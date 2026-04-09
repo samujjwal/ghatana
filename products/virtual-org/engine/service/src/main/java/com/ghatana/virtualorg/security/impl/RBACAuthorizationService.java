@@ -44,14 +44,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * RBACAuthorizationService authz = new RBACAuthorizationService(eventloop);
- * 
+ *
  * // Check authorization
  * boolean canRead = authz.isAuthorized(
  *     principal,
  *     "task:read",
  *     "task-123"
  * ).getResult();
- * 
+ *
  * // Add custom role
  * authz.addRole("custom-role", Set.of(
  *     Permission.parse("task:read"),

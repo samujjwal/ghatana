@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Application service for content policy validation.
- 
+
  *
  * @doc.type class
  * @doc.purpose Policy service

@@ -233,4 +233,3 @@ public interface PredictionCapability {
         LOW
     }
 }
-

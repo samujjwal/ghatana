@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
  *
  * <p>This class provides methods to normalize JSON/YAML files and validate them against JSON Schema
  * using an embedded Node.js runtime.
- 
+
  * @doc.type class
  * @doc.purpose Handles json yaml codemods operations
  * @doc.layer core
@@ -86,7 +86,7 @@ public final class JsonYamlCodemods {
 
             // Process each file asynchronously
             Promise<Void> promise =
-                    Promise.ofBlocking(BLOCKING_EXECUTOR, 
+                    Promise.ofBlocking(BLOCKING_EXECUTOR,
                             () -> {
                                 try {
                                     validateWithSchema(file, schemaFile, diagnostics);

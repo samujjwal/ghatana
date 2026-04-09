@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Day 26: Tests for build log normalizer functionality 
+/** Day 26: Tests for build log normalizer functionality
  * @doc.type class
  * @doc.purpose Handles build log normalizer service test operations
  * @doc.layer core

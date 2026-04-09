@@ -4,7 +4,7 @@ import com.ghatana.contracts.event.v1.EventProto;
 
 /**
  * Action that can be executed in response to governance policy triggers.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Response action

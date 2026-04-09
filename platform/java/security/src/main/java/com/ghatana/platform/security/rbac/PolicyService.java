@@ -1,13 +1,11 @@
 package com.ghatana.platform.security.rbac;
 
 import com.ghatana.platform.governance.security.Principal;
-import com.ghatana.platform.security.rbac.AccessDeniedException;
 import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,7 +53,7 @@ public class PolicyService {
                 .resource(resource)
                 .permissions(new HashSet<>(permissions))  // Create mutable copy
                 .build();
-        
+
         return policyRepository.save(policy);
     }
 
@@ -112,19 +110,19 @@ public class PolicyService {
      */
     public Policy updatePolicy(String id, String name, String description, Boolean enabled) {
         Policy policy = getPolicyById(id);
-        
+
         if (name != null) {
             policy.setName(name);
         }
-        
+
         if (description != null) {
             policy.setDescription(description);
         }
-        
+
         if (enabled != null) {
             policy.setEnabled(enabled);
         }
-        
+
         return policyRepository.save(policy);
     }
 
@@ -178,7 +176,7 @@ public class PolicyService {
      */
     public boolean hasPermission(String role, String resource, String permission) {
         List<Policy> policies = policyRepository.findByRole(role);
-        
+
         return policies.stream()
                 .filter(Policy::isValid)
                 .filter(policy -> policy.appliesTo(resource))
@@ -194,7 +192,7 @@ public class PolicyService {
      */
     public Set<String> getPermissions(String role, String resource) {
         List<Policy> policies = policyRepository.findByRole(role);
-        
+
         return policies.stream()
                 .filter(Policy::isValid)
                 .filter(policy -> policy.appliesTo(resource))
@@ -215,7 +213,7 @@ public class PolicyService {
             throw AccessDeniedException.forPermission(role, resource, permission);
         }
     }
-    
+
     /**
      * Checks if the principal has the required permission for the specified resource.
      *
@@ -233,7 +231,7 @@ public class PolicyService {
         return principal.getRoles().stream()
                 .anyMatch(role -> hasPermission(role, resource, permission));
     }
-    
+
     /**
      * Enforces that the principal has the required permission for the specified resource.
      *
@@ -244,7 +242,7 @@ public class PolicyService {
      */
     public void enforceAuthorization(Principal principal, String permission, String resource) {
         if (!isAuthorized(principal, permission, resource)) {
-            throw new AccessDeniedException("Access denied: Principal does not have permission " + 
+            throw new AccessDeniedException("Access denied: Principal does not have permission " +
                     permission + " for resource " + resource);
         }
     }

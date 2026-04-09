@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Nested;
 
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration tests for ProjectController.

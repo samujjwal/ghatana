@@ -6,7 +6,6 @@
  */
 package com.ghatana.agent.runtime.safety;
 
-import com.ghatana.agent.assurance.PromotionGate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -331,4 +331,3 @@ public class DistributedHttpDataCloudClient extends ManagedDataCloudClient {
         executor.shutdown();
     }
 }
-

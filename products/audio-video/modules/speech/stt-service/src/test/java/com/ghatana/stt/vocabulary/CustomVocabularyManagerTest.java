@@ -8,7 +8,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 /**
@@ -184,4 +183,3 @@ class CustomVocabularyManagerTest {
         assertThat(snap).hasSize(1); // snapshot unchanged
     }
 }
-

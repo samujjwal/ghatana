@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * AND operator that matches when all operands match (conjunction).
- * 
+ *
  * <p>This operator matches when all specified events occur, regardless of order,
  * within an optional time window. For example, AND(A, B, C) matches when events
  * A, B, and C all occur (in any order).
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Pattern Composition Operator - Conjunction (AND) for unordered co-occurrence matching.
@@ -56,7 +56,7 @@ import java.util.Map;
  *                 is handled by the pattern engine's execution layer. Does not provide runtime matching logic.
  */
 public class AndOperator implements Operator {
-    
+
     private static final String TYPE = "AND";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -66,41 +66,41 @@ public class AndOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for AND operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for AndOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount < METADATA.getMinOperands()) {
             throw new PatternValidationException(
-                String.format("AND operator requires at least %d operands, got %d", 
+                String.format("AND operator requires at least %d operands, got %d",
                     METADATA.getMinOperands(), operandCount));
         }
-        
+
         if (operandCount > METADATA.getMaxOperands()) {
             throw new PatternValidationException(
-                String.format("AND operator supports at most %d operands, got %d", 
+                String.format("AND operator supports at most %d operands, got %d",
                     METADATA.getMaxOperands(), operandCount));
         }
-        
+
         // Validate operands
         if (spec.getOperands() != null) {
             for (int i = 0; i < spec.getOperands().size(); i++) {
@@ -109,51 +109,46 @@ public class AndOperator implements Operator {
                     throw new PatternValidationException(
                         String.format("AND operator operand %d cannot be null", i));
                 }
-                
+
                 if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                     throw new PatternValidationException(
                         String.format("AND operator operand %d must have a valid type", i));
                 }
             }
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             return;
         }
-        
+
         // Validate maxTimeWindow parameter if present
         Object maxTimeWindow = parameters.get("maxTimeWindow");
         if (maxTimeWindow != null) {
             if (!(maxTimeWindow instanceof Number)) {
                 throw new PatternValidationException("AND operator maxTimeWindow parameter must be a number");
             }
-            
+
             long maxTimeWindowMs = ((Number) maxTimeWindow).longValue();
             if (maxTimeWindowMs <= 0) {
                 throw new PatternValidationException("AND operator maxTimeWindow parameter must be positive");
             }
         }
-        
+
         // Validate allowPartialMatch parameter if present
         Object allowPartialMatch = parameters.get("allowPartialMatch");
         if (allowPartialMatch != null && !(allowPartialMatch instanceof Boolean)) {
             throw new PatternValidationException("AND operator allowPartialMatch parameter must be a boolean");
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

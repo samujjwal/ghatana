@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Set;
 
 /**
- * Context for a refactoring operation, providing access to project state and configuration. 
+ * Context for a refactoring operation, providing access to project state and configuration.
  * @doc.type interface
  * @doc.purpose Defines the contract for refactoring context
  * @doc.layer core

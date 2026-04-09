@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Integration with Rust tooling including cargo check, clippy, and rustfmt. 
+ * Integration with Rust tooling including cargo check, clippy, and rustfmt.
  * @doc.type class
  * @doc.purpose Handles rust tools runner operations
  * @doc.layer core

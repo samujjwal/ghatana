@@ -5,7 +5,6 @@
 package com.ghatana.kernel.contracts.autonomy;
 
 import com.ghatana.kernel.contracts.AutonomyContract;
-import com.ghatana.kernel.contracts.ContractValidator;
 
 import java.util.List;
 

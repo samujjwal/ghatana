@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * Represents the result of an anomaly detection operation.
- 
+
  *
  * @doc.type class
  * @doc.purpose Validation anomaly detection result
@@ -21,9 +21,9 @@ public class ValidationAnomalyDetectionResult {
     private final String status;
     private final Map<String, Object> metadata;
 
-    public ValidationAnomalyDetectionResult(String detectorId, 
-                                List<DetectedAnomaly> anomalies, 
-                                double confidenceScore, 
+    public ValidationAnomalyDetectionResult(String detectorId,
+                                List<DetectedAnomaly> anomalies,
+                                double confidenceScore,
                                 String status,
                                 Map<String, Object> metadata) {
         this.detectorId = Objects.requireNonNull(detectorId, "Detector ID cannot be null");
@@ -58,74 +58,74 @@ public class ValidationAnomalyDetectionResult {
         private double confidenceScore = 0.0;
         private String status = "PENDING";
         private Map<String, Object> metadata = Map.of();
-        
+
         public Builder detectorId(String detectorId) {
             this.detectorId = detectorId != null ? detectorId : "default-detector";
             return this;
         }
-        
+
         public Builder anomalies(List<DetectedAnomaly> anomalies) {
             this.anomalies = anomalies != null ? List.copyOf(anomalies) : List.of();
             return this;
         }
-        
+
         public Builder confidenceScore(double confidenceScore) {
             this.confidenceScore = confidenceScore;
             return this;
         }
-        
+
         public Builder status(String status) {
             this.status = status != null ? status : "PENDING";
             return this;
         }
-        
+
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
             return this;
         }
-        
+
         public Builder shardId(String shardId) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("shardId", shardId != null ? shardId : "default");
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public Builder isAnomaly(boolean isAnomaly) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("isAnomaly", isAnomaly);
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public Builder score(double score) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("score", score);
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public Builder message(String message) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("message", message != null ? message : "");
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public Builder details(Map<String, Object> details) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("details", details != null ? Map.copyOf(details) : Map.of());
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public Builder enoughData(boolean enoughData) {
             Map<String, Object> updatedMetadata = new HashMap<>(this.metadata);
             updatedMetadata.put("enoughData", enoughData);
             this.metadata = Map.copyOf(updatedMetadata);
             return this;
         }
-        
+
         public ValidationAnomalyDetectionResult build() {
             return new ValidationAnomalyDetectionResult(
                 detectorId,

@@ -1,6 +1,5 @@
 package com.ghatana.plugin.risk.impl;
 
-import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -10,7 +9,6 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

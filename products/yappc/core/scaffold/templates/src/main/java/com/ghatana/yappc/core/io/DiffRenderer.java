@@ -32,17 +32,17 @@ public class DiffRenderer {
         try {
             List<String> originalLines = Arrays.asList(original.split("\\n"));
             List<String> modifiedLines = Arrays.asList(modified.split("\\n"));
-            
+
             StringBuilder result = new StringBuilder();
             result.append("--- original\n");
             result.append("+++ modified\n");
-            
+
             int maxLines = Math.max(originalLines.size(), modifiedLines.size());
-            
+
             for (int i = 0; i < maxLines; i++) {
                 String origLine = i < originalLines.size() ? originalLines.get(i) : null;
                 String modLine = i < modifiedLines.size() ? modifiedLines.get(i) : null;
-                
+
                 if (origLine == null) {
                     // Line added
                     result.append("+ ").append(modLine).append("\n");
@@ -58,7 +58,7 @@ public class DiffRenderer {
                     result.append("  ").append(origLine).append("\n");
                 }
             }
-            
+
             return result.toString();
         } catch (Exception e) {
             log.error("Failed to render diff", e);
@@ -76,12 +76,12 @@ public class DiffRenderer {
         if (patches == null || patches.isEmpty()) {
             return "";
         }
-        
+
         return patches.stream()
             .map(this::formatPatchLine)
             .collect(Collectors.joining("\n"));
     }
-    
+
     /**
      * Format a single patch line with indicators.
      */

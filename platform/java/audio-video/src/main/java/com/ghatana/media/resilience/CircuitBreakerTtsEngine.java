@@ -214,12 +214,12 @@ public class CircuitBreakerTtsEngine implements TtsEngine {
     public EngineStatus getStatus() {
         EngineStatus delegateStatus = delegate.getStatus();
         CircuitBreaker.State cbState = circuitBreaker.getState();
-        
+
         // Include circuit breaker state in engine status
         String statusMessage = delegateStatus.errorMessage() != null
             ? delegateStatus.errorMessage() + " [Circuit: " + cbState + "]"
             : "[Circuit: " + cbState + "]";
-        
+
         return new EngineStatus(
             cbState == CircuitBreaker.State.OPEN ? EngineStatus.State.ERROR : delegateStatus.state(),
             delegateStatus.modelId(),
@@ -232,7 +232,7 @@ public class CircuitBreakerTtsEngine implements TtsEngine {
     @Override
     public EngineMetrics getMetrics() {
         EngineMetrics delegateMetrics = delegate.getMetrics();
-        
+
         // Merge delegate metrics with circuit breaker failure/rejection counts
         return new EngineMetrics(
             delegateMetrics.requestCount(),
@@ -279,7 +279,7 @@ public class CircuitBreakerTtsEngine implements TtsEngine {
         // Return 0.5 seconds of silence
         int sampleCount = (int) (DEFAULT_SAMPLE_RATE * 0.5);
         byte[] silenceData = new byte[sampleCount * DEFAULT_CHANNELS * (DEFAULT_BITS_PER_SAMPLE / 8)];
-        
+
         return new AudioData(
             silenceData,
             DEFAULT_SAMPLE_RATE,

@@ -90,13 +90,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * GovernanceAdapter governance = new GovernanceAdapter(
  *     "agent-cto-001", eventloop, eventEmitter);
- * 
+ *
  * // Authentication
  * String jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
  * governance.authenticate(jwtToken).whenResult(principal -> {
  *     log.info("Authenticated: {}", principal.getName());
  * });
- * 
+ *
  * // Authorization check
  * governance.authorize(principal, "budget", "approve").whenResult(allowed -> {
  *     if (allowed) {
@@ -105,7 +105,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *         log.warn("Authorization denied for budget approval");
  *     }
  * });
- * 
+ *
  * // Policy enforcement
  * SecurityPolicy policy = new SecurityPolicy(
  *     "policy-001", "AUTHORIZATION",
@@ -115,7 +115,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * governance.applyPolicy(policy, context).whenResult(result ->
  *     log.info("Policy result: {}", result)
  * );
- * 
+ *
  * // Message encryption
  * String encrypted = governance.encrypt("Sensitive data", encryptionKey);
  * String decrypted = governance.decrypt(encrypted, encryptionKey);
@@ -200,7 +200,7 @@ public class GovernanceAdapter {
         @NotNull String agentId,
         @NotNull Eventloop eventloop,
         @NotNull EventEmitter eventEmitter) {
-        
+
         this.agentId = agentId;
         this.eventloop = eventloop;
         this.eventEmitter = eventEmitter;
@@ -241,7 +241,7 @@ public class GovernanceAdapter {
     public Promise<Optional<Principal>> authenticate(
         @NotNull String username,
         @NotNull String password) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             if (!initialized) {
                 log.warn("GovernanceAdapter not initialized");
@@ -305,7 +305,7 @@ public class GovernanceAdapter {
         @NotNull Principal principal,
         @NotNull String resource,
         @NotNull String action) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             if (!initialized) {
                 log.warn("GovernanceAdapter not initialized");
@@ -350,7 +350,7 @@ public class GovernanceAdapter {
     public Promise<String> encryptMessage(
         @NotNull String plaintext,
         @NotNull Principal principal) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             if (!initialized) {
                 log.warn("GovernanceAdapter not initialized");
@@ -390,7 +390,7 @@ public class GovernanceAdapter {
     public Promise<String> decryptMessage(
         @NotNull String ciphertext,
         @NotNull Principal principal) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             if (!initialized) {
                 log.warn("GovernanceAdapter not initialized");
@@ -453,7 +453,7 @@ public class GovernanceAdapter {
      */
     public Promise<AuthorizationContext> getAuthorizationContext(
         @NotNull Principal principal) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             log.debug("Loading authorization context: principal={}", principal.getName());
 
@@ -488,7 +488,7 @@ public class GovernanceAdapter {
         @NotNull String resource,
         @NotNull String action,
         @NotNull String outcome) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             AuditLogEntry entry = new AuditLogEntry(
                 UUID.randomUUID().toString(),
@@ -560,7 +560,7 @@ public class GovernanceAdapter {
         Principal principal,
         String resource,
         String action) {
-        
+
         String requiredPermission = resource + ":" + action;
         Set<String> roles = loadRolesForPrincipal(principal);
         Set<String> permissions = loadPermissionsForRoles(roles);
@@ -682,7 +682,7 @@ public class GovernanceAdapter {
         String principalId,
         String outcome,
         Map<String, String> details) {
-        
+
         try {
             Map<String, String> eventData = new HashMap<>(details);
             eventData.put("principalId", principalId);
@@ -715,7 +715,7 @@ public class GovernanceAdapter {
             log.warn("Failed to emit audit event", e);
         }
     }
-    
+
     /**
      * Helper to build events with proper EventId structure.
      */
@@ -726,7 +726,7 @@ public class GovernanceAdapter {
             "1.0",
             "default-tenant"
         );
-        
+
         Instant now = Instant.now();
         long nowMillis = now.toEpochMilli();
         EventTime eventTime = EventTime.builder()
@@ -741,19 +741,19 @@ public class GovernanceAdapter {
                 com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis)
             ))
             .build();
-        
+
         EventStats stats = EventStats.builder()
             .withSizeInBytes(payload.toString().length())
             .build();
-        
+
         EventRelations relations = EventRelations.builder().build();
-        
+
         Map<String, String> headers = new HashMap<>();
         headers.put("correlationId", UUID.randomUUID().toString());
         headers.put("timestamp", String.valueOf(System.currentTimeMillis()));
-        
+
         Map<String, Object> typedPayload = new HashMap<>(payload);
-        
+
         return GEvent.builder()
             .id(eventId)
             .time(eventTime)
@@ -766,7 +766,7 @@ public class GovernanceAdapter {
             .provenance(java.util.List.of())
             .build();
     }
-    
+
     /**
      * Simple EventId implementation.
      */
@@ -775,29 +775,29 @@ public class GovernanceAdapter {
         private final String eventType;
         private final String version;
         private final String tenantId;
-        
+
         SimpleEventId(String id, String eventType, String version, String tenantId) {
             this.id = id;
             this.eventType = eventType;
             this.version = version;
             this.tenantId = tenantId;
         }
-        
+
         @Override
         public String getId() {
             return id;
         }
-        
+
         @Override
         public String getEventType() {
             return eventType;
         }
-        
+
         @Override
         public String getVersion() {
             return version;
         }
-        
+
         @Override
         public String getTenantId() {
             return tenantId;

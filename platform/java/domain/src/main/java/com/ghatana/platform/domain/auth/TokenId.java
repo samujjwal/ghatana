@@ -16,18 +16,18 @@ import java.util.UUID;
  * @doc.pattern ValueObject
  */
 public record TokenId(String value) {
-    
+
     public TokenId {
         Objects.requireNonNull(value, "TokenId cannot be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("TokenId cannot be blank");
         }
     }
-    
+
     public static TokenId of(String value) {
         return new TokenId(value);
     }
-    
+
     public static TokenId random() {
         return new TokenId("token-" + UUID.randomUUID());
     }

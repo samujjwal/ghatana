@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * Configuration properties for email notifications.
- 
+
  *
  * @doc.type class
  * @doc.purpose Email properties
@@ -26,8 +26,8 @@ public class EmailProperties {
     private final List<String> to;
     private final String subjectPrefix;
 
-    private EmailProperties(boolean enabled, String host, int port, String username, 
-                          String password, boolean sslEnabled, String from, 
+    private EmailProperties(boolean enabled, String host, int port, String username,
+                          String password, boolean sslEnabled, String from,
                           List<String> to, String subjectPrefix) {
         this.enabled = enabled;
         this.host = host;
@@ -59,7 +59,7 @@ public class EmailProperties {
                 }
             }
         }
-        
+
         return new Builder()
                 .enabled(Boolean.parseBoolean(config.get("enabled", "false")))
                 .host(config.get("host", "localhost"))
@@ -172,7 +172,7 @@ public class EmailProperties {
 
         public EmailProperties build() {
             return new EmailProperties(
-                enabled, host, port, username, password, sslEnabled, 
+                enabled, host, port, username, password, sslEnabled,
                 from, to, subjectPrefix
             );
         }

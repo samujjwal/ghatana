@@ -1,13 +1,12 @@
 package com.ghatana.datacloud.spi;
 
-import java.util.function.Supplier;
 
 /**
  * Lightweight SPI interface for audit logging exposed to plugins.
  * Implementations may adapt to framework-specific audit implementations.
  *
  * Note: kept minimal to avoid coupling with infrastructure package.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Audit logger
@@ -27,4 +26,3 @@ public interface AuditLogger {
         };
     }
 }
-

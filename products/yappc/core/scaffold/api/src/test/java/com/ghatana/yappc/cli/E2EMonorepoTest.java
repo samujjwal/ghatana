@@ -40,7 +40,7 @@ import picocli.CommandLine;
  *
  * <p>Tests end-to-end workspace generation combining Gradle + Nx adapters, running doctor, graph,
  * and CI dry-run commands with OTel tracing.
- 
+
  * @doc.type class
  * @doc.purpose Handles e2e monorepo test operations
  * @doc.layer core

@@ -26,13 +26,13 @@ import java.util.UUID;
  * @doc.pattern Service
  */
 public class EvolutionServiceImpl implements EvolutionService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(EvolutionServiceImpl.class);
-    
+
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public EvolutionServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
@@ -41,23 +41,23 @@ public class EvolutionServiceImpl implements EvolutionService {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<EvolutionPlan> propose(Insights insights) {
         return proposeWithConstraints(insights, null);
     }
-    
+
     @Override
     public Promise<EvolutionPlan> proposeWithConstraints(Insights insights, ConstraintSpec constraints) {
         long startTime = System.currentTimeMillis();
-        
+
         return proposeWithAI(insights, constraints)
                 .then(plan -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = Map.of("has_constraints", String.valueOf(constraints != null));
                     metrics.recordTimer("yappc.evolve.propose", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.evolve.propose", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("evolve.propose", insights, plan))
                             .map(v -> plan);
                 })
@@ -70,10 +70,10 @@ public class EvolutionServiceImpl implements EvolutionService {
                         Map.of("has_constraints", String.valueOf(constraints != null)));
                 });
     }
-    
+
     private Promise<EvolutionPlan> proposeWithAI(Insights insights, ConstraintSpec constraints) {
         String prompt = buildEvolutionPrompt(insights, constraints);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.3)
@@ -81,47 +81,47 @@ public class EvolutionServiceImpl implements EvolutionService {
                 .build())
                 .map(result -> parseEvolutionPlanFromAIResponse(result, insights));
     }
-    
+
     private String buildEvolutionPrompt(Insights insights, ConstraintSpec constraints) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Create an evolution plan based on the following insights:\n\n");
-        
+
         prompt.append("Patterns:\n");
-        insights.patterns().forEach(p -> 
+        insights.patterns().forEach(p ->
             prompt.append(String.format("- %s (confidence: %.2f)\n", p.description(), p.confidence())));
-        
+
         prompt.append("\nAnomalies:\n");
-        insights.anomalies().forEach(a -> 
+        insights.anomalies().forEach(a ->
             prompt.append(String.format("- %s (severity: %s)\n", a.description(), a.severity())));
-        
+
         prompt.append("\nRecommendations:\n");
-        insights.recommendations().forEach(r -> 
-            prompt.append(String.format("- %s (priority: %d, impact: %.2f)\n", 
+        insights.recommendations().forEach(r ->
+            prompt.append(String.format("- %s (priority: %d, impact: %.2f)\n",
                 r.description(), r.priority(), r.estimatedImpact())));
-        
+
         if (constraints != null) {
             prompt.append("\nConstraints:\n");
             prompt.append(String.format("- Type: %s\n", constraints.type()));
             prompt.append(String.format("- Description: %s\n", constraints.description()));
             prompt.append(String.format("- Severity: %s\n", constraints.severity()));
         }
-        
+
         prompt.append("""
-            
+
             Provide:
             1. Prioritized evolution tasks (refactor, enhance, fix, optimize)
             2. Task dependencies
             3. New intent for next iteration (what should be improved)
-            
+
             Focus on high-impact, low-risk improvements.
             """);
-        
+
         return prompt.toString();
     }
-    
+
     private EvolutionPlan parseEvolutionPlanFromAIResponse(CompletionResult result, Insights insights) {
         String text = result.text();
-        
+
         return EvolutionPlan.builder()
                 .id(UUID.randomUUID().toString())
                 .insightsRef(insights.id())
@@ -131,7 +131,7 @@ public class EvolutionServiceImpl implements EvolutionService {
                 .metadata(Map.of("source", "ai-generated", "model", result.model()))
                 .build();
     }
-    
+
     private List<EvolutionTask> extractEvolutionTasks(String text) {
         return List.of(
             EvolutionTask.builder()
@@ -172,10 +172,10 @@ public class EvolutionServiceImpl implements EvolutionService {
                     .build()
         );
     }
-    
+
     private String generateNewIntentRef(Insights insights) {
         // Generate a new intent based on insights for continuous improvement loop
         return "intent-" + UUID.randomUUID().toString();
     }
-    
+
 }

@@ -10,8 +10,6 @@ import com.ghatana.media.config.TimeoutConfig;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,12 +23,12 @@ class StreamingRetryHandlerTest {
     void testNoRetryOnSuccess() {
         StreamingRetryHandler handler = StreamingRetryHandler.defaults();
         AtomicInteger calls = new AtomicInteger(0);
-        
+
         String result = handler.executeWithRetry(() -> {
             calls.incrementAndGet();
             return "success";
         }, "test operation");
-        
+
         assertEquals("success", result);
         assertEquals(1, calls.get());
     }
@@ -42,9 +40,9 @@ class StreamingRetryHandlerTest {
             .maxRetries(3)
             .initialDelay(Duration.ofMillis(10))
             .build();
-        
+
         AtomicInteger calls = new AtomicInteger(0);
-        
+
         String result = handler.executeWithRetry(() -> {
             int call = calls.incrementAndGet();
             if (call < 3) {
@@ -52,7 +50,7 @@ class StreamingRetryHandlerTest {
             }
             return "success";
         }, "test operation");
-        
+
         assertEquals("success", result);
         assertEquals(3, calls.get());
     }
@@ -64,7 +62,7 @@ class StreamingRetryHandlerTest {
             .maxRetries(2)
             .initialDelay(Duration.ofMillis(1))
             .build();
-        
+
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> {
             handler.executeWithRetry(() -> {
                 throw new RuntimeException("try again");
@@ -79,11 +77,11 @@ class StreamingRetryHandlerTest {
             .maxRetries(2)
             .initialDelay(Duration.ofMillis(1))
             .build();
-        
+
         String result = handler.executeWithFallback(() -> {
             throw new RuntimeException("try again");
         }, "fallback", "failing operation");
-        
+
         assertEquals("fallback", result);
     }
 
@@ -94,9 +92,9 @@ class StreamingRetryHandlerTest {
             .maxRetries(2)
             .initialDelay(Duration.ofMillis(1))
             .build();
-        
+
         AtomicInteger calls = new AtomicInteger(0);
-        
+
         String result = handler.executeWithRetry(() -> {
             int call = calls.incrementAndGet();
             if (call == 1) {
@@ -104,7 +102,7 @@ class StreamingRetryHandlerTest {
             }
             return "success";
         }, "test operation");
-        
+
         assertEquals("success", result);
         assertEquals(2, calls.get());
     }
@@ -114,14 +112,14 @@ class StreamingRetryHandlerTest {
     void testNoRetryOnNonRetryable() {
         StreamingRetryHandler handler = StreamingRetryHandler.defaults();
         AtomicInteger calls = new AtomicInteger(0);
-        
+
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> {
             handler.executeWithRetry(() -> {
                 calls.incrementAndGet();
                 throw new IllegalArgumentException("Invalid argument"); // Non-retryable
             }, "test operation");
         });
-        
+
         assertEquals(1, calls.get()); // Only one attempt
     }
 
@@ -129,23 +127,23 @@ class StreamingRetryHandlerTest {
     @DisplayName("Should apply exponential backoff")
     void testExponentialBackoff() {
         long[] delays = new long[3];
-        
+
         StreamingRetryHandler handler = StreamingRetryHandler.builder()
             .maxRetries(3)
             .initialDelay(Duration.ofMillis(100))
             .backoffMultiplier(2.0)
             .addJitter(false)
             .build();
-        
+
         AtomicInteger calls = new AtomicInteger(0);
-        
+
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> {
             handler.executeWithRetry(() -> {
                 calls.incrementAndGet();
                 throw new RuntimeException("try again");
             }, "test");
         });
-        
+
         // Should have made 4 attempts (initial + 3 retries)
         assertEquals(4, calls.get());
     }
@@ -160,7 +158,7 @@ class StreamingRetryHandlerTest {
             .backoffMultiplier(10.0) // Would exceed max without cap
             .addJitter(false)
             .build();
-        
+
         // Even with high multiplier, delay should not exceed maxDelay
         assertTrue(handler.getMaxDelay().toMillis() <= 200);
     }
@@ -171,13 +169,13 @@ class StreamingRetryHandlerTest {
         TimeoutConfig timeoutConfig = TimeoutConfig.builder()
             .streamingTimeout(Duration.ofMillis(100)) // Very short timeout
             .build();
-        
+
         StreamingRetryHandler handler = StreamingRetryHandler.builder()
             .maxRetries(100) // Would take too long without timeout
             .initialDelay(Duration.ofMillis(50))
             .timeoutConfig(timeoutConfig)
             .build();
-        
+
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> {
             handler.executeWithRetry(() -> {
                 throw new RuntimeException("try again");
@@ -189,7 +187,7 @@ class StreamingRetryHandlerTest {
     @DisplayName("Should create aggressive retry handler")
     void testAggressiveHandler() {
         StreamingRetryHandler handler = StreamingRetryHandler.aggressive();
-        
+
         assertEquals(5, handler.getMaxRetries());
         assertEquals(Duration.ofMillis(100), handler.getInitialDelay());
         assertTrue(handler.isJitterEnabled());
@@ -199,7 +197,7 @@ class StreamingRetryHandlerTest {
     @DisplayName("Should create conservative retry handler")
     void testConservativeHandler() {
         StreamingRetryHandler handler = StreamingRetryHandler.conservative();
-        
+
         assertEquals(10, handler.getMaxRetries());
         assertEquals(Duration.ofMillis(500), handler.getInitialDelay());
         assertEquals(Duration.ofSeconds(30), handler.getMaxDelay());
@@ -212,14 +210,14 @@ class StreamingRetryHandlerTest {
             .maxRetries(2)
             .initialDelay(Duration.ofMillis(1))
             .build();
-        
-        StreamingRetryHandler.StreamingRetryExhaustedException exception = 
+
+        StreamingRetryHandler.StreamingRetryExhaustedException exception =
             assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> {
                 handler.executeWithRetry(() -> {
                     throw new RuntimeException("try again");
                 }, "test");
             });
-        
+
         // 3 attempts (initial + 2 retries)
         assertEquals(3, exception.getAttemptsMade());
         assertNotNull(exception.getLastException());

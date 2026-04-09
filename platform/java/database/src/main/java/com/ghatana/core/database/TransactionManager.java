@@ -34,14 +34,14 @@ import java.util.function.Function;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * TransactionManager txManager = new TransactionManager(entityManagerProvider);
- * 
+ *
  * // 1. Simple transactional operation (no return value)
  * txManager.inTransaction(em -> {
  *     User user = new User("john@example.com");
  *     em.persist(user);
  *     // Transaction automatically committed
  * });
- * 
+ *
  * // 2. Transactional operation with return value
  * User createdUser = txManager.inTransaction(em -> {
  *     User user = new User("jane@example.com");
@@ -49,36 +49,36 @@ import java.util.function.Function;
  *     em.flush(); // Force ID generation
  *     return user;
  * });
- * 
+ *
  * // 3. Read-only transaction (optimization hint)
  * List<User> users = txManager.inReadOnlyTransaction(em ->
  *     em.createQuery("SELECT u FROM User u WHERE u.active = true", User.class)
  *       .getResultList()
  * );
- * 
+ *
  * // 4. Complex multi-step transaction
  * Order order = txManager.inTransaction(em -> {
  *     // Step 1: Create order
  *     Order newOrder = new Order(customerId);
  *     em.persist(newOrder);
- *     
+ *
  *     // Step 2: Add line items
  *     for (CartItem item : cartItems) {
  *         OrderLine line = new OrderLine(newOrder, item);
  *         em.persist(line);
  *     }
- *     
+ *
  *     // Step 3: Update inventory
  *     for (CartItem item : cartItems) {
  *         Product product = em.find(Product.class, item.getProductId());
  *         product.decrementStock(item.getQuantity());
  *         em.merge(product);
  *     }
- *     
+ *
  *     em.flush(); // Force database sync
  *     return newOrder; // All-or-nothing: success=commit, exception=rollback
  * });
- * 
+ *
  * // 5. Nested transactions (propagate outer transaction)
  * txManager.inTransaction(em -> {
  *     User user = createUser(em); // Inner operation participates in outer tx
@@ -130,28 +130,28 @@ import java.util.function.Function;
  */
 public final class TransactionManager {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionManager.class);
-    
+
     private final EntityManagerProvider entityManagerProvider;
-    
+
     /**
      * Creates a new TransactionManager.
-     * 
+     *
      * @param entityManagerProvider The EntityManagerProvider to use
      */
     public TransactionManager(EntityManagerProvider entityManagerProvider) {
         this.entityManagerProvider = Preconditions.requireNonNull(
             entityManagerProvider, "EntityManagerProvider cannot be null");
-        
+
         LOG.info("TransactionManager initialized");
     }
-    
+
     /**
      * Executes a function within a transaction boundary.
-     * 
+     *
      * <p>The transaction is automatically started before the function is called
      * and committed after successful completion. If an exception occurs, the
      * transaction is rolled back.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute within the transaction
      * @return The result of the function
@@ -159,21 +159,21 @@ public final class TransactionManager {
      */
     public <T> T inTransaction(Function<EntityManager, T> function) {
         Preconditions.requireNonNull(function, "Function cannot be null");
-        
+
         return entityManagerProvider.withEntityManager(entityManager -> {
             EntityTransaction transaction = entityManager.getTransaction();
-            
+
             try {
                 transaction.begin();
                 LOG.debug("Transaction started");
-                
+
                 T result = function.apply(entityManager);
-                
+
                 transaction.commit();
                 LOG.debug("Transaction committed successfully");
-                
+
                 return result;
-                
+
             } catch (Exception e) {
                 if (transaction.isActive()) {
                     try {
@@ -184,7 +184,7 @@ public final class TransactionManager {
                         e.addSuppressed(rollbackException);
                     }
                 }
-                
+
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -193,33 +193,33 @@ public final class TransactionManager {
             }
         });
     }
-    
+
     /**
      * Executes a consumer within a transaction boundary.
-     * 
+     *
      * <p>The transaction is automatically started before the consumer is called
      * and committed after successful completion. If an exception occurs, the
      * transaction is rolled back.
-     * 
+     *
      * @param consumer The consumer to execute within the transaction
      * @throws RuntimeException if the transaction fails
      */
     public void inTransaction(Consumer<EntityManager> consumer) {
         Preconditions.requireNonNull(consumer, "Consumer cannot be null");
-        
+
         inTransaction(entityManager -> {
             consumer.accept(entityManager);
             return null;
         });
     }
-    
+
     /**
      * Executes a function within a read-only transaction.
-     * 
+     *
      * <p>This method is optimized for read-only operations and may provide
      * performance benefits. The transaction is automatically started and
      * committed, but no writes should be performed.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute within the read-only transaction
      * @return The result of the function
@@ -227,24 +227,24 @@ public final class TransactionManager {
      */
     public <T> T inReadOnlyTransaction(Function<EntityManager, T> function) {
         Preconditions.requireNonNull(function, "Function cannot be null");
-        
+
         return entityManagerProvider.withEntityManager(entityManager -> {
             EntityTransaction transaction = entityManager.getTransaction();
-            
+
             try {
                 transaction.begin();
                 LOG.debug("Read-only transaction started");
-                
+
                 // Set read-only hint (Hibernate-specific optimization)
                 entityManager.setProperty("org.hibernate.readOnly", true);
-                
+
                 T result = function.apply(entityManager);
-                
+
                 transaction.commit();
                 LOG.debug("Read-only transaction committed successfully");
-                
+
                 return result;
-                
+
             } catch (Exception e) {
                 if (transaction.isActive()) {
                     try {
@@ -255,7 +255,7 @@ public final class TransactionManager {
                         e.addSuppressed(rollbackException);
                     }
                 }
-                
+
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -264,33 +264,33 @@ public final class TransactionManager {
             }
         });
     }
-    
+
     /**
      * Executes a consumer within a read-only transaction.
-     * 
+     *
      * <p>This method is optimized for read-only operations and may provide
      * performance benefits. The transaction is automatically started and
      * committed, but no writes should be performed.
-     * 
+     *
      * @param consumer The consumer to execute within the read-only transaction
      * @throws RuntimeException if the transaction fails
      */
     public void inReadOnlyTransaction(Consumer<EntityManager> consumer) {
         Preconditions.requireNonNull(consumer, "Consumer cannot be null");
-        
+
         inReadOnlyTransaction(entityManager -> {
             consumer.accept(entityManager);
             return null;
         });
     }
-    
+
     /**
      * Executes a function with manual transaction control.
-     * 
+     *
      * <p>This method provides an EntityManager with an active transaction,
      * but the caller is responsible for committing or rolling back the transaction.
      * Use this for complex transaction scenarios that require manual control.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute with manual transaction control
      * @return The result of the function
@@ -298,16 +298,16 @@ public final class TransactionManager {
      */
     public <T> T withManualTransaction(Function<EntityManager, T> function) {
         Preconditions.requireNonNull(function, "Function cannot be null");
-        
+
         return entityManagerProvider.withEntityManager(entityManager -> {
             EntityTransaction transaction = entityManager.getTransaction();
-            
+
             try {
                 transaction.begin();
                 LOG.debug("Manual transaction started");
-                
+
                 return function.apply(entityManager);
-                
+
             } catch (Exception e) {
                 if (transaction.isActive()) {
                     try {
@@ -318,7 +318,7 @@ public final class TransactionManager {
                         e.addSuppressed(rollbackException);
                     }
                 }
-                
+
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -327,32 +327,32 @@ public final class TransactionManager {
             }
         });
     }
-    
+
     /**
      * Executes a consumer with manual transaction control.
-     * 
+     *
      * <p>This method provides an EntityManager with an active transaction,
      * but the caller is responsible for committing or rolling back the transaction.
      * Use this for complex transaction scenarios that require manual control.
-     * 
+     *
      * @param consumer The consumer to execute with manual transaction control
      * @throws RuntimeException if an error occurs
      */
     public void withManuelTransaction(Consumer<EntityManager> consumer) {
         Preconditions.requireNonNull(consumer, "Consumer cannot be null");
-        
+
         withManualTransaction(entityManager -> {
             consumer.accept(entityManager);
             return null;
         });
     }
-    
+
     /**
      * Executes multiple operations within a single transaction.
-     * 
+     *
      * <p>This method allows batching multiple database operations within a single
      * transaction for better performance and consistency.
-     * 
+     *
      * @param operations The operations to execute within the transaction
      * @throws RuntimeException if the transaction fails
      */
@@ -362,20 +362,20 @@ public final class TransactionManager {
         if (operations.length == 0) {
             throw new IllegalArgumentException("Operations cannot be empty");
         }
-        
+
         inTransaction(entityManager -> {
             for (Consumer<EntityManager> operation : operations) {
                 operation.accept(entityManager);
             }
         });
     }
-    
+
     /**
      * Executes a function within a new transaction, regardless of existing transaction context.
-     * 
+     *
      * <p>This method always creates a new transaction, even if one is already active.
      * Use this for operations that need to be isolated from the current transaction.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute in a new transaction
      * @return The result of the function
@@ -383,23 +383,23 @@ public final class TransactionManager {
      */
     public <T> T requiresNewTransaction(Function<EntityManager, T> function) {
         Preconditions.requireNonNull(function, "Function cannot be null");
-        
+
         // Always create a new EntityManager for a new transaction
         EntityManager entityManager = entityManagerProvider.createEntityManager();
         try {
             EntityTransaction transaction = entityManager.getTransaction();
-            
+
             try {
                 transaction.begin();
                 LOG.debug("New transaction started (requires new)");
-                
+
                 T result = function.apply(entityManager);
-                
+
                 transaction.commit();
                 LOG.debug("New transaction committed successfully");
-                
+
                 return result;
-                
+
             } catch (Exception e) {
                 if (transaction.isActive()) {
                     try {
@@ -410,7 +410,7 @@ public final class TransactionManager {
                         e.addSuppressed(rollbackException);
                     }
                 }
-                
+
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException) e;
                 } else {
@@ -421,60 +421,60 @@ public final class TransactionManager {
             entityManagerProvider.closeEntityManager(entityManager);
         }
     }
-    
+
     /**
      * Executes a consumer within a new transaction, regardless of existing transaction context.
-     * 
+     *
      * <p>This method always creates a new transaction, even if one is already active.
      * Use this for operations that need to be isolated from the current transaction.
-     * 
+     *
      * @param consumer The consumer to execute in a new transaction
      * @throws RuntimeException if the transaction fails
      */
     public void requiresNewTransaction(Consumer<EntityManager> consumer) {
         Preconditions.requireNonNull(consumer, "Consumer cannot be null");
-        
+
         requiresNewTransaction(entityManager -> {
             consumer.accept(entityManager);
             return null;
         });
     }
-    
+
     /**
      * Starts a new transaction if one is not already active.
-     * 
+     *
      * @throws IllegalStateException if there is already an active transaction
      */
     public void begin() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
-        
+
         if (transaction.isActive()) {
             throw new IllegalStateException("A transaction is already active");
         }
-        
+
         transaction.begin();
         LOG.debug("Transaction started");
     }
-    
+
     /**
      * Commits the current transaction.
-     * 
+     *
      * @throws IllegalStateException if there is no active transaction
      * @throws IllegalStateException if the transaction is marked for rollback only
      */
     public void commit() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
-        
+
         if (!transaction.isActive()) {
             throw new IllegalStateException("No active transaction to commit");
         }
-        
+
         if (transaction.getRollbackOnly()) {
             throw new IllegalStateException("Transaction is marked for rollback only");
         }
-        
+
         try {
             transaction.commit();
             LOG.debug("Transaction committed successfully");
@@ -483,20 +483,20 @@ public final class TransactionManager {
             throw new RuntimeException("Failed to commit transaction", e);
         }
     }
-    
+
     /**
      * Rolls back the current transaction.
-     * 
+     *
      * @throws IllegalStateException if there is no active transaction
      */
     public void rollback() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
-        
+
         if (!transaction.isActive()) {
             throw new IllegalStateException("No active transaction to rollback");
         }
-        
+
         try {
             transaction.rollback();
             LOG.debug("Transaction rolled back");
@@ -505,10 +505,10 @@ public final class TransactionManager {
             throw new RuntimeException("Failed to rollback transaction", e);
         }
     }
-    
+
     /**
      * Checks if there is an active transaction.
-     * 
+     *
      * @return true if there is an active transaction, false otherwise
      */
     public boolean isActive() {
@@ -520,21 +520,21 @@ public final class TransactionManager {
             return false;
         }
     }
-    
+
     /**
      * Checks if the current transaction is marked for rollback only.
-     * 
+     *
      * @return true if the transaction is marked for rollback only, false otherwise
      * @throws IllegalStateException if there is no active transaction
      */
     public boolean isRollbackOnly() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         EntityTransaction transaction = entityManager.getTransaction();
-        
+
         if (!transaction.isActive()) {
             throw new IllegalStateException("No active transaction");
         }
-        
+
         return transaction.getRollbackOnly();
     }
 }

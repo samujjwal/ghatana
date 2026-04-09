@@ -194,4 +194,3 @@ record KpisConfig(
         return enabled != null ? enabled : true;
     }
 }
-

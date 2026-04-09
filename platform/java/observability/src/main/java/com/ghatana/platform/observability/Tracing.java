@@ -71,7 +71,7 @@ public final class Tracing {
      * Global OpenTelemetry instance (volatile for thread visibility).
      */
     private static volatile OpenTelemetry openTelemetry;
-    
+
     /**
      * Global Tracer instance (volatile for thread visibility).
      */

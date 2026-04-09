@@ -2,7 +2,6 @@ package com.ghatana.platform.observability.trace;
 
 import io.activej.promise.Promise;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
  * filtering/querying capabilities without requiring an external database. This
  * is ideal for unit tests, integration tests, and local development.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>In-Memory Storage</b>: Spans stored in ConcurrentHashMap (traceId → List&lt;SpanData&gt;)</li>
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
  *   <li><b>Thread-Safe</b>: ConcurrentHashMap ensures concurrent access safety</li>
  *   <li><b>Promise-Based</b>: All operations return ActiveJ Promise (immediate completion)</li>
  * </ul>
- * 
+ *
  * <h2>Limitations (NOT for Production)</h2>
  * <ul>
  *   <li><b>No Persistence</b>: Data lost on restart (in-memory only)</li>
@@ -32,7 +31,7 @@ import java.util.stream.Collectors;
  *   <li><b>Memory Pressure</b>: All traces retained until cleared</li>
  *   <li><b>No Retention Policy</b>: No automatic cleanup of old traces</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Test scenario: Store and query traces
@@ -76,7 +75,7 @@ import java.util.stream.Collectors;
  *   <li><b>Tags</b>: All tags must match at least one span</li>
  *   <li><b>Span Count</b>: Number of spans must be within range</li>
  * </ul>
- * 
+ *
  * <h2>Statistics Calculation</h2>
  * <ul>
  *   <li><b>Total Traces</b>: Count of matching traces</li>
@@ -86,11 +85,11 @@ import java.util.stream.Collectors;
  *   <li><b>Most Common Service</b>: Service appearing most frequently in traces</li>
  *   <li><b>Most Common Operation</b>: Operation appearing most frequently in spans</li>
  * </ul>
- * 
+ *
  * <h2>Thread Safety</h2>
  * Uses {@link ConcurrentHashMap} for storing spans, ensuring thread-safe concurrent
  * access. However, queries perform full scans and are not optimized for high concurrency.
- * 
+ *
  * <h2>Cleanup</h2>
  * Call {@link #clear()} or {@link #close()} to remove all stored traces and free memory.
  *

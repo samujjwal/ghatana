@@ -8,7 +8,6 @@ import com.ghatana.media.common.ValidationError;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Shared utility that maps platform {@link ProcessingError} exceptions — and generic
@@ -121,4 +120,3 @@ public final class GrpcExceptionMapper {
                 || status.getCode() == Status.Code.RESOURCE_EXHAUSTED;
     }
 }
-

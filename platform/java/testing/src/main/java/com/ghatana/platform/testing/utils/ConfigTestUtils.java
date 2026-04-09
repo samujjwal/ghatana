@@ -3,7 +3,6 @@ package com.ghatana.platform.testing.utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Consumer;
 
 /**
  * Testing utilities for configuration-related test setup.

@@ -7,7 +7,7 @@ package com.ghatana.refactorer.config;
  * referenced by RefactorerHttpServer (http().host(), http().port()). The full
  * project may provide a richer config object via DI; this shim ensures
  * compile-time availability while the project migrations continue.
- 
+
  * @doc.type class
  * @doc.purpose Handles refactorer config operations
  * @doc.layer core

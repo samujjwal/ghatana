@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -206,4 +205,3 @@ class AepLoadSimulationTest extends EventloopTestBase {
         assertThat(results).hasSize(50);
     }
 }
-

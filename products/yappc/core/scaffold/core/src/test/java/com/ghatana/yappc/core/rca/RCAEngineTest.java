@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for RCAEngine pattern matching.
- 
+
  * @doc.type class
  * @doc.purpose Handles rca engine test operations
  * @doc.layer core
@@ -43,7 +43,7 @@ class RCAEngineTest {
     @DisplayName("Analyze null failure")
     void testAnalyzeNull() {
         RCAResult result = engine.analyze(null);
-        
+
         assertNotNull(result);
         assertEquals("Unknown", result.getMetadata().get("category"));
         assertEquals("No failure information provided", result.getExplanation());
@@ -53,7 +53,7 @@ class RCAEngineTest {
     @DisplayName("Analyze empty failure")
     void testAnalyzeEmpty() {
         RCAResult result = engine.analyze("");
-        
+
         assertNotNull(result);
         assertEquals("Unknown", result.getMetadata().get("category"));
     }
@@ -64,14 +64,14 @@ class RCAEngineTest {
         String failure = "error: cannot find symbol\n" +
                         "  symbol:   class MyClass\n" +
                         "  location: package com.example";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Compilation Error", result.getMetadata().get("category"));
         assertEquals("Missing dependency or incorrect import", result.getExplanation());
         assertFalse(result.getFixSuggestions().isEmpty());
-        assertEquals("Check dependencies and import statements", 
+        assertEquals("Check dependencies and import statements",
                     result.getFixSuggestions().get(0).getDescription());
     }
 
@@ -80,9 +80,9 @@ class RCAEngineTest {
     void testAnalyzeCompilationErrorPackage() {
         String failure = "error: package com.example.missing does not exist\n" +
                         "import com.example.missing.MyClass;";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Compilation Error", result.getMetadata().get("category"));
         assertTrue(result.getExplanation().contains("Missing dependency"));
@@ -94,9 +94,9 @@ class RCAEngineTest {
         String failure = "java.lang.NullPointerException\n" +
                         "    at com.example.MyClass.myMethod(MyClass.java:42)\n" +
                         "    at com.example.Main.main(Main.java:10)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Null Pointer", result.getMetadata().get("category"));
         assertEquals("Null reference accessed", result.getExplanation());
@@ -109,9 +109,9 @@ class RCAEngineTest {
     void testAnalyzeClassNotFound() {
         String failure = "java.lang.ClassNotFoundException: com.example.MyClass\n" +
                         "    at java.net.URLClassLoader.findClass(URLClassLoader.java:382)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Class Not Found", result.getMetadata().get("category"));
         assertEquals("Missing class in classpath", result.getExplanation());
@@ -124,9 +124,9 @@ class RCAEngineTest {
     void testAnalyzeNoClassDefFound() {
         String failure = "java.lang.NoClassDefFoundError: com/example/MyClass\n" +
                         "    at com.example.Main.main(Main.java:10)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Class Not Found", result.getMetadata().get("category"));
     }
@@ -136,9 +136,9 @@ class RCAEngineTest {
     void testAnalyzePortConflictAddress() {
         String failure = "java.net.BindException: Address already in use\n" +
                         "    at java.net.PlainSocketImpl.socketBind(Native Method)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Port Conflict", result.getMetadata().get("category"));
         assertEquals("Port already in use by another process", result.getExplanation());
@@ -150,9 +150,9 @@ class RCAEngineTest {
     @DisplayName("Analyze port conflict - port already bound")
     void testAnalyzePortConflictBound() {
         String failure = "Error: port 8080 is already bound to another process";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Port Conflict", result.getMetadata().get("category"));
     }
@@ -162,9 +162,9 @@ class RCAEngineTest {
     void testAnalyzeMemoryError() {
         String failure = "java.lang.OutOfMemoryError: Java heap space\n" +
                         "    at java.util.Arrays.copyOf(Arrays.java:3332)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Memory Error", result.getMetadata().get("category"));
         assertEquals("Insufficient memory allocated", result.getExplanation());
@@ -177,9 +177,9 @@ class RCAEngineTest {
     void testAnalyzePermissionDenied() {
         String failure = "java.io.IOException: Permission denied\n" +
                         "    at java.io.UnixFileSystem.createFileExclusively(Native Method)";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Permission Denied", result.getMetadata().get("category"));
         assertEquals("Insufficient file system permissions", result.getExplanation());
@@ -192,9 +192,9 @@ class RCAEngineTest {
     void testAnalyzeAccessDenied() {
         String failure = "Error: Access is denied\n" +
                         "Cannot write to file: /protected/file.txt";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Permission Denied", result.getMetadata().get("category"));
     }
@@ -203,9 +203,9 @@ class RCAEngineTest {
     @DisplayName("Analyze unknown failure")
     void testAnalyzeUnknownFailure() {
         String failure = "Some random error that doesn't match any pattern";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertEquals("Unknown", result.getMetadata().get("category"));
         assertEquals("Unable to determine root cause", result.getExplanation());
@@ -215,9 +215,9 @@ class RCAEngineTest {
     @DisplayName("RCA result has proper structure")
     void testRCAResultStructure() {
         String failure = "NullPointerException at line 42";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertNotNull(result);
         assertNotNull(result.getAnalysisId());
         assertNotNull(result.getTimestamp());
@@ -233,9 +233,9 @@ class RCAEngineTest {
     @DisplayName("Fix suggestions have proper priority")
     void testFixSuggestionsPriority() {
         String failure = "cannot find symbol: MyClass";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertFalse(result.getFixSuggestions().isEmpty());
         RCAResult.FixSuggestion suggestion = result.getFixSuggestions().get(0);
         assertNotNull(suggestion.getPriority());
@@ -246,9 +246,9 @@ class RCAEngineTest {
     @DisplayName("Fix suggestions have proper category")
     void testFixSuggestionsCategory() {
         String failure = "ClassNotFoundException: MyClass";
-        
+
         RCAResult result = engine.analyze(failure);
-        
+
         assertFalse(result.getFixSuggestions().isEmpty());
         RCAResult.FixSuggestion suggestion = result.getFixSuggestions().get(0);
         assertNotNull(suggestion.getCategory());

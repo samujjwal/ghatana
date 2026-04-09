@@ -94,7 +94,7 @@ public abstract class KernelContract {
     public ContractFamily getFamily() { return family; }
     public Map<String, String> getMetadata() { return metadata; }
     public Object getSchema() { return schema; }
-    
+
     /**
      * Returns metadata as Map<String, Object> for compatibility with validators.
      * Values are boxed as Objects.

@@ -92,7 +92,7 @@ public class FinanceDepartment extends BaseSoftwareOrgDepartment {
      */
     public void checkBudget(String department, float actualSpend, float budgetLimit) {
         boolean exceeded = actualSpend > budgetLimit;
-        
+
         publishEvent(exceeded ? "BudgetExceeded" : "BudgetChecked", newPayload()
                 .withField("department", department)
                 .withField("actual_spend", actualSpend)

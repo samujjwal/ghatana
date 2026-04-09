@@ -14,16 +14,16 @@ import java.util.stream.Collectors;
 
 /**
  * Data-Cloud based storage adapter for graph data.
- * 
+ *
  * <p>Uses Data-Cloud EntityRepository for persistent storage of graph nodes and edges.
  * Provides efficient querying, indexing, and multi-tenant isolation.
- * 
+ *
  * <p><b>Collections:</b>
  * <ul>
  *   <li>kg_nodes: Stores graph nodes</li>
  *   <li>kg_edges: Stores graph edges</li>
  * </ul>
- * 
+ *
  * <p><b>Indexes:</b>
  * <ul>
  *   <li>Node type index for efficient type-based queries</li>
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  *   <li>Tenant ID index for multi-tenant isolation</li>
  *   <li>Source/target node indexes for edge queries</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Data-Cloud storage adapter for graph data
  * @doc.layer storage
@@ -39,97 +39,97 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
-    
+
     private static final String NODES_COLLECTION = "kg_nodes";
     private static final String EDGES_COLLECTION = "kg_edges";
-    
+
     private final EntityRepository entityRepository;
     private final Map<String, GraphNode> nodeCache;
     private final Map<String, GraphEdge> edgeCache;
     private volatile boolean initialized = false;
     private volatile boolean running = false;
-    
+
     public DataCloudGraphStorageAdapter(EntityRepository entityRepository) {
         this.entityRepository = entityRepository;
         this.nodeCache = new ConcurrentHashMap<>();
         this.edgeCache = new ConcurrentHashMap<>();
         log.info("DataCloudGraphStorageAdapter created");
     }
-    
+
     @Override
     public void initialize(Map<String, Object> config) {
         log.info("Initializing DataCloudGraphStorageAdapter with config: {}", config);
-        
+
         // Create collections if they don't exist
         createCollectionsIfNeeded();
-        
+
         // Create indexes for efficient queries
         createIndexes();
-        
+
         initialized = true;
         log.info("DataCloudGraphStorageAdapter initialized successfully");
     }
-    
+
     @Override
     public void start() {
         if (!initialized) {
             throw new IllegalStateException("Storage adapter must be initialized before starting");
         }
-        
+
         running = true;
         log.info("DataCloudGraphStorageAdapter started");
     }
-    
+
     @Override
     public void stop() {
         running = false;
-        
+
         // Clear caches
         nodeCache.clear();
         edgeCache.clear();
-        
+
         log.info("DataCloudGraphStorageAdapter stopped");
     }
-    
+
     @Override
     public void shutdown() {
         stop();
         log.info("DataCloudGraphStorageAdapter shutdown");
     }
-    
+
     @Override
     public boolean isHealthy() {
         return initialized && running;
     }
-    
+
     // ========================================================================
     // Node Operations
     // ========================================================================
-    
+
     @Override
     public GraphNode createNode(GraphNode node) {
         ensureRunning();
-        
+
         log.debug("Creating node: id={}, type={}", node.getId(), node.getType());
-        
+
         // Persist to EntityRepository
         Entity entity = nodeToEntity(node);
         entityRepository.save(node.getTenantId(), entity);
-        
+
         // Update write-through cache
         String cacheKey = getCacheKey(node.getId(), node.getTenantId());
         nodeCache.put(cacheKey, node);
-        
+
         log.debug("Node created successfully: id={}", node.getId());
         return node;
     }
-    
+
     @Override
     public GraphNode getNode(String nodeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Getting node: id={}, tenantId={}", nodeId, tenantId);
-        
+
         // Check cache first
         String cacheKey = getCacheKey(nodeId, tenantId);
         GraphNode cached = nodeCache.get(cacheKey);
@@ -137,75 +137,75 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
             log.debug("Node found in cache: id={}", nodeId);
             return cached;
         }
-        
+
         // Retrieve from EntityRepository
         UUID entityId = toUUID(nodeId);
         Optional<Entity> maybeEntity = entityRepository.findById(tenantId, NODES_COLLECTION, entityId)
                 .getResult();
-        
+
         if (maybeEntity != null && maybeEntity.isPresent()) {
             GraphNode node = entityToNode(maybeEntity.get());
             nodeCache.put(cacheKey, node);
             log.debug("Node found in storage: id={}", nodeId);
             return node;
         }
-        
+
         log.debug("Node not found: id={}", nodeId);
         return null;
     }
-    
+
     @Override
     public GraphNode updateNode(GraphNode node) {
         ensureRunning();
-        
+
         log.debug("Updating node: id={}, type={}", node.getId(), node.getType());
-        
+
         GraphNode updatedNode = node.withUpdated();
-        
+
         // Persist updated node
         Entity entity = nodeToEntity(updatedNode);
         entityRepository.save(updatedNode.getTenantId(), entity);
-        
+
         // Update cache
         String cacheKey = getCacheKey(node.getId(), node.getTenantId());
         nodeCache.put(cacheKey, updatedNode);
-        
+
         log.debug("Node updated successfully: id={}", node.getId());
         return updatedNode;
     }
-    
+
     @Override
     public boolean deleteNode(String nodeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Deleting node: id={}, tenantId={}", nodeId, tenantId);
-        
+
         // Delete from EntityRepository
         UUID entityId = toUUID(nodeId);
         entityRepository.delete(tenantId, NODES_COLLECTION, entityId);
-        
+
         // Remove from cache
         String cacheKey = getCacheKey(nodeId, tenantId);
         GraphNode removed = nodeCache.remove(cacheKey);
-        
+
         // Also delete all edges connected to this node
         List<GraphEdge> connectedEdges = getNodeEdges(nodeId, tenantId);
         for (GraphEdge edge : connectedEdges) {
             deleteEdge(edge.getId(), tenantId);
         }
-        
+
         boolean deleted = removed != null || connectedEdges.size() > 0;
-        log.debug("Node deletion result: id={}, deleted={}, edgesRemoved={}", 
+        log.debug("Node deletion result: id={}, deleted={}, edgesRemoved={}",
                 nodeId, deleted, connectedEdges.size());
         return true; // Entity deletion is idempotent via soft-delete
     }
-    
+
     @Override
     public List<GraphNode> queryNodes(GraphQuery query) {
         ensureRunning();
-        
+
         log.debug("Querying nodes: tenantId={}, types={}", query.getTenantId(), query.getNodeTypes());
-        
+
         // Build filter from query
         Map<String, Object> filter = new LinkedHashMap<>();
         if (query.getNodeTypes() != null && !query.getNodeTypes().isEmpty()) {
@@ -214,7 +214,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
         if (query.hasPropertyFilters()) {
             filter.putAll(query.getPropertyFilters());
         }
-        
+
         // Query via EntityRepository
         List<Entity> entities = entityRepository.findAll(
                 query.getTenantId(),
@@ -224,7 +224,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 query.getEffectiveOffset(),
                 query.getEffectiveLimit()
         ).getResult();
-        
+
         List<GraphNode> results;
         if (entities != null && !entities.isEmpty()) {
             results = entities.stream()
@@ -239,85 +239,85 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                     .limit(query.getEffectiveLimit())
                     .collect(Collectors.toList());
         }
-        
+
         log.debug("Query returned {} nodes", results.size());
         return results;
     }
-    
+
     @Override
     public List<GraphNode> batchCreateNodes(List<GraphNode> nodes) {
         ensureRunning();
-        
+
         log.debug("Batch creating {} nodes", nodes.size());
-        
+
         // Batch persist using saveAll grouped by tenantId
         Map<String, List<GraphNode>> byTenant = nodes.stream()
                 .collect(Collectors.groupingBy(GraphNode::getTenantId));
-        
+
         List<GraphNode> created = new ArrayList<>();
         for (Map.Entry<String, List<GraphNode>> entry : byTenant.entrySet()) {
             List<Entity> entities = entry.getValue().stream()
                     .map(this::nodeToEntity)
                     .collect(Collectors.toList());
             entityRepository.saveAll(entry.getKey(), entities);
-            
+
             for (GraphNode node : entry.getValue()) {
                 String cacheKey = getCacheKey(node.getId(), node.getTenantId());
                 nodeCache.put(cacheKey, node);
                 created.add(node);
             }
         }
-        
+
         log.debug("Batch created {} nodes successfully", created.size());
         return created;
     }
-    
+
     @Override
     public int batchDeleteNodes(List<String> nodeIds, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Batch deleting {} nodes for tenantId={}", nodeIds.size(), tenantId);
-        
+
         int deleted = 0;
         for (String nodeId : nodeIds) {
             if (deleteNode(nodeId, tenantId)) {
                 deleted++;
             }
         }
-        
+
         log.debug("Batch deleted {} nodes", deleted);
         return deleted;
     }
-    
+
     // ========================================================================
     // Edge Operations
     // ========================================================================
-    
+
     @Override
     public GraphEdge createEdge(GraphEdge edge) {
         ensureRunning();
-        
-        log.debug("Creating edge: id={}, source={}, target={}", 
+
+        log.debug("Creating edge: id={}, source={}, target={}",
                 edge.getId(), edge.getSourceNodeId(), edge.getTargetNodeId());
-        
+
         // Persist to EntityRepository
         Entity entity = edgeToEntity(edge);
         entityRepository.save(edge.getTenantId(), entity);
-        
+
         // Update write-through cache
         String cacheKey = getCacheKey(edge.getId(), edge.getTenantId());
         edgeCache.put(cacheKey, edge);
-        
+
         log.debug("Edge created successfully: id={}", edge.getId());
         return edge;
     }
-    
+
     @Override
     public GraphEdge getEdge(String edgeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Getting edge: id={}, tenantId={}", edgeId, tenantId);
-        
+
         // Check cache first
         String cacheKey = getCacheKey(edgeId, tenantId);
         GraphEdge cached = edgeCache.get(cacheKey);
@@ -325,66 +325,66 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
             log.debug("Edge found in cache: id={}", edgeId);
             return cached;
         }
-        
+
         // Retrieve from EntityRepository
         UUID entityId = toUUID(edgeId);
         Optional<Entity> maybeEntity = entityRepository.findById(tenantId, EDGES_COLLECTION, entityId)
                 .getResult();
-        
+
         if (maybeEntity != null && maybeEntity.isPresent()) {
             GraphEdge edge = entityToEdge(maybeEntity.get());
             edgeCache.put(cacheKey, edge);
             log.debug("Edge found in storage: id={}", edgeId);
             return edge;
         }
-        
+
         log.debug("Edge not found: id={}", edgeId);
         return null;
     }
-    
+
     @Override
     public GraphEdge updateEdge(GraphEdge edge) {
         ensureRunning();
-        
+
         log.debug("Updating edge: id={}", edge.getId());
-        
+
         GraphEdge updatedEdge = edge.withUpdated();
-        
+
         // Persist
         Entity entity = edgeToEntity(updatedEdge);
         entityRepository.save(updatedEdge.getTenantId(), entity);
-        
+
         String cacheKey = getCacheKey(edge.getId(), edge.getTenantId());
         edgeCache.put(cacheKey, updatedEdge);
-        
+
         log.debug("Edge updated successfully: id={}", edge.getId());
         return updatedEdge;
     }
-    
+
     @Override
     public boolean deleteEdge(String edgeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Deleting edge: id={}, tenantId={}", edgeId, tenantId);
-        
+
         // Delete from EntityRepository
         UUID entityId = toUUID(edgeId);
         entityRepository.delete(tenantId, EDGES_COLLECTION, entityId);
-        
+
         // Remove from cache
         String cacheKey = getCacheKey(edgeId, tenantId);
         edgeCache.remove(cacheKey);
-        
+
         log.debug("Edge deleted: id={}", edgeId);
         return true;
     }
-    
+
     @Override
     public List<GraphEdge> queryEdges(GraphQuery query) {
         ensureRunning();
-        
+
         log.debug("Querying edges: tenantId={}, types={}", query.getTenantId(), query.getRelationshipTypes());
-        
+
         // Build filter for edge query
         Map<String, Object> filter = new LinkedHashMap<>();
         if (query.getRelationshipTypes() != null && !query.getRelationshipTypes().isEmpty()) {
@@ -396,7 +396,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
         if (query.getTargetNodeId() != null) {
             filter.put("targetNodeId", query.getTargetNodeId());
         }
-        
+
         List<Entity> entities = entityRepository.findAll(
                 query.getTenantId(),
                 EDGES_COLLECTION,
@@ -405,7 +405,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 query.getEffectiveOffset(),
                 query.getEffectiveLimit()
         ).getResult();
-        
+
         List<GraphEdge> results;
         if (entities != null && !entities.isEmpty()) {
             results = entities.stream()
@@ -419,29 +419,29 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                     .limit(query.getEffectiveLimit())
                     .collect(Collectors.toList());
         }
-        
+
         log.debug("Query returned {} edges", results.size());
         return results;
     }
-    
+
     @Override
     public List<GraphEdge> getNodeEdges(String nodeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Getting node edges: nodeId={}, tenantId={}", nodeId, tenantId);
-        
+
         // Query edges where sourceNodeId or targetNodeId matches
         Map<String, Object> sourceFilter = Map.of("sourceNodeId", nodeId);
         Map<String, Object> targetFilter = Map.of("targetNodeId", nodeId);
-        
+
         List<Entity> sourceEntities = entityRepository.findAll(
                 tenantId, EDGES_COLLECTION, sourceFilter, null, 0, 10000).getResult();
         List<Entity> targetEntities = entityRepository.findAll(
                 tenantId, EDGES_COLLECTION, targetFilter, null, 0, 10000).getResult();
-        
+
         Set<String> seen = new HashSet<>();
         List<GraphEdge> results = new ArrayList<>();
-        
+
         if (sourceEntities != null) {
             for (Entity e : sourceEntities) {
                 GraphEdge edge = entityToEdge(e);
@@ -458,7 +458,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 }
             }
         }
-        
+
         // Merge with cache for any not yet persisted
         for (GraphEdge cached : edgeCache.values()) {
             if (cached.getTenantId().equals(tenantId) && cached.connects(nodeId)
@@ -466,124 +466,124 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 results.add(cached);
             }
         }
-        
+
         log.debug("Found {} edges for node {}", results.size(), nodeId);
         return results;
     }
-    
+
     @Override
     public List<GraphEdge> getOutgoingEdges(String nodeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Getting outgoing edges: nodeId={}, tenantId={}", nodeId, tenantId);
-        
+
         Map<String, Object> filter = Map.of("sourceNodeId", nodeId);
         List<Entity> entities = entityRepository.findAll(
                 tenantId, EDGES_COLLECTION, filter, null, 0, 10000).getResult();
-        
+
         List<GraphEdge> results = new ArrayList<>();
         if (entities != null) {
             results = entities.stream()
                     .map(this::entityToEdge)
                     .collect(Collectors.toList());
         }
-        
+
         log.debug("Found {} outgoing edges for node {}", results.size(), nodeId);
         return results;
     }
-    
+
     @Override
     public List<GraphEdge> getIncomingEdges(String nodeId, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Getting incoming edges: nodeId={}, tenantId={}", nodeId, tenantId);
-        
+
         Map<String, Object> filter = Map.of("targetNodeId", nodeId);
         List<Entity> entities = entityRepository.findAll(
                 tenantId, EDGES_COLLECTION, filter, null, 0, 10000).getResult();
-        
+
         List<GraphEdge> results = new ArrayList<>();
         if (entities != null) {
             results = entities.stream()
                     .map(this::entityToEdge)
                     .collect(Collectors.toList());
         }
-        
+
         log.debug("Found {} incoming edges for node {}", results.size(), nodeId);
         return results;
     }
-    
+
     @Override
     public List<GraphEdge> batchCreateEdges(List<GraphEdge> edges) {
         ensureRunning();
-        
+
         log.debug("Batch creating {} edges", edges.size());
-        
+
         Map<String, List<GraphEdge>> byTenant = edges.stream()
                 .collect(Collectors.groupingBy(GraphEdge::getTenantId));
-        
+
         List<GraphEdge> created = new ArrayList<>();
         for (Map.Entry<String, List<GraphEdge>> entry : byTenant.entrySet()) {
             List<Entity> entities = entry.getValue().stream()
                     .map(this::edgeToEntity)
                     .collect(Collectors.toList());
             entityRepository.saveAll(entry.getKey(), entities);
-            
+
             for (GraphEdge edge : entry.getValue()) {
                 String cacheKey = getCacheKey(edge.getId(), edge.getTenantId());
                 edgeCache.put(cacheKey, edge);
                 created.add(edge);
             }
         }
-        
+
         log.debug("Batch created {} edges successfully", created.size());
         return created;
     }
-    
+
     @Override
     public int batchDeleteEdges(List<String> edgeIds, String tenantId) {
         ensureRunning();
-        
+
         log.debug("Batch deleting {} edges for tenantId={}", edgeIds.size(), tenantId);
-        
+
         int deleted = 0;
         for (String edgeId : edgeIds) {
             if (deleteEdge(edgeId, tenantId)) {
                 deleted++;
             }
         }
-        
+
         log.debug("Batch deleted {} edges", deleted);
         return deleted;
     }
-    
+
     // ========================================================================
     // Private Helper Methods
     // ========================================================================
-    
+
     private void ensureRunning() {
         if (!running) {
             throw new IllegalStateException("Storage adapter is not running");
         }
     }
-    
+
     private String getCacheKey(String id, String tenantId) {
         return tenantId + ":" + id;
     }
-    
+
     private boolean matchesQuery(GraphNode node, GraphQuery query) {
         // Check tenant
         if (!node.getTenantId().equals(query.getTenantId())) {
             return false;
         }
-        
+
         // Check node types
         if (query.getNodeTypes() != null && !query.getNodeTypes().isEmpty()) {
             if (!query.getNodeTypes().contains(node.getType())) {
                 return false;
             }
         }
-        
+
         // Check labels
         if (query.getLabels() != null && !query.getLabels().isEmpty()) {
             boolean hasAnyLabel = query.getLabels().stream()
@@ -592,7 +592,7 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 return false;
             }
         }
-        
+
         // Check property filters
         if (query.hasPropertyFilters()) {
             for (Map.Entry<String, Object> filter : query.getPropertyFilters().entrySet()) {
@@ -602,37 +602,37 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     private boolean matchesQuery(GraphEdge edge, GraphQuery query) {
         // Check tenant
         if (!edge.getTenantId().equals(query.getTenantId())) {
             return false;
         }
-        
+
         // Check relationship types
         if (query.getRelationshipTypes() != null && !query.getRelationshipTypes().isEmpty()) {
             if (!query.getRelationshipTypes().contains(edge.getRelationshipType())) {
                 return false;
             }
         }
-        
+
         // Check source node
         if (query.getSourceNodeId() != null) {
             if (!edge.getSourceNodeId().equals(query.getSourceNodeId())) {
                 return false;
             }
         }
-        
+
         // Check target node
         if (query.getTargetNodeId() != null) {
             if (!edge.getTargetNodeId().equals(query.getTargetNodeId())) {
                 return false;
             }
         }
-        
+
         // Check property filters
         if (query.hasPropertyFilters()) {
             for (Map.Entry<String, Object> filter : query.getPropertyFilters().entrySet()) {
@@ -642,10 +642,10 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     private void createCollectionsIfNeeded() {
         // Verify collections exist by attempting a count; EntityRepository implementations
         // create tables/collections on first access or via schema migration.
@@ -657,11 +657,11 @@ public class DataCloudGraphStorageAdapter implements GraphStorageAdapter {
             log.warn("Could not verify collections - they will be created on first write: {}", e.getMessage());
         }
     }
-    
+
     private void createIndexes() {
         // Indexes are managed by the EntityRepository infrastructure layer (JPA/Flyway/Liquibase).
         // Log intent for observability; actual DDL is handled by schema migration scripts.
-        log.info("Graph storage indexes expected: " 
+        log.info("Graph storage indexes expected: "
                 + "{}.type, {}.sourceNodeId, {}.targetNodeId, {}.relationshipType",
                 NODES_COLLECTION, EDGES_COLLECTION, EDGES_COLLECTION, EDGES_COLLECTION);
     }

@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Test harness that starts a lightweight in-process gRPC server and HTTP server
  * for integration testing of adapters.
- 
+
  * @doc.type class
  * @doc.purpose Handles server test harness operations
  * @doc.layer core

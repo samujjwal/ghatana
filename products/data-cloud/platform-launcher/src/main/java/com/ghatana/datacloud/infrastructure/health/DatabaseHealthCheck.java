@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -214,13 +213,13 @@ public final class DatabaseHealthCheck {
                     details.put("timestamp", Instant.now().toString());
                     details.put("latency_ms", lastLatencyMs);
                     details.put("last_check", lastCheckTime != null ? lastCheckTime.toString() : "never");
-                    
+
                     Map<String, Object> dbDetails = new LinkedHashMap<>();
                     dbDetails.put("connected", status != HealthStatus.DOWN);
                     dbDetails.put("healthy", status == HealthStatus.UP);
                     dbDetails.put("degraded", status == HealthStatus.DEGRADED);
                     dbDetails.putAll(getConnectionPoolStatus());
-                    
+
                     details.put("database", dbDetails);
                     return details;
                 });

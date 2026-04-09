@@ -9,7 +9,6 @@ import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.ModelRegistryService;
 import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.quality.QualityLevel;
 import com.ghatana.datacloud.entity.quality.QualityMetrics;
 import com.ghatana.datacloud.entity.quality.QualityScoreExplanation;
 import com.ghatana.platform.core.exception.ResourceNotFoundException;

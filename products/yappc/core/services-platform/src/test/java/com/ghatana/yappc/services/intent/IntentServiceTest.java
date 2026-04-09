@@ -4,9 +4,6 @@
 package com.ghatana.yappc.services.intent;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.services.intent.IntentAnalysis;
-import com.ghatana.yappc.services.intent.IntentInput;
-import com.ghatana.yappc.services.intent.IntentSpec;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,10 +27,10 @@ class IntentServiceTest extends EventloopTestBase {
     @DisplayName("Should capture intent from user input")
     void testCaptureIntent() throws Exception {
         IntentInput input = new IntentInput("Create a REST API for user management");
-        
+
         Promise<IntentSpec> promise = intentService.capture(input);
         IntentSpec spec = runPromise(() -> promise);
-        
+
         assertThat(spec).isNotNull();
         assertThat(spec.description()).isEqualTo("Create a REST API for user management");
         assertThat(spec.intentType()).isEqualTo("API_CREATION");
@@ -47,10 +44,10 @@ class IntentServiceTest extends EventloopTestBase {
             "API_CREATION",
             java.util.Map.of("domain", "user-management")
         );
-        
+
         Promise<IntentAnalysis> promise = intentService.analyze(spec);
         IntentAnalysis analysis = runPromise(() -> promise);
-        
+
         assertThat(analysis).isNotNull();
         assertThat(analysis.feasible()).isTrue();
         assertThat(analysis.estimatedComplexity()).isEqualTo("MEDIUM");
@@ -61,7 +58,7 @@ class IntentServiceTest extends EventloopTestBase {
     void testCountIntents() throws Exception {
         Promise<Long> promise = intentService.count();
         Long count = runPromise(() -> promise);
-        
+
         assertThat(count).isGreaterThanOrEqualTo(0L);
     }
 
@@ -71,10 +68,10 @@ class IntentServiceTest extends EventloopTestBase {
         IntentInput input = new IntentInput(
             "Build a microservices architecture with authentication, database, and API gateway"
         );
-        
+
         IntentSpec spec = runPromise(() -> intentService.capture(input));
         IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec));
-        
+
         assertThat(spec.intentType()).isEqualTo("ARCHITECTURE_DESIGN");
         assertThat(analysis.estimatedComplexity()).isEqualTo("HIGH");
         assertThat(analysis.requiredPhases()).contains("PLANNING", "DESIGN", "IMPLEMENTATION");
@@ -84,18 +81,18 @@ class IntentServiceTest extends EventloopTestBase {
     @DisplayName("Should handle simple intent")
     void testSimpleIntent() throws Exception {
         IntentInput input = new IntentInput("Add a new field to User model");
-        
+
         IntentSpec spec = runPromise(() -> intentService.capture(input));
         IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec));
-        
+
         assertThat(spec.intentType()).isEqualTo("MODEL_MODIFICATION");
         assertThat(analysis.estimatedComplexity()).isEqualTo("LOW");
     }
 
     // Mock implementations for testing
-    
+
     static class MockIntentService implements IntentService {
-        
+
         @Override
         public Promise<IntentSpec> capture(IntentInput input) {
             String intentType = determineIntentType(input.description());
@@ -105,12 +102,12 @@ class IntentServiceTest extends EventloopTestBase {
                 java.util.Map.of("source", "user-input")
             ));
         }
-        
+
         @Override
         public Promise<IntentAnalysis> analyze(IntentSpec spec) {
             String complexity = estimateComplexity(spec.description());
             java.util.List<String> phases = determinePhases(spec.intentType());
-            
+
             return Promise.of(new IntentAnalysis(
                 true,
                 complexity,
@@ -118,12 +115,12 @@ class IntentServiceTest extends EventloopTestBase {
                 java.util.Map.of("recommendation", "Proceed with implementation")
             ));
         }
-        
+
         @Override
         public Promise<Long> count() {
             return Promise.of(42L);
         }
-        
+
         private String determineIntentType(String description) {
             String lower = description.toLowerCase();
             if (lower.contains("microservices") || lower.contains("architecture")) {
@@ -135,7 +132,7 @@ class IntentServiceTest extends EventloopTestBase {
             }
             return "GENERAL";
         }
-        
+
         private String estimateComplexity(String description) {
             String lower = description.toLowerCase();
             if (lower.contains("microservices") || lower.contains("architecture")) {
@@ -145,7 +142,7 @@ class IntentServiceTest extends EventloopTestBase {
             }
             return "LOW";
         }
-        
+
         private java.util.List<String> determinePhases(String intentType) {
             return switch (intentType) {
                 case "ARCHITECTURE_DESIGN" -> java.util.List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING");

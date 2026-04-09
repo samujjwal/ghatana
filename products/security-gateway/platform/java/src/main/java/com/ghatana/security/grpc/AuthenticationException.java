@@ -15,7 +15,7 @@ package com.ghatana.security.grpc;
 
 /**
  * Exception thrown when user authentication fails.
- 
+
  *
  * @doc.type class
  * @doc.purpose Authentication exception
@@ -23,11 +23,11 @@ package com.ghatana.security.grpc;
  * @doc.pattern Exception
 */
 public class AuthenticationException extends Exception {
-    
+
     public AuthenticationException(String message) {
         super(message);
     }
-    
+
     public AuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }

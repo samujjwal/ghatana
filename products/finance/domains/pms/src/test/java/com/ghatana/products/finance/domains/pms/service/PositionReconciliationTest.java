@@ -182,7 +182,7 @@ class PositionReconciliationTest {
     }
 
     record Position(String symbol, long quantity, BigDecimal averagePrice) {}
-    
+
     record ReconciliationResult(
         boolean isMatched,
         long quantityDifference,
@@ -270,11 +270,11 @@ class PositionReconciliationTest {
         ReconciliationResult reconcileWithAutoResolve(Position internal, Position broker, BigDecimal tolerance) {
             ReconciliationResult result = reconcile(internal, broker);
             boolean withinTolerance = isWithinTolerance(internal, broker, tolerance);
-            
+
             if (!result.isMatched() && withinTolerance) {
                 return new ReconciliationResult(true, 0L, BigDecimal.ZERO, true);
             }
-            
+
             return result;
         }
 

@@ -33,7 +33,7 @@ import java.util.Map;
  * @doc.layer core
  * @doc.pattern Port, Service Provider Interface
  *     // Business logic
- *     
+ *
  *     // Create child span
  *     Span childSpan = provider.createChildSpan("validate-request", rootSpan);
  *     try {

@@ -19,7 +19,7 @@ import java.util.Map;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * public class CodeReviewWorkflow extends BaseWorkflow {
- *     
+ *
  *     @Override
  *     public WorkflowMetadata getMetadata() {
  *         return WorkflowMetadata.builder()
@@ -27,7 +27,7 @@ import java.util.Map;
  *             .withDescription("Multi-agent code review")
  *             .build();
  *     }
- *     
+ *
  *     @Override
  *     protected Promise<WorkflowResult> executeInternal(WorkflowContext context) {
  *         // Workflow logic here
@@ -61,13 +61,13 @@ public abstract class BaseWorkflow implements Workflow {
      */
     @Override
     public Promise<Void> validate(WorkflowContext context) {
-        log.debug("Validating workflow {} for tenant {}", 
+        log.debug("Validating workflow {} for tenant {}",
             getMetadata().getName(), context.getTenantId());
-        
+
         try {
             // Validate required inputs
             WorkflowMetadata metadata = getMetadata();
-            for (Map.Entry<String, WorkflowMetadata.InputSpec> entry : 
+            for (Map.Entry<String, WorkflowMetadata.InputSpec> entry :
                     metadata.getRequiredInputs().entrySet()) {
                 String inputName = entry.getKey();
                 if (!context.getInput(inputName).isPresent()) {
@@ -76,12 +76,12 @@ public abstract class BaseWorkflow implements Workflow {
                             "Missing required input: " + inputName));
                 }
             }
-            
+
             // Custom validation
             return validateInternal(context);
-            
+
         } catch (Exception e) {
-            log.error("Validation failed for workflow {}", 
+            log.error("Validation failed for workflow {}",
                 getMetadata().getName(), e);
             return Promise.ofException(e);
         }
@@ -93,23 +93,23 @@ public abstract class BaseWorkflow implements Workflow {
     @Override
     public Promise<WorkflowResult> execute(WorkflowContext context) {
         String workflowName = getMetadata().getName();
-        log.info("Executing workflow {} for tenant {}", 
+        log.info("Executing workflow {} for tenant {}",
             workflowName, context.getTenantId());
-        
+
         long startTime = System.currentTimeMillis();
-        
+
         Promise<WorkflowResult> executionPromise = executeInternal(context)
             .whenComplete((result, error) -> {
                 long duration = System.currentTimeMillis() - startTime;
-                
+
                 if (error != null) {
-                    log.error("Workflow {} failed after {}ms", 
+                    log.error("Workflow {} failed after {}ms",
                         workflowName, duration, error);
                 } else if (result.isSuccess()) {
-                    log.info("Workflow {} completed successfully in {}ms", 
+                    log.info("Workflow {} completed successfully in {}ms",
                         workflowName, duration);
                 } else {
-                    log.warn("Workflow {} completed with errors in {}ms: {}", 
+                    log.warn("Workflow {} completed with errors in {}ms: {}",
                         workflowName, duration, result.getErrorMessage().orElse("Unknown"));
                 }
             });
@@ -127,12 +127,12 @@ public abstract class BaseWorkflow implements Workflow {
      */
     @Override
     public Promise<Void> cleanup(WorkflowContext context) {
-        log.debug("Cleaning up workflow {} for tenant {}", 
+        log.debug("Cleaning up workflow {} for tenant {}",
             getMetadata().getName(), context.getTenantId());
-        
+
         return cleanupInternal(context)
             .whenException(error -> {
-                log.warn("Cleanup failed for workflow {}", 
+                log.warn("Cleanup failed for workflow {}",
                     getMetadata().getName(), error);
                 // Suppress cleanup errors
             });
@@ -199,14 +199,14 @@ public abstract class BaseWorkflow implements Workflow {
     protected <T> T requireInput(WorkflowContext context, String inputName, Class<T> expectedType) {
         return context.getInput(inputName, expectedType)
             .orElseThrow(() -> new IllegalArgumentException(
-                "Missing or invalid required input: " + inputName + 
+                "Missing or invalid required input: " + inputName +
                 " (expected " + expectedType.getSimpleName() + ")"));
     }
 
     /**
      * Helper to get an optional input with a default value.
      */
-    protected <T> T getInputOrDefault(WorkflowContext context, String inputName, 
+    protected <T> T getInputOrDefault(WorkflowContext context, String inputName,
                                       Class<T> expectedType, T defaultValue) {
         return context.getInput(inputName, expectedType).orElse(defaultValue);
     }

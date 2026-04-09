@@ -8,7 +8,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -60,7 +59,7 @@ class PluginEdgeCasesTest extends PluginTestBase {
             TestCrashingPlugin crashingPlugin = new TestCrashingPlugin(
                     CrashPhase.INITIALIZE, CrashType.EXCEPTION
             );
-            
+
             registry.register(healthyPlugin);
             registry.register(crashingPlugin);
 
@@ -141,7 +140,7 @@ class PluginEdgeCasesTest extends PluginTestBase {
             TestCrashingPlugin crashingPlugin = new TestCrashingPlugin(
                     CrashPhase.START, CrashType.EXCEPTION
             );
-            
+
             registry.register(healthyPlugin);
             registry.register(crashingPlugin);
 
@@ -204,7 +203,7 @@ class PluginEdgeCasesTest extends PluginTestBase {
             TestCrashingPlugin crashingPlugin = new TestCrashingPlugin(
                     CrashPhase.STOP, CrashType.EXCEPTION
             );
-            
+
             registry.register(healthyPlugin);
             registry.register(crashingPlugin);
 
@@ -334,12 +333,12 @@ class PluginEdgeCasesTest extends PluginTestBase {
 
             try {
                 Thread.sleep(100); // Let init start
-                
+
                 // Attempt to start while initialization is in progress
                 assertThatCode(() ->
                         runPromise(() -> registry.startAll())
                 ).doesNotThrowAnyException();
-                
+
                 initThread.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

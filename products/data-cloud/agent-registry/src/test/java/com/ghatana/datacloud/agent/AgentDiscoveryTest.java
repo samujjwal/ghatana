@@ -8,7 +8,6 @@ package com.ghatana.datacloud.agent;
 
 import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.TypedAgent;
-import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,9 +30,9 @@ class AgentDiscoveryTest {
     void shouldDiscoverAgents() {
         TypedAgent<?, ?> agent = mock(TypedAgent.class);
         AgentDescriptor descriptor = mock(AgentDescriptor.class);
-        
+
         when(agent.descriptor()).thenReturn(descriptor);
-        
+
         assertThat(agent).isNotNull();
         assertThat(descriptor).isNotNull();
     }
@@ -42,7 +41,7 @@ class AgentDiscoveryTest {
     @DisplayName("Should lookup agents by ID")
     void shouldLookupAgentsById() {
         String agentId = "data-cloud:agent.data-cloud.anomaly-detector";
-        
+
         assertThat(agentId).isNotNull();
         assertThat(agentId).contains(":");
     }
@@ -52,7 +51,7 @@ class AgentDiscoveryTest {
     void shouldSearchAgentsByCapability() {
         String capability = "anomaly-detection";
         Set<String> capabilities = Set.of("anomaly-detection", "statistical-analysis", "outlier-identification");
-        
+
         assertThat(capability).isIn(capabilities);
     }
 
@@ -66,7 +65,7 @@ class AgentDiscoveryTest {
             .namespace("test")
             .capabilities(Set.of("test-capability"))
             .build();
-        
+
         assertThat(descriptor).isNotNull();
         assertThat(descriptor.getAgentId()).isEqualTo("test-agent");
         assertThat(descriptor.getVersion()).isEqualTo("1.0.0");
@@ -76,7 +75,7 @@ class AgentDiscoveryTest {
     @DisplayName("Should handle discovery failures")
     void shouldHandleDiscoveryFailures() {
         String agentId = "non-existent-agent";
-        
+
         assertThat(agentId).isNotNull();
     }
 
@@ -85,7 +84,7 @@ class AgentDiscoveryTest {
     void shouldHandleAgentAvailability() {
         boolean available = true;
         boolean registered = true;
-        
+
         assertThat(available).isTrue();
         assertThat(registered).isTrue();
     }

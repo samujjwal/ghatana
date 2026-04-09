@@ -21,7 +21,7 @@ public record DefaultAgentExecutionContext(
         long timeoutMs,
         long createdAt
 ) implements AgentExecutionContext {
-    
+
     /**
      * Create a basic execution context with minimal required information
      */
@@ -37,7 +37,7 @@ public record DefaultAgentExecutionContext(
                 System.currentTimeMillis()
         );
     }
-    
+
     /**
      * Create an execution context with security information
      */

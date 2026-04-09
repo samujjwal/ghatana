@@ -42,7 +42,7 @@ import java.util.List;
  *     .reasoning("Standard layered approach with DB-first design")
  *     .alternative("Could use NoSQL instead of relational DB")
  *     .build();
- * 
+ *
  * // Execute plan
  * List<String> completed = new ArrayList<>();
  * while (!plan.isComplete(completed)) {

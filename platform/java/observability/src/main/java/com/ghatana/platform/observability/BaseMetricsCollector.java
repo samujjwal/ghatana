@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  * @notes Thread-safe; null registry supported for graceful degradation
  */
 public abstract class BaseMetricsCollector implements MetricsCollector {
-    
+
     /**
      * The underlying Micrometer MeterRegistry for metrics storage.
      *
@@ -73,7 +73,7 @@ public abstract class BaseMetricsCollector implements MetricsCollector {
             return; // Graceful degradation for null registry
         }
         // Convert Map<String, String> tags to Micrometer Tags
-        Tags micrometerTags = tags != null ? 
+        Tags micrometerTags = tags != null ?
             Tags.of(tags.entrySet().stream()
                 .flatMap(e -> Tags.of(e.getKey(), String.valueOf(e.getValue())).stream())
                 .toList()) : Tags.empty();

@@ -18,7 +18,7 @@ package com.ghatana.yappc.core.composition;
 
 /**
  * Exception thrown when composition generation fails.
- * 
+ *
  * @doc.type class
  * @doc.purpose Exception for composition generation errors
  * @doc.layer platform

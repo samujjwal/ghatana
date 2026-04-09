@@ -100,7 +100,7 @@ public interface AutonomyManager {
         private final Map<String, Object> metadata;
         private DecisionStatus status;
 
-        public AutonomousDecision(String agentId, AgentOrchestrator.AgentRequest request, 
+        public AutonomousDecision(String agentId, AgentOrchestrator.AgentRequest request,
                                  Object result, boolean requiresReview) {
             this.decisionId = java.util.UUID.randomUUID().toString();
             this.agentId = agentId;

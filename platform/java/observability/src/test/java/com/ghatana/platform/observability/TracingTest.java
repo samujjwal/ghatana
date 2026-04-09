@@ -13,7 +13,7 @@ class TracingTest {
     @Test
     void testTracerReturnsNoOpWhenNotInitialized() {
         Tracer tracer = Tracing.tracer();
-        
+
         assertNotNull(tracer);
     }
 
@@ -21,7 +21,7 @@ class TracingTest {
     void testInitDisabled() {
         // Should not throw
         Tracing.init(false, null, null);
-        
+
         Tracer tracer = Tracing.tracer();
         assertNotNull(tracer);
     }
@@ -30,7 +30,7 @@ class TracingTest {
     void testInitWithDefaults() {
         // Should not throw with null values
         Tracing.init(true, null, null);
-        
+
         Tracer tracer = Tracing.tracer();
         assertNotNull(tracer);
     }

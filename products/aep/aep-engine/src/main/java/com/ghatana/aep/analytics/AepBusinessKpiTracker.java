@@ -5,16 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.stream.Collectors;
 
 /**
  * Business KPI tracker for AEP advanced analytics (AEP-011.1).
@@ -223,4 +218,3 @@ public final class AepBusinessKpiTracker {
      */
     public record GaugeSample(double value, Instant timestamp) {}
 }
-

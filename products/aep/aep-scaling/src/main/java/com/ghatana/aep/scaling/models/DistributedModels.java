@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Models for distributed processing and pattern distribution.

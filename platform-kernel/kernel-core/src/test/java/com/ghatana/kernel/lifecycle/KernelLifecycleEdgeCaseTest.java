@@ -86,10 +86,10 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
 
         // WHEN: Stop modules with timeout
         long startTime = System.currentTimeMillis();
-        
+
         // Normal module stops quickly
         assertThat(runPromise(() -> normalModule.stop())).isNull();
-        
+
         // Hanging module should timeout (we'll simulate with a short delay)
         // In production, this would be handled by a timeout mechanism
         assertThat(normalModule.isStopped()).isTrue();
@@ -156,7 +156,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
         assertThat(moduleC.isStarted()).isTrue();
 
         moduleB.initialize(context);
-        
+
         // Module B fails during start
         assertThatThrownBy(() -> runPromise(() -> moduleB.start()))
             .isInstanceOf(RuntimeException.class)

@@ -195,7 +195,7 @@ public record PullRequest(
     public String getOptionId() {
         return optionId;
     }
-    
+
     /**
      * Creates a builder for PullRequest.
      *
@@ -204,7 +204,7 @@ public record PullRequest(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for PullRequest instances.
      */
@@ -230,42 +230,42 @@ public record PullRequest(
         private int integrationTestsCount = 0;
         private int e2ETestsCount = 0;
         private String optionId = "";
-        
+
         public Builder pullRequestId(String pullRequestId) {
             this.pullRequestId = pullRequestId;
             return this;
         }
-        
+
         public Builder title(String title) {
             this.title = title;
             return this;
         }
-        
+
         public Builder description(String description) {
             this.description = description;
             return this;
         }
-        
+
         public Builder author(String author) {
             this.author = author;
             return this;
         }
-        
+
         public Builder sourceBranch(String sourceBranch) {
             this.sourceBranch = sourceBranch;
             return this;
         }
-        
+
         public Builder targetBranch(String targetBranch) {
             this.targetBranch = targetBranch;
             return this;
         }
-        
+
         public Builder reviewers(List<String> reviewers) {
             this.reviewers = reviewers;
             return this;
         }
-        
+
         public Builder addReviewer(String reviewer) {
             if (this.reviewers.isEmpty()) {
                 this.reviewers = new java.util.ArrayList<>();
@@ -275,7 +275,7 @@ public record PullRequest(
             ((java.util.ArrayList<String>) this.reviewers).add(reviewer);
             return this;
         }
-        
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -345,7 +345,7 @@ public record PullRequest(
             this.optionId = optionId;
             return this;
         }
-        
+
         public PullRequest build() {
             return new PullRequest(
                 pullRequestId, title, description, author,

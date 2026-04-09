@@ -200,7 +200,7 @@ public final class AgentDefinition {
             Objects.requireNonNull(typeName, "typeName must not be null");
             Objects.requireNonNull(format, "format must not be null");
         }
-        
+
         /** Backward compatible constructor */
         public IOContract(String typeName, String format, String schema) {
             this(typeName, format, schema, null);

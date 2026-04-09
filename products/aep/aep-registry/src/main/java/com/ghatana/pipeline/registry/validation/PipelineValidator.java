@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Comprehensive pipeline configuration validator.
@@ -36,11 +35,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class PipelineValidator {
-    
+
     private static final int MAX_PIPELINE_NAME_LENGTH = 255;
     private static final int MAX_DESCRIPTION_LENGTH = 1000;
     private static final int MAX_CONFIG_SIZE = 1_000_000; // 1MB
-    
+
     private final AgentRegistryClient agentRegistryClient;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
@@ -51,14 +50,14 @@ public class PipelineValidator {
 
     /**
      * Validates a pipeline configuration.
-     * 
+     *
      * @param pipeline The pipeline to validate
      * @param existingPipeline The existing pipeline (if updating)
      * @return List of validation errors, empty if valid
      */
     public List<String> validate(PipelineRegistration pipeline, PipelineRegistration existingPipeline) {
         List<String> errors = new ArrayList<>();
-        
+
         // Basic field validation
         if (pipeline.getName() == null || pipeline.getName().trim().isEmpty()) {
             errors.add("PipelineRegistration name is required");
@@ -67,11 +66,11 @@ public class PipelineValidator {
         } else if (!pipeline.getName().matches("^[a-zA-Z0-9][a-zA-Z0-9_\\.-]*$")) {
             errors.add("PipelineRegistration name can only contain alphanumeric characters, dots, hyphens, and underscores");
         }
-        
+
         if (pipeline.getDescription() != null && pipeline.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
             errors.add(String.format("Description must be at most %d characters", MAX_DESCRIPTION_LENGTH));
         }
-        
+
         if (pipeline.getConfig() == null || pipeline.getConfig().trim().isEmpty()) {
             errors.add("PipelineRegistration configuration is required");
         } else if (pipeline.getConfig().length() > MAX_CONFIG_SIZE) {
@@ -80,27 +79,27 @@ public class PipelineValidator {
             // Validate the pipeline configuration structure
             validatePipelineConfig(pipeline.getConfig(), errors);
         }
-        
+
         // Version validation for updates
         if (existingPipeline != null) {
             if (pipeline.getVersion() <= existingPipeline.getVersion()) {
                 errors.add("New version must be greater than the current version");
             }
-            
+
             // Prevent changing the name of an existing pipeline
             if (!pipeline.getName().equals(existingPipeline.getName())) {
                 errors.add("Cannot change the name of an existing pipeline");
             }
-            
+
             // Prevent changing the tenant ID
             if (!pipeline.getTenantId().equals(existingPipeline.getTenantId())) {
                 errors.add("Cannot change the tenant of an existing pipeline");
             }
         }
-        
+
         return errors;
     }
-    
+
     /**
      * Validates the pipeline configuration structure.
      */
@@ -132,37 +131,37 @@ public class PipelineValidator {
             errors.add("Invalid pipeline configuration: " + e.getMessage());
         }
     }
-    
+
     /**
      * Validates that the pipeline DAG is acyclic and generates execution order.
-     * 
+     *
      * <p><b>Purpose</b><br>
      * Detects circular dependencies in pipeline stages using depth-first search with cycle path tracking.
      * Provides detailed error messages showing the exact cycle path for debugging.
-     * 
+     *
      * <p><b>Algorithm</b><br>
      * Uses DFS with recursion stack to detect back edges (cycles). Tracks full path for error reporting.
-     * 
+     *
      * @param config The pipeline configuration (YAML/JSON)
      * @return List of validation errors with cycle details, empty if the DAG is valid
      */
     public List<String> validateDag(String config) {
         List<String> errors = new ArrayList<>();
-        
+
         try {
             Map<String, List<String>> graph = parseDagFromConfig(config);
-            
+
             // Validate empty graph
             if (graph.isEmpty()) {
                 errors.add("PipelineRegistration has no stages defined");
                 return errors;
             }
-            
+
             // Check for cycles using depth-first search with path tracking
             Set<String> visited = new HashSet<>();
             Set<String> recursionStack = new HashSet<>();
             List<String> cyclePath = new ArrayList<>();
-            
+
             for (String node : graph.keySet()) {
                 if (!visited.contains(node)) {
                     if (hasCycle(graph, node, visited, recursionStack, cyclePath)) {
@@ -173,13 +172,13 @@ public class PipelineValidator {
                     }
                 }
             }
-            
+
             // Check for missing dependencies (referenced but not defined)
             List<String> missingDeps = findMissingDependencies(graph);
             if (!missingDeps.isEmpty()) {
                 errors.add("Missing stage dependencies: " + String.join(", ", missingDeps));
             }
-            
+
             // Check for disconnected components (stages with no incoming/outgoing edges)
             if (errors.isEmpty()) {
                 List<String> isolated = findIsolatedStages(graph);
@@ -188,15 +187,15 @@ public class PipelineValidator {
                     // Warning only - isolated stages are valid but suspicious
                 }
             }
-            
+
         } catch (Exception e) {
             log.error("Error validating pipeline DAG", e);
             errors.add("Error validating pipeline DAG: " + e.getMessage());
         }
-        
+
         return errors;
     }
-    
+
     /**
      * Builds a human-readable error message describing the detected cycle.
      *
@@ -208,23 +207,23 @@ public class PipelineValidator {
         if (cyclePath.isEmpty()) {
             return "PipelineRegistration contains a circular dependency";
         }
-        
+
         // Find where the cycle actually starts in the path
         int cycleStartIndex = cyclePath.indexOf(cycleStart);
         if (cycleStartIndex == -1) {
             cycleStartIndex = 0;
         }
-        
+
         List<String> actualCycle = new ArrayList<>(cyclePath.subList(cycleStartIndex, cyclePath.size()));
         actualCycle.add(cycleStart); // Close the cycle
-        
+
         return String.format(
             "Circular dependency detected: %s (stage '%s' depends on itself)",
             String.join(" → ", actualCycle),
             cycleStart
         );
     }
-    
+
     /**
      * Finds stages that are referenced as dependencies but not defined in the pipeline.
      *
@@ -234,15 +233,15 @@ public class PipelineValidator {
     private List<String> findMissingDependencies(Map<String, List<String>> graph) {
         Set<String> definedStages = graph.keySet();
         Set<String> referencedStages = new HashSet<>();
-        
+
         for (List<String> deps : graph.values()) {
             referencedStages.addAll(deps);
         }
-        
+
         referencedStages.removeAll(definedStages);
         return new ArrayList<>(referencedStages);
     }
-    
+
     /**
      * Finds stages that have no dependencies and no dependents (isolated).
      *
@@ -252,24 +251,24 @@ public class PipelineValidator {
     private List<String> findIsolatedStages(Map<String, List<String>> graph) {
         Set<String> hasOutgoing = new HashSet<>();
         Set<String> hasIncoming = new HashSet<>();
-        
+
         for (Map.Entry<String, List<String>> entry : graph.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 hasOutgoing.add(entry.getKey());
                 hasIncoming.addAll(entry.getValue());
             }
         }
-        
+
         List<String> isolated = new ArrayList<>();
         for (String stage : graph.keySet()) {
             if (!hasOutgoing.contains(stage) && !hasIncoming.contains(stage)) {
                 isolated.add(stage);
             }
         }
-        
+
         return isolated;
     }
-    
+
     /**
      * Helper method to detect cycles in a directed graph using DFS.
      *
@@ -284,7 +283,7 @@ public class PipelineValidator {
      * @param path List tracking the current path (for error reporting)
      * @return true if a cycle is detected, false otherwise
      */
-    private boolean hasCycle(Map<String, List<String>> graph, String node, 
+    private boolean hasCycle(Map<String, List<String>> graph, String node,
                             Set<String> visited, Set<String> recursionStack,
                             List<String> path) {
         // Back edge detected - cycle exists
@@ -293,33 +292,33 @@ public class PipelineValidator {
             log.warn("Cycle detected in pipeline DAG: {} -> {}", String.join(" → ", path), node);
             return true;
         }
-        
+
         // Already fully explored in a previous DFS tree
         if (visited.contains(node)) {
             return false;
         }
-        
+
         // Mark node as visited and add to recursion stack
         visited.add(node);
         recursionStack.add(node);
         path.add(node);
-        
+
         // Explore all dependencies (neighbors)
         for (String neighbor : graph.getOrDefault(node, Collections.emptyList())) {
             if (hasCycle(graph, neighbor, visited, recursionStack, path)) {
                 return true; // Cycle found in subtree
             }
         }
-        
+
         // Backtrack: remove from recursion stack and path
         recursionStack.remove(node);
         if (!path.isEmpty()) {
             path.remove(path.size() - 1);
         }
-        
+
         return false;
     }
-    
+
     /**
      * Computes the topological execution order for pipeline stages.
      *
@@ -338,23 +337,23 @@ public class PipelineValidator {
      */
     public List<String> computeExecutionOrder(String config) {
         Map<String, List<String>> dependsOnGraph = parseDagFromConfig(config);
-        
+
         // First validate no cycles exist
         List<String> cycleErrors = validateDag(config);
         if (!cycleErrors.isEmpty()) {
             throw new IllegalArgumentException("Cannot compute execution order: " + cycleErrors.get(0));
         }
-        
+
         // Reverse the graph: convert "A depends on B" to "B is depended on by A"
         // This is needed because parseDagFromConfig returns dependsOn relationships,
         // but Kahn's algorithm needs outgoing edges (who depends on me)
         Map<String, List<String>> graph = new HashMap<>();
-        
+
         // Initialize all nodes
         for (String stage : dependsOnGraph.keySet()) {
             graph.putIfAbsent(stage, new ArrayList<>());
         }
-        
+
         // Build reverse edges
         for (Map.Entry<String, List<String>> entry : dependsOnGraph.entrySet()) {
             String stage = entry.getKey();
@@ -363,17 +362,17 @@ public class PipelineValidator {
                 graph.computeIfAbsent(dependency, k -> new ArrayList<>()).add(stage);
             }
         }
-        
+
         // Kahn's algorithm for topological sort
         Map<String, Integer> inDegree = new HashMap<>();
-        
+
         // Initialize in-degree map using the original dependsOn graph
         for (Map.Entry<String, List<String>> entry : dependsOnGraph.entrySet()) {
             String stage = entry.getKey();
             int deps = entry.getValue().size();
             inDegree.put(stage, deps);
         }
-        
+
         // Queue for stages with no dependencies
         java.util.Queue<String> queue = new java.util.LinkedList<>();
         for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
@@ -381,13 +380,13 @@ public class PipelineValidator {
                 queue.offer(entry.getKey());
             }
         }
-        
+
         List<String> executionOrder = new ArrayList<>();
-        
+
         while (!queue.isEmpty()) {
             String current = queue.poll();
             executionOrder.add(current);
-            
+
             // Reduce in-degree for stages that depend on current
             for (String dependent : graph.getOrDefault(current, Collections.emptyList())) {
                 inDegree.put(dependent, inDegree.get(dependent) - 1);
@@ -396,17 +395,17 @@ public class PipelineValidator {
                 }
             }
         }
-        
+
         // If not all stages are in execution order, there's a cycle (shouldn't happen after validation)
         if (executionOrder.size() != dependsOnGraph.size()) {
-            log.error("Topological sort failed: {} stages in order, {} total stages", 
+            log.error("Topological sort failed: {} stages in order, {} total stages",
                 executionOrder.size(), dependsOnGraph.size());
             throw new IllegalStateException("Internal error: cycle not detected during validation");
         }
-        
+
         return executionOrder;
     }
-    
+
     /**
      * Parses the DAG structure from the pipeline configuration.
      * Supports multiple formats: dependsOn (list), dependencies (list), after (string/list).
@@ -428,21 +427,21 @@ public class PipelineValidator {
                     if (stage.has("name")) {
                         String stageName = stage.get("name").asText();
                         List<String> dependencies = new ArrayList<>();
-                        
+
                         // Format 1: dependsOn array
                         if (stage.has("dependsOn") && stage.get("dependsOn").isArray()) {
                             for (JsonNode dep : stage.get("dependsOn")) {
                                 dependencies.add(dep.asText());
                             }
                         }
-                        
+
                         // Format 2: dependencies array (alternative)
                         if (stage.has("dependencies") && stage.get("dependencies").isArray()) {
                             for (JsonNode dep : stage.get("dependencies")) {
                                 dependencies.add(dep.asText());
                             }
                         }
-                        
+
                         // Format 3: after (string or array)
                         if (stage.has("after")) {
                             JsonNode after = stage.get("after");
@@ -454,7 +453,7 @@ public class PipelineValidator {
                                 dependencies.add(after.asText());
                             }
                         }
-                        
+
                         graph.put(stageName, dependencies);
                     }
                 }
@@ -464,7 +463,7 @@ public class PipelineValidator {
         }
         return graph;
     }
-    
+
     /**
      * Validates that all referenced agents exist and are accessible to the tenant.
      *
@@ -517,7 +516,7 @@ public class PipelineValidator {
 
         return Promises.all(checks).map($ -> new ArrayList<>(errors));
     }
-    
+
     /**
      * Extracts agent references from the pipeline configuration.
      */

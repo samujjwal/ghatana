@@ -30,7 +30,7 @@ import io.activej.inject.module.AbstractModule;
  * @doc.pattern Module
  */
 public class YappcApiModule extends AbstractModule {
-    
+
     @Provides
     IntentService intentService(
             CompletionService aiService,
@@ -38,7 +38,7 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new IntentServiceImpl(aiService, auditLogger, metrics);
     }
-    
+
     @Provides
     ShapeService shapeService(
             CompletionService aiService,
@@ -46,7 +46,7 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new ShapeServiceImpl(aiService, auditLogger, metrics);
     }
-    
+
     @Provides
     ValidationService validationService(
             PolicyEngine policyEngine,
@@ -54,7 +54,7 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new ValidationServiceImpl(policyEngine, auditLogger, metrics);
     }
-    
+
     @Provides
     GenerationService generationService(
             CompletionService aiService,
@@ -62,21 +62,21 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new GenerationServiceImpl(aiService, auditLogger, metrics);
     }
-    
+
     @Provides
     RunService runService(
             AuditLogger auditLogger,
             MetricsCollector metrics) {
         return new RunServiceImpl(auditLogger, metrics);
     }
-    
+
     @Provides
     ObserveService observeService(
             MetricsCollector metrics,
             AuditLogger auditLogger) {
         return new ObserveServiceImpl(metrics, auditLogger);
     }
-    
+
     @Provides
     LearningService learningService(
             CompletionService aiService,
@@ -84,7 +84,7 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new LearningServiceImpl(aiService, auditLogger, metrics);
     }
-    
+
     @Provides
     EvolutionService evolutionService(
             CompletionService aiService,

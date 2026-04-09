@@ -36,7 +36,7 @@ import java.util.UUID;
 /**
  * gRPC interceptor that enforces IAM policies for pattern learning endpoints.
  * Provides authentication, authorization, and audit logging for gRPC service calls.
- 
+
  *
  * @doc.type class
  * @doc.purpose Policy enforcement interceptor
@@ -45,65 +45,65 @@ import java.util.UUID;
 */
 public class PolicyEnforcementInterceptor implements ServerInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(PolicyEnforcementInterceptor.class);
-    
+
     // gRPC context keys for user information
     public static final Context.Key<User> USER_CONTEXT_KEY = Context.key("user");
     public static final Context.Key<String> TENANT_CONTEXT_KEY = Context.key("tenantId");
     public static final Context.Key<String> CORRELATION_CONTEXT_KEY = Context.key("correlationId");
-    
+
     // Metadata keys for authentication
-    private static final Metadata.Key<String> AUTHORIZATION_HEADER = 
+    private static final Metadata.Key<String> AUTHORIZATION_HEADER =
             Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
-    private static final Metadata.Key<String> TENANT_ID_HEADER = 
+    private static final Metadata.Key<String> TENANT_ID_HEADER =
             Metadata.Key.of("x-tenant-id", Metadata.ASCII_STRING_MARSHALLER);
         private static final Metadata.Key<String> TRACE_ID_HEADER =
             Metadata.Key.of("x-trace-id", Metadata.ASCII_STRING_MARSHALLER);
         private static final Metadata.Key<String> CORRELATION_ID_HEADER =
             Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER);
         private static final String CORRELATION_ID_MDC_KEY = "correlationId";
-    
+
     private final IamPolicyEnforcer policyEnforcer;
     private final AuditEmitter auditEmitter;
     private final UserAuthenticationService userAuthService;
-    
-    public PolicyEnforcementInterceptor(IamPolicyEnforcer policyEnforcer, 
+
+    public PolicyEnforcementInterceptor(IamPolicyEnforcer policyEnforcer,
                                        AuditEmitter auditEmitter,
                                        UserAuthenticationService userAuthService) {
         this.policyEnforcer = policyEnforcer;
         this.auditEmitter = auditEmitter;
         this.userAuthService = userAuthService;
     }
-    
+
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
             ServerCall<ReqT, RespT> call,
             Metadata headers,
             ServerCallHandler<ReqT, RespT> next) {
-        
+
         String methodName = call.getMethodDescriptor().getFullMethodName();
         String correlationId = resolveCorrelationId(headers);
         ServerCall<ReqT, RespT> correlatedCall = wrapCallWithCorrelation(call, correlationId);
         logger.debug("Intercepting gRPC call: {} correlationId={}", methodName, correlationId);
         MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
-        
+
         try {
             // Extract authentication information from headers
             String authToken = headers.get(AUTHORIZATION_HEADER);
             String tenantId = headers.get(TENANT_ID_HEADER);
-            
+
             // Authenticate user
             User user = authenticateUser(authToken);
             if (user == null) {
                 correlatedCall.close(Status.UNAUTHENTICATED.withDescription("Authentication required"), new Metadata());
                 return new ServerCall.Listener<ReqT>() { };
             }
-            
+
             // Validate tenant ID
             if (tenantId == null || tenantId.trim().isEmpty()) {
                 correlatedCall.close(Status.INVALID_ARGUMENT.withDescription("Tenant ID required"), new Metadata());
                 return new ServerCall.Listener<ReqT>() { };
             }
-            
+
             // Authorize based on method
             PolicyEnforcementResult authzResult = authorizeMethod(user, tenantId, methodName);
             if (!authzResult.isGranted()) {
@@ -111,24 +111,24 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
                 if (authzResult.getAuditEvent() != null) {
                     auditEmitter.emitAuditEvent(authzResult.getAuditEvent());
                 }
-                
+
                 correlatedCall.close(Status.PERMISSION_DENIED.withDescription(authzResult.getReason()), new Metadata());
                 return new ServerCall.Listener<ReqT>() { };
             }
-            
+
             // Emit audit event for granted access
             if (authzResult.getAuditEvent() != null) {
                 auditEmitter.emitAuditEvent(authzResult.getAuditEvent());
             }
-            
+
             // Continue with the call, setting user and tenant context
             Context contextWithUser = Context.current()
                     .withValue(USER_CONTEXT_KEY, user)
                     .withValue(TENANT_CONTEXT_KEY, tenantId)
                     .withValue(CORRELATION_CONTEXT_KEY, correlationId);
-            
+
             return Contexts.interceptCall(contextWithUser, correlatedCall, headers, next);
-            
+
         } catch (Exception e) {
             logger.error("Policy enforcement failed for method: {}", methodName, e);
             correlatedCall.close(Status.INTERNAL.withDescription("Security check failed"), new Metadata());
@@ -167,7 +167,7 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
             }
         };
     }
-    
+
     /**
      * Authenticates a user based on the provided authentication token.
      */
@@ -175,12 +175,12 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
         if (authToken == null || authToken.trim().isEmpty()) {
             return null;
         }
-        
+
         // Remove "Bearer " prefix if present
         if (authToken.startsWith("Bearer ")) {
             authToken = authToken.substring(7);
         }
-        
+
         try {
             return userAuthService.authenticate(authToken);
         } catch (Exception e) {
@@ -188,7 +188,7 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
             return null;
         }
     }
-    
+
     /**
      * Authorizes a user to access a specific gRPC method.
      */
@@ -197,10 +197,10 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
         switch (methodName) {
             case "ghatana.contracts.learning.v1.PatternLearningService/RecommendPatterns":
                 return policyEnforcer.enforcePatternRecommendPolicy(user, tenantId, "patterns/recommend");
-                
+
             case "ghatana.contracts.learning.v1.PatternLearningService/EvaluatePatterns":
                 return policyEnforcer.enforcePatternEvaluatePolicy(user, tenantId, "patterns/evaluate");
-                
+
             default:
                 // For other methods, check if user is authenticated
                 if (user.isAuthenticated()) {
@@ -210,14 +210,14 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
                 }
         }
     }
-    
+
     /**
      * Helper method to emit audit events for pattern learning operations.
      */
     private Promise<Void> emitAuditEvent(AuditEvent auditEvent) {
         return auditEmitter.emitAuditEvent(auditEvent);
     }
-    
+
     /**
      * Extracts user from current gRPC context.
      * This can be used by service implementations to get the authenticated user.
@@ -225,7 +225,7 @@ public class PolicyEnforcementInterceptor implements ServerInterceptor {
     public static User getCurrentUser() {
         return USER_CONTEXT_KEY.get();
     }
-    
+
     /**
      * Extracts tenant ID from current gRPC context.
      * This can be used by service implementations to get the tenant ID.

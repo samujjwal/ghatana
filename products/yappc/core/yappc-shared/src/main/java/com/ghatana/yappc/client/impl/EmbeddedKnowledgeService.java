@@ -15,45 +15,45 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author YAPPC Team
  * @version 1.0.0
  * @since 1.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles embedded knowledge service operations
  * @doc.layer core
  * @doc.pattern Service
 */
 final class EmbeddedKnowledgeService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedKnowledgeService.class);
-    
+
     private final YAPPCConfig config;
     private final Map<String, KnowledgeDocument> documents;
     private volatile boolean initialized = false;
-    
+
     EmbeddedKnowledgeService(YAPPCConfig config) {
         this.config = config;
         this.documents = new ConcurrentHashMap<>();
     }
-    
+
     void initialize() {
         logger.info("Initializing embedded knowledge service");
         initialized = true;
     }
-    
+
     void shutdown() {
         logger.info("Shutting down embedded knowledge service");
         documents.clear();
         initialized = false;
     }
-    
+
     boolean isHealthy() {
         return initialized;
     }
-    
+
     Promise<SearchResults> search(KnowledgeQuery query) {
         return Promise.ofCallback(cb -> {
             try {
                 logger.debug("Searching knowledge: {}", query.getQuery());
-                
+
                 SearchResults results = new SearchResults(List.of(), 0);
                 cb.set(results);
             } catch (Exception e) {
@@ -62,7 +62,7 @@ final class EmbeddedKnowledgeService {
             }
         });
     }
-    
+
     Promise<Void> ingest(KnowledgeDocument document) {
         return Promise.ofCallback(cb -> {
             try {

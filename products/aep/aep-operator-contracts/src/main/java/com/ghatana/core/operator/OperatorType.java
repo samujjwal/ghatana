@@ -57,10 +57,10 @@ package com.ghatana.core.operator;
  * <pre>{@code
  * // Find all stream operators
  * List<UnifiedOperator> streamOps = catalog.findByType(OperatorType.STREAM);
- * 
+ *
  * // Find all pattern operators
  * List<UnifiedOperator> patternOps = catalog.findByType(OperatorType.PATTERN);
- * 
+ *
  * // Find all learning operators
  * List<UnifiedOperator> learningOps = catalog.findByType(OperatorType.LEARNING);
  * }</pre>
@@ -71,7 +71,7 @@ package com.ghatana.core.operator;
  *     .operator(filterOp)       // STREAM type
  *     .operator(sequenceOp)     // PATTERN type
  *     .operator(recommenderOp); // LEARNING type
- * 
+ *
  * // Validate type compatibility
  * for (UnifiedOperator op : pipeline.getOperators()) {
  *     OperatorType type = op.getType();
@@ -90,7 +90,7 @@ package com.ghatana.core.operator;
  *     "operator_type", operator.getType().name(),
  *     "operator_name", operator.getName()
  * );
- * 
+ *
  * timer.record(() -> operator.process(event));
  * }</pre>
  *
@@ -99,7 +99,7 @@ package com.ghatana.core.operator;
  * // Recommend next operator based on pipeline context
  * Pipeline partialPipeline = Pipeline.create("analysis")
  *     .operator(filterOp);  // STREAM type
- * 
+ *
  * // Recommender suggests PATTERN operators after STREAM
  * OperatorType lastType = partialPipeline.getLastOperator().getType();
  * if (lastType == OperatorType.STREAM) {
@@ -197,35 +197,35 @@ package com.ghatana.core.operator;
  * @see UnifiedOperator
  * @see OperatorId
  * @see OperatorCatalog
- * 
+ *
  * @doc.type enum
  * @doc.purpose Classification of operators in Unified Operator Model (Stream, Pattern, Learning)
  * @doc.layer core
  * @doc.pattern Enumeration
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
  */
 public enum OperatorType {
-    
+
     /**
      * Stream processing operators (transformations, filters, aggregations).
-     * 
+     *
      * <p>Examples: Filter, Map, FlatMap, Window, Join, Reduce
      */
     STREAM,
 
     /**
      * Pattern detection operators (Complex Event Processing).
-     * 
+     *
      * <p>Examples: SEQ, AND, OR, NOT, WITHIN, REPEAT, UNTIL
      */
     PATTERN,
 
     /**
      * Learning operators (machine learning, pattern discovery).
-     * 
+     *
      * <p>Examples: FrequentSequenceMiner, CorrelationAnalyzer, PatternSynthesizer, Recommender
      */
     LEARNING

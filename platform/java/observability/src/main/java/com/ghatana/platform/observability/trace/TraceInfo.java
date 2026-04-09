@@ -11,7 +11,7 @@ import java.util.Objects;
  * through a distributed system. TraceInfo aggregates all spans belonging to the same
  * traceId and provides summary information (duration, error count, status, etc.).
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Trace Aggregation</b>: Consolidates all spans with same traceId</li>
@@ -20,7 +20,7 @@ import java.util.Objects;
  *   <li><b>Service Attribution</b>: Primary service (typically entry point)</li>
  *   <li><b>Span Navigation</b>: Find root span, error spans, spans by service</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Build trace from spans
@@ -53,7 +53,7 @@ import java.util.Objects;
  *     System.out.println("Trace has errors!");
  * }
  * }</pre>
- * 
+ *
  * <h2>Trace Lifecycle</h2>
  * <ol>
  *   <li><b>Start</b>: First span starts (startTime = earliest span start)</li>
@@ -61,7 +61,7 @@ import java.util.Objects;
  *   <li><b>End</b>: Last span ends (endTime = latest span end)</li>
  *   <li><b>Duration</b>: Total time from first span start to last span end</li>
  * </ol>
- * 
+ *
  * <h2>Status Derivation</h2>
  * Overall trace status is derived from span statuses:
  * <ul>
@@ -69,11 +69,11 @@ import java.util.Objects;
  *   <li><b>OK</b>: If all spans have status "OK"</li>
  *   <li><b>UNSET</b>: If all spans have status "UNSET"</li>
  * </ul>
- * 
+ *
  * <h2>Service Name</h2>
  * The primary service is typically the entry point (root span's service).
  * If no root span, serviceName may be null.
- * 
+ *
  * <h2>Validation Rules</h2>
  * <ul>
  *   <li>traceId must not be null or blank</li>
@@ -95,7 +95,7 @@ import java.util.Objects;
  * @param errorCount  Number of spans with ERROR status
  * @param serviceName Primary service name (typically the entry point service)
  * @param status      Overall trace status: "OK" if all spans OK, "ERROR" if any error
- * 
+ *
  * @author Ghatana Team
  * @version 1.0
  * @since 1.0

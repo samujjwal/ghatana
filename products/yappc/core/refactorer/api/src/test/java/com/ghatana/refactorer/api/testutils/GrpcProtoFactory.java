@@ -17,7 +17,7 @@ import java.time.Instant;
 /**
  * Test data factory for gRPC proto messages. Provides builders and sample data for testing proto
  * round-trips.
- 
+
  * @doc.type class
  * @doc.purpose Handles grpc proto factory operations
  * @doc.layer core

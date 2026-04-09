@@ -7,7 +7,6 @@ package com.ghatana.aep.runtime;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
-import com.ghatana.agent.spi.AgentLogicProviderRegistry;
 import com.ghatana.aep.catalog.AepCentralCatalogService;
 import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;

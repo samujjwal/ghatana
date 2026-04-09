@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Get router instance (DI-injected)
  * StorageRouterService router = // injected

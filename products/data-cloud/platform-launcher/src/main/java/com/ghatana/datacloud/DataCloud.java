@@ -47,11 +47,11 @@ public final class DataCloud {
      */
     public static DataCloudClient create(DataCloudConfig config) {
         Objects.requireNonNull(config, "config required");
-        
+
         // Discover stores via ServiceLoader or use in-memory
         EntityStore entityStore = discoverEntityStore(config);
         EventLogStore eventLogStore = discoverEventLogStore(config);
-        
+
         return new DefaultDataCloudClient(entityStore, eventLogStore, config);
     }
 
@@ -174,7 +174,7 @@ public final class DataCloud {
             }
 
             public DataCloudConfig build() {
-                return new DataCloudConfig(instanceId, maxConnectionsPerTenant, 
+                return new DataCloudConfig(instanceId, maxConnectionsPerTenant,
                     enableCaching, enableMetrics, customConfig);
             }
         }
@@ -200,14 +200,14 @@ public final class DataCloud {
         public Promise<Entity> save(String tenantId, String collection, Map<String, Object> data) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            
+
             String id = data.containsKey("id") ? data.get("id").toString() : UUID.randomUUID().toString();
             EntityStore.Entity entity = EntityStore.Entity.builder()
                 .id(id)
                 .collection(collection)
                 .data(data)
                 .build();
-            
+
             return entityStore.save(tenant, entity)
                 .map(saved -> new Entity(
                     saved.id().value(),
@@ -223,7 +223,7 @@ public final class DataCloud {
         public Promise<Optional<Entity>> findById(String tenantId, String collection, String id) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            
+
             return entityStore.findById(tenant, EntityStore.EntityId.of(id))
                 .map(opt -> opt.map(e -> new Entity(
                     e.id().value(),
@@ -239,13 +239,13 @@ public final class DataCloud {
         public Promise<List<Entity>> query(String tenantId, String collection, Query query) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            
+
             EntityStore.QuerySpec spec = EntityStore.QuerySpec.builder()
                 .collection(collection)
                 .offset(query.offset())
                 .limit(query.limit())
                 .build();
-            
+
             return entityStore.query(tenant, spec)
                 .map(result -> result.entities().stream()
                     .map(e -> new Entity(
@@ -284,7 +284,7 @@ public final class DataCloud {
                 .timestamp(event.timestamp())
                 .headers(event.headers())
                 .build();
-            
+
             return eventLogStore.append(tenant, entry)
                 .map(offset -> DataCloudClient.Offset.of(numericOffsetValue(offset)));
         }
@@ -293,7 +293,7 @@ public final class DataCloud {
         public Promise<List<Event>> queryEvents(String tenantId, EventQuery query) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            
+
             if (query.startTime() != null && query.endTime() != null) {
                 return eventLogStore.readByTimeRange(tenant, query.startTime(), query.endTime(), query.limit())
                     .map(entries -> entries.stream()
@@ -301,7 +301,7 @@ public final class DataCloud {
                         .map(this::toEvent)
                         .toList());
             }
-            
+
             return eventLogStore.read(tenant, com.ghatana.platform.types.identity.Offset.zero(), query.limit())
                 .map(entries -> entries.stream()
                     .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
@@ -314,9 +314,9 @@ public final class DataCloud {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
             com.ghatana.platform.types.identity.Offset fromOffset = com.ghatana.platform.types.identity.Offset.of(request.fromOffset().value());
-            
+
             final boolean[] cancelled = {false};
-            
+
             eventLogStore.tail(tenant, fromOffset, entry -> {
                 if (!cancelled[0]) {
                     if (request.eventTypes().isEmpty() || request.eventTypes().contains(entry.eventType())) {
@@ -324,7 +324,7 @@ public final class DataCloud {
                     }
                 }
             });
-            
+
             return new Subscription() {
                 @Override
                 public void cancel() {

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Placeholder for Python-specific codemods. In this iteration we rely on Ruff --fix and optional
  * Black formatting; custom codemods can be added incrementally.
- 
+
  * @doc.type class
  * @doc.purpose Handles python codemods operations
  * @doc.layer core

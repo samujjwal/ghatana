@@ -2,7 +2,6 @@ package com.ghatana.datacloud;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,7 +25,7 @@ import java.util.Map;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * FieldDefinition emailField = FieldDefinition.builder()
  *         .name("email")

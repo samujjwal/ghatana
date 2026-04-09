@@ -13,7 +13,7 @@ class EventTypeIdTest {
     @Test
     void testOf() {
         EventTypeId id = EventTypeId.of("test-event-type");
-        
+
         assertEquals("test-event-type", id.value());
         assertEquals("test-event-type", id.raw());
     }
@@ -22,7 +22,7 @@ class EventTypeIdTest {
     void testRandom() {
         EventTypeId id1 = EventTypeId.random();
         EventTypeId id2 = EventTypeId.random();
-        
+
         assertNotNull(id1.value());
         assertNotNull(id2.value());
         assertNotEquals(id1.value(), id2.value());
@@ -47,7 +47,7 @@ class EventTypeIdTest {
         EventTypeId id1 = EventTypeId.of("same-id");
         EventTypeId id2 = EventTypeId.of("same-id");
         EventTypeId id3 = EventTypeId.of("different-id");
-        
+
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
     }

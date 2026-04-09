@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Interface for language-specific reference resolution logic. 
+ * Interface for language-specific reference resolution logic.
  * @doc.type interface
  * @doc.purpose Defines the contract for language resolver
  * @doc.layer core

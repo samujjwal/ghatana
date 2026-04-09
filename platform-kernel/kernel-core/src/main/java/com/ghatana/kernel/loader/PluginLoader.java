@@ -4,7 +4,6 @@ import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.PluginRegistry;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -35,7 +34,7 @@ public class PluginLoader {
 
     /**
      * Load plugins from directory.
-     * 
+     *
      * Scans the plugin directory for plugin JARs and loads them.
      */
     public void loadPlugins() {
@@ -50,7 +49,7 @@ public class PluginLoader {
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith(".jar"))
                 .forEach(this::loadPlugin);
-                
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to load plugins from directory: " + pluginDirectory, e);
         }
@@ -58,28 +57,28 @@ public class PluginLoader {
 
     /**
      * Load individual plugin from JAR file.
-     * 
+     *
      * @param pluginJar path to plugin JAR
      */
     public void loadPlugin(Path pluginJar) {
         try {
             System.out.println("Loading plugin from: " + pluginJar);
-            
+
             // Load plugin JAR
             URLClassLoader classLoader = createPluginClassLoader(pluginJar);
-            
+
             // Load plugin class using ServiceLoader
             ServiceLoader<KernelPlugin> loader = ServiceLoader.load(KernelPlugin.class, classLoader);
-            
+
             for (KernelPlugin plugin : loader) {
                 System.out.println("Found plugin: " + plugin.getModuleId() + " v" + plugin.getVersion());
-                
+
                 // Validate and register plugin
                 pluginRegistry.registerPlugin(plugin);
-                
+
                 System.out.println("Successfully registered plugin: " + plugin.getModuleId());
             }
-            
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to load plugin: " + pluginJar, e);
         }
@@ -120,7 +119,7 @@ public class PluginLoader {
 
     /**
      * Create plugin class loader.
-     * 
+     *
      * @param pluginPath path to plugin JAR
      * @return URLClassLoader for the plugin
      */
@@ -131,7 +130,7 @@ public class PluginLoader {
 
     /**
      * Get plugin directory.
-     * 
+     *
      * @return plugin directory path
      */
     public String getPluginDirectory() {
@@ -140,7 +139,7 @@ public class PluginLoader {
 
     /**
      * Check if plugin directory exists.
-     * 
+     *
      * @return true if directory exists
      */
     public boolean pluginDirectoryExists() {
@@ -149,7 +148,7 @@ public class PluginLoader {
 
     /**
      * Create plugin directory if it doesn't exist.
-     * 
+     *
      * @return true if directory was created
      */
     public boolean createPluginDirectory() {

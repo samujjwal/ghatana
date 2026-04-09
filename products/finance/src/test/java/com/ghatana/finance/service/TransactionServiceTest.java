@@ -75,48 +75,48 @@ public class TransactionServiceTest {
     @Test
     public void testProcessTransaction_LowRisk_ShouldApprove() {
         Transaction transaction = createTransaction("txn-001", 500.0, "USD", "NEW_YORK");
-        
+
         TransactionResult result = transactionService.processTransaction(transaction);
-        
+
         assertNotNull(result);
         assertEquals("APPROVED", result.getStatus());
         assertTrue(result.getMetadata().containsKey("fraud_score"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
         assertEquals("finance_transaction_approve", result.getMetadata().get("trace_operation"));
     }
-    
+
     @Test
     public void testProcessTransaction_HighRisk_ShouldReject() {
         Transaction transaction = createTransaction("txn-002", 100000.0, "BTC", "UNKNOWN");
-        
+
         TransactionResult result = transactionService.processTransaction(transaction);
-        
+
         assertNotNull(result);
         assertEquals("REJECTED", result.getStatus());
         assertTrue(result.getMessage().contains("Fraud detected"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
         assertEquals("finance_transaction_reject", result.getMetadata().get("trace_operation"));
     }
-    
+
     @Test
     public void testProcessTransaction_HighValue_ShouldQueueForReview() {
         Transaction transaction = createTransaction("txn-003", 150000.0, "USD", "NEW_YORK");
-        
+
         TransactionResult result = transactionService.processTransaction(transaction);
-        
+
         assertNotNull(result);
         assertEquals("PENDING_REVIEW", result.getStatus());
         assertTrue(result.getMessage().contains("manual review"));
         assertTrue(result.getMetadata().containsKey("correlation_id"));
         assertEquals("finance_transaction_manual_review", result.getMetadata().get("trace_operation"));
     }
-    
+
     @Test
     public void testProcessTransaction_MediumRisk_ShouldApproveWithWarning() {
         Transaction transaction = createTransaction("txn-004", 15000.0, "EUR", "LONDON");
-        
+
         TransactionResult result = transactionService.processTransaction(transaction);
-        
+
         assertNotNull(result);
         // Should be approved but with metadata showing medium risk
         assertEquals("APPROVED", result.getStatus());

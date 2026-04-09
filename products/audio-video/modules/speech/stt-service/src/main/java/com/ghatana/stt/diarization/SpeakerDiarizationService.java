@@ -213,4 +213,3 @@ public final class SpeakerDiarizationService {
      */
     public record SpeakerTurn(String speakerId, long startMs, long endMs, String text) {}
 }
-

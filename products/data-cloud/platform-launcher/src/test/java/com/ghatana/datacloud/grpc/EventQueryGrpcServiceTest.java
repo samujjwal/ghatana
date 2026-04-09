@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.grpc;
 
-import com.ghatana.contracts.event.v1.EventQueryServiceGrpc;
 import com.ghatana.contracts.event.v1.ExecuteQueryRequestProto;
 import com.ghatana.contracts.event.v1.ExecuteQueryResponseProto;
 import com.ghatana.contracts.event.v1.ExplainQueryRequestProto;
@@ -8,9 +7,6 @@ import com.ghatana.contracts.event.v1.ExplainQueryResponseProto;
 import com.ghatana.contracts.common.v1.Envelope;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
-import com.ghatana.platform.types.identity.Offset;
-import com.google.protobuf.Struct;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -342,7 +338,7 @@ class EventQueryGrpcServiceTest {
         void shouldHandleNullRequest() {
             CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>();
 
-            assertThrows(NullPointerException.class, () -> 
+            assertThrows(NullPointerException.class, () ->
                 service.executeQuery(null, observer));
         }
     }

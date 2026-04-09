@@ -15,7 +15,7 @@ import java.util.UUID;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * Webhook webhook = new Webhook(
  *         UUID.randomUUID(),

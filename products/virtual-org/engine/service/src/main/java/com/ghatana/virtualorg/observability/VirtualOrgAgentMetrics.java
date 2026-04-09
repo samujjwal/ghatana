@@ -99,17 +99,17 @@ public class VirtualOrgAgentMetrics implements com.ghatana.platform.domain.agent
                 .description("Total tasks processed by agent")
                 .tags(tags)
                 .register(registry);
-        
+
         this.tasksSucceeded = Counter.builder("virtualorg.tasks.succeeded")
                 .description("Tasks that completed successfully")
                 .tags(tags)
                 .register(registry);
-        
+
         this.tasksFailed = Counter.builder("virtualorg.tasks.failed")
                 .description("Tasks that failed")
                 .tags(tags)
                 .register(registry);
-        
+
         this.taskProcessingTime = Timer.builder("virtualorg.tasks.duration")
                 .description("Task processing duration")
                 .tags(tags)

@@ -6,8 +6,6 @@
  */
 package com.ghatana.media.common.pool;
 
-import com.ghatana.media.stt.api.SttEngine;
-import com.ghatana.media.tts.api.TtsEngine;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -38,20 +36,20 @@ import java.util.*;
  * @param <T> engine type (SttEngine, TtsEngine, etc.)
  */
 public class EnginePool<T> implements AutoCloseable {
-    
+
     private static final Logger LOG = Logger.getLogger(EnginePool.class.getName());
-    
+
     private final BlockingQueue<PooledEngine<T>> available;
     private final ConcurrentMap<T, PooledEngine<T>> inUse;
     private final Supplier<T> factory;
     private final Function<T, Boolean> healthCheck;
     private final Function<T, Void> destroyer;
-    
+
     private final int minSize;
     private final int maxSize;
     private final Duration idleTimeout;
     private final Duration borrowTimeout;
-    
+
     private final AtomicInteger totalCreated = new AtomicInteger(0);
     private final AtomicInteger totalDestroyed = new AtomicInteger(0);
     private final AtomicInteger activeEngines = new AtomicInteger(0);
@@ -61,17 +59,17 @@ public class EnginePool<T> implements AutoCloseable {
     private final AtomicLong leakDetections = new AtomicLong(0);
     private final AtomicLong backpressureEvents = new AtomicLong(0);
     private final AtomicReference<ResourceUsageSnapshot> lastUsageSnapshot = new AtomicReference<>();
-    
+
     // Leak detection tracking
     private final ConcurrentMap<IdentityWeakReference<T>, BorrowInfo> borrowTracking = new ConcurrentHashMap<>();
     private final ReferenceQueue<T> borrowTrackingQueue = new ReferenceQueue<>();
     private final Duration leakDetectionThreshold;
     private final long leakCheckIntervalMillis;
     private final ScheduledExecutorService leakDetectionExecutor;
-    
+
     private final ScheduledExecutorService evictionExecutor;
     private volatile boolean closed = false;
-    
+
     /**
      * Creates a new engine pool.
      *
@@ -85,7 +83,7 @@ public class EnginePool<T> implements AutoCloseable {
             Function<T, Boolean> healthCheck,
             Function<T, Void> destroyer,
             PoolConfig config) {
-        
+
         this.factory = factory;
         this.healthCheck = healthCheck;
         this.destroyer = destroyer;
@@ -95,10 +93,10 @@ public class EnginePool<T> implements AutoCloseable {
         this.borrowTimeout = config.borrowTimeout;
         this.leakDetectionThreshold = config.leakDetectionThreshold;
         this.leakCheckIntervalMillis = computeLeakCheckIntervalMillis(config.leakDetectionThreshold);
-        
+
         this.available = new LinkedBlockingQueue<>(maxSize);
         this.inUse = new ConcurrentHashMap<>();
-        
+
         // Pre-populate minimum size
         for (int i = 0; i < minSize; i++) {
             T engine = createEngineIfCapacity();
@@ -106,38 +104,38 @@ public class EnginePool<T> implements AutoCloseable {
                 available.offer(new PooledEngine<>(engine, Instant.now()));
             }
         }
-        
+
         // Start eviction thread
         this.evictionExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "engine-pool-eviction");
             t.setDaemon(true);
             return t;
         });
-        
+
         evictionExecutor.scheduleAtFixedRate(
-            this::evictIdleEngines, 
-            idleTimeout.toMillis(), 
-            idleTimeout.toMillis() / 2, 
+            this::evictIdleEngines,
+            idleTimeout.toMillis(),
+            idleTimeout.toMillis() / 2,
             TimeUnit.MILLISECONDS
         );
-        
+
         // Start leak detection thread
         this.leakDetectionExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "engine-pool-leak-detection");
             t.setDaemon(true);
             return t;
         });
-        
+
         leakDetectionExecutor.scheduleAtFixedRate(
             this::detectLeaks,
             leakCheckIntervalMillis,
             leakCheckIntervalMillis,
             TimeUnit.MILLISECONDS
         );
-        
+
         LOG.info("Engine pool created: min=" + minSize + ", max=" + maxSize + ", leak detection enabled");
     }
-    
+
     /**
      * Borrows an engine from the pool.
      *
@@ -149,18 +147,18 @@ public class EnginePool<T> implements AutoCloseable {
         if (closed) {
             throw new IllegalStateException("Pool is closed");
         }
-        
+
         totalBorrowed.incrementAndGet();
-        
+
         // Check for pool exhaustion and apply backpressure
         if (inUse.size() >= maxSize && available.isEmpty()) {
             backpressureEvents.incrementAndGet();
             LOG.warning("Pool exhaustion detected. In use: " + inUse.size() + ", Max: " + maxSize);
         }
-        
+
         // Try to get from available queue
         PooledEngine<T> pooled = available.poll();
-        
+
         // If none available and under max, create new
         if (pooled == null) {
             T engine = createEngineIfCapacity();
@@ -168,7 +166,7 @@ public class EnginePool<T> implements AutoCloseable {
                 pooled = new PooledEngine<>(engine, Instant.now());
             }
         }
-        
+
         // If still none, wait with timeout
         if (pooled == null) {
             try {
@@ -178,14 +176,14 @@ public class EnginePool<T> implements AutoCloseable {
                 throw new PoolExhaustedException("Interrupted while waiting for engine");
             }
         }
-        
+
         if (pooled == null) {
             throw new PoolExhaustedException(
                 "No engines available within " + borrowTimeout.toMillis() + "ms. " +
                 "In use: " + inUse.size() + ", Available: " + available.size()
             );
         }
-        
+
         // Health check
         if (!isHealthy(pooled.engine)) {
             // Replace unhealthy engine
@@ -196,21 +194,21 @@ public class EnginePool<T> implements AutoCloseable {
             }
             pooled = new PooledEngine<>(replacement, Instant.now());
         }
-        
+
         pooled.lastBorrowed = Instant.now();
         inUse.put(pooled.engine, pooled);
         cleanupCollectedBorrowEntries();
-        
+
         // Track borrow for leak detection
         borrowTracking.put(new IdentityWeakReference<>(pooled.engine, borrowTrackingQueue), new BorrowInfo(
             pooled.engine,
             Instant.now(),
             Thread.currentThread().getStackTrace()
         ));
-        
+
         return pooled.engine;
     }
-    
+
     /**
      * Returns an engine to the pool.
      *
@@ -218,29 +216,29 @@ public class EnginePool<T> implements AutoCloseable {
      */
     public void returnEngine(T engine) {
         if (engine == null) return;
-        
+
         PooledEngine<T> pooled = inUse.remove(engine);
         if (pooled == null) {
             LOG.warning("Returning engine not from this pool");
             destroyEngine(engine);
             return;
         }
-        
+
         // Remove from leak tracking
         cleanupCollectedBorrowEntries();
         borrowTracking.remove(new IdentityWeakReference<>(engine));
-        
+
         totalReturned.incrementAndGet();
-        
+
         if (closed || !isHealthy(engine)) {
             destroyEngine(engine);
             return;
         }
-        
+
         pooled.lastReturned = Instant.now();
         available.offer(pooled);
     }
-    
+
     /**
      * Execute a function with a borrowed engine.
      * Automatically returns the engine after execution.
@@ -258,7 +256,7 @@ public class EnginePool<T> implements AutoCloseable {
             returnEngine(engine);
         }
     }
-    
+
     /**
      * Get current pool statistics.
      */
@@ -276,7 +274,7 @@ public class EnginePool<T> implements AutoCloseable {
             closed
         );
     }
-    
+
     /**
      * Get detailed resource usage snapshot.
      */
@@ -295,7 +293,7 @@ public class EnginePool<T> implements AutoCloseable {
         lastUsageSnapshot.set(snapshot);
         return snapshot;
     }
-    
+
     /**
      * Get list of potentially leaked engines.
      */
@@ -303,7 +301,7 @@ public class EnginePool<T> implements AutoCloseable {
         cleanupCollectedBorrowEntries();
         List<LeakInfo> leaks = new ArrayList<>();
         Instant threshold = Instant.now().minus(leakDetectionThreshold);
-        
+
         for (BorrowInfo info : borrowTracking.values()) {
             if (!info.borrowTime.isAfter(threshold)) {
                 leaks.add(new LeakInfo(
@@ -314,23 +312,23 @@ public class EnginePool<T> implements AutoCloseable {
                 ));
             }
         }
-        
+
         return leaks;
     }
-    
+
     @Override
     public void close() {
         closed = true;
         evictionExecutor.shutdown();
         leakDetectionExecutor.shutdown();
-        
+
         // Destroy all engines
         available.forEach(p -> destroyEngine(p.engine));
         inUse.keySet().forEach(this::destroyEngine);
-        
+
         available.clear();
         inUse.clear();
-        
+
         try {
             if (!evictionExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
                 evictionExecutor.shutdownNow();
@@ -343,17 +341,17 @@ public class EnginePool<T> implements AutoCloseable {
             evictionExecutor.shutdownNow();
             leakDetectionExecutor.shutdownNow();
         }
-        
+
         // Log any remaining leaks
         if (!borrowTracking.isEmpty()) {
             LOG.warning("Pool closed with " + borrowTracking.size() + " engines still borrowed (potential leaks)");
         }
-        
+
         borrowTracking.clear();
-        
+
         LOG.info("Engine pool closed. Total created: " + totalCreated.get());
     }
-    
+
     private T createEngine() {
         try {
             T engine = factory.get();
@@ -386,7 +384,7 @@ public class EnginePool<T> implements AutoCloseable {
         activeEngines.decrementAndGet();
         return null;
     }
-    
+
     private void destroyEngine(T engine) {
         try {
             destroyer.apply(engine);
@@ -396,7 +394,7 @@ public class EnginePool<T> implements AutoCloseable {
             LOG.warning("Error destroying engine: " + e.getMessage());
         }
     }
-    
+
     private boolean isHealthy(T engine) {
         try {
             boolean healthy = healthCheck.apply(engine);
@@ -409,20 +407,20 @@ public class EnginePool<T> implements AutoCloseable {
             return false;
         }
     }
-    
+
     private void evictIdleEngines() {
         if (closed) return;
-        
+
         Instant cutoff = Instant.now().minus(idleTimeout);
         int evicted = 0;
-        
+
         // Keep minimum size, evict rest that are idle too long
         while (available.size() > minSize) {
             PooledEngine<T> pooled = available.peek();
             if (pooled == null || pooled.lastReturned.isAfter(cutoff)) {
                 break; // No more idle engines to evict
             }
-            
+
             // Actually remove and destroy
             pooled = available.poll();
             if (pooled != null) {
@@ -430,33 +428,33 @@ public class EnginePool<T> implements AutoCloseable {
                 evicted++;
             }
         }
-        
+
         if (evicted > 0) {
-            LOG.fine("Evicted " + evicted + " idle engines. Pool size: " + 
+            LOG.fine("Evicted " + evicted + " idle engines. Pool size: " +
                      (available.size() + inUse.size()));
         }
     }
-    
+
     private void detectLeaks() {
         if (closed) return;
         cleanupCollectedBorrowEntries();
-        
+
         Instant now = Instant.now();
         Instant threshold = now.minus(leakDetectionThreshold);
         List<BorrowInfo> leakedBorrows = new ArrayList<>();
-        
+
         for (BorrowInfo info : borrowTracking.values()) {
             if (!info.borrowTime.isAfter(threshold)) {
                 leakedBorrows.add(info);
             }
         }
-        
+
         if (!leakedBorrows.isEmpty()) {
             leakDetections.addAndGet(leakedBorrows.size());
-            LOG.log(Level.SEVERE, 
+            LOG.log(Level.SEVERE,
                 "Detected " + leakedBorrows.size() + " potential resource leaks. " +
                 "Engines borrowed for > " + leakDetectionThreshold.toMinutes() + " minutes");
-            
+
             // Log stack traces for debugging
             for (BorrowInfo info : leakedBorrows) {
                 RuntimeException leakTrace = new RuntimeException("Borrow stack trace");
@@ -478,12 +476,12 @@ public class EnginePool<T> implements AutoCloseable {
         long thresholdMillis = Math.max(1L, threshold.toMillis());
         return Math.max(250L, Math.min(thresholdMillis / 4L, 30_000L));
     }
-    
+
     private static class BorrowInfo {
         final WeakReference<Object> engineRef;
         final Instant borrowTime;
         final StackTraceElement[] stackTrace;
-        
+
         BorrowInfo(Object engine, Instant borrowTime, StackTraceElement[] stackTrace) {
             this.engineRef = new WeakReference<>(engine);
             this.borrowTime = borrowTime;
@@ -522,13 +520,13 @@ public class EnginePool<T> implements AutoCloseable {
             return referent != null && referent == otherReferent;
         }
     }
-    
+
     private static class PooledEngine<T> {
         final T engine;
         final Instant created;
         volatile Instant lastBorrowed;
         volatile Instant lastReturned;
-        
+
         PooledEngine(T engine, Instant created) {
             this.engine = engine;
             this.created = created;
@@ -536,7 +534,7 @@ public class EnginePool<T> implements AutoCloseable {
             this.lastReturned = created;
         }
     }
-    
+
     /**
      * Pool configuration.
      */
@@ -546,37 +544,37 @@ public class EnginePool<T> implements AutoCloseable {
         private Duration idleTimeout = Duration.ofMinutes(5);
         private Duration borrowTimeout = Duration.ofSeconds(30);
         private Duration leakDetectionThreshold = Duration.ofMinutes(10);
-        
+
         public PoolConfig minSize(int min) {
             this.minSize = min;
             return this;
         }
-        
+
         public PoolConfig maxSize(int max) {
             this.maxSize = max;
             return this;
         }
-        
+
         public PoolConfig idleTimeout(Duration timeout) {
             this.idleTimeout = timeout;
             return this;
         }
-        
+
         public PoolConfig borrowTimeout(Duration timeout) {
             this.borrowTimeout = timeout;
             return this;
         }
-        
+
         public PoolConfig leakDetectionThreshold(Duration threshold) {
             this.leakDetectionThreshold = threshold;
             return this;
         }
-        
+
         public static PoolConfig defaults() {
             return new PoolConfig();
         }
     }
-    
+
     /**
      * Pool statistics snapshot.
      */
@@ -591,7 +589,7 @@ public class EnginePool<T> implements AutoCloseable {
         public final long leakDetections;
         public final long backpressureEvents;
         public final boolean closed;
-        
+
         public PoolStats(int available, int inUse, int totalCreated, int totalDestroyed,
                         long totalBorrowed, long totalReturned, long failedHealthChecks,
                         long leakDetections, long backpressureEvents, boolean closed) {
@@ -606,13 +604,13 @@ public class EnginePool<T> implements AutoCloseable {
             this.backpressureEvents = backpressureEvents;
             this.closed = closed;
         }
-        
+
         public int getTotalSize() { return available + inUse; }
-        public double getUtilization() { 
+        public double getUtilization() {
             int total = getTotalSize();
             return total > 0 ? (double) inUse / total : 0.0;
         }
-        
+
         @Override
         public String toString() {
             return String.format(
@@ -625,7 +623,7 @@ public class EnginePool<T> implements AutoCloseable {
             );
         }
     }
-    
+
     /**
      * Resource usage snapshot.
      */
@@ -638,7 +636,7 @@ public class EnginePool<T> implements AutoCloseable {
         public final long totalLeaks;
         public final long totalBackpressure;
         public final Instant timestamp;
-        
+
         public ResourceUsageSnapshot(int available, int inUse, int maxSize,
                                     double utilizationPercent, int trackedBorrows,
                                     long totalLeaks, long totalBackpressure, Instant timestamp) {
@@ -651,15 +649,15 @@ public class EnginePool<T> implements AutoCloseable {
             this.totalBackpressure = totalBackpressure;
             this.timestamp = timestamp;
         }
-        
+
         public boolean isExhausted() {
             return available == 0 && inUse >= maxSize;
         }
-        
+
         public boolean hasLeaks() {
             return totalLeaks > 0;
         }
-        
+
         @Override
         public String toString() {
             return String.format(
@@ -670,7 +668,7 @@ public class EnginePool<T> implements AutoCloseable {
             );
         }
     }
-    
+
     /**
      * Information about a potential resource leak.
      */
@@ -679,7 +677,7 @@ public class EnginePool<T> implements AutoCloseable {
         public final Instant borrowTime;
         public final Duration heldDuration;
         public final StackTraceElement[] borrowStackTrace;
-        
+
         public LeakInfo(Object engine, Instant borrowTime, Duration heldDuration,
                        StackTraceElement[] borrowStackTrace) {
             this.engine = engine;
@@ -687,7 +685,7 @@ public class EnginePool<T> implements AutoCloseable {
             this.heldDuration = heldDuration;
             this.borrowStackTrace = borrowStackTrace;
         }
-        
+
         @Override
         public String toString() {
             return String.format(
@@ -696,7 +694,7 @@ public class EnginePool<T> implements AutoCloseable {
             );
         }
     }
-    
+
     /**
      * Exception thrown when pool is exhausted.
      */

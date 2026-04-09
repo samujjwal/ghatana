@@ -1,7 +1,5 @@
 package com.ghatana.auth.adapter.memory;
 
-import com.ghatana.platform.security.port.TokenStore;
-import com.ghatana.platform.domain.auth.User;
 import com.ghatana.platform.domain.auth.ClientId;
 import com.ghatana.platform.domain.auth.Scope;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -102,7 +100,7 @@ class InMemoryTokenStoreTest extends EventloopTestBase {
         // GIVEN: Two tenants
         TenantId tenant1 = TenantId.of("tenant-1");
         TenantId tenant2 = TenantId.of("tenant-2");
-        
+
         // GIVEN: Tokens for each tenant
         Token token1 = createToken(tenant1, "token1");
         Token token2 = createToken(tenant2, "token2");
@@ -402,7 +400,7 @@ class InMemoryTokenStoreTest extends EventloopTestBase {
         // WHEN/THEN: Operations should handle null safely
         assertThatCode(() -> {
             // This should not throw, but handle gracefully
-            Optional<Token> result = runPromise(() -> 
+            Optional<Token> result = runPromise(() ->
                 tokenStore.findById(TenantId.of("null-test"), TokenId.random())
             );
             assertThat(result).isEmpty();

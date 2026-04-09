@@ -11,51 +11,50 @@ import java.util.concurrent.Executors;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
  * Canvas Validation Service
- * 
+ *
  * Java/ActiveJ implementation of ValidationAgent for hybrid backend.
  * Provides phase-specific validation logic with performance optimization.
- * 
+ *
  * @doc.type class
  * @doc.purpose Canvas validation service implementation
  * @doc.layer platform
  * @doc.pattern Service
  */
 public class CanvasValidationService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(CanvasValidationService.class);
     private static final Executor BLOCKING_EXECUTOR = Executors.newCachedThreadPool();
     private static final int MAX_EXECUTION_TIME_MS = 10000; // 10 seconds
-    
+
     private final MetricsCollector metrics;
-    
+
     public CanvasValidationService(MetricsCollector metrics) {
         this.metrics = Objects.requireNonNull(metrics, "metrics required");
     }
-    
+
     /**
      * Validate canvas design
      */
     public Promise<ValidationReport> validate(ValidateCanvasRequest request) {
         long startTime = System.currentTimeMillis();
-        
+
         return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
             try {
                 // Start metrics
                 metrics.incrementCounter("canvas.validation.requests");
-                
+
                 // Extract request data
                 CanvasState canvasState = request.getCanvasState();
                 LifecyclePhase phase = request.getLifecyclePhase();
                 ValidationOptions options = request.hasOptions() ? request.getOptions() : getDefaultOptions();
-                
-                logger.info("Validating canvas {} for phase {}", 
+
+                logger.info("Validating canvas {} for phase {}",
                     canvasState.getCanvasId(), phase);
-                
+
                 // Build validation report
                 ValidationReport.Builder reportBuilder = ValidationReport.newBuilder()
                     .setPhase(phase)
@@ -63,7 +62,7 @@ public class CanvasValidationService {
                         .setSeconds(Instant.now().getEpochSecond())
                         .build())
                     .setValidationId(UUID.randomUUID().toString());
-                
+
                 // Run phase-specific validation
                 List<ValidationIssue> issues = new ArrayList<>();
                 switch (phase) {
@@ -85,42 +84,42 @@ public class CanvasValidationService {
                     default:
                         logger.warn("Unknown lifecycle phase: {}", phase);
                 }
-                
+
                 reportBuilder.addAllIssues(issues);
-                
+
                 // Identify gaps if requested
                 List<String> gaps = new ArrayList<>();
                 if (options.getIncludeGaps()) {
                     gaps.addAll(identifyGaps(canvasState));
                 }
                 reportBuilder.addAllGaps(gaps);
-                
+
                 // Assess risks if requested
                 List<RiskAssessment> risks = new ArrayList<>();
                 if (options.getIncludeRisks()) {
                     risks.addAll(assessRisks(canvasState, issues));
                 }
                 reportBuilder.addAllRisks(risks);
-                
+
                 // Calculate summary
                 ValidationSummary summary = calculateSummary(issues, gaps, risks);
                 reportBuilder.setSummary(summary);
-                
+
                 // Calculate score
                 int score = calculateScore(summary);
                 reportBuilder.setScore(score);
-                
+
                 // Record metrics
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 metrics.recordTimer("canvas.validation.duration", elapsedTime);
                 metrics.incrementCounter("canvas.validation.score", "value", String.valueOf(score));
                 metrics.incrementCounter("canvas.validation.success");
-                
-                logger.info("Validation complete for canvas {} - Score: {}/100, Errors: {}, Warnings: {}", 
+
+                logger.info("Validation complete for canvas {} - Score: {}/100, Errors: {}, Warnings: {}",
                     canvasState.getCanvasId(), score, summary.getErrors(), summary.getWarnings());
-                
+
                 return reportBuilder.build();
-                
+
             } catch (Exception e) {
                 metrics.incrementCounter("canvas.validation.errors");
                 logger.error("Validation failed", e);
@@ -128,14 +127,14 @@ public class CanvasValidationService {
             }
         });
     }
-    
+
     /**
      * Validate SHAPE phase - Architecture design
      */
     private List<ValidationIssue> validateShapePhase(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
         List<CanvasElement> elements = canvasState.getElementsList();
-        
+
         // Check for empty canvas
         if (elements.isEmpty()) {
             issues.add(createIssue(
@@ -150,16 +149,16 @@ public class CanvasValidationService {
             ));
             return issues;
         }
-        
+
         // Check for isolated nodes (nodes without connections)
         for (CanvasElement element : elements) {
-            if (element.getKind() == ElementKind.ELEMENT_KIND_NODE && 
+            if (element.getKind() == ElementKind.ELEMENT_KIND_NODE &&
                 element.getConnectionsCount() == 0) {
                 issues.add(createIssue(
                     IssueSeverity.ISSUE_SEVERITY_WARNING,
                     "isolated_node",
                     "Isolated Node",
-                    String.format("Node '%s' has no connections. Consider connecting to other layers.", 
+                    String.format("Node '%s' has no connections. Consider connecting to other layers.",
                         element.getData().getFieldsOrDefault("label", com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue()),
                     List.of(element.getId()),
                     "Connect this node to data layer, API layer, or frontend components",
@@ -168,14 +167,14 @@ public class CanvasValidationService {
                 ));
             }
         }
-        
+
         // Check for missing layers
         boolean hasAPI = elements.stream().anyMatch(e -> e.getType() == ElementType.ELEMENT_TYPE_API);
         boolean hasData = elements.stream().anyMatch(e -> e.getType() == ElementType.ELEMENT_TYPE_DATA);
-        boolean hasFrontend = elements.stream().anyMatch(e -> 
-            e.getType() == ElementType.ELEMENT_TYPE_COMPONENT || 
+        boolean hasFrontend = elements.stream().anyMatch(e ->
+            e.getType() == ElementType.ELEMENT_TYPE_COMPONENT ||
             e.getType() == ElementType.ELEMENT_TYPE_PAGE);
-        
+
         if (hasAPI && !hasData) {
             issues.add(createIssue(
                 IssueSeverity.ISSUE_SEVERITY_ERROR,
@@ -188,7 +187,7 @@ public class CanvasValidationService {
                 LifecyclePhase.LIFECYCLE_PHASE_SHAPE
             ));
         }
-        
+
         if (hasFrontend && !hasAPI) {
             issues.add(createIssue(
                 IssueSeverity.ISSUE_SEVERITY_WARNING,
@@ -201,39 +200,39 @@ public class CanvasValidationService {
                 LifecyclePhase.LIFECYCLE_PHASE_SHAPE
             ));
         }
-        
+
         return issues;
     }
-    
+
     /**
      * Validate LAYOUT phase - Positioning
      */
     private List<ValidationIssue> validateLayoutPhase(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
         List<CanvasElement> elements = canvasState.getElementsList();
-        
+
         // Check for overlapping elements
         Map<String, List<CanvasElement>> positionMap = new HashMap<>();
         for (CanvasElement element : elements) {
             if (element.hasPosition()) {
-                String posKey = String.format("%.0f,%.0f", 
-                    element.getPosition().getX(), 
+                String posKey = String.format("%.0f,%.0f",
+                    element.getPosition().getX(),
                     element.getPosition().getY());
                 positionMap.computeIfAbsent(posKey, k -> new ArrayList<>()).add(element);
             }
         }
-        
+
         for (Map.Entry<String, List<CanvasElement>> entry : positionMap.entrySet()) {
             if (entry.getValue().size() > 1) {
                 List<String> elementIds = entry.getValue().stream()
                     .map(CanvasElement::getId)
                     .collect(Collectors.toList());
-                    
+
                 String elementNames = entry.getValue().stream()
-                    .map(e -> e.getData().getFieldsOrDefault("label", 
+                    .map(e -> e.getData().getFieldsOrDefault("label",
                         com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue())
                     .collect(Collectors.joining(", "));
-                    
+
                 issues.add(createIssue(
                     IssueSeverity.ISSUE_SEVERITY_ERROR,
                     "overlapping_elements",
@@ -246,7 +245,7 @@ public class CanvasValidationService {
                 ));
             }
         }
-        
+
         // Check for out-of-bounds elements
         for (CanvasElement element : elements) {
             if (element.hasPosition()) {
@@ -255,8 +254,8 @@ public class CanvasValidationService {
                         IssueSeverity.ISSUE_SEVERITY_ERROR,
                         "out_of_bounds",
                         "Out of Bounds",
-                        String.format("Element '%s' is out of bounds (negative position)", 
-                            element.getData().getFieldsOrDefault("label", 
+                        String.format("Element '%s' is out of bounds (negative position)",
+                            element.getData().getFieldsOrDefault("label",
                                 com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue()),
                         List.of(element.getId()),
                         "Reposition element within canvas bounds",
@@ -266,20 +265,20 @@ public class CanvasValidationService {
                 }
             }
         }
-        
+
         return issues;
     }
-    
+
     /**
      * Validate COMPONENT phase - Configuration
      */
     private List<ValidationIssue> validateComponentPhase(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
         List<CanvasElement> elements = canvasState.getElementsList();
-        
+
         for (CanvasElement element : elements) {
             // Check for unlabeled elements
-            if (!element.getData().containsFields("label") || 
+            if (!element.getData().containsFields("label") ||
                 element.getData().getFieldsOrThrow("label").getStringValue().isEmpty()) {
                 issues.add(createIssue(
                     IssueSeverity.ISSUE_SEVERITY_WARNING,
@@ -292,17 +291,17 @@ public class CanvasValidationService {
                     LifecyclePhase.LIFECYCLE_PHASE_COMPONENT
                 ));
             }
-            
+
             // Validate API endpoints
             if (element.getType() == ElementType.ELEMENT_TYPE_API) {
-                if (!element.getData().containsFields("endpoint") || 
+                if (!element.getData().containsFields("endpoint") ||
                     !element.getData().containsFields("method")) {
                     issues.add(createIssue(
                         IssueSeverity.ISSUE_SEVERITY_ERROR,
                         "missing_api_config",
                         "Missing API Configuration",
-                        String.format("API node '%s' is missing endpoint configuration", 
-                            element.getData().getFieldsOrDefault("label", 
+                        String.format("API node '%s' is missing endpoint configuration",
+                            element.getData().getFieldsOrDefault("label",
                                 com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue()),
                         List.of(element.getId()),
                         "Add path and HTTP method to the API endpoint",
@@ -311,17 +310,17 @@ public class CanvasValidationService {
                     ));
                 }
             }
-            
+
             // Validate database configuration
             if (element.getType() == ElementType.ELEMENT_TYPE_DATA) {
-                if (!element.getData().containsFields("connectionString") || 
+                if (!element.getData().containsFields("connectionString") ||
                     !element.getData().containsFields("tableName")) {
                     issues.add(createIssue(
                         IssueSeverity.ISSUE_SEVERITY_ERROR,
                         "missing_db_config",
                         "Missing Database Configuration",
-                        String.format("Data node '%s' is missing database configuration", 
-                            element.getData().getFieldsOrDefault("label", 
+                        String.format("Data node '%s' is missing database configuration",
+                            element.getData().getFieldsOrDefault("label",
                                 com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue()),
                         List.of(element.getId()),
                         "Add connection string and table name",
@@ -331,41 +330,41 @@ public class CanvasValidationService {
                 }
             }
         }
-        
+
         return issues;
     }
-    
+
     /**
      * Validate VALIDATE phase - Comprehensive validation
      */
     private List<ValidationIssue> validateValidatePhase(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
-        
+
         // Run all previous validations
         issues.addAll(validateShapePhase(canvasState));
         issues.addAll(validateLayoutPhase(canvasState));
         issues.addAll(validateComponentPhase(canvasState));
-        
+
         // Additional comprehensive checks
         issues.addAll(detectCircularDependencies(canvasState));
-        
+
         return issues;
     }
-    
+
     /**
      * Validate DEPLOY phase - Deployment readiness
      */
     private List<ValidationIssue> validateDeployPhase(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
-        
+
         // Run all validations
         issues.addAll(validateValidatePhase(canvasState));
-        
+
         // Check deployment readiness
         long errorCount = issues.stream()
             .filter(i -> i.getSeverity() == IssueSeverity.ISSUE_SEVERITY_ERROR)
             .count();
-            
+
         if (errorCount > 0) {
             issues.add(createIssue(
                 IssueSeverity.ISSUE_SEVERITY_ERROR,
@@ -378,35 +377,35 @@ public class CanvasValidationService {
                 LifecyclePhase.LIFECYCLE_PHASE_DEPLOY
             ));
         }
-        
+
         return issues;
     }
-    
+
     /**
      * Detect circular dependencies
      */
     private List<ValidationIssue> detectCircularDependencies(CanvasState canvasState) {
         List<ValidationIssue> issues = new ArrayList<>();
-        
+
         // Build adjacency list
         Map<String, List<String>> graph = new HashMap<>();
         for (CanvasElement element : canvasState.getElementsList()) {
             graph.putIfAbsent(element.getId(), new ArrayList<>());
             graph.get(element.getId()).addAll(element.getConnectionsList());
         }
-        
+
         // DFS to detect cycles
         Set<String> visited = new HashSet<>();
         Set<String> recStack = new HashSet<>();
         List<String> cycle = new ArrayList<>();
-        
+
         for (String node : graph.keySet()) {
             if (hasCycle(node, visited, recStack, graph, cycle)) {
                 issues.add(createIssue(
                     IssueSeverity.ISSUE_SEVERITY_ERROR,
                     "circular_dependency",
                     "Circular Dependency Detected",
-                    String.format("Circular dependency detected in element connections: %s", 
+                    String.format("Circular dependency detected in element connections: %s",
                         String.join(" → ", cycle)),
                     new ArrayList<>(cycle),
                     "Remove one of the connections to break the cycle",
@@ -416,11 +415,11 @@ public class CanvasValidationService {
                 break;
             }
         }
-        
+
         return issues;
     }
-    
-    private boolean hasCycle(String node, Set<String> visited, Set<String> recStack, 
+
+    private boolean hasCycle(String node, Set<String> visited, Set<String> recStack,
                             Map<String, List<String>> graph, List<String> cycle) {
         if (recStack.contains(node)) {
             cycle.add(node);
@@ -429,10 +428,10 @@ public class CanvasValidationService {
         if (visited.contains(node)) {
             return false;
         }
-        
+
         visited.add(node);
         recStack.add(node);
-        
+
         for (String neighbor : graph.getOrDefault(node, List.of())) {
             if (hasCycle(neighbor, visited, recStack, graph, cycle)) {
                 if (!cycle.isEmpty() && !cycle.get(0).equals(node)) {
@@ -441,24 +440,24 @@ public class CanvasValidationService {
                 return true;
             }
         }
-        
+
         recStack.remove(node);
         return false;
     }
-    
+
     /**
      * Identify gaps in architecture
      */
     private List<String> identifyGaps(CanvasState canvasState) {
         List<String> gaps = new ArrayList<>();
         List<CanvasElement> elements = canvasState.getElementsList();
-        
+
         boolean hasAPI = elements.stream().anyMatch(e -> e.getType() == ElementType.ELEMENT_TYPE_API);
         boolean hasData = elements.stream().anyMatch(e -> e.getType() == ElementType.ELEMENT_TYPE_DATA);
-        boolean hasFrontend = elements.stream().anyMatch(e -> 
-            e.getType() == ElementType.ELEMENT_TYPE_COMPONENT || 
+        boolean hasFrontend = elements.stream().anyMatch(e ->
+            e.getType() == ElementType.ELEMENT_TYPE_COMPONENT ||
             e.getType() == ElementType.ELEMENT_TYPE_PAGE);
-        
+
         if (!hasAPI) {
             gaps.add("No API layer defined");
         }
@@ -468,27 +467,27 @@ public class CanvasValidationService {
         if (!hasFrontend) {
             gaps.add("No frontend components defined");
         }
-        
+
         return gaps;
     }
-    
+
     /**
      * Assess risks
      */
     private List<RiskAssessment> assessRisks(CanvasState canvasState, List<ValidationIssue> issues) {
         List<RiskAssessment> risks = new ArrayList<>();
-        
+
         // Security risks
         for (CanvasElement element : canvasState.getElementsList()) {
             if (element.getType() == ElementType.ELEMENT_TYPE_API) {
-                if (!element.getData().containsFields("auth") || 
+                if (!element.getData().containsFields("auth") ||
                     !element.getData().getFieldsOrThrow("auth").getBoolValue()) {
                     risks.add(createRisk(
                         RiskType.RISK_TYPE_SECURITY,
                         RiskSeverity.RISK_SEVERITY_HIGH,
                         "Exposed API Endpoint",
-                        String.format("API endpoint '%s' is exposed without authentication", 
-                            element.getData().getFieldsOrDefault("label", 
+                        String.format("API endpoint '%s' is exposed without authentication",
+                            element.getData().getFieldsOrDefault("label",
                                 com.google.protobuf.Value.newBuilder().setStringValue("Unnamed").build()).getStringValue()),
                         "Unauthorized access to sensitive data or operations",
                         "Add authentication and authorization to the API endpoint"
@@ -496,7 +495,7 @@ public class CanvasValidationService {
                 }
             }
         }
-        
+
         // Performance risks
         long dataNodeCount = canvasState.getElementsList().stream()
             .filter(e -> e.getType() == ElementType.ELEMENT_TYPE_DATA)
@@ -511,15 +510,15 @@ public class CanvasValidationService {
                 "Consider consolidating data sources or implementing caching"
             ));
         }
-        
+
         return risks;
     }
-    
+
     /**
      * Calculate validation summary
      */
-    private ValidationSummary calculateSummary(List<ValidationIssue> issues, 
-                                               List<String> gaps, 
+    private ValidationSummary calculateSummary(List<ValidationIssue> issues,
+                                               List<String> gaps,
                                                List<RiskAssessment> risks) {
         int errors = (int) issues.stream()
             .filter(i -> i.getSeverity() == IssueSeverity.ISSUE_SEVERITY_ERROR)
@@ -530,7 +529,7 @@ public class CanvasValidationService {
         int info = (int) issues.stream()
             .filter(i -> i.getSeverity() == IssueSeverity.ISSUE_SEVERITY_INFO)
             .count();
-            
+
         return ValidationSummary.newBuilder()
             .setErrors(errors)
             .setWarnings(warnings)
@@ -539,21 +538,21 @@ public class CanvasValidationService {
             .setRisks(risks.size())
             .build();
     }
-    
+
     /**
      * Calculate validation score (0-100)
      */
     private int calculateScore(ValidationSummary summary) {
         int base = 100;
-        int score = base 
+        int score = base
             - (summary.getErrors() * 15)
             - (summary.getWarnings() * 5)
             - (summary.getInfo() * 1)
             - (summary.getGaps() * 10);
-            
+
         return Math.max(0, Math.min(100, score));
     }
-    
+
     /**
      * Create validation issue
      */
@@ -573,7 +572,7 @@ public class CanvasValidationService {
             .setPhase(phase)
             .build();
     }
-    
+
     /**
      * Create risk assessment
      */
@@ -589,7 +588,7 @@ public class CanvasValidationService {
             .setMitigation(mitigation)
             .build();
     }
-    
+
     /**
      * Get default validation options
      */

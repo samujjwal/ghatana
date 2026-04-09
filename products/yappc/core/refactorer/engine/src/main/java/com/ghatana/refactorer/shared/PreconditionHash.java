@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  *     // File has changed, skip the fix
  * }
  * }</pre>
- 
+
  * @doc.type class
  * @doc.purpose Handles precondition hash operations
  * @doc.layer core

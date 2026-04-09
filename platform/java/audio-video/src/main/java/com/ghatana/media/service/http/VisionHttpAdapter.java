@@ -27,17 +27,17 @@ import java.util.Map;
  * @doc.pattern Adapter
  */
 public class VisionHttpAdapter {
-    
+
     private final AudioVideoLibrary library;
     private final ObjectMapper mapper;
-    
+
     public VisionHttpAdapter(VisionConfig config) {
         this.library = AudioVideoLibrary.builder()
             .withVisionConfig(config)
             .build();
         this.mapper = new ObjectMapper();
     }
-    
+
     /**
      * Handle POST /api/v1/vision/detect
      */
@@ -45,7 +45,7 @@ public class VisionHttpAdapter {
         return request.getBody().map(body -> {
             try {
                 DetectRequest req = mapper.readValue(body.getString(), DetectRequest.class);
-                
+
                 try (VisionEngine vision = library.getVisionEngine()) {
                     ImageData image = ImageData.builder()
                         .data(req.imageData)
@@ -53,15 +53,15 @@ public class VisionHttpAdapter {
                         .height(req.height)
                         .format(ImageFormat.valueOf(req.format))
                         .build();
-                    
+
                     DetectionOptions options = DetectionOptions.builder()
                         .confidenceThreshold(req.confidenceThreshold)
                         .maxDetections(req.maxDetections)
                         .enableTracking(req.enableTracking)
                         .build();
-                    
+
                     DetectionResult result = vision.detect(image, options);
-                    
+
                     DetectResponse response = new DetectResponse(
                         result.imageWidth(),
                         result.imageHeight(),
@@ -79,7 +79,7 @@ public class VisionHttpAdapter {
                             ))
                             .toList()
                     );
-                    
+
                     return HttpResponse.ok200()
                         .withJson(mapper.writeValueAsString(response));
                 }
@@ -92,7 +92,7 @@ public class VisionHttpAdapter {
             }
         });
     }
-    
+
     /**
      * Handle GET /api/v1/vision/models
      */
@@ -100,7 +100,7 @@ public class VisionHttpAdapter {
         return Promise.ofCallable(() -> {
             try (VisionEngine vision = library.getVisionEngine()) {
                 List<DetectionModelInfo> models = vision.getAvailableModels();
-                
+
                 List<ModelJson> response = models.stream()
                     .map(m -> new ModelJson(
                         m.modelId(),
@@ -112,13 +112,13 @@ public class VisionHttpAdapter {
                         m.inputHeight()
                     ))
                     .toList();
-                
+
                 return HttpResponse.ok200()
                     .withJson(mapper.writeValueAsString(Map.of("models", response)));
             }
         });
     }
-    
+
     public record DetectRequest(
         byte[] imageData,
         int width,
@@ -128,27 +128,27 @@ public class VisionHttpAdapter {
         int maxDetections,
         boolean enableTracking
     ) {}
-    
+
     public record DetectResponse(
         int imageWidth,
         int imageHeight,
         long processingTimeMs,
         List<DetectedObjectJson> objects
     ) {}
-    
+
     public record DetectedObjectJson(
         String className,
         double confidence,
         BoundingBoxJson bbox
     ) {}
-    
+
     public record BoundingBoxJson(
         float x,
         float y,
         float width,
         float height
     ) {}
-    
+
     public record ModelJson(
         String modelId,
         String name,

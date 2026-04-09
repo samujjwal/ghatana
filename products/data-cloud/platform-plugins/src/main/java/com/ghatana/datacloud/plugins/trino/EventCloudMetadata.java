@@ -284,7 +284,7 @@ public class EventCloudMetadata implements ConnectorMetadata {
             int ordinalPosition
     ) implements ColumnHandle {
 
-        
+
 
     public String getName() {
         return name;

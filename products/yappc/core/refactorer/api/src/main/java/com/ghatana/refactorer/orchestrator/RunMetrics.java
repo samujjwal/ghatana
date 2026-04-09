@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Tracks detailed metrics for a polyfix run, including performance, resource usage, and operational
  * metrics.
- 
+
  * @doc.type class
  * @doc.purpose Handles run metrics operations
  * @doc.layer core

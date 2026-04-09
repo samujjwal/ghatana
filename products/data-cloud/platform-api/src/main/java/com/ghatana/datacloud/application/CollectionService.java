@@ -337,7 +337,7 @@ public class CollectionService {
 
                 MetaCollection collection = collectionOpt.get();
                 List<MetaField> fields = new ArrayList<>(collection.getFields());
-                
+
                 // Check for duplicate field name
                 boolean exists = fields.stream()
                     .anyMatch(f -> f.getName().equals(field.getName()));
@@ -356,7 +356,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.add.success",
                         "tenant", tenantId, "collection", collectionName);
-                    log.info("Field added: tenantId={}, collection={}, field={}", 
+                    log.info("Field added: tenantId={}, collection={}, field={}",
                         tenantId, collectionName, field.getName());
                 } else {
                     metrics.incrementCounter("collection.field.add.error",
@@ -396,7 +396,7 @@ public class CollectionService {
 
                 MetaCollection collection = collectionOpt.get();
                 List<MetaField> fields = new ArrayList<>(collection.getFields());
-                
+
                 // Find and update the field
                 boolean found = false;
                 for (int i = 0; i < fields.size(); i++) {
@@ -421,7 +421,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.update.success",
                         "tenant", tenantId, "collection", collectionName);
-                    log.info("Field updated: tenantId={}, collection={}, fieldId={}", 
+                    log.info("Field updated: tenantId={}, collection={}, fieldId={}",
                         tenantId, collectionName, fieldId);
                 } else {
                     metrics.incrementCounter("collection.field.update.error",
@@ -458,7 +458,7 @@ public class CollectionService {
 
                 MetaCollection collection = collectionOpt.get();
                 List<MetaField> fields = new ArrayList<>(collection.getFields());
-                
+
                 // Remove the field
                 boolean removed = fields.removeIf(f -> f.getId().equals(fieldId));
                 if (!removed) {
@@ -475,7 +475,7 @@ public class CollectionService {
                 if (ex == null) {
                     metrics.incrementCounter("collection.field.delete.success",
                         "tenant", tenantId, "collection", collectionName);
-                    log.info("Field deleted: tenantId={}, collection={}, fieldId={}", 
+                    log.info("Field deleted: tenantId={}, collection={}, fieldId={}",
                         tenantId, collectionName, fieldId);
                 } else {
                     metrics.incrementCounter("collection.field.delete.error",

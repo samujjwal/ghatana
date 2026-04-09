@@ -267,7 +267,7 @@ public final class ReportGenerator implements AutoCloseable {
             }
 
             serverFuture =
-                    Promise.ofBlocking(BLOCKING_EXECUTOR, 
+                    Promise.ofBlocking(BLOCKING_EXECUTOR,
                             () -> {
                                 try {
                                     reportServer.start();

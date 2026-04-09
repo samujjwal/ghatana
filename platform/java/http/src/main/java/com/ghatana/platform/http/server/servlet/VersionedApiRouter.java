@@ -1,7 +1,5 @@
 package com.ghatana.platform.http.server.servlet;
 
-import io.activej.http.HttpMethod;
-import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -10,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * API versioning router that supports URI-prefix versioning (/api/v1/, /api/v2/).

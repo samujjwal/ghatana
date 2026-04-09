@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for Core Platform components.
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration tests validating core platform component interactions
  * @doc.layer platform
@@ -38,14 +38,14 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle concurrent promise execution correctly")
     void shouldHandleConcurrentPromiseExecution() {
         AtomicInteger counter = new AtomicInteger(0);
-        
+
         Integer result = run(
             Promise.of(1)
                 .then(v -> Promise.of(counter.incrementAndGet()))
                 .then(v -> Promise.of(counter.incrementAndGet()))
                 .then(v -> Promise.of(counter.incrementAndGet()))
         );
-        
+
         assertThat(result).isEqualTo(3);
         assertThat(counter.get()).isEqualTo(3);
     }
@@ -57,7 +57,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
             Promise.of(1)
                 .then(v -> Promise.ofException(new RuntimeException("Test error")))
         );
-        
+
         assertThat(error).hasMessageContaining("Test error");
     }
 
@@ -67,7 +67,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         Throwable error = runExpectFailure(
             Promise.<String>ofException(new RuntimeException("Primary failed"))
         );
-        
+
         assertThat(error).isInstanceOf(RuntimeException.class);
     }
 
@@ -80,7 +80,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
                     .then(v2 -> Promise.of(v2 + 1)
                         .then(v3 -> Promise.of(v3 + 1))))
         );
-        
+
         assertThat(result).isEqualTo(4);
     }
 
@@ -88,14 +88,14 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle conditional promise execution")
     void shouldHandleConditionalPromiseExecution() {
         boolean condition = true;
-        
+
         String result = run(
             Promise.of(condition)
-                .then(cond -> cond ? 
-                    Promise.of("Condition true") : 
+                .then(cond -> cond ?
+                    Promise.of("Condition true") :
                     Promise.of("Condition false"))
         );
-        
+
         assertThat(result).isEqualTo("Condition true");
     }
 
@@ -105,7 +105,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         Integer result = run(
             Promise.of(10).combine(Promise.of(5), (b, m) -> b * m)
         );
-        
+
         assertThat(result).isEqualTo(50);
     }
 
@@ -115,7 +115,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         java.util.List<Integer> result = run(
             ActiveJPatterns.sequential(Promise.of(1), Promise.of(2), Promise.of(3))
         );
-        
+
         assertThat(result).containsExactly(1, 2, 3);
     }
 
@@ -125,7 +125,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         java.util.List<Integer> result = run(
             ActiveJPatterns.parallel(Promise.of(1), Promise.of(2), Promise.of(3))
         );
-        
+
         assertThat(result).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -133,12 +133,12 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle promise retry logic")
     void shouldHandlePromiseRetryLogic() {
         AtomicInteger attempts = new AtomicInteger(0);
-        
+
         Integer result = run(
             ActiveJPatterns.withRetry(
                 () -> {
                     int attempt = attempts.incrementAndGet();
-                    return attempt < 3 ? 
+                    return attempt < 3 ?
                         Promise.ofException(new RuntimeException("Attempt " + attempt)) :
                         Promise.of(attempt);
                 },
@@ -147,7 +147,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
                 java.time.Duration.ofMillis(10)
             )
         );
-        
+
         assertThat(result).isEqualTo(3);
     }
 
@@ -157,7 +157,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         String result = run(
             Promise.of("Success value")
         );
-        
+
         assertThat(result).isEqualTo("Success value");
     }
 
@@ -167,7 +167,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         java.util.List<Integer> result = run(
             ActiveJPatterns.sequential()
         );
-        
+
         assertThat(result).isEmpty();
     }
 
@@ -177,7 +177,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
         java.util.List<Integer> result = run(
             ActiveJPatterns.parallel()
         );
-        
+
         assertThat(result).isEmpty();
     }
 }

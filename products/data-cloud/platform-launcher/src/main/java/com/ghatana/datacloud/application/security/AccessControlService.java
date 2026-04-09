@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * AccessControlService accessControl = new AccessControlService(
  *         collectionRepository, metricsCollector);

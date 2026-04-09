@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link AesGcmEncryptionProvider} and encryption round-trips.

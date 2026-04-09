@@ -56,7 +56,7 @@ import java.util.Optional;
  * @doc.pattern Port
  */
 public interface UserRepository {
-    
+
     /**
      * Saves or updates a user.
      *
@@ -64,7 +64,7 @@ public interface UserRepository {
      * @return Promise of saved user
      */
     Promise<User> save(User user);
-    
+
     /**
      * Finds a user by tenant and user ID.
      *
@@ -73,7 +73,7 @@ public interface UserRepository {
      * @return Promise of Optional user (empty if not found)
      */
     Promise<Optional<User>> findByUserId(TenantId tenantId, UserId userId);
-    
+
     /**
      * Finds a user by tenant and username.
      *
@@ -82,7 +82,7 @@ public interface UserRepository {
      * @return Promise of Optional user (empty if not found)
      */
     Promise<Optional<User>> findByUsername(TenantId tenantId, String username);
-    
+
     /**
      * Finds a user by tenant and email.
      *
@@ -91,7 +91,7 @@ public interface UserRepository {
      * @return Promise of Optional user (empty if not found)
      */
     Promise<Optional<User>> findByEmail(TenantId tenantId, String email);
-    
+
     /**
      * Lists all active users for a tenant.
      *
@@ -99,7 +99,7 @@ public interface UserRepository {
      * @return Promise of list of active users
      */
     Promise<List<User>> findAllByTenant(TenantId tenantId);
-    
+
     /**
      * Authenticates a user with username and password.
      *
@@ -109,7 +109,7 @@ public interface UserRepository {
      * @return Promise of Optional user (empty if authentication failed)
      */
     Promise<Optional<User>> authenticate(TenantId tenantId, String username, String password);
-    
+
     /**
      * Updates user password (hashes password before storage).
      *
@@ -119,7 +119,7 @@ public interface UserRepository {
      * @return Promise of void
      */
     Promise<Void> updatePassword(TenantId tenantId, UserId userId, String newPassword);
-    
+
     /**
      * Locks a user account (prevents authentication).
      *
@@ -128,7 +128,7 @@ public interface UserRepository {
      * @return Promise of void
      */
     Promise<Void> lockUser(TenantId tenantId, UserId userId);
-    
+
     /**
      * Unlocks a user account.
      *
@@ -137,7 +137,7 @@ public interface UserRepository {
      * @return Promise of void
      */
     Promise<Void> unlockUser(TenantId tenantId, UserId userId);
-    
+
     /**
      * Deletes a user (soft delete recommended).
      *

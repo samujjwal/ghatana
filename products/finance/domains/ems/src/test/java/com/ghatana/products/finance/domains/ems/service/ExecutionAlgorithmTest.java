@@ -1,6 +1,5 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -228,15 +227,15 @@ class ExecutionAlgorithmTest {
             return calculateSlices(totalQuantity, startTime, endTime, sliceCount, 0L);
         }
 
-        List<AlgorithmSlice> calculateSlices(long totalQuantity, Instant startTime, Instant endTime, 
+        List<AlgorithmSlice> calculateSlices(long totalQuantity, Instant startTime, Instant endTime,
                                             int sliceCount, long minSliceSize) {
             if (totalQuantity <= 0) {
                 throw new IllegalArgumentException("Quantity must be positive");
             }
-            
+
             long sliceSize = Math.max(totalQuantity / sliceCount, minSliceSize);
             long intervalSeconds = (endTime.getEpochSecond() - startTime.getEpochSecond()) / sliceCount;
-            
+
             return java.util.stream.IntStream.range(0, sliceCount)
                 .mapToObj(i -> new AlgorithmSlice(
                     startTime.plusSeconds(i * intervalSeconds),
@@ -245,13 +244,13 @@ class ExecutionAlgorithmTest {
                 .toList();
         }
 
-        List<AlgorithmSlice> calculateSlicesWithUrgency(long totalQuantity, Instant startTime, 
+        List<AlgorithmSlice> calculateSlicesWithUrgency(long totalQuantity, Instant startTime,
                                                         Instant endTime, int sliceCount, double urgency) {
             long intervalSeconds = (endTime.getEpochSecond() - startTime.getEpochSecond()) / sliceCount;
             double totalWeight = java.util.stream.IntStream.range(0, sliceCount)
                 .mapToDouble(i -> Math.pow(urgency, sliceCount - i - 1))
                 .sum();
-            
+
             return java.util.stream.IntStream.range(0, sliceCount)
                 .mapToObj(i -> {
                     double weight = Math.pow(urgency, sliceCount - i - 1);
@@ -272,12 +271,12 @@ class ExecutionAlgorithmTest {
             return (long) (marketVolume * effectiveRate);
         }
 
-        PovProgress calculateProgress(long totalQuantity, long executedQuantity, 
+        PovProgress calculateProgress(long totalQuantity, long executedQuantity,
                                      long currentMarketVolume, double targetRate) {
             double percentComplete = (executedQuantity * 100.0) / totalQuantity;
             long targetExecuted = (long) (currentMarketVolume * targetRate);
             boolean onTarget = executedQuantity >= (targetExecuted * 0.9);
-            
+
             return new PovProgress(percentComplete, onTarget, totalQuantity - executedQuantity);
         }
     }

@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Base implementation of {@link RefactoringContext}. 
+ * Base implementation of {@link RefactoringContext}.
  * @doc.type class
  * @doc.purpose Handles base refactoring context operations
  * @doc.layer core

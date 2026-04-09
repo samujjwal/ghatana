@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * Generates and compares fingerprints for actions to detect regressions.
  * Uses SHA-256 for fingerprint generation.
- 
+
  * @doc.type class
  * @doc.purpose Handles failure fingerprint operations
  * @doc.layer core
@@ -32,12 +32,12 @@ public class FailureFingerprint {
     public String generateFingerprint(String content, String rule, String context) {
         Objects.requireNonNull(content, "Content cannot be null");
         Objects.requireNonNull(rule, "Rule cannot be null");
-        
-        String input = String.format("%s:%s:%s", 
-            rule, 
-            context != null ? context : "", 
+
+        String input = String.format("%s:%s:%s",
+            rule,
+            context != null ? context : "",
             normalizeContent(content));
-        
+
         try {
             MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));

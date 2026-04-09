@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Provides automated fixes for common Bash issues detected by shellcheck. 
+/** Provides automated fixes for common Bash issues detected by shellcheck.
  * @doc.type class
  * @doc.purpose Handles bash codemods operations
  * @doc.layer core

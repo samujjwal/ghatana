@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 /**
  * Default implementation of the KeyManager interface.
  * Manages cryptographic keys in memory with support for key rotation.
- 
+
  *
  * @doc.type class
  * @doc.purpose Default key manager
@@ -46,7 +46,7 @@ public class DefaultKeyManager implements KeyManager {
         this.keyGenerator = keyGenerator;
         this.algorithm = algorithm;
         this.executorService = executorService;
-        logger.info("Initialized DefaultKeyManager with {} keys, current key: {}", 
+        logger.info("Initialized DefaultKeyManager with {} keys, current key: {}",
             keys.size(), currentKeyId);
     }
 

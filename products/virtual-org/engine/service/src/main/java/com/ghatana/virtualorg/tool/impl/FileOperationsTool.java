@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.Duration;
@@ -54,13 +53,13 @@ import java.util.stream.Stream;
  *     "/workspace",  // base directory
  *     30             // timeout seconds
  * );
- * 
+ *
  * // Read file
  * ToolResult content = fileTool.execute(Map.of(
  *     "operation", "read",
  *     "path", "src/main.java"
  * )).getResult();
- * 
+ *
  * // Search files
  * ToolResult files = fileTool.execute(Map.of(
  *     "operation", "search",

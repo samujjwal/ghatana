@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Handles authentication endpoints for the security module.
- 
+
  *
  * @doc.type class
  * @doc.purpose Auth controller
@@ -22,15 +22,15 @@ import java.util.List;
 */
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-    
+
     private final List<AuthenticationProvider> authenticationProviders;
     private final JwtTokenProvider jwtTokenProvider;
-    
+
     public AuthController(List<AuthenticationProvider> authenticationProviders, JwtTokenProvider jwtTokenProvider) {
         this.authenticationProviders = authenticationProviders;
         this.jwtTokenProvider = jwtTokenProvider;
     }
-    
+
     public Promise<HttpResponse> handleLogin(HttpRequest request) {
 
             return ResponseBuilder.ok()

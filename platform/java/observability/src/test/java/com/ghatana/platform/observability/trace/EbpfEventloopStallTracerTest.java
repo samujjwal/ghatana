@@ -17,7 +17,7 @@ class EbpfEventloopStallTracerTest {
 
     private MeterRegistry registry;
     private EbpfEventloopStallTracer tracer;
-    
+
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
@@ -54,12 +54,12 @@ class EbpfEventloopStallTracerTest {
                         counter -> assertThat(counter.count()).isEqualTo(0.0)
                 );
     }
-    
+
     @Test
     void shouldRecordOverdueTasks() {
         // When
         tracer.onScheduledTaskOverdue(150L, false);
-        
+
         // Then
         assertThat(registry.counter("eventloop.stall.count").count()).isEqualTo(1.0);
     }

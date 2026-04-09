@@ -181,7 +181,7 @@ public record CIPipelineSpec(
             Map<String, String> environment,
             boolean parallel) {
 
-        
+
 
     public static Builder builder() {
         return new Builder();

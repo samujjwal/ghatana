@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * WITHIN operator that applies temporal constraints to its operand.
- * 
+ *
  * <p>This operator constrains its operand to match only within a specified time window.
  * For example, WITHIN(A, timeWindow=60000) matches event A only if it occurs within
  * 60 seconds of the pattern evaluation start. Supports optional start/end time bounds.
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Temporal Constraint Operator - Time-bounded matching (WITHIN) for absolute or relative
@@ -51,7 +51,7 @@ import java.util.Map;
  *                  .parameter("timeWindow", 60000L)
  *                  .parameter("inclusive", true)
  *                  .build()
- *              
+ *
  *              // Absolute time bounds (business hours only)
  *              OperatorSpec.builder()
  *                  .type("WITHIN")
@@ -70,7 +70,7 @@ import java.util.Map;
  *                 runtime matching logic.
  */
 public class WithinOperator implements Operator {
-    
+
     private static final String TYPE = "WITHIN";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -80,113 +80,108 @@ public class WithinOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for WITHIN operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for WithinOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount != 1) {
             throw new PatternValidationException(
                 String.format("WITHIN operator requires exactly 1 operand, got %d", operandCount));
         }
-        
+
         // Validate operand
         if (spec.getOperands() != null && !spec.getOperands().isEmpty()) {
             OperatorSpec operand = spec.getOperands().get(0);
             if (operand == null) {
                 throw new PatternValidationException("WITHIN operator operand cannot be null");
             }
-            
+
             if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                 throw new PatternValidationException("WITHIN operator operand must have a valid type");
             }
         } else {
             throw new PatternValidationException("WITHIN operator must have exactly one operand");
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             throw new PatternValidationException("WITHIN operator requires parameters");
         }
-        
+
         // Validate timeWindow parameter (required for WITHIN operator)
         Object timeWindow = parameters.get("timeWindow");
         if (timeWindow == null) {
             throw new PatternValidationException("WITHIN operator requires timeWindow parameter");
         }
-        
+
         if (!(timeWindow instanceof Number)) {
             throw new PatternValidationException("WITHIN operator timeWindow parameter must be a number");
         }
-        
+
         long timeWindowMs = ((Number) timeWindow).longValue();
         if (timeWindowMs <= 0) {
             throw new PatternValidationException("WITHIN operator timeWindow parameter must be positive");
         }
-        
+
         // Validate startTime parameter if present
         Object startTime = parameters.get("startTime");
         if (startTime != null) {
             if (!(startTime instanceof Number)) {
                 throw new PatternValidationException("WITHIN operator startTime parameter must be a number");
             }
-            
+
             long startTimeMs = ((Number) startTime).longValue();
             if (startTimeMs < 0) {
                 throw new PatternValidationException("WITHIN operator startTime parameter must be non-negative");
             }
         }
-        
+
         // Validate endTime parameter if present
         Object endTime = parameters.get("endTime");
         if (endTime != null) {
             if (!(endTime instanceof Number)) {
                 throw new PatternValidationException("WITHIN operator endTime parameter must be a number");
             }
-            
+
             long endTimeMs = ((Number) endTime).longValue();
             if (endTimeMs < 0) {
                 throw new PatternValidationException("WITHIN operator endTime parameter must be non-negative");
             }
         }
-        
+
         // Validate inclusive parameter if present
         Object inclusive = parameters.get("inclusive");
         if (inclusive != null && !(inclusive instanceof Boolean)) {
             throw new PatternValidationException("WITHIN operator inclusive parameter must be a boolean");
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

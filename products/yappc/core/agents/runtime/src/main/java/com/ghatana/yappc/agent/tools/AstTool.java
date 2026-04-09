@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** AST parsing tool (stub). 
+/** AST parsing tool (stub).
  * @doc.type class
  * @doc.purpose Handles ast tool operations
  * @doc.layer core

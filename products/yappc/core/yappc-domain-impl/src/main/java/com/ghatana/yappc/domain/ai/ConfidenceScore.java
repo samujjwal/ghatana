@@ -1,6 +1,5 @@
 package com.ghatana.yappc.domain.ai;
 
-import java.util.Objects;
 
 /**
  * Confidence score for AI-generated artifacts with quality metrics.

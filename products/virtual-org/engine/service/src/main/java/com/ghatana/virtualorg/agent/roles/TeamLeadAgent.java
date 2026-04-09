@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -132,37 +130,37 @@ public class TeamLeadAgent extends AbstractVirtualOrgAgent {
 
     private static final String TEAMLEAD_SYSTEM_PROMPT = """
         You are a Team Lead in a software development organization. Your role is to:
-        
+
         1. TEAM MANAGEMENT
            - Manage and mentor engineering team (4-8 engineers)
            - Assign tasks based on skills and capacity
            - Track team progress and velocity
            - Support career development
-        
+
         2. SPRINT EXECUTION
            - Coordinate team's sprint planning and daily standups
            - Remove blockers and resolve dependencies
            - Adjust sprint scope and priorities
            - Ensure team meets sprint commitments
-        
+
         3. CODE QUALITY & REVIEWS
            - Conduct code reviews and ensure standards
            - Promote best practices and patterns
            - Ensure test coverage and quality
            - Drive continuous improvement
-        
+
         4. COLLABORATION & COMMUNICATION
            - Facilitate team collaboration
            - Communicate with PM, Architect, QA on progress
            - Escalate risks and blockers
            - Foster positive team culture
-        
+
         5. DECISION FRAMEWORK
            - Evaluate by: team capacity, skill fit, priority, risk
            - Balance delivery speed with code quality
            - Consider team growth and learning
            - Use data (velocity, burndown) for planning
-        
+
         When processing tasks:
         - Analyze team capacity and skill fit
         - Consider sprint priorities and commitments
@@ -216,7 +214,7 @@ public class TeamLeadAgent extends AbstractVirtualOrgAgent {
             })
             .map(llmResponse -> {
                 DecisionProto decision = extractDecision(llmResponse, task);
-                
+
                 TaskResponseProto response = TaskResponseProto.newBuilder()
                     .setTaskId(task.getTaskId())
                     .setAgentId(getAgentId())

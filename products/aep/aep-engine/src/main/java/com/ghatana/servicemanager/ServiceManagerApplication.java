@@ -2,7 +2,6 @@ package com.ghatana.servicemanager;
 
 import com.ghatana.servicemanager.config.ServiceManagerConfig;
 import com.ghatana.servicemanager.service.ServiceManager;
-import com.ghatana.servicemanager.service.ServiceManagerImpl;
 
 import com.sun.net.httpserver.HttpServer;
 import io.activej.inject.Injector;
@@ -17,15 +16,14 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Service Manager Application.
- * 
+ *
  * Orchestrates the startup and management of all AEP services
  * based on configuration. Provides a single entrypoint for
  * running multiple services.
- * 
+ *
  * @doc.type class
  * @doc.purpose Service orchestration and management
  * @doc.layer orchestration
@@ -70,13 +68,13 @@ public class ServiceManagerApplication {
         try {
             // Start enabled services
             serviceManager.startEnabledServices();
-            
+
             LOG.info("All enabled services started successfully");
             LOG.info("Services running: {}", serviceManager.getRunningServices());
-            
+
             // Wait for shutdown signal
             shutdownLatch.await();
-            
+
         } catch (Exception e) {
             LOG.error("Error starting services", e);
             System.exit(1);

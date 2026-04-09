@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.observability.trace.MockTraceStorage;
 import com.ghatana.platform.testing.activej.ActiveJServletTestUtil;
 import com.ghatana.platform.testing.activej.EventloopExtension;
-import com.ghatana.platform.testing.activej.EventloopTestUtil;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -246,7 +245,7 @@ class QueryHandlerTest {
     @Test
     @DisplayName("GET /api/v1/traces - should accept combined filters")
     void shouldAcceptCombinedFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) {
-        HttpRequest request = HttpRequest.builder(HttpMethod.GET, 
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET,
                 "http://localhost/api/v1/traces?serviceName=svc&operationName=op&status=OK&limit=25")
                 .withHeader(HttpHeaders.ACCEPT, "application/json")
                 .build();

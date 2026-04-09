@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * ServiceLoader provider for Redis hot tier plugin.
- * 
+ *
  * <p>This provider enables automatic discovery of the Redis
  * hot tier storage plugin via Java's ServiceLoader mechanism.
  *

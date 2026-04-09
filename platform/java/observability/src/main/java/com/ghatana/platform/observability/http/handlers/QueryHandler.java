@@ -108,13 +108,13 @@ public class QueryHandler {
                     }
 
                     TraceInfo trace = matchingTrace.get();
-                    logger.debug("Found trace: traceId={}, spanCount={}", 
+                    logger.debug("Found trace: traceId={}, spanCount={}",
                             trace.traceId(), trace.spanCount());
                     return Promise.of(createJsonResponse(200, trace));
                 }, ex -> {
                     logger.error("Failed to query trace: {}", traceId, ex);
                     ObsHttpError error = ObsHttpError.internalError(
-                            "Failed to query trace: " + ex.getMessage(), 
+                            "Failed to query trace: " + ex.getMessage(),
                             request.getPath());
                     return Promise.of(createJsonResponse(500, error));
                 });
@@ -135,15 +135,15 @@ public class QueryHandler {
             // Parse query parameters
             TraceQuery query = parseQueryParameters(request);
 
-            logger.debug("Searching traces with filters: serviceName={}, status={}, limit={}", 
-                    query.getServiceName().orElse("*"), 
-                    query.getStatus().orElse("*"), 
+            logger.debug("Searching traces with filters: serviceName={}, status={}, limit={}",
+                    query.getServiceName().orElse("*"),
+                    query.getStatus().orElse("*"),
                     query.getLimit());
 
             return storage.queryTraces(query)
                     .then(traces -> {
                         logger.info("Found {} traces matching query", traces.size());
-                        
+
                         // Wrap results in response object
                         SearchResponse response = new SearchResponse(
                                 traces.size(),
@@ -151,12 +151,12 @@ public class QueryHandler {
                                 query.getOffset(),
                                 traces
                         );
-                        
+
                         return Promise.of(createJsonResponse(200, response));
                     }, ex -> {
                         logger.error("Failed to search traces", ex);
                         ObsHttpError error = ObsHttpError.internalError(
-                                "Failed to search traces: " + ex.getMessage(), 
+                                "Failed to search traces: " + ex.getMessage(),
                                 request.getPath());
                         return Promise.of(createJsonResponse(500, error));
                     });
@@ -164,7 +164,7 @@ public class QueryHandler {
         } catch (IllegalArgumentException ex) {
             logger.warn("Invalid query parameters: {}", ex.getMessage());
             ObsHttpError error = ObsHttpError.badRequest(
-                    "Invalid query parameters: " + ex.getMessage(), 
+                    "Invalid query parameters: " + ex.getMessage(),
                     request.getPath());
             return Promise.of(createJsonResponse(400, error));
         }
@@ -202,11 +202,11 @@ public class QueryHandler {
         int limit = getQueryParam(request, "limit")
                 .map(s -> parseInt(s, "limit"))
                 .orElse(DEFAULT_LIMIT);
-        
+
         if (limit > MAX_LIMIT) {
             throw new IllegalArgumentException("limit cannot exceed " + MAX_LIMIT);
         }
-        
+
         int offset = getQueryParam(request, "offset")
                 .map(s -> parseInt(s, "offset"))
                 .orElse(0);

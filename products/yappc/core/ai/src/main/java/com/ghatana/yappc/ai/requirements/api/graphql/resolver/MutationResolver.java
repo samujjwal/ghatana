@@ -214,4 +214,3 @@ public class MutationResolver /* implements GraphQLMutationResolver */ {
         ProjectStatus status
     ) {}
 }
-

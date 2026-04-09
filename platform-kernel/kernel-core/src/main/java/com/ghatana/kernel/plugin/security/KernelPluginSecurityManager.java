@@ -4,9 +4,6 @@ import io.activej.promise.Promise;
 
 import java.nio.file.Path;
 import java.security.MessageDigest;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Set;

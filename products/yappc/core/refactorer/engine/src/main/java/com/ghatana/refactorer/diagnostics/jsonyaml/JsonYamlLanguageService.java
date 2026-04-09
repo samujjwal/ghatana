@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @doc.language json,yaml
  * @doc.tool ajv
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.purpose Handles json yaml language service operations
  * @doc.layer core
  * @doc.pattern Service
@@ -105,7 +105,7 @@ public final class JsonYamlLanguageService implements LanguageService {
             PolyfixProjectContext context, NodeBridge nodeBridge, Path file) {
         return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
             List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
-            
+
             try {
                 Path schemaFile = findSchemaForFile(file, context.root());
                 if (schemaFile == null) {
@@ -149,7 +149,7 @@ public final class JsonYamlLanguageService implements LanguageService {
                 diagnostics.add(
                         createErrorDiagnostic(file, "Validation error: " + e.getMessage()));
             }
-            
+
             return diagnostics;
         });
     }

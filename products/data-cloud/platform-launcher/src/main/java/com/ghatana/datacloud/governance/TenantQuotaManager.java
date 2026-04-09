@@ -24,7 +24,7 @@ import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
 
 /**
  * Tenant resource quota management and monitoring.
- * 
+ *
  * <p>This service provides comprehensive resource quota management:
  * <ul>
  *   <li>Storage quotas (per-tenant data limits)</li>
@@ -33,7 +33,7 @@ import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
  *   <li>Compute resource quotas (CPU, memory)</li>
  *   <li>Event streaming quotas (events per second)</li>
  * </ul>
- * 
+ *
  * <h2>Quota Enforcement</h2>
  * <ul>
  *   <li>Hard limits: Operations rejected when exceeded</li>
@@ -41,16 +41,16 @@ import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
  *   <li>Throttling: Rate limiting for API requests</li>
  *   <li>Alerts: Notifications when quotas are exceeded</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Tenant resource quota management, enforcement, and monitoring
  * @doc.layer governance
  * @doc.pattern ResourceGovernance
  */
 public class TenantQuotaManager {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(TenantQuotaManager.class);
-    
+
     // Default quota limits
     private static final long DEFAULT_MAX_STORAGE_MB = 10240; // 10 GB
     private static final int DEFAULT_MAX_CONCURRENT_CONNECTIONS = 100;
@@ -58,56 +58,56 @@ public class TenantQuotaManager {
     private static final int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
     private static final int DEFAULT_MAX_COLLECTIONS = 100;
     private static final int DEFAULT_MAX_ENTITIES_PER_COLLECTION = 1000000;
-    
+
     private final DataSource dataSource;
     private final MeterRegistry meterRegistry;
     private final ExecutorService blockingExecutor;
-    
+
     // In-memory quota tracking
     private final Map<String, TenantQuotaConfig> tenantQuotas = new ConcurrentHashMap<>();
     private final Map<String, AtomicInteger> currentConnections = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> requestsLastMinute = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> eventsLastSecond = new ConcurrentHashMap<>();
     private final Map<String, TenantUsageStats> tenantUsage = new ConcurrentHashMap<>();
-    
+
     // Metrics
     private final Timer quotaCheckTime;
     private final io.micrometer.core.instrument.Counter quotaViolations;
-    
+
     public TenantQuotaManager(DataSource dataSource, MeterRegistry meterRegistry) {
         this.dataSource = dataSource;
         this.meterRegistry = meterRegistry;
         this.blockingExecutor = JpaThreadPoolConfig.fromEnvironment().createExecutorService();
-        
+
         // Initialize metrics
         this.quotaCheckTime = Timer.builder("datacloud.quota.check.time")
             .description("Time spent checking quotas")
             .register(meterRegistry);
-        
+
         this.quotaViolations = io.micrometer.core.instrument.Counter.builder("datacloud.quota.violations.total")
             .description("Total quota violations")
             .register(meterRegistry);
-        
+
         // Register tenant usage gauges
         Gauge.builder("datacloud.tenant.storage.used.mb", this, TenantQuotaManager::getTotalStorageUsedMB)
             .description("Storage used by tenant in MB")
             .register(meterRegistry);
-        
+
         Gauge.builder("datacloud.tenant.connections.active", this, TenantQuotaManager::getTotalActiveConnections)
             .description("Active connections per tenant")
             .register(meterRegistry);
-        
+
         // Start background cleanup tasks
         startBackgroundTasks();
     }
-    
+
     // ====================================================================================
     // Quota Configuration Management
     // ====================================================================================
-    
+
     /**
      * Set quota configuration for a tenant.
-     * 
+     *
      * @param tenantId The tenant ID
      * @param config The quota configuration
      * @return Promise<Void>
@@ -128,7 +128,7 @@ public class TenantQuotaManager {
                      "max_collections = EXCLUDED.max_collections, " +
                      "max_entities_per_collection = EXCLUDED.max_entities_per_collection, " +
                      "updated_at = EXCLUDED.updated_at")) {
-                
+
                 stmt.setString(1, tenantId);
                 stmt.setLong(2, config.getMaxStorageMB());
                 stmt.setInt(3, config.getMaxConcurrentConnections());
@@ -137,24 +137,24 @@ public class TenantQuotaManager {
                 stmt.setInt(6, config.getMaxCollections());
                 stmt.setInt(7, config.getMaxEntitiesPerCollection());
                 stmt.setTimestamp(8, java.sql.Timestamp.from(Instant.now()));
-                
+
                 stmt.executeUpdate();
-                
+
                 // Update in-memory cache
                 tenantQuotas.put(tenantId, config);
-                
+
                 logger.info("Quota configuration updated for tenant: {}", tenantId);
-                
+
             } catch (SQLException e) {
                 logger.error("Failed to set quota for tenant: {}", tenantId, e);
                 throw new RuntimeException("Failed to set tenant quota", e);
             }
         });
     }
-    
+
     /**
      * Get quota configuration for a tenant.
-     * 
+     *
      * @param tenantId The tenant ID
      * @return Promise<TenantQuotaConfig>
      */
@@ -165,15 +165,15 @@ public class TenantQuotaManager {
             if (cached != null) {
                 return cached;
             }
-            
+
             // Load from database
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(
                      "SELECT * FROM tenant_quotas WHERE tenant_id = ?")) {
-                
+
                 stmt.setString(1, tenantId);
                 ResultSet rs = stmt.executeQuery();
-                
+
                 if (rs.next()) {
                     TenantQuotaConfig config = new TenantQuotaConfig(
                         rs.getLong("max_storage_mb"),
@@ -183,24 +183,24 @@ public class TenantQuotaManager {
                         rs.getInt("max_collections"),
                         rs.getInt("max_entities_per_collection")
                     );
-                    
+
                     tenantQuotas.put(tenantId, config);
                     return config;
                 } else {
                     // Return default quotas
                     return getDefaultQuota();
                 }
-                
+
             } catch (SQLException e) {
                 logger.error("Failed to get quota for tenant: {}", tenantId, e);
                 return getDefaultQuota();
             }
         });
     }
-    
+
     /**
      * Check if operation is within quota limits.
-     * 
+     *
      * @param tenantId The tenant ID
      * @param operationType Type of operation
      * @param resourceAmount Amount of resource being used
@@ -208,64 +208,64 @@ public class TenantQuotaManager {
      */
     public Promise<QuotaCheckResult> checkQuota(String tenantId, String operationType, long resourceAmount) {
         Instant start = Instant.now();
-        
+
         return getTenantQuota(tenantId)
             .map(config -> {
                 QuotaCheckResult result = performQuotaCheck(tenantId, operationType, resourceAmount, config);
-                
+
                 // Record metrics
                 quotaCheckTime.record(Duration.between(start, Instant.now()));
-                
+
                 if (!result.isAllowed()) {
                     quotaViolations.increment();
-                    logger.warn("Quota violation for tenant {}: {} - {}", 
+                    logger.warn("Quota violation for tenant {}: {} - {}",
                         tenantId, operationType, result.getReason());
                     alertOnQuotaViolation(tenantId, operationType, result);
                 }
-                
+
                 return result;
             });
     }
-    
-    private QuotaCheckResult performQuotaCheck(String tenantId, String operationType, 
+
+    private QuotaCheckResult performQuotaCheck(String tenantId, String operationType,
                                                 long resourceAmount, TenantQuotaConfig config) {
-        
+
         switch (operationType.toUpperCase()) {
             case "STORAGE":
                 return checkStorageQuota(tenantId, resourceAmount, config);
-                
+
             case "CONNECTION":
                 return checkConnectionQuota(tenantId, config);
-                
+
             case "REQUEST":
                 return checkRequestQuota(tenantId, config);
-                
+
             case "EVENT":
                 return checkEventQuota(tenantId, resourceAmount, config);
-                
+
             case "COLLECTION":
                 return checkCollectionQuota(tenantId, config);
-                
+
             case "ENTITY":
                 return checkEntityQuota(tenantId, resourceAmount, config);
-                
+
             default:
                 return new QuotaCheckResult(true, null, 0, 0);
         }
     }
-    
+
     // ====================================================================================
     // Individual Quota Checks
     // ====================================================================================
-    
+
     private QuotaCheckResult checkStorageQuota(String tenantId, long additionalBytes, TenantQuotaConfig config) {
         long currentUsageMB = getTenantStorageUsageMB(tenantId);
         long additionalMB = additionalBytes / (1024 * 1024);
         long projectedUsageMB = currentUsageMB + additionalMB;
-        
+
         if (projectedUsageMB > config.getMaxStorageMB()) {
             return new QuotaCheckResult(
-                false, 
+                false,
                 "Storage quota exceeded. Current: " + currentUsageMB + "MB, " +
                 "Projected: " + projectedUsageMB + "MB, " +
                 "Limit: " + config.getMaxStorageMB() + "MB",
@@ -273,7 +273,7 @@ public class TenantQuotaManager {
                 config.getMaxStorageMB()
             );
         }
-        
+
         // Warning at 80% of quota
         if (projectedUsageMB > config.getMaxStorageMB() * 0.8) {
             return new QuotaCheckResult(
@@ -283,14 +283,14 @@ public class TenantQuotaManager {
                 config.getMaxStorageMB()
             );
         }
-        
+
         return new QuotaCheckResult(true, null, projectedUsageMB, config.getMaxStorageMB());
     }
-    
+
     private QuotaCheckResult checkConnectionQuota(String tenantId, TenantQuotaConfig config) {
         AtomicInteger current = currentConnections.computeIfAbsent(tenantId, k -> new AtomicInteger(0));
         int currentCount = current.incrementAndGet();
-        
+
         if (currentCount > config.getMaxConcurrentConnections()) {
             current.decrementAndGet();
             return new QuotaCheckResult(
@@ -300,73 +300,73 @@ public class TenantQuotaManager {
                 config.getMaxConcurrentConnections()
             );
         }
-        
+
         return new QuotaCheckResult(true, null, currentCount, config.getMaxConcurrentConnections());
     }
-    
+
     private QuotaCheckResult checkRequestQuota(String tenantId, TenantQuotaConfig config) {
         AtomicLong current = requestsLastMinute.computeIfAbsent(tenantId, k -> new AtomicLong(0));
         long currentCount = current.incrementAndGet();
-        
+
         if (currentCount > config.getMaxRequestsPerMinute()) {
             return new QuotaCheckResult(
                 false,
-                "Rate limit exceeded. Requests last minute: " + currentCount + 
+                "Rate limit exceeded. Requests last minute: " + currentCount +
                 ", Limit: " + config.getMaxRequestsPerMinute() + "/min",
                 currentCount,
                 config.getMaxRequestsPerMinute()
             );
         }
-        
+
         return new QuotaCheckResult(true, null, currentCount, config.getMaxRequestsPerMinute());
     }
-    
+
     private QuotaCheckResult checkEventQuota(String tenantId, long eventCount, TenantQuotaConfig config) {
         AtomicLong current = eventsLastSecond.computeIfAbsent(tenantId, k -> new AtomicLong(0));
         long currentCount = current.addAndGet(eventCount);
-        
+
         if (currentCount > config.getMaxEventsPerSecond()) {
             return new QuotaCheckResult(
                 false,
-                "Event quota exceeded. Events this second: " + currentCount + 
+                "Event quota exceeded. Events this second: " + currentCount +
                 ", Limit: " + config.getMaxEventsPerSecond() + "/sec",
                 currentCount,
                 config.getMaxEventsPerSecond()
             );
         }
-        
+
         return new QuotaCheckResult(true, null, currentCount, config.getMaxEventsPerSecond());
     }
-    
+
     private QuotaCheckResult checkCollectionQuota(String tenantId, TenantQuotaConfig config) {
         int currentCollections = getTenantCollectionCount(tenantId);
-        
+
         if (currentCollections >= config.getMaxCollections()) {
             return new QuotaCheckResult(
                 false,
-                "Collection quota exceeded. Current: " + currentCollections + 
+                "Collection quota exceeded. Current: " + currentCollections +
                 ", Limit: " + config.getMaxCollections(),
                 currentCollections,
                 config.getMaxCollections()
             );
         }
-        
+
         return new QuotaCheckResult(true, null, currentCollections, config.getMaxCollections());
     }
-    
+
     private QuotaCheckResult checkEntityQuota(String tenantId, long additionalEntities, TenantQuotaConfig config) {
         // This would need to be implemented based on the specific collection
         // For now, return allowed with warning
         return new QuotaCheckResult(true, null, additionalEntities, config.getMaxEntitiesPerCollection());
     }
-    
+
     // ====================================================================================
     // Usage Tracking
     // ====================================================================================
-    
+
     /**
      * Release a connection for a tenant.
-     * 
+     *
      * @param tenantId The tenant ID
      */
     public void releaseConnection(String tenantId) {
@@ -375,10 +375,10 @@ public class TenantQuotaManager {
             current.decrementAndGet();
         }
     }
-    
+
     /**
      * Get current usage statistics for a tenant.
-     * 
+     *
      * @param tenantId The tenant ID
      * @return TenantUsageStats
      */
@@ -392,20 +392,20 @@ public class TenantQuotaManager {
             return stats;
         });
     }
-    
+
     // ====================================================================================
     // Database Queries
     // ====================================================================================
-    
+
     private long getTenantStorageUsageMB(String tenantId) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
                  "SELECT COALESCE(SUM(pg_column_size(data)), 0) / (1024 * 1024) as size_mb " +
                  "FROM entities WHERE tenant_id = ?")) {
-            
+
             stmt.setString(1, tenantId);
             ResultSet rs = stmt.executeQuery();
-            
+
             if (rs.next()) {
                 return rs.getLong("size_mb");
             }
@@ -414,15 +414,15 @@ public class TenantQuotaManager {
         }
         return 0;
     }
-    
+
     private int getTenantCollectionCount(String tenantId) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
                  "SELECT COUNT(DISTINCT collection_name) as count FROM entities WHERE tenant_id = ?")) {
-            
+
             stmt.setString(1, tenantId);
             ResultSet rs = stmt.executeQuery();
-            
+
             if (rs.next()) {
                 return rs.getInt("count");
             }
@@ -431,11 +431,11 @@ public class TenantQuotaManager {
         }
         return 0;
     }
-    
+
     // ====================================================================================
     // Background Tasks
     // ====================================================================================
-    
+
     private void startBackgroundTasks() {
         // Reset request counters every minute
         Thread requestResetThread = new Thread(() -> {
@@ -451,7 +451,7 @@ public class TenantQuotaManager {
         });
         requestResetThread.setDaemon(true);
         requestResetThread.start();
-        
+
         // Reset event counters every second
         Thread eventResetThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
@@ -467,39 +467,39 @@ public class TenantQuotaManager {
         eventResetThread.setDaemon(true);
         eventResetThread.start();
     }
-    
+
     // ====================================================================================
     // Alerting
     // ====================================================================================
-    
+
     private void alertOnQuotaViolation(String tenantId, String operationType, QuotaCheckResult result) {
         String message = String.format(
             "Quota Violation: Tenant=%s, Operation=%s, Reason=%s",
             tenantId, operationType, result.getReason()
         );
-        
+
         logger.error(message);
-        
+
         // In production: send to alerting system
         // sendAlert("QUOTA_VIOLATION", message, "HIGH", tenantId);
     }
-    
+
     // ====================================================================================
     // Metrics for Micrometer
     // ====================================================================================
-    
+
     private double getTotalStorageUsedMB() {
         return tenantUsage.values().stream()
             .mapToLong(TenantUsageStats::getStorageMB)
             .sum();
     }
-    
+
     private double getTotalActiveConnections() {
         return currentConnections.values().stream()
             .mapToInt(AtomicInteger::get)
             .sum();
     }
-    
+
     private TenantQuotaConfig getDefaultQuota() {
         return new TenantQuotaConfig(
             DEFAULT_MAX_STORAGE_MB,
@@ -510,11 +510,11 @@ public class TenantQuotaManager {
             DEFAULT_MAX_ENTITIES_PER_COLLECTION
         );
     }
-    
+
     // ====================================================================================
     // Inner Classes
     // ====================================================================================
-    
+
     public static class TenantQuotaConfig {
         private final long maxStorageMB;
         private final int maxConcurrentConnections;
@@ -522,7 +522,7 @@ public class TenantQuotaManager {
         private final int maxEventsPerSecond;
         private final int maxCollections;
         private final int maxEntitiesPerCollection;
-        
+
         public TenantQuotaConfig(long maxStorageMB, int maxConcurrentConnections,
                                 int maxRequestsPerMinute, int maxEventsPerSecond,
                                 int maxCollections, int maxEntitiesPerCollection) {
@@ -533,7 +533,7 @@ public class TenantQuotaManager {
             this.maxCollections = maxCollections;
             this.maxEntitiesPerCollection = maxEntitiesPerCollection;
         }
-        
+
         public long getMaxStorageMB() { return maxStorageMB; }
         public int getMaxConcurrentConnections() { return maxConcurrentConnections; }
         public int getMaxRequestsPerMinute() { return maxRequestsPerMinute; }
@@ -541,49 +541,49 @@ public class TenantQuotaManager {
         public int getMaxCollections() { return maxCollections; }
         public int getMaxEntitiesPerCollection() { return maxEntitiesPerCollection; }
     }
-    
+
     public static class QuotaCheckResult {
         private final boolean allowed;
         private final String reason;
         private final long currentUsage;
         private final long limit;
-        
+
         public QuotaCheckResult(boolean allowed, String reason, long currentUsage, long limit) {
             this.allowed = allowed;
             this.reason = reason;
             this.currentUsage = currentUsage;
             this.limit = limit;
         }
-        
+
         public boolean isAllowed() { return allowed; }
         public String getReason() { return reason; }
         public long getCurrentUsage() { return currentUsage; }
         public long getLimit() { return limit; }
-        
+
         public double getUsagePercentage() {
             return limit > 0 ? (double) currentUsage / limit * 100 : 0;
         }
     }
-    
+
     public static class TenantUsageStats {
         private long storageMB;
         private int activeConnections;
         private long requestsLastMinute;
         private int collectionCount;
         private Instant lastUpdated = Instant.now();
-        
+
         public long getStorageMB() { return storageMB; }
         public void setStorageMB(long storageMB) { this.storageMB = storageMB; }
-        
+
         public int getActiveConnections() { return activeConnections; }
         public void setActiveConnections(int activeConnections) { this.activeConnections = activeConnections; }
-        
+
         public long getRequestsLastMinute() { return requestsLastMinute; }
         public void setRequestsLastMinute(long requestsLastMinute) { this.requestsLastMinute = requestsLastMinute; }
-        
+
         public int getCollectionCount() { return collectionCount; }
         public void setCollectionCount(int collectionCount) { this.collectionCount = collectionCount; }
-        
+
         public Instant getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }
     }

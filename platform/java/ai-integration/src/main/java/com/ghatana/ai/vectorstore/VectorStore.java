@@ -6,14 +6,14 @@ import java.util.List;
 
 /**
  * Core abstraction for vector storage and similarity search operations.
- * 
+ *
  * @doc.type interface
  * @doc.purpose Defines the contract for vector storage backends that support similarity search operations.
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
 public interface VectorStore {
-    
+
     /**
      * Stores a vector with associated metadata.
      *
@@ -29,7 +29,7 @@ public interface VectorStore {
             float[] vector,
             java.util.Map<String, String> metadata
     );
-    
+
     /**
      * Performs a similarity search for the given query vector.
      *
@@ -43,7 +43,7 @@ public interface VectorStore {
             int limit,
             double threshold
     );
-    
+
     /**
      * Performs a similarity search with metadata filtering.
      *
@@ -73,7 +73,7 @@ public interface VectorStore {
             int limit,
             double threshold
     );
-    
+
     /**
      * Retrieves a vector by its ID.
      *
@@ -81,7 +81,7 @@ public interface VectorStore {
      * @return A promise that completes with the vector
      */
     Promise<VectorSearchResult> getById(String id);
-    
+
     /**
      * Deletes a vector by its ID.
      *
@@ -89,21 +89,21 @@ public interface VectorStore {
      * @return A promise that completes when the vector is deleted
      */
     Promise<Void> delete(String id);
-    
+
     /**
      * Clears all vectors from the store.
      *
      * @return A promise that completes when all vectors are cleared
      */
     Promise<Void> clear();
-    
+
     /**
      * Gets the total number of vectors in the store.
      *
      * @return A promise that completes with the count
      */
     Promise<Long> count();
-    
+
     /**
      * Checks if a vector with the given ID exists.
      *

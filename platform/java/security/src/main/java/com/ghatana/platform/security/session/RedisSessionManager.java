@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
  * store. This enables session sharing across multiple application instances, automatic
  * expiration, and high availability.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Distributed Storage</b>: Redis for cross-instance session sharing</li>
@@ -36,14 +35,14 @@ import java.util.stream.Collectors;
  *   <li><b>Promise-Based</b>: ActiveJ Promise for async operations</li>
  *   <li><b>Query Support</b>: Find sessions by userId or tenantId</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Initialize
  * JedisPool jedisPool = new JedisPool("localhost", 6379);
  * ObjectMapper objectMapper = new ObjectMapper();
  * MetricsRegistry metrics = new MetricsRegistry(meterRegistry);
- * 
+ *
  * RedisSessionManager sessionManager = new RedisSessionManager(
  *     jedisPool,
  *     objectMapper,
@@ -84,7 +83,7 @@ import java.util.stream.Collectors;
  *         System.out.println("Deleted " + count + " expired sessions");
  *     });
  * }</pre>
- * 
+ *
  * <h2>Redis Key Structure</h2>
  * Sessions stored as: <code>{keyPrefix}{sessionId}</code>
  * <ul>
@@ -92,7 +91,7 @@ import java.util.stream.Collectors;
  *   <li>TTL set to maxInactiveInterval seconds</li>
  *   <li>Automatically extended on access</li>
  * </ul>
- * 
+ *
  * <h2>Metrics Tracked</h2>
  * <ul>
  *   <li><b>session.created.total</b>: Counter for sessions created</li>
@@ -102,7 +101,7 @@ import java.util.stream.Collectors;
  *   <li><b>session.load.duration</b>: Timer for session load latency</li>
  *   <li><b>session.save.duration</b>: Timer for session save latency</li>
  * </ul>
- * 
+ *
  * <h2>Expiration Handling</h2>
  * <ul>
  *   <li>Sessions expire after maxInactiveInterval seconds of inactivity</li>
@@ -110,7 +109,7 @@ import java.util.stream.Collectors;
  *   <li>Redis automatically deletes expired keys (passive + active eviction)</li>
  *   <li>Application-level check: isExpired() in getSession()</li>
  * </ul>
- * 
+ *
  * <h2>Thread Safety</h2>
  * Thread-safe via Jedis connection pooling. Each operation gets a connection from
  * pool and returns it after use.
@@ -125,7 +124,7 @@ import java.util.stream.Collectors;
  * @performance O(1) get/set, O(n) for findSessions
  * @see SessionManager
  * @see SessionState
- 
+
  *
  * @doc.type class
  * @doc.purpose Redis session manager
@@ -133,14 +132,14 @@ import java.util.stream.Collectors;
  * @doc.pattern Manager
 */
 public class RedisSessionManager implements SessionManager {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(RedisSessionManager.class);
-    
+
     private final JedisPool jedisPool;
     private final ObjectMapper objectMapper;
     private final String keyPrefix;
     private final Duration defaultTtl;
-    
+
     // Metrics
     private final Counter sessionCreatedCounter;
     private final Counter sessionLoadedCounter;
@@ -148,17 +147,17 @@ public class RedisSessionManager implements SessionManager {
     private final Counter sessionErrorCounter;
     private final Timer sessionLoadTimer;
     private final Timer sessionSaveTimer;
-    
+
     /**
      * Create a new RedisSessionManager.
      */
-    public RedisSessionManager(JedisPool jedisPool, ObjectMapper objectMapper, 
+    public RedisSessionManager(JedisPool jedisPool, ObjectMapper objectMapper,
                              String keyPrefix, Duration defaultTtl, MetricsRegistry metricsRegistry) {
         this.jedisPool = jedisPool;
         this.objectMapper = objectMapper;
         this.keyPrefix = keyPrefix;
         this.defaultTtl = defaultTtl;
-        
+
         // Initialize metrics
         if (metricsRegistry != null) {
             this.sessionCreatedCounter = metricsRegistry.customCounter(
@@ -181,23 +180,23 @@ public class RedisSessionManager implements SessionManager {
             this.sessionLoadTimer = null;
             this.sessionSaveTimer = null;
         }
-        
+
         logger.info("RedisSessionManager initialized with key prefix: {}", keyPrefix);
     }
-    
+
     @Override
     public Promise<SessionState> createSession() {
         return runBlocking(() -> {
             SessionState session = new SessionState();
             session.setMaxInactiveInterval(defaultTtl.getSeconds());
-            
+
             try {
                 saveSession(session);
-                
+
                 if (sessionCreatedCounter != null) {
                     sessionCreatedCounter.increment();
                 }
-                
+
                 return session;
             } catch (Exception e) {
                 if (sessionErrorCounter != null) {
@@ -207,7 +206,7 @@ public class RedisSessionManager implements SessionManager {
             }
         });
     }
-    
+
     @Override
     public Promise<Optional<SessionState>> getSession(String sessionId) {
         return runBlocking(() -> {
@@ -215,45 +214,45 @@ public class RedisSessionManager implements SessionManager {
             if (sessionLoadTimer != null) {
                 sample = Timer.start();
             }
-            
+
             try (Jedis jedis = jedisPool.getResource()) {
                 String key = getKey(sessionId);
                 String json = jedis.get(key);
-                
+
                 if (json == null) {
                     return Optional.empty();
                 }
-                
+
                 SessionState session = deserializeSession(json);
-                
+
                 // Check if session has expired
                 if (session.isExpired()) {
                     jedis.del(key);
-                    
+
                     if (sessionExpiredCounter != null) {
                         sessionExpiredCounter.increment();
                     }
-                    
+
                     return Optional.empty();
                 }
-                
+
                 // Update last accessed time and extend TTL
                 session.access();
                 jedis.expire(key, (int) session.getMaxInactiveInterval());
-                
+
                 if (sessionLoadedCounter != null) {
                     sessionLoadedCounter.increment();
                 }
-                
+
                 return Optional.of(session);
-                
+
             } catch (Exception e) {
                 logger.error("Error loading session: {}", sessionId, e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 return Optional.empty();
             } finally {
                 if (sample != null && sessionLoadTimer != null) {
@@ -262,7 +261,7 @@ public class RedisSessionManager implements SessionManager {
             }
         });
     }
-    
+
     @Override
     public Promise<Void> saveSession(SessionState session) {
         return runBlocking(() -> {
@@ -270,26 +269,26 @@ public class RedisSessionManager implements SessionManager {
             if (sessionSaveTimer != null) {
                 sample = Timer.start();
             }
-            
+
             try (Jedis jedis = jedisPool.getResource()) {
                 String key = getKey(session.getId());
                 String json = serializeSession(session);
-                
+
                 // Update last accessed time
                 session.access();
-                
+
                 // Save session with TTL
                 SetParams params = new SetParams().ex((int) session.getMaxInactiveInterval());
                 jedis.set(key, json, params);
-                
+
                 return null;
             } catch (Exception e) {
                 logger.error("Error saving session: {}", session.getId(), e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 throw e;
             } finally {
                 if (sample != null && sessionSaveTimer != null) {
@@ -298,7 +297,7 @@ public class RedisSessionManager implements SessionManager {
             }
         });
     }
-    
+
     @Override
     public Promise<Boolean> deleteSession(String sessionId) {
         return runBlocking(() -> {
@@ -308,23 +307,23 @@ public class RedisSessionManager implements SessionManager {
                 return result > 0;
             } catch (Exception e) {
                 logger.error("Error deleting session: {}", sessionId, e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 return false;
             }
         });
     }
-    
+
     @Override
     public Promise<Set<String>> findSessionsByUserId(String userId) {
         return runBlocking(() -> {
             try (Jedis jedis = jedisPool.getResource()) {
                 // Get all session keys
                 Set<String> keys = jedis.keys(keyPrefix + "*");
-                
+
                 // Filter sessions by user ID
                 return keys.stream()
                     .map(key -> {
@@ -333,12 +332,12 @@ public class RedisSessionManager implements SessionManager {
                             if (json == null) {
                                 return null;
                             }
-                            
+
                             SessionState session = deserializeSession(json);
                             if (userId.equals(session.getUserId())) {
                                 return session.getId();
                             }
-                            
+
                             return null;
                         } catch (Exception e) {
                             logger.error("Error deserializing session: {}", key, e);
@@ -349,23 +348,23 @@ public class RedisSessionManager implements SessionManager {
                     .collect(Collectors.toSet());
             } catch (Exception e) {
                 logger.error("Error finding sessions by user ID: {}", userId, e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 throw e;
             }
         });
     }
-    
+
     @Override
     public Promise<Set<String>> findSessionsByTenantId(String tenantId) {
         return runBlocking(() -> {
             try (Jedis jedis = jedisPool.getResource()) {
                 // Get all session keys
                 Set<String> keys = jedis.keys(keyPrefix + "*");
-                
+
                 // Filter sessions by tenant ID
                 return keys.stream()
                     .map(key -> {
@@ -374,12 +373,12 @@ public class RedisSessionManager implements SessionManager {
                             if (json == null) {
                                 return null;
                             }
-                            
+
                             SessionState session = deserializeSession(json);
                             if (tenantId.equals(session.getTenantId())) {
                                 return session.getId();
                             }
-                            
+
                             return null;
                         } catch (Exception e) {
                             logger.error("Error deserializing session: {}", key, e);
@@ -390,16 +389,16 @@ public class RedisSessionManager implements SessionManager {
                     .collect(Collectors.toSet());
             } catch (Exception e) {
                 logger.error("Error finding sessions by tenant ID: {}", tenantId, e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 throw e;
             }
         });
     }
-    
+
     @Override
     public Promise<Long> deleteExpiredSessions() {
         return runBlocking(() -> {
@@ -407,20 +406,20 @@ public class RedisSessionManager implements SessionManager {
                 // Get all session keys
                 Set<String> keys = jedis.keys(keyPrefix + "*");
                 long deletedCount = 0;
-                
+
                 // Check each session for expiration
                 for (String key : keys) {
                     String json = jedis.get(key);
                     if (json == null) {
                         continue;
                     }
-                    
+
                     try {
                         SessionState session = deserializeSession(json);
                         if (session.isExpired()) {
                             jedis.del(key);
                             deletedCount++;
-                            
+
                             if (sessionExpiredCounter != null) {
                                 sessionExpiredCounter.increment();
                             }
@@ -429,34 +428,34 @@ public class RedisSessionManager implements SessionManager {
                         logger.error("Error checking session expiration: {}", key, e);
                     }
                 }
-                
+
                 return deletedCount;
             } catch (Exception e) {
                 logger.error("Error deleting expired sessions", e);
-                
+
                 if (sessionErrorCounter != null) {
                     sessionErrorCounter.increment();
                 }
-                
+
                 throw e;
             }
         });
     }
-    
+
     /**
      * Get the Redis key for a session ID.
      */
     private String getKey(String sessionId) {
         return keyPrefix + sessionId;
     }
-    
+
     /**
      * Serialize a session to JSON.
      */
     private String serializeSession(SessionState session) throws JsonProcessingException {
         return objectMapper.writeValueAsString(session);
     }
-    
+
     /**
      * Deserialize a session from JSON.
      */

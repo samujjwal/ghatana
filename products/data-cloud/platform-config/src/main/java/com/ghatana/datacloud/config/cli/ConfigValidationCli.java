@@ -441,7 +441,7 @@ public class ConfigValidationCli {
             int validFiles,
             List<ValidationError> errors) {
 
-        
+
 
     public boolean isValid() {
         return errors.isEmpty();

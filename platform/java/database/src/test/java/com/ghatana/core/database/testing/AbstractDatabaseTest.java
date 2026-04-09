@@ -17,17 +17,17 @@ import javax.sql.DataSource;
  */
 @Testcontainers
 public abstract class AbstractDatabaseTest {
-    
+
     @Container
     protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
         .withDatabaseName("testdb")
         .withUsername("test")
         .withPassword("test");
-    
+
     protected DataSource dataSource;
     protected JpaConfig jpaConfig;
     protected EntityManagerFactory entityManagerFactory;
-    
+
     @BeforeEach
     void setUp() {
         // Initialize JpaConfig with test database settings
@@ -40,20 +40,20 @@ public abstract class AbstractDatabaseTest {
             .showSql(true)           // Show SQL for debugging
             .formatSql(true)         // Format SQL for better readability
             .build();
-            
+
         // Create and initialize the data source
         this.dataSource = jpaConfig.createDataSource();
-        
+
         // Create the EntityManagerFactory
         this.entityManagerFactory = jpaConfig.createEntityManagerFactory(dataSource);
     }
-    
+
     @AfterEach
     void tearDown() {
         if (entityManagerFactory != null && entityManagerFactory.isOpen()) {
             entityManagerFactory.close();
         }
-        
+
         if (dataSource instanceof AutoCloseable) {
             try {
                 ((AutoCloseable) dataSource).close();
@@ -62,10 +62,10 @@ public abstract class AbstractDatabaseTest {
             }
         }
     }
-    
+
     /**
      * Helper method to execute a database transaction.
-     * 
+     *
      * @param callback The callback to execute within a transaction
      * @param <T> The return type of the callback
      * @return The result of the callback
@@ -88,5 +88,5 @@ public abstract class AbstractDatabaseTest {
             }
         }
     }
-    
+
 }

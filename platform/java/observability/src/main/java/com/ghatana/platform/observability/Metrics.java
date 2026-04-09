@@ -60,7 +60,7 @@ import io.micrometer.core.instrument.Timer;
  * @examples See class-level JavaDoc usage example
  * @testing Test timer creation with percentiles, counter creation, registry access
  * @notes Simpler alternative to MetricsCollector for timer/counter-only use cases
- 
+
  *
  * @doc.type class
  * @doc.purpose Metrics

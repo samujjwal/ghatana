@@ -23,7 +23,6 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Controller for managing graduated autonomy levels.

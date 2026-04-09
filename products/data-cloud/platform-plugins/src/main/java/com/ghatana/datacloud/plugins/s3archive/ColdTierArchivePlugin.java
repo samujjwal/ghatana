@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.plugins.s3archive;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.datacloud.StorageTier;
@@ -35,7 +34,6 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPOutputStream;
 

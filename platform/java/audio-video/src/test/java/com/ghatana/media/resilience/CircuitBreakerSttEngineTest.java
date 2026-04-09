@@ -18,7 +18,6 @@ import static org.mockito.Mockito.*;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.concurrent.*;
 
 /**
@@ -36,10 +35,10 @@ class CircuitBreakerSttEngineTest {
         mockDelegate = mock(SttEngine.class);
         eventloop = Eventloop.create();
         executor = Executors.newSingleThreadExecutor();
-        
+
         // Start eventloop in background
         executor.submit(() -> eventloop.run());
-        
+
         // Create circuit breaker with sensitive settings for testing
         CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-stt-circuit")
             .failureThreshold(3)
@@ -48,7 +47,7 @@ class CircuitBreakerSttEngineTest {
             .maxBackoff(Duration.ofMillis(500))
             .backoffMultiplier(1.0)
             .build();
-            
+
         protectedEngine = new CircuitBreakerSttEngine(mockDelegate, eventloop, circuitBreaker);
     }
 
@@ -66,13 +65,13 @@ class CircuitBreakerSttEngineTest {
         AudioData audio = createTestAudio();
         TranscriptionOptions options = TranscriptionOptions.defaults();
         TranscriptionResult expectedResult = createTestResult("Hello world");
-        
+
         when(mockDelegate.transcribe(audio, options)).thenReturn(expectedResult);
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
-        
+
         // When
         TranscriptionResult result = protectedEngine.transcribe(audio, options);
-        
+
         // Then
         assertEquals(expectedResult, result);
         assertEquals(CircuitBreaker.State.CLOSED, protectedEngine.getCircuitBreakerState());
@@ -85,11 +84,11 @@ class CircuitBreakerSttEngineTest {
         // Given
         AudioData audio = createTestAudio();
         TranscriptionOptions options = TranscriptionOptions.defaults();
-        
+
         when(mockDelegate.transcribe(any(), any()))
             .thenThrow(new InferenceError("Test failure", new RuntimeException("fail"), false));
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
-        
+
         // When - trigger 3 failures
         for (int i = 0; i < 3; i++) {
             try {
@@ -98,10 +97,10 @@ class CircuitBreakerSttEngineTest {
                 // Expected
             }
         }
-        
+
         // Then - circuit should be open
         assertEquals(CircuitBreaker.State.OPEN, protectedEngine.getCircuitBreakerState());
-        
+
         // Additional call should return degraded result, not call delegate
         TranscriptionResult result = protectedEngine.transcribe(audio, options);
         assertEquals("", result.text()); // Degraded result has empty text
@@ -117,32 +116,32 @@ class CircuitBreakerSttEngineTest {
             .successThreshold(1)
             .resetTimeout(Duration.ofHours(1)) // Long timeout to keep it open
             .build();
-            
+
         // Force circuit open by triggering failure
         when(mockDelegate.transcribe(any(), any()))
             .thenThrow(new InferenceError("Test failure", new RuntimeException("fail"), false));
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
-        
+
         CircuitBreakerSttEngine engineWithOpenCircuit = new CircuitBreakerSttEngine(
             mockDelegate, eventloop, openCircuitBreaker
         );
-        
+
         // Trigger failure to open circuit
         try {
             engineWithOpenCircuit.transcribe(createTestAudio(), TranscriptionOptions.defaults());
         } catch (Exception e) {
             // Expected
         }
-        
+
         // Verify circuit is open
         assertEquals(CircuitBreaker.State.OPEN, engineWithOpenCircuit.getCircuitBreakerState());
-        
+
         // When - call while circuit is open
         TranscriptionResult result = engineWithOpenCircuit.transcribe(
-            createTestAudio(), 
+            createTestAudio(),
             TranscriptionOptions.builder().language(Locale.ENGLISH).build()
         );
-        
+
         // Then - should return degraded result
         assertNotNull(result);
         assertEquals("", result.text());
@@ -156,10 +155,10 @@ class CircuitBreakerSttEngineTest {
         // Given
         EngineMetrics delegateMetrics = new EngineMetrics(100, 5, 50, 2, 0);
         when(mockDelegate.getMetrics()).thenReturn(delegateMetrics);
-        
+
         // When
         EngineMetrics metrics = protectedEngine.getMetrics();
-        
+
         // Then
         assertEquals(100, metrics.requestCount());
         // Errors should include both delegate errors and circuit breaker failures
@@ -175,10 +174,10 @@ class CircuitBreakerSttEngineTest {
         );
         when(mockDelegate.getStatus()).thenReturn(delegateStatus);
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
-        
+
         // When
         EngineStatus status = protectedEngine.getStatus();
-        
+
         // Then
         assertNotNull(status.state().name());
         assertTrue(status.errorMessage().contains("CLOSED"));
@@ -192,9 +191,9 @@ class CircuitBreakerSttEngineTest {
             .failureThreshold(1)
             .resetTimeout(Duration.ofHours(1))
             .build();
-            
+
         CircuitBreakerSttEngine engine = new CircuitBreakerSttEngine(mockDelegate, eventloop, sensitiveBreaker);
-        
+
         EngineStatus delegateStatus = new EngineStatus(
             EngineStatus.State.READY, "test-model", "1.0", 1000L, null
         );
@@ -202,17 +201,17 @@ class CircuitBreakerSttEngineTest {
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
         when(mockDelegate.transcribe(any(), any()))
             .thenThrow(new InferenceError("Fail", new RuntimeException(), false));
-        
+
         // Trigger failure
         try {
             engine.transcribe(createTestAudio(), TranscriptionOptions.defaults());
         } catch (Exception e) {
             // Expected
         }
-        
+
         // When
         EngineStatus status = engine.getStatus();
-        
+
         // Then
         assertEquals(EngineStatus.State.ERROR, status.state());
         assertTrue(status.errorMessage().contains("OPEN"));
@@ -223,7 +222,7 @@ class CircuitBreakerSttEngineTest {
     void testDetailedCircuitBreakerMetrics() {
         // When
         CircuitBreakerSttEngine.CircuitBreakerMetrics metrics = protectedEngine.getCircuitBreakerMetrics();
-        
+
         // Then
         assertNotNull(metrics);
         assertEquals("CLOSED", metrics.state());
@@ -238,24 +237,24 @@ class CircuitBreakerSttEngineTest {
             .failureThreshold(1)
             .resetTimeout(Duration.ofHours(1))
             .build();
-            
+
         CircuitBreakerSttEngine engine = new CircuitBreakerSttEngine(mockDelegate, eventloop, breaker);
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
         when(mockDelegate.transcribe(any(), any()))
             .thenThrow(new InferenceError("Fail", new RuntimeException(), false));
-        
+
         // Open circuit
         try {
             engine.transcribe(createTestAudio(), TranscriptionOptions.defaults());
         } catch (Exception e) {
             // Expected
         }
-        
+
         assertEquals(CircuitBreaker.State.OPEN, engine.getCircuitBreakerState());
-        
+
         // When - reset circuit
         engine.resetCircuitBreaker();
-        
+
         // Then
         assertEquals(CircuitBreaker.State.CLOSED, engine.getCircuitBreakerState());
     }
@@ -268,29 +267,29 @@ class CircuitBreakerSttEngineTest {
             .failureThreshold(1)
             .resetTimeout(Duration.ofHours(1))
             .build();
-            
+
         CircuitBreakerSttEngine engine = new CircuitBreakerSttEngine(mockDelegate, eventloop, breaker);
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
         when(mockDelegate.createStreamingSession(any()))
             .thenThrow(new RuntimeException("Session creation failed"));
-        
+
         // Open circuit
         try {
             engine.createStreamingSession(null);
         } catch (Exception e) {
             // Expected
         }
-        
+
         // When - create session with open circuit
         StreamingSession session = engine.createStreamingSession(null);
-        
+
         // Then - should get degraded session
         assertNotNull(session);
         assertTrue(session.isActive());
-        
+
         // Feed audio should not throw
         session.feedAudio(new AudioChunk(new byte[100], 0, false, 16000));
-        
+
         session.close();
     }
 
@@ -301,11 +300,11 @@ class CircuitBreakerSttEngineTest {
         List<ModelInfo> models = List.of(new ModelInfo("m1", "Model 1", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false));
         when(mockDelegate.getAvailableModels()).thenReturn(models);
         when(mockDelegate.listProfiles()).thenReturn(List.of("profile1"));
-        
+
         // When & Then - these should delegate directly
         assertEquals(models, protectedEngine.getAvailableModels());
         assertEquals(List.of("profile1"), protectedEngine.listProfiles());
-        
+
         verify(mockDelegate).getAvailableModels();
         verify(mockDelegate).listProfiles();
     }
@@ -317,7 +316,7 @@ class CircuitBreakerSttEngineTest {
 
     private TranscriptionResult createTestResult(String text) {
         return new TranscriptionResult(
-            text, 0.95, List.of(), List.of(), 
+            text, 0.95, List.of(), List.of(),
             Duration.ofMillis(100), "en", "test-model"
         );
     }

@@ -9,7 +9,7 @@ import com.ghatana.platform.validation.ValidationResult;
 
 /**
  * Validates configuration values.
- * 
+ *
  * Implementations validate specific configuration constraints
  * and return validation results.
  *
@@ -20,7 +20,7 @@ import com.ghatana.platform.validation.ValidationResult;
  */
 @FunctionalInterface
 public interface ConfigValidator {
-    
+
     /**
      * Validates a configuration value.
      *

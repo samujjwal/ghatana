@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class KernelPurityEnforcementTest {
 
     private static final String KERNEL_SOURCE_PATH = "platform/java/kernel/src/main/java";
-    
+
     // Product-specific packages that should NEVER appear in kernel code
     private static final String[] FORBIDDEN_IMPORTS = {
         "com.ghatana.phr",
@@ -42,7 +42,7 @@ class KernelPurityEnforcementTest {
         "com.ghatana.tutorputor",
         "com.ghatana.yappc"
     };
-    
+
     // Product-specific terms that should not appear in kernel code
     private static final String[] FORBIDDEN_TERMS = {
         "PatientRecord",
@@ -62,7 +62,7 @@ class KernelPurityEnforcementTest {
     void testNoProductImports() throws IOException {
         List<String> violations = new ArrayList<>();
         Path kernelPath = Paths.get(KERNEL_SOURCE_PATH);
-        
+
         if (!Files.exists(kernelPath)) {
             // Skip test if kernel path doesn't exist (e.g., in CI without full checkout)
             return;
@@ -85,8 +85,8 @@ class KernelPurityEnforcementTest {
                  });
         }
 
-        assertTrue(violations.isEmpty(), 
-            "Kernel purity violation - product-specific imports found:\n" + 
+        assertTrue(violations.isEmpty(),
+            "Kernel purity violation - product-specific imports found:\n" +
             String.join("\n", violations));
     }
 
@@ -95,7 +95,7 @@ class KernelPurityEnforcementTest {
     void testNoProductClassReferences() throws IOException {
         List<String> violations = new ArrayList<>();
         Path kernelPath = Paths.get(KERNEL_SOURCE_PATH);
-        
+
         if (!Files.exists(kernelPath)) {
             return;
         }
@@ -126,33 +126,33 @@ class KernelPurityEnforcementTest {
                  });
         }
 
-        assertTrue(violations.isEmpty(), 
-            "Kernel purity violation - product-specific terms found:\n" + 
+        assertTrue(violations.isEmpty(),
+            "Kernel purity violation - product-specific terms found:\n" +
             String.join("\n", violations));
     }
 
     @Test
     @DisplayName("Kernel capabilities contain no product-specific constants")
     void testKernelCapabilitiesPurity() throws IOException {
-        Path capabilitiesFile = Paths.get(KERNEL_SOURCE_PATH, 
+        Path capabilitiesFile = Paths.get(KERNEL_SOURCE_PATH,
             "com/ghatana/kernel/descriptor/KernelCapability.java");
-        
+
         if (!Files.exists(capabilitiesFile)) {
             return;
         }
 
         String content = Files.readString(capabilitiesFile);
-        
+
         // Verify no product-specific capability constants
         for (String forbidden : FORBIDDEN_TERMS) {
             assertFalse(content.contains("public static final KernelCapability " + forbidden.toUpperCase()),
                 "KernelCapability contains product-specific constant: " + forbidden);
         }
-        
+
         // Verify no nested Products class
         assertFalse(content.contains("class Products"),
             "KernelCapability contains deprecated Products inner class");
-        
+
         // Verify no product-specific comments
         assertFalse(content.contains("Product-specific capability constants"),
             "KernelCapability contains product-specific comments");
@@ -162,7 +162,7 @@ class KernelPurityEnforcementTest {
     @DisplayName("Kernel adapter interfaces contain no product-specific methods")
     void testAdapterInterfacesPurity() throws IOException {
         Path adapterPath = Paths.get(KERNEL_SOURCE_PATH, "com/ghatana/kernel/adapter");
-        
+
         if (!Files.exists(adapterPath)) {
             return;
         }
@@ -186,7 +186,7 @@ class KernelPurityEnforcementTest {
                  });
         }
 
-        assertTrue(violations.isEmpty(), 
+        assertTrue(violations.isEmpty(),
             "Kernel adapter purity violation:\n" + String.join("\n", violations));
     }
 
@@ -194,7 +194,7 @@ class KernelPurityEnforcementTest {
     @DisplayName("Kernel service base classes contain no product-specific logic")
     void testServiceBaseClassesPurity() throws IOException {
         Path servicePath = Paths.get(KERNEL_SOURCE_PATH, "com/ghatana/kernel/service");
-        
+
         if (!Files.exists(servicePath)) {
             return;
         }
@@ -223,34 +223,34 @@ class KernelPurityEnforcementTest {
                  });
         }
 
-        assertTrue(violations.isEmpty(), 
+        assertTrue(violations.isEmpty(),
             "Kernel service base class purity violation:\n" + String.join("\n", violations));
     }
 
     @Test
     @DisplayName("AbstractDataService contains no product-specific code")
     void testAbstractDataServicePurity() throws IOException {
-        Path abstractDataService = Paths.get(KERNEL_SOURCE_PATH, 
+        Path abstractDataService = Paths.get(KERNEL_SOURCE_PATH,
             "com/ghatana/kernel/service/AbstractDataService.java");
-        
+
         if (!Files.exists(abstractDataService)) {
             return;
         }
 
         String content = Files.readString(abstractDataService);
-        
+
         // Verify no product imports
         for (String forbidden : FORBIDDEN_IMPORTS) {
             assertFalse(content.contains("import " + forbidden),
                 "AbstractDataService imports product package: " + forbidden);
         }
-        
+
         // Verify no product-specific terms
         for (String forbidden : FORBIDDEN_TERMS) {
             assertFalse(content.contains(forbidden),
                 "AbstractDataService contains product-specific term: " + forbidden);
         }
-        
+
         // Verify it's in kernel package
         assertTrue(content.contains("package com.ghatana.kernel.service"),
             "AbstractDataService not in kernel package");
@@ -259,9 +259,9 @@ class KernelPurityEnforcementTest {
     @Test
     @DisplayName("DataCloud adapter classes contain no product-specific code")
     void testDataCloudAdapterPurity() throws IOException {
-        Path dataCloudPath = Paths.get(KERNEL_SOURCE_PATH, 
+        Path dataCloudPath = Paths.get(KERNEL_SOURCE_PATH,
             "com/ghatana/kernel/adapter/datacloud");
-        
+
         if (!Files.exists(dataCloudPath)) {
             return;
         }
@@ -274,17 +274,17 @@ class KernelPurityEnforcementTest {
                  .forEach(file -> {
                      try {
                          String content = Files.readString(file);
-                         
+
                          // Check for product imports
                          for (String forbidden : FORBIDDEN_IMPORTS) {
                              if (content.contains("import " + forbidden)) {
                                  violations.add(file + " imports: " + forbidden);
                              }
                          }
-                         
+
                          // Check for product-specific terms in class/method names
                          for (String forbidden : FORBIDDEN_TERMS) {
-                             if (content.contains("class " + forbidden) || 
+                             if (content.contains("class " + forbidden) ||
                                  content.contains("interface " + forbidden)) {
                                  violations.add(file + " defines product-specific type: " + forbidden);
                              }
@@ -295,7 +295,7 @@ class KernelPurityEnforcementTest {
                  });
         }
 
-        assertTrue(violations.isEmpty(), 
+        assertTrue(violations.isEmpty(),
             "DataCloud adapter purity violation:\n" + String.join("\n", violations));
     }
 }

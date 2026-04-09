@@ -120,7 +120,7 @@ import java.util.Objects;
  * {@code
  * // In heartbeat handler
  * agentInfo.setLastSeen(Instant.now());
- * 
+ *
  * // In health checker
  * Duration timeSinceLastSeen = Duration.between(agentInfo.getLastSeen(), Instant.now());
  * if (timeSinceLastSeen.toMinutes() > 5) {
@@ -182,7 +182,7 @@ public class AgentInfo {
         this.capabilities = new HashMap<>();
         this.metadata = new HashMap<>();
     }
-    
+
     /**
      * Creates a new AgentInfo with the specified details.
      *
@@ -194,7 +194,7 @@ public class AgentInfo {
      * @param description a description of the agent
      * @param endpoint the network endpoint of the agent
      */
-    public AgentInfo(String id, String name, String type, String version, 
+    public AgentInfo(String id, String name, String type, String version,
                     String status, String description, String endpoint) {
         this();
         this.id = id;

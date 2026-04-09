@@ -55,7 +55,7 @@ import org.jetbrains.annotations.NotNull;
  * // Receive and decrypt message
  * Principal receiver = Principal.of("agent-456", PrincipalType.AGENT);
  * SecureMessage msg = channel.receiveMessage(receiver, messageId).getResult();
- * 
+ *
  * // Verify and use decrypted payload
  * if (msg.isVerified()) {
  *     String decryptedPayload = msg.payload();

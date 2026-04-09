@@ -11,7 +11,7 @@ import java.util.Set;
  * SessionManager defines the contract for session storage backends. Implementations
  * handle session persistence, retrieval, and lifecycle management.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>CRUD Operations</b>: Create, get, save, delete sessions</li>
@@ -19,7 +19,7 @@ import java.util.Set;
  *   <li><b>Cleanup</b>: Delete expired sessions</li>
  *   <li><b>Promise-Based</b>: All operations return ActiveJ Promise</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * SessionManager manager = new RedisSessionManager(...);
@@ -48,7 +48,7 @@ import java.util.Set;
  * // Cleanup expired sessions
  * int deleted = manager.deleteExpiredSessions().get();
  * }</pre>
- * 
+ *
  * <h2>Implementation Guidelines</h2>
  * <ul>
  *   <li><b>Non-Blocking</b>: Use Promise.ofBlocking() for I/O operations</li>
@@ -56,7 +56,7 @@ import java.util.Set;
  *   <li><b>Idempotent</b>: getSession() returns empty for missing sessions</li>
  *   <li><b>TTL Support</b>: Auto-expire sessions based on maxInactiveInterval</li>
  * </ul>
- * 
+ *
  * <h2>Implementations</h2>
  * <ul>
  *   <li>{@link RedisSessionManager}: Redis-based distributed storage</li>
@@ -74,7 +74,7 @@ import java.util.Set;
  * @performance Implementation-dependent
  * @see SessionState
  * @see RedisSessionManager
- 
+
  *
  * @doc.type interface
  * @doc.purpose Session manager
@@ -82,37 +82,37 @@ import java.util.Set;
  * @doc.pattern Manager
 */
 public interface SessionManager {
-    
+
     /**
      * Create a new session.
      */
     Promise<SessionState> createSession();
-    
+
     /**
      * Get a session by ID.
      */
     Promise<Optional<SessionState>> getSession(String sessionId);
-    
+
     /**
      * Save a session.
      */
     Promise<Void> saveSession(SessionState session);
-    
+
     /**
      * Delete a session.
      */
     Promise<Boolean> deleteSession(String sessionId);
-    
+
     /**
      * Find sessions by user ID.
      */
     Promise<Set<String>> findSessionsByUserId(String userId);
-    
+
     /**
      * Find sessions by tenant ID.
      */
     Promise<Set<String>> findSessionsByTenantId(String tenantId);
-    
+
     /**
      * Delete expired sessions.
      */

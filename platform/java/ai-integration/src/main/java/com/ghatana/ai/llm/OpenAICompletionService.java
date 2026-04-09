@@ -5,18 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.bytebuf.ByteBuf;
-import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpHeaderValue;
 import io.activej.http.HttpHeaders;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +83,7 @@ public class OpenAICompletionService implements CompletionService {
                         if (shouldRetry(e, attempt)) {
                             long delay = calculateBackoff(attempt);
                             logger.warn("OpenAI request failed (attempt {}), retrying in {}ms: {}", attempt + 1, delay, e.getMessage());
-                            
+
                             // Use Eventloop delay for non-blocking retry
                             return Promises.delay(delay).then(() -> executeWithRetry(request, attempt + 1));
                         }
@@ -99,7 +96,7 @@ public class OpenAICompletionService implements CompletionService {
         try {
             String url = (config.getBaseUrl() != null ? config.getBaseUrl() : DEFAULT_BASE_URL) + "/v1/chat/completions";
             String jsonBody = createRequestBody(request);
-            
+
             HttpRequest httpRequest = HttpRequest.post(url)
                     .withHeader(HttpHeaders.AUTHORIZATION, HttpHeaderValue.of("Bearer " + config.getApiKey()))
                     .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/json"))
@@ -113,11 +110,11 @@ public class OpenAICompletionService implements CompletionService {
                     .map(body -> {
                         long latency = System.currentTimeMillis() - startTime;
                         String responseBody = body.getString(java.nio.charset.StandardCharsets.UTF_8);
-                        
+
                         if (responseBody.contains("\"error\"")) {
                              throw new RuntimeException("OpenAI API Error: " + responseBody);
                         }
-                        
+
                         return parseResponse(responseBody, latency);
                     });
         } catch (JsonProcessingException e) {
@@ -128,7 +125,7 @@ public class OpenAICompletionService implements CompletionService {
     private String createRequestBody(CompletionRequest request) throws JsonProcessingException {
         Map<String, Object> payload = new HashMap<>();
         payload.put("model", config.getModelName());
-        
+
         if (request.getMessages() != null && !request.getMessages().isEmpty()) {
             payload.put("messages", request.getMessages().stream().map(msg -> {
                 Map<String, String> m = new HashMap<>();
@@ -143,7 +140,7 @@ public class OpenAICompletionService implements CompletionService {
 
         payload.put("max_tokens", request.getMaxTokens());
         payload.put("temperature", request.getTemperature());
-        
+
         if (request.getResponseFormat() != null) {
              payload.put("response_format", Map.of("type", request.getResponseFormat()));
         }
@@ -157,7 +154,7 @@ public class OpenAICompletionService implements CompletionService {
             JsonNode choice = root.path("choices").get(0);
             String content = choice.path("message").path("content").asText();
             String finishReason = choice.path("finish_reason").asText();
-            
+
             JsonNode usage = root.path("usage");
             int promptTokens = usage.path("prompt_tokens").asInt();
             int completionTokens = usage.path("completion_tokens").asInt();

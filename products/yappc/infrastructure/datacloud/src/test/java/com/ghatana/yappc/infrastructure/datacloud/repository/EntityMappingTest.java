@@ -16,9 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
-import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles entity mapping test operations
  * @doc.layer platform

@@ -12,7 +12,7 @@ import java.io.IOException;
  * with start() and close() methods. It exists to unblock compilation until a
  * full ActiveJ server factory implementation is (re)introduced or wired from
  * core/http-server.
- 
+
  * @doc.type class
  * @doc.purpose Handles activej server factory operations
  * @doc.layer core

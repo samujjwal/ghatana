@@ -33,19 +33,19 @@ class OrderRoutingTest {
 
     @Mock
     private OrderRoutingService.EmsPort emsPort;
-    
+
     @Mock
     private DataSource dataSource;
-    
+
     @Mock
     private EventBusPort eventBusPort;
-    
+
     @Mock
     private Connection connection;
-    
+
     @Mock
     private PreparedStatement preparedStatement;
-    
+
     @Mock
     private ResultSet resultSet;
 
@@ -56,7 +56,7 @@ class OrderRoutingTest {
     void setUp() throws Exception {
         meterRegistry = new SimpleMeterRegistry();
         routingService = new OrderRoutingService(emsPort, dataSource, eventBusPort, meterRegistry);
-        
+
         // Setup default database mocks
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
@@ -70,7 +70,7 @@ class OrderRoutingTest {
         // GIVEN: Valid order and EMS returns routing ID
         String orderId = "ORD-001";
         String expectedRoutingId = "EMS-ROUTE-001";
-        
+
         when(emsPort.route(eq(orderId), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), any(), anyString(), anyString()))
             .thenReturn(expectedRoutingId);
@@ -90,11 +90,11 @@ class OrderRoutingTest {
 
         // THEN: Routing ID returned and metrics updated
         assertThat(routingId).isEqualTo(expectedRoutingId);
-        
+
         Counter ordersRouted = meterRegistry.find("oms.orders.routed").counter();
         assertThat(ordersRouted).isNotNull();
         assertThat(ordersRouted.count()).isEqualTo(1.0);
-        
+
         verify(eventBusPort).publish(any(OrderRoutingService.OrderRoutedEvent.class));
     }
 
@@ -104,7 +104,7 @@ class OrderRoutingTest {
         // GIVEN: EMS rejects the order
         String orderId = "ORD-002";
         String rejectionReason = "Insufficient margin";
-        
+
         when(emsPort.route(eq(orderId), anyString(), anyString(), anyString(),
                 anyString(), anyLong(), any(), anyString(), anyString()))
             .thenThrow(new OrderRoutingService.EmsPort.EmsRejectException(rejectionReason));
@@ -124,11 +124,11 @@ class OrderRoutingTest {
 
         // THEN: Returns null and metrics updated
         assertThat(routingId).isNull();
-        
+
         Counter emsRejections = meterRegistry.find("oms.ems.rejections").counter();
         assertThat(emsRejections).isNotNull();
         assertThat(emsRejections.count()).isEqualTo(1.0);
-        
+
         verify(eventBusPort).publish(any(OrderRoutingService.OrderEmsRejectedEvent.class));
     }
 
@@ -138,7 +138,7 @@ class OrderRoutingTest {
         // GIVEN: Order already routed
         String orderId = "ORD-003";
         String existingRoutingId = "EMS-ROUTE-003";
-        
+
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("routing_id")).thenReturn(existingRoutingId);
 
@@ -167,7 +167,7 @@ class OrderRoutingTest {
         // GIVEN: MARKET order (no limit price)
         String orderId = "ORD-004";
         String expectedRoutingId = "EMS-ROUTE-004";
-        
+
         when(emsPort.route(eq(orderId), anyString(), anyString(), anyString(),
                 eq("SELL"), anyLong(), isNull(), eq("MARKET"), anyString()))
             .thenReturn(expectedRoutingId);
@@ -198,7 +198,7 @@ class OrderRoutingTest {
         String orderId = "ORD-005";
         String expectedRoutingId = "EMS-ROUTE-005";
         String targetExchange = "NYSE";
-        
+
         when(emsPort.route(eq(orderId), anyString(), anyString(), eq(targetExchange),
                 anyString(), anyLong(), any(), anyString(), anyString()))
             .thenReturn(expectedRoutingId);
@@ -229,7 +229,7 @@ class OrderRoutingTest {
         String orderId = "ORD-006";
         String expectedRoutingId = "EMS-ROUTE-006";
         long largeQuantity = 1_000_000L;
-        
+
         when(emsPort.route(eq(orderId), anyString(), anyString(), anyString(),
                 anyString(), eq(largeQuantity), any(), anyString(), anyString()))
             .thenReturn(expectedRoutingId);

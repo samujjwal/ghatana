@@ -15,7 +15,7 @@ class NoopValidationServiceTest extends EventloopTestBase {
     @Test
     void testValidateEvent() {
         ValidationResult result = runPromise(() -> service.validateEvent(new Object()));
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }
@@ -23,7 +23,7 @@ class NoopValidationServiceTest extends EventloopTestBase {
     @Test
     void testValidatePayload() {
         ValidationResult result = runPromise(() -> service.validatePayload("type", "{}"));
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }
@@ -31,7 +31,7 @@ class NoopValidationServiceTest extends EventloopTestBase {
     @Test
     void testValidateSchema() {
         ValidationResult result = runPromise(() -> service.validateSchema("{}"));
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }
@@ -39,7 +39,7 @@ class NoopValidationServiceTest extends EventloopTestBase {
     @Test
     void testCompileSchema() {
         String result = runPromise(() -> service.compileSchema("{}"));
-        
+
         assertEquals("noop", result);
     }
 }

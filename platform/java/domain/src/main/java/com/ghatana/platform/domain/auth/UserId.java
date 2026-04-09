@@ -18,18 +18,18 @@ import java.util.UUID;
  * @doc.pattern ValueObject
  */
 public record UserId(String value) {
-    
+
     public UserId {
         Objects.requireNonNull(value, "UserId cannot be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("UserId cannot be blank");
         }
     }
-    
+
     public static UserId of(String value) {
         return new UserId(value);
     }
-    
+
     public static UserId random() {
         return new UserId("user-" + UUID.randomUUID());
     }

@@ -116,7 +116,7 @@ public class StreamingRetryHandler {
      * @return operation result
      * @throws StreamingRetryExhaustedException if all retries exhausted
      */
-    public <T> T executeWithRetry(Supplier<T> operation, String context, 
+    public <T> T executeWithRetry(Supplier<T> operation, String context,
                                    java.util.function.Predicate<Throwable> shouldRetry) {
         int attempt = 0;
         Throwable lastException = null;
@@ -138,15 +138,15 @@ public class StreamingRetryHandler {
                 return result;
             } catch (Exception e) {
                 lastException = e;
-                
+
                 if (attempt >= maxRetries || !shouldRetry.test(e)) {
                     throw new StreamingRetryExhaustedException(
                         "Retries exhausted for: " + context, e, attempt + 1);
                 }
 
                 Duration delay = calculateDelay(attempt);
-                LOG.log(Level.WARNING, 
-                    "Attempt " + (attempt + 1) + "/" + (maxRetries + 1) + 
+                LOG.log(Level.WARNING,
+                    "Attempt " + (attempt + 1) + "/" + (maxRetries + 1) +
                     " failed for " + context + ", retrying in " + delay.toMillis() + "ms", e);
 
                 try {

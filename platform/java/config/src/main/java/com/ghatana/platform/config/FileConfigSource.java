@@ -23,10 +23,10 @@ import java.util.Optional;
  * @doc.pattern Service
  */
 public class FileConfigSource implements ConfigSource {
-    
+
     private final Config config;
     private final String filePath;
-    
+
     /**
      * Creates a new FileConfigSource from the specified file path.
      *
@@ -40,7 +40,7 @@ public class FileConfigSource implements ConfigSource {
         }
         this.config = ConfigFactory.parseFile(file);
     }
-    
+
     @Override
     @NotNull
     public Optional<String> getString(@NotNull String key) {
@@ -49,7 +49,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Integer> getInt(@NotNull String key) {
@@ -58,7 +58,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Long> getLong(@NotNull String key) {
@@ -67,7 +67,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Double> getDouble(@NotNull String key) {
@@ -76,7 +76,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Boolean> getBoolean(@NotNull String key) {
@@ -85,7 +85,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<String[]> getStringArray(@NotNull String key) {
@@ -95,7 +95,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Map<String, String>> getMap(@NotNull String key) {
@@ -107,14 +107,14 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public <T> Optional<T> getObject(@NotNull String key, @NotNull Class<T> type) {
         // Typesafe config doesn't support direct object mapping
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<ConfigSource> getConfig(@NotNull String key) {
@@ -123,7 +123,7 @@ public class FileConfigSource implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Map<String, Object> getAll() {
@@ -131,30 +131,30 @@ public class FileConfigSource implements ConfigSource {
         config.entrySet().forEach(e -> result.put(e.getKey(), e.getValue().unwrapped()));
         return result;
     }
-    
+
     @Override
     public boolean hasKey(@NotNull String key) {
         return config.hasPath(key);
     }
-    
+
     @Override
     @NotNull
     public String getName() {
         return "file:" + filePath;
     }
-    
+
     /**
      * Inner class for nested configuration.
      */
     private static class SubConfigSource implements ConfigSource {
         private final Config config;
         private final String prefix;
-        
+
         SubConfigSource(@NotNull Config config, @NotNull String prefix) {
             this.config = config;
             this.prefix = prefix;
         }
-        
+
         @Override
         @NotNull
         public Optional<String> getString(@NotNull String key) {
@@ -163,7 +163,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<Integer> getInt(@NotNull String key) {
@@ -172,7 +172,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<Long> getLong(@NotNull String key) {
@@ -181,7 +181,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<Double> getDouble(@NotNull String key) {
@@ -190,7 +190,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<Boolean> getBoolean(@NotNull String key) {
@@ -199,7 +199,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<String[]> getStringArray(@NotNull String key) {
@@ -209,7 +209,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<Map<String, String>> getMap(@NotNull String key) {
@@ -221,13 +221,13 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public <T> Optional<T> getObject(@NotNull String key, @NotNull Class<T> type) {
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Optional<ConfigSource> getConfig(@NotNull String key) {
@@ -236,7 +236,7 @@ public class FileConfigSource implements ConfigSource {
             }
             return Optional.empty();
         }
-        
+
         @Override
         @NotNull
         public Map<String, Object> getAll() {
@@ -244,12 +244,12 @@ public class FileConfigSource implements ConfigSource {
             config.entrySet().forEach(e -> result.put(e.getKey(), e.getValue().unwrapped()));
             return result;
         }
-        
+
         @Override
         public boolean hasKey(@NotNull String key) {
             return config.hasPath(key);
         }
-        
+
         @Override
         @NotNull
         public String getName() {

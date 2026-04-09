@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * ServiceLoader provider for S3 cold tier archive plugin.
- * 
+ *
  * <p>This provider enables automatic discovery of the S3
  * archive plugin via Java's ServiceLoader mechanism.
  *

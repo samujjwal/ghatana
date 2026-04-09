@@ -1,6 +1,5 @@
 package com.ghatana.core.workflow;
 
-import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -328,4 +327,3 @@ public class EscalationManager {
         void onEscalation(WorkflowTask task, EscalationEvent event);
     }
 }
-

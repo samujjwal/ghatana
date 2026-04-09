@@ -59,7 +59,7 @@ public final class AsyncTestUtils {
      */
     public static void await(Supplier<Boolean> condition, Duration timeout, Duration interval) {
         long endTime = System.currentTimeMillis() + timeout.toMillis();
-        
+
         while (System.currentTimeMillis() < endTime) {
             if (Boolean.TRUE.equals(condition.get())) {
                 return;
@@ -71,7 +71,7 @@ public final class AsyncTestUtils {
                 throw new RuntimeException("Interrupted while waiting for condition", e);
             }
         }
-        
+
         throw new RuntimeException("Condition not met within " + timeout);
     }
 

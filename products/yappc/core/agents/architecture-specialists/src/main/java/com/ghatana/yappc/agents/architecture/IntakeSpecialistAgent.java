@@ -11,7 +11,6 @@ import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
 import com.ghatana.yappc.ai.canvas.llm.LLMProvider;
 import com.ghatana.yappc.ai.canvas.llm.LLMRequest;
-import com.ghatana.yappc.ai.canvas.llm.LLMResponse;
 import com.ghatana.yappc.framework.core.config.FeatureFlag;
 import com.ghatana.yappc.framework.core.config.FeatureFlags;
 import io.activej.promise.Promise;

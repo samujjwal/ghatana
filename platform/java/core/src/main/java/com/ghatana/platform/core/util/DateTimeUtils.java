@@ -19,10 +19,10 @@ import java.util.TimeZone;
 
 /**
  * Date and time manipulation utilities for Java 8+ java.time API with UTC normalization.
- * 
+ *
  * Provides production-grade temporal operations including UTC conversion, date/time parsing,
  * formatting with ISO-8601 standards, range calculations, and legacy java.util.Date interoperability.
- * 
+ *
  * Thread-safe: All methods are static and stateless. DateTimeFormatter instances are immutable.
  *
  * @doc.type class
@@ -151,7 +151,7 @@ public final class DateTimeUtils {
      */
     @Nullable
     public static Date toDate(@Nullable LocalDateTime dateTime) {
-        return dateTime != null ? 
+        return dateTime != null ?
                 Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()) : null;
     }
 
@@ -160,7 +160,7 @@ public final class DateTimeUtils {
      */
     @Nullable
     public static LocalDateTime toLocalDateTime(@Nullable Date date) {
-        return date != null ? 
+        return date != null ?
                 date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null;
     }
 

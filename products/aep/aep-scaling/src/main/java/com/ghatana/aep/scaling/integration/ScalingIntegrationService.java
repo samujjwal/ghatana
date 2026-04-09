@@ -6,7 +6,6 @@ package com.ghatana.aep.scaling.integration;
 
 import com.ghatana.aep.scaling.autoscaling.AutoScalingEngine;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels;
-import com.ghatana.aep.scaling.cluster.ClusterManagementModels;
 import com.ghatana.aep.scaling.cluster.ClusterManagementSystem;
 import com.ghatana.aep.scaling.distributed.DistributedPatternProcessor;
 import com.ghatana.aep.scaling.loadbalancer.AdvancedLoadBalancer;
@@ -54,7 +53,7 @@ public class ScalingIntegrationService {
         log.info("Starting integrated scaling evaluation for cluster {}", clusterId);
 
         // Step 1: Auto-scaling evaluation
-        ScalingOperationModels.ScalingEvaluationRequest request = 
+        ScalingOperationModels.ScalingEvaluationRequest request =
             new ScalingOperationModels.ScalingEvaluationRequest(clusterId);
         return autoScalingEngine.evaluateScaling(request)
             .map(scalingResult -> {
@@ -67,10 +66,10 @@ public class ScalingIntegrationService {
                 }
 
                 // Step 2: Update load balancers if scaling decision was made
-                if (scalingResult.getDecision() != null && 
+                if (scalingResult.getDecision() != null &&
                     scalingResult.getDecision().getAction() != null &&
                     scalingResult.getDecision().getAction().getType() != ScalingOperationModels.ScalingAction.Type.NO_ACTION) {
-                    
+
                     for (AdvancedLoadBalancer lb : loadBalancers.values()) {
                         // Notify load balancers of scaling change
                         log.debug("Notifying load balancer of scaling change for cluster {}", clusterId);

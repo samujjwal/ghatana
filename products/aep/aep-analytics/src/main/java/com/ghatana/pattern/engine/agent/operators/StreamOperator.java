@@ -1,6 +1,5 @@
 package com.ghatana.pattern.engine.agent.operators;
 
-import com.ghatana.core.operator.OperatorConfig;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.platform.domain.event.Event;
@@ -307,4 +306,3 @@ public class StreamOperator extends BaseOperator {
         }
     }
 }
-

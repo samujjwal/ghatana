@@ -279,7 +279,7 @@ class ExecutionComplianceTest {
         Instant executedAt,
         boolean isIso
     ) {
-        ExecutionRecord(String executionId, String symbol, ExecutionSide side, 
+        ExecutionRecord(String executionId, String symbol, ExecutionSide side,
                        BigDecimal quantity, BigDecimal price, String venue, Instant executedAt) {
             this(executionId, symbol, side, quantity, price, venue, executedAt, false);
         }
@@ -293,7 +293,7 @@ class ExecutionComplianceTest {
     static class BestExecutionService {
         void validate(ExecutionRecord execution, List<MarketData> marketData) {
             MarketData nbbo = marketData.get(0);
-            if (execution.side() == ExecutionSide.BUY && 
+            if (execution.side() == ExecutionSide.BUY &&
                 execution.price().compareTo(nbbo.askPrice()) > 0) {
                 throw new BestExecutionViolationException("Execution price worse than NBBO");
             }
@@ -302,7 +302,7 @@ class ExecutionComplianceTest {
         void validateWithTolerance(ExecutionRecord execution, List<MarketData> marketData, BigDecimal tolerance) {
             MarketData nbbo = marketData.get(0);
             BigDecimal maxPrice = nbbo.askPrice().add(tolerance);
-            if (execution.side() == ExecutionSide.BUY && 
+            if (execution.side() == ExecutionSide.BUY &&
                 execution.price().compareTo(maxPrice) > 0) {
                 throw new BestExecutionViolationException("Execution price exceeds tolerance");
             }
@@ -350,7 +350,7 @@ class ExecutionComplianceTest {
             }
 
             for (ProtectedQuote quote : quotes) {
-                if (execution.side() == ExecutionSide.BUY && 
+                if (execution.side() == ExecutionSide.BUY &&
                     execution.price().compareTo(quote.price()) > 0) {
                     throw new TradeThroughViolationException("Trade-through violation detected");
                 }

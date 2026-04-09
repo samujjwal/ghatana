@@ -107,22 +107,22 @@ import java.util.*;
 
     // Configuration
     private final EmbeddedClientConfig config;
-    
+
     // Plugin registry is retained for advanced callers that register plugins
     // externally, but embedded mode does not reflectively construct plugins.
     private final PluginRegistry pluginRegistry;
     private final String storagePluginType;
     private final DataStorageOperations dataStoragePlugin; // For entity CRUD operations
-    
+
     // Simple in-memory entity storage (fallback when no DataStoragePlugin configured)
     private final Map<String, Map<String, Map<UUID, SimpleEntity>>> entityStore = new java.util.concurrent.ConcurrentHashMap<>();
-    
+
     // Event storage: tenant -> stream -> events
     private final Map<String, Map<String, List<DataRecord>>> eventStore = new java.util.concurrent.ConcurrentHashMap<>();
-    
+
     // Event offsets: tenant -> stream -> offset
     private final Map<String, Map<String, java.util.concurrent.atomic.AtomicLong>> eventOffsets = new java.util.concurrent.ConcurrentHashMap<>();
-    
+
     private final Instant startTime;
 
     /**
@@ -132,13 +132,13 @@ import java.util.*;
             EmbeddedClientConfig config,
             PluginRegistry pluginRegistry,
             DataStorageOperations dataStoragePlugin) {
-        
+
         this.config = Objects.requireNonNull(config, "config required");
         this.pluginRegistry = Objects.requireNonNull(pluginRegistry, "pluginRegistry required");
         this.storagePluginType = Objects.requireNonNull(config.getStoragePluginType(), "storagePluginType required");
         this.dataStoragePlugin = dataStoragePlugin; // Can be null (fallback to in-memory)
         this.startTime = Instant.now();
-        
+
         if (dataStoragePlugin != null) {
             String storageName = dataStoragePlugin instanceof com.ghatana.platform.plugin.Plugin plugin
                     ? plugin.metadata().name()
@@ -165,17 +165,17 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(data, "data is required");
-        
+
         // Use DataStoragePlugin if available
         if (dataStoragePlugin != null) {
             return dataStoragePlugin.create(tenantId, collectionName, data);
         }
-        
+
         // Fallback to in-memory storage
         try {
             UUID entityId = UUID.randomUUID();
             Instant now = Instant.now();
-            
+
             SimpleEntity entity = new SimpleEntity(
                 entityId,
                 tenantId,
@@ -186,15 +186,15 @@ import java.util.*;
                 now,
                 1
             );
-            
+
             entityStore
                 .computeIfAbsent(tenantId, k -> new java.util.concurrent.ConcurrentHashMap<>())
                 .computeIfAbsent(collectionName, k -> new java.util.concurrent.ConcurrentHashMap<>())
                 .put(entityId, entity);
-            
+
             log.debug("Created entity {} in {}/{}", entityId, tenantId, collectionName);
             return Promise.of(entity);
-            
+
         } catch (Exception e) {
             log.error("Error creating entity", e);
             return Promise.ofException(e);
@@ -207,15 +207,15 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(entityId, "entityId is required");
-        
+
         try {
             Optional<EntityInterface> result = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .map(entities -> entities.get(entityId));
-            
+
             log.debug("Get entity {} from {}/{}: {}", entityId, tenantId, collectionName, result.isPresent() ? "found" : "not found");
             return Promise.of(result);
-            
+
         } catch (Exception e) {
             log.error("Error getting entity", e);
             return Promise.ofException(e);
@@ -229,26 +229,26 @@ import java.util.*;
         validateCollectionName(collectionName);
         Objects.requireNonNull(entityId, "entityId is required");
         Objects.requireNonNull(data, "data is required");
-        
+
         // Use DataStoragePlugin if available
         if (dataStoragePlugin != null) {
             return dataStoragePlugin.update(tenantId, collectionName, entityId, data);
         }
-        
+
         // Fallback to in-memory storage
         try {
             Optional<SimpleEntity> existing = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .map(entities -> entities.get(entityId));
-            
+
             if (existing.isEmpty()) {
                 return Promise.ofException(new IllegalArgumentException("Entity not found: " + entityId));
             }
-            
+
             // Merge updates with existing data
             Map<String, Object> mergedData = new HashMap<>(existing.get().getData());
             mergedData.putAll(data);
-            
+
             SimpleEntity updated = new SimpleEntity(
                 entityId,
                 tenantId,
@@ -259,12 +259,12 @@ import java.util.*;
                 Instant.now(),
                 existing.get().getVersion() + 1
             );
-            
+
             entityStore.get(tenantId).get(collectionName).put(entityId, updated);
-            
+
             log.debug("Updated entity {} in {}/{}", entityId, tenantId, collectionName);
             return Promise.of(updated);
-            
+
         } catch (Exception e) {
             log.error("Error updating entity", e);
             return Promise.ofException(e);
@@ -277,26 +277,26 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(entityId, "entityId is required");
-        
+
         // Use DataStoragePlugin if available
         if (dataStoragePlugin != null) {
             return dataStoragePlugin.delete(tenantId, collectionName, entityId);
         }
-        
+
         // Fallback to in-memory storage
         try {
             boolean removed = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .map(entities -> entities.remove(entityId) != null)
                 .orElse(false);
-            
+
             if (!removed) {
                 return Promise.ofException(new IllegalArgumentException("Entity not found: " + entityId));
             }
-            
+
             log.debug("Deleted entity {} from {}/{}", entityId, tenantId, collectionName);
             return Promise.complete();
-            
+
         } catch (Exception e) {
             log.error("Error deleting entity", e);
             return Promise.ofException(e);
@@ -309,7 +309,7 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(query, "query is required");
-        
+
         try {
             List<EntityInterface> results = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
@@ -317,14 +317,14 @@ import java.util.*;
                     .map(entity -> (EntityInterface) entity)
                     .toList())
                 .orElseGet(List::of);
-            
+
             // Apply limit if specified
             int limit = query.getLimit() > 0 ? query.getLimit() : results.size();
             results = results.stream().limit(limit).collect(java.util.stream.Collectors.toList());
-            
+
             log.debug("Query returned {} entities from {}/{}", results.size(), tenantId, collectionName);
             return Promise.of(results);
-            
+
         } catch (Exception e) {
             log.error("Error querying entities", e);
             return Promise.ofException(e);
@@ -336,11 +336,11 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         Objects.requireNonNull(query, "query is required");
-        
+
         try {
             List<EntityInterface> matchedEntities = new ArrayList<>();
             int totalCount = 0;
-            
+
             Map<String, Map<UUID, SimpleEntity>> tenantCollections = entityStore.get(tenantId);
             if (tenantCollections != null) {
                 for (Map<UUID, SimpleEntity> collection : tenantCollections.values()) {
@@ -348,12 +348,12 @@ import java.util.*;
                     matchedEntities.addAll(collection.values());
                 }
             }
-            
+
             // Implement simple pagination
             int fromIndex = Math.min(0, matchedEntities.size());
             int toIndex = Math.min(100, matchedEntities.size());
             List<EntityInterface> pagedResults = matchedEntities.subList(fromIndex, toIndex);
-            
+
             SearchResults results = new SimpleSearchResults(pagedResults, totalCount, false);
             return Promise.of(results);
         } catch (Exception e) {
@@ -370,24 +370,24 @@ import java.util.*;
         validateTenantId(tenantId);
         Objects.requireNonNull(streamName, "streamName is required");
         Objects.requireNonNull(event, "event is required");
-        
+
         try {
             // Get or create event stream
             Map<String, List<DataRecord>> tenantStreams = eventStore
                 .computeIfAbsent(tenantId, k -> new java.util.concurrent.ConcurrentHashMap<>());
-            
+
             List<DataRecord> stream = tenantStreams
                 .computeIfAbsent(streamName, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
-            
+
             // Get next offset
             long offset = eventOffsets
                 .computeIfAbsent(tenantId, k -> new java.util.concurrent.ConcurrentHashMap<>())
                 .computeIfAbsent(streamName, k -> new java.util.concurrent.atomic.AtomicLong(0))
                 .getAndIncrement();
-            
+
             // Append event
             stream.add(event);
-            
+
             log.debug("Appended event to {}/{} at offset {}", tenantId, streamName, offset);
             return Promise.of(offset);
         } catch (Exception e) {
@@ -401,16 +401,16 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         Objects.requireNonNull(streamName, "streamName is required");
-        
+
         try {
             List<DataRecord> events = Optional.ofNullable(eventStore.get(tenantId))
                 .map(streams -> streams.get(streamName))
                 .orElse(List.of());
-            
+
             // Apply offset and limit
             int fromIndex = (int) Math.min(fromOffset, events.size());
             int toIndex = Math.min(fromIndex + limit, events.size());
-            
+
             List<DataRecord> result = events.subList(fromIndex, toIndex);
             log.debug("Read {} events from {}/{} starting at offset {}", result.size(), tenantId, streamName, fromOffset);
             return Promise.of(result);
@@ -419,27 +419,27 @@ import java.util.*;
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<List<DataRecord>> readEventsByTimeRange(String tenantId, String streamName, String startTime, String endTime) {
         requireOpen();
         validateTenantId(tenantId);
-        
+
         try {
             Instant start = Instant.parse(startTime);
             Instant end = Instant.parse(endTime);
-            
+
             List<DataRecord> events = Optional.ofNullable(eventStore.get(tenantId))
                 .map(streams -> streams.get(streamName))
                 .orElse(List.of());
-            
+
             List<DataRecord> filtered = events.stream()
                 .filter(e -> {
                     Instant eventTime = e.getCreatedAt();
                     return eventTime != null && !eventTime.isBefore(start) && !eventTime.isAfter(end);
                 })
                 .collect(java.util.stream.Collectors.toList());
-            
+
             log.debug("Read {} events from {}/{} in time range [{}, {}]", filtered.size(), tenantId, streamName, startTime, endTime);
             return Promise.of(filtered);
         } catch (Exception e) {
@@ -452,12 +452,12 @@ import java.util.*;
     public Promise<Long> getLatestOffset(String tenantId, String streamName) {
         requireOpen();
         validateTenantId(tenantId);
-        
+
         long offset = Optional.ofNullable(eventOffsets.get(tenantId))
             .map(streams -> streams.get(streamName))
             .map(atomic -> atomic.get())
             .orElse(0L);
-        
+
         return Promise.of(offset);
     }
 
@@ -465,12 +465,12 @@ import java.util.*;
     public Promise<Long> countEvents(String tenantId, String streamName) {
         requireOpen();
         validateTenantId(tenantId);
-        
+
         long count = Optional.ofNullable(eventStore.get(tenantId))
             .map(streams -> streams.get(streamName))
             .map(List::size)
             .orElse(0);
-        
+
         return Promise.of(count);
     }
 
@@ -479,25 +479,25 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
-        
+
         Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
             .map(collections -> collections.get(collectionName))
             .orElse(java.util.Collections.emptyMap());
-        
+
         // Apply filter expression if provided
         if (filterExpression == null || filterExpression.trim().isEmpty()) {
             return Promise.of((long) collection.size());
         }
-        
+
         // Simple filter implementation: supports "field=value" format
         // Example: "status=active" or "type=user"
         long count = collection.values().stream()
             .filter(entity -> matchesFilter(entity, filterExpression))
             .count();
-        
+
         return Promise.of(count);
     }
-    
+
     /**
      * Enhanced filter matcher supporting complex expressions.
      * Supports:
@@ -511,31 +511,31 @@ import java.util.*;
     private boolean matchesFilter(SimpleEntity entity, String filterExpression) {
         try {
             String normalized = filterExpression.trim();
-            
+
             // Handle NOT operator
             if (normalized.toUpperCase().startsWith("NOT ")) {
                 String innerExpression = normalized.substring(4).trim();
                 return !matchesFilter(entity, innerExpression);
             }
-            
+
             // Handle OR operator (lower precedence)
             if (normalized.toUpperCase().contains(" OR ")) {
                 String[] orParts = normalized.split("(?i)\\s+OR\\s+", 2);
                 return matchesFilter(entity, orParts[0]) || matchesFilter(entity, orParts[1]);
             }
-            
+
             // Handle AND operator (higher precedence)
             if (normalized.toUpperCase().contains(" AND ")) {
                 String[] andParts = normalized.split("(?i)\\s+AND\\s+", 2);
                 return matchesFilter(entity, andParts[0]) && matchesFilter(entity, andParts[1]);
             }
-            
+
             // Handle parentheses (highest precedence)
             if (normalized.startsWith("(") && normalized.endsWith(")")) {
                 String innerExpression = normalized.substring(1, normalized.length() - 1);
                 return matchesFilter(entity, innerExpression);
             }
-            
+
             // Handle comparison operators
             if (normalized.contains(">=")) {
                 return evaluateComparison(entity, normalized, ">=");
@@ -548,21 +548,21 @@ import java.util.*;
             } else if (normalized.contains("!=")) {
                 return evaluateComparison(entity, normalized, "!=");
             }
-            
+
             // Default: simple equality (field=value)
             String[] parts = normalized.split("=", 2);
             if (parts.length != 2) {
                 return true; // Invalid filter, include entity
             }
-            
+
             String field = parts[0].trim();
             String expectedValue = parts[1].trim();
-            
+
             Object actualValue = entity.getData().get(field);
             if (actualValue == null) {
                 return false;
             }
-            
+
             return actualValue.toString().equals(expectedValue);
         } catch (Exception e) {
             // On error, include the entity (fail open)
@@ -570,25 +570,25 @@ import java.util.*;
             return true;
         }
     }
-    
+
     /**
      * Evaluates comparison operators (<, >, <=, >=, !=).
      */
     private boolean evaluateComparison(SimpleEntity entity, String expression, String operator) {
         String[] parts = expression.split(operator, 2);
         if (parts.length != 2) return true;
-        
+
         String field = parts[0].trim();
         String expectedValue = parts[1].trim();
-        
+
         Object actualValue = entity.getData().get(field);
         if (actualValue == null) return false;
-        
+
         try {
             // Attempt numeric comparison
             double actual = Double.parseDouble(actualValue.toString());
             double expected = Double.parseDouble(expectedValue);
-            
+
             return switch (operator) {
                 case ">" -> actual > expected;
                 case "<" -> actual < expected;
@@ -612,18 +612,18 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(entities, "entities is required");
-        
+
         try {
             List<EntityInterface> created = new ArrayList<>();
             Instant now = Instant.now();
-            
+
             Map<UUID, SimpleEntity> collection = entityStore
                 .computeIfAbsent(tenantId, k -> new java.util.concurrent.ConcurrentHashMap<>())
                 .computeIfAbsent(collectionName, k -> new java.util.concurrent.ConcurrentHashMap<>());
-            
+
             for (EntityInterface entity : entities) {
                 UUID id = entity.getId() != null ? entity.getId() : UUID.randomUUID();
-                
+
                 SimpleEntity newEntity = new SimpleEntity(
                     id,
                     tenantId,
@@ -634,11 +634,11 @@ import java.util.*;
                     now,
                     1
                 );
-                
+
                 collection.put(id, newEntity);
                 created.add(newEntity);
             }
-            
+
             log.debug("Bulk created {} entities in {}/{}", created.size(), tenantId, collectionName);
             return Promise.of(created);
         } catch (Exception e) {
@@ -653,19 +653,19 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(entityIds, "entityIds is required");
-        
+
         try {
             Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .orElse(Map.of());
-            
+
             long deletedCount = 0;
             for (UUID id : entityIds) {
                 if (collection.remove(id) != null) {
                     deletedCount++;
                 }
             }
-            
+
             log.debug("Bulk deleted {} entities from {}/{}", deletedCount, tenantId, collectionName);
             return Promise.of(deletedCount);
         } catch (Exception e) {
@@ -680,12 +680,12 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(queryText, "queryText is required");
-        
+
         try {
             Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .orElse(Map.of());
-            
+
             String lowerQuery = queryText.toLowerCase();
             List<EntityInterface> matches = collection.values().stream()
                 .filter(entity -> {
@@ -695,7 +695,7 @@ import java.util.*;
                 })
                 .limit(limit)
                 .collect(java.util.stream.Collectors.toList());
-            
+
             SearchResults results = new SimpleSearchResults(matches, matches.size(), matches.size() < collection.size());
             log.debug("Full text search found {} matches in {}/{}", matches.size(), tenantId, collectionName);
             return Promise.of(results);
@@ -711,12 +711,12 @@ import java.util.*;
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
         Objects.requireNonNull(fieldName, "fieldName is required");
-        
+
         try {
             Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .orElse(Map.of());
-            
+
             Map<String, Long> facets = collection.values().stream()
                 .map(entity -> entity.getData().get(fieldName))
                 .filter(Objects::nonNull)
@@ -724,7 +724,7 @@ import java.util.*;
                     Object::toString,
                     java.util.stream.Collectors.counting()
                 ));
-            
+
             log.debug("Generated {} facets for field {} in {}/{}", facets.size(), fieldName, tenantId, collectionName);
             return Promise.of(facets);
         } catch (Exception e) {
@@ -738,31 +738,31 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
-        
+
         try {
             Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .orElse(Map.of());
-            
+
             long totalRecords = collection.size();
             long nullFieldCount = collection.values().stream()
                 .flatMap(e -> e.getData().values().stream())
                 .filter(Objects::isNull)
                 .count();
-            
+
             long totalFields = collection.values().stream()
                 .mapToLong(e -> e.getData().size())
                 .sum();
-            
+
             double completeness = totalFields > 0 ? (double)(totalFields - nullFieldCount) / totalFields : 1.0;
-            
+
             QualityMetrics metrics = new SimpleQualityMetrics(
                 completeness,
                 1.0, // consistency
                 totalRecords > 0 ? 1.0 : 0.0, // validity
                 System.currentTimeMillis()
             );
-            
+
             log.debug("Generated quality metrics for {}/{}: completeness={}", tenantId, collectionName, completeness);
             return Promise.of(metrics);
         } catch (Exception e) {
@@ -775,7 +775,7 @@ import java.util.*;
     public Promise<CostAnalysis> getCostAnalysis(String tenantId, int daysBack) {
         requireOpen();
         validateTenantId(tenantId);
-        
+
         try {
             // Calculate storage costs based on entity count
             long totalEntities = Optional.ofNullable(entityStore.get(tenantId))
@@ -783,25 +783,25 @@ import java.util.*;
                     .mapToLong(Map::size)
                     .sum())
                 .orElse(0L);
-            
+
             long totalEvents = Optional.ofNullable(eventStore.get(tenantId))
                 .map(streams -> streams.values().stream()
                     .mapToLong(List::size)
                     .sum())
                 .orElse(0L);
-            
+
             // Estimate costs (simplified model)
             double storageCostUSD = (totalEntities + totalEvents) * 0.0001; // $0.0001 per record
             double operationCostUSD = 0.05; // Minimal operation cost for in-memory
             double totalCostUSD = storageCostUSD + operationCostUSD;
-            
+
             CostAnalysis analysis = new SimpleCostAnalysis(
                 storageCostUSD,
                 operationCostUSD,
                 totalCostUSD,
                 Instant.now()
             );
-            
+
             log.debug("Generated cost analysis for {}: total=${}", tenantId, totalCostUSD);
             return Promise.of(analysis);
         } catch (Exception e) {
@@ -815,23 +815,23 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         validateCollectionName(collectionName);
-        
+
         try {
             // Build simple lineage graph
             Map<UUID, SimpleEntity> collection = Optional.ofNullable(entityStore.get(tenantId))
                 .map(collections -> collections.get(collectionName))
                 .orElse(Map.of());
-            
+
             List<String> nodes = collection.keySet().stream()
                 .map(UUID::toString)
                 .collect(java.util.stream.Collectors.toList());
-            
+
             LineageGraph graph = new SimpleLineageGraph(
                 nodes,
                 List.of(), // No edges in simple implementation
                 collectionName
             );
-            
+
             log.debug("Generated lineage graph for {}/{} with {} nodes", tenantId, collectionName, nodes.size());
             return Promise.of(graph);
         } catch (Exception e) {
@@ -845,31 +845,31 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         Objects.requireNonNull(record, "record is required");
-        
+
         try {
             // Basic AI processing simulation
             Map<String, AIAspectResult> aspects = new HashMap<>();
-            
+
             // Sentiment analysis aspect
             aspects.put("sentiment", new SimpleAIAspectResult(
                 "sentiment",
                 Map.of("score", 0.0, "label", "neutral"),
                 0.95
             ));
-            
+
             // Classification aspect
             aspects.put("classification", new SimpleAIAspectResult(
                 "classification",
                 Map.of("category", "general"),
                 0.90
             ));
-            
+
             AIProcessingResult result = new SimpleAIProcessingResult(
                 record.getId().toString(),
                 aspects,
                 Instant.now()
             );
-            
+
             log.debug("Processed record {} with AI", record.getId());
             return Promise.of(result);
         } catch (Exception e) {
@@ -883,7 +883,7 @@ import java.util.*;
         requireOpen();
         validateTenantId(tenantId);
         Objects.requireNonNull(modelName, "modelName is required");
-        
+
         try {
             // Return info for built-in models
             AIModelInfo info = new SimpleAIModelInfo(
@@ -893,7 +893,7 @@ import java.util.*;
                 List.of("text", "data"),
                 Instant.now()
             );
-            
+
             log.debug("Retrieved AI model info for {}", modelName);
             return Promise.of(info);
         } catch (Exception e) {
@@ -908,16 +908,16 @@ import java.util.*;
         validateTenantId(tenantId);
         Objects.requireNonNull(entityId, "entityId is required");
         Objects.requireNonNull(featureNames, "featureNames is required");
-        
+
         try {
             // Extract features from entity data
             Map<String, Double> features = new HashMap<>();
-            
+
             for (String featureName : featureNames) {
                 // Simple feature extraction: return 0.0 for unknown features
                 features.put(featureName, 0.0);
             }
-            
+
             log.debug("Extracted {} features for entity {}", features.size(), entityId);
             return Promise.of(features);
         } catch (Exception e) {
@@ -933,13 +933,13 @@ import java.util.*;
         if (!isRunning()) {
             return Promise.of(closedHealthStatus());
         }
-        
+
         // Check plugin health
         Map<String, ComponentStatus> components = new HashMap<>();
         components.put("storage_mode", componentStatus("storage_mode", storagePluginType != null, storagePluginType));
-        
+
         boolean allHealthy = components.values().stream().allMatch(ComponentStatus::isHealthy);
-        
+
         return Promise.of(new HealthStatus() {
             @Override
             public boolean isHealthy() {
@@ -961,24 +961,24 @@ import java.util.*;
     @Override
     public Promise<SystemMetrics> getMetrics() {
         requireOpen();
-        
+
         try {
             // Calculate real metrics from stores
             long totalOperations = entityStore.values().stream()
                 .flatMap(collections -> collections.values().stream())
                 .mapToLong(Map::size)
                 .sum();
-            
+
             totalOperations += eventStore.values().stream()
                 .flatMap(streams -> streams.values().stream())
                 .mapToLong(List::size)
                 .sum();
-            
+
             // Calculate uptime
             long uptimeSeconds = java.time.Duration.between(startTime, Instant.now()).getSeconds();
             double avgLatencyMs = totalOperations > 0 ? 1.0 : 0.0; // In-memory is fast!
             double errorRate = 0.0; // No errors tracked yet
-            
+
             Map<String, Long> operationMetrics = new HashMap<>();
             operationMetrics.put("entity_count", entityStore.values().stream()
                 .flatMap(c -> c.values().stream())
@@ -989,7 +989,7 @@ import java.util.*;
                 .mapToLong(List::size)
                 .sum());
             operationMetrics.put("uptime_seconds", uptimeSeconds);
-            
+
             return Promise.of(systemMetrics(
                 totalOperations,
                 avgLatencyMs,
@@ -1009,30 +1009,30 @@ import java.util.*;
         }
 
         log.info("Shutting down embedded storage mode: {}", storagePluginType);
-        
+
         log.info("EmbeddedDataCloudClient closed");
     }
-    
+
     // ==================== Validation ====================
-    
+
     private void validateTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalArgumentException("tenantId is required");
         }
     }
-    
+
     private void validateCollectionName(String collectionName) {
         if (collectionName == null || collectionName.isBlank()) {
             throw new IllegalArgumentException("collectionName is required");
         }
     }
-    
+
     private void requireOpen() {
         requireRunning();
     }
-    
+
     // ==================== Configuration ====================
-    
+
     /**
      * Configuration for embedded client.
      */
@@ -1041,68 +1041,68 @@ import java.util.*;
         private final Map<String, Object> storageConfig;
         private final boolean enableStreaming;
         private final Map<String, Object> streamingConfig;
-        
+
         private EmbeddedClientConfig(Builder builder) {
             this.storagePluginType = builder.storagePluginType;
             this.storageConfig = new HashMap<>(builder.storageConfig);
             this.enableStreaming = builder.enableStreaming;
             this.streamingConfig = new HashMap<>(builder.streamingConfig);
         }
-        
+
         public String getStoragePluginType() {
             return storagePluginType;
         }
-        
+
         public Map<String, Object> getStorageConfig() {
             return storageConfig;
         }
-        
+
         public boolean isEnableStreaming() {
             return enableStreaming;
         }
-        
+
         public Map<String, Object> getStreamingConfig() {
             return streamingConfig;
         }
-        
+
         public static Builder builder() {
             return new Builder();
         }
-        
+
         public static class Builder {
             private String storagePluginType = "memory";
             private Map<String, Object> storageConfig = new HashMap<>();
             private boolean enableStreaming = false;
             private Map<String, Object> streamingConfig = new HashMap<>();
-            
+
             public Builder storagePluginType(String type) {
                 this.storagePluginType = type;
                 return this;
             }
-            
+
             public Builder storageConfig(Map<String, Object> config) {
                 this.storageConfig.putAll(config);
                 return this;
             }
-            
+
             public Builder enableStreaming(boolean enable) {
                 this.enableStreaming = enable;
                 return this;
             }
-            
+
             public Builder streamingConfig(Map<String, Object> config) {
                 this.streamingConfig.putAll(config);
                 return this;
             }
-            
+
             public EmbeddedClientConfig build() {
                 return new EmbeddedClientConfig(this);
             }
         }
     }
-    
+
     // ==================== Builder ====================
-    
+
     /**
      * Builder for EmbeddedDataCloudClient with fluent API.
      */
@@ -1110,7 +1110,7 @@ import java.util.*;
         private EmbeddedClientConfig.Builder configBuilder = EmbeddedClientConfig.builder();
         private PluginRegistry pluginRegistry;
         private DataStorageOperations dataStoragePlugin;
-        
+
         /**
          * Use in-memory storage (default, for testing).
          */
@@ -1118,7 +1118,7 @@ import java.util.*;
             configBuilder.storagePluginType("memory");
             return this;
         }
-        
+
         /**
          * Use PostgreSQL storage (production).
          */
@@ -1128,7 +1128,7 @@ import java.util.*;
                 .storageConfig(config);
             return this;
         }
-        
+
         /**
          * Use Redis storage (caching).
          */
@@ -1138,7 +1138,7 @@ import java.util.*;
                 .storageConfig(config);
             return this;
         }
-        
+
         /**
          * Use custom storage plugin.
          */
@@ -1149,7 +1149,7 @@ import java.util.*;
                 "EmbeddedDataCloudClient no longer accepts opaque StoragePlugin instances. "
                 + "Pass an explicit DataStorageOperations adapter via withDataStoragePlugin(...) instead.");
         }
-        
+
         /**
          * Use custom data storage plugin for entity CRUD operations.
          */
@@ -1157,7 +1157,7 @@ import java.util.*;
             this.dataStoragePlugin = plugin;
             return this;
         }
-        
+
         /**
          * Use existing plugin registry (advanced).
          */
@@ -1165,27 +1165,27 @@ import java.util.*;
             this.pluginRegistry = registry;
             return this;
         }
-        
+
         /**
          * Builds the client.
          */
         public EmbeddedDataCloudClient build() {
             EmbeddedClientConfig config = configBuilder.build();
-            
+
             // Initialize plugin registry if not provided
             if (pluginRegistry == null) {
                 pluginRegistry = new PluginRegistry();
             }
-            
+
             validateSupportedEmbeddedMode(config, dataStoragePlugin);
-            
+
             try {
                 createPluginContext(config);
                 log.info("Initialized embedded storage mode: {}", config.getStoragePluginType());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to initialize storage plugin", e);
             }
-            
+
             return new EmbeddedDataCloudClient(config, pluginRegistry, dataStoragePlugin);
         }
 
@@ -1210,14 +1210,14 @@ import java.util.*;
                 default -> throw new IllegalArgumentException("Unknown storage plugin type: " + pluginType);
             }
         }
-        
+
         private com.ghatana.platform.plugin.PluginContext createPluginContext(EmbeddedClientConfig config) {
             // Create a simple plugin context - no-op for embedded mode
             return new com.ghatana.platform.plugin.impl.DefaultPluginContext(
                     new com.ghatana.platform.plugin.PluginRegistry(), java.util.Map.of());
         }
     }
-    
+
     // Simple entity record for in-memory storage
     private static class SimpleEntity implements EntityInterface {
         private UUID id;
@@ -1231,8 +1231,8 @@ import java.util.*;
         private String updatedBy;
         private Integer version;
         private Boolean active;
-        
-        public SimpleEntity(UUID id, String tenantId, String collectionName, Map<String, Object> data, 
+
+        public SimpleEntity(UUID id, String tenantId, String collectionName, Map<String, Object> data,
                           Map<String, Object> metadata, Instant createdAt, Instant updatedAt, Integer version) {
             this.id = id;
             this.tenantId = tenantId;
@@ -1244,77 +1244,77 @@ import java.util.*;
             this.version = version;
             this.active = true;
         }
-        
+
         @Override
         public UUID getId() { return id; }
-        
+
         @Override
         public void setId(UUID id) { this.id = id; }
-        
+
         @Override
         public String getTenantId() { return tenantId; }
-        
+
         public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-        
+
         @Override
         public String getCollectionName() { return collectionName; }
-        
+
         @Override
         public void setCollectionName(String collectionName) { this.collectionName = collectionName; }
-        
+
         @Override
         public RecordType getRecordType() { return RecordType.ENTITY; }
-        
+
         @Override
         public Map<String, Object> getData() { return data; }
-        
+
         @Override
         public void setData(Map<String, Object> data) { this.data = data; }
-        
+
         @Override
         public Map<String, Object> getMetadata() { return metadata; }
-        
+
         @Override
         public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
-        
+
         @Override
         public Instant getCreatedAt() { return createdAt; }
-        
+
         @Override
         public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-        
+
         @Override
         public String getCreatedBy() { return createdBy; }
-        
+
         @Override
         public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-        
+
         @Override
         public Instant getUpdatedAt() { return updatedAt; }
-        
+
         @Override
         public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
-        
+
         @Override
         public String getUpdatedBy() { return updatedBy; }
-        
+
         @Override
         public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-        
+
         @Override
         public Integer getVersion() { return version; }
-        
+
         public void setVersion(Integer version) { this.version = version; }
-        
+
         @Override
         public Boolean getActive() { return active; }
-        
+
         @Override
         public void setActive(Boolean active) { this.active = active; }
     }
-    
+
     // ==================== Additional Inner Classes ====================
-    
+
     private record SimpleSearchResults(
         List<EntityInterface> hits,
         long totalHits,
@@ -1325,20 +1325,20 @@ import java.util.*;
         public SimpleSearchResults(List<EntityInterface> hits, long totalHits, boolean hasMore) {
             this(hits, totalHits, Map.of(), 0L);
         }
-        
+
         @Override
         public List<EntityInterface> getHits() { return hits; }
-        
+
         @Override
         public long getTotalHits() { return totalHits; }
-        
+
         @Override
         public Map<String, Map<String, Long>> getFacets() { return facets; }
-        
+
         @Override
         public long getExecutionTimeMs() { return executionTimeMs; }
     }
-    
+
     private record SimpleQualityMetrics(
         double completenessScore,
         double accuracyScore,
@@ -1350,23 +1350,23 @@ import java.util.*;
         public SimpleQualityMetrics(double completeness, double consistency, double validity, long timestamp) {
             this(completeness, validity, consistency, 1.0, timestamp);
         }
-        
+
         @Override
         public double getCompletenessScore() { return completenessScore; }
-        
+
         @Override
         public double getAccuracyScore() { return accuracyScore; }
-        
+
         @Override
         public double getConsistencyScore() { return consistencyScore; }
-        
+
         @Override
         public double getTimelinessScore() { return timelinessScore; }
-        
+
         @Override
         public long getRecordCount() { return recordCount; }
     }
-    
+
     private record SimpleCostAnalysis(
         double totalCostUSD,
         Map<String, Double> costByTier,
@@ -1377,20 +1377,20 @@ import java.util.*;
         public SimpleCostAnalysis(double storageCost, double operationCost, double totalCost, Instant analysisTime) {
             this(totalCost, Map.of("storage", storageCost, "operations", operationCost), 0.01, 0L);
         }
-        
+
         @Override
         public double getTotalCostUSD() { return totalCostUSD; }
-        
+
         @Override
         public Map<String, Double> getCostByTier() { return costByTier; }
-        
+
         @Override
         public double getCostPerGB() { return costPerGB; }
-        
+
         @Override
         public long getStorageGB() { return storageGB; }
     }
-    
+
     private record SimpleLineageGraph(
         List<String> upstream,
         List<String> downstream,
@@ -1400,17 +1400,17 @@ import java.util.*;
         public SimpleLineageGraph(List<String> nodes, List<String> edges, String rootNode) {
             this(nodes, edges, Map.of());
         }
-        
+
         @Override
         public List<String> getUpstream() { return upstream; }
-        
+
         @Override
         public List<String> getDownstream() { return downstream; }
-        
+
         @Override
         public Map<String, String> getDependencies() { return dependencies; }
     }
-    
+
     private record SimpleAIProcessingResult(
         DataRecord record,
         List<AIAspectResult> aspectResults,
@@ -1420,17 +1420,17 @@ import java.util.*;
         public SimpleAIProcessingResult(String recordId, Map<String, AIAspectResult> aspects, Instant processedAt) {
             this(null, new ArrayList<>(aspects.values()), 0L);
         }
-        
+
         @Override
         public DataRecord getRecord() { return record; }
-        
+
         @Override
         public List<AIAspectResult> getAspectResults() { return aspectResults; }
-        
+
         @Override
         public long getProcessingTimeMs() { return processingTimeMs; }
     }
-    
+
     private record SimpleAIAspectResult(
         String aspectName,
         String aspectType,
@@ -1441,20 +1441,20 @@ import java.util.*;
         public SimpleAIAspectResult(String aspectName, Map<String, Object> result, double confidence) {
             this(aspectName, "generic", result, confidence);
         }
-        
+
         @Override
         public String getAspectName() { return aspectName; }
-        
+
         @Override
         public String getAspectType() { return aspectType; }
-        
+
         @Override
         public Map<String, Object> getOutput() { return output; }
-        
+
         @Override
         public double getConfidence() { return confidence; }
     }
-    
+
     private record SimpleAIModelInfo(
         String name,
         String version,
@@ -1466,19 +1466,19 @@ import java.util.*;
         public SimpleAIModelInfo(String modelName, String version, String description, List<String> supportedInputTypes, Instant createdAt) {
             this(modelName, version, "embedded", "active", createdAt.toEpochMilli());
         }
-        
+
         @Override
         public String getName() { return name; }
-        
+
         @Override
         public String getVersion() { return version; }
-        
+
         @Override
         public String getFramework() { return framework; }
-        
+
         @Override
         public String getDeploymentStatus() { return deploymentStatus; }
-        
+
         @Override
         public long getLastUpdatedMs() { return lastUpdatedMs; }
     }

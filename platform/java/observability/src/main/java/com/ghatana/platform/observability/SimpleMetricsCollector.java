@@ -51,7 +51,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * @notes No additional logic beyond BaseMetricsCollector; primary concrete implementation
  */
 public class SimpleMetricsCollector extends BaseMetricsCollector {
-    
+
     /**
      * Constructs a SimpleMetricsCollector with the specified MeterRegistry.
      *

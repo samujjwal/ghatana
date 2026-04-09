@@ -55,7 +55,7 @@ import java.util.Optional;
  * @doc.pattern Port
  */
 public interface ClientRepository {
-    
+
     /**
      * Saves or updates a client.
      *
@@ -63,7 +63,7 @@ public interface ClientRepository {
      * @return Promise of saved client (may have generated fields)
      */
     Promise<Client> save(Client client);
-    
+
     /**
      * Finds a client by tenant and client ID.
      *
@@ -72,7 +72,7 @@ public interface ClientRepository {
      * @return Promise of Optional client (empty if not found)
      */
     Promise<Optional<Client>> findByClientId(TenantId tenantId, ClientId clientId);
-    
+
     /**
      * Lists all active clients for a tenant.
      *
@@ -80,7 +80,7 @@ public interface ClientRepository {
      * @return Promise of list of active clients
      */
     Promise<List<Client>> findAllByTenant(TenantId tenantId);
-    
+
     /**
      * Deletes a client (soft delete recommended).
      *
@@ -89,7 +89,7 @@ public interface ClientRepository {
      * @return Promise of void
      */
     Promise<Void> delete(TenantId tenantId, ClientId clientId);
-    
+
     /**
      * Validates client credentials (client_id + client_secret).
      *

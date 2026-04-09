@@ -21,7 +21,7 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 /**
  * Platform-wide ArchUnit rules enforcing Ghatana architectural standards.
- * 
+ *
  * <p>These rules enforce:
  * <ul>
  *   <li>No circular dependencies between modules</li>
@@ -53,7 +53,7 @@ public class PlatformArchitectureTest {
         allClasses = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages("com.ghatana");
-        
+
         libsClasses = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages(
@@ -63,7 +63,7 @@ public class PlatformArchitectureTest {
                 "com.ghatana.security",
                 "com.ghatana.plugin"
             );
-        
+
         productsClasses = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages(
@@ -85,7 +85,7 @@ public class PlatformArchitectureTest {
                 .matching("com.ghatana.(*)..")
                 .should().beFreeOfCycles()
                 .as("No circular dependencies between top-level packages (informational)");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -169,7 +169,7 @@ public class PlatformArchitectureTest {
                     "com.ghatana.guardian.."
                 )
                 .as("Library modules should not depend on product modules (informational)");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -182,7 +182,7 @@ public class PlatformArchitectureTest {
                 .orShould().beRecords()
                 .orShould().beEnums()
                 .as("SPI packages should only contain interfaces, records, and enums");
-            
+
             // Note: This is informational, violations logged but not failed
             rule.allowEmptyShould(true).check(allClasses);
         }
@@ -267,7 +267,7 @@ public class PlatformArchitectureTest {
                 .because("ActiveJ Promise must be used instead of CompletableFuture. " +
                     "Infrastructure/adapter layers may use CompletableFuture for external library integration. " +
                     "See copilot-instructions.md for async standards.");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -282,7 +282,7 @@ public class PlatformArchitectureTest {
                 )
                 .should().haveRawReturnType("io.activej.promise.Promise")
                 .as("Methods ending with 'Async' should return ActiveJ Promise");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -353,7 +353,7 @@ public class PlatformArchitectureTest {
                 .that().resideInAnyPackage("com.ghatana..")
                 .should().beAnnotatedWith("lombok.extern.log4j.Log4j2")
                 .because("Use @Slf4j instead of @Log4j2. See copilot-instructions.md.");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -366,7 +366,7 @@ public class PlatformArchitectureTest {
                 .should().beAnnotatedWith("lombok.extern.slf4j.Slf4j")
                 .orShould().haveOnlyFinalFields()
                 .as("Service classes should use @Slf4j for logging");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
     }
@@ -388,7 +388,7 @@ public class PlatformArchitectureTest {
                     "..repository.."
                 )
                 .as("Domain layer should not depend on infrastructure concerns");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
 
@@ -404,7 +404,7 @@ public class PlatformArchitectureTest {
                 .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Adapters", "Infrastructure")
                 .whereLayer("Application").mayOnlyBeAccessedByLayers("Adapters", "Infrastructure")
                 .as("Hexagonal architecture layers should be respected");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
     }
@@ -422,7 +422,7 @@ public class PlatformArchitectureTest {
                 .should().implement("com.ghatana.datacloud.spi.Plugin")
                 .orShould().implement("com.ghatana.datacloud.event.spi.Plugin")
                 .as("Plugin classes should implement the Plugin interface");
-            
+
             rule.allowEmptyShould(true).check(productsClasses);
         }
 
@@ -433,7 +433,7 @@ public class PlatformArchitectureTest {
                 .that().implement("com.ghatana.datacloud.spi.PluginProvider")
                 .should().haveNameMatching(".*PluginProvider")
                 .as("PluginProvider implementations should end with 'PluginProvider'");
-            
+
             rule.allowEmptyShould(true).check(allClasses);
         }
     }
@@ -448,13 +448,13 @@ public class PlatformArchitectureTest {
             JavaClasses testClasses = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.ONLY_INCLUDE_TESTS)
                 .importPackages("com.ghatana");
-            
+
             ArchRule rule = classes()
                 .that().haveNameMatching(".*AsyncTest")
                 .or().haveNameMatching(".*PromiseTest")
                 .should().beAssignableTo("com.ghatana.test.EventloopTestBase")
                 .as("Async tests must extend EventloopTestBase");
-            
+
             rule.allowEmptyShould(true).check(testClasses);
         }
     }

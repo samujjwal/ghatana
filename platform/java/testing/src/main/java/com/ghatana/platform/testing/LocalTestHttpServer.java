@@ -17,7 +17,7 @@ package com.ghatana.platform.testing;
  * {@code
  * // 1. Basic usage: Create server and register endpoint
  * LocalTestHttpServer server = new LocalTestHttpServer();
- * 
+ *
  * server.createContext("/api", exchange -> {
  *     String response = "{\"status\": \"ok\"}";
  *     byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
@@ -27,15 +27,15 @@ package com.ghatana.platform.testing;
  *         os.write(bytes);
  *     }
  * });
- * 
+ *
  * // 2. Get server URI and make requests
  * URI serverUri = server.getBaseUri();
  * URI apiUri = serverUri.resolve("/api");
- * 
+ *
  * // 3. Make HTTP request to test endpoint
  * HttpURLConnection conn = (HttpURLConnection) apiUri.toURL().openConnection();
  * assertEquals(200, conn.getResponseCode());
- * 
+ *
  * // 4. Cleanup
  * server.close();
  *

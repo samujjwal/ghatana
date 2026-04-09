@@ -11,7 +11,6 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.governance.ActionClass;
 import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
 import com.ghatana.agent.framework.tools.ToolExecutionEnvelope;
-import com.ghatana.agent.framework.tools.ToolExecutionResult;
 import com.ghatana.agent.framework.tools.ToolExecutionStatus;
 import com.ghatana.agent.framework.tools.ToolContract;
 import com.ghatana.agent.framework.tools.ToolContractBuilder;

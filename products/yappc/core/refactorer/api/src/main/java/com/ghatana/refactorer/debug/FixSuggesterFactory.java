@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Factory for creating and managing FixSuggester instances. 
+ * Factory for creating and managing FixSuggester instances.
  * @doc.type class
  * @doc.purpose Handles fix suggester factory operations
  * @doc.layer core

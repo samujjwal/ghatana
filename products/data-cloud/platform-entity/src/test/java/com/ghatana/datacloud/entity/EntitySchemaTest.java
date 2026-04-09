@@ -30,7 +30,7 @@ class EntitySchemaTest {
             .name("test-collection")
             .schemaVersion("1.0.0")
             .build();
-        
+
         assertThat(collection.getSchemaVersion()).isEqualTo("1.0.0");
     }
 
@@ -42,9 +42,9 @@ class EntitySchemaTest {
             .name("test-collection")
             .schemaVersion("1.0.0")
             .build();
-        
+
         collection.setSchemaVersion("2.0.0");
-        
+
         assertThat(collection.getSchemaVersion()).isEqualTo("2.0.0");
     }
 
@@ -56,13 +56,13 @@ class EntitySchemaTest {
             .name("test-collection")
             .schemaVersion("1.0.0")
             .build();
-        
+
         MetaCollection newSchema = MetaCollection.builder()
             .tenantId("tenant-123")
             .name("test-collection")
             .schemaVersion("2.0.0")
             .build();
-        
+
         assertThat(oldSchema.getSchemaVersion()).isNotEqualTo(newSchema.getSchemaVersion());
     }
 
@@ -71,7 +71,7 @@ class EntitySchemaTest {
     void shouldHandleSchemaVersioning() {
         String version = "1.0.0";
         String[] parts = version.split("\\.");
-        
+
         assertThat(parts).hasSize(3);
         assertThat(parts[0]).isEqualTo("1");
         assertThat(parts[1]).isEqualTo("0");
@@ -86,16 +86,16 @@ class EntitySchemaTest {
             .name("test-collection")
             .schemaVersion("1.0.0")
             .build();
-        
+
         MetaCollection collection2 = MetaCollection.builder()
             .tenantId("tenant-123")
             .name("test-collection")
             .schemaVersion("2.0.0")
             .build();
-        
+
         boolean sameName = collection1.getName().equals(collection2.getName());
         boolean differentVersion = !collection1.getSchemaVersion().equals(collection2.getSchemaVersion());
-        
+
         assertThat(sameName).isTrue();
         assertThat(differentVersion).isTrue();
     }
@@ -106,13 +106,13 @@ class EntitySchemaTest {
         Map<String, Object> validationSchema = new HashMap<>();
         validationSchema.put("type", "object");
         validationSchema.put("required", new String[]{"name", "email"});
-        
+
         MetaCollection collection = MetaCollection.builder()
             .tenantId("tenant-123")
             .name("test-collection")
             .validationSchema(validationSchema)
             .build();
-        
+
         assertThat(collection.getValidationSchema()).isNotNull();
         assertThat(collection.getValidationSchema()).containsKey("type");
     }

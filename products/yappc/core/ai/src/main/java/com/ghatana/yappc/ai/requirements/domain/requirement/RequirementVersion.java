@@ -24,7 +24,7 @@ import java.time.Instant;
  *     "Initial creation",
  *     Instant.now()
  * );
- * 
+ *
  * // Later, after changes
  * RequirementVersion v2 = new RequirementVersion(
  *     "req-123",

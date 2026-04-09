@@ -18,4 +18,3 @@ public interface CompletionService {
     MetricsCollector getMetricsCollector();
     String getProviderName();
 }
-

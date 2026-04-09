@@ -166,8 +166,8 @@ class SecurityPenetrationTest extends EventloopTestBase {
         @DisplayName("Should prevent privilege escalation")
         void shouldRejectPrivilegeEscalation() {
             String userToken = harness.generateTokenForRole("USER");
-            
-            assertThatThrownBy(() -> runPromise(() -> 
+
+            assertThatThrownBy(() -> runPromise(() ->
                     harness.deleteUserWithToken("other-user", userToken)))
                     .isInstanceOf(AuthorizationException.class)
                     .hasMessage("Insufficient permissions");
@@ -334,7 +334,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         @Test
         @DisplayName("Should not expose database structure in error messages")
         void shouldNotExposeDbStructure() {
-            assertThatThrownBy(() -> runPromise(() -> 
+            assertThatThrownBy(() -> runPromise(() ->
                     harness.executeQuery("SELECT * FROM nonexistent_table")))
                     .isInstanceOf(Exception.class)
                     .hasMessageNotContaining("table 'nonexistent_table' doesn't exist");
@@ -522,7 +522,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
     private static class Record {
         Map<String, Object> data = new HashMap<>();
         String id = UUID.randomUUID().toString();
-        
+
         void put(String key, Object value) { data.put(key, value); }
         Object get(String key) { return data.get(key); }
         String getId() { return id; }

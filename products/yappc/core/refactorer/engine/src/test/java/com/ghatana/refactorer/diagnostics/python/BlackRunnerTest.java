@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.process.ProcessResult;
 import com.ghatana.refactorer.testutils.TestConfig;
-import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.io.IOException;
 import java.nio.file.Files;

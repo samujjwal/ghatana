@@ -10,23 +10,23 @@ import java.util.UUID;
 
 /**
  * Canvas generation and management service.
- * 
+ *
  * <p>Handles creation, update, and retrieval of canvas configurations
  * for unified canvas architecture.
- * 
+ *
  * @doc.type class
  * @doc.purpose Canvas service for unified canvas architecture
  * @doc.layer product
  * @doc.pattern Service
  */
 public class CanvasService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(CanvasService.class);
-    
+
     public CanvasService() {
         LOG.info("Initialized CanvasService");
     }
-    
+
     /**
      * Creates a new canvas.
      */
@@ -44,7 +44,7 @@ public class CanvasService {
             "config", config
         ));
     }
-    
+
     /**
      * Updates an existing canvas.
      */
@@ -56,7 +56,7 @@ public class CanvasService {
         LOG.debug("Updating canvas: {}", canvasId);
         return Promise.of(updates);
     }
-    
+
     /**
      * Retrieves a canvas by ID.
      */
@@ -65,7 +65,7 @@ public class CanvasService {
         LOG.debug("Retrieving canvas: {}", canvasId);
         return Promise.of(Map.of("id", canvasId.toString()));
     }
-    
+
     /**
      * Deletes a canvas.
      */
@@ -74,7 +74,7 @@ public class CanvasService {
         LOG.debug("Deleting canvas: {}", canvasId);
         return Promise.of(true);
     }
-    
+
     /**
      * Generates canvas from AI model.
      */

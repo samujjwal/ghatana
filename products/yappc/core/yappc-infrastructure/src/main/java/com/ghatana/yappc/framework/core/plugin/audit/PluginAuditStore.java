@@ -5,7 +5,6 @@
 package com.ghatana.yappc.framework.core.plugin.audit;
 
 import io.activej.promise.Promise;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

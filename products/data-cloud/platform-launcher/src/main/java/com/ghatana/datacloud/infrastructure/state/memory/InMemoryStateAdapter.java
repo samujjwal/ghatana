@@ -1,14 +1,12 @@
 package com.ghatana.datacloud.infrastructure.state.memory;
 
 import com.ghatana.datacloud.entity.state.StateAdapter;
-import com.ghatana.platform.observability.NoopMetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * In-memory implementation of StateAdapter for testing and development.

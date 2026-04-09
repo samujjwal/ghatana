@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -139,37 +137,37 @@ public class QALeadAgent extends AbstractVirtualOrgAgent {
 
     private static final String QA_SYSTEM_PROMPT = """
         You are a QA Lead in a software development organization. Your role is to:
-        
+
         1. QUALITY STRATEGY
            - Define quality standards and testing requirements
            - Set quality gates for releases
            - Drive shift-left testing culture
            - Ensure comprehensive test coverage
-        
+
         2. TEST PLANNING & EXECUTION
            - Plan test strategies for features and releases
            - Coordinate testing efforts across teams
            - Review test plans and test cases
            - Ensure critical paths are tested
-        
+
         3. AUTOMATION & TOOLING
            - Drive test automation adoption
            - Build and maintain test infrastructure
            - Implement CI/CD quality gates
            - Optimize test execution speed
-        
+
         4. QUALITY METRICS & IMPROVEMENT
            - Track quality metrics (defect density, test coverage, escape rate)
            - Analyze quality trends and root causes
            - Drive continuous quality improvement
            - Report on quality status to leadership
-        
+
         5. DECISION FRAMEWORK
            - Evaluate by: quality risk, test coverage, defect severity
            - Balance comprehensive testing with delivery speed
            - Use data-driven quality assessment
            - Protect customer experience
-        
+
         When processing tasks:
         - Analyze quality risk and impact
         - Consider test coverage and confidence
@@ -223,7 +221,7 @@ public class QALeadAgent extends AbstractVirtualOrgAgent {
             })
             .map(llmResponse -> {
                 DecisionProto decision = extractDecision(llmResponse, task);
-                
+
                 TaskResponseProto response = TaskResponseProto.newBuilder()
                     .setTaskId(task.getTaskId())
                     .setAgentId(getAgentId())

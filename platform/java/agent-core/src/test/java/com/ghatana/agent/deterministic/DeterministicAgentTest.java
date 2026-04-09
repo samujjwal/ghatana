@@ -12,7 +12,6 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Nested;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  */
 @DisplayName("Authority Record Tests")
 class AuthorityTest {
-    
+
     @Test
     @DisplayName("Create authority with builder")
     void testCreateWithBuilder() {
@@ -30,45 +30,45 @@ class AuthorityTest {
             .addDecision("code_review")
             .addDecision("merge_pr")
             .build();
-        
+
         assertThat(auth.canDecide("code_review")).isTrue();
         assertThat(auth.canDecide("merge_pr")).isTrue();
         assertThat(auth.getDecisionCount()).isEqualTo(2);
     }
-    
+
     @Test
     @DisplayName("Create authority from set")
     void testCreateFromSet() {
         Set<String> decisions = Set.of("code_review", "merge_pr", "deploy");
         Authority auth = new Authority(decisions);
-        
+
         assertThat(auth.canDecide("code_review")).isTrue();
         assertThat(auth.canDecide("merge_pr")).isTrue();
         assertThat(auth.canDecide("deploy")).isTrue();
         assertThat(auth.getDecisionCount()).isEqualTo(3);
     }
-    
+
     @Test
     @DisplayName("Authority rejects unknown decision")
     void testRejectUnknownDecision() {
         Authority auth = Authority.builder()
             .addDecision("code_review")
             .build();
-        
+
         assertThat(auth.canDecide("code_review")).isTrue();
         assertThat(auth.canDecide("deploy")).isFalse();
     }
-    
+
     @Test
     @DisplayName("Empty authority has no decisions")
     void testEmptyAuthority() {
         Authority auth = new Authority(Set.of());
-        
+
         assertThat(auth.isEmpty()).isTrue();
         assertThat(auth.getDecisionCount()).isEqualTo(0);
         assertThat(auth.canDecide("any_decision")).isFalse();
     }
-    
+
     @Test
     @DisplayName("Builder rejects null decision type")
     void testBuilderRejectNullDecision() {
@@ -76,7 +76,7 @@ class AuthorityTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Decision type cannot be null or empty");
     }
-    
+
     @Test
     @DisplayName("Builder rejects empty decision type")
     void testBuilderRejectEmptyDecision() {
@@ -84,7 +84,7 @@ class AuthorityTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Decision type cannot be null or empty");
     }
-    
+
     @Test
     @DisplayName("Builder supports chaining")
     void testBuilderChaining() {
@@ -93,29 +93,29 @@ class AuthorityTest {
             .addDecision("decision2")
             .addDecision("decision3")
             .build();
-        
+
         assertThat(auth.getDecisionCount()).isEqualTo(3);
     }
-    
+
     @Test
     @DisplayName("Builder supports addDecisions with varargs")
     void testBuilderAddDecisions() {
         Authority auth = Authority.builder()
             .addDecisions("code_review", "merge_pr", "deploy")
             .build();
-        
+
         assertThat(auth.getDecisionCount()).isEqualTo(3);
         assertThat(auth.canDecide("code_review")).isTrue();
         assertThat(auth.canDecide("merge_pr")).isTrue();
         assertThat(auth.canDecide("deploy")).isTrue();
     }
-    
+
     @Test
     @DisplayName("Authority is immutable")
     void testImmutability() {
         Set<String> decisions = Set.of("code_review");
         Authority auth = new Authority(decisions);
-        
+
         // Verify that modifying the original set doesn't affect authority
         assertThat(auth.canDecide("code_review")).isTrue();
     }

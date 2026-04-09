@@ -12,12 +12,12 @@ import java.lang.annotation.Target;
 
 /**
  * Utility for handling native dependencies in tests.
- * 
+ *
  * This provides:
  * - @RequireNative annotation to skip tests when native deps aren't available
  * - NativeDependencyChecker utility class for runtime detection
  * - Automatic test skipping with informative messages
- * 
+ *
  * @doc.type class
  * @doc.purpose Test support for native dependencies
  * @doc.layer testing
@@ -37,7 +37,7 @@ public class NativeDependencySupport {
          * @return The type of native dependency required
          */
         NativeType value() default NativeType.ANY;
-        
+
         /**
          * @return Custom message to display when test is skipped
          */
@@ -60,24 +60,24 @@ public class NativeDependencySupport {
      * JUnit 5 condition for skipping tests when native dependencies aren't available.
      */
     public static class NativeDependencyCondition implements ExecutionCondition {
-        
+
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
             RequireNative annotation = context.getElement()
                 .map(el -> el.getAnnotation(RequireNative.class))
                 .orElse(null);
-                
+
             if (annotation == null) {
                 return ConditionEvaluationResult.enabled("No @RequireNative annotation");
             }
-            
+
             NativeType requiredType = annotation.value();
             String customMessage = annotation.message();
-            
+
             if (NativeDependencyChecker.isNativeAvailable(requiredType)) {
                 return ConditionEvaluationResult.enabled("Native dependencies available");
             } else {
-                String message = String.format("%s: %s not available", 
+                String message = String.format("%s: %s not available",
                     customMessage, requiredType);
                 return ConditionEvaluationResult.disabled(message);
             }
@@ -88,13 +88,13 @@ public class NativeDependencySupport {
      * Utility class for checking native dependency availability at runtime.
      */
     public static class NativeDependencyChecker {
-        
+
         private static final String WHISPER_CPP_CLASS = "com.ghatana.stt.core.whisper.WhisperCppAdapter";
         private static final String COQUI_TTS_CLASS = "com.ghatana.tts.core.coqui.CoquiTTSAdapter";
-        
+
         /**
          * Check if native dependencies are available for the specified type.
-         * 
+         *
          * @param type The type of native dependency to check
          * @return true if available, false otherwise
          */
@@ -105,16 +105,16 @@ public class NativeDependencySupport {
                 case COQUI_TTS:
                     return isClassAvailable(COQUI_TTS_CLASS);
                 case ANY:
-                    return isClassAvailable(WHISPER_CPP_CLASS) || 
+                    return isClassAvailable(WHISPER_CPP_CLASS) ||
                            isClassAvailable(COQUI_TTS_CLASS);
                 default:
                     return false;
             }
         }
-        
+
         /**
          * Check if a specific class can be loaded (indicating native library availability).
-         * 
+         *
          * @param className The fully qualified class name to check
          * @return true if the class can be loaded AND native library is available, false otherwise
          */
@@ -139,33 +139,33 @@ public class NativeDependencySupport {
                 return false;
             }
         }
-        
+
         /**
          * Get a descriptive message about native dependency availability.
-         * 
+         *
          * @return A human-readable status message
          */
         public static String getNativeStatusMessage() {
             StringBuilder sb = new StringBuilder();
             sb.append("Native Dependencies Status:\n");
-            
+
             boolean whisperAvailable = isClassAvailable(WHISPER_CPP_CLASS);
             boolean coquiAvailable = isClassAvailable(COQUI_TTS_CLASS);
-            
+
             sb.append("  Whisper.cpp: ").append(whisperAvailable ? "✅ Available" : "❌ Not Available").append("\n");
             sb.append("  Coqui TTS: ").append(coquiAvailable ? "✅ Available" : "❌ Not Available").append("\n");
-            
+
             if (!whisperAvailable || !coquiAvailable) {
                 sb.append("\nTo install native dependencies, run:\n");
                 sb.append("  ./scripts/setup-native-deps.sh\n");
             }
-            
+
             return sb.toString();
         }
-        
+
         /**
          * Assert that native dependencies are available, throwing an informative exception if not.
-         * 
+         *
          * @param type The type of native dependency required
          * @throws AssertionError if the native dependency is not available
          */

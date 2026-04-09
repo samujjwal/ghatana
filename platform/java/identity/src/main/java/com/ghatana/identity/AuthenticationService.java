@@ -6,7 +6,6 @@ package com.ghatana.identity;
 
 import io.activej.promise.Promise;
 
-import java.time.Duration;
 import java.util.Optional;
 
 /**

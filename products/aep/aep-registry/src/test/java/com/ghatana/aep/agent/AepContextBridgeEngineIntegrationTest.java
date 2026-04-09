@@ -5,7 +5,6 @@ import com.ghatana.aep.event.EventCloud;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -2,7 +2,6 @@ package com.ghatana.datacloud.config.model;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Raw collection configuration as parsed from YAML files.
@@ -37,9 +36,9 @@ public record RawCollectionConfig(
             Map<String, String> labels,
             Map<String, String> annotations
     ) {
-        
 
-    
+
+
 
     public RawMetadata    {
         labels = labels != null ? Map.copyOf(labels) : Map.of();

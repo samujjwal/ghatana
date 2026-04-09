@@ -222,4 +222,3 @@ class PipelineSpecValidatorTest {
                 .isInstanceOf(NullPointerException.class);
     }
 }
-

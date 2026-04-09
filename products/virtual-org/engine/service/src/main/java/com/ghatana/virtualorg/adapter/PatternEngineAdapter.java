@@ -86,21 +86,21 @@ import java.util.stream.Collectors;
  * <pre>{@code
  * PatternEngineAdapter patternEngine = new PatternEngineAdapter(
  *     "agent-cto-001", eventloop, eventEmitter);
- * 
+ *
  * // Query patterns for decision guidance
  * Map<String, String> context = Map.of(
  *     "decision_type", "ARCHITECTURE",
  *     "complexity", "HIGH",
  *     "budget", "150000"
  * );
- * 
+ *
  * patternEngine.findPatternsByContext(context).whenResult(patterns -> {
  *     for (Pattern pattern : patterns) {
  *         log.info("Found pattern: {} (confidence: {})",
  *             pattern.getDescription(), pattern.getConfidence());
  *     }
  * });
- * 
+ *
  * // Subscribe to real-time pattern matches
  * PatternSubscription subscription = new PatternSubscription(
  *     "pattern-architecture-changes",
@@ -108,19 +108,19 @@ import java.util.stream.Collectors;
  *     Map.of("complexity", "HIGH"),
  *     Instant.now()
  * );
- * 
+ *
  * patternEngine.subscribe(subscription, matchedPattern -> {
  *     log.info("Pattern matched: {}", matchedPattern);
  *     // Notify agent of relevant pattern
  * });
- * 
+ *
  * // Get recommendations for decision
  * patternEngine.getRecommendations("ARCHITECTURE", context)
  *     .whenResult(recommendations -> {
  *         DecisionProto decision = selectBestRecommendation(recommendations);
  *         log.info("Pattern-recommended: {}", decision.getChoice());
  *     });
- * 
+ *
  * // Submit decision outcome for learning
  * patternEngine.submitOutcome(
  *     "decision-123",
@@ -197,7 +197,7 @@ public class PatternEngineAdapter {
         @NotNull String agentId,
         @NotNull Eventloop eventloop,
         @NotNull EventEmitter eventEmitter) {
-        
+
         this.agentId = agentId;
         this.eventloop = eventloop;
         this.eventEmitter = eventEmitter;
@@ -213,16 +213,16 @@ public class PatternEngineAdapter {
     public Promise<Void> initialize() {
         return Promise.ofBlocking(eventloop, () -> {
             log.info("Initializing PatternEngineAdapter for agent: {}", agentId);
-            
+
             // TODO: Connect to EventCloud's pattern-engine module
             // This would involve:
             // 1. Creating a connection to the pattern engine
             // 2. Registering the agent for pattern subscriptions
             // 3. Starting the pattern match listener thread
-            
+
             initialized = true;
             log.info("PatternEngineAdapter initialized for agent: {}", agentId);
-            
+
             return null;
         });
     }
@@ -237,7 +237,7 @@ public class PatternEngineAdapter {
     public Promise<List<PatternRecommendation>> queryPatterns(
         @NotNull DecisionTypeProto decisionType,
         @NotNull Map<String, String> context) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             if (!initialized) {
                 log.warn("PatternEngineAdapter not initialized for agent: {}", agentId);
@@ -303,28 +303,28 @@ public class PatternEngineAdapter {
         @NotNull String patternType,
         @NotNull Map<String, String> criteria,
         @NotNull PatternMatchListener listener) {
-        
+
         String subscriptionId = UUID.randomUUID().toString();
         String patternId = patternType + ":" + subscriptionId;
-        
+
         PatternSubscription subscription = new PatternSubscription(
             patternId,
             patternType,
             criteria,
             listener
         );
-        
+
         subscriptions.put(subscriptionId, subscription);
-        
+
         log.info("Pattern subscription created: patternType={}, subscriptionId={}, agentId={}",
                 patternType, subscriptionId, agentId);
 
         // TODO: Register this subscription with the pattern engine
         // The pattern engine will then notify this adapter when patterns match
-        
+
         // Emit subscription event for observability
         emitPatternSubscriptionEvent(subscriptionId, patternType, true);
-        
+
         return subscriptionId;
     }
 
@@ -336,18 +336,18 @@ public class PatternEngineAdapter {
      */
     public boolean unsubscribeFromPattern(@NotNull String subscriptionId) {
         PatternSubscription removed = subscriptions.remove(subscriptionId);
-        
+
         if (removed != null) {
             log.info("Pattern subscription removed: subscriptionId={}, agentId={}",
                     subscriptionId, agentId);
-            
+
             // Emit unsubscription event for observability
             emitPatternSubscriptionEvent(subscriptionId, removed.patternType(), false);
-            
+
             // TODO: Notify pattern engine of unsubscription
             return true;
         }
-        
+
         return false;
     }
 
@@ -364,11 +364,11 @@ public class PatternEngineAdapter {
         @NotNull DecisionTypeProto decisionType,
         @NotNull Map<String, String> context,
         @NotNull List<OptionProto> options) {
-        
+
         return queryPatterns(decisionType, context)
             .then(patterns -> {
                 log.debug("Enriching options with {} pattern recommendations", patterns.size());
-                
+
                 return Promise.of(enrichOptionsWithPatterns(options, patterns));
             })
             .mapException(e -> {
@@ -390,7 +390,7 @@ public class PatternEngineAdapter {
         @NotNull DecisionTypeProto decisionType,
         @NotNull String selectedOption,
         @NotNull DecisionOutcomeProto outcome) {
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             log.info("Recording decision outcome: type={}, option={}, agentId={}",
                     decisionType, selectedOption, agentId);
@@ -436,21 +436,21 @@ public class PatternEngineAdapter {
     private List<EnrichedOptionProto> enrichOptionsWithPatterns(
         List<OptionProto> options,
         List<PatternRecommendation> patterns) {
-        
+
         List<EnrichedOptionProto> enriched = new ArrayList<>();
-        
+
         for (OptionProto option : options) {
             double patternScore = calculatePatternScore(option, patterns);
-            
+
             EnrichedOptionProto enrichedOption = EnrichedOptionProto.newBuilder()
                 .setOption(option)
                 .setPatternScore(patternScore)
                 .setPatternCount(patterns.size())
                 .build();
-            
+
             enriched.add(enrichedOption);
         }
-        
+
         return enriched;
     }
 
@@ -468,7 +468,7 @@ public class PatternEngineAdapter {
         String subscriptionId,
         String patternType,
         boolean isSubscription) {
-        
+
         try {
             Map<String, String> data = Map.of(
                 "subscriptionId", subscriptionId,
@@ -476,9 +476,9 @@ public class PatternEngineAdapter {
                 "agentId", agentId,
                 "action", isSubscription ? "subscribed" : "unsubscribed"
             );
-            
+
             Event event = buildEvent("com.ghatana.virtualorg.pattern.subscription", data);
-            
+
             eventEmitter.emit(event);
         } catch (Exception e) {
             log.warn("Failed to emit pattern subscription event", e);
@@ -489,7 +489,7 @@ public class PatternEngineAdapter {
         DecisionTypeProto decisionType,
         String selectedOption,
         DecisionOutcomeProto outcome) {
-        
+
         try {
             Map<String, String> data = Map.of(
                 "decisionType", decisionType.toString(),
@@ -498,9 +498,9 @@ public class PatternEngineAdapter {
                 "outcome", outcome.getOutcome().toString(),
                 "confidence", String.valueOf(outcome.getConfidence())
             );
-            
+
             Event event = buildEvent("com.ghatana.virtualorg.decision.outcome", data);
-            
+
             eventEmitter.emit(event);
         } catch (Exception e) {
             log.warn("Failed to emit decision outcome event", e);
@@ -521,7 +521,7 @@ public class PatternEngineAdapter {
         String recommendedOptionId,
         Map<String, String> metadata
     ) {}
-    
+
     /**
      * Helper to build events with proper EventId structure.
      */
@@ -532,7 +532,7 @@ public class PatternEngineAdapter {
             "1.0",
             "default-tenant"
         );
-        
+
         Instant now = Instant.now();
         long nowMillis = now.toEpochMilli();
         EventTime eventTime = EventTime.builder()
@@ -547,19 +547,19 @@ public class PatternEngineAdapter {
                 com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis)
             ))
             .build();
-        
+
         EventStats stats = EventStats.builder()
             .withSizeInBytes(payload.toString().length())
             .build();
-        
+
         EventRelations relations = EventRelations.builder().build();
-        
+
         Map<String, String> headers = new HashMap<>();
         headers.put("correlationId", UUID.randomUUID().toString());
         headers.put("timestamp", String.valueOf(System.currentTimeMillis()));
-        
+
         Map<String, Object> typedPayload = new HashMap<>(payload);
-        
+
         return GEvent.builder()
             .id(eventId)
             .time(eventTime)
@@ -572,7 +572,7 @@ public class PatternEngineAdapter {
             .provenance(java.util.List.of())
             .build();
     }
-    
+
     /**
      * Simple EventId implementation.
      */
@@ -581,29 +581,29 @@ public class PatternEngineAdapter {
         private final String eventType;
         private final String version;
         private final String tenantId;
-        
+
         SimpleEventId(String id, String eventType, String version, String tenantId) {
             this.id = id;
             this.eventType = eventType;
             this.version = version;
             this.tenantId = tenantId;
         }
-        
+
         @Override
         public String getId() {
             return id;
         }
-        
+
         @Override
         public String getEventType() {
             return eventType;
         }
-        
+
         @Override
         public String getVersion() {
             return version;
         }
-        
+
         @Override
         public String getTenantId() {
             return tenantId;

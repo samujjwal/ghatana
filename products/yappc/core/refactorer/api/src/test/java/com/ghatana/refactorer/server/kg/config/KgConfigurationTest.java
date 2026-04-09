@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for KgConfiguration. 
+/** Unit tests for KgConfiguration.
  * @doc.type class
  * @doc.purpose Handles kg configuration test operations
  * @doc.layer core
@@ -17,12 +17,12 @@ class KgConfigurationTest extends EventloopTestBase {
   @Test
   void testDefaultConfiguration() {
     KgConfiguration config = KgConfiguration.createDefault();
-    
+
     assertThat(config.mining().minSupport()).isEqualTo(0.3);
     assertThat(config.mining().minConfidence()).isEqualTo(0.5);
     assertThat(config.mining().correlationWindowMs()).isEqualTo(300000);
     assertThat(config.mining().enabled()).isTrue();
-    
+
     assertThat(config.patterns().autoActivate()).isFalse();
     assertThat(config.patterns().archivalAgeDays()).isEqualTo(90);
     assertThat(config.patterns().versioningEnabled()).isTrue();
@@ -31,7 +31,7 @@ class KgConfigurationTest extends EventloopTestBase {
   @Test
   void testDevelopmentConfiguration() {
     KgConfiguration config = KgConfiguration.createForDevelopment();
-    
+
     // Development has more permissive thresholds
     assertThat(config.mining().minSupport()).isEqualTo(0.2);
     assertThat(config.mining().minConfidence()).isEqualTo(0.3);
@@ -41,7 +41,7 @@ class KgConfigurationTest extends EventloopTestBase {
   @Test
   void testProductionConfiguration() {
     KgConfiguration config = KgConfiguration.createForProduction();
-    
+
     // Production has stricter thresholds
     assertThat(config.mining().minSupport()).isEqualTo(0.5);
     assertThat(config.mining().minConfidence()).isEqualTo(0.8);
@@ -76,7 +76,7 @@ class KgConfigurationTest extends EventloopTestBase {
         .autoActivate(true)
         .batchSize(2000)
         .build();
-    
+
     assertThat(config.mining().minSupport()).isEqualTo(0.4);
     assertThat(config.mining().minConfidence()).isEqualTo(0.6);
     assertThat(config.mining().correlationWindowMs()).isEqualTo(600000);
@@ -116,7 +116,7 @@ class KgConfigurationTest extends EventloopTestBase {
   @Test
   void testConfigurationImmutability() {
     KgConfiguration config = KgConfiguration.createDefault();
-    
+
     // Records are immutable, so accessing same values multiple times works
     assertThat(config.mining().minSupport())
         .isEqualTo(config.mining().minSupport());

@@ -64,4 +64,3 @@ public interface EventSink {
     default void close() {
     }
 }
-

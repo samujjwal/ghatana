@@ -4,7 +4,6 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.products.yappc.domain.agent.AgentRegistry;
 import com.ghatana.products.yappc.domain.workflow.*;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

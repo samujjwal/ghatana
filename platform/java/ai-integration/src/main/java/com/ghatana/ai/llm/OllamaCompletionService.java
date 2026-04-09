@@ -8,7 +8,6 @@ import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpHeaderValue;
 import io.activej.http.HttpHeaders;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -111,7 +110,7 @@ public class OllamaCompletionService implements CompletionService {
                         if (shouldRetry(e, attempt)) {
                             long delay = calculateBackoff(attempt);
                             logger.warn("Ollama request failed (attempt {}), retrying in {}ms: {}", attempt + 1, delay, e.getMessage());
-                            
+
                             return Promises.delay(delay).then(() -> executeWithRetry(request, attempt + 1));
                         }
                         return Promise.ofException(e);
@@ -128,31 +127,31 @@ public class OllamaCompletionService implements CompletionService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("model", model);
             payload.put("messages", buildMessages(request));
-            
+
             payload.put("temperature", config.getTemperature());
             payload.put("max_tokens", config.getMaxTokens());
-            
+
             if (request.getStopSequences() != null && !request.getStopSequences().isEmpty()) {
                 payload.put("stop", request.getStopSequences());
             }
 
             String jsonPayload = objectMapper.writeValueAsString(payload);
-            
+
             HttpRequest httpRequest = HttpRequest.post(url)
                     .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/json"))
                     .withBody(ByteBuf.wrapForReading(jsonPayload.getBytes()))
                     .build();
 
             long startTime = System.currentTimeMillis();
-            
+
             return httpClient.request(httpRequest)
                     .then(response -> response.loadBody())
                     .map(body -> {
                         long duration = System.currentTimeMillis() - startTime;
                         metrics.recordTimer("llm.ollama.latency", duration);
-                        
+
                         String responseBody = body.getString(java.nio.charset.StandardCharsets.UTF_8);
-                        
+
                         if (responseBody.contains("\"error\"")) {
                             logger.error("Ollama API error: {}", responseBody);
                             throw new RuntimeException("Ollama API error: " + responseBody);
@@ -169,7 +168,7 @@ public class OllamaCompletionService implements CompletionService {
 
     private List<Map<String, Object>> buildMessages(CompletionRequest request) {
         List<Map<String, Object>> messages = new ArrayList<>();
-        
+
         // Add conversation history if provided
         if (request.getMessages() != null && !request.getMessages().isEmpty()) {
             for (ChatMessage msg : request.getMessages()) {
@@ -185,14 +184,14 @@ public class OllamaCompletionService implements CompletionService {
                 "content", request.getPrompt()
             ));
         }
-        
+
         return messages;
     }
 
     private CompletionResult parseResponse(String json, String model, long latency) {
         try {
             JsonNode root = objectMapper.readTree(json);
-            
+
             // Ollama OpenAI-compatible response format
             JsonNode choices = root.get("choices");
             if (choices == null || !choices.isArray() || choices.isEmpty()) {
@@ -209,7 +208,7 @@ public class OllamaCompletionService implements CompletionService {
             int promptTokens = 0;
             int completionTokens = 0;
             int totalTokens = 0;
-            
+
             JsonNode usage = root.get("usage");
             if (usage != null) {
                 promptTokens = usage.has("prompt_tokens") ? usage.get("prompt_tokens").asInt() : 0;

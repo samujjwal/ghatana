@@ -4,15 +4,12 @@
  */
 package com.ghatana.identity;
 
-import com.ghatana.identity.spi.IdentityResolver;
-import com.ghatana.identity.spi.InMemoryIdentityResolver;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

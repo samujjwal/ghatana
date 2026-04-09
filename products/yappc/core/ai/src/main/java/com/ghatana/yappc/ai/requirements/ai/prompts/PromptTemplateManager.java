@@ -111,17 +111,17 @@ public class PromptTemplateManager {
         registerTemplate("generate-requirements", new PromptTemplate(
                 """
             {{personaPrompt}}
-            
+
             Feature Description: {{featureDescription}}
             {{contextPrompt}}
-            
+
             Generate {{count}} {{typeDescription}} requirements for this feature.
-            
+
             For each requirement:
             1. Write a clear, specific, and testable requirement statement
             2. Ensure it follows SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound)
             {{acceptanceCriteriaPrompt}}
-            
+
             Return your response as a JSON array with this structure:
             [
               {
@@ -131,7 +131,7 @@ public class PromptTemplateManager {
                 "acceptanceCriteria": ["criteria 1", "criteria 2", ...]
               }
             ]
-            
+
             Focus on quality over quantity. Each requirement should be production-ready.
             """
         ));
@@ -140,16 +140,16 @@ public class PromptTemplateManager {
         registerTemplate("improve-requirement", new PromptTemplate(
                 """
             You are an expert requirements analyst. Review the following requirement and suggest improvements.
-            
+
             Requirement: {{requirement}}
-            
+
             Analyze the requirement for:
             1. Clarity - Is it clear and unambiguous?
             2. Completeness - Does it include all necessary information?
             3. Testability - Can it be verified?
             4. Specificity - Is it specific enough?
             5. Consistency - Does it follow standard patterns?
-            
+
             Provide 3-5 specific, actionable improvement suggestions as a JSON array:
             [
               {
@@ -166,15 +166,15 @@ public class PromptTemplateManager {
         registerTemplate("extract-acceptance-criteria", new PromptTemplate(
                 """
             Extract or generate acceptance criteria for the following requirement in Given-When-Then format.
-            
+
             Requirement: {{requirement}}
-            
+
             Generate 3-5 acceptance criteria that:
             1. Cover the main scenarios
             2. Include edge cases
             3. Are testable and specific
             4. Follow Given-When-Then format
-            
+
             Return as a JSON array of strings:
             [
               "GIVEN [context] WHEN [action] THEN [outcome]",
@@ -191,9 +191,9 @@ public class PromptTemplateManager {
             - FUNCTIONAL: Describes what the system should do (features, behaviors)
             - NON_FUNCTIONAL: Describes quality attributes (performance, security, usability)
             - CONSTRAINT: Describes limitations or boundaries (compliance, technology constraints)
-            
+
             Requirement: {{requirement}}
-            
+
             Return ONLY the classification as one word: FUNCTIONAL, NON_FUNCTIONAL, or CONSTRAINT
             """
         ));
@@ -202,18 +202,18 @@ public class PromptTemplateManager {
         registerTemplate("validate-quality", new PromptTemplate(
                 """
             Analyze the quality of the following requirement across multiple dimensions.
-            
+
             Requirement: {{requirement}}
-            
+
             Score each dimension from 0.0 to 1.0:
-            
+
             1. **Clarity** (0.0-1.0): Is it clear, unambiguous, and easy to understand?
             2. **Completeness** (0.0-1.0): Does it include all necessary information?
             3. **Testability** (0.0-1.0): Can it be verified objectively?
             4. **Consistency** (0.0-1.0): Does it align with standard patterns and practices?
-            
+
             Also identify specific issues and recommendations.
-            
+
             Return as JSON:
             {
               "clarityScore": 0.0-1.0,

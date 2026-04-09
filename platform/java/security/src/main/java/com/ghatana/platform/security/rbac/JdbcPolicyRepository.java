@@ -25,11 +25,11 @@ import java.util.*;
  * <pre>{@code
  * DataSource dataSource = // obtain from connection pool
  * PolicyRepository repository = new JdbcPolicyRepository(dataSource);
- * 
+ *
  * // Save a policy
  * Policy policy = new Policy("admin-all", "Admin policy", "admin", "*", Set.of("read", "write"));
  * repository.save(policy);
- * 
+ *
  * // Find policies by role
  * List<Policy> adminPolicies = repository.findByRole("admin");
  * }</pre>

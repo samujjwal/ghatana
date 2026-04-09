@@ -7,7 +7,6 @@ package com.ghatana.agent.memory.governance;
 import com.ghatana.agent.memory.model.*;
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
-import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.MemoryQuery;
 import com.ghatana.agent.memory.store.ScoredMemoryItem;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

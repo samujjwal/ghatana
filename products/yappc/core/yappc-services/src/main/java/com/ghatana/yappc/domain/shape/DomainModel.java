@@ -16,27 +16,27 @@ public record DomainModel(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private List<EntitySpec> entities = List.of();
         private List<RelationshipSpec> relationships = List.of();
         private List<BoundedContextSpec> boundedContexts = List.of();
-        
+
         public Builder entities(List<EntitySpec> entities) {
             this.entities = entities;
             return this;
         }
-        
+
         public Builder relationships(List<RelationshipSpec> relationships) {
             this.relationships = relationships;
             return this;
         }
-        
+
         public Builder boundedContexts(List<BoundedContextSpec> boundedContexts) {
             this.boundedContexts = boundedContexts;
             return this;
         }
-        
+
         public DomainModel build() {
             return new DomainModel(entities, relationships, boundedContexts);
         }

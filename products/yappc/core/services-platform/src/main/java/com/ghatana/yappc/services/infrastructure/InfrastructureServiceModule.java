@@ -114,4 +114,3 @@ public class InfrastructureServiceModule extends AbstractModule {
         return new HikariDataSource(cfg);
     }
 }
-

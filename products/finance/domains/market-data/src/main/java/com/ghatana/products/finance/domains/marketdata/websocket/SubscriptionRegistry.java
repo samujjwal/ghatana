@@ -1,6 +1,5 @@
 package com.ghatana.products.finance.domains.marketdata.websocket;
 
-import com.ghatana.products.finance.domains.marketdata.domain.L1Quote;
 import com.ghatana.platform.core.exception.ServiceException;
 
 import java.util.*;

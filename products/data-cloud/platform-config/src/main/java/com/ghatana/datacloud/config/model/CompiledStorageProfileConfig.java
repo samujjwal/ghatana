@@ -264,7 +264,7 @@ public record CompiledProfileDefaults(
 public boolean meetsTierRequirement(StorageTier requiredTier) {
         return tier.ordinal() <= requiredTier.ordinal();
     }
-    
+
     /**
      * Check if this profile supports event sourcing workloads.
      *

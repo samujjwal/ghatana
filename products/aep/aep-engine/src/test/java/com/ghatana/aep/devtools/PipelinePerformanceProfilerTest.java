@@ -205,4 +205,3 @@ class PipelinePerformanceProfilerTest {
         profiler.printReport();
     }
 }
-

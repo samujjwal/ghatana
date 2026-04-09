@@ -18,33 +18,33 @@ import java.util.HashMap;
  * @doc.pattern Service
  */
 public class FinanceModelMetadata implements ModelGovernanceService.ModelMetadata {
-    
+
     private final ModelRecord record;
-    
+
     public FinanceModelMetadata(ModelRecord record) {
         this.record = record;
     }
-    
+
     @Override
     public String getModelId() {
         return record.getModelId();
     }
-    
+
     @Override
     public String getName() {
         return record.getName();
     }
-    
+
     @Override
     public String getVersion() {
         return record.getVersion();
     }
-    
+
     @Override
     public String getType() {
         return record.getType();
     }
-    
+
     @Override
     public Map<String, Object> getAttributes() {
         Map<String, Object> attributes = new HashMap<>();

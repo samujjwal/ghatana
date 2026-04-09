@@ -2,7 +2,6 @@ package com.ghatana.agent.observability;
 
 import com.ghatana.platform.observability.MetricsCollector;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**

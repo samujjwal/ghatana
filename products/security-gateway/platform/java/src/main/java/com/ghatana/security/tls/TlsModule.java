@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Dependency injection module for TLS/SSL configuration.
- 
+
  *
  * @doc.type class
  * @doc.purpose Tls module
@@ -32,7 +32,7 @@ public class TlsModule extends AbstractModule {
     protected void configure() {
         // Bind the TLS configuration service as a singleton
         bind(TlsConfigurationService.class).to(TlsConfigurationService.class);
-        
+
         // Bind SSLContext as a singleton
         bind(SSLContext.class).to(SSLContext.class);
         // Bind socket settings as singletons
@@ -88,7 +88,7 @@ public class TlsModule extends AbstractModule {
             throw new RuntimeException("Failed to get SSL context", e);
         }
     }
-    
+
     @Provides
     @Named("tlsServerSocketSettings")
     ServerSocketSettings serverSocketSettings(TlsProperties tlsProps) {
@@ -99,7 +99,7 @@ public class TlsModule extends AbstractModule {
                 .build();
 
     }
-    
+
     @Provides
     @Named("tlsClientSocketSettings")
     SocketSettings clientSocketSettings(TlsProperties tlsProps) {

@@ -1,7 +1,6 @@
 package com.ghatana.tutorputor.agent;
 
 import com.ghatana.agent.framework.api.AgentContext;
-import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -165,7 +164,7 @@ class ContentQualityValidatorTest extends EventloopTestBase {
               ]
             }
             """;
-        
+
         ContentGenerationResponse response = ContentGenerationResponse.builder()
             .content(simulationJson)
             .domain("PHYSICS")
@@ -214,13 +213,13 @@ class ContentQualityValidatorTest extends EventloopTestBase {
         // Given - claim with too many sentences
         validator = new ContentQualityValidator(new SimpleMeterRegistry());
         String verboseClaim = """
-            Plants make their own food through photosynthesis. 
-            This process uses sunlight as energy. 
+            Plants make their own food through photosynthesis.
+            This process uses sunlight as energy.
             Carbon dioxide comes from the air.
             Water is absorbed through the roots.
             The plant produces glucose and oxygen.
             """;
-        
+
         ContentGenerationResponse response = ContentGenerationResponse.builder()
             .content(verboseClaim)
             .domain("SCIENCE")
@@ -261,7 +260,7 @@ class ContentQualityValidatorTest extends EventloopTestBase {
 
         // Then
         assertThat(result.passed()).isFalse();
-        assertThat(result.issues()).anyMatch(issue -> 
+        assertThat(result.issues()).anyMatch(issue ->
             issue.contains("null") || issue.contains("empty"));
     }
 

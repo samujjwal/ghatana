@@ -49,7 +49,7 @@ public final class ADRModels {
             List<String> stakeholders,
             DecisionStatus status,
             Map<String, Object> projectInfo) {
-        
+
         public static Builder builder() {
             return new Builder();
         }
@@ -177,7 +177,7 @@ public final class ADRModels {
     /**
  * Matrix for comparing alternatives across criteria. */
     public record ComparisonMatrix(
-            List<String> criteria, 
+            List<String> criteria,
             Map<String, Map<String, Double>> scores) {}
 
     /**
@@ -191,8 +191,8 @@ public final class ADRModels {
     /**
  * A single validation issue found in an ADR. */
     public record ValidationIssue(
-            IssueSeverity severity, 
-            String section, 
-            String message, 
+            IssueSeverity severity,
+            String section,
+            String message,
             String suggestion) {}
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.ghatana.platform.observability.util.BlockingExecutors.blockingExecutor;
 
 /**
  * Advanced query builder with optimizations.
@@ -421,4 +420,3 @@ public class AdvancedQueryBuilder {
             int limit
     ) {}
 }
-

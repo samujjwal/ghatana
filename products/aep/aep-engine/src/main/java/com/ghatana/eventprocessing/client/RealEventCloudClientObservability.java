@@ -128,8 +128,8 @@ public class RealEventCloudClientObservability {
                             "tenant",
                             tenantId)
                     .increment();
-            meterRegistry.gauge("aep.eventcloud.client.batch.size", 
-                    Tags.of("stream", streamName, "tenant", tenantId), 
+            meterRegistry.gauge("aep.eventcloud.client.batch.size",
+                    Tags.of("stream", streamName, "tenant", tenantId),
                     new java.util.concurrent.atomic.AtomicInteger(eventCount),
                     java.util.concurrent.atomic.AtomicInteger::get);
         }

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Minimal audit logger contract for lifecycle services.
  * Kept in compatibility package to preserve existing imports.
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for audit logger
  * @doc.layer core

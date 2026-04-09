@@ -14,7 +14,7 @@ import java.util.Map;
  * <p>
  * Represents a list of entity payloads to be processed in a single
  * bulk create or update operation.</n>
- 
+
  *
  * @doc.type class
  * @doc.purpose Bulk operation request

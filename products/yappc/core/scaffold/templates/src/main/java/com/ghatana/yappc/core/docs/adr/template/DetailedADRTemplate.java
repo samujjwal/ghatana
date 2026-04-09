@@ -33,7 +33,7 @@ import java.util.Map;
  * @doc.pattern Component
  */
 public class DetailedADRTemplate implements ADRTemplate {
-    
+
     @Override
     public ADRTemplateType templateType() {
         return ADRTemplateType.DETAILED;

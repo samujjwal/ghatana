@@ -259,7 +259,7 @@ public class CollectionController {
                         @ApiResponse(responseCode = "409", description = "Collection already exists")
         })
         public Promise<HttpResponse> createCollection(
-                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request containing the collection data") HttpRequest request, 
+                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request containing the collection data") HttpRequest request,
                         @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID extracted from headers") String tenantId) {
                 long startTime = System.currentTimeMillis();
 
@@ -357,7 +357,7 @@ public class CollectionController {
                         @ApiResponse(responseCode = "404", description = "Collection not found")
         })
         public Promise<HttpResponse> getCollection(
-                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to retrieve") String collectionId, 
+                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to retrieve") String collectionId,
                         @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
                 long startTime = System.currentTimeMillis();
 
@@ -409,8 +409,8 @@ public class CollectionController {
                         @ApiResponse(responseCode = "404", description = "Collection not found")
         })
         public Promise<HttpResponse> updateCollection(
-                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request containing update patch") HttpRequest request, 
-                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to update") String collectionId, 
+                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request containing update patch") HttpRequest request,
+                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to update") String collectionId,
                         @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
                 long startTime = System.currentTimeMillis();
 
@@ -518,7 +518,7 @@ public class CollectionController {
                         @ApiResponse(responseCode = "404", description = "Collection not found")
         })
         public Promise<HttpResponse> deleteCollection(
-                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to delete") String collectionId, 
+                        @io.swagger.v3.oas.annotations.Parameter(description = "The ID of the collection to delete") String collectionId,
                         @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
                 long startTime = System.currentTimeMillis();
 
@@ -561,7 +561,7 @@ public class CollectionController {
                         @ApiResponse(responseCode = "400", description = "Invalid pagination parameters")
         })
         public Promise<HttpResponse> listCollections(
-                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request with pagination parameters") HttpRequest request, 
+                        @io.swagger.v3.oas.annotations.Parameter(description = "HTTP request with pagination parameters") HttpRequest request,
                         @io.swagger.v3.oas.annotations.Parameter(description = "Tenant ID") String tenantId) {
                 long startTime = System.currentTimeMillis();
 

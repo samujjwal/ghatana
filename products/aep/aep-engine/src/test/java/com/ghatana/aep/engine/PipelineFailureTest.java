@@ -8,7 +8,6 @@ package com.ghatana.aep.engine;
 
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,7 @@ class PipelineFailureTest {
     @DisplayName("Should handle pipeline step failure")
     void shouldHandlePipelineStepFailure() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -37,7 +36,7 @@ class PipelineFailureTest {
     @DisplayName("Should handle pipeline timeout")
     void shouldHandlePipelineTimeout() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -45,7 +44,7 @@ class PipelineFailureTest {
     @DisplayName("Should handle resource exhaustion")
     void shouldHandleResourceExhaustion() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -54,7 +53,7 @@ class PipelineFailureTest {
     void shouldHandleInvalidEventData() {
         AepEngine engine = Aep.forTesting();
         AepEngine.Event event = new AepEngine.Event("test-type", Map.of("data", "value"), Map.of(), Instant.now());
-        
+
         assertThat(event).isNotNull();
     }
 
@@ -62,7 +61,7 @@ class PipelineFailureTest {
     @DisplayName("Should handle retry logic")
     void shouldHandleRetryLogic() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -70,7 +69,7 @@ class PipelineFailureTest {
     @DisplayName("Should handle dead letter queue")
     void shouldHandleDeadLetterQueue() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

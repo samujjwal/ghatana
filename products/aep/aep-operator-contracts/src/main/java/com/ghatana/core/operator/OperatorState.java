@@ -43,18 +43,18 @@ package com.ghatana.core.operator;
  * <pre>{@code
  * UnifiedOperator operator = new FilterOperator(...);
  * assert operator.getState() == OperatorState.CREATED;
- * 
+ *
  * // Initialize operator
  * operator.initialize(config).getResult();
  * assert operator.getState() == OperatorState.INITIALIZED;
- * 
+ *
  * // Start processing
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
- * 
+ *
  * // Process events
  * OperatorResult result = operator.process(event).getResult();
- * 
+ *
  * // Graceful shutdown
  * operator.stop().getResult();
  * assert operator.getState() == OperatorState.STOPPED;
@@ -64,7 +64,7 @@ package com.ghatana.core.operator;
  * <pre>{@code
  * UnifiedOperator operator = new PatternOperator(...);
  * assert operator.getState() == OperatorState.CREATED;
- * 
+ *
  * // Invalid configuration causes initialization failure
  * try {
  *     operator.initialize(invalidConfig).getResult();
@@ -82,14 +82,14 @@ package com.ghatana.core.operator;
  * operator.initialize(config).getResult();
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
- * 
+ *
  * // Processing failure transitions to FAILED state
  * try {
  *     operator.process(malformedEvent).getResult();
  * } catch (Exception e) {
  *     assert operator.getState() == OperatorState.FAILED;
  * }
- * 
+ *
  * // Recovery requires restart
  * UnifiedOperator recoveredOperator = new LearningOperator(...);
  * recoveredOperator.initialize(config).getResult();
@@ -103,11 +103,11 @@ package com.ghatana.core.operator;
  *     .addOperator(operator1)
  *     .addOperator(operator2)
  *     .addOperator(operator3);
- * 
+ *
  * // Check all operators are healthy (RUNNING state)
  * boolean allHealthy = pipeline.getOperators().stream()
  *     .allMatch(op -> op.getState() == OperatorState.RUNNING && op.isHealthy());
- * 
+ *
  * if (!allHealthy) {
  *     // Find failed operators
  *     List<UnifiedOperator> failedOps = pipeline.getOperators().stream()
@@ -123,11 +123,11 @@ package com.ghatana.core.operator;
  * operator.initialize(config).getResult();
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
- * 
+ *
  * // Stop operator
  * operator.stop().getResult();
  * assert operator.getState() == OperatorState.STOPPED;
- * 
+ *
  * // Restart operator (STOPPED → RUNNING transition allowed)
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
@@ -141,7 +141,7 @@ package com.ghatana.core.operator;
  *     operator,
  *     op -> op.getState().ordinal()  // CREATED=0, INITIALIZED=1, etc.
  * );
- * 
+ *
  * // Count operators by state
  * meterRegistry.gauge("operator.count.running",
  *     catalog.getAll().stream()
@@ -234,18 +234,18 @@ package com.ghatana.core.operator;
  * @see UnifiedOperator
  * @see AbstractOperator
  * @see OperatorId
- * 
+ *
  * @doc.type enum
  * @doc.purpose Lifecycle state of operators in Unified Operator Model
  * @doc.layer core
  * @doc.pattern State Machine
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
  */
 public enum OperatorState {
-    
+
     /**
      * Operator instance created, not yet initialized.
      */

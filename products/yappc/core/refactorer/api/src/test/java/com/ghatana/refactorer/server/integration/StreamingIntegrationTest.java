@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration tests focused on streaming transports (SSE, WebSocket) backed by the shared
  * JobProgressStreamer implementation.
- 
+
  * @doc.type class
  * @doc.purpose Handles streaming integration test operations
  * @doc.layer core

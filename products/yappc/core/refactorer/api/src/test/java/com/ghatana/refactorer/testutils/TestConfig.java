@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 
 /**
  * Test configuration helper that creates a minimal {@link PolyfixProjectContext} for testing.
- 
+
  * @doc.type class
  * @doc.purpose Handles test config operations
  * @doc.layer core

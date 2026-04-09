@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.storage;
 
-import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
 import com.ghatana.datacloud.spi.EventLogStore.Subscription;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -17,17 +16,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 

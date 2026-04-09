@@ -98,7 +98,7 @@ class PHRAuditTrailServiceTest {
 
         auditTrailService.recordAuditEvent(event);
 
-        AuditTrailService.ImmutableAuditTrail trail = 
+        AuditTrailService.ImmutableAuditTrail trail =
             auditTrailService.getImmutableTrail("patient-1");
 
         assertNotNull(trail);
@@ -133,7 +133,7 @@ class PHRAuditTrailServiceTest {
         auditTrailService.recordAuditEvent(event1);
         auditTrailService.recordAuditEvent(event2);
 
-        AuditTrailService.VerificationResult result = 
+        AuditTrailService.VerificationResult result =
             auditTrailService.verifyTrailIntegrity("patient-1");
 
         assertTrue(result.isValid());

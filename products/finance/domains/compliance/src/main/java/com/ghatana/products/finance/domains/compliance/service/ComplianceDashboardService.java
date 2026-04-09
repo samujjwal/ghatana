@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @doc.type      Service

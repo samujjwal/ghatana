@@ -79,47 +79,47 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class RedisHealthCheck implements HealthCheck {
-    
+
     private final JedisPool jedisPool;
     private final String name;
     private final Duration timeout;
-    
+
     public RedisHealthCheck(JedisPool jedisPool, String name) {
         this(jedisPool, name, Duration.ofSeconds(3));
     }
-    
+
     public RedisHealthCheck(JedisPool jedisPool, String name, Duration timeout) {
         this.jedisPool = jedisPool;
         this.name = name;
         this.timeout = timeout;
     }
-    
+
     @Override
     public Promise<HealthCheckResult> check() {
         return PromisesCompat.runBlocking(() -> {
             Instant start = Instant.now();
-            
+
             try (Jedis jedis = jedisPool.getResource()) {
                 // Test basic connectivity with ping
                 String pingResult = jedis.ping();
                 if (!"PONG".equals(pingResult)) {
                     return HealthCheckResult.unhealthy("Redis ping failed, got: " + pingResult);
                 }
-                
+
                 // Test basic operations
                 String testKey = "health:check:" + System.currentTimeMillis();
                 String testValue = "test";
-                
+
                 jedis.setex(testKey, 10, testValue); // Set with 10 second expiration
                 String retrievedValue = jedis.get(testKey);
                 jedis.del(testKey); // Clean up
-                
+
                 if (!testValue.equals(retrievedValue)) {
                     return HealthCheckResult.unhealthy("Redis set/get test failed");
                 }
-                
+
                 Duration duration = Duration.between(start, Instant.now());
-                
+
                 Map<String, Object> details = Map.of(
                     "ping", pingResult,
                     "setGetTest", "passed",
@@ -127,9 +127,9 @@ public class RedisHealthCheck implements HealthCheck {
                     "poolIdle", jedisPool.getNumIdle(),
                     "poolWaiters", jedisPool.getNumWaiters()
                 );
-                
+
                 return HealthCheckResult.healthy("Redis connection successful", details, duration);
-                
+
             } catch (Exception e) {
                 Duration duration = Duration.between(start, Instant.now());
                 Map<String, Object> details = Map.of(
@@ -138,22 +138,22 @@ public class RedisHealthCheck implements HealthCheck {
                     "poolActive", jedisPool.getNumActive(),
                     "poolIdle", jedisPool.getNumIdle()
                 );
-                
+
                 return HealthCheckResult.unhealthy("Redis health check failed", details, duration, e);
             }
         });
     }
-    
+
     @Override
     public String getName() {
         return name;
     }
-    
+
     @Override
     public Duration getTimeout() {
         return timeout;
     }
-    
+
     @Override
     public boolean isCritical() {
         return false; // Redis is typically not critical for liveness, but important for readiness

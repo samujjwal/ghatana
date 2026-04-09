@@ -39,20 +39,20 @@ import java.util.function.Supplier;
  * <pre>{@code
  * JedisPool pool = new JedisPool("localhost", 6379);
  * ObjectMapper mapper = new ObjectMapper();
- * 
+ *
  * RedisCacheManager cache = new RedisCacheManager(
  *     pool, mapper, "tenant:acme", Duration.ofMinutes(15)
  * );
- * 
+ *
  * // Store user with 5-minute TTL
  * cache.put("user:123", user, Duration.ofMinutes(5))
  *     .whenComplete(() -> logger.info("User cached"));
- * 
+ *
  * // Get-or-compute pattern
- * cache.getOrCompute("config", Config.class, 
+ * cache.getOrCompute("config", Config.class,
  *     () -> loadFromDatabase())
  *     .whenResult(cfg -> logger.info("Config: {}", cfg));
- * 
+ *
  * // View statistics
  * CacheStats stats = cache.getStats();
  * logger.info("Hit rate: {}", stats.getHitRate());
@@ -112,12 +112,12 @@ public class RedisCacheManager implements CacheManager {
                 jedis -> jedis.get(redisOperations.namespaceKey(key)),
                 "get"
             );
-            
+
             if (value == null) {
                 missCount.incrementAndGet();
                 return Optional.empty();
             }
-            
+
             hitCount.incrementAndGet();
             return Optional.of(redisOperations.fromJson(value, type));
         });
@@ -133,7 +133,7 @@ public class RedisCacheManager implements CacheManager {
         return runBlocking(() -> {
             String json = redisOperations.toJson(value);
             String namespacedKey = redisOperations.namespaceKey(key);
-            
+
             if (ttl == null || ttl.isZero() || ttl.isNegative()) {
                 redisOperations.execute(
                     jedis -> jedis.set(namespacedKey, json),
@@ -151,7 +151,7 @@ public class RedisCacheManager implements CacheManager {
 
     @Override
     public Promise<Boolean> remove(String key) {
-        return runBlocking(() -> 
+        return runBlocking(() ->
             redisOperations.execute(
                 jedis -> jedis.del(redisOperations.namespaceKey(key)) > 0,
                 "del"
@@ -161,7 +161,7 @@ public class RedisCacheManager implements CacheManager {
 
     @Override
     public Promise<Boolean> exists(String key) {
-        return runBlocking(() -> 
+        return runBlocking(() ->
             redisOperations.execute(
                 jedis -> jedis.exists(redisOperations.namespaceKey(key)),
                 "exists"
@@ -176,7 +176,7 @@ public class RedisCacheManager implements CacheManager {
                 jedis -> jedis.keys(redisOperations.namespaceKey(pattern.replace("*", "")) + "*"),
                 "keys"
             );
-            
+
             Set<String> result = new HashSet<>();
             for (String k : keys) {
                 result.add(redisOperations.removeNamespace(k));
@@ -197,7 +197,7 @@ public class RedisCacheManager implements CacheManager {
                 jedis -> jedis.keys(redisOperations.namespaceKey(pattern.replace("*", "")) + "*"),
                 "keys"
             );
-            
+
             long deleted = redisOperations.execute(
                 jedis -> {
                     long count = 0;
@@ -208,7 +208,7 @@ public class RedisCacheManager implements CacheManager {
                 },
                 "del"
             );
-            
+
             evictionCount.addAndGet(deleted);
             return deleted;
         });
@@ -225,7 +225,7 @@ public class RedisCacheManager implements CacheManager {
             if (optional.isPresent()) {
                 return Promise.of(optional.get());
             }
-            
+
             Instant start = Instant.now();
             return supplier.get().then(value ->
                 put(key, value, ttl).map(ignored -> {
@@ -244,7 +244,7 @@ public class RedisCacheManager implements CacheManager {
 
     @Override
     public Promise<Long> increment(String key, long delta) {
-        return runBlocking(() -> 
+        return runBlocking(() ->
             redisOperations.execute(
                 jedis -> jedis.incrBy(redisOperations.namespaceKey(key), delta),
                 "incrBy"
@@ -270,7 +270,7 @@ public class RedisCacheManager implements CacheManager {
                 jedis -> jedis.ttl(redisOperations.namespaceKey(key)),
                 "ttl"
             );
-            
+
             if (ttlSeconds == null) {
                 return Duration.ZERO;
             }
@@ -302,13 +302,13 @@ public class RedisCacheManager implements CacheManager {
      */
     private class CacheStatsImpl implements CacheStats {
         @Override
-        public long getHitCount() { 
-            return hitCount.get(); 
+        public long getHitCount() {
+            return hitCount.get();
         }
 
         @Override
-        public long getMissCount() { 
-            return missCount.get(); 
+        public long getMissCount() {
+            return missCount.get();
         }
 
         @Override
@@ -319,13 +319,13 @@ public class RedisCacheManager implements CacheManager {
         }
 
         @Override
-        public long getEvictionCount() { 
-            return evictionCount.get(); 
+        public long getEvictionCount() {
+            return evictionCount.get();
         }
 
         @Override
-        public long getSize() { 
-            return -1; 
+        public long getSize() {
+            return -1;
         }
 
         @Override

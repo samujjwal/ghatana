@@ -11,7 +11,6 @@ import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 

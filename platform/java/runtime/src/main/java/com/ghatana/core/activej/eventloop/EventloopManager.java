@@ -105,23 +105,23 @@ import java.util.Map;
  */
 @Slf4j
 public final class EventloopManager {
-    
+
     private static final ThreadLocal<Eventloop> THREAD_LOCAL_EVENTLOOP = new ThreadLocal<>();
     private static final ConcurrentHashMap<Long, Eventloop> EVENTLOOP_REGISTRY = new ConcurrentHashMap<>();
     private static final AtomicBoolean SHUTDOWN_INITIATED = new AtomicBoolean(false);
     private static final AtomicLong EVENTLOOP_COUNTER = new AtomicLong(0);
-    
+
     // Map threadId -> current eventloop id for that thread
     private static final ConcurrentHashMap<Long, Long> THREAD_EVENTLOOP_ID = new ConcurrentHashMap<>();
 
     private EventloopManager() {
         throw new UnsupportedOperationException("Utility class - do not instantiate");
     }
-    
+
     /**
      * Gets or creates an eventloop for the current thread.
      * This method is idempotent - multiple calls return the same instance.
-     * 
+     *
      * @return The eventloop for the current thread
      * @throws IllegalStateException if shutdown has been initiated
      */
@@ -133,22 +133,22 @@ public final class EventloopManager {
         }
         return eventloop;
     }
-    
+
     /**
      * Creates a new managed eventloop with default configuration.
      * The eventloop is automatically registered for shutdown.
-     * 
+     *
      * @return A new eventloop instance
      * @throws IllegalStateException if shutdown has been initiated
      */
     public static Eventloop create() {
         return create(null);
     }
-    
+
     /**
      * Creates a new managed eventloop with custom thread name.
      * The eventloop is automatically registered for shutdown.
-     * 
+     *
      * @param threadName Custom thread name (null for auto-generated)
      * @return A new eventloop instance
      * @throws IllegalStateException if shutdown has been initiated
@@ -157,18 +157,18 @@ public final class EventloopManager {
         if (SHUTDOWN_INITIATED.get()) {
             throw new IllegalStateException("EventloopManager is shutting down - cannot create new eventloops");
         }
-        
+
         long eventloopId = EVENTLOOP_COUNTER.incrementAndGet();
-        String name = threadName != null ? threadName : 
+        String name = threadName != null ? threadName :
             "eventloop-" + Thread.currentThread().getName() + "-" + eventloopId;
-        
+
         Eventloop eventloop = Eventloop.builder()
             .withThreadName(name)
             .withFatalErrorHandler((error, context) -> {
                 log.error("Fatal error in eventloop {}: {}", name, context, error);
             })
             .build();
-        
+
         long threadId = Thread.currentThread().getId();
         // Register eventloop under unique id so we can track multiple eventloops created on the same thread
         EVENTLOOP_REGISTRY.put(eventloopId, eventloop);
@@ -177,23 +177,23 @@ public final class EventloopManager {
         // Also set thread-local so getCurrentEventloop works
         THREAD_LOCAL_EVENTLOOP.set(eventloop);
 
-        log.debug("Created eventloop '{}' for thread {} (total active: {})", 
+        log.debug("Created eventloop '{}' for thread {} (total active: {})",
             name, threadId, EVENTLOOP_REGISTRY.size());
         return eventloop;
     }
-    
+
     /**
      * Checks if the current thread has an associated eventloop.
-     * 
+     *
      * @return true if current thread has an eventloop, false otherwise
      */
     public static boolean hasEventloop() {
         return THREAD_LOCAL_EVENTLOOP.get() != null;
     }
-    
+
     /**
      * Gets the eventloop for a specific thread ID.
-     * 
+     *
      * @param threadId The thread ID
      * @return The eventloop for that thread, or null if none exists
      */
@@ -201,11 +201,11 @@ public final class EventloopManager {
         Long id = THREAD_EVENTLOOP_ID.get(threadId);
         return id == null ? null : EVENTLOOP_REGISTRY.get(id);
     }
-    
+
     /**
      * Removes the eventloop association for the current thread.
      * <b>Note:</b> This does NOT stop the eventloop - caller must handle that separately.
-     * 
+     *
      * <p>Use this when a thread is done using its eventloop but the eventloop
      * itself may still be running on another thread.
      */
@@ -221,11 +221,11 @@ public final class EventloopManager {
             }
         }
     }
-    
+
     /**
      * Initiates graceful shutdown of all managed eventloops.
      * This method blocks until all eventloops stop or timeout is reached.
-     * 
+     *
      * <p><b>Shutdown Process:</b>
      * <ol>
      *   <li>Marks manager as shutting down (prevents new eventloop creation)</li>
@@ -233,7 +233,7 @@ public final class EventloopManager {
      *   <li>Waits for each to stop within timeout</li>
      *   <li>Clears all registrations</li>
      * </ol>
-     * 
+     *
      * @param timeout Maximum time to wait for all eventloops to stop
      * @return true if all eventloops stopped cleanly within timeout, false otherwise
      */
@@ -242,18 +242,18 @@ public final class EventloopManager {
             log.warn("Shutdown already initiated");
             return false;
         }
-        
+
         int count = EVENTLOOP_REGISTRY.size();
         log.info("Initiating shutdown of {} eventloop(s) with timeout {}", count, timeout);
-        
+
         if (count == 0) {
             log.info("No eventloops to shutdown");
             return true;
         }
-        
+
         long deadlineNanos = System.nanoTime() + timeout.toNanos();
         boolean allStopped = true;
-        
+
         // Break all eventloops
         for (Map.Entry<Long, Eventloop> entry : EVENTLOOP_REGISTRY.entrySet()) {
             Eventloop eventloop = entry.getValue();
@@ -276,7 +276,7 @@ public final class EventloopManager {
                 allStopped = false;
             }
         }
-        
+
         // In test and many runtime scenarios eventloops may be run on the current thread
         // and not expose a separate thread to wait on; treat breakEventloop() as sufficient
         // to request shutdown and consider them stopped for the manager's bookkeeping.
@@ -290,16 +290,16 @@ public final class EventloopManager {
         log.info("Shutdown complete. All stopped cleanly: {}", allStopped);
         return allStopped;
     }
-    
+
     /**
      * Gets the count of currently active (registered) eventloops.
-     * 
+     *
      * @return The number of active eventloops
      */
     public static int getActiveCount() {
         return EVENTLOOP_REGISTRY.size();
     }
-    
+
     /**
      * Resets the manager state. <b>FOR TESTING ONLY.</b>
      * Clears all registrations and resets shutdown flag.

@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Learning session manager that tracks and orchestrates learner sessions.
- * 
+ *
  * <p>Features:
  * <ul>
  *   <li>Session lifecycle management (start, pause, resume, end)</li>
@@ -38,7 +38,7 @@ public class LearningSessionService {
     private final UnifiedContentService contentService;
     private final MeterRegistry meterRegistry;
     private final ConcurrentMap<String, LearningSession> activeSessions;
-    
+
     // Metrics
     private final Timer sessionDurationTimer;
 
@@ -54,11 +54,11 @@ public class LearningSessionService {
         this.contentService = contentService;
         this.meterRegistry = meterRegistry;
         this.activeSessions = new ConcurrentHashMap<>();
-        
+
         this.sessionDurationTimer = Timer.builder("tutorputor.sessions.duration")
             .description("Learning session duration")
             .register(meterRegistry);
-        
+
         LOG.info("LearningSessionService initialized");
     }
 
@@ -76,9 +76,9 @@ public class LearningSessionService {
             @NotNull String learnerId,
             @NotNull List<String> topics,
             @NotNull Duration targetDuration) {
-        
+
         String sessionId = UUID.randomUUID().toString();
-        
+
         LearningSession session = new LearningSession(
             sessionId,
             tenantId,
@@ -87,12 +87,12 @@ public class LearningSessionService {
             targetDuration,
             Instant.now()
         );
-        
+
         activeSessions.put(sessionId, session);
-        
-        LOG.info("Started learning session: {} for learner {} with {} topics", 
+
+        LOG.info("Started learning session: {} for learner {} with {} topics",
             sessionId, learnerId, topics.size());
-        
+
         return sessionId;
     }
 
@@ -107,14 +107,14 @@ public class LearningSessionService {
         if (session == null) {
             return Promise.of(null);
         }
-        
+
         // Check if session should end
         if (session.isComplete() || session.hasExceededDuration()) {
             return Promise.of(new SessionContent(
                 null, null, null, true, session.getProgress()
             ));
         }
-        
+
         String currentTopic = session.getCurrentTopic();
         if (currentTopic == null) {
             session.markComplete();
@@ -122,7 +122,7 @@ public class LearningSessionService {
                 null, null, null, true, session.getProgress()
             ));
         }
-        
+
         // Generate content for current topic
         return contentService.generateClaims(
             session.tenantId,
@@ -140,10 +140,10 @@ public class LearningSessionService {
                     session.getProgress()
                 );
             }
-            
+
             String claim = claims.get(0);
             session.setCurrentClaim(claim);
-            
+
             return new SessionContent(
                 currentTopic,
                 claim,
@@ -164,21 +164,21 @@ public class LearningSessionService {
     public Promise<SessionFeedback> submitResponse(
             @NotNull String sessionId,
             @NotNull String response) {
-        
+
         LearningSession session = activeSessions.get(sessionId);
         if (session == null) {
             return Promise.of(new SessionFeedback(
                 false, "Session not found", null, null
             ));
         }
-        
+
         String currentClaim = session.getCurrentClaim();
         if (currentClaim == null) {
             return Promise.of(new SessionFeedback(
                 false, "No active content", null, session.getProgress()
             ));
         }
-        
+
         LearnerAction action = new LearnerAction(
             session.learnerId,
             session.getCurrentTopic() != null ? session.getCurrentTopic() : currentClaim,
@@ -191,7 +191,7 @@ public class LearningSessionService {
             null,
             Map.of("tenantId", session.tenantId, "claim", currentClaim)
         );
-        
+
         return contentService.processLearnerAction(action)
             .map(tutorResponse -> {
                 if (tutorResponse == null) {
@@ -199,12 +199,12 @@ public class LearningSessionService {
                         false, "Unable to evaluate", null, session.getProgress()
                     );
                 }
-                
+
                 boolean correct = tutorResponse.responseType() == TutoringResponse.ResponseType.CORRECT_FEEDBACK
                     || tutorResponse.responseType() == TutoringResponse.ResponseType.MASTERY_ACHIEVED;
-                
+
                 session.recordAttempt(correct);
-                
+
                 // Decide whether to advance
                 if (correct || session.getAttemptsOnCurrent() >= 3) {
                     if (session.shouldAdvanceTopic()) {
@@ -213,7 +213,7 @@ public class LearningSessionService {
                         session.advanceToNextClaim();
                     }
                 }
-                
+
                 return new SessionFeedback(
                     correct,
                     tutorResponse.message(),
@@ -234,14 +234,14 @@ public class LearningSessionService {
         if (session == null) {
             return Promise.of("Session not found");
         }
-        
+
         String currentClaim = session.getCurrentClaim();
         if (currentClaim == null) {
             return Promise.of("No active content");
         }
-        
+
         int hintLevel = session.incrementHintCount();
-        
+
         return contentService.generateHint(
             session.tenantId,
             session.learnerId,
@@ -287,12 +287,12 @@ public class LearningSessionService {
         if (session == null) {
             return null;
         }
-        
+
         session.end();
-        
+
         Duration duration = session.getTotalDuration();
         sessionDurationTimer.record(duration);
-        
+
         SessionSummary summary = new SessionSummary(
             sessionId,
             session.learnerId,
@@ -303,13 +303,13 @@ public class LearningSessionService {
             session.getHintsUsed(),
             session.calculateMasteryGain()
         );
-        
-        LOG.info("Ended session: {} - {} topics completed, {}% accuracy", 
-            sessionId, 
+
+        LOG.info("Ended session: {} - {} topics completed, {}% accuracy",
+            sessionId,
             summary.topicsCompleted(),
-            summary.totalAttempts() > 0 ? 
+            summary.totalAttempts() > 0 ?
                 (summary.correctAttempts() * 100 / summary.totalAttempts()) : 0);
-        
+
         return summary;
     }
 
@@ -324,7 +324,7 @@ public class LearningSessionService {
         if (session == null) {
             return null;
         }
-        
+
         return new SessionInfo(
             sessionId,
             session.learnerId,
@@ -360,7 +360,7 @@ public class LearningSessionService {
         final List<String> topics;
         final Duration targetDuration;
         final Instant startTime;
-        
+
         private int currentTopicIndex = 0;
         private String currentClaim;
         private Instant currentItemStartTime;
@@ -372,7 +372,7 @@ public class LearningSessionService {
         private int topicsCompleted = 0;
         private double initialMastery = 0.0;
         private double currentMastery = 0.0;
-        
+
         private SessionState state = SessionState.ACTIVE;
         private Instant pauseTime;
         private Duration pausedDuration = Duration.ZERO;
@@ -394,7 +394,7 @@ public class LearningSessionService {
         }
 
         String getCurrentClaim() { return currentClaim; }
-        void setCurrentClaim(String claim) { 
+        void setCurrentClaim(String claim) {
             this.currentClaim = claim;
             this.currentItemStartTime = Instant.now();
             this.attemptsOnCurrent = 0;
@@ -406,7 +406,7 @@ public class LearningSessionService {
         }
 
         int getAttemptsOnCurrent() { return attemptsOnCurrent; }
-        
+
         void recordAttempt(boolean correct) {
             attemptsOnCurrent++;
             totalAttempts++;
@@ -424,7 +424,7 @@ public class LearningSessionService {
 
         boolean shouldAdvanceTopic() {
             // Advance after demonstrating mastery on current topic
-            return correctAttempts > 0 && 
+            return correctAttempts > 0 &&
                    (double) correctAttempts / totalAttempts > 0.7;
         }
 
@@ -455,7 +455,7 @@ public class LearningSessionService {
         }
 
         Duration getTotalDuration() {
-            Duration active = Duration.between(startTime, 
+            Duration active = Duration.between(startTime,
                 state == SessionState.PAUSED ? pauseTime : Instant.now());
             return active.minus(pausedDuration);
         }
@@ -484,7 +484,7 @@ public class LearningSessionService {
         int getTotalAttempts() { return totalAttempts; }
         int getCorrectAttempts() { return correctAttempts; }
         int getHintsUsed() { return totalHints; }
-        
+
         double calculateMasteryGain() {
             return currentMastery - initialMastery;
         }

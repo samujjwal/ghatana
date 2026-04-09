@@ -2,7 +2,6 @@ package com.ghatana.kernel.adapter;
 
 import com.ghatana.kernel.adapter.aep.AepKernelAdapter;
 import com.ghatana.kernel.adapter.aep.AepKernelAdapterImpl;
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
 import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl;
 import com.ghatana.kernel.adapter.datacloud.DataResult;
 import com.ghatana.kernel.adapter.datacloud.SchemaInfo;

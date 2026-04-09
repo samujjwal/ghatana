@@ -108,7 +108,7 @@ public final class OmsDomainModule implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting OMS Domain module");
 
-        
+
             // Start OMS services
             started = true;
             log.info("OMS Domain module started successfully");
@@ -119,7 +119,7 @@ public final class OmsDomainModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping OMS Domain module");
 
-        
+
             started = false;
             log.info("OMS Domain module stopped successfully");
         return Promise.complete();

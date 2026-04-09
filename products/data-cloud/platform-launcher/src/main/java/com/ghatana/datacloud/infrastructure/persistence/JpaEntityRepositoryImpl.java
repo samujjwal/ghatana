@@ -1,8 +1,6 @@
 package com.ghatana.datacloud.infrastructure.persistence;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.application.DynamicQueryBuilder;
 import com.ghatana.datacloud.application.QuerySpec;
 import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import com.ghatana.datacloud.entity.Entity;
@@ -18,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 /**
  * JPA implementation of EntityRepository with ActiveJ Promise support.

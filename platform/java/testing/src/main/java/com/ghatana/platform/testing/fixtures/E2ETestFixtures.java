@@ -10,19 +10,19 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * E2E Test Fixtures — Pre-configured test containers for common scenarios.
- * 
+ *
  * Provides:
  * - PostgreSQL database container
  * - Redis cache container
  * - Kafka message broker container
  * - Common fixture configurations
- * 
+ *
  * Usage:
  * ```java
  * class AgentExecutionE2ETest {
  *   static PostgreSQLContainer<?> db = E2ETestFixtures.postgresDatabase();
  *   static GenericContainer<?> redis = E2ETestFixtures.redisCache();
- *   
+ *
  *   @BeforeEach
  *   void setUp() {
  *     db.start();
@@ -88,14 +88,14 @@ public class E2ETestFixtures {
 
     /**
      * Shared fixture wrapper for multi-container scenarios
-     * 
+     *
      * Usage:
      * ```java
      * E2ETestFixtures.Shared fixtures = E2ETestFixtures.createSharedFixtures();
      * fixtures.start();
-     * 
+     *
      * // Use fixtures.database(), fixtures.cache(), etc.
-     * 
+     *
      * fixtures.stop();
      * ```
      */

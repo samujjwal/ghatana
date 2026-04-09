@@ -22,9 +22,9 @@ import java.util.Map;
  * @doc.pattern Operator
  */
 public class PhaseOperator {
-    
+
     private static final Logger log = LoggerFactory.getLogger(PhaseOperator.class);
-    
+
     private final PhaseType phase;
     private final IntentService intentService;
     private final ShapeService shapeService;
@@ -34,7 +34,7 @@ public class PhaseOperator {
     private final ObserveService observeService;
     private final LearningService learningService;
     private final EvolutionService evolutionService;
-    
+
     public PhaseOperator(
             PhaseType phase,
             IntentService intentService,
@@ -55,16 +55,16 @@ public class PhaseOperator {
         this.learningService = learningService;
         this.evolutionService = evolutionService;
     }
-    
+
     /**
      * Executes the phase operation.
-     * 
+     *
      * @param input Input data for the phase
      * @return Promise of execution result
      */
     public Promise<Object> execute(Object input) {
         log.info("Executing phase: {}", phase);
-        
+
         return switch (phase) {
             case INTENT -> executeIntent(input);
             case SHAPE -> executeShape(input);
@@ -76,7 +76,7 @@ public class PhaseOperator {
             case EVOLVE -> executeEvolve(input);
         };
     }
-    
+
     private Promise<Object> executeIntent(Object input) {
         if (input instanceof com.ghatana.yappc.domain.intent.IntentInput intentInput) {
             return intentService.capture(intentInput)
@@ -84,7 +84,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Intent phase"));
     }
-    
+
     private Promise<Object> executeShape(Object input) {
         if (input instanceof com.ghatana.yappc.domain.intent.IntentSpec intentSpec) {
             return shapeService.derive(intentSpec)
@@ -92,7 +92,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Shape phase"));
     }
-    
+
     private Promise<Object> executeValidate(Object input) {
         if (input instanceof com.ghatana.yappc.domain.shape.ShapeSpec shapeSpec) {
             return validationService.validate(shapeSpec)
@@ -100,7 +100,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Validate phase"));
     }
-    
+
     private Promise<Object> executeGenerate(Object input) {
         if (input instanceof com.ghatana.yappc.domain.generate.ValidatedSpec validatedSpec) {
             return generationService.generate(validatedSpec)
@@ -108,7 +108,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Generate phase"));
     }
-    
+
     private Promise<Object> executeRun(Object input) {
         if (input instanceof com.ghatana.yappc.domain.run.RunSpec runSpec) {
             return runService.execute(runSpec)
@@ -116,7 +116,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Run phase"));
     }
-    
+
     private Promise<Object> executeObserve(Object input) {
         if (input instanceof com.ghatana.yappc.domain.run.RunResult runResult) {
             return observeService.collect(runResult)
@@ -124,7 +124,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Observe phase"));
     }
-    
+
     private Promise<Object> executeLearn(Object input) {
         if (input instanceof com.ghatana.yappc.domain.observe.Observation observation) {
             return learningService.analyze(observation)
@@ -132,7 +132,7 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Learn phase"));
     }
-    
+
     private Promise<Object> executeEvolve(Object input) {
         if (input instanceof com.ghatana.yappc.domain.learn.Insights insights) {
             return evolutionService.propose(insights)
@@ -140,19 +140,19 @@ public class PhaseOperator {
         }
         return Promise.ofException(new IllegalArgumentException("Invalid input type for Evolve phase"));
     }
-    
+
     /**
      * Gets the operator ID for this phase.
-     * 
+     *
      * @return Operator ID
      */
     public String getOperatorId() {
         return "yappc.phase." + phase.name().toLowerCase();
     }
-    
+
     /**
      * Gets metadata about this operator.
-     * 
+     *
      * @return Operator metadata
      */
     public Map<String, String> getMetadata() {

@@ -150,7 +150,7 @@ public interface ModelGovernanceService {
         private final long latencyMillis;
         private final Map<String, Double> customMetrics;
 
-        public ModelPerformanceMetrics(double confidence, double accuracy, long latencyMillis, 
+        public ModelPerformanceMetrics(double confidence, double accuracy, long latencyMillis,
                                       Map<String, Double> customMetrics) {
             this.confidence = confidence;
             this.accuracy = accuracy;
@@ -188,7 +188,7 @@ public interface ModelGovernanceService {
         private final String type;
         private final Map<String, Object> metadata;
 
-        public ModelRegistration(String modelId, String name, String version, String type, 
+        public ModelRegistration(String modelId, String name, String version, String type,
                                 Map<String, Object> metadata) {
             this.modelId = modelId;
             this.name = name;

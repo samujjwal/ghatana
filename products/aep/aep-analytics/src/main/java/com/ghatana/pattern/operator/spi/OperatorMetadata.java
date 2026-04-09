@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Metadata about an operator for validation and compilation purposes.
- * 
+ *
  * <p>OperatorMetadata describes operator capabilities and constraints:
  * <ul>
  *   <li><b>Parameters</b>: Required and optional configuration parameters</li>
@@ -15,7 +15,7 @@ import java.util.Map;
  *   <li><b>Statefulness</b>: Whether operator requires stateful/stateless execution</li>
  *   <li><b>Constraints</b>: Additional validation rules (type constraints, value ranges)</li>
  * </ul>
- * 
+ *
  * @doc.pattern Value Object Pattern (immutable metadata), Builder Pattern (construction)
  * @doc.compiler-phase Operator Metadata (validation constraints for compilation)
  * @doc.threading Thread-safe after construction (immutable value object)
@@ -23,7 +23,7 @@ import java.util.Map;
  * @doc.memory O(1) for fixed fields + O(p+c) where p=parameters, c=constraints
  * @doc.immutability Immutable after build(); use builder for modifications
  * @doc.apiNote Define metadata in operator constructor; use for compile-time validation
- * 
+ *
  * <h2>Parameter Types</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -52,7 +52,7 @@ import java.util.Map;
  *     <td>slide (Duration), type (WindowType)</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Operand Constraints</b>:
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -88,7 +88,7 @@ import java.util.Map;
  * </table>
  */
 public class OperatorMetadata {
-    
+
     private final String type;
     private final String description;
     private final List<String> requiredParameters;
@@ -99,7 +99,7 @@ public class OperatorMetadata {
     private final boolean supportsStateless;
     private final Map<String, Object> constraints;
     private final Map<String, Object> metadata;
-    
+
     // Private constructor - use Builder
     private OperatorMetadata(Builder builder) {
         this.type = builder.type;
@@ -113,7 +113,7 @@ public class OperatorMetadata {
         this.constraints = builder.constraints;
         this.metadata = builder.metadata;
     }
-    
+
     // Getters
     public String getType() { return type; }
     public String getDescription() { return description; }
@@ -125,11 +125,11 @@ public class OperatorMetadata {
     public boolean isSupportsStateless() { return supportsStateless; }
     public Map<String, Object> getConstraints() { return constraints; }
     public Map<String, Object> getMetadata() { return metadata; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String type;
         private String description;
@@ -141,7 +141,7 @@ public class OperatorMetadata {
         private boolean supportsStateless = true;
         private Map<String, Object> constraints;
         private Map<String, Object> metadata;
-        
+
         public Builder type(String type) { this.type = type; return this; }
         public Builder description(String description) { this.description = description; return this; }
         public Builder requiredParameters(List<String> requiredParameters) { this.requiredParameters = requiredParameters; return this; }
@@ -215,20 +215,20 @@ public class OperatorMetadata {
             return new OperatorMetadata(this);
         }
     }
-    
+
     /**
      * Check if the operator requires a specific parameter.
-     * 
+     *
      * @param parameterName the parameter name
      * @return true if the parameter is required
      */
     public boolean isRequiredParameter(String parameterName) {
         return requiredParameters != null && requiredParameters.contains(parameterName);
     }
-    
+
     /**
      * Check if the operator supports a specific parameter.
-     * 
+     *
      * @param parameterName the parameter name
      * @return true if the parameter is supported
      */
@@ -236,37 +236,37 @@ public class OperatorMetadata {
         return (requiredParameters != null && requiredParameters.contains(parameterName)) ||
                (optionalParameters != null && optionalParameters.contains(parameterName));
     }
-    
+
     /**
      * Check if the operator supports the given number of operands.
-     * 
+     *
      * @param operandCount the number of operands
      * @return true if the operand count is supported
      */
     public boolean supportsOperandCount(int operandCount) {
         return operandCount >= minOperands && operandCount <= maxOperands;
     }
-    
+
     /**
      * Get a constraint value by key.
-     * 
+     *
      * @param key the constraint key
      * @return the constraint value, or null if not found
      */
     public Object getConstraint(String key) {
         return constraints != null ? constraints.get(key) : null;
     }
-    
+
     /**
      * Get a metadata value by key.
-     * 
+     *
      * @param key the metadata key
      * @return the metadata value, or null if not found
      */
     public Object getMetadata(String key) {
         return metadata != null ? metadata.get(key) : null;
     }
-    
+
     @Override
     public String toString() {
         return "OperatorMetadata{" +
@@ -279,8 +279,3 @@ public class OperatorMetadata {
                 '}';
     }
 }
-
-
-
-
-

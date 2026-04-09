@@ -45,7 +45,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         String password = "secure-password";
 
         // WHEN: Authenticate user
-        AuthenticationResult result = runPromise(() -> 
+        AuthenticationResult result = runPromise(() ->
             securityManager.authenticate(username, password)
         );
 
@@ -62,7 +62,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         String password = "wrong-password";
 
         // WHEN: Authenticate with invalid password
-        AuthenticationResult result = runPromise(() -> 
+        AuthenticationResult result = runPromise(() ->
             securityManager.authenticate(username, password)
         );
 
@@ -79,13 +79,13 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         securityManager.grantPermission(userId, "module:write");
 
         // WHEN: Check authorization
-        boolean canRead = runPromise(() -> 
+        boolean canRead = runPromise(() ->
             securityManager.hasPermission(userId, "module:read")
         );
-        boolean canWrite = runPromise(() -> 
+        boolean canWrite = runPromise(() ->
             securityManager.hasPermission(userId, "module:write")
         );
-        boolean canDelete = runPromise(() -> 
+        boolean canDelete = runPromise(() ->
             securityManager.hasPermission(userId, "module:delete")
         );
 
@@ -104,7 +104,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         securityManager.addRolePermission("admin", "system:manage");
 
         // WHEN: Check role permissions
-        boolean hasPermission = runPromise(() -> 
+        boolean hasPermission = runPromise(() ->
             securityManager.hasPermission(userId, "system:manage")
         );
 
@@ -117,12 +117,12 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     void testSecurityTokenValidation() {
         // GIVEN: Generated security token
         String userId = "test-user";
-        String token = runPromise(() -> 
+        String token = runPromise(() ->
             securityManager.generateToken(userId)
         );
 
         // WHEN: Validate token
-        TokenValidationResult validation = runPromise(() -> 
+        TokenValidationResult validation = runPromise(() ->
             securityManager.validateToken(token)
         );
 
@@ -138,7 +138,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         String expiredToken = securityManager.generateExpiredToken("test-user");
 
         // WHEN: Validate expired token
-        TokenValidationResult validation = runPromise(() -> 
+        TokenValidationResult validation = runPromise(() ->
             securityManager.validateToken(expiredToken)
         );
 
@@ -154,23 +154,23 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         SecurityPolicy policy = new SecurityPolicy("module-access-policy");
         policy.addRule("module:finance", "role:finance-user");
         policy.addRule("module:phr", "role:healthcare-user");
-        
+
         securityManager.registerPolicy(policy);
 
         // WHEN: Check access for different users
         String financeUser = "finance-user";
         String phrUser = "phr-user";
-        
+
         securityManager.assignRole(financeUser, "finance-user");
         securityManager.assignRole(phrUser, "healthcare-user");
 
-        boolean financeAccess = runPromise(() -> 
+        boolean financeAccess = runPromise(() ->
             securityManager.checkPolicyAccess(financeUser, "module:finance")
         );
-        boolean phrAccess = runPromise(() -> 
+        boolean phrAccess = runPromise(() ->
             securityManager.checkPolicyAccess(phrUser, "module:phr")
         );
-        boolean crossAccess = runPromise(() -> 
+        boolean crossAccess = runPromise(() ->
             securityManager.checkPolicyAccess(financeUser, "module:phr")
         );
 
@@ -210,7 +210,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
             final String userId = "user-" + i;
             new Thread(() -> {
                 try {
-                    AuthenticationResult result = runPromise(() -> 
+                    AuthenticationResult result = runPromise(() ->
                         securityManager.authenticate(userId, "password")
                     );
                     if (result.isAuthenticated()) {
@@ -249,7 +249,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
 
         Promise<AuthenticationResult> authenticate(String username, String password) {
             auditLog.add("authentication:" + username);
-            
+
             if ((validUsers.contains(username) || username.startsWith("user-"))
                 && ("password".equals(password) || "secure-password".equals(password))) {
                 return Promise.of(new AuthenticationResult(true, username));
@@ -271,12 +271,12 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
 
         Promise<Boolean> hasPermission(String userId, String permission) {
             auditLog.add("authorization:" + userId + ":" + permission);
-            
+
             // Check direct permissions
             if (userPermissions.getOrDefault(userId, Set.of()).contains(permission)) {
                 return Promise.of(true);
             }
-            
+
             // Check role permissions
             Set<String> roles = userRoles.getOrDefault(userId, Set.of());
             for (String role : roles) {
@@ -284,7 +284,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
                     return Promise.of(true);
                 }
             }
-            
+
             return Promise.of(false);
         }
 
@@ -307,11 +307,11 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
             if (expiry == null) {
                 return Promise.of(new TokenValidationResult(false, null, "Token not found"));
             }
-            
+
             if (System.currentTimeMillis() > expiry) {
                 return Promise.of(new TokenValidationResult(false, null, "Token expired"));
             }
-            
+
             String userId = tokenUsers.get(token);
             return Promise.of(new TokenValidationResult(true, userId, null));
         }

@@ -3,8 +3,6 @@ package com.ghatana.tts.grpc;
 import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.AudioData;
 import com.ghatana.media.common.AudioFormat;
-import com.ghatana.media.common.EngineMetrics;
-import com.ghatana.media.common.EngineStatus;
 import com.ghatana.media.common.ValidationError;
 import com.ghatana.media.tts.api.ProfileSettings;
 import com.ghatana.media.tts.api.TtsEngine;
@@ -350,4 +348,3 @@ class TtsGrpcServiceTest {
         Throwable getError() { return error; }
     }
 }
-

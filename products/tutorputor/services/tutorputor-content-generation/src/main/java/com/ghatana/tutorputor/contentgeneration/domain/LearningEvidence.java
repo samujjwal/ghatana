@@ -5,23 +5,23 @@ public class LearningEvidence {
     private final String claimId;
     private final String type;
     private final String content;
-    
+
     public LearningEvidence(String id, String claimId, String type, String content) {
         this.id = id;
         this.claimId = claimId;
         this.type = type;
         this.content = content;
     }
-    
+
     public String getId() { return id; }
     public String getClaimId() { return claimId; }
     public String getType() { return type; }
     public String getContent() { return content; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String id, claimId, type, content;
         public Builder id(String id) { this.id = id; return this; }

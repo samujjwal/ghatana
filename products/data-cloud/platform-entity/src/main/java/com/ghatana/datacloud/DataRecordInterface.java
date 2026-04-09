@@ -145,4 +145,3 @@ public interface DataRecordInterface {
      */
     void setCreatedAt(Instant createdAt);
 }
-

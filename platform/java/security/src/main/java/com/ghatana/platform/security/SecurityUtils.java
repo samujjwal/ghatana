@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Utility class for common security operations.
  * Migrated to use PolicyService for modern policy-based access control.
- 
+
  *
  * @doc.type class
  * @doc.purpose Security utils
@@ -22,18 +22,18 @@ import java.util.Map;
 */
 public class SecurityUtils {
     private static final Logger logger = LoggerFactory.getLogger(SecurityUtils.class);
-    
+
     // Predefined permission constants
     public static final String PERMISSION_ADMIN = "*:*:*";
     public static final String PERMISSION_EVENT_READ = "event:read:all";
     public static final String PERMISSION_EVENT_WRITE = "event:write:all";
     public static final String PERMISSION_USER_READ = "user:read:all";
     public static final String PERMISSION_USER_WRITE = "user:write:all";
-    
+
     private SecurityUtils() {
         // Private constructor to prevent instantiation
     }
-    
+
     /**
      * Checks if the current user has the required permission using PolicyService.
      *
@@ -48,17 +48,17 @@ public class SecurityUtils {
             logger.warn("Permission check failed: user or policyService is null");
             return false;
         }
-        
+
         // Create a Principal from the user for PolicyService
         // Note: Using "default" as tenantId; in production, tenantId should come from request context
         Principal principal = new Principal("default", user.getRoles().stream().toList());
-        
+
         // Use PolicyService for authorization
         return policyService.isAuthorized(principal, permission, resource);
     }
-    
 
-    
+
+
     /**
      * Checks if a user permission matches a required permission.
      * Supports wildcard matching.
@@ -67,24 +67,24 @@ public class SecurityUtils {
         if (userPermission.equals(PERMISSION_ADMIN)) {
             return true;
         }
-        
+
         String[] userParts = userPermission.split(":");
         String[] requiredParts = requiredPermission.split(":");
-        
+
         if (userParts.length != 3 || requiredParts.length != 3) {
             return false;
         }
-        
+
         // Check each part of the permission
         for (int i = 0; i < 3; i++) {
             if (!userParts[i].equals("*") && !userParts[i].equals(requiredParts[i])) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * Extracts the required permission from a method's annotations.
      *
@@ -95,18 +95,18 @@ public class SecurityUtils {
         if (methodAnnotations == null) {
             return null;
         }
-        
+
         for (Annotation annotation : methodAnnotations) {
             if (annotation instanceof RequiresPermission) {
                 return ((RequiresPermission) annotation).value();
             }
         }
-        
+
         return null;
     }
-    
 
-    
+
+
     /**
      * Extracts the bearer token from an authorization header.
      *
@@ -119,7 +119,7 @@ public class SecurityUtils {
         }
         return authHeader.substring(7);
     }
-    
+
     /**
      * Validates if a password meets the security requirements.
      *

@@ -68,7 +68,7 @@ class ContentGenerationAgentTest extends EventloopTestBase {
     void setUp() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         qualityValidator = new ContentQualityValidator(registry);
-        
+
         // Set up agent
         agent = new TestContentGenerationAgent(
             mockGenerator,
@@ -109,18 +109,18 @@ class ContentGenerationAgentTest extends EventloopTestBase {
 
         when(mockGenerator.generate(any(), any()))
             .thenReturn(Promise.of(generatedResponse));
-        
+
         // Mock the generator metadata to avoid NullPointerException
         GeneratorMetadata metadata = mock(GeneratorMetadata.class);
         lenient().when(metadata.getName()).thenReturn("test-generator");
         lenient().when(mockGenerator.getMetadata()).thenReturn(metadata);
-        
+
         when(mockKnowledgeBaseService.checkCurriculumAlignment(anyString(), anyString(), anyString()))
             .thenReturn(Promise.of(new KnowledgeBaseService.CurriculumAlignmentResult(
-                true, 0.85, "Aligned with science curriculum", 
+                true, 0.85, "Aligned with science curriculum",
                 List.of("Biology", "Energy"), "https://example.com"
             )));
-        
+
         when(mockMemoryStore.storeEpisode(any()))
             .thenReturn(Promise.of(Episode.builder()
                 .agentId("test-agent")
@@ -129,7 +129,7 @@ class ContentGenerationAgentTest extends EventloopTestBase {
                 .input("test")
                 .output("test")
                 .build()));
-        
+
         when(mockMemoryStore.storeFact(any()))
             .thenReturn(Promise.of(Fact.builder()
                 .agentId("test-agent")

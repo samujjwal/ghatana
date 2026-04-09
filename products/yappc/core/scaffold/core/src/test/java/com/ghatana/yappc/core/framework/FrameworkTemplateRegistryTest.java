@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for FrameworkTemplateRegistry.
- 
+
  * @doc.type class
  * @doc.purpose Handles framework template registry test operations
  * @doc.layer core
@@ -49,10 +49,10 @@ class FrameworkTemplateRegistryTest {
     void setUp() throws Exception {
         templatesDir = tempDir.resolve("templates/frameworks");
         Files.createDirectories(templatesDir);
-        
+
         // Create test template structure
         createTestTemplates();
-        
+
         registry = new FrameworkTemplateRegistry(List.of(templatesDir));
     }
 
@@ -65,9 +65,9 @@ class FrameworkTemplateRegistryTest {
             "component",
             "button"
         );
-        
+
         registry.registerTemplate(template);
-        
+
         Optional<FrameworkTemplate> found = registry.getTemplate("test:component:button");
         assertTrue(found.isPresent());
         assertEquals("button", found.get().name());
@@ -78,17 +78,17 @@ class FrameworkTemplateRegistryTest {
     void testFindTemplatesByFramework() {
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of());
-        
+
         FrameworkTemplate template1 = createTestTemplate("react:component:button", "react", "component", "button");
         FrameworkTemplate template2 = createTestTemplate("react:component:input", "react", "component", "input");
         FrameworkTemplate template3 = createTestTemplate("vue:component:button", "vue", "component", "button");
-        
+
         registry.registerTemplate(template1);
         registry.registerTemplate(template2);
         registry.registerTemplate(template3);
-        
+
         List<FrameworkTemplate> reactTemplates = registry.findTemplates("react", "*");
-        
+
         assertEquals(2, reactTemplates.size());
         assertTrue(reactTemplates.stream().allMatch(t -> "react".equals(t.framework())));
     }
@@ -98,15 +98,15 @@ class FrameworkTemplateRegistryTest {
     void testFindTemplatesByFrameworkAndVersion() {
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of());
-        
+
         FrameworkTemplate template1 = createTestTemplate("react:component:button", "react", "18.0", "component", "button");
         FrameworkTemplate template2 = createTestTemplate("react:component:input", "react", "17.0", "component", "input");
-        
+
         registry.registerTemplate(template1);
         registry.registerTemplate(template2);
-        
+
         List<FrameworkTemplate> react18 = registry.findTemplates("react", "18.0");
-        
+
         assertEquals(1, react18.size());
         assertEquals("button", react18.get(0).name());
     }
@@ -117,13 +117,13 @@ class FrameworkTemplateRegistryTest {
         FrameworkTemplate template1 = createTestTemplate("react:component:button", "react", "component", "button");
         FrameworkTemplate template2 = createTestTemplate("react:page:dashboard", "react", "page", "dashboard");
         FrameworkTemplate template3 = createTestTemplate("react:component:input", "react", "component", "input");
-        
+
         registry.registerTemplate(template1);
         registry.registerTemplate(template2);
         registry.registerTemplate(template3);
-        
+
         List<FrameworkTemplate> components = registry.findByCategory("react", "component");
-        
+
         assertEquals(2, components.size());
         assertTrue(components.stream().allMatch(t -> "component".equals(t.category())));
     }
@@ -140,13 +140,13 @@ class FrameworkTemplateRegistryTest {
     void testGetFrameworks() {
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of());
-        
+
         registry.registerTemplate(createTestTemplate("react:component:button", "react", "component", "button"));
         registry.registerTemplate(createTestTemplate("vue:component:button", "vue", "component", "button"));
         registry.registerTemplate(createTestTemplate("angular:component:button", "angular", "component", "button"));
-        
+
         var frameworks = registry.getFrameworks();
-        
+
         assertEquals(3, frameworks.size());
         assertTrue(frameworks.contains("react"));
         assertTrue(frameworks.contains("vue"));
@@ -158,7 +158,7 @@ class FrameworkTemplateRegistryTest {
     void testValidateTemplateSuccess() throws Exception {
         Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}");
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             "test:component:button",
             "test",
@@ -171,9 +171,9 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             new TemplateMetadata("Test", "Author", "1.0", List.of(), Map.of(), List.of(), List.of())
         );
-        
+
         var result = registry.validateTemplate(template);
-        
+
         assertTrue(result.valid());
         assertTrue(result.errors().isEmpty());
     }
@@ -183,7 +183,7 @@ class FrameworkTemplateRegistryTest {
     void testValidateTemplateMissingId() throws Exception {
         Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}");
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             null,
             "test",
@@ -196,9 +196,9 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             null
         );
-        
+
         var result = registry.validateTemplate(template);
-        
+
         assertFalse(result.valid());
         assertTrue(result.errors().stream().anyMatch(e -> e.contains("ID is required")));
     }
@@ -208,7 +208,7 @@ class FrameworkTemplateRegistryTest {
     void testValidateTemplateMissingFramework() throws Exception {
         Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}");
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             "test:component:button",
             null,
@@ -221,9 +221,9 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             null
         );
-        
+
         var result = registry.validateTemplate(template);
-        
+
         assertFalse(result.valid());
         assertTrue(result.errors().stream().anyMatch(e -> e.contains("Framework is required")));
     }
@@ -243,9 +243,9 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             null
         );
-        
+
         var result = registry.validateTemplate(template);
-        
+
         assertFalse(result.valid());
         assertTrue(result.errors().stream().anyMatch(e -> e.contains("does not exist")));
     }
@@ -255,7 +255,7 @@ class FrameworkTemplateRegistryTest {
     void testDiscoverTemplates() throws Exception {
         // Templates were created in setUp, registry should have discovered them
         var frameworks = registry.getFrameworks();
-        
+
         assertFalse(frameworks.isEmpty());
         assertTrue(frameworks.contains("react"));
     }
@@ -266,7 +266,7 @@ class FrameworkTemplateRegistryTest {
         Path templateFile = templatesDir.resolve("react/components/test.hbs");
         Files.createDirectories(templateFile.getParent());
         Files.writeString(templateFile, "{{componentName}}");
-        
+
         TemplateMetadata metadata = new TemplateMetadata(
             "Test component",
             "Test Author",
@@ -276,7 +276,7 @@ class FrameworkTemplateRegistryTest {
             List.of("react"),
             List.of()
         );
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             "react:components:test",
             "react",
@@ -289,9 +289,9 @@ class FrameworkTemplateRegistryTest {
             metadata.dependencies(),
             metadata
         );
-        
+
         registry.registerTemplate(template);
-        
+
         Optional<FrameworkTemplate> found = registry.getTemplate("react:components:test");
         assertTrue(found.isPresent());
         assertNotNull(found.get().metadata());
@@ -303,7 +303,7 @@ class FrameworkTemplateRegistryTest {
     void testTemplateMatches() throws Exception {
         Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}");
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             "react:component:button",
             "react",
@@ -316,7 +316,7 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             null
         );
-        
+
         assertTrue(template.matches("react", "18.0"));
         assertTrue(template.matches("react", "*"));
         assertFalse(template.matches("react", "17.0"));
@@ -329,7 +329,7 @@ class FrameworkTemplateRegistryTest {
         String content = "Hello {{name}}!";
         Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, content);
-        
+
         FrameworkTemplate template = new FrameworkTemplate(
             "test:greeting:hello",
             "test",
@@ -342,7 +342,7 @@ class FrameworkTemplateRegistryTest {
             List.of(),
             null
         );
-        
+
         assertEquals(content, template.getContent());
     }
 
@@ -353,7 +353,7 @@ class FrameworkTemplateRegistryTest {
         Path reactComponents = templatesDir.resolve("react/components");
         Files.createDirectories(reactComponents);
         Files.writeString(reactComponents.resolve("button.hbs"), "export function {{componentName}}() {}");
-        
+
         // Create Spring Boot controller template
         Path springControllers = templatesDir.resolve("spring-boot/controllers");
         Files.createDirectories(springControllers);
@@ -369,7 +369,7 @@ class FrameworkTemplateRegistryTest {
             Path templateFile = templatesDir.resolve(framework).resolve(category).resolve(name + ".hbs");
             Files.createDirectories(templateFile.getParent());
             Files.writeString(templateFile, "{{content}}");
-            
+
             return new FrameworkTemplate(
                 id,
                 framework,

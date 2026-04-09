@@ -69,7 +69,7 @@ import java.util.HashMap;
  * List<String> errors = new ArrayList<>();
  * if (user.getAge() < 0) errors.add("age must be non-negative");
  * if (!user.getEmail().contains("@")) errors.add("email must contain @");
- * 
+ *
  * if (!errors.isEmpty()) {
  *     throw new SchemaValidationException(
  *         "UserSchema",
@@ -113,9 +113,9 @@ import java.util.HashMap;
  * @doc.pattern validation-exception schema-validation error-handling
  */
 public class SchemaValidationException extends ValidationException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Constructs a SchemaValidationException with a validation error message.
      *
@@ -159,7 +159,7 @@ public class SchemaValidationException extends ValidationException {
         super(message, new HashMap<>());
         initCause(cause);
     }
-    
+
     /**
      * Constructs a SchemaValidationException with schema name and specific reason.
      *
@@ -173,7 +173,7 @@ public class SchemaValidationException extends ValidationException {
      *     "Event",  // Schema name
      *     "eventTime field is required and cannot be null"
      * );
-     * 
+     *
      * // Results in message:
      * // "Schema validation failed for 'Event': eventTime field is required and cannot be null"
      * }</pre>

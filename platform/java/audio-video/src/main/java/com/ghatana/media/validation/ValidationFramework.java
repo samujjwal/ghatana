@@ -51,7 +51,7 @@ public final class ValidationFramework {
             throw new ValidationError("Invalid channel count: " + audio.channels());
         }
 
-        if (audio.bitsPerSample() != 8 && audio.bitsPerSample() != 16 && 
+        if (audio.bitsPerSample() != 8 && audio.bitsPerSample() != 16 &&
             audio.bitsPerSample() != 24 && audio.bitsPerSample() != 32) {
             throw new ValidationError("Invalid bits per sample: " + audio.bitsPerSample());
         }

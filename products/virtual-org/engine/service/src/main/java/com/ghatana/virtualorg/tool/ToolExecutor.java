@@ -30,13 +30,13 @@ import java.util.Map;
  *     3,                       // max retries
  *     eventloop
  * );
- * 
+ *
  * // Execute single tool
  * ToolCallProto result = executor.execute(
  *     "git",
  *     Map.of("operation", "clone", "url", "...")
  * ).getResult();
- * 
+ *
  * // Execute multiple tools in parallel
  * List<ToolCallProto> results = executor.executeAll(toolCalls).getResult();
  * }</pre>
@@ -66,7 +66,7 @@ public interface ToolExecutor {
      */
     @NotNull
     Promise<java.util.List<ToolCallProto>> executeAll(@NotNull java.util.List<ToolCallProto> toolCalls);
-    
+
     /**
      * Executes tools and returns results (compatibility method).
      *

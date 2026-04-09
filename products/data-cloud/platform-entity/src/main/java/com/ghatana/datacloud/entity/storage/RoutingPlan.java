@@ -15,7 +15,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * RoutingPlan plan = RoutingPlan.builder()
  *         .tenantId("tenant-123")
@@ -279,7 +279,7 @@ public final class RoutingPlan {
      *
      * <p>
      * Usage:<br>
-     * 
+     *
      * <pre>{@code
      * RoutingPlan plan = RoutingPlan.builder()
      *         .tenantId("tenant-1")

@@ -46,7 +46,7 @@ import com.ghatana.platform.types.identity.OperatorId;
  *                     getId()
  *                 );
  *             }
- *             
+ *
  *             // Initialize state store
  *             stateStore = StateStoreFactory.create(config);
  *             return Promise.complete();
@@ -101,14 +101,14 @@ import com.ghatana.platform.types.identity.OperatorId;
  *                     "Missing required config: windowSize",
  *                     getId()
  *                 ));
- *             
+ *
  *             if (windowSize.isNegative() || windowSize.isZero()) {
  *                 throw new OperatorConfigurationException(
  *                     "Invalid windowSize: must be positive, got " + windowSize,
  *                     getId()
  *                 );
  *             }
- *             
+ *
  *             this.windowSize = windowSize;
  *             return Promise.complete();
  *         } catch (OperatorConfigurationException e) {
@@ -122,11 +122,11 @@ import com.ghatana.platform.types.identity.OperatorId;
  * <pre>{@code
  * public class TimeoutOperator extends AbstractOperator {
  *     private final Duration processingTimeout = Duration.ofSeconds(5);
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         long startTime = System.currentTimeMillis();
- *         
+ *
  *         return doProcess(event)
  *             .withTimeout(processingTimeout)
  *             .whenException(TimeoutException.class, e -> {
@@ -150,7 +150,7 @@ import com.ghatana.platform.types.identity.OperatorId;
  *         .whenException(OperatorException.class, e -> {
  *             // Extract operator ID from exception
  *             OperatorId operatorId = e.getOperatorId();
- *             
+ *
  *             // Send to DLQ with full exception context
  *             deadLetterQueue.send(
  *                 event,
@@ -158,7 +158,7 @@ import com.ghatana.platform.types.identity.OperatorId;
  *                 operatorId,
  *                 e.getClass().getSimpleName()
  *             );
- *             
+ *
  *             // Return failed result
  *             return Promise.of(OperatorResult.failed(e.getMessage()));
  *         });
@@ -173,12 +173,12 @@ import com.ghatana.platform.types.identity.OperatorId;
  *         .whenException(OperatorException.class, e -> {
  *             // Scope metrics by exception type
  *             String errorType = e.getClass().getSimpleName();
- *             
+ *
  *             meterRegistry.counter("operator.errors",
  *                 "operator_id", e.getOperatorId().toString(),
  *                 "error_type", errorType
  *             ).increment();
- *             
+ *
  *             // Log with structured context
  *             logger.error("Operator processing failed",
  *                 "operatorId", e.getOperatorId(),
@@ -262,25 +262,25 @@ import com.ghatana.platform.types.identity.OperatorId;
  * @see UnifiedOperator
  * @see OperatorId
  * @see OperatorState
- * 
+ *
  * @doc.type exception
  * @doc.purpose Base exception for operator processing errors with operator context
  * @doc.layer core
  * @doc.pattern Exception Hierarchy
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
  */
 public class OperatorException extends RuntimeException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private final OperatorId operatorId;
 
     /**
      * Create exception with message.
-     * 
+     *
      * @param message error message
      */
     public OperatorException(String message) {
@@ -289,7 +289,7 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Create exception with message and cause.
-     * 
+     *
      * @param message error message
      * @param cause underlying cause
      */
@@ -299,7 +299,7 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Create exception with message and operator ID.
-     * 
+     *
      * @param message error message
      * @param operatorId operator identifier
      */
@@ -309,7 +309,7 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Create exception with message, cause, and operator ID.
-     * 
+     *
      * @param message error message
      * @param cause underlying cause
      * @param operatorId operator identifier
@@ -321,7 +321,7 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Get operator ID associated with this exception.
-     * 
+     *
      * @return operator ID or null if not specified
      */
     public OperatorId getOperatorId() {
@@ -340,13 +340,13 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Operator initialization failure.
-     * 
+     *
      * <p>Thrown during initialize() or start() methods.
      */
     public static class OperatorInitializationException extends OperatorException {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         public OperatorInitializationException(String message) {
             super(message);
         }
@@ -366,13 +366,13 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Runtime processing error.
-     * 
+     *
      * <p>Thrown during process() or processBatch() methods.
      */
     public static class OperatorProcessingException extends OperatorException {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         public OperatorProcessingException(String message) {
             super(message);
         }
@@ -392,13 +392,13 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Configuration error.
-     * 
+     *
      * <p>Thrown when operator config is invalid.
      */
     public static class OperatorConfigurationException extends OperatorException {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         public OperatorConfigurationException(String message) {
             super(message);
         }
@@ -418,13 +418,13 @@ public class OperatorException extends RuntimeException {
 
     /**
      * Processing timeout.
-     * 
+     *
      * <p>Thrown when processing exceeds configured timeout.
      */
     public static class OperatorTimeoutException extends OperatorException {
-        
+
         private static final long serialVersionUID = 1L;
-        
+
         private final long timeoutMillis;
         private final long actualMillis;
 

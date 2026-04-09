@@ -17,7 +17,7 @@ import java.time.Duration;
 public class EventDurabilityConfig {
 
     /** Default durability level */
-    private EventDurabilityService.DurabilityLevel defaultDurabilityLevel = 
+    private EventDurabilityService.DurabilityLevel defaultDurabilityLevel =
         EventDurabilityService.DurabilityLevel.MAJORITY_ACK;
 
     /** Timeout for durability acknowledgment */

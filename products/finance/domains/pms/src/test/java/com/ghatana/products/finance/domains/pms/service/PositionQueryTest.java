@@ -158,7 +158,7 @@ class PositionQueryTest {
             return positions.stream()
                 .filter(p -> query.getAccount() == null || p.account().equals(query.getAccount()))
                 .filter(p -> query.getMinQuantity() == null || p.quantity() >= query.getMinQuantity())
-                .filter(p -> query.getMinValue() == null || 
+                .filter(p -> query.getMinValue() == null ||
                     p.averagePrice().multiply(BigDecimal.valueOf(p.quantity())).compareTo(query.getMinValue()) >= 0)
                 .toList();
         }

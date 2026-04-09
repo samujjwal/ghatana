@@ -24,7 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for hook execution functionality. Week 2, Day 9 deliverable tests. 
+/** Tests for hook execution functionality. Week 2, Day 9 deliverable tests.
  * @doc.type class
  * @doc.purpose Handles hook executor test operations
  * @doc.layer core

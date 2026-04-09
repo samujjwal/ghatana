@@ -24,11 +24,11 @@ class PromptTemplateTest {
     @DisplayName("Should render simple template with single variable")
     void testRenderSimpleTemplate() {
         PromptTemplate template = new PromptTemplate("Generate requirements for {{featureName}}");
-        
+
         String result = template.render(Map.of(
                 "featureName", "User Login"
         ));
-        
+
         assertThat(result).isEqualTo("Generate requirements for User Login");
     }
 
@@ -38,14 +38,14 @@ class PromptTemplateTest {
         PromptTemplate template = new PromptTemplate(
                 "Generate {{count}} {{type}} requirements for {{featureName}} in context of {{context}}"
         );
-        
+
         String result = template.render(Map.of(
                 "count", "5",
                 "type", "functional",
                 "featureName", "User Authentication",
                 "context", "Multi-tenant SaaS"
         ));
-        
+
         assertThat(result).isEqualTo(
                 "Generate 5 functional requirements for User Authentication in context of Multi-tenant SaaS"
         );
@@ -55,7 +55,7 @@ class PromptTemplateTest {
     @DisplayName("Should throw on undefined variable")
     void testThrowOnUndefinedVariable() {
         PromptTemplate template = new PromptTemplate("Generate requirements for {{featureName}}");
-        
+
         assertThatThrownBy(() -> template.render(Map.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Undefined variable: featureName");
@@ -67,9 +67,9 @@ class PromptTemplateTest {
         PromptTemplate template = new PromptTemplate(
                 "Generate {{count}} {{type}} for {{feature}} in {{context}}"
         );
-        
+
         Set<String> variables = template.getVariableNames();
-        
+
         assertThat(variables).containsExactlyInAnyOrder("count", "type", "feature", "context");
     }
 
@@ -79,10 +79,10 @@ class PromptTemplateTest {
         PromptTemplate template = new PromptTemplate(
                 "{{feature}} is {{feature}} and {{feature}}"
         );
-        
+
         Set<String> variables = template.getVariableNames();
         assertThat(variables).containsExactly("feature");
-        
+
         String result = template.render(Map.of("feature", "important"));
         assertThat(result).isEqualTo("important is important and important");
     }
@@ -91,7 +91,7 @@ class PromptTemplateTest {
     @DisplayName("Should validate variable requirements")
     void testValidateVariables() {
         PromptTemplate template = new PromptTemplate("Generate for {{feature}} in {{context}}");
-        
+
         assertThat(template.isValid(Map.of("feature", "auth", "context", "SaaS"))).isTrue();
         assertThat(template.isValid(Map.of("feature", "auth"))).isFalse();
         assertThat(template.isValid(Map.of())).isFalse();
@@ -101,11 +101,11 @@ class PromptTemplateTest {
     @DisplayName("Should handle special characters in values")
     void testSpecialCharactersInValues() {
         PromptTemplate template = new PromptTemplate("Requirement: {{description}}");
-        
+
         String result = template.render(Map.of(
                 "description", "Must support $100+ and regex [a-z]+ patterns"
         ));
-        
+
         assertThat(result).contains("$100+", "[a-z]+");
     }
 
@@ -113,12 +113,12 @@ class PromptTemplateTest {
     @DisplayName("Should render from Object map")
     void testRenderFromObjects() {
         PromptTemplate template = new PromptTemplate("Count: {{count}}, Value: {{value}}");
-        
+
         Map<String, Object> variables = Map.of(
                 "count", 42,
                 "value", 3.14
         );
-        
+
         String result = template.renderFromObjects(variables);
         assertThat(result).isEqualTo("Count: 42, Value: 3.14");
     }
@@ -149,7 +149,7 @@ class PromptTemplateTest {
     void testGetTemplate() {
         String rawTemplate = "Generate {{count}} requirements for {{feature}}";
         PromptTemplate template = new PromptTemplate(rawTemplate);
-        
+
         assertThat(template.getTemplate()).isEqualTo(rawTemplate);
     }
 
@@ -161,13 +161,13 @@ class PromptTemplateTest {
                 "Type: {{type}}\n" +
                 "Context: {{context}}"
         );
-        
+
         String result = template.render(Map.of(
                 "featureName", "Authentication",
                 "type", "Security",
                 "context", "OAuth 2.0"
         ));
-        
+
         assertThat(result).contains("Feature: Authentication", "Type: Security", "Context: OAuth 2.0");
     }
 }

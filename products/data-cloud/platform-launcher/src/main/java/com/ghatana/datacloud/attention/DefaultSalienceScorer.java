@@ -36,12 +36,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p><b>Scoring Algorithm</b><br>
  * <pre>
- * finalScore = baseScore 
+ * finalScore = baseScore
  *            + (anomalyBoost × anomalyWeight)
  *            + (hotnessBoost × hotnessWeight)
  *            + (patternBoost × patternWeight)
  *            + urgencyBoost
- * 
+ *
  * where:
  *   - baseScore = average of component scores
  *   - anomalyBoost = max(anomaly.severity × anomaly.confidence)

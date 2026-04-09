@@ -30,8 +30,8 @@ public final class HttpResponseAssertions {
      * @throws AssertionError if the status code doesn't match
      */
     public static <T> void assertStatusCode(HttpResponse<T> response, int expectedStatus) {
-        assertEquals(expectedStatus, response.statusCode(), 
-            String.format("Expected status code %d but was %d", 
+        assertEquals(expectedStatus, response.statusCode(),
+            String.format("Expected status code %d but was %d",
                 expectedStatus, response.statusCode()));
     }
 
@@ -62,7 +62,7 @@ public final class HttpResponseAssertions {
     public static <T> void assertBodyContains(HttpResponse<T> response, String expectedText) {
         assertNotNull(response.body(), "Response body is null");
         assertTrue(response.body().toString().contains(expectedText),
-            String.format("Response body does not contain '%s'. Actual body: %s", 
+            String.format("Response body does not contain '%s'. Actual body: %s",
                 expectedText, response.body()));
     }
 
@@ -76,8 +76,8 @@ public final class HttpResponseAssertions {
      * @throws AssertionError if the body doesn't match the predicate
      */
     public static <T> void assertBodyMatches(
-            HttpResponse<T> response, 
-            Predicate<T> predicate, 
+            HttpResponse<T> response,
+            Predicate<T> predicate,
             String message) {
         assertTrue(predicate.test(response.body()),
             String.format("%s. Response body: %s", message, response.body()));
@@ -92,7 +92,7 @@ public final class HttpResponseAssertions {
      * @throws AssertionError if the body doesn't match the predicate
      */
     public static <T> void assertBodyMatches(
-            HttpResponse<T> response, 
+            HttpResponse<T> response,
             Predicate<T> predicate) {
         assertBodyMatches(response, predicate, "Response body does not match the expected condition");
     }
@@ -117,7 +117,7 @@ public final class HttpResponseAssertions {
      * @throws AssertionError if the content type doesn't match
      */
     public static <T> void assertContentType(
-            HttpResponse<T> response, 
+            HttpResponse<T> response,
             String expectedContentType) {
         assertHeader(response, "Content-Type", expectedContentType);
     }

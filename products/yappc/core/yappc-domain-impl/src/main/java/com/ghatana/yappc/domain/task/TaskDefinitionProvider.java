@@ -14,7 +14,7 @@ import java.util.List;
  * @doc.pattern Strategy, Provider
  */
 public interface TaskDefinitionProvider {
-    
+
     /**
      * Provider name for logging/debugging.
      *

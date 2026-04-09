@@ -108,7 +108,7 @@ public class ReportsController implements AsyncServlet {
 
     private Promise<HttpResponse> getReport(HttpRequest request, String id) {
         String tenantId = extractTenantId(request);
-        
+
         // Try cache first
         return cacheService.get(id)
             .then(cached -> {

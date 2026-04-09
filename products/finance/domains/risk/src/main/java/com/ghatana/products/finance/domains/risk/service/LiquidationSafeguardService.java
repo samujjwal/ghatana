@@ -11,7 +11,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.Executor;
 
@@ -165,8 +164,8 @@ public class LiquidationSafeguardService {
 
     private double loadMaxDailyLimit(String clientId) {
         String sql = """
-            SELECT COALESCE(max_daily_liquidation, ?) 
-            FROM client_risk_settings 
+            SELECT COALESCE(max_daily_liquidation, ?)
+            FROM client_risk_settings
             WHERE client_id = ?
             """;
         try (Connection conn = dataSource.getConnection();

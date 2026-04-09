@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * Minimal glob helper for matching files under a root. 
+ * Minimal glob helper for matching files under a root.
  * @doc.type class
  * @doc.purpose Handles glob operations
  * @doc.layer core

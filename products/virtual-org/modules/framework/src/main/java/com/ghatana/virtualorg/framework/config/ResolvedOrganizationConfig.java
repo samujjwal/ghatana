@@ -148,4 +148,3 @@ public record ResolvedOrganizationConfig(
         );
     }
 }
-

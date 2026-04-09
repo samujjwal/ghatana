@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Test utilities for report generation tests. 
+/** Test utilities for report generation tests.
  * @doc.type class
  * @doc.purpose Handles test utils operations
  * @doc.layer core

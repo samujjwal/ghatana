@@ -18,7 +18,6 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * AI and Plugin Integration Test
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration tests showing AI and plugin service usage
  * @doc.layer test
@@ -49,7 +48,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         MockitoAnnotations.openMocks(this);
         aiService = new AIAssistServiceImpl(llmProvider, metrics);
         pluginRegistry = new PluginRegistryImpl(metrics);
-        
+
         when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
@@ -80,7 +79,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         assertThat(activated.isActive()).isTrue();
 
         // When - Execute plugin hook
-        PluginRegistry.HookResult hookResult = runPromise(() -> 
+        PluginRegistry.HookResult hookResult = runPromise(() ->
             pluginRegistry.executeHook("data-processor", "processQuery", Map.of("table", "sales")));
 
         // Then
@@ -97,7 +96,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
             "resp-1", "SQL result", 10, 5, 5, "stop", 25L, "gpt-4"
         )));
-        
+
         AIAssistService.QueryContext context = new AIAssistService.QueryContext(
             "tenant-alpha", "user-1", null, null, null, Map.of(), null
         );
@@ -142,7 +141,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         // When - Register and configure
         PluginRegistry.PluginMetadata registered = runPromise(() -> pluginRegistry.register(aiPlugin));
         runPromise(() -> pluginRegistry.activate(aiPlugin.id()));
-        
+
         Map<String, Object> config = Map.of(
             "model", "gpt-4",
             "temperature", 0.7,
@@ -152,7 +151,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
 
         // Then
         assertThat(registered.id()).isEqualTo("ai-enhancer");
-        
+
         Map<String, Object> retrievedConfig = runPromise(() -> pluginRegistry.getConfiguration(aiPlugin.id()));
         assertThat(retrievedConfig.get("model")).isEqualTo("gpt-4");
 
@@ -208,7 +207,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         runPromise(() -> pluginRegistry.register(transformPlugin));
 
         // When - List plugins for tenant
-        List<PluginRegistry.PluginMetadata> plugins = runPromise(() -> 
+        List<PluginRegistry.PluginMetadata> plugins = runPromise(() ->
             pluginRegistry.listPlugins(tenantId, null));
 
         // Then
@@ -222,7 +221,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         }
 
         // Verify all active
-        List<PluginRegistry.PluginMetadata> activePlugins = runPromise(() -> 
+        List<PluginRegistry.PluginMetadata> activePlugins = runPromise(() ->
             pluginRegistry.listPlugins(tenantId, PluginRegistry.PluginStatus.ACTIVE));
         assertThat(activePlugins).hasSize(2);
 
@@ -233,7 +232,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
     @DisplayName("[INTEGRATION-009]: ai_conversation_with_plugin_context")
     void aiConversationWithPluginContext() {
         // Given - Create conversation
-        AIAssistService.Conversation conv = runPromise(() -> 
+        AIAssistService.Conversation conv = runPromise(() ->
             aiService.createConversation("tenant-alpha", "user-1"));
 
         // Add plugin context message
@@ -245,7 +244,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             Map.of("plugins", List.of("data-processor", "ai-enhancer"))
         );
 
-        AIAssistService.Conversation updated = runPromise(() -> 
+        AIAssistService.Conversation updated = runPromise(() ->
             aiService.addMessage(conv.id(), pluginContextMsg));
 
         // When - Add user query
@@ -257,7 +256,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             Map.of("intent", "process", "targetPlugin", "data-processor")
         );
 
-        AIAssistService.Conversation finalConv = runPromise(() -> 
+        AIAssistService.Conversation finalConv = runPromise(() ->
             aiService.addMessage(conv.id(), userMsg));
 
         // Then

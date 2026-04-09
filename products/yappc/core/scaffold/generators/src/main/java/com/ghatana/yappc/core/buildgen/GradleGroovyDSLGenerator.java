@@ -54,7 +54,7 @@ public class GradleGroovyDSLGenerator implements AIBuildScriptGenerator {
     @Override
     public Promise<GeneratedBuildScript> generateBuildScript(
             BuildScriptSpec spec, List<RCAResult> rcaResults) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     String generationId = UUID.randomUUID().toString();
                     Instant timestamp = Instant.now();
@@ -94,7 +94,7 @@ public class GradleGroovyDSLGenerator implements AIBuildScriptGenerator {
     @Override
     public Promise<BuildScriptImprovement> suggestImprovements(
             String existingScript, BuildScriptSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     String improvementId = UUID.randomUUID().toString();
                     Instant timestamp = Instant.now();
@@ -120,7 +120,7 @@ public class GradleGroovyDSLGenerator implements AIBuildScriptGenerator {
     @Override
     public Promise<BuildScriptValidation> validateBuildScript(
             String script, BuildScriptSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     String validationId = UUID.randomUUID().toString();
                     Instant timestamp = Instant.now();

@@ -148,7 +148,7 @@ class PositionKernelIntegrationTest {
                 }
             }
 
-            BigDecimal avgPrice = totalBought > 0 
+            BigDecimal avgPrice = totalBought > 0
                 ? totalCost.divide(BigDecimal.valueOf(totalBought), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
@@ -263,7 +263,7 @@ class PositionKernelIntegrationTest {
             BigDecimal startValue = first.averagePrice().multiply(BigDecimal.valueOf(first.quantity()));
             BigDecimal endValue = marketPrice.multiply(BigDecimal.valueOf(last.quantity()));
             BigDecimal totalReturn = endValue.subtract(startValue);
-            double percentReturn = startValue.compareTo(BigDecimal.ZERO) > 0 
+            double percentReturn = startValue.compareTo(BigDecimal.ZERO) > 0
                 ? totalReturn.divide(startValue, 4, java.math.RoundingMode.HALF_UP).doubleValue() * 100
                 : 0.0;
             return new PerformanceMetrics(totalReturn, percentReturn);

@@ -10,7 +10,7 @@ package com.ghatana.yappc.ai.requirements.api.rest.dto;
  * @param status Project status
  * @param createdAt Created timestamp
  * @param updatedAt Updated timestamp
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for project response
  * @doc.layer core
@@ -26,4 +26,3 @@ public record ProjectResponse(
     String updatedAt
 ) {
 }
-

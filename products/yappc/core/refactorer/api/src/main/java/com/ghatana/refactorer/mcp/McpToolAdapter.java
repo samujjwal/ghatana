@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * MCP tool adapter that translates MCP tool calls to Polyfix gRPC service calls. Provides the
  * bridge between MCP runtime and Polyfix service.
- 
+
  * @doc.type class
  * @doc.purpose Handles mcp tool adapter operations
  * @doc.layer core

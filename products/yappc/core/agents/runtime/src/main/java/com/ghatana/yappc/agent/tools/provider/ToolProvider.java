@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for tool provider
  * @doc.layer core

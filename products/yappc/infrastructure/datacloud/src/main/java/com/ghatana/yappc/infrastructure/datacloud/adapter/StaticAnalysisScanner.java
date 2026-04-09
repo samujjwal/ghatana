@@ -5,7 +5,6 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

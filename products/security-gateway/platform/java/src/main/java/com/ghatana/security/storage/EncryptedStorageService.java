@@ -13,7 +13,7 @@ import java.util.concurrent.Executor;
 /**
  * Service that provides secure storage with encryption at rest.
  * Integrates with KeyManager for key management and EncryptionService for data protection.
- 
+
  *
  * @doc.type class
  * @doc.purpose Encrypted storage service

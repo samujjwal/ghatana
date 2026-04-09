@@ -3,7 +3,6 @@ package com.ghatana.audio.video.common;
 import io.grpc.BindableService;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
-import io.grpc.stub.ServerCalls;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,8 +10,6 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link AudioVideoGrpcServerBase}.
@@ -113,4 +110,3 @@ class AudioVideoGrpcServerBaseTest {
         }
     }
 }
-

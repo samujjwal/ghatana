@@ -47,7 +47,7 @@ class PositionReportingTest {
         List<Position> positions = List.of(
             new Position("AAPL", 1000L, BigDecimal.valueOf(150.00))
         );
-        
+
         List<PriceUpdate> prices = List.of(
             new PriceUpdate("AAPL", BigDecimal.valueOf(155.00))
         );
@@ -109,7 +109,7 @@ class PositionReportingTest {
         List<Position> startPositions = List.of(
             new Position("AAPL", 1000L, BigDecimal.valueOf(150.00))
         );
-        
+
         List<Position> endPositions = List.of(
             new Position("AAPL", 1000L, BigDecimal.valueOf(155.00))
         );
@@ -186,7 +186,7 @@ class PositionReportingTest {
     record PriceUpdate(String symbol, BigDecimal price) {}
     record Trade(String tradeId, String symbol, String side, long quantity, BigDecimal price) {}
     record TaxLot(String lotId, String symbol, long quantity, BigDecimal costBasis, LocalDate acquiredDate) {}
-    
+
     record DailyReport(int positionCount, BigDecimal totalValue, LocalDate reportDate) {}
     record PnLReport(BigDecimal unrealizedPnL, BigDecimal realizedPnL) {}
     record HoldingsSummary(int totalPositions, int longPositions, int shortPositions) {}
@@ -254,7 +254,7 @@ class PositionReportingTest {
             BigDecimal startValue = start.stream()
                 .map(p -> p.averagePrice().multiply(BigDecimal.valueOf(Math.abs(p.quantity()))))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
             BigDecimal endValue = end.stream()
                 .map(p -> p.averagePrice().multiply(BigDecimal.valueOf(Math.abs(p.quantity()))))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

@@ -2,8 +2,6 @@ package com.ghatana.core.connectors;
 
 import com.ghatana.platform.types.ContentType;
 import com.ghatana.platform.domain.auth.TenantId;
-import com.ghatana.platform.types.identity.CorrelationId;
-import com.ghatana.platform.types.identity.IdempotencyKey;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

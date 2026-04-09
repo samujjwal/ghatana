@@ -16,15 +16,15 @@ import java.util.UUID;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * MediaStore store = new S3MediaStore(s3Client, bucketName, metricsCollector);
- * 
+ *
  * // Upload file
  * Promise<MediaAttachment> uploadResult = store.upload(
  *     tenantId, entityId, filename, contentType, size, inputStream);
- * 
+ *
  * // Generate signed URL
  * Promise<MediaUrl> urlResult = store.generateUrl(
  *     storageKey, Duration.ofHours(1));
- * 
+ *
  * // Delete file
  * Promise<Void> deleteResult = store.delete(storageKey);
  * }</pre>

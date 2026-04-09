@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  *     .validationQuery("SELECT 1")
  *     .timeout(Duration.ofSeconds(5))
  *     .build();
- * 
+ *
  * HealthStatus status = healthCheck.check();
  * if (status.isHealthy()) {
  *     logger.info("Database healthy: {}", status.getMessage());
@@ -77,13 +77,13 @@ import java.util.concurrent.TimeUnit;
  * @GetMapping("/health/database")
  * public ResponseEntity<HealthResponse> getDatabaseHealth() {
  *     HealthStatus status = healthCheck.check();
- *     
+ *
  *     HttpStatus httpStatus = switch (status.getStatus()) {
  *         case HEALTHY -> HttpStatus.OK;
  *         case UNHEALTHY -> HttpStatus.SERVICE_UNAVAILABLE;
  *         case UNKNOWN -> HttpStatus.INTERNAL_SERVER_ERROR;
  *     };
- *     
+ *
  *     return ResponseEntity.status(httpStatus)
  *         .body(new HealthResponse(
  *             status.getStatus().name(),
@@ -149,63 +149,63 @@ import java.util.concurrent.TimeUnit;
  */
 public final class DatabaseHealthCheck {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseHealthCheck.class);
-    
+
     private static final String DEFAULT_VALIDATION_QUERY = "SELECT 1";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
-    
+
     private static final ExecutorService BLOCKING_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-    
+
     private final DataSource dataSource;
     private final String validationQuery;
     private final Duration timeout;
     private final boolean validateConnection;
-    
+
     private DatabaseHealthCheck(Builder builder) {
         this.dataSource = Preconditions.requireNonNull(builder.dataSource, "DataSource cannot be null");
         this.validationQuery = builder.validationQuery;
         this.timeout = builder.timeout;
         this.validateConnection = builder.validateConnection;
-        
-        LOG.info("DatabaseHealthCheck initialized with validation query: '{}', timeout: {}ms", 
+
+        LOG.info("DatabaseHealthCheck initialized with validation query: '{}', timeout: {}ms",
                 validationQuery, timeout.toMillis());
     }
-    
+
     /**
      * Performs a synchronous health check.
-     * 
+     *
      * @return Health status result
      */
     public HealthStatus check() {
         return checkWithTimeout(timeout);
     }
-    
+
     /**
      * Performs a synchronous health check with custom timeout.
-     * 
+     *
      * @param customTimeout The timeout for the health check
      * @return Health status result
      */
     public HealthStatus checkWithTimeout(Duration customTimeout) {
         Preconditions.requireNonNull(customTimeout, "Timeout cannot be null");
-        
+
         LOG.debug("Performing database health check with timeout: {}ms", customTimeout.toMillis());
-        
+
         Instant startTime = Instant.now();
-        
+
         try {
             HealthStatus status = BLOCKING_EXECUTOR.submit(this::performCheck)
                 .get(customTimeout.toMillis(), TimeUnit.MILLISECONDS);
-            
+
             Duration responseTime = Duration.between(startTime, Instant.now());
-            LOG.debug("Health check completed in {}ms with status: {}", 
+            LOG.debug("Health check completed in {}ms with status: {}",
                     responseTime.toMillis(), status.getStatus());
-            
+
             return status;
-            
+
         } catch (Exception e) {
             Duration responseTime = Duration.between(startTime, Instant.now());
             LOG.warn("Health check failed after {}ms: {}", responseTime.toMillis(), e.getMessage());
-            
+
             return HealthStatus.unhealthy(
                 "Health check failed: " + e.getMessage(),
                 responseTime,
@@ -213,15 +213,15 @@ public final class DatabaseHealthCheck {
             );
         }
     }
-    
+
     /**
      * Performs an asynchronous health check.
-     * 
+     *
      * @return Promise containing the health status result
      */
     public Promise<HealthStatus> checkAsync() {
         LOG.debug("Performing asynchronous database health check");
-        
+
         return Promise.ofBlocking(BLOCKING_EXECUTOR, this::performCheck)
             .map(status -> status)
             .mapException(throwable -> {
@@ -229,17 +229,17 @@ public final class DatabaseHealthCheck {
                 return throwable;
             });
     }
-    
+
     /**
      * Performs the actual health check logic.
-     * 
+     *
      * @return Health status result
      */
     private HealthStatus performCheck() {
         Instant startTime = Instant.now();
-        
+
         try (Connection connection = dataSource.getConnection()) {
-            
+
             // Check if connection is valid
             if (validateConnection && !connection.isValid(1)) {
                 Duration responseTime = Duration.between(startTime, Instant.now());
@@ -249,14 +249,14 @@ public final class DatabaseHealthCheck {
                     null
                 );
             }
-            
+
             // Execute validation query
             try (PreparedStatement statement = connection.prepareStatement(validationQuery);
                  ResultSet resultSet = statement.executeQuery()) {
-                
+
                 if (resultSet.next()) {
                     Duration responseTime = Duration.between(startTime, Instant.now());
-                    
+
                     return HealthStatus.healthy(
                         "Database connection successful",
                         responseTime,
@@ -271,11 +271,11 @@ public final class DatabaseHealthCheck {
                     );
                 }
             }
-            
+
         } catch (SQLException e) {
             Duration responseTime = Duration.between(startTime, Instant.now());
             LOG.debug("Database health check failed with SQL exception", e);
-            
+
             return HealthStatus.unhealthy(
                 "Database connection failed: " + e.getMessage(),
                 responseTime,
@@ -283,10 +283,10 @@ public final class DatabaseHealthCheck {
             );
         }
     }
-    
+
     /**
      * Creates health details from the database connection.
-     * 
+     *
      * @param connection The database connection
      * @return Health details
      */
@@ -310,43 +310,43 @@ public final class DatabaseHealthCheck {
                 .build();
         }
     }
-    
+
     /**
      * Gets the data source used by this health check.
-     * 
+     *
      * @return The data source
      */
     public DataSource getDataSource() {
         return dataSource;
     }
-    
+
     /**
      * Gets the validation query used by this health check.
-     * 
+     *
      * @return The validation query
      */
     public String getValidationQuery() {
         return validationQuery;
     }
-    
+
     /**
      * Gets the timeout used by this health check.
-     * 
+     *
      * @return The timeout duration
      */
     public Duration getTimeout() {
         return timeout;
     }
-    
+
     /**
      * Creates a new builder for DatabaseHealthCheck.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for DatabaseHealthCheck with fluent API and sensible defaults.
      */
@@ -355,12 +355,12 @@ public final class DatabaseHealthCheck {
         private String validationQuery = DEFAULT_VALIDATION_QUERY;
         private Duration timeout = DEFAULT_TIMEOUT;
         private boolean validateConnection = true;
-        
+
         private Builder() {}
-        
+
         /**
          * Sets the data source.
-         * 
+         *
          * @param dataSource The data source
          * @return This builder
          */
@@ -368,10 +368,10 @@ public final class DatabaseHealthCheck {
             this.dataSource = dataSource;
             return this;
         }
-        
+
         /**
          * Sets the validation query.
-         * 
+         *
          * @param validationQuery The validation query (default: "SELECT 1")
          * @return This builder
          */
@@ -380,10 +380,10 @@ public final class DatabaseHealthCheck {
                 validationQuery, "Validation query cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets the timeout for health checks.
-         * 
+         *
          * @param timeout The timeout duration (default: 5 seconds)
          * @return This builder
          */
@@ -391,10 +391,10 @@ public final class DatabaseHealthCheck {
             this.timeout = Preconditions.requireNonNull(timeout, "Timeout cannot be null");
             return this;
         }
-        
+
         /**
          * Sets whether to validate the connection using Connection.isValid().
-         * 
+         *
          * @param validateConnection Whether to validate connection (default: true)
          * @return This builder
          */
@@ -402,10 +402,10 @@ public final class DatabaseHealthCheck {
             this.validateConnection = validateConnection;
             return this;
         }
-        
+
         /**
          * Builds the DatabaseHealthCheck instance.
-         * 
+         *
          * @return A new DatabaseHealthCheck instance
          */
         public DatabaseHealthCheck build() {

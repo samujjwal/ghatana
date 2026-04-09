@@ -210,12 +210,12 @@ public class CodeGeneratorAgent extends AbstractAIAgent<CodeGeneratorInput, Code
 
         String systemPrompt = String.format("""
                 You are an expert test engineer. Generate comprehensive test cases.
-                
+
                 Testing Framework: %s
                 Include integration tests: %s
                 Include mocks: %s
                 Coverage target: %s%%
-                
+
                 Generate well-structured, maintainable tests with:
                 - Clear test descriptions
                 - Proper setup and teardown
@@ -231,12 +231,12 @@ public class CodeGeneratorAgent extends AbstractAIAgent<CodeGeneratorInput, Code
 
         String userPrompt = String.format("""
                 Generate tests for the following:
-                
+
                 Item ID: %s
                 Description: %s
                 Requirements:
                 %s
-                
+
                 Generate test files with full implementations.
                 """,
                 input.itemId(),
@@ -304,7 +304,7 @@ public class CodeGeneratorAgent extends AbstractAIAgent<CodeGeneratorInput, Code
     ) {
         String systemPrompt = """
                 You are a technical documentation expert. Generate clear, comprehensive documentation.
-                
+
                 Include:
                 - Overview and purpose
                 - Installation/setup instructions
@@ -312,18 +312,18 @@ public class CodeGeneratorAgent extends AbstractAIAgent<CodeGeneratorInput, Code
                 - Usage examples
                 - Configuration options
                 - Troubleshooting guide
-                
+
                 Use Markdown format with proper headings, code blocks, and tables.
                 """;
 
         String userPrompt = String.format("""
                 Generate documentation for:
-                
+
                 Item ID: %s
                 Description: %s
                 Language: %s
                 Framework: %s
-                
+
                 Requirements:
                 %s
                 """,
@@ -423,17 +423,17 @@ public class CodeGeneratorAgent extends AbstractAIAgent<CodeGeneratorInput, Code
     private String buildImplementationSystemPrompt(CodeGeneratorInput input) {
         return String.format("""
                 You are an expert software engineer. Generate production-quality code.
-                
+
                 Language: %s
                 Framework: %s
-                
+
                 Code Style:
                 - Clean, readable, and maintainable
                 - Follow SOLID principles
                 - Include proper error handling
                 - Add JSDoc/JavaDoc comments
                 - Use meaningful variable names
-                
+
                 Output format:
                 Use ```filename.ext to mark file boundaries.
                 Include all necessary imports.

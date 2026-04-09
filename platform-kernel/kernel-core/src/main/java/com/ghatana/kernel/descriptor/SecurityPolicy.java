@@ -2,7 +2,6 @@ package com.ghatana.kernel.descriptor;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -19,7 +18,7 @@ import java.util.Set;
  * @since 1.0.0
  */
 public final class SecurityPolicy {
-    
+
     private final boolean authenticationRequired;
     private final boolean authorizationRequired;
     private final Set<String> requiredRoles;

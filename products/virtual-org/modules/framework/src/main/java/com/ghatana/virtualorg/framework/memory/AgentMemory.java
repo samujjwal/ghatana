@@ -3,7 +3,6 @@ package com.ghatana.virtualorg.framework.memory;
 import io.activej.promise.Promise;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Interface for agent memory storage and retrieval.

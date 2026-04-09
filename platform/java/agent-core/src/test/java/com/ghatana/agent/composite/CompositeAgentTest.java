@@ -125,7 +125,7 @@ class CompositeAgentTest {
             StubAgent a = new StubAgent("a", Map.of("score", 80.0), 0.9);
             StubAgent b = new StubAgent("b", Map.of("score", 60.0), 0.8);
 
-            CompositeAgent agent = createComposite("wavg", 
+            CompositeAgent agent = createComposite("wavg",
                     CompositeAgentConfig.AggregationStrategy.WEIGHTED_AVERAGE,
                     List.of(a, b), List.of(0.7, 0.3));
 

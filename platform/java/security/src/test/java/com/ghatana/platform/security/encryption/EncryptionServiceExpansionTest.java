@@ -165,7 +165,7 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
             byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted));
 
             assertThat(decrypted).isEqualTo(plaintext);
-            
+
             // All encrypted bytes should be different from original (statistical property)
             int differentCount = 0;
             for (int i = 0; i < Math.min(plaintext.length, encrypted.length); i++) {

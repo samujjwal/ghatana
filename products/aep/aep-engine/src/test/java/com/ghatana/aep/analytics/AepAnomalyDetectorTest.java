@@ -102,4 +102,3 @@ class AepAnomalyDetectorTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
-

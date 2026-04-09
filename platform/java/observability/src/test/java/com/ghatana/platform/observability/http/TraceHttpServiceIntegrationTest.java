@@ -3,20 +3,13 @@ package com.ghatana.platform.observability.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.observability.trace.MockTraceStorage;
-import com.ghatana.platform.testing.activej.ActiveJServletTestUtil;
 import com.ghatana.platform.testing.activej.EventloopExtension;
-import com.ghatana.platform.testing.activej.EventloopTestUtil;
-import io.activej.http.HttpHeaders;
-import io.activej.http.HttpMethod;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

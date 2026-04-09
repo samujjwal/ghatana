@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Generates HTML reports from performance test results. 
+ * Generates HTML reports from performance test results.
  * @doc.type class
  * @doc.purpose Handles report generator operations
  * @doc.layer core

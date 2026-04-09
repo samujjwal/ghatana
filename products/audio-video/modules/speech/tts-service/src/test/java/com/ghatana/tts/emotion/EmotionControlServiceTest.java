@@ -117,4 +117,3 @@ class EmotionControlServiceTest {
         assertThat(EmotionControlService.EmotionType.isValid(null)).isFalse();
     }
 }
-

@@ -1,7 +1,5 @@
 package com.ghatana.auth.service.impl;
 
-import com.ghatana.platform.domain.auth.Permission;
-import com.ghatana.platform.domain.auth.Role;
 import com.ghatana.platform.domain.auth.UserPrincipal;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.observability.NoopMetricsCollector;

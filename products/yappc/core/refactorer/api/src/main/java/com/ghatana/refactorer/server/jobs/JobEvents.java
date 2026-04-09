@@ -1,6 +1,5 @@
 package com.ghatana.refactorer.server.jobs;
 
-import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.event.EventId;
 import com.ghatana.platform.domain.event.GEvent;
 import java.time.Instant;

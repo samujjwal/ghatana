@@ -60,11 +60,11 @@ import java.util.concurrent.atomic.AtomicReference;
  *     .append(true)
  *     .sinkEnabled(true)
  *     .build();
- * 
+ *
  * auditLog.initialize(config)
  *     .then(() -> auditLog.start())
  *     .whenResult(() -> auditLog.writeMessage("User login: admin"));
- * 
+ *
  * // Create source connector for monitoring
  * FileConnector monitor = new FileConnector("file-watcher");
  * ConnectorConfig watchConfig = FileConnectorConfig.builder()
@@ -72,7 +72,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *     .filePath("/tmp/events.json")
  *     .sourceEnabled(true)
  *     .build();
- * 
+ *
  * monitor.initialize(watchConfig)
  *     .then(() -> monitor.start());
  * // Connector will detect file changes and process them
@@ -95,19 +95,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 1.0.0
  */
 public class FileConnector extends BaseConnector {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(FileConnector.class);
-    
+
     private final AtomicReference<Path> filePath = new AtomicReference<>();
     private final AtomicReference<WatchService> watchService = new AtomicReference<>();
     private final AtomicReference<BufferedWriter> writer = new AtomicReference<>();
     private final AtomicReference<Thread> watchThread = new AtomicReference<>();
     private volatile boolean running = false;
-    
+
     public FileConnector(String name) {
         super(name, "file");
     }
-    
+
     @Override
     protected Promise<Void> doInitialize(ConnectorConfig config) {
         return PromisesCompat.runBlocking(() -> {
@@ -116,14 +116,14 @@ public class FileConnector extends BaseConnector {
                 if (path == null) {
                     throw new IllegalArgumentException("file.path is required");
                 }
-                
+
                 filePath.set(Paths.get(path));
-                
+
                 // Create parent directories if they don't exist
                 if (isSinkCapable()) {
                     Files.createDirectories(filePath.get().getParent());
                 }
-                
+
                 // Initialize watch service if source-capable
                 if (isSourceCapable()) {
                     watchService.set(FileSystems.getDefault().newWatchService());
@@ -134,7 +134,7 @@ public class FileConnector extends BaseConnector {
                     );
                     logger.info("Watch service initialized for directory: {}", filePath.get().getParent());
                 }
-                
+
                 return null;
             } catch (Exception e) {
                 logger.error("Failed to initialize File connector", e);
@@ -142,7 +142,7 @@ public class FileConnector extends BaseConnector {
             }
         });
     }
-    
+
     @Override
     protected Promise<Void> doStart() {
         return PromisesCompat.runBlocking(() -> {
@@ -153,7 +153,7 @@ public class FileConnector extends BaseConnector {
                     writer.set(new BufferedWriter(new FileWriter(filePath.get().toFile(), append)));
                     logger.info("File writer opened for path: {}", filePath.get());
                 }
-                
+
                 // Start watch thread if source-capable
                 if (isSourceCapable() && watchService.get() != null) {
                     running = true;
@@ -164,7 +164,7 @@ public class FileConnector extends BaseConnector {
                     watchThread.set(thread);
                     logger.info("File watch thread started for path: {}", filePath.get());
                 }
-                
+
                 return null;
             } catch (Exception e) {
                 logger.error("Failed to start File connector", e);
@@ -172,7 +172,7 @@ public class FileConnector extends BaseConnector {
             }
         });
     }
-    
+
     @Override
     protected Promise<Void> doStop() {
         return PromisesCompat.runBlocking(() -> {
@@ -184,21 +184,21 @@ public class FileConnector extends BaseConnector {
                     watchThread.set(null);
                     logger.info("File watch thread stopped");
                 }
-                
+
                 // Close watch service if initialized
                 if (watchService.get() != null) {
                     watchService.get().close();
                     watchService.set(null);
                     logger.info("Watch service closed");
                 }
-                
+
                 // Close writer if initialized
                 if (writer.get() != null) {
                     writer.get().close();
                     writer.set(null);
                     logger.info("File writer closed");
                 }
-                
+
                 return null;
             } catch (Exception e) {
                 logger.error("Failed to stop File connector", e);
@@ -206,7 +206,7 @@ public class FileConnector extends BaseConnector {
             }
         });
     }
-    
+
     @Override
     protected Promise<HealthCheckResult> doHealthCheck() {
         return PromisesCompat.runBlocking(() -> {
@@ -215,7 +215,7 @@ public class FileConnector extends BaseConnector {
                 boolean fileReadable = Files.isReadable(filePath.get());
                 boolean fileWritable = !isSinkCapable() || Files.isWritable(filePath.get());
                 boolean watcherRunning = !isSourceCapable() || (watchThread.get() != null && watchThread.get().isAlive());
-                
+
                 if (fileExists && fileReadable && fileWritable && watcherRunning) {
                     Map<String, Object> details = new HashMap<>();
                     details.put("path", filePath.get().toString());
@@ -224,7 +224,7 @@ public class FileConnector extends BaseConnector {
                     details.put("writable", fileWritable);
                     details.put("watcherRunning", watcherRunning);
                     details.put("messagesProcessed", getMetrics().getMessagesProcessed());
-                    
+
                     return HealthCheckResult.healthy("File connector is healthy", details, Duration.ZERO);
                 } else {
                     Map<String, Object> details = new HashMap<>();
@@ -233,7 +233,7 @@ public class FileConnector extends BaseConnector {
                     details.put("readable", fileReadable);
                     details.put("writable", fileWritable);
                     details.put("watcherRunning", watcherRunning);
-                    
+
                     return HealthCheckResult.unhealthy("File connector is unhealthy", details, Duration.ZERO, null);
                 }
             } catch (Exception e) {
@@ -241,19 +241,19 @@ public class FileConnector extends BaseConnector {
             }
         });
     }
-    
+
     @Override
     public boolean isSourceCapable() {
         ConnectorConfig cfg = getConfig();
         return cfg != null && cfg.getProperty("source.enabled", Boolean.class, false);
     }
-    
+
     @Override
     public boolean isSinkCapable() {
         ConnectorConfig cfg = getConfig();
         return cfg != null && cfg.getProperty("sink.enabled", Boolean.class, false);
     }
-    
+
     /**
      * Write a message to the file.
      */
@@ -262,20 +262,20 @@ public class FileConnector extends BaseConnector {
             if (!isSinkCapable()) {
                 throw new IllegalStateException("Connector is not sink-capable");
             }
-            
+
             if (writer.get() == null) {
                 throw new IllegalStateException("Writer is not initialized");
             }
-            
+
             try {
                 long startTime = System.currentTimeMillis();
                 writer.get().write(message);
                 writer.get().newLine();
                 writer.get().flush();
-                
+
                 long processingTime = System.currentTimeMillis() - startTime;
                 recordMessage(true, message.getBytes(StandardCharsets.UTF_8).length, processingTime);
-                
+
                 return null;
             } catch (Exception e) {
                 recordMessage(false, 0, 0);
@@ -283,7 +283,7 @@ public class FileConnector extends BaseConnector {
             }
         });
     }
-    
+
     /**
      * Watch file for changes.
      */
@@ -291,18 +291,18 @@ public class FileConnector extends BaseConnector {
         try {
             while (running) {
                 WatchKey key = watchService.get().take(); // Blocking
-                
+
                 for (WatchEvent<?> event : key.pollEvents()) {
                     @SuppressWarnings("unchecked")
                     WatchEvent<Path> pathEvent = (WatchEvent<Path>) event;
                     Path changed = pathEvent.context();
-                    
+
                     // Check if the event is for our file
                     if (filePath.get().getFileName().equals(changed)) {
                         processFileChange();
                     }
                 }
-                
+
                 if (!key.reset()) {
                     logger.warn("Watch key is no longer valid");
                     break;
@@ -315,29 +315,29 @@ public class FileConnector extends BaseConnector {
             logger.error("Error in watch thread", e);
         }
     }
-    
+
     /**
      * Process file change event.
      */
     private void processFileChange() {
         try {
             long startTime = System.currentTimeMillis();
-            
+
             // Read the file
             byte[] content = Files.readAllBytes(filePath.get());
-            
+
             // Process the content (in a real implementation, you'd call a handler)
             logger.debug("File changed: {} ({} bytes)", filePath.get(), content.length);
-            
+
             long processingTime = System.currentTimeMillis() - startTime;
             recordMessage(true, content.length, processingTime);
-            
+
         } catch (Exception e) {
             logger.error("Failed to process file change", e);
             recordMessage(false, 0, 0);
         }
     }
-    
+
     /**
      * Create a default configuration for the File connector.
      */
@@ -348,9 +348,9 @@ public class FileConnector extends BaseConnector {
         private final int retryAttempts;
         private final Duration retryDelay;
         private final boolean enabled;
-        
-        public FileConnectorConfig(String name, Map<String, Object> properties, 
-                                 Duration timeout, int retryAttempts, 
+
+        public FileConnectorConfig(String name, Map<String, Object> properties,
+                                 Duration timeout, int retryAttempts,
                                  Duration retryDelay, boolean enabled) {
             this.name = name;
             this.properties = new HashMap<>(properties);
@@ -359,22 +359,22 @@ public class FileConnector extends BaseConnector {
             this.retryDelay = retryDelay;
             this.enabled = enabled;
         }
-        
+
         @Override
         public String getName() {
             return name;
         }
-        
+
         @Override
         public String getType() {
             return "file";
         }
-        
+
         @Override
         public Map<String, Object> getProperties() {
             return new HashMap<>(properties);
         }
-        
+
         @Override
         public <T> T getProperty(String key, Class<T> type) {
             Object value = properties.get(key);
@@ -386,33 +386,33 @@ public class FileConnector extends BaseConnector {
             }
             throw new IllegalArgumentException("Property " + key + " is not of type " + type.getName());
         }
-        
+
         @Override
         public <T> T getProperty(String key, Class<T> type, T defaultValue) {
             T value = getProperty(key, type);
             return value != null ? value : defaultValue;
         }
-        
+
         @Override
         public Duration getTimeout() {
             return timeout;
         }
-        
+
         @Override
         public int getRetryAttempts() {
             return retryAttempts;
         }
-        
+
         @Override
         public Duration getRetryDelay() {
             return retryDelay;
         }
-        
+
         @Override
         public boolean isEnabled() {
             return enabled;
         }
-        
+
         /**
          * Builder for FileConnectorConfig.
          */
@@ -423,62 +423,62 @@ public class FileConnector extends BaseConnector {
             private int retryAttempts = 3;
             private Duration retryDelay = Duration.ofSeconds(1);
             private boolean enabled = true;
-            
+
             public Builder name(String name) {
                 this.name = name;
                 return this;
             }
-            
+
             public Builder property(String key, Object value) {
                 properties.put(key, value);
                 return this;
             }
-            
+
             public Builder properties(Map<String, Object> properties) {
                 this.properties.putAll(properties);
                 return this;
             }
-            
+
             public Builder timeout(Duration timeout) {
                 this.timeout = timeout;
                 return this;
             }
-            
+
             public Builder retryAttempts(int retryAttempts) {
                 this.retryAttempts = retryAttempts;
                 return this;
             }
-            
+
             public Builder retryDelay(Duration retryDelay) {
                 this.retryDelay = retryDelay;
                 return this;
             }
-            
+
             public Builder enabled(boolean enabled) {
                 this.enabled = enabled;
                 return this;
             }
-            
+
             public Builder filePath(String filePath) {
                 properties.put("file.path", filePath);
                 return this;
             }
-            
+
             public Builder append(boolean append) {
                 properties.put("file.append", append);
                 return this;
             }
-            
+
             public Builder sourceEnabled(boolean enabled) {
                 properties.put("source.enabled", enabled);
                 return this;
             }
-            
+
             public Builder sinkEnabled(boolean enabled) {
                 properties.put("sink.enabled", enabled);
                 return this;
             }
-            
+
             public FileConnectorConfig build() {
                 if (name == null || name.isEmpty()) {
                     throw new IllegalArgumentException("Connector name is required");
@@ -489,7 +489,7 @@ public class FileConnector extends BaseConnector {
                 return new FileConnectorConfig(name, properties, timeout, retryAttempts, retryDelay, enabled);
             }
         }
-        
+
         public static Builder builder() {
             return new Builder();
         }

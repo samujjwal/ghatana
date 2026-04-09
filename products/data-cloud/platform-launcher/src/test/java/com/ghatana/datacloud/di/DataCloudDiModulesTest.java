@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.di;
 
-import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataRecord;

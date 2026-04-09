@@ -7,7 +7,6 @@ import com.ghatana.datacloud.entity.quality.QualityMetrics;
 import com.ghatana.datacloud.entity.quality.QualityScoreExplanation;
 import com.ghatana.datacloud.entity.quality.QualityScorer;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

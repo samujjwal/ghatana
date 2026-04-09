@@ -55,22 +55,22 @@ public class InMemoryPolicyRepository implements PolicyRepository {
         if (policy == null) {
             throw new IllegalArgumentException("Policy cannot be null");
         }
-        
+
         policiesById.put(policy.getId(), policy);
         log.debug("Saved policy: {}", policy.getId());
-        
+
         return policy;
     }
 
     @Override
     public boolean deleteById(String id) {
         Policy policy = policiesById.remove(id);
-        
+
         if (policy != null) {
             log.debug("Deleted policy: {}", id);
             return true;
         }
-        
+
         return false;
     }
 

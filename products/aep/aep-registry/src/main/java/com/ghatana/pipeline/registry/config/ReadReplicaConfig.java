@@ -33,21 +33,21 @@ import static io.activej.config.converter.ConfigConverters.ofString;
  * @since 2.0.0
  */
 public class ReadReplicaConfig extends AbstractModule {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(ReadReplicaConfig.class);
-    
+
     @Provides
     DataSource routingDataSource(Config config, MetricsRegistry metricsRegistry) {
         // Create primary data source
         DataSource primaryDataSource = createPrimaryDataSource(config);
-        
+
         // Create replica data sources
         Map<String, DataSource> replicaDataSources = createReplicaDataSources(config);
-        
+
         // Create routing data source
         long circuitBreakerTimeout = config.get(ofInteger(), "db.replica.circuit_breaker.timeout_ms", 60000);
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaDataSources, circuitBreakerTimeout);
-        
+
         // Create replica lag monitor
         if (!replicaDataSources.isEmpty()) {
             long lagThresholdBytes = config.get(ofInteger(), "db.replica.lag.threshold_bytes", 10_000_000); // 10MB default
@@ -58,19 +58,19 @@ public class ReadReplicaConfig extends AbstractModule {
                 metricsRegistry,
                 lagThresholdBytes
             );
-            
+
             // Start monitoring
             long initialDelay = config.get(ofInteger(), "db.replica.lag.check.initial_delay_seconds", 10);
             long period = config.get(ofInteger(), "db.replica.lag.check.period_seconds", 30);
             lagMonitor.start(initialDelay, period, TimeUnit.SECONDS);
-            
-            LOG.info("Replica lag monitor started with threshold: {} bytes, period: {} seconds", 
+
+            LOG.info("Replica lag monitor started with threshold: {} bytes, period: {} seconds",
                       lagThresholdBytes, period);
         }
-        
+
         return routingDataSource;
     }
-    
+
     /**
      * Create the primary data source.
      */
@@ -100,12 +100,12 @@ public class ReadReplicaConfig extends AbstractModule {
         hc.setMaxLifetime(maxLifetime);
         hc.setPoolName("pipeline-registry-primary-pool");
         hc.setAutoCommit(true);
-        
+
         // Enhanced configuration for production
         hc.setLeakDetectionThreshold(60000); // 1 minute
         hc.setConnectionTestQuery("SELECT 1");
         hc.setValidationTimeout(5000);
-        
+
         // Connection pool properties for better performance
         hc.addDataSourceProperty("cachePrepStmts", "true");
         hc.addDataSourceProperty("prepStmtCacheSize", "250");
@@ -120,27 +120,27 @@ public class ReadReplicaConfig extends AbstractModule {
 
         return new HikariDataSource(hc);
     }
-    
+
     /**
      * Create replica data sources.
      */
     private Map<String, DataSource> createReplicaDataSources(Config config) {
         Map<String, DataSource> replicas = new HashMap<>();
-        
+
         // Check if replicas are enabled
         boolean replicasEnabled = config.get(ofString(), "db.replica.enabled", "false").equalsIgnoreCase("true");
         if (!replicasEnabled) {
             LOG.info("Read replicas are disabled");
             return replicas;
         }
-        
+
         // Get replica count
         int replicaCount = config.get(ofInteger(), "db.replica.count", 0);
         if (replicaCount <= 0) {
             LOG.info("No read replicas configured");
             return replicas;
         }
-        
+
         // Create data sources for each replica
         for (int i = 1; i <= replicaCount; i++) {
             String replicaName = "replica-" + i;
@@ -151,10 +151,10 @@ public class ReadReplicaConfig extends AbstractModule {
             String pass = config.get(ofString(), "db.password", "postgres");
             int maxPool = config.get(ofInteger(), "db.replica.pool.max.size", 5);
             int minIdle = config.get(ofInteger(), "db.replica.pool.min.idle", 1);
-            
+
             String jdbcUrl = String.format("jdbc:postgresql://%s:%d/%s", host, port, db);
             LOG.info("Configuring replica HikariCP DataSource for {}: {}", replicaName, jdbcUrl);
-            
+
             HikariConfig hc = new HikariConfig();
             hc.setJdbcUrl(jdbcUrl);
             hc.setUsername(user);
@@ -167,22 +167,22 @@ public class ReadReplicaConfig extends AbstractModule {
             hc.setPoolName("pipeline-registry-" + replicaName + "-pool");
             hc.setAutoCommit(true);
             hc.setReadOnly(true); // Important: replicas are read-only
-            
+
             // Enhanced configuration for production
             hc.setLeakDetectionThreshold(60000); // 1 minute
             hc.setConnectionTestQuery("SELECT 1");
             hc.setValidationTimeout(5000);
-            
+
             // Connection pool properties for better performance
             hc.addDataSourceProperty("cachePrepStmts", "true");
             hc.addDataSourceProperty("prepStmtCacheSize", "250");
             hc.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-            
+
             replicas.put(replicaName, new HikariDataSource(hc));
         }
-        
+
         LOG.info("Configured {} read replicas", replicas.size());
         return replicas;
     }
-    
+
 }

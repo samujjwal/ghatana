@@ -28,7 +28,7 @@ import java.util.Map;
  *   <li>Exactly one operand (next operator in chain)</li>
  *   <li>Required parameter: eventTypes (List&lt;String&gt;)</li>
  * </ul>
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  *               Auto-Injection Pattern - Compiler automatically injects PRIMARY_EVENT at DAG root if not
@@ -79,7 +79,7 @@ import java.util.Map;
  *                  .operands(Collections.singletonList(seqOperatorSpec))
  *                  .parameter("eventTypes", Arrays.asList("com.ghatana.financial.TransactionEvent"))
  *                  .build()
- *              
+ *
  *              // Multiple event types (OR semantics at filter level)
  *              OperatorSpec.builder()
  *                  .type("PRIMARY_EVENT")

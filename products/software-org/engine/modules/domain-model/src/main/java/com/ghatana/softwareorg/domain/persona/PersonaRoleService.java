@@ -319,9 +319,9 @@ public class PersonaRoleService {
      * Validation result for role activation
      */
     public record ValidationResult(boolean isValid, String errorMessage) {
-        
 
-    
+
+
 
     public static ValidationResult valid() {
         return new ValidationResult(true, null);

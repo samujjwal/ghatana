@@ -1,7 +1,6 @@
 package com.ghatana.virtualorg.framework.hitl;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Context for an approval request.

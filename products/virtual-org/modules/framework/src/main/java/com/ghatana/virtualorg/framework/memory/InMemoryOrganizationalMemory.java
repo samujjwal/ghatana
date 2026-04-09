@@ -1,7 +1,5 @@
 package com.ghatana.virtualorg.framework.memory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,19 +31,19 @@ import java.util.stream.Collectors;
  * @doc.pattern Adapter
  */
 public class InMemoryOrganizationalMemory implements OrganizationalMemory {
-    
+
     private final Map<String, MemoryEntry> entries = new ConcurrentHashMap<>();
-    
+
     @Override
     public void store(MemoryEntry entry) {
         entries.put(entry.getId(), entry);
     }
-    
+
     @Override
     public Optional<MemoryEntry> retrieve(String id) {
         return Optional.ofNullable(entries.get(id));
     }
-    
+
     @Override
     public List<MemoryEntry> search(String query, int limit) {
         String lowerQuery = query.toLowerCase();
@@ -57,7 +55,7 @@ public class InMemoryOrganizationalMemory implements OrganizationalMemory {
             .limit(limit)
             .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<MemoryEntry> searchByCategory(String category, int limit) {
         return entries.values().stream()
@@ -66,7 +64,7 @@ public class InMemoryOrganizationalMemory implements OrganizationalMemory {
             .limit(limit)
             .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<MemoryEntry> searchByActor(String actor, int limit) {
         return entries.values().stream()
@@ -75,7 +73,7 @@ public class InMemoryOrganizationalMemory implements OrganizationalMemory {
             .limit(limit)
             .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<MemoryEntry> getRecent(int limit) {
         return entries.values().stream()
@@ -83,12 +81,12 @@ public class InMemoryOrganizationalMemory implements OrganizationalMemory {
             .limit(limit)
             .collect(Collectors.toList());
     }
-    
+
     @Override
     public void clear() {
         entries.clear();
     }
-    
+
     @Override
     public long getSize() {
         return entries.size();

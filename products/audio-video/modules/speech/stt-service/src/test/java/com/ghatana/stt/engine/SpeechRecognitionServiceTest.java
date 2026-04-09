@@ -4,12 +4,9 @@ import com.ghatana.stt.engine.WhisperTranscriptionEngine.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -32,7 +29,7 @@ class SpeechRecognitionServiceTest {
     private static final byte[] SAMPLE_AUDIO_JA = "SAMPLE_PCM_DATA_KONNICHIWA_SEKAI".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SAMPLE_AUDIO_WITH_NOISE = "SAMPLE_PCM_DATA_WITH_NOISE_CONTENT".getBytes(StandardCharsets.UTF_8);
     private static final byte[] LARGE_AUDIO_DATA = new byte[10_000_000]; // 10MB
-    
+
     private WhisperTranscriptionEngine engine;
     private WhisperTranscriptionEngine diarizationEngine;
 
@@ -84,7 +81,7 @@ class SpeechRecognitionServiceTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════
-    // FORMAT HANDLING TESTS  
+    // FORMAT HANDLING TESTS
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
@@ -96,7 +93,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("transcription succeeds for all supported formats")
         void transcriptionSucceedsForAllFormats(AudioFormat format) {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, format, "en");
-            
+
             assertThat(result).isNotNull();
             assertThat(result.text()).isNotBlank();
             assertThat(result.inputFormat()).isEqualTo(format);
@@ -108,7 +105,7 @@ class SpeechRecognitionServiceTest {
         void pcmFormatProducesConsistentTranscription() {
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en");
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en");
-            
+
             assertThat(r1.text()).isEqualTo(r2.text());
             assertThat(r1.confidence()).isEqualTo(r2.confidence());
         }
@@ -117,7 +114,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("WAV format output matches expected pattern")
         void wavFormatOutputMatchesPattern() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.text()).containsIgnoringCase("transcribed");
             assertThat(result.inputFormat()).isEqualTo(AudioFormat.WAV);
         }
@@ -126,7 +123,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("MP3 format produces valid transcription")
         void mp3FormatProducesValidTranscription() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.MP3, "en");
-            
+
             assertThat(result.text()).isNotBlank();
             assertThat(result.confidence()).isStrictlyBetween(0.0, 1.0);
         }
@@ -173,7 +170,7 @@ class SpeechRecognitionServiceTest {
         void confidenceIsDeterministic() {
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en");
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en");
-            
+
             assertThat(r1.confidence()).isEqualTo(r2.confidence());
         }
 
@@ -182,7 +179,7 @@ class SpeechRecognitionServiceTest {
         void differentInputsMayProduceDifferentConfidence() {
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en");
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_FR, AudioFormat.PCM, "fr");
-            
+
             // Confidence values might be different due to different audio content
             assertThat(r1.confidence()).isBetween(0.0, 1.0);
             assertThat(r2.confidence()).isBetween(0.0, 1.0);
@@ -192,7 +189,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("noisy audio produces valid confidence (may be lower)")
         void noisyAudioProducesValidConfidence() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_WITH_NOISE, AudioFormat.PCM, "en");
-            
+
             assertThat(result.confidence()).isBetween(0.0, 1.0);
         }
     }
@@ -226,7 +223,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("null language hint triggers auto-detection")
         void nullLanguageHintTriggersAutoDetection() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, null);
-            
+
             assertThat(result.detectedLanguage()).isNotNull();
             assertThat(result.detectedLanguage()).isNotBlank();
         }
@@ -235,7 +232,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("detectLanguage() method returns valid BCP47 tag")
         void detectLanguageMethodReturnsValidTag() {
             String lang = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM);
-            
+
             assertThat(lang).isNotBlank();
             assertThat(lang).matches("[a-z]{2}(-[A-Z]{2})?");
         }
@@ -246,7 +243,7 @@ class SpeechRecognitionServiceTest {
             String langEn = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM);
             String langFr = engine.detectLanguage(SAMPLE_AUDIO_FR, AudioFormat.PCM);
             String langJa = engine.detectLanguage(SAMPLE_AUDIO_JA, AudioFormat.PCM);
-            
+
             assertThat(langEn).isNotBlank();
             assertThat(langFr).isNotBlank();
             assertThat(langJa).isNotBlank();
@@ -257,7 +254,7 @@ class SpeechRecognitionServiceTest {
         void languageDetectionIsDeterministic() {
             String lang1 = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM);
             String lang2 = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM);
-            
+
             assertThat(lang1).isEqualTo(lang2);
         }
     }
@@ -274,7 +271,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("diarization disabled produces empty speaker segments")
         void diarizationDisabledProducesEmptySegments() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.speakerSegments()).isEmpty();
         }
 
@@ -282,7 +279,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("diarization enabled produces non-empty speaker segments")
         void diarizationEnabledProducesNonEmptySegments() {
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.speakerSegments()).isNotEmpty();
         }
 
@@ -290,7 +287,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("each speaker segment contains valid speaker ID")
         void eachSpeakerSegmentContainsValidId() {
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             result.speakerSegments().forEach(segment -> {
                 assertThat(segment.speakerId()).isNotNull();
                 assertThat(segment.speakerId()).isNotBlank();
@@ -301,7 +298,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("speaker segments have valid time boundaries")
         void speakerSegmentsHaveValidTimeBoundaries() {
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             result.speakerSegments().forEach(segment -> {
                 assertThat(segment.start()).isNotNull();
                 assertThat(segment.end()).isNotNull();
@@ -313,7 +310,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("speaker text is non-blank in all segments")
         void speakerTextIsNonBlank() {
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             result.speakerSegments().forEach(segment ->
                     assertThat(segment.text()).isNotBlank()
             );
@@ -323,7 +320,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("speaker segments are ordered by start time")
         void speakerSegmentsAreOrdered() {
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             List<SpeakerSegment> segments = result.speakerSegments();
             for (int i = 1; i < segments.size(); i++) {
                 assertThat(segments.get(i).start())
@@ -344,7 +341,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("processing time is recorded and non-negative")
         void processingTimeIsRecordedAndNonNegative() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.processingTime()).isNotNull();
             assertThat(result.processingTime().toNanos()).isGreaterThanOrEqualTo(0);
         }
@@ -354,15 +351,15 @@ class SpeechRecognitionServiceTest {
         void processingTimeIncreasesWithLargerAudio() {
             byte[] smallAudio = new byte[100];
             byte[] largeAudio = new byte[10_000];
-            
+
             long startSmall = System.nanoTime();
             engine.transcribe(smallAudio, AudioFormat.PCM, "en");
             long durationSmall = System.nanoTime() - startSmall;
-            
+
             long startLarge = System.nanoTime();
             engine.transcribe(largeAudio, AudioFormat.PCM, "en");
             long durationLarge = System.nanoTime() - startLarge;
-            
+
             // Processing time should be comparable or larger for larger audio
             assertThat(durationSmall).isGreaterThan(0);
             assertThat(durationLarge).isGreaterThan(0);
@@ -374,7 +371,7 @@ class SpeechRecognitionServiceTest {
             int threadCount = 5;
             Thread[] threads = new Thread[threadCount];
             TranscriptionResult[] results = new TranscriptionResult[threadCount];
-            
+
             for (int i = 0; i < threadCount; i++) {
                 final int index = i;
                 threads[i] = new Thread(() ->
@@ -382,11 +379,11 @@ class SpeechRecognitionServiceTest {
                 );
                 threads[i].start();
             }
-            
+
             for (Thread t : threads) {
                 t.join();
             }
-            
+
             // All results should be consistent
             for (int i = 1; i < threadCount; i++) {
                 assertThat(results[i].text()).isEqualTo(results[0].text());
@@ -401,7 +398,7 @@ class SpeechRecognitionServiceTest {
             for (int i = 0; i < LARGE_AUDIO_DATA.length; i++) {
                 LARGE_AUDIO_DATA[i] = (byte) (i % 256);
             }
-            
+
             assertThatCode(() -> engine.transcribe(LARGE_AUDIO_DATA, AudioFormat.PCM, "en"))
                     .doesNotThrowAnyException();
         }
@@ -419,7 +416,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("result contains non-blank transcription text")
         void resultContainsNonBlankText() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.text()).isNotNull();
             assertThat(result.text()).isNotBlank();
         }
@@ -428,7 +425,7 @@ class SpeechRecognitionServiceTest {
         @DisplayName("result isEmpty() is consistent with text content")
         void resultIsEmptyIsConsistent() {
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
-            
+
             assertThat(result.isEmpty())
                     .isEqualTo(result.text() == null || result.text().isBlank());
         }
@@ -480,10 +477,10 @@ class SpeechRecognitionServiceTest {
             // First, trigger some errors
             assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.PCM, "en"))
                     .isInstanceOf(TranscriptionException.class);
-            
+
             assertThatThrownBy(() -> engine.transcribe(new byte[0], AudioFormat.PCM, "en"))
                     .isInstanceOf(TranscriptionException.class);
-            
+
             // Next transcription should work fine
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en");
             assertThat(result.text()).isNotBlank();

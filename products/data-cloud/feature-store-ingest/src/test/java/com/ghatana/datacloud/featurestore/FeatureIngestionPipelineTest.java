@@ -6,13 +6,9 @@
  */
 package com.ghatana.datacloud.featurestore;
 
-import com.ghatana.aiplatform.featurestore.MLFeature;
-import com.ghatana.services.featurestore.FeatureStoreIngestLauncher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +25,7 @@ class FeatureIngestionPipelineTest {
     @DisplayName("Should handle feature ingestion")
     void shouldHandleFeatureIngestion() {
         Map<String, Object> payload = Map.of("age", 25, "income", 50000.0);
-        
+
         assertThat(payload).isNotEmpty();
         assertThat(payload.size()).isGreaterThan(1);
     }
@@ -38,7 +34,7 @@ class FeatureIngestionPipelineTest {
     @DisplayName("Should handle feature processing")
     void shouldHandleFeatureProcessing() {
         Map<String, Object> payload = Map.of("name", "test", "value", 123);
-        
+
         assertThat(payload).isNotEmpty();
         assertThat(payload).containsKey("value");
     }
@@ -47,7 +43,7 @@ class FeatureIngestionPipelineTest {
     @DisplayName("Should handle feature validation")
     void shouldHandleFeatureValidation() {
         Map<String, Object> payload = Map.of("age", 25, "name", "John Doe");
-        
+
         assertThat(payload).isNotEmpty();
         assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
     }
@@ -56,7 +52,7 @@ class FeatureIngestionPipelineTest {
     @DisplayName("Should handle feature transformation")
     void shouldHandleFeatureTransformation() {
         Map<String, Object> payload = Map.of("status", "active");
-        
+
         assertThat(payload).isNotEmpty();
         assertThat(payload).containsKey("status");
     }
@@ -65,7 +61,7 @@ class FeatureIngestionPipelineTest {
     @DisplayName("Should handle ingestion failures")
     void shouldHandleIngestionFailures() {
         Map<String, Object> nullPayload = Map.of("null_field", null);
-        
+
         assertThat(nullPayload).containsKey("null_field");
     }
 
@@ -74,7 +70,7 @@ class FeatureIngestionPipelineTest {
     void shouldHandleBatchIngestion() {
         int batchSize = 100;
         Map<String, Object> payload = Map.of("batch_id", 1);
-        
+
         assertThat(batchSize).isPositive();
         assertThat(payload).isNotEmpty();
     }

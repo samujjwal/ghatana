@@ -66,18 +66,18 @@ public class FilterOperator extends AbstractStreamOperator {
         payload.put("name", getName());
         payload.put("version", getVersion());
         payload.put("description", getDescription());
-        
+
         Map<String, Object> config = new HashMap<>();
         config.put("filterType", "custom_predicate");
         payload.put("config", config);
-        
+
         List<String> capabilities = List.of("stream.filter", "event.filter");
         payload.put("capabilities", capabilities);
-        
+
         Map<String, String> headers = new HashMap<>();
         headers.put("operatorId", getId().toString());
         headers.put("tenantId", getId().getNamespace());
-        
+
         return GEvent.builder()
             .type("operator.registered")
             .headers(headers)

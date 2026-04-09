@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.model;
 
 /**
- * Represents a TypeScript/JavaScript element that can be refactored. 
+ * Represents a TypeScript/JavaScript element that can be refactored.
  * @doc.type class
  * @doc.purpose Handles type script element operations
  * @doc.layer core

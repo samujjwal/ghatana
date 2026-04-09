@@ -70,4 +70,3 @@ public final class DataCloudColumnNames {
     public static final String UPDATED_AT  = "updated_at";
     public static final String UPDATED_BY  = "updated_by";
 }
-

@@ -6,7 +6,6 @@ package com.ghatana.yappc.services.security;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;

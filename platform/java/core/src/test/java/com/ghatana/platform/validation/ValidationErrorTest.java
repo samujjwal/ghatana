@@ -12,7 +12,7 @@ class ValidationErrorTest {
     @Test
     void testConstructorWithCodeAndMessage() {
         ValidationError error = new ValidationError("CODE", "Message");
-        
+
         assertEquals("CODE", error.getCode());
         assertEquals("Message", error.getMessage());
         assertNull(error.getPath());
@@ -22,7 +22,7 @@ class ValidationErrorTest {
     @Test
     void testConstructorWithAllFields() {
         ValidationError error = new ValidationError("CODE", "Message", "/field", "value");
-        
+
         assertEquals("CODE", error.getCode());
         assertEquals("Message", error.getMessage());
         assertEquals("/field", error.getPath());
@@ -33,7 +33,7 @@ class ValidationErrorTest {
     void testToString() {
         ValidationError error = new ValidationError("CODE", "Message", "/field", null);
         String str = error.toString();
-        
+
         assertTrue(str.contains("CODE"));
         assertTrue(str.contains("Message"));
         assertTrue(str.contains("/field"));

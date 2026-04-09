@@ -36,7 +36,7 @@ class ObservabilityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should record metric with tags")
     void testRecordMetric() {
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             telemetryManager.recordMetric("test.metric", 42.0, "tag1", "value1")
         );
     }
@@ -70,7 +70,7 @@ class ObservabilityFrameworkIntegrationTest {
         KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer");
 
         assertNotNull(timer);
-        
+
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {
@@ -114,7 +114,7 @@ class ObservabilityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should verify audit trail integrity")
     void testVerifyTrailIntegrity() {
-        AuditTrailService.VerificationResult result = 
+        AuditTrailService.VerificationResult result =
             auditTrailService.verifyTrailIntegrity("entity-1");
 
         assertNotNull(result);
@@ -129,7 +129,7 @@ class ObservabilityFrameworkIntegrationTest {
         );
         MockExecutionContext context = new MockExecutionContext();
 
-        ExplainabilityFramework.Explanation explanation = 
+        ExplainabilityFramework.Explanation explanation =
             explainabilityFramework.generateExplanation(action, context);
 
         assertNotNull(explanation);
@@ -139,7 +139,7 @@ class ObservabilityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should record and retrieve decision explanation")
     void testRecordDecisionExplanation() {
-        ExplainabilityFramework.Explanation explanation = 
+        ExplainabilityFramework.Explanation explanation =
             ExplainabilityFramework.Explanation.builder()
                 .decisionId("decision-1")
                 .summary("Test decision")
@@ -149,8 +149,8 @@ class ObservabilityFrameworkIntegrationTest {
                 .build();
 
         explainabilityFramework.recordDecisionExplanation("decision-1", explanation);
-        
-        ExplainabilityFramework.Explanation retrieved = 
+
+        ExplainabilityFramework.Explanation retrieved =
             explainabilityFramework.getExplanation("decision-1");
 
         assertNotNull(retrieved);
@@ -322,7 +322,7 @@ class ObservabilityFrameworkIntegrationTest {
         private final Map<String, Explanation> explanations = new HashMap<>();
 
         @Override
-        public Explanation generateExplanation(KernelTelemetryManager.AgentAction action, 
+        public Explanation generateExplanation(KernelTelemetryManager.AgentAction action,
                                                ExecutionContext context) {
             return Explanation.builder()
                 .decisionId("decision-1")

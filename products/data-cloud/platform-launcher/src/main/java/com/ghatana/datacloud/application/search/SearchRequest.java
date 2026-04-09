@@ -17,7 +17,7 @@ import java.util.Objects;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * SearchRequest request = SearchRequest.builder()
  *         .query("gaming laptop")

@@ -7,7 +7,6 @@ package com.ghatana.yappc.framework.core.plugin.hotreload;
 import com.ghatana.yappc.framework.core.plugin.sandbox.IsolatingPluginSandbox;
 import com.ghatana.yappc.framework.core.plugin.sandbox.PluginDescriptor;
 import com.ghatana.yappc.framework.core.plugin.sandbox.PluginLoadException;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

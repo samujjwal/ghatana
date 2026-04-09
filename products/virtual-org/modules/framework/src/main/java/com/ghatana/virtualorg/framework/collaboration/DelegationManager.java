@@ -125,7 +125,7 @@ public interface DelegationManager {
             List<String> requiredCapabilities,
             boolean allowEscalation
     ) {
-        
+
 
     public static Builder builder() {
         return new Builder();

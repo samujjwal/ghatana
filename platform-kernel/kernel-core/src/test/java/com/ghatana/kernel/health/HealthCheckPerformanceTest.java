@@ -50,7 +50,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         // GIVEN: 100 registered modules
         int moduleCount = 100;
         List<TestModule> modules = new ArrayList<>();
-        
+
         IntStream.range(0, moduleCount).forEach(i -> {
             TestModule module = new TestModule("module-" + i, "1.0.0", Duration.ofMillis(1));
             modules.add(module);
@@ -60,13 +60,13 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
 
         // WHEN: Aggregate health checks
         long startTime = System.nanoTime();
-        
+
         List<Promise<HealthStatus>> healthChecks = modules.stream()
             .map(m -> Promise.of(m.getHealthStatus()))
             .toList();
-        
+
         List<HealthStatus> results = runPromise(() -> Promises.toList(healthChecks));
-        
+
         long duration = (System.nanoTime() - startTime) / 1_000_000; // Convert to ms
 
         // THEN: All health checks complete within 500ms
@@ -81,7 +81,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         // GIVEN: 50 modules with varying health check durations
         int moduleCount = 50;
         List<TestModule> modules = new ArrayList<>();
-        
+
         IntStream.range(0, moduleCount).forEach(i -> {
             // Varying durations: 1ms, 2ms, 3ms, etc.
             Duration duration = Duration.ofMillis(i % 10 + 1);
@@ -93,13 +93,13 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
 
         // WHEN: Execute health checks in parallel
         long startTime = System.nanoTime();
-        
+
         List<Promise<HealthStatus>> healthChecks = modules.stream()
             .map(m -> Promise.of(m.getHealthStatus()))
             .toList();
-        
+
         List<HealthStatus> results = runPromise(() -> Promises.toList(healthChecks));
-        
+
         long parallelDuration = (System.nanoTime() - startTime) / 1_000_000;
 
         // THEN: Parallel execution is much faster than sequential
@@ -115,7 +115,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         // GIVEN: 20 modules
         int moduleCount = 20;
         List<TestModule> modules = new ArrayList<>();
-        
+
         IntStream.range(0, moduleCount).forEach(i -> {
             TestModule module = new TestModule("module-" + i, "1.0.0", Duration.ofMillis(5));
             registry.registerModule(module);
@@ -126,9 +126,9 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         // WHEN: Multiple concurrent health check aggregations
         int requestCount = 10;
         List<Promise<List<HealthStatus>>> requests = new ArrayList<>();
-        
+
         long startTime = System.nanoTime();
-        
+
         for (int i = 0; i < requestCount; i++) {
             Promise<List<HealthStatus>> request = Promises.toList(
                 modules.stream()
@@ -137,9 +137,9 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
             );
             requests.add(request);
         }
-        
+
         List<List<HealthStatus>> allResults = runPromise(() -> Promises.toList(requests));
-        
+
         long duration = (System.nanoTime() - startTime) / 1_000_000;
 
         // THEN: All requests complete successfully
@@ -148,7 +148,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
             assertThat(results).hasSize(moduleCount);
             assertThat(results).allMatch(HealthStatus::isHealthy);
         });
-        
+
         // AND: Concurrent execution is efficient
         assertThat(duration).isLessThan(200);
     }
@@ -162,30 +162,30 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
             "1.0.0",
             Duration.ofSeconds(10)
         );
-        
+
         FastHealthCheckModule fastModule = new FastHealthCheckModule(
             "fast-module",
             "1.0.0"
         );
-        
+
         registry.registerModule(slowModule);
         registry.registerModule(fastModule);
-        
+
         slowModule.initialize(context);
         fastModule.initialize(context);
 
         // WHEN: Execute health checks with timeout
         long startTime = System.nanoTime();
-        
+
         // Fast module should complete
         HealthStatus fastResult = fastModule.getHealthStatus();
-        
+
         long duration = (System.nanoTime() - startTime) / 1_000_000;
 
         // THEN: Fast module completes quickly
         assertThat(fastResult.isHealthy()).isTrue();
         assertThat(duration).isLessThan(100);
-        
+
         // Slow module would timeout in production (not tested here to avoid long test)
     }
 
@@ -200,17 +200,17 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         // WHEN: Call health check multiple times rapidly
         int callCount = 10;
         List<Promise<HealthStatus>> calls = new ArrayList<>();
-        
+
         for (int i = 0; i < callCount; i++) {
             calls.add(Promise.of(module.getHealthStatus()));
         }
-        
+
         List<HealthStatus> results = runPromise(() -> Promises.toList(calls));
 
         // THEN: All calls succeed
         assertThat(results).hasSize(callCount);
         assertThat(results).allMatch(HealthStatus::isHealthy);
-        
+
         // AND: Health check was actually invoked (caching is optional)
         assertThat(module.getHealthCheckCount()).isGreaterThan(0);
     }
@@ -222,14 +222,14 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         int healthyCount = 80;
         int unhealthyCount = 20;
         List<KernelModule> modules = new ArrayList<>();
-        
+
         IntStream.range(0, healthyCount).forEach(i -> {
             TestModule module = new TestModule("healthy-" + i, "1.0.0", Duration.ofMillis(1));
             registry.registerModule(module);
             modules.add(module);
             module.initialize(context);
         });
-        
+
         IntStream.range(0, unhealthyCount).forEach(i -> {
             UnhealthyModule module = new UnhealthyModule("unhealthy-" + i, "1.0.0");
             registry.registerModule(module);
@@ -241,16 +241,16 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
         List<Promise<HealthStatus>> healthChecks = modules.stream()
             .map(m -> Promise.of(m.getHealthStatus()))
             .toList();
-        
+
         List<HealthStatus> results = runPromise(() -> Promises.toList(healthChecks));
 
         // THEN: All checks complete
         assertThat(results).hasSize(healthyCount + unhealthyCount);
-        
+
         // AND: Correct health status distribution
         long healthy = results.stream().filter(HealthStatus::isHealthy).count();
         long unhealthy = results.stream().filter(status -> !status.isHealthy()).count();
-        
+
         assertThat(healthy).isEqualTo(healthyCount);
         assertThat(unhealthy).isEqualTo(unhealthyCount);
     }

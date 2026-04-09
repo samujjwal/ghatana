@@ -18,7 +18,7 @@ import org.openrewrite.Recipe;
  *
  * <p>This class coordinates between Java, JSON, and YAML codemods, ensuring proper error handling
  * and reporting.
- 
+
  * @doc.type class
  * @doc.purpose Handles codemod orchestrator operations
  * @doc.layer core

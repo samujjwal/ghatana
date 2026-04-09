@@ -63,7 +63,7 @@ import java.util.List;
  * @examples See class-level JavaDoc usage example; used in TracingManager.createForTesting()
  * @testing Test export, shutdown, clear operations; verify thread-safety
  * @notes For testing only; do not use in production (unbounded memory growth)
- 
+
  *
  * @doc.type class
  * @doc.purpose In memory span exporter
@@ -73,12 +73,12 @@ import java.util.List;
 public class InMemorySpanExporter implements SpanExporter {
 
     private static final Logger log = LoggerFactory.getLogger(InMemorySpanExporter.class);
-    
+
     /**
      * Thread-safe list of finished spans.
      */
     private final List<SpanData> finishedSpans = Collections.synchronizedList(new ArrayList<>());
-    
+
     /**
      * Flag indicating whether the exporter has been shutdown.
      */
@@ -98,10 +98,10 @@ public class InMemorySpanExporter implements SpanExporter {
         if (isStopped) {
             return CompletableResultCode.ofFailure();
         }
-        
+
         finishedSpans.addAll(spans);
         log.debug("Exported {} spans", spans.size());
-        
+
         return CompletableResultCode.ofSuccess();
     }
 

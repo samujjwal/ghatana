@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.util.Objects;
 
 /**
  * Request DTO for executing entity queries.
@@ -13,7 +12,7 @@ import java.util.Objects;
  * <p>
  * This is a minimal DTO aligned with QueryController usage. It captures
  * a filter expression, pagination (limit/offset), and simple sorting.
- 
+
  *
  * @doc.type class
  * @doc.purpose Entity query request

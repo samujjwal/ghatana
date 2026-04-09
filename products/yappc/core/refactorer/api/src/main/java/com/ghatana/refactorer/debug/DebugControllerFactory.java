@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Factory for creating DebugController instances with default configuration. 
+ * Factory for creating DebugController instances with default configuration.
  * @doc.type class
  * @doc.purpose Handles debug controller factory operations
  * @doc.layer core

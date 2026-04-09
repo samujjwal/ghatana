@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * OR operator that matches when any operand matches (disjunction).
- * 
+ *
  * <p>This operator matches when at least one of the specified events occurs.
  * For example, OR(A, B, C) matches when event A or B or C occurs. Supports
  * exclusive OR (XOR) semantics via the {@code exclusive} parameter.
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Pattern Composition Operator - Disjunction (OR) for alternative matching.
@@ -49,7 +49,7 @@ import java.util.Map;
  *                  .operands(Arrays.asList(creditCardSpec, debitCardSpec, cashSpec))
  *                  .parameter("exclusive", false)
  *                  .build()
- *              
+ *
  *              // Exclusive OR (XOR - exactly one)
  *              OperatorSpec.builder()
  *                  .type("OR")
@@ -64,7 +64,7 @@ import java.util.Map;
  *                 pattern engine's execution layer. Does not provide runtime matching logic.
  */
 public class OrOperator implements Operator {
-    
+
     private static final String TYPE = "OR";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -74,41 +74,41 @@ public class OrOperator implements Operator {
             .supportsStateful(false)
             .supportsStateless(true)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for OR operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for OrOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount < METADATA.getMinOperands()) {
             throw new PatternValidationException(
-                String.format("OR operator requires at least %d operands, got %d", 
+                String.format("OR operator requires at least %d operands, got %d",
                     METADATA.getMinOperands(), operandCount));
         }
-        
+
         if (operandCount > METADATA.getMaxOperands()) {
             throw new PatternValidationException(
-                String.format("OR operator supports at most %d operands, got %d", 
+                String.format("OR operator supports at most %d operands, got %d",
                     METADATA.getMaxOperands(), operandCount));
         }
-        
+
         // Validate operands
         if (spec.getOperands() != null) {
             for (int i = 0; i < spec.getOperands().size(); i++) {
@@ -117,51 +117,46 @@ public class OrOperator implements Operator {
                     throw new PatternValidationException(
                         String.format("OR operator operand %d cannot be null", i));
                 }
-                
+
                 if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                     throw new PatternValidationException(
                         String.format("OR operator operand %d must have a valid type", i));
                 }
             }
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             return;
         }
-        
+
         // Validate exclusive parameter if present
         Object exclusive = parameters.get("exclusive");
         if (exclusive != null && !(exclusive instanceof Boolean)) {
             throw new PatternValidationException("OR operator exclusive parameter must be a boolean");
         }
-        
+
         // Validate priority parameter if present
         Object priority = parameters.get("priority");
         if (priority != null) {
             if (!(priority instanceof Number)) {
                 throw new PatternValidationException("OR operator priority parameter must be a number");
             }
-            
+
             int priorityValue = ((Number) priority).intValue();
             if (priorityValue < 0) {
                 throw new PatternValidationException("OR operator priority parameter must be non-negative");
             }
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

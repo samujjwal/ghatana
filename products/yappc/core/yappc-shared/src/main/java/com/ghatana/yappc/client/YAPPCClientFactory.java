@@ -2,7 +2,6 @@ package com.ghatana.yappc.client;
 
 import com.ghatana.yappc.client.impl.EmbeddedYAPPCClient;
 import com.ghatana.yappc.client.impl.RemoteYAPPCClient;
-import io.activej.promise.Promise;
 
 /**
  * Factory for creating YAPPCClient instances.
@@ -56,17 +55,17 @@ import io.activej.promise.Promise;
  * @author YAPPC Team
  * @version 1.0.0
  * @since 1.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles yappc client factory operations
  * @doc.layer core
  * @doc.pattern Factory
 */
 public final class YAPPCClientFactory {
-    
+
     private YAPPCClientFactory() {
     }
-    
+
     /**
      * Creates an embedded YAPPC client that runs services in-process.
      *
@@ -79,7 +78,7 @@ public final class YAPPCClientFactory {
         }
         return new EmbeddedYAPPCClient(config);
     }
-    
+
     /**
      * Creates a remote YAPPC client that connects to a YAPPC server.
      *
@@ -90,7 +89,7 @@ public final class YAPPCClientFactory {
     public static YAPPCClient remote(String serverUrl, YAPPCConfig config) {
         return remote(serverUrl, config, ClientOptions.builder().build());
     }
-    
+
     /**
      * Creates a remote YAPPC client with custom options.
      *

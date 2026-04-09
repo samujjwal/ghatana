@@ -3,7 +3,6 @@ package com.ghatana.auth.adapter;
 import com.ghatana.platform.security.port.TokenStore;
 import com.ghatana.auth.adapter.memory.InMemoryTokenStore;
 import com.ghatana.auth.adapter.jpa.JpaTokenRepository;
-import com.ghatana.auth.adapter.jpa.TokenEntity;
 import com.ghatana.platform.domain.auth.ClientId;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.Token;
@@ -60,7 +59,7 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
     private static class AdapterTestFixture {
         String name;
         InMemoryTokenStore adapter;
-        
+
         AdapterTestFixture(String name, InMemoryTokenStore adapter) {
             this.name = name;
             this.adapter = adapter;
@@ -76,13 +75,13 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         adapters = new java.util.ArrayList<>();
-        
+
         // InMemory adapter
         adapters.add(new AdapterTestFixture("InMemory", new InMemoryTokenStore()));
-        
+
         // Redis adapter (would need Testcontainers setup in real scenario)
         // adapters.add(new AdapterTestFixture("Redis", new RedisTokenStore(...)));
-        
+
         // JPA adapter (would need Testcontainers setup in real scenario)
         // adapters.add(new AdapterTestFixture("PostgreSQL", new JpaTokenRepository(...)));
 
@@ -105,10 +104,10 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
         for (AdapterTestFixture fixture : adapters) {
             // GIVEN: Valid token
             Token token = createTestToken(tenant1, userId1);
-            
+
             // WHEN: Save token
             runPromise(() -> fixture.adapter.store(token));
-            
+
             // THEN: Can retrieve by ID
             Optional<Token> retrievedOpt = runPromise(() -> fixture.adapter.findById(tenant1, token.getTokenId()));
             Token retrieved = retrievedOpt.orElse(null);
@@ -134,25 +133,25 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
             // GIVEN: Tokens for two different tenants
             Token token1 = createTestToken(tenant1, userId1);
             Token token2 = createTestToken(tenant2, userId1);
-            
+
             runPromise(() -> fixture.adapter.store(token1));
             runPromise(() -> fixture.adapter.store(token2));
-            
+
             // WHEN: Query tenant-1 for tokens by userId
-            java.util.List<Token> tenant1Tokens = runPromise(() -> 
+            java.util.List<Token> tenant1Tokens = runPromise(() ->
                 fixture.adapter.findByUserId(tenant1, userId1));
-            
+
             // THEN: Only tenant-1 token returned
             assertThat(tenant1Tokens)
                     .as("[%s] Should only return tenant-1 tokens", fixture.name)
                     .hasSize(1)
                     .extracting(Token::getTokenId)
                     .containsOnly(token1.getTokenId());
-            
+
             // Verify tenant-2 query returns only tenant-2 token
             java.util.List<Token> tenant2Tokens = runPromise(() ->
                 fixture.adapter.findByUserId(tenant2, userId1));
-            
+
             assertThat(tenant2Tokens)
                     .as("[%s] Should only return tenant-2 tokens", fixture.name)
                     .hasSize(1)
@@ -175,16 +174,16 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
             // GIVEN: Saved token
             Token token = createTestToken(tenant1, userId1);
             runPromise(() -> fixture.adapter.store(token));
-            
+
             // Verify initially valid
             boolean validBefore = runPromise(() -> fixture.adapter.isValid(tenant1, token.getTokenId()));
             assertThat(validBefore)
                     .as("[%s] Token should be valid initially", fixture.name)
                     .isTrue();
-            
+
             // WHEN: Revoke token
             runPromise(() -> fixture.adapter.revoke(tenant1, token.getTokenId()));
-            
+
             // THEN: Token now invalid
             boolean validAfter = runPromise(() -> fixture.adapter.isValid(tenant1, token.getTokenId()));
             assertThat(validAfter)
@@ -215,13 +214,13 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
                     .issuedAt(java.time.Instant.now().minus(java.time.Duration.ofDays(2)))
                     .expiresAt(java.time.Instant.now().minus(java.time.Duration.ofDays(1)))
                     .build();
-            
+
             runPromise(() -> fixture.adapter.store(expiredToken));
-            
+
             // WHEN: Check validity
             Optional<Token> maybeToken = runPromise(() -> fixture.adapter.findById(tenant1, expiredToken.getTokenId()));
             boolean isValid = maybeToken.map(Token::isValid).orElse(false);
-            
+
             // THEN: Token marked as invalid (expired)
             assertThat(isValid)
                     .as("[%s] Expired token should be invalid", fixture.name)
@@ -243,11 +242,11 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
             // GIVEN: Saved token
             Token token = createTestToken(tenant1, userId1);
             runPromise(() -> fixture.adapter.store(token));
-            
+
             // WHEN: Lookup by value
             Optional<Token> foundOpt = runPromise(() -> fixture.adapter.findByValue(tenant1, token.getTokenValue()));
             Token found = foundOpt.orElse(null);
-            
+
             // THEN: Same token returned
             assertThat(found)
                     .as("[%s] Should find token by value", fixture.name)
@@ -272,15 +271,15 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
             Token token1 = createTestToken(tenant1, userId1);
             Token token2 = createTestToken(tenant1, userId1);
             Token token3 = createTestToken(tenant1, userId1);
-            
+
             runPromise(() -> fixture.adapter.store(token1));
             runPromise(() -> fixture.adapter.store(token2));
             runPromise(() -> fixture.adapter.store(token3));
-            
+
             // WHEN: Query by user ID
             java.util.List<Token> userTokens = runPromise(() ->
                 fixture.adapter.findByUserId(tenant1, userId1));
-            
+
             // THEN: All 3 tokens returned
             assertThat(userTokens)
                     .as("[%s] Should return all user tokens", fixture.name)
@@ -309,7 +308,7 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
             for (int i = 0; i < 10; i++) {
                 tokens.add(createTestToken(tenant1, userId1));
             }
-            
+
             // WHEN: Save all concurrently
             runPromise(() -> {
 java.util.List<Promise<Void>> saves = tokens.stream()
@@ -318,11 +317,11 @@ java.util.List<Promise<Void>> saves = tokens.stream()
 
                 return Promises.all(saves).map(v -> null);
             });
-            
+
             // THEN: All tokens retrievable
             java.util.List<Token> userTokens = runPromise(() ->
                 fixture.adapter.findByUserId(tenant1, userId1));
-            
+
             assertThat(userTokens)
                     .as("[%s] All concurrently saved tokens should be retrievable", fixture.name)
                     .hasSize(10);
@@ -351,7 +350,7 @@ java.util.List<Promise<Void>> saves = tokens.stream()
                     .issuedAt(java.time.Instant.now())
                     .expiresAt(java.time.Instant.now().plus(java.time.Duration.ofHours(1)))
                     .build();
-            
+
             Token clientBToken = Token.builder()
                     .tenantId(tenant1)
                     .tokenId(TokenId.random())
@@ -362,14 +361,14 @@ java.util.List<Promise<Void>> saves = tokens.stream()
                     .issuedAt(java.time.Instant.now())
                     .expiresAt(java.time.Instant.now().plus(java.time.Duration.ofHours(1)))
                     .build();
-            
+
             runPromise(() -> fixture.adapter.store(clientAToken));
             runPromise(() -> fixture.adapter.store(clientBToken));
-            
+
             // WHEN: Query by client ID
             java.util.List<Token> clientATokens = runPromise(() ->
                 fixture.adapter.findByClientId(tenant1, ClientId.of("client-a")));
-            
+
             // THEN: Only client-a tokens returned
             assertThat(clientATokens)
                     .as("[%s] Should return only client-a tokens", fixture.name)
@@ -384,7 +383,7 @@ java.util.List<Promise<Void>> saves = tokens.stream()
     @Nested
     @DisplayName("Adapter-Specific Tests")
     class AdapterSpecificTests {
-        
+
         /**
          * Verifies InMemory adapter doesn't persist across instances.
          */
@@ -392,16 +391,16 @@ java.util.List<Promise<Void>> saves = tokens.stream()
         @DisplayName("InMemory adapter is non-persistent")
         void shouldBeNonPersistent() {
             Token token = createTestToken(tenant1, userId1);
-            
+
             // Save to first instance
             TokenStore adapter1 = new InMemoryTokenStore();
             runPromise(() -> adapter1.store(token));
-            
+
             // Create new instance - should be empty
             TokenStore adapter2 = new InMemoryTokenStore();
             Optional<Token> retrievedOpt = runPromise(() -> adapter2.findById(tenant1, token.getTokenId()));
             Token retrieved = retrievedOpt.orElse(null);
-            
+
             assertThat(retrieved)
                     .as("InMemory adapter should not persist between instances")
                     .isNull();

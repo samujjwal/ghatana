@@ -11,7 +11,7 @@ import java.util.Optional;
 
 /**
  * Interface for configuration sources.
- * 
+ *
  * Configuration sources provide access to configuration properties
  * from various sources (files, environment, system properties, etc.).
  *
@@ -21,7 +21,7 @@ import java.util.Optional;
  * @doc.pattern Service
  */
 public interface ConfigSource {
-    
+
     /**
      * Gets a string value for the specified key.
      *
@@ -30,7 +30,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<String> getString(@NotNull String key);
-    
+
     /**
      * Gets an integer value for the specified key.
      *
@@ -39,7 +39,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<Integer> getInt(@NotNull String key);
-    
+
     /**
      * Gets a long value for the specified key.
      *
@@ -48,7 +48,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<Long> getLong(@NotNull String key);
-    
+
     /**
      * Gets a double value for the specified key.
      *
@@ -57,7 +57,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<Double> getDouble(@NotNull String key);
-    
+
     /**
      * Gets a boolean value for the specified key.
      *
@@ -66,7 +66,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<Boolean> getBoolean(@NotNull String key);
-    
+
     /**
      * Gets a string array value for the specified key.
      *
@@ -75,7 +75,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<String[]> getStringArray(@NotNull String key);
-    
+
     /**
      * Gets a map value for the specified key.
      *
@@ -84,7 +84,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<Map<String, String>> getMap(@NotNull String key);
-    
+
     /**
      * Gets an object value for the specified key.
      *
@@ -95,7 +95,7 @@ public interface ConfigSource {
      */
     @NotNull
     <T> Optional<T> getObject(@NotNull String key, @NotNull Class<T> type);
-    
+
     /**
      * Gets a nested configuration source for the specified key.
      *
@@ -104,7 +104,7 @@ public interface ConfigSource {
      */
     @NotNull
     Optional<ConfigSource> getConfig(@NotNull String key);
-    
+
     /**
      * Gets all configuration properties as a map.
      *
@@ -112,7 +112,7 @@ public interface ConfigSource {
      */
     @NotNull
     Map<String, Object> getAll();
-    
+
     /**
      * Checks if the configuration source contains the specified key.
      *
@@ -120,7 +120,7 @@ public interface ConfigSource {
      * @return true if the key exists
      */
     boolean hasKey(@NotNull String key);
-    
+
     /**
      * Gets the name of this configuration source.
      *

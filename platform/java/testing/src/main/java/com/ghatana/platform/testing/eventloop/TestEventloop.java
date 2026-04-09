@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 
 /**
  * Utility class for running test code in an Eventloop context.
- * 
+ *
  * @doc.type class
  * @doc.purpose Wrapper for testing code execution within ActiveJ Eventloop context
  * @doc.layer core
@@ -38,7 +38,7 @@ public final class TestEventloop {
     public static <T> T runInEventloop(Supplier<Promise<T>> supplier) {
         Eventloop eventloop = Eventloop.create();
         CompletableFuture<T> future = new CompletableFuture<>();
-        
+
         // Set a timeout to prevent hanging
         eventloop.delay(10_000L, () -> {
             if (!future.isDone()) {
@@ -46,7 +46,7 @@ public final class TestEventloop {
                 eventloop.keepAlive(false);
             }
         });
-        
+
         eventloop.execute(() -> {
             try {
                 Promise<T> promise = supplier.get();
@@ -57,10 +57,10 @@ public final class TestEventloop {
                 future.completeExceptionally(e);
             }
         });
-        
+
         // Run the event loop
         eventloop.run();
-        
+
         try {
             return future.get(11, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
@@ -84,7 +84,7 @@ public final class TestEventloop {
     public <T> T run(Supplier<Promise<T>> supplier) {
         return runInEventloop(supplier);
     }
-    
+
     public void run(Runnable runnable) {
         runInEventloop(() -> {
             try {

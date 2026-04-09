@@ -22,10 +22,10 @@ package com.ghatana.platform.plugin;
  * @since 1.0.0
  */
 public enum PluginTier {
-    
+
     /**
      * T1: Configuration-only plugins.
-     * 
+     *
      * <p>Capabilities:
      * <ul>
      *   <li>Read/write configuration</li>
@@ -35,10 +35,10 @@ public enum PluginTier {
      * </ul></p>
      */
     T1(1, "Configuration-only"),
-    
+
     /**
      * T2: Scripted plugins.
-     * 
+     *
      * <p>Capabilities:
      * <ul>
      *   <li>All T1 capabilities</li>
@@ -49,10 +49,10 @@ public enum PluginTier {
      * </ul></p>
      */
     T2(2, "Scripted"),
-    
+
     /**
      * T3: Network-capable plugins.
-     * 
+     *
      * <p>Capabilities:
      * <ul>
      *   <li>All T2 capabilities</li>

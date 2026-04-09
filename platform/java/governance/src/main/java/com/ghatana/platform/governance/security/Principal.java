@@ -95,47 +95,47 @@ public class Principal {
     private final String name;
     private final List<String> roles;
     private final String tenantId;
-    
+
     public Principal(String name, List<String> roles) {
         this(name, roles, "default-tenant");
     }
-    
+
     public Principal(String name, List<String> roles, String tenantId) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.roles = List.copyOf(Objects.requireNonNull(roles, "roles cannot be null"));
         this.tenantId = Objects.requireNonNull(tenantId, "tenantId cannot be null");
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public List<String> getRoles() {
         return roles;
     }
-    
+
     public String getTenantId() {
         return tenantId;
     }
-    
+
     public boolean hasRole(String role) {
         return roles.contains(role);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Principal principal = (Principal) o;
-        return name.equals(principal.name) && 
+        return name.equals(principal.name) &&
                tenantId.equals(principal.tenantId);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(name, tenantId);
     }
-    
+
     @Override
     public String toString() {
         return "Principal{name='" + name + "', tenantId='" + tenantId + "', roles=" + roles + "}";

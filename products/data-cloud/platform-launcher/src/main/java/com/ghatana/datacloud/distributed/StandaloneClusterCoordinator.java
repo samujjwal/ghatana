@@ -160,7 +160,7 @@ public final class StandaloneClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public Promise<DistributedLock> acquireLock(String lockName, Duration timeout) {
-        LocalLock lock = locks.computeIfAbsent(lockName, 
+        LocalLock lock = locks.computeIfAbsent(lockName,
                 k -> new LocalLock(k, selfNode.nodeId(), timeout));
 
         if (lock.tryAcquire(selfNode.nodeId(), timeout)) {
@@ -171,7 +171,7 @@ public final class StandaloneClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public Promise<DistributedLock> tryLock(String lockName) {
-        LocalLock lock = locks.computeIfAbsent(lockName, 
+        LocalLock lock = locks.computeIfAbsent(lockName,
                 k -> new LocalLock(k, selfNode.nodeId(), Duration.ofMinutes(1)));
 
         if (lock.tryAcquire(selfNode.nodeId(), Duration.ofMinutes(1))) {

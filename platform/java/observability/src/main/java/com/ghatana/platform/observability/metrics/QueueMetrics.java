@@ -29,12 +29,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * MeterRegistry registry = new SimpleMeterRegistry();
  * QueueMetrics metrics = new QueueMetrics("ingestion-queue", registry);
  * BoundedEventQueue queue = new BoundedEventQueue(1000, metrics);
- * 
+ *
  * // Enqueue automatically records metrics
  * queue.enqueue(event);
  * // Increments: queue.events.enqueued{queue="ingestion-queue"}
  * // Increments: queue.size.gauge{queue="ingestion-queue"} = 1
- * 
+ *
  * // Dequeue with latency tracking
  * long start = System.nanoTime();
  * Event event = queue.dequeue();
@@ -49,12 +49,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * // Example 2: Backpressure detection with dropped events
  * QueueMetrics metrics = new QueueMetrics("bounded-queue", registry);
  * BoundedEventQueue queue = new BoundedEventQueue(100, metrics);
- * 
+ *
  * // Fill queue to capacity
  * for (int i = 0; i < 100; i++) {
  *     queue.enqueue(new Event());
  * }
- * 
+ *
  * // Queue full - drop incoming event
  * if (queue.isFull()) {
  *     metrics.recordDropped();
@@ -68,14 +68,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * // Example 3: Pause/resume lifecycle tracking
  * QueueMetrics metrics = new QueueMetrics("pausable-queue", registry);
  * BoundedEventQueue queue = new BoundedEventQueue(1000, metrics);
- * 
+ *
  * // Pause queue (e.g., downstream system maintenance)
  * queue.pause();
  * metrics.recordPause();
  * // Increments: queue.pause.count{queue="pausable-queue"}
- * 
+ *
  * // ... maintenance window ...
- * 
+ *
  * // Resume queue
  * queue.resume();
  * metrics.recordResume();
@@ -90,7 +90,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * //   for: 5m
  * //   annotations:
  * //     summary: "Queue {{ $labels.queue }} at 80% capacity"
- * 
+ *
  * QueueMetrics metrics = new QueueMetrics("critical-queue", registry);
  * // Grafana dashboard queries:
  * // - rate(queue_events_enqueued_total[5m])  # Enqueue rate
@@ -101,14 +101,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * <pre>{@code
  * // Example 5: Multi-queue monitoring (partitioned queues)
  * MeterRegistry registry = new SimpleMeterRegistry();
- * 
+ *
  * Map<Integer, QueueMetrics> partitionMetrics = new HashMap<>();
  * for (int partition = 0; partition < 8; partition++) {
  *     String queueName = "partition-" + partition;
  *     QueueMetrics metrics = new QueueMetrics(queueName, registry);
  *     partitionMetrics.put(partition, metrics);
  * }
- * 
+ *
  * // Grafana dashboard aggregates across partitions:
  * // sum(rate(queue_events_enqueued_total[5m])) by (queue)
  * }</pre>
@@ -179,41 +179,41 @@ public class QueueMetrics {
 
     public QueueMetrics(String queueName, MeterRegistry registry) {
         this.queueName = queueName;
-        
+
         // Initialize counters
         this.enqueuedCounter = Counter.builder("queue.events.enqueued")
                 .tag("queue", queueName)
                 .description("Number of events enqueued")
                 .register(registry);
-                
+
         this.dequeuedCounter = Counter.builder("queue.events.dequeued")
                 .tag("queue", queueName)
                 .description("Number of events dequeued")
                 .register(registry);
-                
+
         this.droppedCounter = Counter.builder("queue.events.dropped")
                 .tag("queue", queueName)
                 .description("Number of events dropped due to backpressure or pause")
                 .register(registry);
-                
+
         this.pauseCounter = Counter.builder("queue.pause.count")
                 .tag("queue", queueName)
                 .description("Number of times the queue was paused")
                 .register(registry);
-                
+
         this.resumeCounter = Counter.builder("queue.resume.count")
                 .tag("queue", queueName)
                 .description("Number of times the queue was resumed")
                 .register(registry);
-                
+
         this.dequeueLatency = Timer.builder("queue.dequeue.latency")
                 .tag("queue", queueName)
                 .description("Time spent waiting to dequeue events")
                 .publishPercentiles(0.5, 0.9, 0.99)
                 .register(registry);
-                
-        this.queueSizeGauge = registry.gauge("queue.size.gauge", 
-                Tags.of("queue", queueName), 
+
+        this.queueSizeGauge = registry.gauge("queue.size.gauge",
+                Tags.of("queue", queueName),
                 new AtomicLong(0));
     }
 
@@ -239,7 +239,7 @@ public class QueueMetrics {
     public void recordResume() {
         resumeCounter.increment();
     }
-    
+
     private void updateQueueSize(int delta) {
         if (queueSizeGauge != null) {
             queueSizeGauge.addAndGet(delta);

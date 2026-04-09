@@ -1,7 +1,6 @@
 package com.ghatana.core.operator.aggregation;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -84,7 +83,7 @@ import io.activej.promise.Promise;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * EventAggregatorOperator aggregator = new EventAggregatorOperator("agg-1");
  * aggregator.setWindowType(WindowType.TUMBLING);

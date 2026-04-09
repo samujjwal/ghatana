@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
  * diagnostic categories to engines/runners configured elsewhere (OpenRewrite, LibCST, jscodeshift,
  * goimports, taplo, etc.). Text replacement fields are intentionally left null; the engine is
  * selected via metadata.
- 
+
  * @doc.type class
  * @doc.purpose Handles debug planner operations
  * @doc.layer core

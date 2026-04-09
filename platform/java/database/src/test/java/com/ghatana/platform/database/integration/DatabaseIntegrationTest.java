@@ -13,9 +13,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +34,7 @@ class DatabaseIntegrationTest {
     void shouldHandleDatabaseConnectionPooling() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate.getDataSource()).isNotNull();
     }
 
@@ -46,11 +43,11 @@ class DatabaseIntegrationTest {
     void shouldHandleTransactionCommitAndRollback() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         jdbcTemplate.inTransaction(jdbc -> {
             return jdbc.update("INSERT INTO test_table (value) VALUES (?)", "test");
         });
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -58,12 +55,12 @@ class DatabaseIntegrationTest {
     @DisplayName("Should handle database connection failures gracefully")
     void shouldHandleDatabaseConnectionFailuresGracefully() {
         DataSource mockDataSource = mock(DataSource.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection failed"));
-            
+
             JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-            
+
             org.junit.jupiter.api.Assertions.assertThrows(
                 com.ghatana.core.database.jdbc.JdbcException.class,
                 () -> jdbcTemplate.queryForObject("SELECT 1", rs -> rs.getInt(1))
@@ -77,12 +74,12 @@ class DatabaseIntegrationTest {
     @DisplayName("Should handle concurrent database operations")
     void shouldHandleConcurrentDatabaseOperations() {
         DatabaseClient mockClient = mock(DatabaseClient.class);
-        
+
         when(mockClient.query(anyString(), any(), anyInt()))
             .thenReturn(Promise.of(List.of(Map.of("id", "1"))));
-        
+
         Promise<List<Map<String, Object>>> result = mockClient.query("test", Map.of(), 10);
-        
+
         assertThat(result.getResult()).isNotNull();
     }
 
@@ -91,7 +88,7 @@ class DatabaseIntegrationTest {
     void shouldHandleDatabaseQueryTimeouts() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -100,7 +97,7 @@ class DatabaseIntegrationTest {
     void shouldHandleDatabaseSchemaValidation() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 }

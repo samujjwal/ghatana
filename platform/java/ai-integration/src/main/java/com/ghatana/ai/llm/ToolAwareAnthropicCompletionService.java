@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @doc.pattern Adapter
  */
 public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ToolAwareAnthropicCompletionService.class);
     private static final String DEFAULT_BASE_URL = "https://api.anthropic.com";
     private static final String API_VERSION = "2023-06-01";
@@ -72,7 +72,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
     public Promise<CompletionResult> completeWithTools(
             CompletionRequest request,
             List<ToolDefinition> tools) {
-        
+
         return executeWithRetry(() -> {
             try {
                 String jsonBody = createToolRequestBody(request, tools);
@@ -87,7 +87,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
     public Promise<CompletionResult> continueWithToolResults(
             CompletionRequest request,
             List<ToolCallResult> results) {
-        
+
         return executeWithRetry(() -> {
             try {
                 String jsonBody = createContinueRequestBody(request, results);
@@ -136,13 +136,13 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
      * }
      * }</pre>
      */
-    private String createToolRequestBody(CompletionRequest request, List<ToolDefinition> tools) 
+    private String createToolRequestBody(CompletionRequest request, List<ToolDefinition> tools)
             throws JsonProcessingException {
-        
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("model", config.getModelName());
         payload.put("max_tokens", config.getMaxTokens() > 0 ? config.getMaxTokens() : 4096);
-        
+
         // Anthropic requires messages array, not a single prompt
         List<Map<String, Object>> messages = new ArrayList<>();
         messages.add(Map.of(
@@ -176,11 +176,11 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
         Map<String, Object> anthropicTool = new HashMap<>();
         anthropicTool.put("name", tool.getName());
         anthropicTool.put("description", tool.getDescription());
-        
+
         // Convert parameters to input_schema
         Map<String, Object> inputSchema = new HashMap<>();
         inputSchema.put("type", "object");
-        
+
         // Build properties from parameters
         Map<String, Object> properties = new HashMap<>();
         for (var entry : tool.getParameters().entrySet()) {
@@ -191,12 +191,12 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
             ));
         }
         inputSchema.put("properties", properties);
-        
+
         // Add required fields
         if (!tool.getRequiredParameters().isEmpty()) {
             inputSchema.put("required", tool.getRequiredParameters());
         }
-        
+
         anthropicTool.put("input_schema", inputSchema);
         return anthropicTool;
     }
@@ -221,17 +221,17 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
      */
     private String createContinueRequestBody(CompletionRequest request, List<ToolCallResult> results)
             throws JsonProcessingException {
-        
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("model", config.getModelName());
         payload.put("max_tokens", config.getMaxTokens() > 0 ? config.getMaxTokens() : 4096);
 
         // Build messages with tool results
         List<Map<String, Object>> messages = new ArrayList<>();
-        
+
         // Original user message
         messages.add(Map.of("role", "user", "content", request.getPrompt()));
-        
+
         // Assistant message with tool_use (would come from previous response)
         // Note: In practice, you'd store the previous assistant response
         // For now, we construct it from the results
@@ -272,7 +272,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
     private Promise<ByteBuf> sendRequest(String jsonBody) {
         long startTime = System.currentTimeMillis();
 
-        String url = (config.getBaseUrl() != null ? config.getBaseUrl() : DEFAULT_BASE_URL) 
+        String url = (config.getBaseUrl() != null ? config.getBaseUrl() : DEFAULT_BASE_URL)
                 + "/v1/messages";
 
         HttpRequest httpRequest = HttpRequest.post(url)
@@ -288,7 +288,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
                 .then(response -> response.loadBody())
                 .then((body, e) -> {
                     long latency = System.currentTimeMillis() - startTime;
-                    
+
                     if (e != null) {
                         metrics.incrementCounter("llm.anthropic.error");
                         metrics.recordTimer("llm.anthropic.latency", latency);
@@ -297,7 +297,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
 
                     metrics.incrementCounter("llm.anthropic.request");
                     metrics.recordTimer("llm.anthropic.latency", latency);
-                    
+
                     return Promise.of(body);
                 });
     }
@@ -326,7 +326,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
 
             JsonNode root = objectMapper.readTree(responseText);
             JsonNode content = root.get("content");
-            
+
             if (content == null || !content.isArray()) {
                 throw new RuntimeException("Invalid Anthropic response: missing content array");
             }
@@ -337,18 +337,18 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
             // Parse content blocks
             for (JsonNode block : content) {
                 String type = block.get("type").asText();
-                
+
                 if ("text".equals(type)) {
                     textBuilder.append(block.get("text").asText());
                 } else if ("tool_use".equals(type)) {
                     String id = block.get("id").asText();
                     String name = block.get("name").asText();
                     JsonNode input = block.get("input");
-                    
+
                     // Convert input to Map
                     @SuppressWarnings("unchecked")
                     Map<String, Object> arguments = objectMapper.convertValue(input, Map.class);
-                    
+
                     toolCalls.add(ToolCall.of(id, name, arguments));
                 }
             }
@@ -379,7 +379,7 @@ public class ToolAwareAnthropicCompletionService implements ToolAwareCompletionS
     private Promise<CompletionResult> executeWithRetry(
             java.util.function.Supplier<Promise<CompletionResult>> supplier,
             int attempt) {
-        
+
         return supplier.get()
                 .then((result, e) -> {
                     if (e == null) {

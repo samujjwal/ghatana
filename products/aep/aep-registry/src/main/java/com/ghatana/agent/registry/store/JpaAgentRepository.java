@@ -25,14 +25,14 @@ import java.util.Optional;
  */
 public class JpaAgentRepository {
     private static final Logger log = LoggerFactory.getLogger(JpaAgentRepository.class);
-    
+
     @PersistenceContext
     private EntityManager entityManager;
-    
+
     public JpaAgentRepository(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
-    
+
     /**
      * Save a new agent entity or update an existing one.
      *
@@ -43,7 +43,7 @@ public class JpaAgentRepository {
         if (entity == null) {
             throw new IllegalArgumentException("Entity cannot be null");
         }
-        
+
         try {
             if (entity.getId() == null) {
                 entityManager.persist(entity);
@@ -56,7 +56,7 @@ public class JpaAgentRepository {
             throw new RuntimeException("Failed to save agent entity: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Find an agent by ID.
      *
@@ -67,7 +67,7 @@ public class JpaAgentRepository {
         if (id == null || id.isBlank()) {
             return Optional.empty();
         }
-        
+
         try {
             JpaAgentEntity entity = entityManager.find(JpaAgentEntity.class, id);
             return Optional.ofNullable(entity != null && !entity.isDeleted() ? entity : null);
@@ -76,7 +76,7 @@ public class JpaAgentRepository {
             throw new RuntimeException("Failed to find agent by id: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Check if an agent with the given ID exists.
      *
@@ -87,7 +87,7 @@ public class JpaAgentRepository {
         if (id == null || id.isBlank()) {
             return false;
         }
-        
+
         try {
             return entityManager.createQuery(
                     "SELECT COUNT(a) > 0 FROM JpaAgentEntity a WHERE a.id = :id AND a.deleted = false",
@@ -99,7 +99,7 @@ public class JpaAgentRepository {
             throw new RuntimeException("Failed to check if agent exists: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Find all agents, optionally including deleted ones.
      *
@@ -110,19 +110,19 @@ public class JpaAgentRepository {
             CriteriaBuilder cb = entityManager.getCriteriaBuilder();
             CriteriaQuery<JpaAgentEntity> query = cb.createQuery(JpaAgentEntity.class);
             Root<JpaAgentEntity> root = query.from(JpaAgentEntity.class);
-            
+
             // Filter out deleted agents by default
             query.select(root)
                 .where(cb.equal(root.get("deleted"), false))
                 .orderBy(cb.asc(root.get("name")));
-                
+
             return entityManager.createQuery(query).getResultList();
         } catch (Exception e) {
             log.error("Failed to find all agents", e);
             throw new RuntimeException("Failed to find all agents: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Soft delete an agent by ID.
      *
@@ -133,7 +133,7 @@ public class JpaAgentRepository {
         if (id == null || id.isBlank()) {
             return false;
         }
-        
+
         try {
             JpaAgentEntity entity = entityManager.find(JpaAgentEntity.class, id);
             if (entity != null && !entity.isDeleted()) {
@@ -160,7 +160,7 @@ public class JpaAgentRepository {
         if (id == null || id.trim().isEmpty()) {
             throw new IllegalArgumentException("ID cannot be null or empty");
         }
-        
+
         try {
             CriteriaBuilder cb = entityManager.getCriteriaBuilder();
             CriteriaQuery<JpaAgentEntity> cq = cb.createQuery(JpaAgentEntity.class);
@@ -168,13 +168,13 @@ public class JpaAgentRepository {
 
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("id"), id));
-            
+
             if (!includeDeleted) {
                 predicates.add(cb.isFalse(root.get("deleted")));
             }
 
             cq.where(predicates.toArray(new Predicate[0]));
-            
+
             try {
                 JpaAgentEntity result = entityManager.createQuery(cq).getSingleResult();
                 return Optional.ofNullable(result);
@@ -187,18 +187,18 @@ public class JpaAgentRepository {
             throw new RuntimeException("Failed to find agent by ID: " + e.getMessage(), e);
         }
     }
-    
+
     public List<JpaAgentEntity> findByAgentId(String agentId) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<JpaAgentEntity> cq = cb.createQuery(JpaAgentEntity.class);
         Root<JpaAgentEntity> root = cq.from(JpaAgentEntity.class);
-        
+
         List<Predicate> predicates = new ArrayList<>();
         if (agentId != null) {
             predicates.add(cb.equal(root.get("name"), agentId));
         }
         predicates.add(cb.isFalse(root.get("deleted")));
-        
+
         cq.where(predicates.toArray(new Predicate[0]));
         return entityManager.createQuery(cq).getResultList();
     }
@@ -223,46 +223,46 @@ public class JpaAgentRepository {
             boolean includeDeleted,
             int offset,
             int limit) {
-        
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<JpaAgentEntity> query = cb.createQuery(JpaAgentEntity.class);
         Root<JpaAgentEntity> root = query.from(JpaAgentEntity.class);
-        
+
         List<Predicate> predicates = new ArrayList<>();
-        
+
         // Apply tenant filter if specified
         if (tenantId != null && !tenantId.isEmpty()) {
             predicates.add(cb.equal(root.get("tenantId"), tenantId));
         }
-        
+
         // Apply implementation type filter if specified
         if (implementationType != null && !implementationType.isEmpty()) {
             predicates.add(cb.equal(root.get("implementationType"), implementationType));
         }
-        
+
         // Apply tag filter if specified
         if (tags != null && !tags.isEmpty()) {
             Join<JpaAgentEntity, String> tagJoin = root.join("tags");
             predicates.add(tagJoin.in(tags));
         }
-        
+
         // Filter out deprecated agents if requested
         if (!includeDeprecated) {
             predicates.add(cb.equal(root.get("deprecated"), false));
         }
-        
+
         // Filter out deleted agents if requested
         if (!includeDeleted) {
             predicates.add(cb.equal(root.get("deleted"), false));
         }
-        
+
         query.where(predicates.toArray(new Predicate[0]));
         query.orderBy(cb.asc(root.get("name")));
-        
+
         TypedQuery<JpaAgentEntity> typedQuery = entityManager.createQuery(query);
         typedQuery.setFirstResult(offset);
         typedQuery.setMaxResults(limit);
-        
+
         return typedQuery.getResultList();
     }
 
@@ -282,42 +282,42 @@ public class JpaAgentRepository {
             String implementationType,
             boolean includeDeprecated,
             boolean includeDeleted) {
-        
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<JpaAgentEntity> root = query.from(JpaAgentEntity.class);
-        
+
         List<Predicate> predicates = new ArrayList<>();
-        
+
         // Apply tenant filter if specified
         if (tenantId != null && !tenantId.isEmpty()) {
             predicates.add(cb.equal(root.get("tenantId"), tenantId));
         }
-        
+
         // Apply implementation type filter if specified
         if (implementationType != null && !implementationType.isEmpty()) {
             predicates.add(cb.equal(root.get("implementationType"), implementationType));
         }
-        
+
         // Apply tag filter if specified
         if (tags != null && !tags.isEmpty()) {
             Join<JpaAgentEntity, String> tagJoin = root.join("tags");
             predicates.add(tagJoin.in(tags));
         }
-        
+
         // Filter out deprecated agents if requested
         if (!includeDeprecated) {
             predicates.add(cb.equal(root.get("deprecated"), false));
         }
-        
+
         // Filter out deleted agents if requested
         if (!includeDeleted) {
             predicates.add(cb.equal(root.get("deleted"), false));
         }
-        
+
         query.select(cb.count(root));
         query.where(predicates.toArray(new Predicate[0]));
-        
+
         return entityManager.createQuery(query).getSingleResult();
     }
 

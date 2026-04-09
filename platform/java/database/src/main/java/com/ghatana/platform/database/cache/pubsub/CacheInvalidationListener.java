@@ -37,7 +37,7 @@ package com.ghatana.platform.database.cache.pubsub;
  */
 @FunctionalInterface
 public interface CacheInvalidationListener {
-    
+
     /**
      * Handle cache invalidation message
      *

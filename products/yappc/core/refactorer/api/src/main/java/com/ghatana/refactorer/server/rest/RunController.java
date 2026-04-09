@@ -14,11 +14,9 @@ import com.ghatana.refactorer.server.jobs.JobMappers;
 import com.ghatana.refactorer.server.jobs.JobRecord;
 import com.ghatana.refactorer.server.jobs.JobService;
 import com.ghatana.refactorer.server.jobs.JobSubmission;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

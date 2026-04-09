@@ -4,8 +4,6 @@ import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.procedure.ProcedureStep;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.MemoryQuery;
-import com.ghatana.agent.memory.store.ScoredMemoryItem;
-import com.ghatana.agent.memory.model.MemoryItemType;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

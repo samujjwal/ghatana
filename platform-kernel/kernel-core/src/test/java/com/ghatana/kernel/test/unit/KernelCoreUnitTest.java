@@ -5,7 +5,6 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.descriptor.KernelCapability;
-import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

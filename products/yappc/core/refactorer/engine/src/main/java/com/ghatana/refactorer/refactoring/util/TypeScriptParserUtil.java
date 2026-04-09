@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility class for parsing and analyzing TypeScript/JavaScript code. 
+ * Utility class for parsing and analyzing TypeScript/JavaScript code.
  * @doc.type class
  * @doc.purpose Handles type script parser util operations
  * @doc.layer core

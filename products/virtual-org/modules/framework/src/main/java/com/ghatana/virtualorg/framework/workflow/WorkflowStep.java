@@ -32,14 +32,14 @@ import java.util.Objects;
  * @doc.pattern Value Object
  */
 public final class WorkflowStep {
-    
+
     private final String id;
     private final String name;
     private final String description;
     private final Role agentRole;
     private final int timeoutSeconds;
     private final int retries;
-    
+
     private WorkflowStep(
             String id,
             String name,
@@ -54,7 +54,7 @@ public final class WorkflowStep {
         this.timeoutSeconds = timeoutSeconds;
         this.retries = retries;
     }
-    
+
     /**
      * Gets step identifier.
      *
@@ -63,7 +63,7 @@ public final class WorkflowStep {
     public String getId() {
         return id;
     }
-    
+
     /**
      * Gets step name.
      *
@@ -72,7 +72,7 @@ public final class WorkflowStep {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets step description.
      *
@@ -81,7 +81,7 @@ public final class WorkflowStep {
     public String getDescription() {
         return description;
     }
-    
+
     /**
      * Gets agent role responsible for executing this step.
      *
@@ -90,7 +90,7 @@ public final class WorkflowStep {
     public Role getAgentRole() {
         return agentRole;
     }
-    
+
     /**
      * Gets step timeout in seconds.
      *
@@ -99,7 +99,7 @@ public final class WorkflowStep {
     public int getTimeoutSeconds() {
         return timeoutSeconds;
     }
-    
+
     /**
      * Gets maximum number of retries on failure.
      *
@@ -108,7 +108,7 @@ public final class WorkflowStep {
     public int getRetries() {
         return retries;
     }
-    
+
     /**
      * Creates builder for WorkflowStep.
      *
@@ -117,7 +117,7 @@ public final class WorkflowStep {
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for WorkflowStep.
      */
@@ -128,7 +128,7 @@ public final class WorkflowStep {
         private Role agentRole;
         private int timeoutSeconds = 60;
         private int retries = 2;
-        
+
         /**
          * Sets step identifier.
          *
@@ -139,7 +139,7 @@ public final class WorkflowStep {
             this.id = id;
             return this;
         }
-        
+
         /**
          * Sets step name.
          *
@@ -150,7 +150,7 @@ public final class WorkflowStep {
             this.name = name;
             return this;
         }
-        
+
         /**
          * Sets step description.
          *
@@ -161,7 +161,7 @@ public final class WorkflowStep {
             this.description = description;
             return this;
         }
-        
+
         /**
          * Sets agent role for this step.
          *
@@ -172,7 +172,7 @@ public final class WorkflowStep {
             this.agentRole = agentRole;
             return this;
         }
-        
+
         /**
          * Sets step timeout.
          *
@@ -183,7 +183,7 @@ public final class WorkflowStep {
             this.timeoutSeconds = timeoutSeconds;
             return this;
         }
-        
+
         /**
          * Sets max retries on failure.
          *
@@ -194,7 +194,7 @@ public final class WorkflowStep {
             this.retries = retries;
             return this;
         }
-        
+
         /**
          * Builds WorkflowStep.
          *
@@ -214,7 +214,7 @@ public final class WorkflowStep {
             return new WorkflowStep(id, name, description, agentRole, timeoutSeconds, retries);
         }
     }
-    
+
     @Override
     public String toString() {
         return "WorkflowStep{" +
@@ -224,4 +224,3 @@ public final class WorkflowStep {
                 '}';
     }
 }
-

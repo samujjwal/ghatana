@@ -6,7 +6,6 @@ package com.ghatana.aep.connector;
 
 import com.ghatana.aep.connector.config.RetryConfig;
 import com.ghatana.aep.connector.util.RetryExecutor;
-import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

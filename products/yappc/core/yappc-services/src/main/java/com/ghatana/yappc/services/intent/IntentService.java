@@ -14,15 +14,15 @@ import io.activej.promise.Promise;
 public interface IntentService {
     /**
      * Captures intent from human/agent input using LLM-based parsing.
-     * 
+     *
      * @param input Raw intent input (text, structured data, etc.)
      * @return Promise of validated IntentSpec
      */
     Promise<IntentSpec> capture(IntentInput input);
-    
+
     /**
      * Analyzes captured intent for feasibility, risks, and gaps.
-     * 
+     *
      * @param spec The intent specification to analyze
      * @return Promise of analysis result
      */

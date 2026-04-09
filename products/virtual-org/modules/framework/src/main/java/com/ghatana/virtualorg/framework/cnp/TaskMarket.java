@@ -86,7 +86,7 @@ public class TaskMarket {
             bids.remove(id);
             // We might want to keep contracts longer, but for now let's keep them separate
         }
-        
+
         if (!toRemove.isEmpty()) {
             LOG.info("Cleaned up {} expired task announcements", toRemove.size());
         }

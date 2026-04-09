@@ -23,10 +23,10 @@ import java.util.UUID;
  * @doc.pattern Parser
  */
 public class StructuredOutputParser {
-    
+
     private static final Logger log = LoggerFactory.getLogger(StructuredOutputParser.class);
     private static final ObjectMapper mapper = JsonMapper.getMapper();
-    
+
     /**
      * Parses AI response into IntentSpec.
      * Expects JSON format with fields: productName, description, goals, personas, constraints
@@ -35,7 +35,7 @@ public class StructuredOutputParser {
         try {
             // Try to parse as JSON first
             JsonNode root = mapper.readTree(aiResponse);
-            
+
             return IntentSpec.builder()
                     .id(UUID.randomUUID().toString())
                     .productName(extractString(root, "productName", "Unnamed Product"))
@@ -47,20 +47,20 @@ public class StructuredOutputParser {
                     .createdAt(Instant.now())
                     .tenantId(input.tenantId())
                     .build();
-                    
+
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse AI response as JSON, using fallback parsing", e);
             return parseFallback(aiResponse, input);
         }
     }
-    
+
     /**
      * Parses AI response into IntentAnalysis.
      */
     public static IntentAnalysis parseIntentAnalysis(String aiResponse, String intentId) {
         try {
             JsonNode root = mapper.readTree(aiResponse);
-            
+
             return IntentAnalysis.builder()
                     .intentId(intentId)
                     .feasible(extractBoolean(root, "feasible", true))
@@ -70,7 +70,7 @@ public class StructuredOutputParser {
                     .scores(extractScores(root.path("scores")))
                     .summary(extractString(root, "summary", aiResponse))
                     .build();
-                    
+
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse analysis as JSON", e);
             return IntentAnalysis.builder()
@@ -84,14 +84,14 @@ public class StructuredOutputParser {
                     .build();
         }
     }
-    
+
     /**
      * Parses AI response into ShapeSpec.
      */
     public static ShapeSpec parseShapeSpec(String aiResponse, String intentRef, String tenantId) {
         try {
             JsonNode root = mapper.readTree(aiResponse);
-            
+
             return ShapeSpec.builder()
                     .id(UUID.randomUUID().toString())
                     .intentRef(intentRef)
@@ -103,23 +103,23 @@ public class StructuredOutputParser {
                     .createdAt(Instant.now())
                     .tenantId(tenantId)
                     .build();
-                    
+
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse shape spec as JSON", e);
             return createDefaultShapeSpec(intentRef, tenantId);
         }
     }
-    
+
     // Helper methods
-    
+
     private static String extractString(JsonNode node, String field, String defaultValue) {
         return node.has(field) ? node.get(field).asText() : defaultValue;
     }
-    
+
     private static boolean extractBoolean(JsonNode node, String field, boolean defaultValue) {
         return node.has(field) ? node.get(field).asBoolean() : defaultValue;
     }
-    
+
     private static List<String> extractStringList(JsonNode node) {
         List<String> result = new ArrayList<>();
         if (node.isArray()) {
@@ -127,7 +127,7 @@ public class StructuredOutputParser {
         }
         return result;
     }
-    
+
     private static List<GoalSpec> extractGoals(JsonNode goalsNode) {
         List<GoalSpec> goals = new ArrayList<>();
         if (goalsNode.isArray()) {
@@ -143,7 +143,7 @@ public class StructuredOutputParser {
         }
         return goals.isEmpty() ? List.of(createDefaultGoal()) : goals;
     }
-    
+
     private static List<PersonaSpec> extractPersonas(JsonNode personasNode) {
         List<PersonaSpec> personas = new ArrayList<>();
         if (personasNode.isArray()) {
@@ -160,7 +160,7 @@ public class StructuredOutputParser {
         }
         return personas.isEmpty() ? List.of(createDefaultPersona()) : personas;
     }
-    
+
     private static List<ConstraintSpec> extractConstraints(JsonNode constraintsNode) {
         List<ConstraintSpec> constraints = new ArrayList<>();
         if (constraintsNode.isArray()) {
@@ -176,7 +176,7 @@ public class StructuredOutputParser {
         }
         return constraints;
     }
-    
+
     private static Map<String, Double> extractScores(JsonNode scoresNode) {
         Map<String, Double> scores = new HashMap<>();
         if (scoresNode.isObject()) {
@@ -186,7 +186,7 @@ public class StructuredOutputParser {
         }
         return scores;
     }
-    
+
     private static DomainModel extractDomainModel(JsonNode node) {
         // Simplified extraction - can be enhanced
         return DomainModel.builder()
@@ -195,15 +195,15 @@ public class StructuredOutputParser {
                 .boundedContexts(List.of())
                 .build();
     }
-    
+
     private static List<WorkflowSpec> extractWorkflows(JsonNode node) {
         return List.of();
     }
-    
+
     private static List<IntegrationSpec> extractIntegrations(JsonNode node) {
         return List.of();
     }
-    
+
     private static ArchitecturePattern extractArchitecture(JsonNode node) {
         return ArchitecturePattern.builder()
                 .name(extractString(node, "name", "microservices"))
@@ -212,9 +212,9 @@ public class StructuredOutputParser {
                 .properties(new HashMap<>())
                 .build();
     }
-    
+
     // Fallback methods
-    
+
     private static IntentSpec parseFallback(String text, IntentInput input) {
         return IntentSpec.builder()
                 .id(UUID.randomUUID().toString())
@@ -228,7 +228,7 @@ public class StructuredOutputParser {
                 .tenantId(input.tenantId())
                 .build();
     }
-    
+
     private static GoalSpec createDefaultGoal() {
         return GoalSpec.builder()
                 .id(UUID.randomUUID().toString())
@@ -238,7 +238,7 @@ public class StructuredOutputParser {
                 .successMetrics(List.of())
                 .build();
     }
-    
+
     private static PersonaSpec createDefaultPersona() {
         return PersonaSpec.builder()
                 .id(UUID.randomUUID().toString())
@@ -249,7 +249,7 @@ public class StructuredOutputParser {
                 .attributes(new HashMap<>())
                 .build();
     }
-    
+
     private static ShapeSpec createDefaultShapeSpec(String intentRef, String tenantId) {
         return ShapeSpec.builder()
                 .id(UUID.randomUUID().toString())

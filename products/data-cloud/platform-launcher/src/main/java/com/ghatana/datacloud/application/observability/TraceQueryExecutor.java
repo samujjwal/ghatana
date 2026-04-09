@@ -5,7 +5,6 @@ import com.ghatana.datacloud.entity.observability.*;
 import io.activej.promise.Promise;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Application service orchestrating trace query execution.

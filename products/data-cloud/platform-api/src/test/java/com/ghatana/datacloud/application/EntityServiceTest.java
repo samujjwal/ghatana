@@ -316,7 +316,7 @@ class EntityServiceTest extends EventloopTestBase {
 
             // When
             Entity result = runPromise(() ->
-                service.updateEntity(TENANT_ID, COLLECTION_NAME, entityId, 
+                service.updateEntity(TENANT_ID, COLLECTION_NAME, entityId,
                     Map.of("status", "inactive"), USER_ID)
             );
 
@@ -332,7 +332,7 @@ class EntityServiceTest extends EventloopTestBase {
             // When & Then
             assertThatThrownBy(() ->
                 runPromise(() ->
-                    service.updateEntity(TENANT_ID, COLLECTION_NAME, null, 
+                    service.updateEntity(TENANT_ID, COLLECTION_NAME, null,
                         Map.of("name", "Jane"), USER_ID)
                 )
             ).isInstanceOf(NullPointerException.class);

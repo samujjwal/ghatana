@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ghatana.refactorer.api.testutils.GrpcProtoFactory;
 import org.junit.jupiter.api.Test;
 
-/** Tests for gRPC proto message round-trip serialization/deserialization. 
+/** Tests for gRPC proto message round-trip serialization/deserialization.
  * @doc.type class
  * @doc.purpose Handles grpc round trip test operations
  * @doc.layer core

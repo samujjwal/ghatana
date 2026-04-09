@@ -100,7 +100,7 @@ public final class PmsDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting PMS Domain module");
-        
+
             started = true;
             log.info("PMS Domain module started successfully");
         return Promise.complete();
@@ -109,7 +109,7 @@ public final class PmsDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping PMS Domain module");
-        
+
             started = false;
             log.info("PMS Domain module stopped successfully");
         return Promise.complete();

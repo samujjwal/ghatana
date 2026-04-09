@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  * <pre>{@code
  * // 1. Basic GET route with path parameter
  * RoutingServlet servlet = new RoutingServlet();
- * 
+ *
  * servlet.addRoute(HttpMethod.GET, "/users/:id", request -> {
  *     String id = extractPathParam(request.getPath(), "/users/:id", "id");
  *     User user = userService.getUser(id);
@@ -61,14 +61,14 @@ import java.util.regex.Pattern;
  *
  * // 3. RESTful CRUD routes
  * RoutingServlet crudServlet = new RoutingServlet();
- * 
+ *
  * // GET /users/:id
  * crudServlet.addAsyncRoute(HttpMethod.GET, "/users/:id", request ->
  *     userService.getUser(extractId(request))
  *         .map(user -> HttpResponse.ok200().withJson(user))
  *         .mapException(e -> HttpResponse.ofCode(404).withBody("User not found").build())
  * );
- * 
+ *
  * // POST /users
  * crudServlet.addAsyncRoute(HttpMethod.POST, "/users", request ->
  *     parseBody(request, User.class)
@@ -78,14 +78,14 @@ import java.util.regex.Pattern;
  *             .withJson(created)
  *             .build())
  * );
- * 
+ *
  * // PUT /users/:id
  * crudServlet.addAsyncRoute(HttpMethod.PUT, "/users/:id", request ->
  *     parseBody(request, User.class)
  *         .then(user -> userService.updateUser(extractId(request), user))
  *         .map(updated -> HttpResponse.ok200().withJson(updated))
  * );
- * 
+ *
  * // DELETE /users/:id
  * crudServlet.addAsyncRoute(HttpMethod.DELETE, "/users/:id", request ->
  *     userService.deleteUser(extractId(request))
@@ -94,9 +94,9 @@ import java.util.regex.Pattern;
  *
  * // 4. Multi-segment path parameters
  * servlet.addRoute(HttpMethod.GET, "/users/:userId/orders/:orderId", request -> {
- *     String userId = extractPathParam(request.getPath(), 
+ *     String userId = extractPathParam(request.getPath(),
  *         "/users/:userId/orders/:orderId", "userId");
- *     String orderId = extractPathParam(request.getPath(), 
+ *     String orderId = extractPathParam(request.getPath(),
  *         "/users/:userId/orders/:orderId", "orderId");
  *     Order order = orderService.getUserOrder(userId, orderId);
  *     return HttpResponse.ok200().withJson(order);
@@ -107,19 +107,19 @@ import java.util.regex.Pattern;
  *     String query = request.getQueryParameter("q");
  *     int page = Integer.parseInt(request.getQueryParameter("page", "0"));
  *     int size = Integer.parseInt(request.getQueryParameter("size", "10"));
- *     
+ *
  *     SearchResults results = searchService.search(query, page, size);
  *     return HttpResponse.ok200().withJson(results);
  * });
  *
  * // 6. Mixed sync and async routes
  * RoutingServlet mixedServlet = new RoutingServlet();
- * 
+ *
  * // Sync health check
  * mixedServlet.addRoute(HttpMethod.GET, "/health", request ->
  *     HttpResponse.ok200().withPlainText("OK")
  * );
- * 
+ *
  * // Async data endpoint
  * mixedServlet.addAsyncRoute(HttpMethod.GET, "/data", request ->
  *     dataService.fetchData()
@@ -221,13 +221,13 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class RoutingServlet implements AsyncServlet {
-    
+
     private final Map<String, Route> routes = new ConcurrentHashMap<>();
     private static final Pattern PATH_PARAM_PATTERN = Pattern.compile(":([a-zA-Z][a-zA-Z0-9_]*)");
-    
+
     /**
      * Adds a synchronous route handler.
-     * 
+     *
      * @param method The HTTP method
      * @param pathPattern The path pattern (supports :param syntax)
      * @param handler The synchronous handler
@@ -238,10 +238,10 @@ public class RoutingServlet implements AsyncServlet {
         routes.put(key, route);
         log.debug("Added route: {} {}", method, pathPattern);
     }
-    
+
     /**
      * Adds an asynchronous route handler.
-     * 
+     *
      * @param method The HTTP method
      * @param pathPattern The path pattern (supports :param syntax)
      * @param handler The async handler returning a Promise
@@ -252,19 +252,19 @@ public class RoutingServlet implements AsyncServlet {
         routes.put(key, route);
         log.debug("Added async route: {} {}", method, pathPattern);
     }
-    
+
     @Override
     public Promise<HttpResponse> serve(HttpRequest request) {
         String method = request.getMethod().name();
         String path = request.getPath();
-        
+
         // Try exact match first
         String exactKey = routeKey(request.getMethod(), path);
         Route exactRoute = routes.get(exactKey);
         if (exactRoute != null) {
             return exactRoute.handler.apply(request);
         }
-        
+
         // Try pattern matching
         for (Route route : routes.values()) {
             if (route.method == null || route.method == request.getMethod()) {
@@ -276,21 +276,21 @@ public class RoutingServlet implements AsyncServlet {
                 }
             }
         }
-        
+
         // No route found
         log.debug("No route found for: {} {}", method, path);
         return Promise.of(HttpResponse.ofCode(404).withBody("Not Found: " + method + " " + path).build());
     }
-    
+
     /**
      * Gets the number of registered routes.
-     * 
+     *
      * @return The route count
      */
     public int getRouteCount() {
         return routes.size();
     }
-    
+
     /**
      * Clears all registered routes.
      */
@@ -298,13 +298,13 @@ public class RoutingServlet implements AsyncServlet {
         routes.clear();
         log.debug("Cleared all routes");
     }
-    
+
     /**
      * Merges routes from another RoutingServlet into this one.
-     * 
+     *
      * <p>This allows combining multiple servlets' routes into a single servlet,
      * useful for modular route organization by feature/controller.
-     * 
+     *
      * @param other The RoutingServlet whose routes to merge
      * @return This servlet (for fluent chaining)
      */
@@ -312,18 +312,18 @@ public class RoutingServlet implements AsyncServlet {
         if (other == null) {
             return this;
         }
-        
+
         // Copy all routes from the other servlet
         this.routes.putAll(other.routes);
         log.debug("Merged {} routes from another servlet", other.routes.size());
-        
+
         return this;
     }
-    
+
     private String routeKey(HttpMethod method, String path) {
         return (method != null ? method.name() : "*") + ":" + path;
     }
-    
+
     /**
      * Internal route representation.
      */
@@ -333,35 +333,35 @@ public class RoutingServlet implements AsyncServlet {
         private final Pattern compiledPattern;
         private final String[] paramNames;
         private final Function<HttpRequest, Promise<HttpResponse>> handler;
-        
+
         Route(HttpMethod method, String pathPattern, Function<HttpRequest, Promise<HttpResponse>> handler) {
             this.method = method;
             this.pathPattern = pathPattern;
             this.handler = handler;
-            
+
             // Extract parameter names and compile pattern
             Matcher matcher = PATH_PARAM_PATTERN.matcher(pathPattern);
             java.util.List<String> params = new java.util.ArrayList<>();
-            
+
             String regex = pathPattern;
             while (matcher.find()) {
                 params.add(matcher.group(1));
                 regex = regex.replace(":" + matcher.group(1), "([^/]+)");
             }
-            
+
             // Convert wildcard patterns to valid regex: ** -> .*, * -> [^/]+
             // Must replace ** before * to avoid double-replacement
             regex = regex.replace("**", "\u0000")  // placeholder
                          .replace("*", "[^/]+")
                          .replace("\u0000", ".*");
-            
+
             this.paramNames = params.toArray(new String[0]);
             this.compiledPattern = Pattern.compile("^" + regex + "$");
         }
-        
+
         /**
          * Matches a path against this route's pattern.
-         * 
+         *
          * @param path The path to match
          * @return Map of parameter names to values, or null if no match
          */
@@ -370,7 +370,7 @@ public class RoutingServlet implements AsyncServlet {
             if (!matcher.matches()) {
                 return null;
             }
-            
+
             Map<String, String> params = new HashMap<>();
             for (int i = 0; i < paramNames.length; i++) {
                 params.put(paramNames[i], matcher.group(i + 1));

@@ -14,15 +14,15 @@ import io.activej.promise.Promise;
 public interface ShapeService {
     /**
      * Derives system shape from intent using AI-assisted design.
-     * 
+     *
      * @param intent The validated intent specification
      * @return Promise of ShapeSpec
      */
     Promise<ShapeSpec> derive(IntentSpec intent);
-    
+
     /**
      * Generates detailed system model (domain, workflows, integrations).
-     * 
+     *
      * @param spec The shape specification
      * @return Promise of SystemModel
      */

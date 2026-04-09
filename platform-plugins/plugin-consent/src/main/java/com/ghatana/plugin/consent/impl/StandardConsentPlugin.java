@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Standard implementation of ConsentPlugin.

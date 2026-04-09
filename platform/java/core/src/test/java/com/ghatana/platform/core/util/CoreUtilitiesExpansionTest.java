@@ -430,7 +430,7 @@ class CoreUtilitiesExpansionTest {
                 }
             });
 
-            Result<String, String> formatted = parsed.map(i -> 
+            Result<String, String> formatted = parsed.map(i ->
                 StringUtils.toSnakeCase("number_" + i));
 
             assertThat(formatted.isSuccess()).isTrue();

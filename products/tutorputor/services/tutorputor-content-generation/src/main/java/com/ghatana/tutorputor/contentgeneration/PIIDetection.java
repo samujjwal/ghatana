@@ -17,7 +17,7 @@ import java.util.Objects;
  *     50,   // position in text
  *     0.99  // confidence
  * );
- * 
+ *
  * // Redact PII
  * String redacted = email.redact();  // "***@***.***"
  * }</pre>

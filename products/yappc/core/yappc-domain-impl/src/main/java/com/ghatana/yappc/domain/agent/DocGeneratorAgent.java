@@ -100,7 +100,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateReadme(DocInput input, long startTime) {
         String systemPrompt = """
                 You are an expert technical writer. Generate a comprehensive README.md file.
-                
+
                 Include the following sections:
                 1. Project title and badges
                 2. Brief description
@@ -112,7 +112,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 8. API overview (if applicable)
                 9. Contributing guidelines
                 10. License
-                
+
                 Use clear, concise language. Include code examples where appropriate.
                 Format with proper Markdown including headers, code blocks, tables, and lists.
                 """;
@@ -123,7 +123,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateApiDocs(DocInput input, long startTime) {
         String systemPrompt = """
                 You are an expert API documentation writer. Generate comprehensive API reference documentation.
-                
+
                 For each endpoint/method include:
                 1. Description and purpose
                 2. HTTP method and path (for REST) or method signature
@@ -134,7 +134,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 7. Authentication requirements
                 8. Rate limiting information
                 9. Code examples in multiple languages
-                
+
                 Use OpenAPI/Swagger-compatible format where possible.
                 Include curl examples and SDK usage.
                 """;
@@ -145,13 +145,13 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateChangelog(DocInput input, long startTime) {
         String systemPrompt = """
                 You are a technical writer specializing in changelogs. Generate a CHANGELOG.md following Keep a Changelog format.
-                
+
                 Structure:
                 1. Version header with date
                 2. Sections: Added, Changed, Deprecated, Removed, Fixed, Security
                 3. Clear, user-focused descriptions
                 4. Link to issues/PRs where applicable
-                
+
                 Be concise but informative. Group related changes together.
                 Follow Semantic Versioning principles in descriptions.
                 """;
@@ -162,7 +162,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateTechnicalSpec(DocInput input, long startTime) {
         String systemPrompt = """
                 You are a technical architect. Generate a detailed technical specification document.
-                
+
                 Include:
                 1. Overview and objectives
                 2. System requirements
@@ -176,7 +176,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 10. Deployment considerations
                 11. Monitoring and observability
                 12. Future considerations
-                
+
                 Use diagrams (Mermaid syntax) where helpful.
                 Be thorough but organized.
                 """;
@@ -187,7 +187,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateUserGuide(DocInput input, long startTime) {
         String systemPrompt = """
                 You are a user experience writer. Generate a user-friendly guide.
-                
+
                 Include:
                 1. Getting started
                 2. Basic concepts
@@ -197,7 +197,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 6. Troubleshooting common issues
                 7. FAQ section
                 8. Glossary of terms
-                
+
                 Use simple, clear language. Include screenshots placeholders.
                 Anticipate user questions and address them proactively.
                 """;
@@ -208,7 +208,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateArchitectureDoc(DocInput input, long startTime) {
         String systemPrompt = """
                 You are a solutions architect. Generate architecture documentation.
-                
+
                 Include:
                 1. System overview
                 2. High-level architecture diagram (Mermaid)
@@ -220,7 +220,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 8. Security architecture
                 9. Deployment architecture
                 10. Decision log (ADRs)
-                
+
                 Use C4 model concepts where appropriate.
                 Include both current state and future considerations.
                 """;
@@ -231,7 +231,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateReleaseNotes(DocInput input, long startTime) {
         String systemPrompt = """
                 You are a product manager. Generate user-facing release notes.
-                
+
                 Include:
                 1. Release highlights
                 2. New features with benefits
@@ -241,7 +241,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 6. Upgrade instructions
                 7. Breaking changes (if any)
                 8. Deprecation notices
-                
+
                 Write for end users, not developers.
                 Focus on benefits and impact.
                 Be concise and scannable.
@@ -253,7 +253,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
     private Promise<ProcessResult<DocOutput>> generateRunbook(DocInput input, long startTime) {
         String systemPrompt = """
                 You are an SRE/DevOps expert. Generate an operational runbook.
-                
+
                 Include:
                 1. Service overview
                 2. Architecture summary
@@ -265,7 +265,7 @@ public class DocGeneratorAgent extends AbstractAIAgent<DocGeneratorAgent.DocInpu
                 8. Rollback procedures
                 9. Disaster recovery
                 10. Contact information
-                
+
                 Use clear step-by-step procedures.
                 Include command examples.
                 Prioritize actionable information.

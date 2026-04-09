@@ -3,7 +3,7 @@ package com.ghatana.refactorer.refactoring.model;
 import com.github.javaparser.ast.Node;
 
 /**
- * Represents a Java element that can be refactored. 
+ * Represents a Java element that can be refactored.
  * @doc.type class
  * @doc.purpose Handles java element operations
  * @doc.layer core

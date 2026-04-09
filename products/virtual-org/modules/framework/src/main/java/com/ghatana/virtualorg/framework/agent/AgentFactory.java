@@ -89,4 +89,3 @@ public interface AgentFactory {
         return getSupportedTemplates().contains(template);
     }
 }
-

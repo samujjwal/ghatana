@@ -7,7 +7,6 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Interface for LLM clients that provide reasoning and generation capabilities.

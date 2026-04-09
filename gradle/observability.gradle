@@ -17,7 +17,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.micrometer:micrometer-registry-jmx'
-    
+
     // Testing
     testImplementation "io.opentelemetry:opentelemetry-sdk-testing:${libs.versions.opentelemetry.get()}"
     testImplementation 'io.micrometer:micrometer-test'
@@ -27,7 +27,7 @@ dependencies {
 // Configure test task
 test {
     useJUnitPlatform()
-    
+
     // Configure test logging
     testLogging {
         events 'passed', 'skipped', 'failed'
@@ -37,18 +37,18 @@ test {
         showStackTraces = true
         exceptionFormat = 'full'
     }
-    
+
     // Configure system properties for tests
     systemProperty 'otel.traces.exporter', 'none'
     systemProperty 'otel.metrics.exporter', 'none'
     systemProperty 'otel.logs.exporter', 'none'
-    
+
     // Configure test reports
     reports {
         html.required = true
         junitXml.required = true
     }
-    
+
     // Configure test JVM arguments
     jvmArgs = [
         '-Xms512m',
@@ -67,7 +67,7 @@ plugins.withId('jacoco') {
             html.required = true
             csv.required = false
         }
-        
+
         afterEvaluate {
             classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
@@ -89,7 +89,7 @@ if (pluginManager.hasPlugin('com.github.spotbugs')) {
             html.required = true
             xml.required = false
         }
-        
+
         excludeFilter = rootProject.file('config/spotbugs/observability-exclude.xml')
     }
 }

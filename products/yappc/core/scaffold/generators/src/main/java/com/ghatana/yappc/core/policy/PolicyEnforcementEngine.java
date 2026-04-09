@@ -911,7 +911,7 @@ public class PolicyEnforcementEngine {
             PackagePolicy packagePolicy,
             LicensePolicy licensePolicy,
             CodeOwnersPolicy codeOwnersPolicy) {
-        
+
 
     public static PolicyConfiguration defaultConfig() {
         return new PolicyConfiguration(

@@ -30,13 +30,13 @@ class EntityStorageTest {
     @DisplayName("Should store entities")
     void shouldStoreEntities() {
         EntityRepository repository = mock(EntityRepository.class);
-        
+
         Entity entity = Entity.builder()
             .tenantId("tenant-123")
             .collectionName("test-collection")
             .data(new HashMap<>())
             .build();
-        
+
         assertThat(entity.getTenantId()).isEqualTo("tenant-123");
         assertThat(entity.getCollectionName()).isEqualTo("test-collection");
     }
@@ -47,7 +47,7 @@ class EntityStorageTest {
         UUID entityId = UUID.randomUUID();
         String tenantId = "tenant-123";
         String collectionName = "test-collection";
-        
+
         assertThat(entityId).isNotNull();
         assertThat(tenantId).isNotNull();
         assertThat(collectionName).isNotNull();
@@ -61,11 +61,11 @@ class EntityStorageTest {
             .collectionName("test-collection")
             .data(new HashMap<>())
             .build();
-        
+
         Map<String, Object> newData = new HashMap<>();
         newData.put("name", "updated");
         entity.setData(newData);
-        
+
         assertThat(entity.getData()).containsKey("name");
         assertThat(entity.getData().get("name")).isEqualTo("updated");
     }
@@ -74,7 +74,7 @@ class EntityStorageTest {
     @DisplayName("Should delete entities")
     void shouldDeleteEntities() {
         UUID entityId = UUID.randomUUID();
-        
+
         assertThat(entityId).isNotNull();
     }
 
@@ -82,9 +82,9 @@ class EntityStorageTest {
     @DisplayName("Should handle storage failures")
     void shouldHandleStorageFailures() {
         EntityRepository repository = mock(EntityRepository.class);
-        
+
         Promise<Optional<Entity>> result = repository.findById("tenant-123", "test-collection", UUID.randomUUID());
-        
+
         assertThat(repository).isNotNull();
         assertThat(result).isNotNull();
     }
@@ -96,9 +96,9 @@ class EntityStorageTest {
             .tenantId("tenant-123")
             .name("test-collection")
             .build();
-        
+
         collection.setVersion(1);
-        
+
         assertThat(collection.getVersion()).isEqualTo(1);
     }
 }

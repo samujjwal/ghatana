@@ -12,9 +12,7 @@ import com.ghatana.media.vision.api.*;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;

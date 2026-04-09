@@ -129,7 +129,7 @@ public final class FinanceKernelExtension implements KernelExtension {
     private void extendConfiguration(KernelContext context) {
         // Add finance-specific configuration defaults
         log.debug("Adding finance-specific configuration defaults");
-        
+
         // Examples:
         // - Trading hours configuration
         // - Risk limit defaults
@@ -140,7 +140,7 @@ public final class FinanceKernelExtension implements KernelExtension {
     private void extendAudit(KernelContext context) {
         // Add finance-specific audit logging
         log.debug("Adding finance-specific audit logging");
-        
+
         // Examples:
         // - Trade execution audit events
         // - Portfolio change audit events

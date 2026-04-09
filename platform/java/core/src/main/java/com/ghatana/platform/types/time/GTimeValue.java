@@ -18,7 +18,7 @@ package com.ghatana.platform.types.time;
  * @doc.pattern ValueObject
  */
 public record GTimeValue(long amount, GTimeUnit unit) {
-    
+
     public GTimeValue {
         if (amount < 0) {
             throw new IllegalArgumentException("Time value amount cannot be negative");
@@ -27,27 +27,27 @@ public record GTimeValue(long amount, GTimeUnit unit) {
             throw new IllegalArgumentException("Time unit cannot be null");
         }
     }
-    
+
     public static GTimeValue of(long amount, GTimeUnit unit) {
         return new GTimeValue(amount, unit);
     }
-    
+
     public static GTimeValue millis(long amount) {
         return new GTimeValue(amount, GTimeUnit.MILLISECONDS);
     }
-    
+
     public static GTimeValue seconds(long amount) {
         return new GTimeValue(amount, GTimeUnit.SECONDS);
     }
-    
+
     public static GTimeValue minutes(long amount) {
         return new GTimeValue(amount, GTimeUnit.MINUTES);
     }
-    
+
     public static GTimeValue hours(long amount) {
         return new GTimeValue(amount, GTimeUnit.HOURS);
     }
-    
+
     public static GTimeValue days(long amount) {
         return new GTimeValue(amount, GTimeUnit.DAYS);
     }

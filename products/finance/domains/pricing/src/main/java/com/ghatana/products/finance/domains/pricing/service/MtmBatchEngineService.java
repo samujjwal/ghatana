@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

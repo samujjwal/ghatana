@@ -35,23 +35,23 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
 
     // Tenant-isolated event storage: tenantId -> list of events
     private final Map<String, List<AuditEvent>> eventsByTenant = new ConcurrentHashMap<>();
-    
+
     // Event ID -> AuditEvent for quick lookup by ID
     private final Map<String, AuditEvent> eventsById = new ConcurrentHashMap<>();
 
     @Override
     public Promise<Void> record(AuditEvent event) {
         String tenantId = event.getTenantId();
-        
+
         eventsByTenant.computeIfAbsent(tenantId, k -> new CopyOnWriteArrayList<>())
             .add(event);
-        
+
         // Store by ID
         String eventId = event.getId();
         if (eventId != null) {
             eventsById.put(buildKey(tenantId, eventId), event);
         }
-        
+
         return Promise.complete();
     }
 
@@ -73,7 +73,7 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
 
     @Override
     public Promise<List<AuditEvent>> findByResource(String tenantId, String resourceType, String resourceId) {
-        return filterEvents(tenantId, event -> 
+        return filterEvents(tenantId, event ->
             Objects.equals(resourceType, event.getResourceType()) &&
             Objects.equals(resourceId, event.getResourceId())
         );
@@ -81,14 +81,14 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
 
     @Override
     public Promise<List<AuditEvent>> findByPrincipal(String tenantId, String principal) {
-        return filterEvents(tenantId, event -> 
+        return filterEvents(tenantId, event ->
             Objects.equals(principal, event.getPrincipal())
         );
     }
 
     @Override
     public Promise<List<AuditEvent>> findByEventType(String tenantId, String eventType) {
-        return filterEvents(tenantId, event -> 
+        return filterEvents(tenantId, event ->
             Objects.equals(eventType, event.getEventType())
         );
     }
@@ -119,9 +119,9 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
     @Override
     public Promise<List<AuditEvent>> search(String tenantId, AuditSearchCriteria criteria) {
         List<AuditEvent> events = eventsByTenant.getOrDefault(tenantId, List.of());
-        
+
         Stream<AuditEvent> stream = events.stream();
-        
+
         // Apply filters
         if (criteria.resourceType() != null) {
             stream = stream.filter(e -> Objects.equals(criteria.resourceType(), e.getResourceType()));
@@ -144,13 +144,13 @@ public class InMemoryAuditQueryService implements AuditService, AuditQueryServic
         if (criteria.success() != null) {
             stream = stream.filter(e -> Objects.equals(criteria.success(), e.getSuccess()));
         }
-        
+
         // Apply pagination
         List<AuditEvent> results = stream
             .skip(criteria.offset())
             .limit(criteria.limit())
             .collect(Collectors.toList());
-        
+
         return Promise.of(results);
     }
 

@@ -14,15 +14,15 @@ import java.util.function.Consumer;
 public interface ObserveService {
     /**
      * Collects observations from a run.
-     * 
+     *
      * @param run The run result to observe
      * @return Promise of observation data
      */
     Promise<Observation> collect(RunResult run);
-    
+
     /**
      * Streams observations in real-time.
-     * 
+     *
      * @param run The run result
      * @param consumer Observation consumer
      * @return Promise when streaming completes

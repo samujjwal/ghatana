@@ -5,8 +5,6 @@
 package com.ghatana.aep.scaling.cluster;
 
 import com.ghatana.aep.scaling.loadbalancer.LoadBalancerModels;
-import com.ghatana.aep.scaling.models.AutoScalingModels;
-import com.ghatana.aep.scaling.cluster.ClusterState;
 import com.ghatana.aep.scaling.cluster.ClusterManagementModels.NodeRegistrationRequest;
 import com.ghatana.aep.scaling.cluster.ClusterManagementModels.NodeRegistrationResult;
 import com.ghatana.aep.scaling.cluster.ClusterManagementModels.NodeUnregistrationRequest;

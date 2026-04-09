@@ -39,7 +39,7 @@ import java.util.Optional;
  * @doc.pattern Value Object
  */
 public record EscalationPath(List<Role> roles) {
-    
+
     /**
      * Compact constructor with defensive copy.
      *
@@ -48,7 +48,7 @@ public record EscalationPath(List<Role> roles) {
     public EscalationPath {
         roles = List.copyOf(roles);
     }
-    
+
     /**
      * Creates an escalation path from roles.
      *
@@ -58,7 +58,7 @@ public record EscalationPath(List<Role> roles) {
     public static EscalationPath of(Role... roles) {
         return new EscalationPath(List.of(roles));
     }
-    
+
     /**
      * Creates an escalation path from a list of roles.
      *
@@ -68,7 +68,7 @@ public record EscalationPath(List<Role> roles) {
     public static EscalationPath of(List<Role> roleList) {
         return new EscalationPath(roleList);
     }
-    
+
     /**
      * Gets the next role in the escalation chain.
      *
@@ -77,7 +77,7 @@ public record EscalationPath(List<Role> roles) {
     public Optional<Role> getNext() {
         return roles.isEmpty() ? Optional.empty() : Optional.of(roles.get(0));
     }
-    
+
     /**
      * Gets the remaining escalation path after the first role.
      *
@@ -89,7 +89,7 @@ public record EscalationPath(List<Role> roles) {
         }
         return new EscalationPath(roles.subList(1, roles.size()));
     }
-    
+
     /**
      * Checks if escalation path is empty (no escalation roles).
      *
@@ -98,7 +98,7 @@ public record EscalationPath(List<Role> roles) {
     public boolean isEmpty() {
         return roles.isEmpty();
     }
-    
+
     /**
      * Gets the number of escalation levels.
      *
@@ -107,7 +107,7 @@ public record EscalationPath(List<Role> roles) {
     public int getDepth() {
         return roles.size();
     }
-    
+
     /**
      * Gets the final authority in the escalation chain.
      *

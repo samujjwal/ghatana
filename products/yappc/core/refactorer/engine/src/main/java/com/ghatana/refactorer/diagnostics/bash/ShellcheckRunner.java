@@ -16,11 +16,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Runs Shellcheck to analyze Bash scripts and parse the JSON output.
- * 
+ *
  * @doc.type runner
  * @doc.language bash
  * @doc.tool shellcheck
- 
+
  * @doc.purpose Handles shellcheck runner operations
  * @doc.layer core
  * @doc.pattern ValueObject

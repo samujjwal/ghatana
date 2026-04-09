@@ -19,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the YAPPC agent-orchestration-v1 pipeline operators.

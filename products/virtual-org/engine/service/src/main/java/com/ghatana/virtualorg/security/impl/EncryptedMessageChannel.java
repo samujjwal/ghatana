@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -54,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *     macKey,
  *     eventloop
  * );
- * 
+ *
  * // Send encrypted message
  * SecureMessage encrypted = channel.send(
  *     sender,
@@ -62,7 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *     "task.assignment",
  *     payload
  * ).getResult();
- * 
+ *
  * // Receive and verify
  * String decrypted = channel.receive(encrypted).getResult();
  * }</pre>

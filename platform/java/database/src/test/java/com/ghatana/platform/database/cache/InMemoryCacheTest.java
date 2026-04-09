@@ -32,9 +32,9 @@ class InMemoryCacheTest {
     @Test
     void testPutAndGet() {
         cache.put("key1", "value1");
-        
+
         Optional<String> result = cache.get("key1");
-        
+
         assertTrue(result.isPresent());
         assertEquals("value1", result.get());
     }
@@ -42,7 +42,7 @@ class InMemoryCacheTest {
     @Test
     void testGetNonExistent() {
         Optional<String> result = cache.get("nonexistent");
-        
+
         assertFalse(result.isPresent());
     }
 
@@ -50,16 +50,16 @@ class InMemoryCacheTest {
     void testRemove() {
         cache.put("key1", "value1");
         cache.remove("key1");
-        
+
         Optional<String> result = cache.get("key1");
-        
+
         assertFalse(result.isPresent());
     }
 
     @Test
     void testContains() {
         cache.put("key1", "value1");
-        
+
         assertTrue(cache.contains("key1"));
         assertFalse(cache.contains("nonexistent"));
     }
@@ -69,9 +69,9 @@ class InMemoryCacheTest {
         cache.put("key1", "value1");
         cache.put("key2", "value2");
         cache.put("key3", "value3");
-        
+
         cache.clear();
-        
+
         assertFalse(cache.contains("key1"));
         assertFalse(cache.contains("key2"));
         assertFalse(cache.contains("key3"));
@@ -81,13 +81,13 @@ class InMemoryCacheTest {
     @Test
     void testSize() {
         assertEquals(0, cache.size());
-        
+
         cache.put("key1", "value1");
         assertEquals(1, cache.size());
-        
+
         cache.put("key2", "value2");
         assertEquals(2, cache.size());
-        
+
         cache.remove("key1");
         assertEquals(1, cache.size());
     }
@@ -96,9 +96,9 @@ class InMemoryCacheTest {
     void testOverwrite() {
         cache.put("key1", "value1");
         cache.put("key1", "value2");
-        
+
         Optional<String> result = cache.get("key1");
-        
+
         assertTrue(result.isPresent());
         assertEquals("value2", result.get());
         assertEquals(1, cache.size());
@@ -111,10 +111,10 @@ class InMemoryCacheTest {
         try {
             shortTtlCache.put("key1", "value1");
             assertTrue(shortTtlCache.get("key1").isPresent());
-            
+
             // Wait for expiration (sleep > 2x TTL to handle slow/loaded machines)
             TimeUnit.MILLISECONDS.sleep(1000);
-            
+
             assertFalse(shortTtlCache.get("key1").isPresent());
         } finally {
             shortTtlCache.close();
@@ -126,7 +126,7 @@ class InMemoryCacheTest {
         cache.put("key1", "value1");
         cache.put("key2", "value2");
         cache.put("key3", "value3");
-        
+
         assertEquals("value1", cache.get("key1").orElse(null));
         assertEquals("value2", cache.get("key2").orElse(null));
         assertEquals("value3", cache.get("key3").orElse(null));
@@ -157,7 +157,7 @@ class InMemoryCacheTest {
         int threadCount = 10;
         int operationsPerThread = 100;
         Thread[] threads = new Thread[threadCount];
-        
+
         for (int i = 0; i < threadCount; i++) {
             final int threadId = i;
             threads[i] = new Thread(() -> {
@@ -168,15 +168,15 @@ class InMemoryCacheTest {
                 }
             });
         }
-        
+
         for (Thread thread : threads) {
             thread.start();
         }
-        
+
         for (Thread thread : threads) {
             thread.join();
         }
-        
+
         // Should have entries from all threads
         assertTrue(cache.size() > 0);
     }

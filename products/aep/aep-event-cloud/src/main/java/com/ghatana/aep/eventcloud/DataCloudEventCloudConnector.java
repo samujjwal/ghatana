@@ -8,7 +8,6 @@ import com.ghatana.aep.event.spi.EventCloudConnector;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
 import com.ghatana.datacloud.spi.TenantContext;
-import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

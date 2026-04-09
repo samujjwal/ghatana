@@ -11,7 +11,7 @@ public abstract class AbstractPatternSpec implements IPatternSpec {
     public List<IPatternSpec> getPatterns() {
         return Collections.emptyList();
     }
-    
+
     @Override
     public <T> T accept(PatternVisitor<T> visitor) {
         throw new UnsupportedOperationException("accept must be implemented by concrete pattern classes");

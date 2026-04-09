@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * Generated CMake project configuration.
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for generated c make project
  * @doc.layer core

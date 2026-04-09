@@ -5,7 +5,6 @@ import com.ghatana.core.connectors.IngestEvent;
 import io.activej.promise.Promise;
 import io.activej.promise.SettablePromise;
 
-import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -115,4 +114,3 @@ public final class InMemoryEventSource implements EventSource {
         return waiters.size();
     }
 }
-

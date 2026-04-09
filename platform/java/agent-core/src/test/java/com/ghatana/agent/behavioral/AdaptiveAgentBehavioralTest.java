@@ -15,8 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -24,7 +22,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for AdaptiveAgent.
- * 
+ *
  * Focus: Multi-armed bandit algorithms, self-tuning, parameter learning,
  * exploration vs exploitation trade-off, and convergence.
  */
@@ -601,7 +599,7 @@ class AdaptiveAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

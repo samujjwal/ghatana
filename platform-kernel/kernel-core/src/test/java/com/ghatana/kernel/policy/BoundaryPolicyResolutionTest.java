@@ -46,7 +46,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         policyResolver.registerPolicy(policy);
 
         // WHEN: Resolve policy
-        PolicyDecision decision = runPromise(() -> 
+        PolicyDecision decision = runPromise(() ->
             policyResolver.resolve("module:finance", "action:read")
         );
 
@@ -71,7 +71,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         policyResolver.registerPolicy(denyPolicy);
 
         // WHEN: Resolve conflicting policies
-        PolicyDecision decision = runPromise(() -> 
+        PolicyDecision decision = runPromise(() ->
             policyResolver.resolve("module:finance", "action:write")
         );
 
@@ -95,10 +95,10 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         policyResolver.registerPolicy(childPolicy);
 
         // WHEN: Resolve for child module
-        PolicyDecision generalDecision = runPromise(() -> 
+        PolicyDecision generalDecision = runPromise(() ->
             policyResolver.resolve("module:finance", "action:read")
         );
-        PolicyDecision sensitiveDecision = runPromise(() -> 
+        PolicyDecision sensitiveDecision = runPromise(() ->
             policyResolver.resolve("module:finance:sensitive", "action:read")
         );
 
@@ -113,7 +113,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         // GIVEN: No explicit policies
 
         // WHEN: Resolve for unspecified resource
-        PolicyDecision decision = runPromise(() -> 
+        PolicyDecision decision = runPromise(() ->
             policyResolver.resolve("module:unknown", "action:execute")
         );
 
@@ -133,10 +133,10 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         policyResolver.registerPolicy(wildcardPolicy);
 
         // WHEN: Resolve with wildcards
-        PolicyDecision readAny = runPromise(() -> 
+        PolicyDecision readAny = runPromise(() ->
             policyResolver.resolve("module:phr", "action:read")
         );
-        PolicyDecision financeAny = runPromise(() -> 
+        PolicyDecision financeAny = runPromise(() ->
             policyResolver.resolve("module:finance", "action:delete")
         );
 
@@ -156,10 +156,10 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         policyResolver.registerPolicy(timePolicy);
 
         // WHEN: Resolve during and outside time window
-        PolicyDecision duringHours = runPromise(() -> 
+        PolicyDecision duringHours = runPromise(() ->
             policyResolver.resolveWithTime("module:finance", "action:trade", 12)
         );
-        PolicyDecision afterHours = runPromise(() -> 
+        PolicyDecision afterHours = runPromise(() ->
             policyResolver.resolveWithTime("module:finance", "action:trade", 20)
         );
 
@@ -182,10 +182,10 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         Map<String, String> adminContext = Map.of("user.role", "admin");
         Map<String, String> userContext = Map.of("user.role", "user");
 
-        PolicyDecision adminDecision = runPromise(() -> 
+        PolicyDecision adminDecision = runPromise(() ->
             policyResolver.resolveWithContext("module:system", "action:configure", adminContext)
         );
-        PolicyDecision userDecision = runPromise(() -> 
+        PolicyDecision userDecision = runPromise(() ->
             policyResolver.resolveWithContext("module:system", "action:configure", userContext)
         );
 
@@ -363,37 +363,37 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
         Promise<PolicyDecision> resolveWithTime(String resource, String action, int currentHour) {
             List<String> appliedPolicies = new ArrayList<>();
-            
+
             for (BoundaryPolicy policy : policies) {
                 if (policy.matches(resource, action) && policy.isWithinTimeWindow(currentHour)) {
                     appliedPolicies.add(policy.getName());
-                    
+
                     if (policy.isAuditEnabled()) {
                         auditLog.add(String.format("Policy: %s, Resource: %s, Action: %s, Decision: %s",
                             policy.getName(), resource, action, policy.getType()));
                     }
-                    
+
                     boolean allowed = policy.getType() == PolicyType.ALLOW;
-                    return Promise.of(new PolicyDecision(allowed, appliedPolicies, 
+                    return Promise.of(new PolicyDecision(allowed, appliedPolicies,
                         policy.getType().toString()));
                 }
             }
-            
-            return Promise.of(new PolicyDecision(false, appliedPolicies, 
+
+            return Promise.of(new PolicyDecision(false, appliedPolicies,
                 "No matching policy - default deny"));
         }
 
-        Promise<PolicyDecision> resolveWithContext(String resource, String action, 
+        Promise<PolicyDecision> resolveWithContext(String resource, String action,
                                                    Map<String, String> context) {
             List<String> appliedPolicies = new ArrayList<>();
-            
+
             for (ConditionalPolicy policy : conditionalPolicies) {
                 if (policy.matches(resource, action) && policy.matchesConditions(context)) {
                     appliedPolicies.add(policy.getName());
                     return Promise.of(new PolicyDecision(true, appliedPolicies, "Conditional policy matched"));
                 }
             }
-            
+
             return resolve(resource, action);
         }
 

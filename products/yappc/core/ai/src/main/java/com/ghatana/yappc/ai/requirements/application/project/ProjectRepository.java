@@ -15,13 +15,13 @@ import java.util.Optional;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * ProjectRepository repo = new PostgreSQLProjectRepository(dataSource);
- * 
+ *
  * // Save project
  * Project saved = repo.save(project).getResult();
- * 
+ *
  * // Find project
  * Optional<Project> found = repo.findById(projectId).getResult();
- * 
+ *
  * // List workspace projects
  * List<Project> projects = repo.findByWorkspaceId(workspaceId).getResult();
  * }</pre>

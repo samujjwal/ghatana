@@ -6,7 +6,6 @@ import com.ghatana.media.common.ResourceExhaustedError;
 import com.ghatana.media.common.ValidationError;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -157,4 +156,3 @@ class GrpcExceptionMapperTest {
         }
     }
 }
-

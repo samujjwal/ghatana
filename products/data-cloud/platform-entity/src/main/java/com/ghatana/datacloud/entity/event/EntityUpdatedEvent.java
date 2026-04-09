@@ -42,7 +42,7 @@ public class EntityUpdatedEvent extends EntityEvent {
      * @param newVersion the new version number after update
      */
     public EntityUpdatedEvent(String tenantId, String collectionName, UUID entityId,
-                              String actorId, Map<String, Object> oldData, 
+                              String actorId, Map<String, Object> oldData,
                               Map<String, Object> newData, int newVersion) {
         super(tenantId, collectionName, entityId, actorId);
         this.oldData = oldData != null ? Collections.unmodifiableMap(oldData) : Collections.emptyMap();

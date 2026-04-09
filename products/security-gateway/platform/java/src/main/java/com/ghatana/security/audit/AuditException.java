@@ -15,7 +15,7 @@ package com.ghatana.security.audit;
 
 /**
  * Exception thrown when audit operations fail.
- 
+
  *
  * @doc.type class
  * @doc.purpose Audit exception
@@ -23,11 +23,11 @@ package com.ghatana.security.audit;
  * @doc.pattern Exception
 */
 public class AuditException extends Exception {
-    
+
     public AuditException(String message) {
         super(message);
     }
-    
+
     public AuditException(String message, Throwable cause) {
         super(message, cause);
     }

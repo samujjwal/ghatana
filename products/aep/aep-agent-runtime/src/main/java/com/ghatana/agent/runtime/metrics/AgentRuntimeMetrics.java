@@ -5,7 +5,6 @@
 package com.ghatana.agent.runtime.metrics;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.jetbrains.annotations.NotNull;

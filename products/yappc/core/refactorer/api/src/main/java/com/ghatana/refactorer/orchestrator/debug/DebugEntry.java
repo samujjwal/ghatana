@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Entry-point utility for running a safe debug session from the orchestrator. 
+ * Entry-point utility for running a safe debug session from the orchestrator.
  * @doc.type class
  * @doc.purpose Handles debug entry operations
  * @doc.layer core

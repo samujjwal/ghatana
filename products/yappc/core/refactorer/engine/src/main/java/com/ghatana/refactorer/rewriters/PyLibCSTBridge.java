@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>This class provides methods to apply code transformations to Python files using the LibCST
  * library. It supports virtual environments, package management, and common Python code patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles py lib cst bridge operations
  * @doc.layer core

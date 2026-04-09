@@ -1,6 +1,5 @@
 package com.ghatana.yappc.agent;
 
-import com.ghatana.yappc.agent.StepContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -55,4 +54,3 @@ public record StepRequest<I>(@NotNull I input, @NotNull StepContext context) {
     return new StepRequest<>(input, defaultContext);
   }
 }
-

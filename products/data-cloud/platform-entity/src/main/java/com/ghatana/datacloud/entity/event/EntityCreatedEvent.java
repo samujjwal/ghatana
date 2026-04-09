@@ -37,7 +37,7 @@ public class EntityCreatedEvent extends EntityEvent {
      * @param actorId the user/system that created the entity
      * @param data the entity data at creation time
      */
-    public EntityCreatedEvent(String tenantId, String collectionName, UUID entityId, 
+    public EntityCreatedEvent(String tenantId, String collectionName, UUID entityId,
                               String actorId, Map<String, Object> data) {
         super(tenantId, collectionName, entityId, actorId);
         this.data = data != null ? Collections.unmodifiableMap(data) : Collections.emptyMap();

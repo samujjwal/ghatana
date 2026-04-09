@@ -1,8 +1,6 @@
 package com.ghatana.products.finance.domains.ems.service;
 
 import com.ghatana.products.finance.domains.ems.domain.ExecutionFill;
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
-import com.ghatana.products.finance.domains.ems.service.FillAggregationService.FillAggregated;
 import com.ghatana.products.finance.domains.ems.service.FillAggregationService.PartialFill;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -226,12 +224,12 @@ class FillProcessingTest {
         BigDecimal calculateWeightedAverage(List<PartialFill> fills) {
             BigDecimal totalValue = BigDecimal.ZERO;
             long totalQty = 0L;
-            
+
             for (PartialFill fill : fills) {
                 totalValue = totalValue.add(fill.fillPrice().multiply(BigDecimal.valueOf(fill.filledQuantity())));
                 totalQty += fill.filledQuantity();
             }
-            
+
             return totalValue.divide(BigDecimal.valueOf(totalQty), 2, RoundingMode.HALF_UP);
         }
 

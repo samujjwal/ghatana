@@ -1,6 +1,5 @@
 package com.ghatana.core.domain.pipeline;
 
-import java.util.Objects;
 
 /**
  * Library of pre-built {@link PipelineSpec} templates for common streaming use cases.
@@ -195,4 +194,3 @@ public final class PipelineTemplateLibrary {
                         .build());
     }
 }
-

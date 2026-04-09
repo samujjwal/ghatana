@@ -34,7 +34,7 @@ public class DecisionContextExtractor {
 
     /**
      * Extracts context information from the ADR request.
-     * 
+     *
      * @param request ADR request containing project information
      * @return Decision context with project details
      */

@@ -27,10 +27,10 @@ import java.util.Objects;
  * <pre>{@code
  * // Validation error
  * return ErrorResponse.badRequest("Invalid input", Map.of("field", "name"));
- * 
+ *
  * // Authentication error
  * return ErrorResponse.unauthorized("Invalid JWT token");
- * 
+ *
  * // Not found error
  * return ErrorResponse.notFound("Workspace not found", "workspace-123");
  * }</pre>
@@ -42,11 +42,11 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class ErrorResponse {
-    
+
     private ErrorResponse() {
         // Utility class - prevent instantiation
     }
-    
+
     /**
      * Create a bad request error response (400).
      *
@@ -56,7 +56,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse badRequest(String message) {
         return badRequest(message, null, null);
     }
-    
+
     /**
      * Create a bad request error response (400) with details.
      *
@@ -67,7 +67,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse badRequest(String message, Map<String, Object> details) {
         return badRequest(message, "VALIDATION_ERROR", details);
     }
-    
+
     /**
      * Create a bad request error response (400) with code and details.
      *
@@ -83,7 +83,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create an unauthorized error response (401).
      *
@@ -93,7 +93,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse unauthorized(String message) {
         return unauthorized(message, null, null);
     }
-    
+
     /**
      * Create an unauthorized error response (401) with code and details.
      *
@@ -109,7 +109,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create a forbidden error response (403).
      *
@@ -119,7 +119,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse forbidden(String message) {
         return forbidden(message, null, null);
     }
-    
+
     /**
      * Create a forbidden error response (403) with code and details.
      *
@@ -135,7 +135,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create a not found error response (404).
      *
@@ -145,7 +145,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse notFound(String message) {
         return notFound(message, null, null);
     }
-    
+
     /**
      * Create a not found error response (404) with code and details.
      *
@@ -161,7 +161,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create a conflict error response (409).
      *
@@ -171,7 +171,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse conflict(String message) {
         return conflict(message, null, null);
     }
-    
+
     /**
      * Create a conflict error response (409) with code and details.
      *
@@ -187,7 +187,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create a rate limit error response (429).
      *
@@ -197,7 +197,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse rateLimited(String message) {
         return rateLimited(message, null, null);
     }
-    
+
     /**
      * Create a rate limit error response (429) with code and details.
      *
@@ -214,7 +214,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create an internal server error response (500).
      *
@@ -224,7 +224,7 @@ public final class ErrorResponse {
     public static io.activej.http.HttpResponse internalServerError(String message) {
         return internalServerError(message, null, null);
     }
-    
+
     /**
      * Create an internal server error response (500) with code and details.
      *
@@ -240,7 +240,7 @@ public final class ErrorResponse {
             .text(body.toJson())
             .build();
     }
-    
+
     /**
      * Create an error response from an exception.
      *
@@ -249,43 +249,43 @@ public final class ErrorResponse {
      */
     public static io.activej.http.HttpResponse fromException(Exception exception) {
         Objects.requireNonNull(exception, "Exception cannot be null");
-        
+
         // Handle specific exception types
         if (exception instanceof ValidationException) {
             ValidationException ve = (ValidationException) exception;
             return badRequest(ve.getMessage(), "VALIDATION_ERROR", ve.getDetails());
         }
-        
+
         if (exception instanceof AuthenticationException) {
             AuthenticationException ae = (AuthenticationException) exception;
             return unauthorized(ae.getMessage(), ae.getCode(), ae.getDetails());
         }
-        
+
         if (exception instanceof AuthorizationException) {
             AuthorizationException ae = (AuthorizationException) exception;
             return forbidden(ae.getMessage(), ae.getCode(), ae.getDetails());
         }
-        
+
         if (exception instanceof NotFoundException) {
             NotFoundException nfe = (NotFoundException) exception;
             return notFound(nfe.getMessage(), "NOT_FOUND", nfe.getDetails());
         }
-        
+
         if (exception instanceof ConflictException) {
             ConflictException ce = (ConflictException) exception;
             return conflict(ce.getMessage(), "CONFLICT", ce.getDetails());
         }
-        
+
         if (exception instanceof RateLimitException) {
             RateLimitException rle = (RateLimitException) exception;
             return rateLimited(rle.getMessage(), "RATE_LIMITED", rle.getDetails());
         }
-        
+
         // Default to internal server error for unknown exceptions
-        return internalServerError("An unexpected error occurred", "INTERNAL_ERROR", 
+        return internalServerError("An unexpected error occurred", "INTERNAL_ERROR",
             Map.of("type", exception.getClass().getSimpleName()));
     }
-    
+
     /**
      * Error response body with standardized format.
      */
@@ -296,7 +296,7 @@ public final class ErrorResponse {
         private final String code;
         private final Map<String, Object> details;
         private final String timestamp;
-        
+
         public ErrorBody(int status, String error, String code, Map<String, Object> details) {
             this.status = status;
             this.error = error;
@@ -304,13 +304,13 @@ public final class ErrorResponse {
             this.details = details;
             this.timestamp = Instant.now().toString();
         }
-        
+
         public int getStatus() { return status; }
         public String getError() { return error; }
         public String getCode() { return code; }
         public Map<String, Object> getDetails() { return details; }
         public String getTimestamp() { return timestamp; }
-        
+
         public String toJson() {
             try {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -324,102 +324,102 @@ public final class ErrorResponse {
             }
         }
     }
-    
+
     // Custom exception types for better error handling
-    
+
     public static class ValidationException extends Exception {
         private final Map<String, Object> details;
-        
+
         public ValidationException(String message) {
             this(message, null);
         }
-        
+
         public ValidationException(String message, Map<String, Object> details) {
             super(message);
             this.details = details;
         }
-        
+
         public Map<String, Object> getDetails() { return details; }
     }
-    
+
     public static class AuthenticationException extends Exception {
         private final String code;
         private final Map<String, Object> details;
-        
+
         public AuthenticationException(String message) {
             this(message, null, null);
         }
-        
+
         public AuthenticationException(String message, String code, Map<String, Object> details) {
             super(message);
             this.code = code;
             this.details = details;
         }
-        
+
         public String getCode() { return code; }
         public Map<String, Object> getDetails() { return details; }
     }
-    
+
     public static class AuthorizationException extends Exception {
         private final String code;
         private final Map<String, Object> details;
-        
+
         public AuthorizationException(String message) {
             this(message, null, null);
         }
-        
+
         public AuthorizationException(String message, String code, Map<String, Object> details) {
             super(message);
             this.code = code;
             this.details = details;
         }
-        
+
         public String getCode() { return code; }
         public Map<String, Object> getDetails() { return details; }
     }
-    
+
     public static class NotFoundException extends Exception {
         private final Map<String, Object> details;
-        
+
         public NotFoundException(String message) {
             this(message, null);
         }
-        
+
         public NotFoundException(String message, Map<String, Object> details) {
             super(message);
             this.details = details;
         }
-        
+
         public Map<String, Object> getDetails() { return details; }
     }
-    
+
     public static class ConflictException extends Exception {
         private final Map<String, Object> details;
-        
+
         public ConflictException(String message) {
             this(message, null);
         }
-        
+
         public ConflictException(String message, Map<String, Object> details) {
             super(message);
             this.details = details;
         }
-        
+
         public Map<String, Object> getDetails() { return details; }
     }
-    
+
     public static class RateLimitException extends Exception {
         private final Map<String, Object> details;
-        
+
         public RateLimitException(String message) {
             this(message, null);
         }
-        
+
         public RateLimitException(String message, Map<String, Object> details) {
             super(message);
             this.details = details;
         }
-        
+
         public Map<String, Object> getDetails() { return details; }
     }
 }

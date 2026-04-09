@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Virtual-Org agent configuration POJO loaded from YAML.

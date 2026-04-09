@@ -50,14 +50,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *     metricsRegistry,
  *     10 * 1024 * 1024 // 10 MB threshold
  * );
- * 
+ *
  * // Start monitoring every 5 seconds
  * monitor.start(0, 5, TimeUnit.SECONDS);
- * 
+ *
  * // Check lag for specific replica
  * long lag = monitor.getReplicaLag("replica-1");
  * logger.info("Replica-1 lag: {} bytes", lag);
- * 
+ *
  * // Shutdown
  * monitor.stop();
  * }</pre>
@@ -86,15 +86,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 public class ReplicaLagMonitor {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ReplicaLagMonitor.class);
-    
+
     // SQL queries for replication lag
     private static final String PRIMARY_CURRENT_LSN_QUERY = "SELECT pg_current_wal_lsn()";
     private static final String REPLICA_RECEIVED_LSN_QUERY = "SELECT pg_last_wal_receive_lsn()";
     private static final String REPLICA_APPLIED_LSN_QUERY = "SELECT pg_last_wal_replay_lsn()";
     private static final String REPLICA_LAG_BYTES_QUERY = "SELECT pg_wal_lsn_diff(?, ?)";
-    
+
     private final DataSource primaryDataSource;
     private final Map<String, DataSource> replicaDataSources;
     private final MetricsRegistry metricsRegistry;
@@ -103,11 +103,11 @@ public class ReplicaLagMonitor {
     private final long lagThresholdBytes;
     private final ScheduledExecutorService scheduler;
     private final Map<String, Gauge> lagGauges = new ConcurrentHashMap<>();
-    
+
     /**
      * Create a new ReplicaLagMonitor.
      */
-    public ReplicaLagMonitor(RoutingDataSource routingDataSource, DataSource primaryDataSource, 
+    public ReplicaLagMonitor(RoutingDataSource routingDataSource, DataSource primaryDataSource,
                           Map<String, DataSource> replicaDataSources, MetricsRegistry metricsRegistry,
                           long lagThresholdBytes) {
         this.routingDataSource = routingDataSource;
@@ -115,11 +115,11 @@ public class ReplicaLagMonitor {
         this.replicaDataSources = replicaDataSources;
         this.metricsRegistry = metricsRegistry;
         this.lagThresholdBytes = lagThresholdBytes;
-        
+
         // Initialize lag values
         replicaDataSources.keySet().forEach(name -> {
             replicaLags.put(name, new AtomicLong(0));
-            
+
             // Register gauge for replica lag
             if (metricsRegistry != null) {
                 lagGauges.put(name, Gauge.builder("db.replica.lag.bytes", () -> replicaLags.get(name).get())
@@ -128,16 +128,16 @@ public class ReplicaLagMonitor {
                     .register(metricsRegistry.getMeterRegistry()));
             }
         });
-        
+
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "replica-lag-monitor");
             t.setDaemon(true);
             return t;
         });
-        
+
         logger.info("ReplicaLagMonitor initialized with {} replicas", replicaDataSources.size());
     }
-    
+
     /**
      * Start monitoring replication lag.
      */
@@ -145,7 +145,7 @@ public class ReplicaLagMonitor {
         scheduler.scheduleAtFixedRate(this::checkReplicationLag, initialDelay, period, unit);
         logger.info("ReplicaLagMonitor started with period: {} {}", period, unit);
     }
-    
+
     /**
      * Stop monitoring replication lag.
      */
@@ -161,7 +161,7 @@ public class ReplicaLagMonitor {
         }
         logger.info("ReplicaLagMonitor stopped");
     }
-    
+
     /**
      * Check replication lag for all replicas.
      */
@@ -173,7 +173,7 @@ public class ReplicaLagMonitor {
                 logger.warn("Failed to get primary LSN");
                 return;
             }
-            
+
             // Check each replica
             replicaDataSources.forEach((name, dataSource) -> {
                 try {
@@ -183,15 +183,15 @@ public class ReplicaLagMonitor {
                         logger.warn("Failed to get LSN for replica: {}", name);
                         return;
                     }
-                    
+
                     // Calculate lag
                     long lagBytes = calculateLagBytes(primaryLsn, replicaLsn, dataSource);
                     replicaLags.get(name).set(lagBytes);
-                    
+
                     // Check lag threshold
                     if (lagBytes > lagThresholdBytes) {
                         logger.warn("Replica lag exceeds threshold: {} bytes for {}", lagBytes, name);
-                        
+
                         // Mark replica as unavailable if lag is too high
                         if (routingDataSource != null) {
                             routingDataSource.markReplicaUnavailable(name);
@@ -202,24 +202,24 @@ public class ReplicaLagMonitor {
                             routingDataSource.markReplicaAvailable(name);
                         }
                     }
-                    
+
                     logger.debug("Replica lag for {}: {} bytes", name, lagBytes);
-                    
+
                 } catch (Exception e) {
                     logger.error("Error checking lag for replica: {}", name, e);
-                    
+
                     // Mark replica as unavailable on error
                     if (routingDataSource != null) {
                         routingDataSource.markReplicaUnavailable(name);
                     }
                 }
             });
-            
+
         } catch (Exception e) {
             logger.error("Error checking replication lag", e);
         }
     }
-    
+
     /**
      * Get the current LSN from the primary.
      */
@@ -227,18 +227,18 @@ public class ReplicaLagMonitor {
         try (Connection conn = primaryDataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(PRIMARY_CURRENT_LSN_QUERY);
              ResultSet rs = stmt.executeQuery()) {
-            
+
             if (rs.next()) {
                 return rs.getString(1);
             }
-            
+
         } catch (SQLException e) {
             logger.error("Error getting primary LSN", e);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Get the last applied LSN from a replica.
      */
@@ -246,18 +246,18 @@ public class ReplicaLagMonitor {
         try (Connection conn = replicaDataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(REPLICA_APPLIED_LSN_QUERY);
              ResultSet rs = stmt.executeQuery()) {
-            
+
             if (rs.next()) {
                 return rs.getString(1);
             }
-            
+
         } catch (SQLException e) {
             logger.error("Error getting replica applied LSN", e);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Calculate the lag in bytes between primary and replica.
      */
@@ -265,26 +265,26 @@ public class ReplicaLagMonitor {
         if (primaryLsn == null || replicaLsn == null) {
             return -1;
         }
-        
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(REPLICA_LAG_BYTES_QUERY)) {
-            
+
             stmt.setString(1, primaryLsn);
             stmt.setString(2, replicaLsn);
-            
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
                 }
             }
-            
+
         } catch (SQLException e) {
             logger.error("Error calculating lag bytes", e);
         }
-        
+
         return -1;
     }
-    
+
     /**
      * Get the current lag for a replica.
      */
@@ -292,7 +292,7 @@ public class ReplicaLagMonitor {
         AtomicLong lag = replicaLags.get(replicaName);
         return lag != null ? lag.get() : -1;
     }
-    
+
     /**
      * Get the lag for all replicas.
      */

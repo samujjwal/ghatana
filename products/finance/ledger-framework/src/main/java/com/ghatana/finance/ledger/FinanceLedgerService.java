@@ -184,7 +184,7 @@ public final class FinanceLedgerService {
     private final FinanceCurrencyService currencyService;
     private final FinanceComplianceValidator complianceValidator;
     private final Executor executor;
-    
+
     private final Map<String, FinanceAccount> accountCache = new ConcurrentHashMap<>();
     private final Counter transactionProcessedCounter;
     private final Counter complianceViolationCounter;
@@ -205,7 +205,7 @@ public final class FinanceLedgerService {
         this.currencyService = currencyService;
         this.complianceValidator = complianceValidator;
         this.executor = executor;
-        
+
         this.transactionProcessedCounter = Counter.builder("finance.ledger.transaction.processed_total").register(registry);
         this.complianceViolationCounter = Counter.builder("finance.ledger.compliance.violations_total").register(registry);
         this.journalCreatedCounter = Counter.builder("finance.ledger.journal.created_total").register(registry);
@@ -220,7 +220,7 @@ public final class FinanceLedgerService {
         return Promise.ofBlocking(executor, () -> {
             // Validate transaction compliance
             FinanceComplianceResult complianceResult = complianceValidator.validateTransaction(transaction).getResult();
-            
+
             if (!complianceResult.compliant()) {
                 complianceViolationCounter.increment();
                 return new FinanceTransactionResult(
@@ -228,10 +228,10 @@ public final class FinanceLedgerService {
                     complianceResult.violations(), Map.of()
                 );
             }
-            
+
             // Create journal entries for double-entry accounting
             List<FinanceJournalEntry> entries = createJournalEntries(transaction);
-            
+
             // Create and post journal
             FinanceJournal journal = new FinanceJournal(
                 UUID.randomUUID().toString(),
@@ -245,7 +245,7 @@ public final class FinanceLedgerService {
                 transaction.regulatoryBody(),
                 entries
             );
-            
+
             // Validate journal compliance
             FinanceComplianceResult journalCompliance = complianceValidator.validateJournal(journal).getResult();
             if (!journalCompliance.compliant()) {
@@ -255,14 +255,14 @@ public final class FinanceLedgerService {
                     journalCompliance.violations(), Map.of()
                 );
             }
-            
+
             // Post journal and update balances
             String journalId = journalStore.createJournal(journal).getResult();
             Map<String, FinanceBalance> updatedBalances = updateAccountBalances(entries);
-            
+
             transactionProcessedCounter.increment();
             journalCreatedCounter.increment();
-            
+
             return new FinanceTransactionResult(
                 transaction.transactionId(), journalId, true, "COMPLETED",
                 List.of(), updatedBalances
@@ -297,7 +297,7 @@ public final class FinanceLedgerService {
                         Instant.now()
                     ).then(convertedAmount -> {
                         return Promise.of(new FinanceBalance(
-                            accountId, convertedAmount, convertedAmount, 
+                            accountId, convertedAmount, convertedAmount,
                             account.currentBalance().blockedAmount(), Instant.now()
                         ));
                     });
@@ -312,14 +312,14 @@ public final class FinanceLedgerService {
         return Promise.ofBlocking(executor, () -> {
             // Get all accounts for tenant
             List<FinanceAccount> accounts = accountStore.getAccountsByTenant(tenantId).getResult();
-            
+
             Map<FinanceAccountType, MonetaryAmount> balances = new EnumMap<>(FinanceAccountType.class);
-            
+
             for (FinanceAccount account : accounts) {
                 if (account.isActive()) {
                     FinanceBalance balance = account.currentBalance();
                     MonetaryAmount amount = new MonetaryAmount(balance.ledgerBalance(), account.currency(), asOfDate.atStartOfDay().atZone(java.time.ZoneOffset.UTC).toInstant());
-                    
+
                     balances.merge(account.accountType(), amount, (existing, newValue) -> {
                         if (existing.currency().equals(newValue.currency())) {
                             return new MonetaryAmount(
@@ -342,7 +342,7 @@ public final class FinanceLedgerService {
                     });
                 }
             }
-            
+
             return new FinanceTrialBalance(tenantId, asOfDate, balances, Instant.now());
         });
     }
@@ -352,12 +352,12 @@ public final class FinanceLedgerService {
      */
     public Promise<FinanceRegulatoryReport> generateRegulatoryReport(
             String tenantId, FinanceRegulatoryBody regulatoryBody, LocalDate reportPeriod) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             // Get journals for the reporting period
             LocalDate startDate = reportPeriod.minusMonths(1);
             List<FinanceJournal> journals = journalStore.getJournalsByTenant(tenantId, startDate, reportPeriod).getResult();
-            
+
             // Aggregate transaction data
             Map<String, Object> reportData = new HashMap<>();
             reportData.put("totalTransactions", journals.size());
@@ -366,7 +366,7 @@ public final class FinanceLedgerService {
                 .mapToDouble(e -> e.amount().amount().doubleValue())
                 .sum());
             reportData.put("journalIds", journals.stream().map(FinanceJournal::journalId).toList());
-            
+
             FinanceRegulatoryReport report = new FinanceRegulatoryReport(
                 UUID.randomUUID().toString(),
                 "MONTHLY_TRANSACTION_REPORT",
@@ -376,10 +376,10 @@ public final class FinanceLedgerService {
                 reportData,
                 Instant.now()
             );
-            
+
             // Submit report to regulator
             complianceValidator.reportToRegulator(report).getResult();
-            
+
             return report;
         });
     }
@@ -388,7 +388,7 @@ public final class FinanceLedgerService {
 
     private List<FinanceJournalEntry> createJournalEntries(FinanceTransaction transaction) {
         List<FinanceJournalEntry> entries = new ArrayList<>();
-        
+
         // Debit entry
         entries.add(new FinanceJournalEntry(
             UUID.randomUUID().toString(),
@@ -398,7 +398,7 @@ public final class FinanceLedgerService {
             transaction.transactionType().name() + " debit",
             Instant.now()
         ));
-        
+
         // Credit entry
         entries.add(new FinanceJournalEntry(
             UUID.randomUUID().toString(),
@@ -408,39 +408,39 @@ public final class FinanceLedgerService {
             transaction.transactionType().name() + " credit",
             Instant.now()
         ));
-        
+
         return entries;
     }
 
     private Map<String, FinanceBalance> updateAccountBalances(List<FinanceJournalEntry> entries) {
         Map<String, FinanceBalance> updatedBalances = new HashMap<>();
-        
+
         for (FinanceJournalEntry entry : entries) {
             FinanceAccount account = accountCache.get(entry.accountId());
             if (account == null) {
                 account = accountStore.getAccount(entry.accountId()).getResult();
                 accountCache.put(entry.accountId(), account);
             }
-            
+
             FinanceBalance currentBalance = account.currentBalance();
             BigDecimal newLedgerBalance;
-            
+
             if ("DEBIT".equals(entry.direction())) {
-                if (account.accountType() == FinanceAccountType.ASSET || 
+                if (account.accountType() == FinanceAccountType.ASSET ||
                     account.accountType() == FinanceAccountType.EXPENSE) {
                     newLedgerBalance = currentBalance.ledgerBalance().add(entry.amount().amount());
                 } else {
                     newLedgerBalance = currentBalance.ledgerBalance().subtract(entry.amount().amount());
                 }
             } else { // CREDIT
-                if (account.accountType() == FinanceAccountType.ASSET || 
+                if (account.accountType() == FinanceAccountType.ASSET ||
                     account.accountType() == FinanceAccountType.EXPENSE) {
                     newLedgerBalance = currentBalance.ledgerBalance().subtract(entry.amount().amount());
                 } else {
                     newLedgerBalance = currentBalance.ledgerBalance().add(entry.amount().amount());
                 }
             }
-            
+
             FinanceBalance newBalance = new FinanceBalance(
                 entry.accountId(),
                 newLedgerBalance,
@@ -448,11 +448,11 @@ public final class FinanceLedgerService {
                 currentBalance.blockedAmount(),
                 Instant.now()
             );
-            
+
             accountStore.updateAccountBalance(entry.accountId(), newBalance).getResult();
             updatedBalances.put(entry.accountId(), newBalance);
         }
-        
+
         return updatedBalances;
     }
 

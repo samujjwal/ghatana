@@ -49,7 +49,7 @@ public final class EventCloudEventConverter {
     /**
      * Represents an EventCloud record (placeholder - actual impl in
      * event-runtime).
-     
+
  *
  * @doc.type interface
  * @doc.purpose Event cloud record

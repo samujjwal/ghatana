@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Suggests fixes for code issues based on error patterns and available fixes. Uses ConfidenceScorer
  * to rank and filter suggestions.
- 
+
  * @doc.type class
  * @doc.purpose Handles fix suggester operations
  * @doc.layer core

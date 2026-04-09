@@ -40,7 +40,7 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     void setUpTsJsConfig() {
         // Initialize service with Reactor from EventloopTestBase
         tsJsService = new TypeScriptJavaScriptLanguageService();
-        
+
         // Create a basic configuration
         PolyfixConfig config =
                 new PolyfixConfig(

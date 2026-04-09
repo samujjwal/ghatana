@@ -30,21 +30,21 @@ import io.activej.inject.module.AbstractModule;
  * @since 2.0.0
  */
 public class ConnectorConfig extends AbstractModule {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(ConnectorConfig.class);
-    
+
     @Provides
     ConnectorRegistry connectorRegistry(MetricsRegistry metricsRegistry) {
         // Initialize the connector registry
         ConnectorRegistry registry = ConnectorRegistry.initialize(metricsRegistry);
-        
+
         // Register connectors
         registerFileConnectors(registry);
         registerKafkaConnectors(registry);
-        
+
         return registry;
     }
-    
+
     /**
      * Register file connectors.
      */
@@ -52,7 +52,7 @@ public class ConnectorConfig extends AbstractModule {
         try {
             // Create a file connector for logs
             FileConnector logsConnector = new FileConnector("logs-connector");
-            
+
             // Configure the connector
             String logsPath = Paths.get(System.getProperty("java.io.tmpdir"), "pipeline-registry", "logs", "events.log").toString();
             FileConnector.FileConnectorConfig logsConfig = FileConnector.FileConnectorConfig.builder()
@@ -62,22 +62,22 @@ public class ConnectorConfig extends AbstractModule {
                 .sourceEnabled(false)
                 .append(true)
                 .build();
-            
+
             // Register the connector
             registry.register(logsConnector);
-            
+
             // Initialize and start the connector
             // Note: removed .join() calls - these will complete asynchronously
             logsConnector.initialize(logsConfig);
             logsConnector.start();
-            
+
             LOG.info("Registered and started logs file connector");
-            
+
         } catch (Exception e) {
             LOG.error("Failed to register file connectors", e);
         }
     }
-    
+
     /**
      * Register Kafka connectors.
      */
@@ -85,7 +85,7 @@ public class ConnectorConfig extends AbstractModule {
         try {
             // Create a Kafka connector for events
             KafkaConnector eventsConnector = new KafkaConnector("events-connector");
-            
+
             // Configure the connector
             Map<String, Object> properties = new HashMap<>();
             properties.put("bootstrap.servers", "localhost:9092");
@@ -100,7 +100,7 @@ public class ConnectorConfig extends AbstractModule {
             properties.put("consumer.enable.auto.commit", false);
             properties.put("source.enabled", false); // Disabled for now
             properties.put("sink.enabled", true);
-            
+
             KafkaConnector.KafkaConnectorConfig eventsConfig = new KafkaConnector.KafkaConnectorConfig(
                 "events-connector",
                 properties,
@@ -109,16 +109,16 @@ public class ConnectorConfig extends AbstractModule {
                 Duration.ofSeconds(1),
                 true
             );
-            
+
             // Register the connector
             registry.register(eventsConnector);
-            
+
             // Initialize the connector but don't start it yet (Kafka might not be available)
             // Note: removed .join() call - this will complete asynchronously
             eventsConnector.initialize(eventsConfig);
-            
+
             LOG.info("Registered and initialized events Kafka connector");
-            
+
         } catch (Exception e) {
             LOG.error("Failed to register Kafka connectors", e);
         }

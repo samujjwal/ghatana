@@ -252,7 +252,7 @@ public final class PublishStep implements WorkflowStep {
 
   /**
    * Determines the semantic version based on changes in this release.
-   * 
+   *
    * @param units List of implementation units
    * @param builds List of build results
    * @param gates List of quality gates
@@ -262,23 +262,23 @@ public final class PublishStep implements WorkflowStep {
       List<Map<String, Object>> units,
       List<Map<String, Object>> builds,
       List<Map<String, Object>> gates) {
-    
+
     // Default starting version
     SemanticVersioning baseVersion = SemanticVersioning.of(1, 0, 0);
-    
+
     // Analyze changes to determine version bump
     boolean hasBreakingChanges = units.stream()
         .anyMatch(u -> "BREAKING".equals(u.get("changeType")));
-    
+
     boolean hasNewFeatures = units.stream()
         .anyMatch(u -> "FEATURE".equals(u.get("changeType")));
-    
+
     boolean allBuildsPassed = builds.stream()
         .allMatch(b -> "PASSED".equals(b.get("status")));
-    
+
     boolean allGatesPassed = gates.stream()
         .allMatch(g -> "PASSED".equals(g.get("status")));
-    
+
     // Determine change type
     SemanticVersioning.ChangeType changeType;
     if (hasBreakingChanges) {
@@ -288,13 +288,13 @@ public final class PublishStep implements WorkflowStep {
     } else {
       changeType = SemanticVersioning.ChangeType.PATCH;
     }
-    
+
     // If not all checks passed, mark as prerelease
     SemanticVersioning version = baseVersion.nextVersion(changeType);
     if (!allBuildsPassed || !allGatesPassed) {
       version = version.withPrerelease("rc." + System.currentTimeMillis() / 1000);
     }
-    
+
     return version;
   }
 

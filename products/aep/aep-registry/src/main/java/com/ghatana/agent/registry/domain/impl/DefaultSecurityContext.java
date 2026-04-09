@@ -14,20 +14,20 @@ public record DefaultSecurityContext(
         String token,
         boolean authenticated
 ) implements SecurityContext {
-    
+
     @Override
     public String getPrincipal() {
         return principal;
     }
-    
+
     public boolean hasPermission(String permission) {
         return permissions != null && permissions.contains(permission);
     }
-    
+
     public boolean hasRole(String role) {
         return roles != null && roles.contains(role);
     }
-    
+
     /**
      * Create a basic security context for testing or system operations
      */
@@ -40,7 +40,7 @@ public record DefaultSecurityContext(
                 true
         );
     }
-    
+
     /**
      * Create an unauthenticated security context
      */

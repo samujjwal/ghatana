@@ -2,7 +2,7 @@ package com.ghatana.platform.domain.pattern;
 
 /**
  * Window types for event pattern detection and query windowing.
- * 
+ *
  * Defines how events should be grouped into windows for processing. Windows control
  * the temporal boundaries for pattern detection and aggregation operations. Different
  * windowing strategies optimize for different analytical scenarios.
@@ -63,38 +63,38 @@ public enum WindowType {
      * Example: 5-minute tumbling windows group events into consecutive 5-minute buckets.
      */
     TUMBLING("tumbling"),
-    
+
     /**
      * Fixed-size, overlapping windows.
      * Example: 5-minute windows sliding every 1 minute create overlapping time ranges.
      */
     SLIDING("sliding"),
-    
+
     /**
      * Session-based windows with inactivity timeout.
      * Example: Group events with gaps <= 30 minutes into same session window.
      */
     SESSION("session"),
-    
+
     /**
      * Global window (no windowing).
      * All events belong to a single unbounded window.
      */
     GLOBAL("global");
-    
+
     private final String value;
-    
+
     WindowType(String value) {
         this.value = value;
     }
-    
+
     public String getValue() {
         return value;
     }
-    
+
     /**
      * Parse a string value to WindowType enum.
-     * 
+     *
      * @param value The string value to parse
      * @return The corresponding WindowType, or null if not found
      */
@@ -109,19 +109,19 @@ public enum WindowType {
         }
         return null;
     }
-    
+
     /**
      * Check if this window type supports overlapping windows.
-     * 
+     *
      * @return true for SLIDING windows, false otherwise
      */
     public boolean supportsOverlap() {
         return this == SLIDING;
     }
-    
+
     /**
      * Check if this window type is bounded (has finite duration).
-     * 
+     *
      * @return true for TUMBLING, SLIDING, and SESSION; false for GLOBAL
      */
     public boolean isBounded() {

@@ -15,7 +15,7 @@ import java.util.Map;
  * Nx adapter that generates TypeScript workspace configuration. Implements Day 13 requirements for
  * Nx workspace, targets, and inference. Creates nx.json, project.json files per Doc2 §2 TypeScript
  * requirements.
- 
+
  * @doc.type class
  * @doc.purpose Handles nx adapter operations
  * @doc.layer core

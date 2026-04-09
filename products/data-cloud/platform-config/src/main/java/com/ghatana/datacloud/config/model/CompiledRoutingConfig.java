@@ -171,7 +171,7 @@ public record CompiledRoutingConfig(
             List<CompiledRoutingRule> rules,
             String defaultTarget) {
 
-        
+
 
     public CompiledWriteRouting         {
         Objects.requireNonNull(rules, "rules");

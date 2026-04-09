@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 /**
  * Semantic Versioning implementation following SemVer 2.0.0 specification.
- * 
+ *
  * <p>Format: MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
  * <ul>
  *   <li>MAJOR: Breaking changes</li>
@@ -22,19 +22,19 @@ import java.util.regex.Pattern;
  * @doc.pattern Value Object
  */
 public final class SemanticVersioning implements Comparable<SemanticVersioning> {
-  
+
   private static final Pattern VERSION_PATTERN = Pattern.compile(
       "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)" +
       "(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?" +
       "(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
   );
-  
+
   private final int major;
   private final int minor;
   private final int patch;
   private final String prerelease;
   private final String build;
-  
+
   private SemanticVersioning(int major, int minor, int patch, String prerelease, String build) {
     this.major = major;
     this.minor = minor;
@@ -42,10 +42,10 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
     this.prerelease = prerelease;
     this.build = build;
   }
-  
+
   /**
    * Creates a new semantic version.
-   * 
+   *
    * @param major Major version (breaking changes)
    * @param minor Minor version (new features)
    * @param patch Patch version (bug fixes)
@@ -54,10 +54,10 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
   public static SemanticVersioning of(int major, int minor, int patch) {
     return new SemanticVersioning(major, minor, patch, null, null);
   }
-  
+
   /**
    * Creates a new semantic version with prerelease.
-   * 
+   *
    * @param major Major version
    * @param minor Minor version
    * @param patch Patch version
@@ -67,115 +67,115 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
   public static SemanticVersioning of(int major, int minor, int patch, String prerelease) {
     return new SemanticVersioning(major, minor, patch, prerelease, null);
   }
-  
+
   /**
    * Parses a version string into a SemanticVersioning object.
-   * 
+   *
    * @param version Version string to parse
    * @return Parsed SemanticVersioning
    * @throws IllegalArgumentException if version string is invalid
    */
   public static SemanticVersioning parse(String version) {
     Objects.requireNonNull(version, "version must not be null");
-    
+
     Matcher matcher = VERSION_PATTERN.matcher(version);
     if (!matcher.matches()) {
       throw new IllegalArgumentException("Invalid semantic version: " + version);
     }
-    
+
     int major = Integer.parseInt(matcher.group(1));
     int minor = Integer.parseInt(matcher.group(2));
     int patch = Integer.parseInt(matcher.group(3));
     String prerelease = matcher.group(4);
     String build = matcher.group(5);
-    
+
     return new SemanticVersioning(major, minor, patch, prerelease, build);
   }
-  
+
   /**
    * Increments major version (resets minor and patch to 0).
-   * 
+   *
    * @return New version with incremented major
    */
   public SemanticVersioning incrementMajor() {
     return new SemanticVersioning(major + 1, 0, 0, null, null);
   }
-  
+
   /**
    * Increments minor version (resets patch to 0).
-   * 
+   *
    * @return New version with incremented minor
    */
   public SemanticVersioning incrementMinor() {
     return new SemanticVersioning(major, minor + 1, 0, null, null);
   }
-  
+
   /**
    * Increments patch version.
-   * 
+   *
    * @return New version with incremented patch
    */
   public SemanticVersioning incrementPatch() {
     return new SemanticVersioning(major, minor, patch + 1, null, null);
   }
-  
+
   /**
    * Returns version with prerelease identifier.
-   * 
+   *
    * @param prerelease Prerelease identifier
    * @return New version with prerelease
    */
   public SemanticVersioning withPrerelease(String prerelease) {
     return new SemanticVersioning(major, minor, patch, prerelease, null);
   }
-  
+
   /**
    * Returns version without prerelease (stable release).
-   * 
+   *
    * @return New version without prerelease
    */
   public SemanticVersioning toStable() {
     return new SemanticVersioning(major, minor, patch, null, build);
   }
-  
+
   /**
    * Checks if this is a prerelease version.
-   * 
+   *
    * @return true if prerelease
    */
   public boolean isPrerelease() {
     return prerelease != null && !prerelease.isEmpty();
   }
-  
+
   /**
    * Checks if this is a stable release (not prerelease).
-   * 
+   *
    * @return true if stable
    */
   public boolean isStable() {
     return !isPrerelease();
   }
-  
+
   public int getMajor() {
     return major;
   }
-  
+
   public int getMinor() {
     return minor;
   }
-  
+
   public int getPatch() {
     return patch;
   }
-  
+
   public String getPrerelease() {
     return prerelease;
   }
-  
+
   public String getBuild() {
     return build;
   }
-  
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -188,7 +188,7 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
     }
     return sb.toString();
   }
-  
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -200,62 +200,62 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
            Objects.equals(prerelease, that.prerelease);
     // Note: build metadata is ignored in equality comparison per SemVer spec
   }
-  
+
   @Override
   public int hashCode() {
     return Objects.hash(major, minor, patch, prerelease);
   }
-  
+
   @Override
   public int compareTo(SemanticVersioning other) {
     // Compare major, minor, patch
     int result = Integer.compare(this.major, other.major);
     if (result != 0) return result;
-    
+
     result = Integer.compare(this.minor, other.minor);
     if (result != 0) return result;
-    
+
     result = Integer.compare(this.patch, other.patch);
     if (result != 0) return result;
-    
+
     // Compare prerelease
     if (this.prerelease == null && other.prerelease == null) return 0;
     if (this.prerelease == null) return 1; // No prerelease > prerelease
     if (other.prerelease == null) return -1;
-    
+
     return comparePrerelease(this.prerelease, other.prerelease);
   }
-  
+
   private int comparePrerelease(String a, String b) {
     String[] aParts = a.split("\\.");
     String[] bParts = b.split("\\.");
-    
+
     int minLength = Math.min(aParts.length, bParts.length);
     for (int i = 0; i < minLength; i++) {
       int comparison = comparePrereleasePart(aParts[i], bParts[i]);
       if (comparison != 0) return comparison;
     }
-    
+
     return Integer.compare(aParts.length, bParts.length);
   }
-  
+
   private int comparePrereleasePart(String a, String b) {
     boolean aIsNumeric = a.matches("\\d+");
     boolean bIsNumeric = b.matches("\\d+");
-    
+
     if (aIsNumeric && bIsNumeric) {
       return Integer.compare(Integer.parseInt(a), Integer.parseInt(b));
     }
-    
+
     if (aIsNumeric) return -1; // Numeric identifiers have lower precedence
     if (bIsNumeric) return 1;
-    
+
     return a.compareTo(b);
   }
-  
+
   /**
    * Determines the next version based on change type.
-   * 
+   *
    * @param changeType Type of change (MAJOR, MINOR, PATCH)
    * @return Next appropriate version
    */
@@ -266,7 +266,7 @@ public final class SemanticVersioning implements Comparable<SemanticVersioning> 
       case PATCH -> incrementPatch();
     };
   }
-  
+
   /**
    * Types of changes for version incrementing.
    */

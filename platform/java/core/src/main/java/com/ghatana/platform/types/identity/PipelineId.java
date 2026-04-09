@@ -20,21 +20,21 @@ import java.util.UUID;
  * @doc.pattern ValueObject
  */
 public record PipelineId(String value) {
-    
+
     public PipelineId {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Pipeline ID cannot be null or blank");
         }
     }
-    
+
     public static PipelineId of(String value) {
         return new PipelineId(value);
     }
-    
+
     public static PipelineId generate() {
         return new PipelineId(UUID.randomUUID().toString());
     }
-    
+
     @Override
     public String toString() {
         return value;

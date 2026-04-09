@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
  *
  * <p>Provides non-persistent, in-memory pub-sub event bus for development,
  * testing, and single-instance deployments.</p>
- 
+
  * @doc.type class
  * @doc.purpose Handles in memory event bus operations
  * @doc.layer core

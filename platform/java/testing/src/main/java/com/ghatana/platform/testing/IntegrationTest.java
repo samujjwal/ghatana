@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  * <p>
  * Integration tests are tagged separately from unit tests to allow selective execution.
  * They typically run slower and may require special setup.
- * 
+ *
  * @doc.type annotation
  * @doc.purpose Meta-annotation for marking and filtering integration tests
  * @doc.layer core

@@ -16,7 +16,6 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Adapter that wraps a GAA-lifecycle {@link BaseAgent}{@code <I, O>} as a

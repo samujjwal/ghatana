@@ -9,7 +9,7 @@ import java.util.Set;
 
 /**
  * Immutable semantic relationships between events for correlation and causation tracking.
- * 
+ *
  * <p>
  * Encapsulates relationships between events and other entities (causal, hierarchical,
  * temporal, etc.). EventRelations enable building event graphs for root cause analysis,
@@ -104,7 +104,7 @@ public final class EventRelations {
     private EventRelations(Builder builder) {
         // Create an immutable copy of the relations map
         Map<RelationType, Set<EventId>> tempMap = new HashMap<>();
-        builder.relations.forEach((type, ids) -> 
+        builder.relations.forEach((type, ids) ->
             tempMap.put(type, Collections.unmodifiableSet(new HashSet<>(ids)))
         );
         this.relations = Collections.unmodifiableMap(tempMap);
@@ -229,7 +229,7 @@ public final class EventRelations {
          * @return This builder
          */
         public Builder addAll(EventRelations other) {
-            other.relations.forEach((type, ids) -> 
+            other.relations.forEach((type, ids) ->
                 relations.computeIfAbsent(type, k -> new HashSet<>()).addAll(ids)
             );
             return this;

@@ -1,12 +1,9 @@
 package com.ghatana.softwareorg.launcher;
 
 import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Software Organization Launcher - Main application entry point.
@@ -71,7 +68,7 @@ public class SoftwareOrgLauncher {
 
             // Create and start launcher
             SoftwareOrgLauncher launcher = new SoftwareOrgLauncher(config);
-            
+
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Shutdown signal received, stopping application...");

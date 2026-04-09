@@ -83,8 +83,8 @@ public final class WorkflowContext {
     @SuppressWarnings("unchecked")
     public <T> Optional<T> getInput(String key, Class<T> type) {
         Object value = inputs.get(key);
-        return value != null && type.isInstance(value) 
-            ? Optional.of((T) value) 
+        return value != null && type.isInstance(value)
+            ? Optional.of((T) value)
             : Optional.empty();
     }
 
@@ -118,8 +118,8 @@ public final class WorkflowContext {
     @SuppressWarnings("unchecked")
     public <T> Optional<T> getState(String key, Class<T> type) {
         Object value = state.get(key);
-        return value != null && type.isInstance(value) 
-            ? Optional.of((T) value) 
+        return value != null && type.isInstance(value)
+            ? Optional.of((T) value)
             : Optional.empty();
     }
 

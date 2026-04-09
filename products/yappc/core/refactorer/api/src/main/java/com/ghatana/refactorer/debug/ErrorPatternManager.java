@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Manages error patterns for different programming languages and provides
  * pattern matching functionality to classify errors in stack traces.
- 
+
  * @doc.type class
  * @doc.purpose Handles error pattern manager operations
  * @doc.layer core

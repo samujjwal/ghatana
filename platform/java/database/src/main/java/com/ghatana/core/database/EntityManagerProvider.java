@@ -1,6 +1,5 @@
 package com.ghatana.core.database;
 
-import com.ghatana.platform.core.util.Preconditions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
@@ -44,23 +43,23 @@ import java.util.function.Function;
  *     em.merge(user);
  *     // EntityManager automatically closed
  * });
- * 
+ *
  * // 2. Auto-cleanup with function (return value)
- * User user = provider.withEntityManager(em -> 
+ * User user = provider.withEntityManager(em ->
  *     em.find(User.class, userId)
  * );
- * 
+ *
  * // 3. Thread-local EntityManager (shared across method calls)
  * public class UserService {
  *     private final EntityManagerProvider provider;
- *     
+ *
  *     public void processUser(UserId id) {
  *         EntityManager em = provider.getThreadLocalEntityManager();
- *         
+ *
  *         User user = findUser(em, id);      // Same EM
  *         updateUser(em, user);              // Same EM
  *         auditUser(em, user);               // Same EM
- *         
+ *
  *         provider.closeThreadLocalEntityManager(); // Explicit cleanup
  *     }
  * }
@@ -136,14 +135,14 @@ import java.util.function.Function;
  */
 public final class EntityManagerProvider implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(EntityManagerProvider.class);
-    
+
     private final EntityManagerFactory entityManagerFactory;
     private final ConcurrentMap<Thread, EntityManager> threadLocalEntityManagers;
     private volatile boolean closed = false;
-    
+
     /**
      * Creates a new EntityManagerProvider.
-     * 
+     *
      * @param entityManagerFactory The EntityManagerFactory to use
      */
     public EntityManagerProvider(EntityManagerFactory entityManagerFactory) {
@@ -152,42 +151,42 @@ public final class EntityManagerProvider implements AutoCloseable {
         }
         this.entityManagerFactory = entityManagerFactory;
         this.threadLocalEntityManagers = new ConcurrentHashMap<>();
-        
+
         LOG.info("EntityManagerProvider initialized");
     }
-    
+
     /**
      * Creates a new EntityManager instance.
-     * 
+     *
      * <p>The caller is responsible for closing the EntityManager when done.
-     * Consider using {@link #withEntityManager(Consumer)} or 
+     * Consider using {@link #withEntityManager(Consumer)} or
      * {@link #withEntityManager(Function)} for automatic cleanup.
-     * 
+     *
      * @return A new EntityManager instance
      * @throws IllegalStateException if the provider is closed
      */
     public EntityManager createEntityManager() {
         checkNotClosed();
-        
+
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         LOG.debug("Created new EntityManager: {}", entityManager);
-        
+
         return entityManager;
     }
-    
+
     /**
      * Gets or creates a thread-local EntityManager.
-     * 
+     *
      * <p>This method returns the same EntityManager instance for the current thread
      * until it's explicitly closed or the thread ends. Use this for scenarios where
      * you need to share an EntityManager across multiple method calls in the same thread.
-     * 
+     *
      * @return Thread-local EntityManager instance
      * @throws IllegalStateException if the provider is closed
      */
     public EntityManager getThreadLocalEntityManager() {
         checkNotClosed();
-        
+
         Thread currentThread = Thread.currentThread();
         return threadLocalEntityManagers.computeIfAbsent(currentThread, thread -> {
             EntityManager em = createEntityManager();
@@ -195,28 +194,28 @@ public final class EntityManagerProvider implements AutoCloseable {
             return em;
         });
     }
-    
+
     /**
      * Closes the thread-local EntityManager for the current thread.
-     * 
+     *
      * @return true if an EntityManager was closed, false if none existed
      */
     public boolean closeThreadLocalEntityManager() {
         Thread currentThread = Thread.currentThread();
         EntityManager em = threadLocalEntityManagers.remove(currentThread);
-        
+
         if (em != null && em.isOpen()) {
             closeEntityManager(em);
             LOG.debug("Closed thread-local EntityManager for thread: {}", currentThread.getName());
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Safely closes an EntityManager.
-     * 
+     *
      * @param entityManager The EntityManager to close
      */
     public void closeEntityManager(EntityManager entityManager) {
@@ -233,13 +232,13 @@ public final class EntityManagerProvider implements AutoCloseable {
             }
         }
     }
-    
+
     /**
      * Executes a function with an EntityManager, automatically managing its lifecycle.
-     * 
+     *
      * <p>The EntityManager is created before the function is called and closed
      * after the function completes, regardless of whether an exception occurs.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute
      * @return The result of the function
@@ -250,7 +249,7 @@ public final class EntityManagerProvider implements AutoCloseable {
             throw new IllegalArgumentException("Function cannot be null");
         }
         checkNotClosed();
-        
+
         EntityManager entityManager = createEntityManager();
         try {
             return function.apply(entityManager);
@@ -258,13 +257,13 @@ public final class EntityManagerProvider implements AutoCloseable {
             closeEntityManager(entityManager);
         }
     }
-    
+
     /**
      * Executes a consumer with an EntityManager, automatically managing its lifecycle.
-     * 
+     *
      * <p>The EntityManager is created before the consumer is called and closed
      * after the consumer completes, regardless of whether an exception occurs.
-     * 
+     *
      * @param consumer The consumer to execute
      * @throws IllegalStateException if the provider is closed
      */
@@ -272,21 +271,21 @@ public final class EntityManagerProvider implements AutoCloseable {
         if (consumer == null) {
             throw new IllegalArgumentException("Consumer cannot be null");
         }
-        
+
         withEntityManager(entityManager -> {
             consumer.accept(entityManager);
             return null;
         });
     }
-    
+
     /**
      * Executes a function with a thread-local EntityManager.
-     * 
+     *
      * <p>This method uses the thread-local EntityManager, which persists across
      * multiple calls within the same thread. The EntityManager is not automatically
      * closed after the function completes - use {@link #closeThreadLocalEntityManager()}
      * when done with the thread-local EntityManager.
-     * 
+     *
      * @param <T> The return type
      * @param function The function to execute
      * @return The result of the function
@@ -300,15 +299,15 @@ public final class EntityManagerProvider implements AutoCloseable {
         EntityManager entityManager = getThreadLocalEntityManager();
         return function.apply(entityManager);
     }
-    
+
     /**
      * Executes a consumer with a thread-local EntityManager.
-     * 
+     *
      * <p>This method uses the thread-local EntityManager, which persists across
      * multiple calls within the same thread. The EntityManager is not automatically
      * closed after the consumer completes - use {@link #closeThreadLocalEntityManager()}
      * when done with the thread-local EntityManager.
-     * 
+     *
      * @param consumer The consumer to execute
      * @throws IllegalStateException if the provider is closed
      */
@@ -322,44 +321,44 @@ public final class EntityManagerProvider implements AutoCloseable {
             return null;
         });
     }
-    
+
     /**
      * Checks if the provider is closed.
-     * 
+     *
      * @return true if closed, false otherwise
      */
     public boolean isClosed() {
         return closed;
     }
-    
+
     /**
      * Gets the underlying EntityManagerFactory.
-     * 
+     *
      * @return The EntityManagerFactory
      */
     public EntityManagerFactory getEntityManagerFactory() {
         return entityManagerFactory;
     }
-    
+
     /**
      * Gets the number of active thread-local EntityManagers.
-     * 
+     *
      * @return The count of active thread-local EntityManagers
      */
     public int getActiveThreadLocalEntityManagerCount() {
         return threadLocalEntityManagers.size();
     }
-    
+
     /**
      * Closes the provider and all associated resources.
-     * 
+     *
      * <p>This method closes all active thread-local EntityManagers and marks
      * the provider as closed. After calling this method, no new EntityManagers
      * can be created.
      */
     /**
      * Gets the current thread's EntityManager, creating one if it doesn't exist.
-     * 
+     *
      * @return The current thread's EntityManager
      * @throws IllegalStateException if the provider has been closed
      */
@@ -367,27 +366,27 @@ public final class EntityManagerProvider implements AutoCloseable {
         if (closed) {
             throw new IllegalStateException("EntityManagerProvider is closed");
         }
-        
-        return threadLocalEntityManagers.computeIfAbsent(Thread.currentThread(), 
+
+        return threadLocalEntityManagers.computeIfAbsent(Thread.currentThread(),
             t -> {
                 EntityManager em = entityManagerFactory.createEntityManager();
                 LOG.debug("Created new EntityManager for thread: {}", t.getName());
                 return em;
             });
     }
-    
+
     @Override
     public void close() {
         if (closed) {
             return;
         }
-        
+
         closed = true;
-        
+
         // Close all managed EntityManagers
         threadLocalEntityManagers.values().forEach(this::closeEntityManager);
         threadLocalEntityManagers.clear();
-        
+
         // Close the factory
         if (entityManagerFactory != null && entityManagerFactory.isOpen()) {
             try {
@@ -398,10 +397,10 @@ public final class EntityManagerProvider implements AutoCloseable {
             }
         }
     }
-    
+
     /**
      * Checks if the provider is not closed and throws an exception if it is.
-     * 
+     *
      * @throws IllegalStateException if the provider is closed
      */
     private void checkNotClosed() {

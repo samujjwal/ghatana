@@ -40,7 +40,7 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
     void setUpPythonConfig() {
         // Initialize service with Reactor from EventloopTestBase
         pythonService = new PythonLanguageService(eventloop());
-        
+
         // Update config to include Python
         projectContext
                 = new PolyfixProjectContext(

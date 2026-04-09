@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * TypeScript/JavaScript language resolver implementation. 
+ * TypeScript/JavaScript language resolver implementation.
  * @doc.type class
  * @doc.purpose Handles type script language resolver operations
  * @doc.layer core

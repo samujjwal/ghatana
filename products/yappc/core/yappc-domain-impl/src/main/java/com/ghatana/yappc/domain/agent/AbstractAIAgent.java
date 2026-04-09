@@ -1,7 +1,6 @@
 package com.ghatana.products.yappc.domain.agent;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;

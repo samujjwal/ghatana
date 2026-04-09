@@ -29,19 +29,19 @@ import javax.net.ssl.*;
  * - Cross-datacenter Redis replication
  *
  * <p><b>Security Features</b><br>
- * 
+ *
  * <p><b>TLS 1.3 Encryption</b>
  * - Protocol: TLS 1.3 (strongest available)
  * - Cipher Suites: TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256
  * - Forward Secrecy: Ephemeral key exchange
  * - Server Verification: Validates Redis server certificate
- * 
+ *
  * <p><b>Mutual TLS (mTLS)</b>
  * - Client Authentication: Redis verifies client certificate
  * - Server Authentication: Client verifies Redis certificate
  * - Certificate Chain: Full CA validation
  * - Revocation: Support for CRL/OCSP checks
- * 
+ *
  * <p><b>Trust Management</b>
  * - TrustStore: CA certificates for server validation
  * - KeyStore: Client certificates for authentication
@@ -155,7 +155,7 @@ import javax.net.ssl.*;
  * @doc.pattern Value Object
  */
 public final class RedisTlsConfig {
-    
+
     private final Path keyStorePath;
     private final String keyStorePassword;
     private final String keyStoreType;
@@ -264,14 +264,14 @@ public final class RedisTlsConfig {
     public SSLSocketFactory createSslSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            
+
             KeyManager[] keyManagers = null;
             if (keyStorePath != null) {
                 keyManagers = createKeyManagers();
             }
-            
+
             TrustManager[] trustManagers = createTrustManagers();
-            
+
             sslContext.init(keyManagers, trustManagers, new SecureRandom());
             return sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -286,19 +286,19 @@ public final class RedisTlsConfig {
      */
     public SSLParameters createSslParameters() {
         SSLParameters sslParameters = new SSLParameters();
-        
+
         if (verifyPeer) {
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
         }
-        
+
         if (enforceStrongCiphers) {
             String[] protocols = enabledProtocols != null ? enabledProtocols : new String[]{"TLSv1.3"};
             sslParameters.setProtocols(protocols);
-            
+
             String[] ciphers = enabledCipherSuites != null ? enabledCipherSuites : TLS_13_CIPHER_SUITES;
             sslParameters.setCipherSuites(ciphers);
         }
-        
+
         return sslParameters;
     }
 
@@ -313,13 +313,13 @@ public final class RedisTlsConfig {
             try (FileInputStream fis = new FileInputStream(keyStorePath.toFile())) {
                 keyStore.load(fis, keyStorePassword.toCharArray());
             }
-            
+
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(
                 KeyManagerFactory.getDefaultAlgorithm()
             );
             kmf.init(keyStore, keyStorePassword.toCharArray());
             return kmf.getKeyManagers();
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException 
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException
                 | CertificateException | UnrecoverableKeyException e) {
             throw new RuntimeException("Failed to create key managers", e);
         }
@@ -336,13 +336,13 @@ public final class RedisTlsConfig {
             try (FileInputStream fis = new FileInputStream(trustStorePath.toFile())) {
                 trustStore.load(fis, trustStorePassword.toCharArray());
             }
-            
+
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm()
             );
             tmf.init(trustStore);
             return tmf.getTrustManagers();
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException 
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException
                 | CertificateException e) {
             throw new RuntimeException("Failed to create trust managers", e);
         }

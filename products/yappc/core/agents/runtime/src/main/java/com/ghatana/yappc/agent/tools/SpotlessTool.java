@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** Spotless formatting tool (stub). 
+/** Spotless formatting tool (stub).
  * @doc.type class
  * @doc.purpose Handles spotless tool operations
  * @doc.layer core

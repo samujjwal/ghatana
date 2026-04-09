@@ -18,9 +18,9 @@ import org.apache.logging.log4j.Logger;
 /**
  * Enforces code style and quality standards across the project.
  * Can run in different modes: check-only, fix, or format.
- * 
+ *
  * @since 2.0.0 - Migrated to ActiveJ Promise-based API
- 
+
  * @doc.type class
  * @doc.purpose Handles consistency enforcer operations
  * @doc.layer core

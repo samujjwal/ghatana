@@ -14,14 +14,14 @@ import com.ghatana.platform.core.exception.UnauthorizedException;
  * <pre>{@code
  * // Throw directly
  * throw new AuthenticationException("Invalid credentials");
- * 
+ *
  * // Throw with cause
  * try {
  *     verifyToken(token);
  * } catch (JwtException e) {
  *     throw new AuthenticationException("Token verification failed", e);
  * }
- * 
+ *
  * // Catch in HTTP adapter
  * promise.whenException(AuthenticationException.class, ex -> {
  *     return ResponseBuilder.unauthorized()
@@ -52,7 +52,7 @@ import com.ghatana.platform.core.exception.UnauthorizedException;
  * @doc.pattern Exception
  */
 public class AuthenticationException extends UnauthorizedException {
-    
+
     /**
      * Create exception with message.
      *
@@ -61,7 +61,7 @@ public class AuthenticationException extends UnauthorizedException {
     public AuthenticationException(String message) {
         super(message);
     }
-    
+
     /**
      * Create exception with message and cause.
      *

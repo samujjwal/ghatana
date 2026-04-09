@@ -11,7 +11,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Tests for {@link ErrorPatternManager} that verify error pattern matching functionality. 
+/** Tests for {@link ErrorPatternManager} that verify error pattern matching functionality.
  * @doc.type class
  * @doc.purpose Handles error pattern manager test operations
  * @doc.layer core

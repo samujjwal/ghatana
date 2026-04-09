@@ -162,7 +162,7 @@ public class PhrEventProcessor {
         private final Instant timestamp;
         private final Map<String, Object> metadata;
 
-        protected PhrEvent(String eventId, String eventType, String tenantId, 
+        protected PhrEvent(String eventId, String eventType, String tenantId,
                           Instant timestamp, Map<String, Object> metadata) {
             this.eventId = eventId;
             this.eventType = eventType;
@@ -203,7 +203,7 @@ public class PhrEventProcessor {
         private final String consentId;
         private final String consentType;
 
-        public ConsentEvent(String eventId, String tenantId, String patientId, 
+        public ConsentEvent(String eventId, String tenantId, String patientId,
                            String consentId, String consentType, String action) {
             super(eventId, "consent." + action, tenantId, Instant.now(), Map.of());
             this.patientId = patientId;

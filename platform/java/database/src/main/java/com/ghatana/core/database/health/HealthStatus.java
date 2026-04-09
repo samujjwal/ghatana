@@ -36,31 +36,31 @@ import java.util.Map;
  *     .addDetail("connections_active", 15)
  *     .addDetail("connections_max", 100)
  *     .build();
- * 
+ *
  * HealthStatus healthy = HealthStatus.healthy(
  *     "Database connection validated",
  *     Duration.ofMillis(25),
  *     details
  * );
- * 
+ *
  * // Create unhealthy status
  * HealthStatus unhealthy = HealthStatus.unhealthy(
  *     "Connection timeout",
  *     Duration.ofSeconds(5),
  *     new SQLException("Connection refused")
  * );
- * 
+ *
  * // Create unknown status
  * HealthStatus unknown = HealthStatus.unknown(
  *     "Validation query returned unexpected result",
  *     Duration.ofMillis(100)
  * );
- * 
+ *
  * // Expose in health endpoint
  * @GetMapping("/health/database")
  * public ResponseEntity<HealthResponse> getDatabaseHealth() {
  *     HealthStatus status = healthCheck.check();
- *     
+ *
  *     return ResponseEntity
  *         .status(status.isHealthy() ? 200 : 503)
  *         .body(new HealthResponse(
@@ -70,7 +70,7 @@ import java.util.Map;
  *             status.getTimestamp()
  *         ));
  * }
- * 
+ *
  * // Check in monitoring loop
  * HealthStatus status = healthCheck.check();
  * if (!status.isHealthy()) {
@@ -127,7 +127,7 @@ import java.util.Map;
  * @doc.purpose Immutable health status value object with diagnostics
  * @doc.layer core
  * @doc.pattern Value Object
- * 
+ *
  * @deprecated Use {@link com.ghatana.platform.health.HealthStatus} instead.
  *             This class is kept for backward compatibility. New code should use the canonical
  *             platform HealthStatus and add database-specific details (response time, connection info)
@@ -135,7 +135,7 @@ import java.util.Map;
  */
 @Deprecated(since = "4.1.0", forRemoval = true)
 public final class HealthStatus {
-    
+
     /**
      * Health status enumeration.
      */
@@ -144,15 +144,15 @@ public final class HealthStatus {
         UNHEALTHY,
         UNKNOWN
     }
-    
+
     private final HealthState status;
     private final String message;
     private final Duration responseTime;
     private final Instant timestamp;
     private final HealthDetails details;
     private final Throwable exception;
-    
-    private HealthStatus(HealthState status, String message, Duration responseTime, 
+
+    private HealthStatus(HealthState status, String message, Duration responseTime,
                         HealthDetails details, Throwable exception) {
         this.status = status;
         this.message = message;
@@ -161,10 +161,10 @@ public final class HealthStatus {
         this.details = details;
         this.exception = exception;
     }
-    
+
     /**
      * Creates a healthy status.
-     * 
+     *
      * @param message The status message
      * @param responseTime The response time
      * @param details Additional health details
@@ -173,10 +173,10 @@ public final class HealthStatus {
     public static HealthStatus healthy(String message, Duration responseTime, HealthDetails details) {
         return new HealthStatus(HealthState.HEALTHY, message, responseTime, details, null);
     }
-    
+
     /**
      * Creates an unhealthy status.
-     * 
+     *
      * @param message The status message
      * @param responseTime The response time
      * @param exception The exception that caused the unhealthy status
@@ -185,10 +185,10 @@ public final class HealthStatus {
     public static HealthStatus unhealthy(String message, Duration responseTime, Throwable exception) {
         return new HealthStatus(HealthState.UNHEALTHY, message, responseTime, null, exception);
     }
-    
+
     /**
      * Creates an unknown status.
-     * 
+     *
      * @param message The status message
      * @param responseTime The response time
      * @return Unknown status
@@ -196,55 +196,55 @@ public final class HealthStatus {
     public static HealthStatus unknown(String message, Duration responseTime) {
         return new HealthStatus(HealthState.UNKNOWN, message, responseTime, null, null);
     }
-    
+
     /**
      * Gets the health status.
-     * 
+     *
      * @return The status
      */
     public HealthState getStatus() {
         return status;
     }
-    
+
     /**
      * Gets the status message.
-     * 
+     *
      * @return The message
      */
     public String getMessage() {
         return message;
     }
-    
+
     /**
      * Gets the response time.
-     * 
+     *
      * @return The response time
      */
     public Duration getResponseTime() {
         return responseTime;
     }
-    
+
     /**
      * Gets the timestamp when this status was created.
-     * 
+     *
      * @return The timestamp
      */
     public Instant getTimestamp() {
         return timestamp;
     }
-    
+
     /**
      * Gets additional health details.
-     * 
+     *
      * @return The health details, or null if not available
      */
     public HealthDetails getDetails() {
         return details;
     }
-    
+
     /**
      * Gets the exception that caused the unhealthy status.
-     * 
+     *
      * @return The exception, or null if not available
      */
     public Throwable getException() {
@@ -298,25 +298,25 @@ public final class HealthStatus {
             databaseDetails,
             status.getException());
     }
-    
+
     /**
      * Checks if the status is healthy.
-     * 
+     *
      * @return true if healthy
      */
     public boolean isHealthy() {
         return status == HealthState.HEALTHY;
     }
-    
+
     /**
      * Checks if the status is unhealthy.
-     * 
+     *
      * @return true if unhealthy
      */
     public boolean isUnhealthy() {
         return status == HealthState.UNHEALTHY;
     }
-    
+
     @Override
     public String toString() {
         return String.format("HealthStatus{status=%s, message='%s', responseTime=%dms, timestamp=%s}",

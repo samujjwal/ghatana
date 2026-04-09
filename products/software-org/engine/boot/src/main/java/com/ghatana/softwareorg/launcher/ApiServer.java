@@ -84,56 +84,56 @@ public class ApiServer {
             .withEventloop(eventloop)
             .withHost("0.0.0.0")
             .withPort(port)
-            
+
             // Health check endpoint
             .withHealthCheck("/health")
-            
+
             // Configuration endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/config/org", this::getOrgConfig)
             .addAsyncRoute(HttpMethod.POST, "/api/config/reload", this::reloadConfig)
-            
+
             // Persona endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/personas", this::listPersonas)
             .addAsyncRoute(HttpMethod.GET, "/api/personas/:id", this::getPersona)
-            
+
             // Department endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/departments", this::listDepartments)
             .addAsyncRoute(HttpMethod.GET, "/api/departments/:id", this::getDepartment)
-            
+
             // Agent endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/agents", this::listAgents)
             .addAsyncRoute(HttpMethod.GET, "/api/agents/:id", this::getAgent)
-            
+
             // Workflow endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/workflows", this::listWorkflows)
             .addAsyncRoute(HttpMethod.GET, "/api/workflows/:id", this::getWorkflow)
-            
+
             // Phase endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/phases", this::listPhases)
-            
+
             // Stage endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/stages", this::listStages)
-            
+
             // Operator endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/operators", this::listOperators)
-            
+
             // Service endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/services", this::listServices)
-            
+
             // Integration endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/integrations", this::listIntegrations)
-            
+
             // Flow endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/flows", this::listFlows)
-            
+
             // KPI endpoints
             .addAsyncRoute(HttpMethod.GET, "/api/kpis", this::listKpis)
-            
+
             .build();
 
         // Start server (binds to port)
         httpServer.listen();
-        
+
         running = true;
         logger.info("✓ API server started successfully on port {}", port);
     }
@@ -158,16 +158,16 @@ public class ApiServer {
                 logger.error("Error closing HTTP server", e);
             }
         }
-        
+
         executor.shutdown();
         running = false;
         logger.info("✓ API server stopped successfully");
     }
-    
+
     // ========================================================================
     // Configuration Endpoints
     // ========================================================================
-    
+
     private Promise<io.activej.http.HttpResponse> getOrgConfig(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -197,7 +197,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> reloadConfig(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -209,11 +209,11 @@ public class ApiServer {
             }
         });
     }
-    
+
     // ========================================================================
     // Entity List Endpoints
     // ========================================================================
-    
+
     private Promise<io.activej.http.HttpResponse> listPersonas(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -224,7 +224,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> getPersona(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             String id = request.getPathParameter("id");
@@ -243,7 +243,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listDepartments(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -254,7 +254,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> getDepartment(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             String id = request.getPathParameter("id");
@@ -273,7 +273,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listAgents(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -284,7 +284,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> getAgent(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             String id = request.getPathParameter("id");
@@ -303,7 +303,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listWorkflows(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -314,7 +314,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> getWorkflow(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             String id = request.getPathParameter("id");
@@ -333,7 +333,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listPhases(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -344,7 +344,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listStages(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -355,7 +355,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listOperators(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -366,7 +366,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listServices(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -377,7 +377,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listIntegrations(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -388,7 +388,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listFlows(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {
@@ -399,7 +399,7 @@ public class ApiServer {
             }
         });
     }
-    
+
     private Promise<io.activej.http.HttpResponse> listKpis(io.activej.http.HttpRequest request) {
         return Promise.ofBlocking(executor, () -> {
             try {

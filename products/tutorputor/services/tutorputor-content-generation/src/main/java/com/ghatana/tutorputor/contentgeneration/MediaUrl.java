@@ -16,12 +16,12 @@ import java.util.Objects;
  * // Public URL (permanent)
  * MediaUrl publicUrl = MediaUrl.publicUrl(
  *     "https://cdn.example.com/tenant-123/entity-456/image.jpg");
- * 
+ *
  * // Private signed URL (expires after 1 hour)
  * MediaUrl privateUrl = MediaUrl.signedUrl(
  *     "https://s3.amazonaws.com/bucket/file.jpg?signature=...",
  *     Instant.now().plus(Duration.ofHours(1)));
- * 
+ *
  * // Check if URL is still valid
  * if (privateUrl.isExpired()) {
  *     // Regenerate URL

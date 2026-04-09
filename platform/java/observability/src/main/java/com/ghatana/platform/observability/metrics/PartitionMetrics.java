@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * MeterRegistry registry = new SimpleMeterRegistry();
  * PartitionMetrics metrics = new PartitionMetrics("event-history", registry, 16);
- * 
+ *
  * // Record append operation
  * Timer.Sample sample = metrics.startAppendTimer();
  * try {
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * } finally {
  *     metrics.recordAppendDuration(sample);
  * }
- * 
+ *
  * // Record query operation
  * Timer.Sample querySample = metrics.startQueryTimer();
  * try {
@@ -76,7 +76,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PartitionMetrics {
     private static final String METRIC_PREFIX = "partitioned.history.";
-    
+
     private final Counter appendCounter;
     private final Counter queryCounter;
     private final Counter errorCounter;
@@ -89,35 +89,35 @@ public class PartitionMetrics {
     public PartitionMetrics(String name, MeterRegistry registry, int partitionCount) {
         this.name = name;
         this.partitionCount = partitionCount;
-        
+
         // Initialize base metrics
         this.appendCounter = Counter.builder(METRIC_PREFIX + "appends")
                 .tag("name", name)
                 .description("Number of append operations")
                 .register(registry);
-                
+
         this.queryCounter = Counter.builder(METRIC_PREFIX + "queries")
                 .tag("name", name)
                 .description("Number of query operations")
                 .register(registry);
-                
+
         this.errorCounter = Counter.builder(METRIC_PREFIX + "errors")
                 .tag("name", name)
                 .description("Number of errors by operation type")
                 .register(registry);
-                
+
         this.appendLatency = Timer.builder(METRIC_PREFIX + "append.latency")
                 .tag("name", name)
                 .description("Time taken for append operations")
                 .publishPercentiles(0.5, 0.9, 0.99, 0.999)
                 .register(registry);
-                
+
         this.queryLatency = Timer.builder(METRIC_PREFIX + "query.latency")
                 .tag("name", name)
                 .description("Time taken for query operations")
                 .publishPercentiles(0.5, 0.9, 0.99, 0.999)
                 .register(registry);
-                
+
         // Initialize partition-specific metrics
         this.partitionAppendCounters = new ConcurrentHashMap<>();
         for (int i = 0; i < partitionCount; i++) {
@@ -128,17 +128,17 @@ public class PartitionMetrics {
                     .register(registry);
             partitionAppendCounters.put(i, counter);
         }
-        
+
         // Register partition count gauge
         Gauge.builder(METRIC_PREFIX + "partition.count", () -> (double) partitionCount)
                 .tag("name", name)
                 .description("Number of partitions")
                 .register(registry);
     }
-    
+
     /**
      * Record an append operation to a specific partition.
-     * 
+     *
      * @param partition The partition index
      */
     public void recordAppend(int partition) {
@@ -148,40 +148,40 @@ public class PartitionMetrics {
             partitionCounter.increment();
         }
     }
-    
+
     /**
      * Record a query operation.
      */
     public void recordQuery() {
         queryCounter.increment();
     }
-    
+
     /**
      * Record an error for a specific operation.
-     * 
+     *
      * @param operation The operation that failed (e.g., "append", "query")
      */
     public void recordError(String operation) {
         errorCounter.increment();
         // Also record error by operation type
-        Metrics.counter(METRIC_PREFIX + "errors.by.operation", 
+        Metrics.counter(METRIC_PREFIX + "errors.by.operation",
                       "name", name,
                       "operation", operation)
                .increment();
     }
-    
+
     /**
      * Time an append operation.
-     * 
+     *
      * @return A timer sample that should be stopped when the operation completes
      */
     public Timer.Sample startAppendTimer() {
         return Timer.start();
     }
-    
+
     /**
      * Record the duration of an append operation.
-     * 
+     *
      * @param sample The timer sample to stop
      */
     public void recordAppendDuration(Timer.Sample sample) {
@@ -189,19 +189,19 @@ public class PartitionMetrics {
             sample.stop(appendLatency);
         }
     }
-    
+
     /**
      * Time a query operation.
-     * 
+     *
      * @return A timer sample that should be stopped when the operation completes
      */
     public Timer.Sample startQueryTimer() {
         return Timer.start();
     }
-    
+
     /**
      * Record the duration of a query operation.
-     * 
+     *
      * @param sample The timer sample to stop
      */
     public void recordQueryDuration(Timer.Sample sample) {
@@ -209,19 +209,19 @@ public class PartitionMetrics {
             sample.stop(queryLatency);
         }
     }
-    
+
     /**
      * Get the name of the partitioned history these metrics are for.
-     * 
+     *
      * @return The name of the partitioned history
      */
     public String getName() {
         return name;
     }
-    
+
     /**
      * Get the number of partitions.
-     * 
+     *
      * @return The number of partitions
      */
     public int getPartitionCount() {

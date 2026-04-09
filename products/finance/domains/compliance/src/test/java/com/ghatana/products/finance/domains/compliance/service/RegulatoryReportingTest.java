@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -30,7 +29,7 @@ class RegulatoryReportingTest {
     @Test
     @DisplayName("Should generate MiFID II transaction report")
     void shouldGenerateMifidTransactionReport() {
-        Trade trade = new Trade("T1", "LEI123456", "AAPL", 100, BigDecimal.valueOf(150.50), 
+        Trade trade = new Trade("T1", "LEI123456", "AAPL", 100, BigDecimal.valueOf(150.50),
                                 LocalDateTime.now(), "VENUE_X", "BUY", "CLIENT_1");
         MifidReport report = service.generateMifidTransactionReport(trade);
         assertThat(report.lei()).isEqualTo("LEI123456");
@@ -132,9 +131,9 @@ class RegulatoryReportingTest {
         assertThat(summary.byRegulator().get("ESMA")).isEqualTo(2);
     }
 
-    record Trade(String id, String lei, String symbol, int quantity, BigDecimal price, 
+    record Trade(String id, String lei, String symbol, int quantity, BigDecimal price,
                  LocalDateTime timestamp, String venue, String side, String clientId) {}
-    record DerivativeTrade(String id, String productType, BigDecimal notional, 
+    record DerivativeTrade(String id, String productType, BigDecimal notional,
                           LocalDate startDate, LocalDate maturityDate, String counterpartyLei, boolean cleared) {}
     record SftTransaction(String id, String type, String isin, BigDecimal amount,
                          LocalDate startDate, LocalDate endDate, String collateralId) {}

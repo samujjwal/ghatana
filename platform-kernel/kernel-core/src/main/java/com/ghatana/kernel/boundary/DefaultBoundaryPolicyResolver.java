@@ -3,7 +3,6 @@ package com.ghatana.kernel.boundary;
 import com.ghatana.kernel.policy.ClassificationDescriptor;
 import com.ghatana.kernel.policy.ClassificationDescriptor.SensitivityLevel;
 import com.ghatana.kernel.scope.ScopeDescriptor;
-import com.ghatana.kernel.scope.ScopeType;
 
 import java.util.Map;
 import java.util.Objects;

@@ -29,7 +29,7 @@ import java.nio.charset.StandardCharsets;
  */
 public final class DocumentationController {
     private static final Logger logger = LoggerFactory.getLogger(DocumentationController.class);
-    
+
     /**
      * Serve OpenAPI specification.
      *
@@ -38,7 +38,7 @@ public final class DocumentationController {
      */
     public Promise<HttpResponse> getOpenApiSpec(HttpRequest request) {
         logger.debug("Serving OpenAPI specification");
-        
+
         try {
             InputStream inputStream = getClass().getResourceAsStream("/openapi.yaml");
             if (inputStream == null) {
@@ -49,9 +49,9 @@ public final class DocumentationController {
                         .build()
                 );
             }
-            
+
             String spec = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            
+
             return Promise.of(
                 ResponseBuilder.ok()
                     .header("Content-Type", "application/vnd.oai.openapi;version=3.0.3")
@@ -59,7 +59,7 @@ public final class DocumentationController {
                     .text(spec)
                     .build()
             );
-            
+
         } catch (Exception e) {
             logger.error("Failed to serve OpenAPI specification", e);
             return Promise.of(
@@ -69,7 +69,7 @@ public final class DocumentationController {
             );
         }
     }
-    
+
     /**
      * Redirect to Swagger UI.
      *
@@ -78,7 +78,7 @@ public final class DocumentationController {
      */
     public Promise<HttpResponse> getSwaggerUi(HttpRequest request) {
         logger.debug("Redirecting to Swagger UI");
-        
+
         // In production, this would redirect to a hosted Swagger UI
         // For now, return a simple HTML page with the spec URL
         String html = """
@@ -89,20 +89,20 @@ public final class DocumentationController {
                 <style>
                     body { font-family: Arial, sans-serif; margin: 40px; }
                     .container { max-width: 800px; margin: 0 auto; }
-                    .spec-link { 
-                        background: #007bff; 
-                        color: white; 
-                        padding: 12px 24px; 
-                        text-decoration: none; 
-                        border-radius: 4px; 
+                    .spec-link {
+                        background: #007bff;
+                        color: white;
+                        padding: 12px 24px;
+                        text-decoration: none;
+                        border-radius: 4px;
                         display: inline-block;
                         margin: 10px 0;
                     }
                     .spec-link:hover { background: #0056b3; }
-                    .info { 
-                        background: #f8f9fa; 
-                        padding: 20px; 
-                        border-radius: 4px; 
+                    .info {
+                        background: #f8f9fa;
+                        padding: 20px;
+                        border-radius: 4px;
                         margin: 20px 0;
                     }
                 </style>
@@ -110,24 +110,24 @@ public final class DocumentationController {
             <body>
                 <div class="container">
                     <h1>AI Requirements Tool API Documentation</h1>
-                    
+
                     <div class="info">
                         <p><b>Available Documentation</b></p>
                         <p>This API provides comprehensive project and requirements management capabilities with AI-powered features.</p>
-                        
+
                         <p><b>Authentication</b></p>
                         <p>All endpoints (except health checks) require JWT authentication:</p>
                         <code>Authorization: Bearer {jwt-token}</code>
-                        
+
                         <p><b>Base URL</b></p>
                         <p><code>https://api.ghatana.com/api/v1</code></p>
                     </div>
-                    
+
                     <p><b>API Specification</b></p>
                     <a href="/api/docs" class="spec-link">Download OpenAPI Specification (YAML)</a>
                     <br>
                     <a href="/api/docs" class="spec-link" download="openapi.yaml">Download OpenAPI Specification (YAML)</a>
-                    
+
                     <div class="info">
                         <p><b>Using the Specification</b></p>
                         <p>You can use the OpenAPI specification with:</p>
@@ -137,7 +137,7 @@ public final class DocumentationController {
                             <li><a href="https://www.postman.com/" target="_blank">Postman</a></li>
                             <li><a href="https://github.com/OpenAPITools/openapi-generator" target="_blank">OpenAPI Generator</a></li>
                         </ul>
-                        
+
                         <p><b>Quick Start</b></p>
                         <ol>
                             <li>Download the OpenAPI specification using the link above</li>
@@ -146,7 +146,7 @@ public final class DocumentationController {
                             <li>Start exploring the API!</li>
                         </ol>
                     </div>
-                    
+
                     <div class="info">
                         <p><b>Key Features</b></p>
                         <ul>
@@ -163,7 +163,7 @@ public final class DocumentationController {
             </body>
             </html>
             """;
-        
+
         return Promise.of(
             ResponseBuilder.ok()
                 .header("Content-Type", "text/html; charset=UTF-8")

@@ -35,7 +35,7 @@ public class MavenPomGenerator implements MavenBuildGenerator {
 
     @Override
     public Promise<GeneratedMavenProject> generatePom(MavenBuildSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     try {
                         logger.info(
@@ -72,7 +72,7 @@ public class MavenPomGenerator implements MavenBuildGenerator {
 
     @Override
     public Promise<MavenImprovementSuggestions> suggestImprovements(MavenBuildSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     List<MavenImprovementSuggestions.DependencyUpgrade> upgrades =
                             new ArrayList<>();
@@ -119,7 +119,7 @@ public class MavenPomGenerator implements MavenBuildGenerator {
 
     @Override
     public Promise<MavenBuildSpec> convertFromGradle(Object gradleSpec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     // Mock conversion - in real implementation, would parse Gradle build.gradle
                     return new MavenBuildSpec(
@@ -491,7 +491,7 @@ public class MavenPomGenerator implements MavenBuildGenerator {
             #!/bin/sh
             # Maven Wrapper Script
             # This is a basic wrapper. For production use, consider using official Maven wrapper.
-            
+
             MAVEN_VERSION=3.9.6
             echo "Using Maven $MAVEN_VERSION"
             exec mvn "$@"

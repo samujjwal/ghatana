@@ -61,7 +61,7 @@ public class PolicyEnforcementPoint {
                 request.getMetadata()
             );
 
-            PrivacyManager.ConsentStatus consentStatus = 
+            PrivacyManager.ConsentStatus consentStatus =
                 privacyManager.checkConsent(dataRequest, context.getTenantId());
 
             if (consentStatus != PrivacyManager.ConsentStatus.GRANTED &&

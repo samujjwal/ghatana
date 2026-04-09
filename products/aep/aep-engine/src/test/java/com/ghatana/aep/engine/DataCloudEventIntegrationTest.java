@@ -25,7 +25,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should consume Data Cloud events")
     void shouldConsumeDataCloudEvents() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should process Data Cloud events")
     void shouldProcessDataCloudEvents() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should handle event versioning")
     void shouldHandleEventVersioning() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should handle event schema validation")
     void shouldHandleEventSchemaValidation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should handle event transformation")
     void shouldHandleEventTransformation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class DataCloudEventIntegrationTest {
     @DisplayName("Should handle event batching")
     void shouldHandleEventBatching() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

@@ -9,10 +9,8 @@ package com.ghatana.platform.http.server;
 import com.ghatana.platform.http.server.filter.FilterChain;
 import com.ghatana.platform.http.server.server.HttpServerBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
-import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpHeaders;
-import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
 import io.activej.promise.Promise;
@@ -46,15 +44,15 @@ class HttpServerTest {
     @DisplayName("Should handle HTTP routing correctly")
     void shouldHandleHttpRoutingCorrectly() {
         RoutingServlet servlet = new RoutingServlet();
-        
+
         servlet.addRoute(HttpMethod.GET, "/hello", request ->
             HttpResponse.ok200().withBody("Hello World").build()
         );
-        
+
         servlet.addRoute(HttpMethod.GET, "/users/:id", request ->
             HttpResponse.ok200().withBody("User ID: " + request.getPath()).build()
         );
-        
+
         assertThat(servlet.getRouteCount()).isEqualTo(2);
     }
 
@@ -62,17 +60,17 @@ class HttpServerTest {
     @DisplayName("Should handle middleware execution")
     void shouldHandleMiddlewareExecution() {
         AtomicInteger filterCount = new AtomicInteger(0);
-        
+
         FilterChain.Filter filter1 = (request, next) -> {
             filterCount.incrementAndGet();
             return next.serve(request);
         };
-        
+
         FilterChain.Filter filter2 = (request, next) -> {
             filterCount.incrementAndGet();
             return next.serve(request);
         };
-        
+
         HttpServerBuilder builder = HttpServerBuilder.create()
             .withPort(0)
             .addFilter(filter1)
@@ -80,7 +78,7 @@ class HttpServerTest {
             .addRoute(HttpMethod.GET, "/test", request ->
                 HttpResponse.ok200().withBody("test").build()
             );
-        
+
         assertThat(filterCount.get()).isEqualTo(0);
     }
 
@@ -94,14 +92,14 @@ class HttpServerTest {
             }
             return next.serve(request);
         };
-        
+
         HttpServerBuilder builder = HttpServerBuilder.create()
             .withPort(0)
             .addFilter(authFilter)
             .addRoute(HttpMethod.GET, "/protected", request ->
                 HttpResponse.ok200().withBody("Protected content").build()
             );
-        
+
         assertThat(builder).isNotNull();
     }
 
@@ -109,15 +107,15 @@ class HttpServerTest {
     @DisplayName("Should handle concurrent requests")
     void shouldHandleConcurrentRequests() {
         RoutingServlet servlet = new RoutingServlet();
-        
+
         servlet.addAsyncRoute(HttpMethod.GET, "/async", request ->
             Promise.of(HttpResponse.ok200().withBody("Async response").build())
         );
-        
+
         servlet.addRoute(HttpMethod.GET, "/sync", request ->
             HttpResponse.ok200().withBody("Sync response").build()
         );
-        
+
         assertThat(servlet.getRouteCount()).isEqualTo(2);
     }
 
@@ -127,7 +125,7 @@ class HttpServerTest {
         HttpServerBuilder builder = HttpServerBuilder.create()
             .withPort(0)
             .withShutdownTimeout(Duration.ofSeconds(10));
-        
+
         assertThat(builder).isNotNull();
     }
 
@@ -138,7 +136,7 @@ class HttpServerTest {
             .withPort(0)
             .withShutdownTimeout(Duration.ofSeconds(30))
             .withHealthCheck("/health");
-        
+
         server = builder.build();
         assertThat(server).isNotNull();
     }

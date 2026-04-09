@@ -13,7 +13,7 @@ import java.util.UUID;
  * It supports expiration logic and is designed for cross-instance session sharing via
  * {@link SessionManager} implementations.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Serializable</b>: Safe for Redis/DB storage</li>
@@ -23,7 +23,7 @@ import java.util.UUID;
  *   <li><b>Lifecycle Tracking</b>: createdAt, lastAccessedAt, expiresAt</li>
  *   <li><b>Builder Pattern</b>: Fluent API for construction</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Create new session with builder
@@ -58,7 +58,7 @@ import java.util.UUID;
  * Duration remaining = session.getRemainingTime();
  * System.out.println("Session expires in " + remaining.toMinutes() + " minutes");
  * }</pre>
- * 
+ *
  * <h2>Session Lifecycle</h2>
  * <ol>
  *   <li><b>Creation</b>: SessionState.builder().build() or new SessionState()</li>
@@ -66,13 +66,13 @@ import java.util.UUID;
  *   <li><b>Expiration</b>: isExpired() returns true after maxInactiveInterval</li>
  *   <li><b>Cleanup</b>: SessionManager.deleteExpiredSessions() removes old sessions</li>
  * </ol>
- * 
+ *
  * <h2>Expiration Logic</h2>
  * <pre>{@code
  * expiresAt = lastAccessedAt + maxInactiveInterval
  * isExpired() = Instant.now().isAfter(expiresAt)
  * }</pre>
- * 
+ *
  * <h2>Attribute Storage Rules</h2>
  * <ul>
  *   <li><b>Values MUST be Serializable</b>: Required for Redis/DB storage</li>
@@ -80,7 +80,7 @@ import java.util.UUID;
  *   <li><b>removeAttribute()</b>: Returns removed value or null</li>
  *   <li><b>clearAttributes()</b>: Removes all custom attributes</li>
  * </ul>
- * 
+ *
  * <h2>Common Attributes</h2>
  * <ul>
  *   <li><code>cartId</code>: Shopping cart identifier</li>
@@ -89,10 +89,10 @@ import java.util.UUID;
  *   <li><code>lastProduct</code>: Last viewed product ID</li>
  *   <li><code>searchHistory</code>: Recent searches (List<String>)</li>
  * </ul>
- * 
+ *
  * <h2>Thread Safety</h2>
  * <b>WARNING</b>: NOT thread-safe. Use external synchronization or single-threaded access.
- * 
+ *
  * <h2>Serialization</h2>
  * Implements Serializable for:
  * <ul>
@@ -111,7 +111,7 @@ import java.util.UUID;
  * @performance O(1) attribute access
  * @see SessionManager
  * @see RedisSessionManager
- 
+
  *
  * @doc.type class
  * @doc.purpose Session state
@@ -119,9 +119,9 @@ import java.util.UUID;
  * @doc.pattern Component
 */
 public class SessionState implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private final String id;
     private final Map<String, Object> attributes = new HashMap<>();
     private final Instant createdAt;
@@ -129,14 +129,14 @@ public class SessionState implements Serializable {
     private String userId;
     private String tenantId;
     private long maxInactiveInterval; // in seconds
-    
+
     /**
      * Create a new session state with a random ID.
      */
     public SessionState() {
         this(UUID.randomUUID().toString());
     }
-    
+
     /**
      * Create a new session state with the specified ID.
      */
@@ -146,84 +146,84 @@ public class SessionState implements Serializable {
         this.lastAccessedAt = Instant.now();
         this.maxInactiveInterval = 1800; // 30 minutes default
     }
-    
+
     /**
      * Get the session ID.
      */
     public String getId() {
         return id;
     }
-    
+
     /**
      * Get the creation timestamp.
      */
     public Instant getCreatedAt() {
         return createdAt;
     }
-    
+
     /**
      * Get the last accessed timestamp.
      */
     public Instant getLastAccessedAt() {
         return lastAccessedAt;
     }
-    
+
     /**
      * Update the last accessed timestamp.
      */
     public void access() {
         this.lastAccessedAt = Instant.now();
     }
-    
+
     /**
      * Get the user ID associated with this session.
      */
     public String getUserId() {
         return userId;
     }
-    
+
     /**
      * Set the user ID associated with this session.
      */
     public void setUserId(String userId) {
         this.userId = userId;
     }
-    
+
     /**
      * Get the tenant ID associated with this session.
      */
     public String getTenantId() {
         return tenantId;
     }
-    
+
     /**
      * Set the tenant ID associated with this session.
      */
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
-    
+
     /**
      * Get the maximum inactive interval in seconds.
      */
     public long getMaxInactiveInterval() {
         return maxInactiveInterval;
     }
-    
+
     /**
      * Set the maximum inactive interval in seconds.
      */
     public void setMaxInactiveInterval(long maxInactiveInterval) {
         this.maxInactiveInterval = maxInactiveInterval;
     }
-    
+
     /**
      * Check if the session has expired.
      */
     public boolean isExpired() {
         return lastAccessedAt.plusSeconds(maxInactiveInterval).isBefore(Instant.now());
     }
-    
+
     /**
      * Get an attribute from the session.
      */
@@ -231,7 +231,7 @@ public class SessionState implements Serializable {
     public <T> T getAttribute(String name) {
         return (T) attributes.get(name);
     }
-    
+
     /**
      * Set an attribute in the session.
      */
@@ -244,35 +244,35 @@ public class SessionState implements Serializable {
             attributes.put(name, value);
         }
     }
-    
+
     /**
      * Remove an attribute from the session.
      */
     public void removeAttribute(String name) {
         attributes.remove(name);
     }
-    
+
     /**
      * Get all attribute names in the session.
      */
     public Iterable<String> getAttributeNames() {
         return attributes.keySet();
     }
-    
+
     /**
      * Check if the session contains an attribute.
      */
     public boolean hasAttribute(String name) {
         return attributes.containsKey(name);
     }
-    
+
     /**
      * Clear all attributes from the session.
      */
     public void clearAttributes() {
         attributes.clear();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -280,12 +280,12 @@ public class SessionState implements Serializable {
         SessionState that = (SessionState) o;
         return id.equals(that.id);
     }
-    
+
     @Override
     public int hashCode() {
         return id.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return "SessionState{" +

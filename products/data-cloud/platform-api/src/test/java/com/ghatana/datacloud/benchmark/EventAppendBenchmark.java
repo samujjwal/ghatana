@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Event Append Performance Benchmark (TEST-087)
- * 
+ *
  * @doc.type class
  * @doc.purpose Performance benchmark for event append - target < 50ms p99
  * @doc.layer product
@@ -39,7 +39,7 @@ class EventAppendBenchmark extends EventloopTestBase {
 
         // Benchmark
         long[] latencies = new long[BENCHMARK_ITERATIONS];
-        
+
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
             long start = System.nanoTime();
             simulateEventAppend();
@@ -49,9 +49,9 @@ class EventAppendBenchmark extends EventloopTestBase {
 
         // Calculate p99
         long p99 = calculateP99(latencies);
-        
+
         System.out.println("Event Append p99 latency: " + p99 + "ms");
-        
+
         assertThat(p99)
             .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, P99_THRESHOLD_MS)
             .isLessThanOrEqualTo(P99_THRESHOLD_MS);
@@ -62,20 +62,20 @@ class EventAppendBenchmark extends EventloopTestBase {
     void eventAppendBatchPerformance() {
         int batchSize = 100;
         long[] batchLatencies = new long[100];
-        
+
         for (int i = 0; i < 100; i++) {
             long start = System.nanoTime();
             simulateBatchAppend(batchSize);
             long end = System.nanoTime();
             batchLatencies[i] = (end - start) / 1_000_000;
         }
-        
+
         long avgLatency = calculateAverage(batchLatencies);
         double perEventLatency = (double) avgLatency / batchSize;
-        
+
         System.out.println("Batch append avg latency: " + avgLatency + "ms");
         System.out.println("Per-event latency: " + perEventLatency + "ms");
-        
+
         // Per-event latency should be under 5ms in batch
         assertThat(perEventLatency).isLessThanOrEqualTo(5.0);
     }

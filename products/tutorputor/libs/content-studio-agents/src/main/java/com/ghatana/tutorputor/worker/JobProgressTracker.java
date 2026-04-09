@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 
 /**
  * Progress tracker for content generation jobs.
- * 
+ *
  * <p>Provides real-time progress updates for long-running jobs through
  * a subscription-based model. Supports both polling and push-based updates.
  *
@@ -32,7 +32,7 @@ public class JobProgressTracker {
     private final ConcurrentMap<String, Set<Consumer<JobProgress>>> subscribers;
     private final ScheduledExecutorService cleanupExecutor;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter progressUpdatesCounter;
     private final Counter subscriptionsCounter;
@@ -49,7 +49,7 @@ public class JobProgressTracker {
         this.subscribers = new ConcurrentHashMap<>();
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor(
             r -> Thread.ofPlatform().name("progress-cleanup").daemon(true).unstarted(r));
-        
+
         // Initialize metrics
         this.progressUpdatesCounter = Counter.builder("tutorputor.progress.updates")
             .description("Number of progress updates")
@@ -60,11 +60,11 @@ public class JobProgressTracker {
         this.updateLatencyTimer = Timer.builder("tutorputor.progress.update_latency")
             .description("Latency of progress updates")
             .register(meterRegistry);
-        
+
         // Start cleanup task
-        cleanupExecutor.scheduleAtFixedRate(this::cleanupOldProgress, 
+        cleanupExecutor.scheduleAtFixedRate(this::cleanupOldProgress,
             5, 5, TimeUnit.MINUTES);
-        
+
         LOG.info("JobProgressTracker initialized");
     }
 
@@ -76,8 +76,8 @@ public class JobProgressTracker {
      * @param description job description
      */
     public void initializeJob(
-            @NotNull String jobId, 
-            int totalSteps, 
+            @NotNull String jobId,
+            int totalSteps,
             @NotNull String description) {
         JobProgress progress = new JobProgress(
             jobId,
@@ -104,20 +104,20 @@ public class JobProgressTracker {
      * @param currentStep description of current step
      */
     public void updateProgress(
-            @NotNull String jobId, 
-            int completedSteps, 
+            @NotNull String jobId,
+            int completedSteps,
             @NotNull String currentStep) {
         Instant start = Instant.now();
-        
+
         JobProgress existing = progressMap.get(jobId);
         if (existing == null) {
             LOG.warn("Cannot update progress for unknown job: {}", jobId);
             return;
         }
-        
+
         List<String> steps = new ArrayList<>(existing.steps());
         steps.add(currentStep);
-        
+
         JobProgress updated = new JobProgress(
             jobId,
             existing.description(),
@@ -130,14 +130,14 @@ public class JobProgressTracker {
             null,
             steps
         );
-        
+
         progressMap.put(jobId, updated);
         notifySubscribers(jobId, updated);
-        
+
         progressUpdatesCounter.increment();
         updateLatencyTimer.record(Duration.between(start, Instant.now()));
-        
-        LOG.debug("Updated progress for job {}: {}/{} - {}", 
+
+        LOG.debug("Updated progress for job {}: {}/{} - {}",
             jobId, completedSteps, existing.totalSteps(), currentStep);
     }
 
@@ -153,7 +153,7 @@ public class JobProgressTracker {
             LOG.warn("Cannot complete unknown job: {}", jobId);
             return;
         }
-        
+
         JobProgress completed = new JobProgress(
             jobId,
             existing.description(),
@@ -166,11 +166,11 @@ public class JobProgressTracker {
             Instant.now(),
             existing.steps()
         );
-        
+
         progressMap.put(jobId, completed);
         notifySubscribers(jobId, completed);
-        
-        LOG.info("Job completed: {} in {}ms", jobId, 
+
+        LOG.info("Job completed: {} in {}ms", jobId,
             Duration.between(existing.startedAt(), Instant.now()).toMillis());
     }
 
@@ -186,7 +186,7 @@ public class JobProgressTracker {
             LOG.warn("Cannot fail unknown job: {}", jobId);
             return;
         }
-        
+
         JobProgress failed = new JobProgress(
             jobId,
             existing.description(),
@@ -199,10 +199,10 @@ public class JobProgressTracker {
             Instant.now(),
             existing.steps()
         );
-        
+
         progressMap.put(jobId, failed);
         notifySubscribers(jobId, failed);
-        
+
         LOG.warn("Job failed: {} - {}", jobId, error);
     }
 
@@ -224,18 +224,18 @@ public class JobProgressTracker {
      * @return a subscription that can be used to unsubscribe
      */
     public Subscription subscribe(
-            @NotNull String jobId, 
+            @NotNull String jobId,
             @NotNull Consumer<JobProgress> callback) {
         subscribers.computeIfAbsent(jobId, k -> ConcurrentHashMap.newKeySet())
             .add(callback);
         subscriptionsCounter.increment();
-        
+
         // Send current progress immediately if available
         JobProgress current = progressMap.get(jobId);
         if (current != null) {
             callback.accept(current);
         }
-        
+
         return () -> {
             Set<Consumer<JobProgress>> subs = subscribers.get(jobId);
             if (subs != null) {
@@ -298,7 +298,7 @@ public class JobProgressTracker {
 
     private void cleanupOldProgress() {
         Instant cutoff = Instant.now().minus(Duration.ofHours(2));
-        
+
         progressMap.entrySet().removeIf(entry -> {
             JobProgress progress = entry.getValue();
             if (progress.completedAt() != null && progress.completedAt().isBefore(cutoff)) {
@@ -307,7 +307,7 @@ public class JobProgressTracker {
             }
             return false;
         });
-        
+
         LOG.debug("Cleaned up old progress entries. Remaining: {}", progressMap.size());
     }
 

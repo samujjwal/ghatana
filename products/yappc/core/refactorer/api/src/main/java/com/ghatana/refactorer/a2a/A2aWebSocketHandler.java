@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * WebSocket handler for A2A (Agent-to-Agent) communication. Maps envelope messages to Polyfix gRPC
  * service calls and streams responses back.
- 
+
  * @doc.type class
  * @doc.purpose Handles a2a web socket handler operations
  * @doc.layer core

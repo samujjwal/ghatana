@@ -1,6 +1,5 @@
 package com.ghatana.core.operator.eventcloud.partition;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.Set;
  * </p>
  *
  * @since 2.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Round robin strategy
@@ -54,10 +53,10 @@ public class RoundRobinStrategy implements PartitionAssignmentStrategy {
         }
 
         Set<Integer> assigned = new HashSet<>();
-        
+
         // Round-robin: assign partition i to consumer (i % totalConsumers)
         int consumerIndex = calculateConsumerIndex(consumerInstanceId, totalConsumers);
-        
+
         for (int partition = 0; partition < totalPartitions; partition++) {
             int assignedConsumerIndex = partition % totalConsumers;
             if (assignedConsumerIndex == consumerIndex) {
@@ -94,7 +93,7 @@ public class RoundRobinStrategy implements PartitionAssignmentStrategy {
 
         // Compute changes for all consumers
         Map<String, Set<Integer>> previousAssignments = previousAssignment.getAllAssignments();
-        
+
         Set<Integer> totalAdded = new HashSet<>();
         Set<Integer> totalRevoked = new HashSet<>();
 

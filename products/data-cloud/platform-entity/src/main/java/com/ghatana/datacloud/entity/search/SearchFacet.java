@@ -21,7 +21,7 @@ import java.util.Objects;
  *         SearchFacet.FacetValue.of("books", 18)
  *     ))
  *     .build();
- * 
+ *
  * // Access facet results
  * String field = categoryFacet.getFieldName(); // "category"
  * List<FacetValue> values = categoryFacet.getValues();

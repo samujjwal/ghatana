@@ -65,7 +65,7 @@ public final class WorkspaceController {
 
     /**
      * Create servlet with all workspace routes.
-     * 
+     *
      * @return RoutingServlet with all workspace routes
      */
     public RoutingServlet createServlet() {
@@ -115,7 +115,7 @@ public final class WorkspaceController {
             // Validate and extract parameters
             String workspaceId = Validation.requirePathParameter(request, "id");
             UUID workspaceUuid = Validation.requireValidUuid(workspaceId, "workspaceId");
-            
+
             logger.debug("Getting workspace: {}", workspaceUuid);
 
             return extractUser(request)
@@ -133,7 +133,7 @@ public final class WorkspaceController {
                     }
                     throw new RuntimeException(e);
                 });
-                
+
         } catch (ErrorResponse.ValidationException e) {
             // Validation errors are handled by ExceptionHandlingFilter
             throw new RuntimeException(e);

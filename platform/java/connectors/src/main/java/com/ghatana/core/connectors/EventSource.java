@@ -61,4 +61,3 @@ public interface EventSource {
         // default no-op; implementations may override to perform synchronous cleanup
     }
 }
-

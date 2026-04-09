@@ -6,7 +6,6 @@
 package com.ghatana.datacloud.distributed;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;

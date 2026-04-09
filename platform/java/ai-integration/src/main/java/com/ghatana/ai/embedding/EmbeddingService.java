@@ -8,14 +8,14 @@ import java.util.List;
 
 /**
  * Service for generating and managing text embeddings.
- * 
+ *
  * @doc.type interface
  * @doc.purpose Defines the contract for embedding services that convert text to vector representations.
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
 public interface EmbeddingService {
-    
+
     /**
      * Generates an embedding for the given text.
      *
@@ -23,7 +23,7 @@ public interface EmbeddingService {
      * @return A promise that completes with the embedding result
      */
     Promise<EmbeddingResult> createEmbedding(String text);
-    
+
     /**
      * Generates embeddings for multiple texts in a batch.
      *
@@ -31,21 +31,21 @@ public interface EmbeddingService {
      * @return A promise that completes with a list of embedding results
      */
     Promise<List<EmbeddingResult>> createEmbeddings(List<String> texts);
-    
+
     /**
      * Gets the configuration used by this embedding service.
      *
      * @return The LLM configuration
      */
     LLMConfiguration getConfig();
-    
+
     /**
      * Gets the metrics collector for this service.
      *
      * @return The metrics collector instance
      */
     MetricsCollector getMetricsCollector();
-    
+
     /**
      * Generates an embedding for the given text (convenience method).
      *

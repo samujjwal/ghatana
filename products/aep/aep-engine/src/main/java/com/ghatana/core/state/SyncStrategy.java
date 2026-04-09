@@ -133,4 +133,3 @@ public enum SyncStrategy {
         return this == ON_CHECKPOINT;
     }
 }
-

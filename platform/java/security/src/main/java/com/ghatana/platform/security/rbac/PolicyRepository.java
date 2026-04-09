@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * Repository for managing policies.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Policy repository

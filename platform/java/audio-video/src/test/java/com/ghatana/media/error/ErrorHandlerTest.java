@@ -12,8 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Tests for CONS-006: Exception hierarchy consistency and AV-004: Error handling standardization
@@ -154,15 +152,15 @@ class ErrorHandlerTest {
     @Test
     @DisplayName("Should determine correct severity levels")
     void testSeverityLevels() {
-        assertEquals(ErrorHandler.Severity.CRITICAL, 
+        assertEquals(ErrorHandler.Severity.CRITICAL,
             ErrorHandler.getSeverity(new InternalException("Critical")));
-        assertEquals(ErrorHandler.Severity.HIGH, 
+        assertEquals(ErrorHandler.Severity.HIGH,
             ErrorHandler.getSeverity(new ServiceUnavailableException("Down")));
-        assertEquals(ErrorHandler.Severity.MEDIUM, 
+        assertEquals(ErrorHandler.Severity.MEDIUM,
             ErrorHandler.getSeverity(new TimeoutException("Timeout")));
-        assertEquals(ErrorHandler.Severity.LOW, 
+        assertEquals(ErrorHandler.Severity.LOW,
             ErrorHandler.getSeverity(new ValidationException("Invalid")));
-        assertEquals(ErrorHandler.Severity.LOW, 
+        assertEquals(ErrorHandler.Severity.LOW,
             ErrorHandler.getSeverity(new ResourceNotFoundException("Not found")));
     }
 
@@ -170,7 +168,7 @@ class ErrorHandlerTest {
     @DisplayName("Should check nested causes for retryable")
     void testNestedCauseRetryable() {
         // Wrap a retryable exception
-        Exception wrapped = new RuntimeException("Wrapper", 
+        Exception wrapped = new RuntimeException("Wrapper",
             new SocketTimeoutException("Inner timeout"));
         assertTrue(ErrorHandler.isRetryable(wrapped));
 

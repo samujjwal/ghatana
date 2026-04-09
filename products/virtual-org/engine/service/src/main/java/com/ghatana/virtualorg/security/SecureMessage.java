@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
  *     generateNonce(),
  *     signMessage(payload)
  * );
- * 
+ *
  * if (!message.isExpired(300000)) { // 5 min max age
  *     processMessage(message);
  * }

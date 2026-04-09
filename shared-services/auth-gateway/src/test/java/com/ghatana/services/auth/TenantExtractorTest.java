@@ -47,7 +47,7 @@ class TenantExtractorTest extends EventloopTestBase {
     void testExtractFromJwt() throws Exception {
         // Mock JWT with tenant claim
         String mockJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRJZCI6ImFjbWUtY29ycCJ9.mock";
-        
+
         HttpRequest request = HttpRequest.get("http://localhost:8080/api/users")
             .withHeader(HttpHeaders.of("Authorization"), "Bearer " + mockJwt)
             .build();

@@ -45,7 +45,7 @@ public final class EnhancedPluginManager {
     private final PluginDependencyResolver dependencyResolver;
     private final PluginStateMigrationService stateMigrationService;
     private final Executor executor;
-    
+
     private final Map<String, EnhancedLoadedPlugin> enhancedPlugins = new ConcurrentHashMap<>();
     private volatile boolean started = false;
 
@@ -63,7 +63,7 @@ public final class EnhancedPluginManager {
         this.dependencyResolver = new PluginDependencyResolver();
         this.stateMigrationService = new PluginStateMigrationService();
         this.executor = executor;
-        
+
         // Register lifecycle listener
         hotReloadManager.addListener(new PluginLifecycleHandler());
     }
@@ -76,15 +76,15 @@ public final class EnhancedPluginManager {
     public Promise<Void> start() {
         return Promise.ofBlocking(executor, () -> {
             if (started) return null;
-            
+
             log.info("Starting enhanced plugin manager");
-            
+
             // Start hot reload manager
             hotReloadManager.start();
-            
+
             // Process loaded plugins with enhanced features
             hotReloadManager.getLoadedPluginIds().forEach(this::enhancePlugin);
-            
+
             started = true;
             log.info("Enhanced plugin manager started");
             return null;
@@ -99,15 +99,15 @@ public final class EnhancedPluginManager {
     public Promise<Void> stop() {
         return Promise.ofBlocking(executor, () -> {
             if (!started) return null;
-            
+
             log.info("Stopping enhanced plugin manager");
-            
+
             // Stop hot reload manager
             hotReloadManager.stop();
-            
+
             // Clear enhanced plugins
             enhancedPlugins.clear();
-            
+
             started = false;
             log.info("Enhanced plugin manager stopped");
             return null;
@@ -123,29 +123,29 @@ public final class EnhancedPluginManager {
     public Promise<PluginLoadResult> loadPlugin(@NotNull Path pluginPath) {
         return Promise.ofBlocking(executor, () -> {
             log.debug("Loading plugin with enhanced verification: {}", pluginPath);
-            
+
             try {
                 // Verify plugin manifest
                 PluginManifest manifest = verifyPluginManifest(pluginPath);
-                
+
                 // Check tier compatibility
                 PluginTier tier = PluginTier.fromManifest(manifest);
                 tierEnforcer.validateTier(tier);
-                
+
                 // Verify capabilities
                 capabilityVerifier.verifyCapabilities(manifest.getCapabilities());
-                
+
                 // Check resource quotas
                 resourceEnforcer.validateQuotas(manifest.getResourceQuotas());
-                
+
                 // Resolve dependencies
                 dependencyResolver.resolveDependencies(manifest);
-                
+
                 // Load plugin through hot reload manager
                 hotReloadManager.loadPlugin(pluginPath);
-                
+
                 return PluginLoadResult.success(manifest);
-                
+
             } catch (Exception e) {
                 log.error("Failed to load plugin: {}", pluginPath, e);
                 return PluginLoadResult.failure(e.getMessage());
@@ -184,7 +184,7 @@ public final class EnhancedPluginManager {
             if (plugin == null) {
                 return CapabilityValidationResult.failure("Plugin not found: " + pluginId);
             }
-            
+
             return capabilityVerifier.validateRuntimeCapabilities(plugin);
         });
     }
@@ -201,7 +201,7 @@ public final class EnhancedPluginManager {
             if (plugin == null) {
                 return ResourceEnforcementResult.failure("Plugin not found: " + pluginId);
             }
-            
+
             return resourceEnforcer.enforceQuotas(plugin);
         });
     }
@@ -211,7 +211,7 @@ public final class EnhancedPluginManager {
     private void enhancePlugin(String pluginId) {
         HotReloadPluginManager.LoadedPlugin basicPlugin = hotReloadManager.getPlugin(pluginId);
         if (basicPlugin == null) return;
-        
+
         try {
             // Create enhanced plugin with additional metadata
             EnhancedLoadedPlugin enhanced = new EnhancedLoadedPlugin(
@@ -220,10 +220,10 @@ public final class EnhancedPluginManager {
                 Set.of(), // Default capabilities
                 PluginResourceQuota.defaults()
             );
-            
+
             enhancedPlugins.put(pluginId, enhanced);
             log.debug("Enhanced plugin: {}", pluginId);
-            
+
         } catch (Exception e) {
             log.error("Failed to enhance plugin: {}", pluginId, e);
         }
@@ -245,7 +245,7 @@ public final class EnhancedPluginManager {
      * Handler for plugin lifecycle events.
      */
     private class PluginLifecycleHandler implements HotReloadPluginManager.PluginLifecycleListener {
-        
+
         @Override
         public void onLoaded(String pluginId) {
             enhancePlugin(pluginId);

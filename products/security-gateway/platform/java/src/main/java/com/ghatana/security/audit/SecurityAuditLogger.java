@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * Logger for security-related audit events.
  * This class provides methods to log security events such as authentication attempts,
  * authorization decisions, and other security-relevant actions.
- 
+
  *
  * @doc.type class
  * @doc.purpose Security audit logger
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 */
 public class SecurityAuditLogger {
     private static final Logger logger = LoggerFactory.getLogger(SecurityAuditLogger.class);
-    
+
     private final Eventloop eventloop;
     private final Consumer<AuditEvent> auditConsumer;
 
@@ -181,7 +181,7 @@ public class SecurityAuditLogger {
             } else {
                 logger.warn("Security event: {}", event.toString());
             }
-            
+
             // Process the event asynchronously through the audit consumer
             eventloop.execute(() -> {
                 try {
@@ -194,7 +194,7 @@ public class SecurityAuditLogger {
             logger.error("Failed to log security event: {}", event.toString(), e);
         }
     }
-    
+
     /**
      * Logs an event and returns a Promise that completes when the event has been processed.
      *
@@ -213,7 +213,7 @@ public class SecurityAuditLogger {
             });
         });
     }
-    
+
     /**
      * Logs an event and returns a Promise that completes when the event has been processed.
      *
@@ -234,7 +234,7 @@ public class SecurityAuditLogger {
                 .detail("message", message)
                 .build());
     }
-    
+
     public void logRoleRetrievalFailure(String userId, String message) {
         auditConsumer.accept(AuditEvent.builder()
                 .eventType("ROLE_RETRIEVAL_FAILURE")

@@ -45,7 +45,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
 
         // WHEN: Register and execute
         orchestrator.registerAgent(agent);
-        AIResponse response = runPromise(() -> 
+        AIResponse response = runPromise(() ->
             orchestrator.executeAgent("test-agent", new AIRequest("test input"))
         );
 
@@ -72,7 +72,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         workflow.addStep("enricher");
         workflow.addStep("validator");
 
-        WorkflowResult result = runPromise(() -> 
+        WorkflowResult result = runPromise(() ->
             orchestrator.executeWorkflow(workflow, new AIRequest("input data"))
         );
 
@@ -86,7 +86,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     void testAIGovernancePolicies() {
         // GIVEN: AI agent with governance policy
         TestAIAgent agent = new TestAIAgent("governed-agent", "sensitive-classification");
-        
+
         AIGovernancePolicy policy = new AIGovernancePolicy("sensitive-data-policy");
         policy.addRule("max-tokens", "1000");
         policy.addRule("require-audit", "true");
@@ -97,7 +97,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
 
         // WHEN: Execute with governance
         AIRequest request = new AIRequest("sensitive data");
-        AIResponse response = runPromise(() -> 
+        AIResponse response = runPromise(() ->
             orchestrator.executeAgent("governed-agent", request)
         );
 
@@ -116,7 +116,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         orchestrator.registerAgent(failingAgent);
 
         // WHEN: Execute failing agent
-        AIResponse response = runPromise(() -> 
+        AIResponse response = runPromise(() ->
             orchestrator.executeAgent("failing-agent", new AIRequest("input"))
         );
 
@@ -150,7 +150,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         // GIVEN: Multiple versions of same agent
         TestAIAgent agentV1 = new TestAIAgent("classifier", "classification");
         agentV1.setVersion("1.0.0");
-        
+
         TestAIAgent agentV2 = new TestAIAgent("classifier", "classification");
         agentV2.setVersion("2.0.0");
 
@@ -158,10 +158,10 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         orchestrator.registerAgent(agentV2);
 
         // WHEN: Execute specific version
-        AIResponse responseV1 = runPromise(() -> 
+        AIResponse responseV1 = runPromise(() ->
             orchestrator.executeAgentVersion("classifier", "1.0.0", new AIRequest("input"))
         );
-        AIResponse responseV2 = runPromise(() -> 
+        AIResponse responseV2 = runPromise(() ->
             orchestrator.executeAgentVersion("classifier", "2.0.0", new AIRequest("input"))
         );
 
@@ -181,13 +181,13 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         List<Promise<AIResponse>> executions = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             Promise<AIResponse> execution = orchestrator.executeAgent(
-                "concurrent-agent", 
+                "concurrent-agent",
                 new AIRequest("input-" + i)
             );
             executions.add(execution);
         }
 
-        List<AIResponse> responses = runPromise(() -> 
+        List<AIResponse> responses = runPromise(() ->
             io.activej.promise.Promises.toList(executions)
         );
 
@@ -205,7 +205,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
 
         // WHEN: Execute with invalid input
         AIRequest invalidRequest = new AIRequest(""); // Empty input
-        AIResponse invalidResponse = runPromise(() -> 
+        AIResponse invalidResponse = runPromise(() ->
             orchestrator.executeAgent("validating-agent", invalidRequest)
         );
 
@@ -215,7 +215,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
 
         // WHEN: Execute with valid input
         AIRequest validRequest = new AIRequest("valid input");
-        AIResponse validResponse = runPromise(() -> 
+        AIResponse validResponse = runPromise(() ->
             orchestrator.executeAgent("validating-agent", validRequest)
         );
 
@@ -409,8 +409,8 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
                 return Promise.of(new AIResponse(false, null, "Agent not found"));
             }
 
-            TestAIAgent agent = version == null ? 
-                agentVersions.get(agentVersions.size() - 1) : 
+            TestAIAgent agent = version == null ?
+                agentVersions.get(agentVersions.size() - 1) :
                 agentVersions.stream()
                     .filter(a -> a.getVersion().equals(version))
                     .findFirst()
@@ -438,7 +438,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
             Promise<AIRequest> currentPromise = Promise.of(request);
 
             for (String agentId : workflow.getSteps()) {
-                currentPromise = currentPromise.then(req -> 
+                currentPromise = currentPromise.then(req ->
                     executeAgent(agentId, req).then(response -> {
                         if (response.isSuccess()) {
                             executedAgents.add(agentId);

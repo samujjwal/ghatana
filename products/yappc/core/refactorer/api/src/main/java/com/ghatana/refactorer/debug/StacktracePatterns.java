@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 /**
  * Loads and manages stack trace patterns from a JSON configuration file. The patterns are used by
  * language-specific parsers to extract stack frame information.
- 
+
  * @doc.type class
  * @doc.purpose Handles stacktrace patterns operations
  * @doc.layer core

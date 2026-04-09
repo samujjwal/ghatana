@@ -8,7 +8,6 @@ import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
 
 /**
  * Factory for creating {@link EventCloudPlugin} instances.

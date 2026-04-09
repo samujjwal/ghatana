@@ -2,7 +2,7 @@ package com.ghatana.yappc.framework.api.plugin;
 
 import com.ghatana.yappc.framework.api.domain.BuildSystemType;
 
-/** Build file generation plugin contract used by framework integration. 
+/** Build file generation plugin contract used by framework integration.
  * @doc.type interface
  * @doc.purpose Defines the contract for build generator plugin
  * @doc.layer core

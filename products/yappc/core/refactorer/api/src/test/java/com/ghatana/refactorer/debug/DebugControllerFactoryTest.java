@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for {@link DebugControllerFactory}. 
+/** Tests for {@link DebugControllerFactory}.
  * @doc.type class
  * @doc.purpose Handles debug controller factory test operations
  * @doc.layer core

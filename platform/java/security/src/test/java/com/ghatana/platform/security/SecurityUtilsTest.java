@@ -1,6 +1,5 @@
 package com.ghatana.platform.security;
 
-import com.ghatana.platform.security.annotation.RequiresPermission;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.rbac.PolicyService;
 import org.junit.jupiter.api.DisplayName;

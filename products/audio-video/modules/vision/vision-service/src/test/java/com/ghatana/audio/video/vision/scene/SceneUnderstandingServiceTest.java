@@ -133,4 +133,3 @@ class SceneUnderstandingServiceTest {
                 .isThrownBy(() -> new SceneUnderstandingService.SceneLabel("outdoor", 1.1));
     }
 }
-

@@ -28,44 +28,44 @@ import java.util.concurrent.Executors;
  */
 public class PostgresConfig extends AbstractModule {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresConfig.class);
-    
+
     private final Properties properties;
-    
+
     public PostgresConfig(Properties properties) {
         this.properties = properties;
     }
-    
+
     @Provides
     DataSource dataSource() {
         HikariConfig config = new HikariConfig();
-        
+
         // Required settings
         config.setJdbcUrl(properties.getProperty("db.url", "jdbc:postgresql://localhost:5432/pipeline_registry"));
         config.setUsername(properties.getProperty("db.username", "postgres"));
         config.setPassword(properties.getProperty("db.password", "postgres"));
-        
+
         // Connection pool settings
         config.setMaximumPoolSize(Integer.parseInt(properties.getProperty("db.pool.maxSize", "10")));
         config.setMinimumIdle(Integer.parseInt(properties.getProperty("db.pool.minIdle", "2")));
         config.setConnectionTimeout(Long.parseLong(properties.getProperty("db.pool.connectionTimeout", "30000")));
         config.setIdleTimeout(Long.parseLong(properties.getProperty("db.pool.idleTimeout", "600000")));
         config.setMaxLifetime(Long.parseLong(properties.getProperty("db.pool.maxLifetime", "1800000")));
-        
+
         // Connection test settings
         config.setConnectionTestQuery("SELECT 1");
         config.setAutoCommit(true);
-        
+
         // Performance settings
         config.addDataSourceProperty("applicationName", "pipeline-registry");
         config.addDataSourceProperty("tcpKeepAlive", "true");
         config.addDataSourceProperty("socketTimeout", "30");
-        
-        LOG.info("Initializing database connection pool for: {}", 
+
+        LOG.info("Initializing database connection pool for: {}",
                 config.getJdbcUrl().replaceAll("//[^@]*@", "//***:***@"));
-                
+
         return new HikariDataSource(config);
     }
-    
+
     @Provides
     Executor jdbcExecutor() {
         int poolSize = Integer.parseInt(properties.getProperty("db.jdbc.poolSize", "10"));
@@ -75,7 +75,7 @@ public class PostgresConfig extends AbstractModule {
             return thread;
         });
     }
-    
+
     @Provides
     Flyway flyway(DataSource dataSource) {
         LOG.info("Running database migrations...");
@@ -84,10 +84,10 @@ public class PostgresConfig extends AbstractModule {
                 .locations("classpath:db/migration")
                 .baselineOnMigrate(true)
                 .load();
-                
+
         flyway.migrate();
         LOG.info("Database migrations completed successfully");
-        
+
         return flyway;
     }
 }

@@ -105,4 +105,3 @@ public class PipelineConfig {
         parameters.put(key, value);
     }
 }
-

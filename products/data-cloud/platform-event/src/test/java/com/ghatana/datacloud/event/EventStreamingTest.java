@@ -6,11 +6,9 @@
  */
 package com.ghatana.datacloud.event;
 
-import com.ghatana.datacloud.spi.EventLogStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +25,7 @@ class EventStreamingTest {
     void shouldStreamEvents() {
         String streamId = "stream-123";
         String eventType = "USER_ACTION";
-        
+
         assertThat(streamId).isNotNull();
         assertThat(eventType).isNotNull();
     }
@@ -37,7 +35,7 @@ class EventStreamingTest {
     void shouldHandleEventProcessing() {
         String processorId = "processor-123";
         boolean processed = true;
-        
+
         assertThat(processorId).isNotNull();
         assertThat(processed).isTrue();
     }
@@ -47,7 +45,7 @@ class EventStreamingTest {
     void shouldHandleEventDelivery() {
         String consumerId = "consumer-123";
         boolean delivered = true;
-        
+
         assertThat(consumerId).isNotNull();
         assertThat(delivered).isTrue();
     }
@@ -56,7 +54,7 @@ class EventStreamingTest {
     @DisplayName("Should handle event filtering")
     void shouldHandleEventFiltering() {
         String filter = "event_type = 'purchase'";
-        
+
         assertThat(filter).contains("event_type");
         assertThat(filter).contains("purchase");
     }
@@ -66,7 +64,7 @@ class EventStreamingTest {
     void shouldHandleStreamingFailures() {
         boolean failed = false;
         String error = null;
-        
+
         assertThat(failed).isFalse();
         assertThat(error).isNull();
     }
@@ -76,7 +74,7 @@ class EventStreamingTest {
     void shouldHandleEventBackpressure() {
         int bufferCapacity = 1000;
         int currentSize = 500;
-        
+
         assertThat(currentSize).isLessThan(bufferCapacity);
     }
 }

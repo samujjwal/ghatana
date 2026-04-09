@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Unified Knowledge Base Service that orchestrates all external knowledge APIs.
- * 
+ *
  * <p>This service provides:
  * <ul>
  *   <li>Unified search across Wikipedia, OpenStax, and Khan Academy</li>
@@ -31,12 +31,12 @@ import java.util.concurrent.ConcurrentMap;
 public class KnowledgeBaseService {
 
     private static final Logger LOG = LoggerFactory.getLogger(KnowledgeBaseService.class);
-    
+
     private final WikipediaApiClient wikipediaClient;
     private final OpenStaxApiClient openStaxClient;
     private final KhanAcademyApiClient khanClient;
     private final MeterRegistry meterRegistry;
-    
+
     // Simple cache for fact verification results (in production, use Redis/Caffeine)
     private final ConcurrentMap<String, FactVerificationResult> factCache = new ConcurrentHashMap<>();
     private static final int MAX_CACHE_SIZE = 1000;
@@ -52,7 +52,7 @@ public class KnowledgeBaseService {
         this.wikipediaClient = new WikipediaApiClient(httpClient, meterRegistry);
         this.openStaxClient = new OpenStaxApiClient(httpClient, meterRegistry);
         this.khanClient = new KhanAcademyApiClient(httpClient, meterRegistry);
-        
+
         LOG.info("KnowledgeBaseService initialized with Wikipedia, OpenStax, and Khan Academy clients");
     }
 
@@ -66,10 +66,10 @@ public class KnowledgeBaseService {
      */
     public Promise<FactVerificationResult> verifyLearningClaim(
             String claimText, String domain, String gradeLevel) {
-        
-        LOG.info("Verifying learning claim against knowledge bases: '{}'", 
+
+        LOG.info("Verifying learning claim against knowledge bases: '{}'",
             claimText.substring(0, Math.min(50, claimText.length())));
-        
+
         // Check cache first
         String cacheKey = buildCacheKey(claimText, domain);
         FactVerificationResult cached = factCache.get(cacheKey);
@@ -79,18 +79,18 @@ public class KnowledgeBaseService {
         }
 
         String wikiTopic = (domain == null || domain.isBlank()) ? claimText : domain;
-        
+
         // Verify against all sources in parallel
         Promise<WikipediaApiClient.FactVerificationResult> wikiVerification =
             wikipediaClient.verifyFact(claimText, wikiTopic);
-        
-        Promise<OpenStaxApiClient.CurriculumAlignmentResult> curriculumAlignment = 
+
+        Promise<OpenStaxApiClient.CurriculumAlignmentResult> curriculumAlignment =
             openStaxClient.findAlignedContent(claimText, domain, gradeLevel);
-        
+
         // Combine results
         return wikiVerification.combine(curriculumAlignment, (wiki, curriculum) -> {
             List<VerificationSource> sources = new ArrayList<>();
-            
+
             // Add Wikipedia verification
             if (wiki.verified()) {
                 sources.add(new VerificationSource(
@@ -100,7 +100,7 @@ public class KnowledgeBaseService {
                     wiki.explanation()
                 ));
             }
-            
+
             // Add OpenStax verification
             if (curriculum.aligned()) {
                 sources.add(new VerificationSource(
@@ -110,10 +110,10 @@ public class KnowledgeBaseService {
                     curriculum.explanation()
                 ));
             }
-            
+
             // Calculate overall confidence
             double overallConfidence = calculateOverallConfidence(wiki, curriculum);
-            
+
             VerificationStatus status;
             if (overallConfidence >= 0.7) {
                 status = VerificationStatus.VERIFIED;
@@ -124,7 +124,7 @@ public class KnowledgeBaseService {
             } else {
                 status = VerificationStatus.DISPUTED;
             }
-            
+
             FactVerificationResult result = new FactVerificationResult(
                 status,
                 overallConfidence,
@@ -132,12 +132,12 @@ public class KnowledgeBaseService {
                 buildVerificationSummary(status, sources),
                 curriculum.alignedTopics()
             );
-            
+
             // Cache the result
             if (factCache.size() < MAX_CACHE_SIZE) {
                 factCache.put(cacheKey, result);
             }
-            
+
             return result;
         });
     }
@@ -152,21 +152,21 @@ public class KnowledgeBaseService {
      */
     public Promise<UnifiedSearchResult> search(String topic, String domain, int limit) {
         LOG.debug("Unified search for topic: {}", topic);
-        
+
         Promise<List<WikipediaApiClient.WikipediaArticleSummary>> wikiSearch =
             wikipediaClient.search(topic, limit);
-        
-        Promise<List<OpenStaxApiClient.OpenStaxSearchResult>> openstaxSearch = 
+
+        Promise<List<OpenStaxApiClient.OpenStaxSearchResult>> openstaxSearch =
             openStaxClient.search(topic, domain, limit);
-        
-        Promise<List<KhanAcademyApiClient.KhanSearchResult>> khanSearch = 
+
+        Promise<List<KhanAcademyApiClient.KhanSearchResult>> khanSearch =
             khanClient.search(topic, null, limit);
-        
-        return wikiSearch.combine(openstaxSearch, (wiki, openstax) -> 
+
+        return wikiSearch.combine(openstaxSearch, (wiki, openstax) ->
             new PartialResults(wiki, openstax))
             .combine(khanSearch, (partial, khan) -> {
                 List<SearchResultItem> allResults = new ArrayList<>();
-                
+
                 // Add Wikipedia results
                 for (var result : partial.wiki) {
                     allResults.add(new SearchResultItem(
@@ -178,7 +178,7 @@ public class KnowledgeBaseService {
                         0.8 // Wikipedia is highly authoritative
                     ));
                 }
-                
+
                 // Add OpenStax results
                 for (var result : partial.openstax) {
                     allResults.add(new SearchResultItem(
@@ -190,7 +190,7 @@ public class KnowledgeBaseService {
                         0.9 // Peer-reviewed textbooks
                     ));
                 }
-                
+
                 // Add Khan Academy results
                 for (var result : khan) {
                     allResults.add(new SearchResultItem(
@@ -202,7 +202,7 @@ public class KnowledgeBaseService {
                         0.7
                     ));
                 }
-                
+
                 return new UnifiedSearchResult(topic, allResults, allResults.size());
             });
     }
@@ -217,40 +217,40 @@ public class KnowledgeBaseService {
      */
     public Promise<SupplementaryResources> getSupplementaryResources(
             String topic, String domain, String gradeLevel) {
-        
+
         LOG.debug("Fetching supplementary resources for topic: {}", topic);
-        
-        Promise<List<OpenStaxApiClient.PrerequisiteRecommendation>> prerequisites = 
+
+        Promise<List<OpenStaxApiClient.PrerequisiteRecommendation>> prerequisites =
             openStaxClient.getPrerequisites(topic, domain);
-        
-        Promise<KhanAcademyApiClient.SupplementaryContentResult> khanContent = 
+
+        Promise<KhanAcademyApiClient.SupplementaryContentResult> khanContent =
             khanClient.findSupplementaryContent(topic, List.of(
                 KhanAcademyApiClient.ContentType.VIDEO,
                 KhanAcademyApiClient.ContentType.EXERCISE
             ));
-        
-        Promise<KhanAcademyApiClient.LearningPath> learningPath = 
+
+        Promise<KhanAcademyApiClient.LearningPath> learningPath =
             khanClient.getLearningPath(topic, gradeLevel);
-        
-        return prerequisites.combine(khanContent, (prereqs, khan) -> 
+
+        return prerequisites.combine(khanContent, (prereqs, khan) ->
             new PartialSupplementary(prereqs, khan))
             .combine(learningPath, (partial, path) -> {
                 List<ResourceLink> videos = partial.khan.videoLinks().stream()
                     .map(url -> new ResourceLink("Video", url, "Khan Academy"))
                     .toList();
-                
+
                 List<ResourceLink> exercises = partial.khan.exerciseLinks().stream()
                     .map(url -> new ResourceLink("Exercise", url, "Khan Academy"))
                     .toList();
-                
+
                 List<ResourceLink> prereqLinks = partial.prereqs.stream()
                     .map(p -> new ResourceLink(p.title(), p.url(), "OpenStax"))
                     .toList();
-                
+
                 List<LearningPathStep> pathSteps = path.steps().stream()
                     .map(s -> new LearningPathStep(s.order(), s.title(), s.url(), s.estimatedMinutes()))
                     .toList();
-                
+
                 return new SupplementaryResources(
                     videos,
                     exercises,
@@ -271,7 +271,7 @@ public class KnowledgeBaseService {
      */
     public Promise<CurriculumAlignmentResult> checkCurriculumAlignment(
             String contentText, String domain, String gradeLevel) {
-        
+
         return openStaxClient.findAlignedContent(contentText, domain, gradeLevel)
             .map(result -> new CurriculumAlignmentResult(
                 result.aligned(),
@@ -285,13 +285,13 @@ public class KnowledgeBaseService {
     private double calculateOverallConfidence(
             WikipediaApiClient.FactVerificationResult wiki,
             OpenStaxApiClient.CurriculumAlignmentResult curriculum) {
-        
+
         double wikiWeight = 0.4;
         double curriculumWeight = 0.6;
-        
+
         double wikiScore = wiki.verified() ? wiki.confidence() : 0.0;
         double curriculumScore = curriculum.aligned() ? curriculum.confidenceScore() : 0.0;
-        
+
         return (wikiScore * wikiWeight) + (curriculumScore * curriculumWeight);
     }
 
@@ -299,7 +299,7 @@ public class KnowledgeBaseService {
         if (sources.isEmpty()) {
             return "Unable to verify claim against available knowledge sources.";
         }
-        
+
         StringBuilder summary = new StringBuilder();
         summary.append(switch (status) {
             case VERIFIED -> "Claim verified by multiple authoritative sources. ";
@@ -307,14 +307,14 @@ public class KnowledgeBaseService {
             case UNVERIFIED -> "Claim could not be verified. ";
             case DISPUTED -> "Claim verification inconclusive. ";
         });
-        
+
         summary.append("Sources consulted: ");
         summary.append(sources.stream()
             .map(VerificationSource::sourceName)
             .distinct()
             .reduce((a, b) -> a + ", " + b)
             .orElse("none"));
-        
+
         return summary.toString();
     }
 
@@ -335,7 +335,7 @@ public class KnowledgeBaseService {
         List<WikipediaApiClient.WikipediaArticleSummary> wiki,
         List<OpenStaxApiClient.OpenStaxSearchResult> openstax
     ) {}
-    
+
     private record PartialSupplementary(
         List<OpenStaxApiClient.PrerequisiteRecommendation> prereqs,
         KhanAcademyApiClient.SupplementaryContentResult khan

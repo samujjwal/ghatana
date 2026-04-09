@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * A/B Testing Service for AI Model Comparison (Java/ActiveJ)
@@ -299,7 +298,7 @@ public class ABTestingEvaluationService {
     ) {
         return Promise.ofBlocking(Runnable::run, () -> {
             Map<AIModelProvider, Double> scores = new EnumMap<>(AIModelProvider.class);
-            
+
             // Normalize weights
             double totalWeight = qualityWeight + costWeight + latencyWeight;
             double normQuality = qualityWeight / totalWeight;
@@ -338,7 +337,7 @@ public class ABTestingEvaluationService {
                     .orElse(AIModelProvider.GPT_4_TURBO);
 
             double bestScore = scores.getOrDefault(best, 0.0);
-            
+
             String reason = generateRecommendationReason(best, performanceCache.get(best), normQuality, normCost, normLatency);
 
             return new ModelRecommendation(best, reason, bestScore, scores);

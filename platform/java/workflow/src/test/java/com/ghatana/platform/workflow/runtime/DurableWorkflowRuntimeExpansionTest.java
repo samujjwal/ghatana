@@ -13,10 +13,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -139,7 +137,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
             runPromise(() -> definitionRegistry.register(def));
 
-            WorkflowRun result = runPromise(() -> runtime.start("multi-op-wf", "tenant-1", "corr-1", 
+            WorkflowRun result = runPromise(() -> runtime.start("multi-op-wf", "tenant-1", "corr-1",
                     new HashMap<>()));
 
             assertThat(result).isNotNull();
@@ -183,7 +181,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
             runPromise(() -> definitionRegistry.register(def));
 
-            WorkflowRun result = runPromise(() -> runtime.start("chain-wf", "tenant-1", "corr-1", 
+            WorkflowRun result = runPromise(() -> runtime.start("chain-wf", "tenant-1", "corr-1",
                     new HashMap<>()));
 
             assertThat(result).isNotNull();
@@ -215,7 +213,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
             WorkflowDefinition def = builder.build();
             runPromise(() -> definitionRegistry.register(def));
 
-            WorkflowRun result = runPromise(() -> runtime.start("long-chain-wf", "tenant-1", "corr-1", 
+            WorkflowRun result = runPromise(() -> runtime.start("long-chain-wf", "tenant-1", "corr-1",
                     new HashMap<>()));
 
             assertThat(result).isNotNull();
@@ -248,7 +246,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
             // Run multiple times - each should have isolated context
             for (int i = 0; i < 3; i++) {
                 final int tenantNum = i;
-                WorkflowRun result = runPromise(() -> runtime.start("context-wf", "tenant-" + tenantNum, 
+                WorkflowRun result = runPromise(() -> runtime.start("context-wf", "tenant-" + tenantNum,
                         "corr-" + tenantNum, new HashMap<>()));
                 assertThat(result).isNotNull();
             }
@@ -274,7 +272,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
             runPromise(() -> definitionRegistry.register(def));
 
-            WorkflowRun result = runPromise(() -> runtime.start("event-wf", "tenant-1", "corr-1", 
+            WorkflowRun result = runPromise(() -> runtime.start("event-wf", "tenant-1", "corr-1",
                     new HashMap<>()));
 
             // Events should have been captured

@@ -18,14 +18,6 @@ import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.agent.AepEventPublisher;
 import com.ghatana.yappc.services.security.YappcApiSecurity;
-import com.ghatana.yappc.services.intent.IntentService;
-import com.ghatana.yappc.services.shape.ShapeService;
-import com.ghatana.yappc.services.generate.GenerationService;
-import com.ghatana.yappc.services.run.RunService;
-import com.ghatana.yappc.services.observe.ObserveService;
-import com.ghatana.yappc.services.evolve.EvolutionService;
-import com.ghatana.yappc.services.learn.LearningService;
-import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import io.activej.http.AsyncServlet;
@@ -548,4 +540,3 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         new YappcLifecycleService().launch(args);
     }
 }
-

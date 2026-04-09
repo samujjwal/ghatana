@@ -46,7 +46,7 @@ public class LearningEngineConfig {
         this.evolutionInterval = builder.evolutionInterval;
         this.stateRetentionPeriod = builder.stateRetentionPeriod;
         this.timeWindow = builder.timeWindow;
-        
+
         this.minPatternConfidence = builder.minPatternConfidence;
         this.minPatternSupport = builder.minPatternSupport;
         this.minSequenceConfidence = builder.minSequenceConfidence;
@@ -56,11 +56,11 @@ public class LearningEngineConfig {
         this.minAnomalyThreshold = builder.minAnomalyThreshold;
         this.minOptimizationThreshold = builder.minOptimizationThreshold;
         this.minEvolutionThreshold = builder.minEvolutionThreshold;
-        
+
         this.maxLearningStates = builder.maxLearningStates;
         this.maxDiscoveredPatterns = builder.maxDiscoveredPatterns;
         this.threadPoolSize = builder.threadPoolSize;
-        
+
         this.sequenceConfig = builder.sequenceConfig;
         this.correlationConfig = builder.correlationConfig;
         this.anomalyConfig = builder.anomalyConfig;
@@ -74,7 +74,7 @@ public class LearningEngineConfig {
     public long getEvolutionInterval() { return evolutionInterval; }
     public long getStateRetentionPeriod() { return stateRetentionPeriod; }
     public long getTimeWindow() { return timeWindow; }
-    
+
     public double getMinPatternConfidence() { return minPatternConfidence; }
     public long getMinPatternSupport() { return minPatternSupport; }
     public double getMinSequenceConfidence() { return minSequenceConfidence; }
@@ -84,11 +84,11 @@ public class LearningEngineConfig {
     public double getMinAnomalyThreshold() { return minAnomalyThreshold; }
     public double getMinOptimizationThreshold() { return minOptimizationThreshold; }
     public double getMinEvolutionThreshold() { return minEvolutionThreshold; }
-    
+
     public int getMaxLearningStates() { return maxLearningStates; }
     public int getMaxDiscoveredPatterns() { return maxDiscoveredPatterns; }
     public int getThreadPoolSize() { return threadPoolSize; }
-    
+
     public SequenceAnalyzerConfig getSequenceConfig() { return sequenceConfig; }
     public CorrelationDetectorConfig getCorrelationConfig() { return correlationConfig; }
     public AnomalyDetectorConfig getAnomalyConfig() { return anomalyConfig; }

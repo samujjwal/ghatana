@@ -28,7 +28,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * CollectionStorageProfile mapping = CollectionStorageProfile.builder()
  *         .tenantId("tenant-1")

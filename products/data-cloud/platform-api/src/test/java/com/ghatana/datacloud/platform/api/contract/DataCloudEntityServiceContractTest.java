@@ -15,14 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -124,7 +121,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String tenantId = "tenant-1";
             String collectionId = "coll-strict-schema";
             // Collection schema requires: name (string), email (string)
-            Entity invalidEntity = new Entity("", collectionId, tenantId, 
+            Entity invalidEntity = new Entity("", collectionId, tenantId,
                     Map.of("missing_required_field", "value"));
             lenient().when(entityService.create(tenantId, collectionId, invalidEntity))
                     .thenReturn(Promise.ofException(
@@ -191,7 +188,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             lenient().when(entityService.getById(tenantId, collectionId, entityId))
                     .thenReturn(Promise.of(Optional.of(expected)));
 
-            Optional<Entity> result = runPromise(() -> 
+            Optional<Entity> result = runPromise(() ->
                     entityService.getById(tenantId, collectionId, entityId));
 
             assertThat(result).isPresent();
@@ -219,7 +216,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         void entityResponseMustBeComplete() {
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            Entity entity = new Entity("ent-1", collectionId, tenantId, 
+            Entity entity = new Entity("ent-1", collectionId, tenantId,
                     Map.of("name", "Eve", "email", "eve@example.com"));
             lenient().when(entityService.getById(tenantId, collectionId, "ent-1"))
                     .thenReturn(Promise.of(Optional.of(entity)));
@@ -245,7 +242,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-1";
-            Entity updated = new Entity(entityId, collectionId, tenantId, 
+            Entity updated = new Entity(entityId, collectionId, tenantId,
                     Map.of("name", "Frank", "age", 35));
             updated.updatedBy = "user-updater";
             lenient().when(entityService.update(tenantId, collectionId, entityId, any()))

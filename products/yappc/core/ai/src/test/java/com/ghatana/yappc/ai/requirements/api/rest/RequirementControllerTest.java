@@ -15,7 +15,6 @@ import com.ghatana.yappc.ai.requirements.api.rest.dto.CreateRequirementRequest;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.RecordFeedbackRequest;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.bytebuf.ByteBuf;
-import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;

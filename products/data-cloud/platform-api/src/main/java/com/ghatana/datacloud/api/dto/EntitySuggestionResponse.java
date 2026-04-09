@@ -55,7 +55,7 @@ public record EntitySuggestionResponse(
 
     /**
      * Gets suggested data from domain object.
-     * 
+     *
      * @return Map of suggested field names to values
      */
     public java.util.Map<String, Object> suggestedData() {
@@ -64,7 +64,7 @@ public record EntitySuggestionResponse(
 
     /**
      * Gets confidence score (0.0-1.0).
-     * 
+     *
      * @return Confidence between 0 and 1
      */
     public double confidence() {
@@ -73,7 +73,7 @@ public record EntitySuggestionResponse(
 
     /**
      * Gets reasoning explanation list.
-     * 
+     *
      * @return List of reasoning strings
      */
     public java.util.List<String> reasoning() {

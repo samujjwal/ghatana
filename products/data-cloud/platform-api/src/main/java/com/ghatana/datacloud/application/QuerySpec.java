@@ -70,7 +70,7 @@ public record QuerySpec(
     public QuerySpec {
         Objects.requireNonNull(sql, "SQL must not be null");
         Objects.requireNonNull(parameters, "Parameters must not be null");
-        
+
         if (offset < 0) {
             throw new IllegalArgumentException("Offset must be >= 0, got: " + offset);
         }

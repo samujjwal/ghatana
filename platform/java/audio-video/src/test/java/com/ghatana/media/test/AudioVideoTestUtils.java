@@ -44,7 +44,7 @@ public final class AudioVideoTestUtils {
      * @param failureRate rate 0.0-1.0 of operations that should fail
      * @param exceptionType type of exception to throw
      */
-    public static SttEngine createFailingSttEngine(double failureRate, 
+    public static SttEngine createFailingSttEngine(double failureRate,
                                                     Class<? extends Exception> exceptionType) {
         return new FailingSttEngine(failureRate, exceptionType);
     }
@@ -76,7 +76,7 @@ public final class AudioVideoTestUtils {
      * @return the result
      * @throws TimeoutException if operation times out
      */
-    public static <T> T awaitWithTimeout(CompletableFuture<T> future, Duration timeout) 
+    public static <T> T awaitWithTimeout(CompletableFuture<T> future, Duration timeout)
             throws TimeoutException, ExecutionException, InterruptedException {
         return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
@@ -241,8 +241,8 @@ public final class AudioVideoTestUtils {
         }
 
         @Override
-        public java.util.Optional<UserProfile> loadProfile(String profileId) { 
-            return java.util.Optional.of(createProfile(profileId, List.of())); 
+        public java.util.Optional<UserProfile> loadProfile(String profileId) {
+            return java.util.Optional.of(createProfile(profileId, List.of()));
         }
 
         @Override
@@ -326,8 +326,8 @@ public final class AudioVideoTestUtils {
         }
 
         @Override
-        public java.util.Optional<UserProfile> loadProfile(String profileId) { 
-            return java.util.Optional.of(createProfile(profileId, List.of())); 
+        public java.util.Optional<UserProfile> loadProfile(String profileId) {
+            return java.util.Optional.of(createProfile(profileId, List.of()));
         }
 
         @Override

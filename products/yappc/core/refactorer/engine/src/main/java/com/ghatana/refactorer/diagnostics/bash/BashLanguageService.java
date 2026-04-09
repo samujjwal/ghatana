@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @doc.language bash
  * @doc.tools shellcheck,shfmt
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.purpose Handles bash language service operations
  * @doc.layer core
  * @doc.pattern Service

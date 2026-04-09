@@ -26,7 +26,7 @@ class PluginSecurityTest {
     void shouldValidatePluginPermissions() {
         Set<String> permissions = Set.of("read", "write", "execute");
         String requiredPermission = "read";
-        
+
         assertThat(permissions).contains(requiredPermission);
     }
 
@@ -35,7 +35,7 @@ class PluginSecurityTest {
     void shouldHandlePluginAuthentication() {
         String token = "plugin-token-123";
         boolean authenticated = true;
-        
+
         assertThat(token).isNotNull();
         assertThat(authenticated).isTrue();
     }
@@ -45,7 +45,7 @@ class PluginSecurityTest {
     void shouldHandlePluginAuthorization() {
         String role = "ADMIN";
         Set<String> allowedRoles = Set.of("ADMIN", "USER");
-        
+
         assertThat(allowedRoles).contains(role);
     }
 
@@ -54,7 +54,7 @@ class PluginSecurityTest {
     void shouldHandlePluginSandboxing() {
         boolean sandboxed = true;
         String isolationLevel = "PROCESS";
-        
+
         assertThat(sandboxed).isTrue();
         assertThat(isolationLevel).isNotNull();
     }
@@ -64,7 +64,7 @@ class PluginSecurityTest {
     void shouldHandleSecurityViolations() {
         boolean violation = false;
         String violationType = null;
-        
+
         assertThat(violation).isFalse();
         assertThat(violationType).isNull();
     }
@@ -74,7 +74,7 @@ class PluginSecurityTest {
     void shouldHandlePluginCertificates() {
         String certificate = "cert-123";
         boolean valid = true;
-        
+
         assertThat(certificate).isNotNull();
         assertThat(valid).isTrue();
     }

@@ -3,7 +3,7 @@ package com.ghatana.refactorer.a2a;
 /**
  * Constants for A2A envelope types. Defines the standard message types for agent-to-agent
  * communication.
- 
+
  * @doc.type class
  * @doc.purpose Handles envelope types operations
  * @doc.layer core

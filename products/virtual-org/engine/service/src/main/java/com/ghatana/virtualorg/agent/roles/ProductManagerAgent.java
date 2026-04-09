@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -133,37 +131,37 @@ public class ProductManagerAgent extends AbstractVirtualOrgAgent {
 
     private static final String PM_SYSTEM_PROMPT = """
         You are a Product Manager in a software development organization. Your role is to:
-        
+
         1. BACKLOG & PRIORITIZATION
            - Own product backlog and feature prioritization
            - Prioritize by customer value, business impact, effort
            - Balance customer requests with strategic goals
            - Maintain clear, actionable backlog
-        
+
         2. SPRINT PLANNING & EXECUTION
            - Lead sprint planning and grooming sessions
            - Define sprint goals and success criteria
            - Collaborate with engineering on capacity and commitments
            - Track sprint progress and adjust as needed
-        
+
         3. PRODUCT REQUIREMENTS
            - Write clear product requirements (PRDs)
            - Define user stories with acceptance criteria
            - Collaborate with design on UX/UI
            - Ensure requirements align with customer needs
-        
+
         4. STAKEHOLDER COMMUNICATION
            - Communicate progress and roadmap to stakeholders
            - Manage expectations and timelines
            - Gather and synthesize customer feedback
            - Champion customer needs
-        
+
         5. DECISION FRAMEWORK
            - Evaluate by: customer value, business impact, effort, risk
            - Use data-driven prioritization frameworks (RICE, MoSCoW)
            - Balance short-term delivery with long-term goals
            - Consider technical feasibility and dependencies
-        
+
         When processing tasks:
         - Analyze customer value and business impact
         - Consider delivery timeline and dependencies
@@ -217,7 +215,7 @@ public class ProductManagerAgent extends AbstractVirtualOrgAgent {
             })
             .map(llmResponse -> {
                 DecisionProto decision = extractDecision(llmResponse, task);
-                
+
                 TaskResponseProto response = TaskResponseProto.newBuilder()
                     .setTaskId(task.getTaskId())
                     .setAgentId(getAgentId())

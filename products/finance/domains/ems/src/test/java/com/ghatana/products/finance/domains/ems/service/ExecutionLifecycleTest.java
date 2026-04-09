@@ -1,12 +1,8 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionStatus;
-import com.ghatana.products.finance.domains.ems.service.FillAggregationService.FillAggregated;
 import com.ghatana.products.finance.domains.ems.service.FillAggregationService.PartialFill;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +18,6 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -36,10 +31,10 @@ class ExecutionLifecycleTest extends EventloopTestBase {
 
     private ExecutionLifecycleService lifecycleService;
     private FillAggregationService fillAggregationService;
-    
+
     @Mock
     private DataSource dataSource;
-    
+
     private SimpleMeterRegistry meterRegistry;
     private Executor executor;
 
@@ -48,7 +43,7 @@ class ExecutionLifecycleTest extends EventloopTestBase {
         MockitoAnnotations.openMocks(this);
         meterRegistry = new SimpleMeterRegistry();
         executor = Runnable::run;
-        
+
         lifecycleService = new ExecutionLifecycleService();
         fillAggregationService = new FillAggregationService(dataSource, executor, meterRegistry);
     }
@@ -191,7 +186,7 @@ class ExecutionLifecycleTest extends EventloopTestBase {
     @DisplayName("Should aggregate multiple partial fills")
     void shouldAggregateMultiplePartialFills() {
         String orderId = UUID.randomUUID().toString();
-        
+
         List<PartialFill> fills = List.of(
             new PartialFill("fill-1", orderId, "slice-1", 30L, BigDecimal.valueOf(150.00), Instant.now()),
             new PartialFill("fill-2", orderId, "slice-2", 40L, BigDecimal.valueOf(150.50), Instant.now()),
@@ -199,7 +194,7 @@ class ExecutionLifecycleTest extends EventloopTestBase {
         );
 
         BigDecimal wavg = computeWeightedAverage(fills);
-        
+
         assertThat(wavg).isEqualByComparingTo(BigDecimal.valueOf(150.50));
     }
 
@@ -268,7 +263,7 @@ class ExecutionLifecycleTest extends EventloopTestBase {
 
         ExecutionState applyFill(ExecutionState state, BigDecimal fillQuantity, BigDecimal fillPrice) {
             BigDecimal newFilled = state.filledQuantity().add(fillQuantity);
-            
+
             if (newFilled.compareTo(state.totalQuantity()) > 0) {
                 throw new IllegalStateException("Overfill detected");
             }

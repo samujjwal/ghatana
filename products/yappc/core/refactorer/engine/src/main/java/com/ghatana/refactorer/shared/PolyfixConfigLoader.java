@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * Loads and validates Polyfix configuration with support for: - Default values - File-based
  * configuration - Environment variable overrides - Schema validation
- 
+
  * @doc.type class
  * @doc.purpose Handles polyfix config loader operations
  * @doc.layer core

@@ -2,7 +2,6 @@ package com.ghatana.datacloud.plugins.iceberg;
 
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -59,19 +58,19 @@ import java.util.concurrent.atomic.AtomicLong;
  *     .interval(Duration.ofHours(1))
  *     .deleteAfterMigration(true)
  *     .build();
- * 
+ *
  * TierMigrationScheduler scheduler = new TierMigrationScheduler(
  *     l1StoragePlugin,
  *     l2StoragePlugin,
  *     config
  * );
- * 
+ *
  * // Start migration scheduler
  * scheduler.start();
- * 
+ *
  * // Trigger manual migration
  * scheduler.triggerMigration("tenant-123", "orders-stream");
- * 
+ *
  * // Stop scheduler
  * scheduler.stop();
  * }</pre>
@@ -147,7 +146,7 @@ public class TierMigrationScheduler {
         this.l1Storage = Objects.requireNonNull(l1Storage, "l1Storage");
         this.l2Storage = Objects.requireNonNull(l2Storage, "l2Storage");
         this.config = Objects.requireNonNull(config, "config");
-        
+
         initializeMetrics();
     }
 
@@ -312,7 +311,7 @@ public class TierMigrationScheduler {
 
     private long migrateStream(String tenantId, String streamName) {
         Instant cutoffTime = Instant.now().minus(config.getRetentionThreshold());
-        
+
         log.debug("Migrating events before {} for tenant={}, stream={}",
                 cutoffTime, tenantId, streamName);
 

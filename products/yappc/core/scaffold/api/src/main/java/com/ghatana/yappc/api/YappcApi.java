@@ -33,7 +33,7 @@ import java.util.Map;
  * <p>Usage example:
  * <pre>{@code
  * YappcApi yappc = YappcApi.create();
- * 
+ *
  * // Create a new project
  * CreateResult result = yappc.projects().create(
  *     CreateRequest.builder()
@@ -42,7 +42,7 @@ import java.util.Map;
  *         .variable("packageName", "com.example")
  *         .build()
  * );
- * 
+ *
  * // Add a feature
  * yappc.projects().addFeature(
  *     AddFeatureRequest.builder()

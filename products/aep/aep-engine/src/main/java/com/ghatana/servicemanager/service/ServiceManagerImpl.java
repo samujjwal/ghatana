@@ -12,10 +12,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Service Manager implementation.
- * 
+ *
  * Manages AEP service processes using configuration-driven approach.
  * Supports environment variables, configuration files, and feature flags.
- * 
+ *
  * @doc.type class
  * @doc.purpose Service orchestration implementation
  * @doc.layer orchestration
@@ -37,9 +37,9 @@ public class ServiceManagerImpl implements ServiceManager {
     @Override
     public void startEnabledServices() throws Exception {
         LOG.info("Starting enabled services based on configuration");
-        
+
         List<ServiceConfiguration> enabledServices = serviceConfig.getEnabledServices();
-        
+
         if (enabledServices.isEmpty()) {
             LOG.warn("No services enabled in configuration");
             return;
@@ -80,15 +80,15 @@ public class ServiceManagerImpl implements ServiceManager {
         }
 
         LOG.info("Starting service: {} on port: {}", serviceName, config.getPort());
-        
+
         ServiceProcess process = new ServiceProcess(config);
         process.start();
-        
+
         runningServices.put(serviceName, process);
-        
+
         // Poll for readiness instead of blocking Thread.sleep
         boolean ready = awaitServiceReady(process, serviceName, 2000, 100);
-        
+
         if (!ready || !process.isAlive()) {
             runningServices.remove(serviceName);
             throw new RuntimeException("Service " + serviceName + " failed to start");
@@ -135,20 +135,20 @@ public class ServiceManagerImpl implements ServiceManager {
         }
 
         LOG.info("Stopping service: {}", serviceName);
-        
+
         process.stop();
         runningServices.remove(serviceName);
-        
+
         LOG.info("Service {} stopped", serviceName);
     }
 
     @Override
     public void shutdownAll() throws Exception {
         LOG.info("Shutting down all running services");
-        
+
         // Create a copy to avoid concurrent modification
         Set<String> servicesToStop = new HashSet<>(runningServices.keySet());
-        
+
         for (String serviceName : servicesToStop) {
             try {
                 stopService(serviceName);
@@ -156,7 +156,7 @@ public class ServiceManagerImpl implements ServiceManager {
                 LOG.error("Error stopping service: {}", serviceName, e);
             }
         }
-        
+
         LOG.info("All services shut down");
     }
 

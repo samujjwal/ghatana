@@ -32,7 +32,7 @@ public class CargoTomlGenerator implements CargoBuildGenerator {
 
     @Override
     public Promise<GeneratedCargoProject> generateCargoToml(CargoBuildSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     try {
                         logger.info("Generating Cargo.toml for project: {}", spec.getName());
@@ -68,7 +68,7 @@ public class CargoTomlGenerator implements CargoBuildGenerator {
 
     @Override
     public Promise<CargoImprovementSuggestions> suggestImprovements(CargoBuildSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     List<CargoImprovementSuggestions.DependencyUpgrade> upgrades =
                             new ArrayList<>();
@@ -123,7 +123,7 @@ public class CargoTomlGenerator implements CargoBuildGenerator {
 
     @Override
     public Promise<RustProjectScaffold> generateProjectScaffold(CargoBuildSpec spec) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     Map<String, String> sourceFiles = new HashMap<>();
                     Map<String, String> testFiles = new HashMap<>();
@@ -158,7 +158,7 @@ public class CargoTomlGenerator implements CargoBuildGenerator {
 
     @Override
     public Promise<CargoAnalysisResult> analyzeProject(String projectPath) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     // Mock analysis - in real implementation would analyze actual Rust project
                     CargoAnalysisResult.ProjectMetrics metrics =

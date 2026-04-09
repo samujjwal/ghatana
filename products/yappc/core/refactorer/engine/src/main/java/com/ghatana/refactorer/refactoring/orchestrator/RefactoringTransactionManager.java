@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Manages transactions for refactoring operations to ensure atomicity. 
+ * Manages transactions for refactoring operations to ensure atomicity.
  * @doc.type class
  * @doc.purpose Handles refactoring transaction manager operations
  * @doc.layer core

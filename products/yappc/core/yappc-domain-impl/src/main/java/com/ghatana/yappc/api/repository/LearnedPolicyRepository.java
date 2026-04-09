@@ -16,7 +16,7 @@ import java.util.Optional;
  * @doc.pattern Repository
  */
 public interface LearnedPolicyRepository {
-    
+
     /**
      * Save a learned policy.
      *
@@ -24,7 +24,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of the saved policy
      */
     Promise<LearnedPolicy> save(LearnedPolicy policy);
-    
+
     /**
      * Find a policy by its ID.
      *
@@ -32,7 +32,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of optional containing the policy if found
      */
     Promise<Optional<LearnedPolicy>> findById(String id);
-    
+
     /**
      * Find all policies for a tenant.
      *
@@ -40,7 +40,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of list of policies
      */
     Promise<List<LearnedPolicy>> findByTenantId(String tenantId);
-    
+
     /**
      * Find policies by agent type.
      *
@@ -49,7 +49,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of list of matching policies
      */
     Promise<List<LearnedPolicy>> findByTenantIdAndAgentType(String tenantId, String agentType);
-    
+
     /**
      * Find high-confidence policies above a threshold.
      *
@@ -58,7 +58,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of list of high-confidence policies
      */
     Promise<List<LearnedPolicy>> findByTenantIdAndConfidenceGreaterThan(String tenantId, double minConfidence);
-    
+
     /**
      * Find policies by agent ID.
      *
@@ -67,7 +67,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of list of policies for the agent
      */
     Promise<List<LearnedPolicy>> findByAgent(String tenantId, String agentId);
-    
+
     /**
      * Find policies above a confidence threshold.
      *
@@ -76,7 +76,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of list of high-confidence policies
      */
     Promise<List<LearnedPolicy>> findAboveConfidence(String tenantId, double minConfidence);
-    
+
     /**
      * Delete a policy by ID.
      *
@@ -84,7 +84,7 @@ public interface LearnedPolicyRepository {
      * @return Promise of true if deleted, false otherwise
      */
     Promise<Boolean> deleteById(String id);
-    
+
     /**
      * Find all active policies for a tenant.
      *

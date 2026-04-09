@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for SimpleTemplateEngine. Week 2, Day 6 deliverable - template engine
  * testing.
- 
+
  * @doc.type class
  * @doc.purpose Handles simple template engine test operations
  * @doc.layer core

@@ -89,7 +89,7 @@ class ExperimentManagerTest {
         // WHEN - assign many users
         int controlCount = 0;
         int treatmentCount = 0;
-        
+
         for (int i = 0; i < 1000; i++) {
             ExperimentManager.Variant variant = experimentManager.getVariant("exp-003", "user-" + i);
             if (variant != null) {
@@ -140,7 +140,7 @@ class ExperimentManagerTest {
     void shouldTrackConversionsByVariant() {
         // GIVEN
         createTwoVariantExperiment("exp-005");
-        
+
         // Assign users first
         experimentManager.getVariant("exp-005", "user-1");
         experimentManager.getVariant("exp-005", "user-2");
@@ -161,7 +161,7 @@ class ExperimentManagerTest {
     void shouldCalculateStatisticalSignificance() {
         // GIVEN
         createTwoVariantExperiment("exp-006");
-        
+
         // Simulate many users with different outcomes
         for (int i = 0; i < 100; i++) {
             String userId = "control-user-" + i;
@@ -169,7 +169,7 @@ class ExperimentManagerTest {
             // Control users get lower scores
             experimentManager.recordConversion("exp-006", userId, "score", 50 + Math.random() * 10);
         }
-        
+
         for (int i = 0; i < 100; i++) {
             String userId = "treatment-user-" + i;
             experimentManager.getVariant("exp-006", userId);

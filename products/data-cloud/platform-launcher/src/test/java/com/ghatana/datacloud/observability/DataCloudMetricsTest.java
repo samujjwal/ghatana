@@ -3,7 +3,6 @@ package com.ghatana.datacloud.observability;
 import com.ghatana.datacloud.observability.DataCloudMetrics.OperationType;
 import com.ghatana.datacloud.observability.DataCloudMetrics.PluginType;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -15,7 +14,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -164,7 +162,7 @@ class DataCloudMetricsTest {
 
             // Gauge should be registered
             long gauges = registry.getMeters().stream()
-                    .filter(m -> m.getId().getName().contains("entity") 
+                    .filter(m -> m.getId().getName().contains("entity")
                             && m.getId().getName().contains("count"))
                     .count();
             assertThat(gauges).isGreaterThan(0);

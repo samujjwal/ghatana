@@ -53,14 +53,14 @@ import java.util.Objects;
  * public class AndOperator extends AbstractPatternOperator {
  *     private final List<UnifiedOperator> subPatterns;
  *     private StateStore<String, PartialMatches> matchState;
- *     
+ *
  *     public AndOperator(OperatorId id, List<UnifiedOperator> subPatterns,
  *                        MetricsCollector metrics) {
  *         super(id, "AND Pattern", "Matches when all sub-patterns match",
  *               List.of("pattern.and", "pattern.conjunction"), metrics);
  *         this.subPatterns = List.copyOf(subPatterns);
  *     }
- *     
+ *
  *     @Override
  *     protected Promise<Void> doInitialize(OperatorConfig config) {
  *         // Validate: must have at least 2 sub-patterns
@@ -69,16 +69,16 @@ import java.util.Objects;
  *                 "AND pattern requires at least 2 sub-patterns", getId()
  *             ));
  *         }
- *         
+ *
  *         // Initialize state store
  *         this.matchState = StateStoreFactory.createHybrid(config);
  *         return Promise.complete();
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         String groupKey = event.getPayload().getString("key");
- *         
+ *
  *         return matchState.get(groupKey, PartialMatches.class)
  *             .map(optional -> optional.orElse(new PartialMatches()))
  *             .then(partial -> {
@@ -89,7 +89,7 @@ import java.util.Objects;
  *                             .then(result -> {
  *                                 if (result.isMatch()) {
  *                                     partial.addMatch(subPattern.getId(), event);
- *                                     
+ *
  *                                     if (partial.isComplete(subPatterns.size())) {
  *                                         // All sub-patterns matched - emit result
  *                                         return matchState.delete(groupKey)
@@ -110,7 +110,7 @@ import java.util.Objects;
  *                 return Promise.of(OperatorResult.empty());
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public List<UnifiedOperator> getSubPatterns() {
  *         return subPatterns;
@@ -123,29 +123,29 @@ import java.util.Objects;
  * public class SeqOperator extends AbstractPatternOperator {
  *     private final List<UnifiedOperator> sequence;
  *     private StateStore<String, SeqState> sequenceState;
- *     
+ *
  *     public SeqOperator(OperatorId id, List<UnifiedOperator> sequence,
  *                        MetricsCollector metrics) {
  *         super(id, "SEQ Pattern", "Matches events in strict order",
  *               List.of("pattern.seq", "pattern.sequence"), metrics);
  *         this.sequence = List.copyOf(sequence);
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         String key = event.getPayload().getString("key");
- *         
+ *
  *         return sequenceState.get(key, SeqState.class)
  *             .map(optional -> optional.orElse(new SeqState(0)))
  *             .then(state -> {
  *                 int currentStep = state.getCurrentStep();
  *                 UnifiedOperator expectedPattern = sequence.get(currentStep);
- *                 
+ *
  *                 return expectedPattern.process(event)
  *                     .then(result -> {
  *                         if (result.isMatch()) {
  *                             state.advance(event);
- *                             
+ *
  *                             if (state.isComplete(sequence.size())) {
  *                                 // Sequence complete - emit match
  *                                 return sequenceState.delete(key)
@@ -163,7 +163,7 @@ import java.util.Objects;
  *                     });
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public List<UnifiedOperator> getSubPatterns() {
  *         return sequence;
@@ -177,7 +177,7 @@ import java.util.Objects;
  *     private final UnifiedOperator pattern;
  *     private final Duration timeWindow;
  *     private StateStore<String, WithinState> timeState;
- *     
+ *
  *     public WithinOperator(OperatorId id, UnifiedOperator pattern,
  *                           Duration timeWindow, MetricsCollector metrics) {
  *         super(id, "WITHIN Pattern", "Matches pattern within time window",
@@ -185,12 +185,12 @@ import java.util.Objects;
  *         this.pattern = pattern;
  *         this.timeWindow = timeWindow;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         String key = event.getPayload().getString("key");
  *         long now = System.currentTimeMillis();
- *         
+ *
  *         return timeState.get(key, WithinState.class)
  *             .map(optional -> optional.orElse(new WithinState(now)))
  *             .then(state -> {
@@ -200,7 +200,7 @@ import java.util.Objects;
  *                     return timeState.delete(key)
  *                         .map(v -> OperatorResult.empty());
  *                 }
- *                 
+ *
  *                 // Check pattern match
  *                 return pattern.process(event)
  *                     .then(result -> {
@@ -213,7 +213,7 @@ import java.util.Objects;
  *                     });
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public List<UnifiedOperator> getSubPatterns() {
  *         return List.of(pattern);
@@ -270,12 +270,12 @@ import java.util.Objects;
  * @see AbstractLearningOperator
  * @see UnifiedOperator
  * @see OperatorType#PATTERN
- * 
+ *
  * @doc.type class
  * @doc.purpose Abstract base class for pattern detection operators (CEP)
  * @doc.layer core
  * @doc.pattern Template Method (process extension point)
- * 
+ *
  * @since 2.0
  */
 public abstract class AbstractPatternOperator extends AbstractOperator {

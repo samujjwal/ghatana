@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** SonarQube analysis tool (stub). 
+/** SonarQube analysis tool (stub).
  * @doc.type class
  * @doc.purpose Handles sonar tool operations
  * @doc.layer core

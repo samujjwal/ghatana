@@ -7,18 +7,16 @@ import com.ghatana.pattern.compiler.ast.ASTBuilder;
 import com.ghatana.pattern.compiler.dag.DAGBuilder;
 import com.ghatana.pattern.compiler.dag.DAGOptimizer;
 import com.ghatana.pattern.operator.registry.OperatorRegistry;
-import com.ghatana.pattern.operator.spi.ValidationContext;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Main pattern compiler that transforms PatternSpecification into DetectionPlan.
- * 
+ *
  * <p>This compiler handles the complete compilation pipeline:
  * <ol>
  *   <li>Validation of pattern specification</li>
@@ -26,7 +24,7 @@ import java.util.UUID;
  *   <li>DAG generation and optimization</li>
  *   <li>Detection plan creation</li>
  * </ol>
- * 
+ *
  * @doc.type class
  * @doc.purpose Transforms PatternSpecification into optimized DetectionPlan via multi-phase compilation
  * @doc.layer product
@@ -39,7 +37,7 @@ import java.util.UUID;
  * @doc.apiNote Compile patterns before deployment; compiled plans are immutable and cacheable
  * @doc.limitation No incremental compilation; full recompile required on pattern changes
  * @doc.sideEffects Emits metrics for compilation time, validation time, and optimization steps
- * 
+ *
  * <h2>Compilation Phases</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -79,27 +77,27 @@ import java.util.UUID;
  *     <td>O(1)</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Design Reference:</b>
  * This compiler implements the Pattern Compilation pipeline from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Unified Operator Model" for operator integration.
  */
 public class PatternCompiler {
-    
+
     private final OperatorRegistry operatorRegistry;
     private final ValidationEngine validationEngine;
     private final ASTBuilder astBuilder;
     private final DAGBuilder dagBuilder;
     private final DAGOptimizer dagOptimizer;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Timer compilationTimer;
     private final Timer validationTimer;
     private final Timer astBuildTimer;
     private final Timer dagBuildTimer;
     private final Timer optimizationTimer;
-    
+
     public PatternCompiler(OperatorRegistry operatorRegistry, MeterRegistry meterRegistry) {
         this.operatorRegistry = operatorRegistry;
         this.meterRegistry = meterRegistry;
@@ -107,29 +105,29 @@ public class PatternCompiler {
         this.astBuilder = new ASTBuilder(operatorRegistry, meterRegistry);
         this.dagBuilder = new DAGBuilder(operatorRegistry, meterRegistry);
         this.dagOptimizer = new DAGOptimizer(operatorRegistry, meterRegistry);
-        
+
         // Initialize metrics
         this.compilationTimer = Timer.builder("pattern.compiler.compilation.time")
                 .description("Time taken to compile a pattern")
                 .register(meterRegistry);
-        
+
         this.validationTimer = Timer.builder("pattern.compiler.validation.time")
                 .description("Time taken to validate a pattern")
                 .register(meterRegistry);
-        
+
         this.astBuildTimer = Timer.builder("pattern.compiler.ast.build.time")
                 .description("Time taken to build AST")
                 .register(meterRegistry);
-        
+
         this.dagBuildTimer = Timer.builder("pattern.compiler.dag.build.time")
                 .description("Time taken to build DAG")
                 .register(meterRegistry);
-        
+
         this.optimizationTimer = Timer.builder("pattern.compiler.optimization.time")
                 .description("Time taken to optimize DAG")
                 .register(meterRegistry);
     }
-    
+
     /**
      * Compile a pattern specification into a detection plan.
      *
@@ -181,10 +179,10 @@ public class PatternCompiler {
             throw new PatternValidationException("Pattern compilation failed", e);
         }
     }
-    
+
     /**
      * Validate a pattern specification without compilation.
-     * 
+     *
      * @param spec the pattern specification to validate
      * @throws PatternValidationException if validation fails
      */
@@ -192,7 +190,7 @@ public class PatternCompiler {
         if (spec == null) {
             throw new PatternValidationException("PatternSpecification cannot be null");
         }
-        
+
         try {
             validationTimer.recordCallable(() -> {
                 validationEngine.validate(spec);
@@ -205,7 +203,7 @@ public class PatternCompiler {
             throw new PatternValidationException("Validation failed", e);
         }
     }
-    
+
     private DetectionPlan createDetectionPlan(PatternSpecification spec, OperatorDAG dag) {
         // Generate state keys for stateful operators
         Map<String, String> stateKeys = dagBuilder.generateStateKeys(spec.getId(), dag);
@@ -261,7 +259,7 @@ public class PatternCompiler {
 
         return config;
     }
-    
+
     private Map<String, Object> createCompilationMetadata(PatternSpecification spec, OperatorDAG dag) {
         return Map.of(
             "compilerVersion", "1.0",
@@ -270,54 +268,49 @@ public class PatternCompiler {
             "compilationTime", Instant.now().toString()
         );
     }
-    
+
     /**
      * Get the operator registry used by this compiler.
-     * 
+     *
      * @return the operator registry
      */
     public OperatorRegistry getOperatorRegistry() {
         return operatorRegistry;
     }
-    
+
     /**
      * Get the validation engine used by this compiler.
-     * 
+     *
      * @return the validation engine
      */
     public ValidationEngine getValidationEngine() {
         return validationEngine;
     }
-    
+
     /**
      * Get the AST builder used by this compiler.
-     * 
+     *
      * @return the AST builder
      */
     public ASTBuilder getAstBuilder() {
         return astBuilder;
     }
-    
+
     /**
      * Get the DAG builder used by this compiler.
-     * 
+     *
      * @return the DAG builder
      */
     public DAGBuilder getDagBuilder() {
         return dagBuilder;
     }
-    
+
     /**
      * Get the DAG optimizer used by this compiler.
-     * 
+     *
      * @return the DAG optimizer
      */
     public DAGOptimizer getDagOptimizer() {
         return dagOptimizer;
     }
 }
-
-
-
-
-

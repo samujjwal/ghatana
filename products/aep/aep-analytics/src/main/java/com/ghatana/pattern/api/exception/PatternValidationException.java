@@ -4,7 +4,7 @@ import com.ghatana.platform.core.exception.ValidationException;
 
 /**
  * Exception thrown when pattern validation fails during compilation.
- * 
+ *
  * <p>PatternValidationException is raised during the validation phase when:
  * <ul>
  *   <li>Pattern specification violates schema constraints</li>
@@ -13,7 +13,7 @@ import com.ghatana.platform.core.exception.ValidationException;
  *   <li>Event types are not registered in the catalog</li>
  *   <li>Window specifications have invalid parameters</li>
  * </ul>
- * 
+ *
  * @doc.pattern Exception Pattern (validation errors), Value Object Pattern (error details)
  * @doc.compiler-phase Validation (thrown during first compilation phase)
  * @doc.type exception
@@ -22,7 +22,7 @@ import com.ghatana.platform.core.exception.ValidationException;
  * @doc.threading Thread-safe (immutable after construction)
  * @doc.apiNote Catch during compile() to handle validation errors gracefully
  * @doc.errorHandling Contains patternId and specific validation error for debugging
- * 
+ *
  * <h2>Common Validation Errors</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -53,40 +53,39 @@ import com.ghatana.platform.core.exception.ValidationException;
  * </table>
  */
 public class PatternValidationException extends ValidationException {
-    
+
     private final String patternId;
     private final String validationError;
-    
+
     public PatternValidationException(String message) {
         super(message);
         this.patternId = null;
         this.validationError = message;
     }
-    
+
     public PatternValidationException(String patternId, String message) {
         super("Pattern validation failed for pattern " + patternId + ": " + message);
         this.patternId = patternId;
         this.validationError = message;
     }
-    
+
     public PatternValidationException(String message, Throwable cause) {
         super(message, cause);
         this.patternId = null;
         this.validationError = message;
     }
-    
+
     public PatternValidationException(String patternId, String message, Throwable cause) {
         super("Pattern validation failed for pattern " + patternId + ": " + message, cause);
         this.patternId = patternId;
         this.validationError = message;
     }
-    
+
     public String getPatternId() {
         return patternId;
     }
-    
+
     public String getValidationError() {
         return validationError;
     }
 }
-

@@ -4,7 +4,7 @@ import java.util.Set;
 
 /**
  * Registry that maps roles to their permissions.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Role permission registry

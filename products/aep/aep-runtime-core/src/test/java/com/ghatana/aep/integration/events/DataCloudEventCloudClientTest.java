@@ -4,8 +4,6 @@ import com.ghatana.core.event.cloud.AppendResult;
 import com.ghatana.core.event.cloud.EventCloud;
 import com.ghatana.core.event.cloud.EventCloud.AppendOptions;
 import com.ghatana.core.event.cloud.EventCloud.AppendRequest;
-import com.ghatana.core.event.cloud.EventCloud.EventChunk;
-import com.ghatana.core.event.cloud.EventCloud.EventConsumer;
 import com.ghatana.core.event.cloud.EventCloud.EventEnvelope;
 import com.ghatana.core.event.cloud.EventCloud.HistoryQuery;
 import com.ghatana.core.event.cloud.EventCloud.HistoryScan;

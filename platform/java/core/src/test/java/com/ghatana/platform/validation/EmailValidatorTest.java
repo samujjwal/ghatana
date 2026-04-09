@@ -14,7 +14,7 @@ class EmailValidatorTest {
     @Test
     void testValidateNull() {
         ValidationResult result = validator.validate(null, "email");
-        
+
         assertFalse(result.isValid());
         assertEquals("NOT_NULL", result.getErrors().get(0).getCode());
     }
@@ -22,7 +22,7 @@ class EmailValidatorTest {
     @Test
     void testValidateEmpty() {
         ValidationResult result = validator.validate("", "email");
-        
+
         assertFalse(result.isValid());
         assertEquals("NOT_EMPTY", result.getErrors().get(0).getCode());
     }
@@ -30,7 +30,7 @@ class EmailValidatorTest {
     @Test
     void testValidateInvalidEmail() {
         ValidationResult result = validator.validate("not-an-email", "email");
-        
+
         assertFalse(result.isValid());
         assertEquals("INVALID_EMAIL", result.getErrors().get(0).getCode());
     }
@@ -38,7 +38,7 @@ class EmailValidatorTest {
     @Test
     void testValidateValidEmail() {
         ValidationResult result = validator.validate("test@example.com", "email");
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }
@@ -46,7 +46,7 @@ class EmailValidatorTest {
     @Test
     void testValidateValidEmailWithDots() {
         ValidationResult result = validator.validate("user.name@example.co.uk", "email");
-        
+
         assertTrue(result.isValid());
     }
 

@@ -27,13 +27,13 @@ import java.util.Objects;
  * @doc.pattern Service
  */
 public class ValidationServiceImpl implements ValidationService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ValidationServiceImpl.class);
-    
+
     private final PolicyEngine policyEngine;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public ValidationServiceImpl(
             PolicyEngine policyEngine,
             AuditLogger auditLogger,
@@ -42,18 +42,18 @@ public class ValidationServiceImpl implements ValidationService {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<LifecycleValidationResult> validate(ShapeSpec spec) {
         return validate(spec, ValidationConfig.defaultConfig());
     }
-    
+
     @Override
     public Promise<LifecycleValidationResult> validate(ShapeSpec spec, ValidationConfig config) {
         Objects.requireNonNull(spec, "spec must not be null");
         ValidationConfig effectiveConfig = config == null ? ValidationConfig.defaultConfig() : config;
         long startTime = System.currentTimeMillis();
-        
+
         return runValidators(spec, effectiveConfig)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
@@ -62,7 +62,7 @@ public class ValidationServiceImpl implements ValidationService {
                         "passed", String.valueOf(result.passed()));
                     metrics.recordTimer("yappc.validate.execute", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.validate.execute", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("validate.execute", spec, result))
                             .then(v -> Promise.of(result), auditErr -> {
                                 log.warn("Audit logging failed for validate.execute, continuing", auditErr);
@@ -78,11 +78,11 @@ public class ValidationServiceImpl implements ValidationService {
                         ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
-    
+
     @Override
     public Promise<LifecycleValidationResult> validateWithPolicy(ShapeSpec spec, PolicySpec policy) {
         long startTime = System.currentTimeMillis();
-        
+
         return runPolicyValidation(spec, policy)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
@@ -91,7 +91,7 @@ public class ValidationServiceImpl implements ValidationService {
                         "policy", policy.id());
                     metrics.recordTimer("yappc.validate.policy", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.validate.policy", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("validate.policy", spec, result))
                             .then(v -> Promise.of(result), auditErr -> {
                                 log.warn("Audit logging failed for validate.policy, continuing", auditErr);
@@ -108,38 +108,38 @@ public class ValidationServiceImpl implements ValidationService {
                                "policy", policy.id()));
                 });
     }
-    
+
     private Promise<LifecycleValidationResult> runValidators(ShapeSpec spec, ValidationConfig config) {
         List<Promise<List<ValidationIssue>>> validatorPromises = new ArrayList<>();
-        
+
         // Schema validation
         if (!config.excludedIds().contains("schema")) {
             validatorPromises.add(validateSchema(spec));
         }
-        
+
         // Security validation
         if (!config.excludedIds().contains("security")) {
             validatorPromises.add(validateSecurity(spec));
         }
-        
+
         // Consistency validation
         if (!config.excludedIds().contains("consistency")) {
             validatorPromises.add(validateConsistency(spec));
         }
-        
+
         // Feasibility validation
         if (!config.excludedIds().contains("feasibility")) {
             validatorPromises.add(validateFeasibility(spec));
         }
-        
+
         return Promises.toList(validatorPromises)
                 .map(issuesListOfLists -> {
                     List<ValidationIssue> allIssues = issuesListOfLists.stream()
                             .flatMap(List::stream)
                             .toList();
-                    
+
                     boolean passed = allIssues.stream().noneMatch(ValidationIssue::blocking);
-                    
+
                     return LifecycleValidationResult.builder()
                             .passed(passed)
                             .issues(allIssues)
@@ -148,7 +148,7 @@ public class ValidationServiceImpl implements ValidationService {
                             .build();
                 });
     }
-    
+
     private Promise<LifecycleValidationResult> runPolicyValidation(ShapeSpec spec, PolicySpec policy) {
         Map<String, Object> context = new java.util.HashMap<>();
         context.put("specId", spec.id() != null ? spec.id() : "unknown");
@@ -156,7 +156,7 @@ public class ValidationServiceImpl implements ValidationService {
         context.put("entityCount", spec.domainModel() != null ? spec.domainModel().entities().size() : 0);
         context.put("workflowCount", spec.workflows() != null ? spec.workflows().size() : 0);
         context.put("policyId", policy.id());
-        
+
         return policyEngine.evaluate(policy.id(), context)
                 .map(passed -> {
                     List<ValidationIssue> issues = new ArrayList<>();
@@ -179,11 +179,11 @@ public class ValidationServiceImpl implements ValidationService {
                             .build();
                 });
     }
-    
+
     private Promise<List<ValidationIssue>> validateSchema(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
         DomainModel model = spec.domainModel();
-        
+
         // Validate domain model structure
         if (model == null || entities(model).isEmpty()) {
             issues.add(ValidationIssue.builder()
@@ -197,7 +197,7 @@ public class ValidationServiceImpl implements ValidationService {
                     .build());
             return Promise.of(issues);
         }
-        
+
         // Validate entity fields
         entities(model).forEach(entity -> {
             if (entity.fields().isEmpty()) {
@@ -212,18 +212,18 @@ public class ValidationServiceImpl implements ValidationService {
                         .build());
             }
         });
-        
+
         return Promise.of(issues);
     }
-    
+
     private Promise<List<ValidationIssue>> validateSecurity(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
-        
+
         // Check for authentication in workflows
         boolean hasAuthWorkflow = workflows(spec).stream()
-                .anyMatch(w -> w.name().toLowerCase().contains("auth") || 
+                .anyMatch(w -> w.name().toLowerCase().contains("auth") ||
                               w.name().toLowerCase().contains("login"));
-        
+
         if (!hasAuthWorkflow) {
             issues.add(ValidationIssue.builder()
                     .id("security-001")
@@ -235,24 +235,24 @@ public class ValidationServiceImpl implements ValidationService {
                     .blocking(false)
                     .build());
         }
-        
+
         return Promise.of(issues);
     }
-    
+
     private Promise<List<ValidationIssue>> validateConsistency(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
         DomainModel model = spec.domainModel();
         if (model == null) {
             return Promise.of(issues);
         }
-        
+
         // Validate relationship consistency
         model.relationships().forEach(rel -> {
             boolean fromExists = entities(model).stream()
                     .anyMatch(e -> e.name().equals(rel.fromEntity()));
             boolean toExists = entities(model).stream()
                     .anyMatch(e -> e.name().equals(rel.toEntity()));
-            
+
             if (!fromExists || !toExists) {
                 issues.add(ValidationIssue.builder()
                         .id("consistency-001")
@@ -265,13 +265,13 @@ public class ValidationServiceImpl implements ValidationService {
                         .build());
             }
         });
-        
+
         return Promise.of(issues);
     }
-    
+
     private Promise<List<ValidationIssue>> validateFeasibility(ShapeSpec spec) {
         List<ValidationIssue> issues = new ArrayList<>();
-        
+
         // Check for reasonable entity count
         int entityCount = spec.domainModel() == null ? 0 : entities(spec.domainModel()).size();
         if (entityCount > 50) {
@@ -285,7 +285,7 @@ public class ValidationServiceImpl implements ValidationService {
                     .blocking(false)
                     .build());
         }
-        
+
         return Promise.of(issues);
     }
 

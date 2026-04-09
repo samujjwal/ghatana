@@ -50,18 +50,18 @@ import io.activej.promise.Promise;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * EventEmitter emitter = new EventEmitterImpl(eventloop);
- * 
+ *
  * // Fire-and-forget (non-blocking)
  * Event taskStarted = VirtualOrgEventFactory.createTaskStartedEvent(
  *     "agent-001", task, correlationId);
  * emitter.emit(taskStarted);
- * 
+ *
  * // Guaranteed delivery (with Promise)
  * Event decision = VirtualOrgEventFactory.createDecisionMadeEvent(
  *     "agent-001", decision, correlationId);
  * emitter.emitAsync(decision).whenComplete(() ->
  *     log.info("Decision event delivered"));
- * 
+ *
  * // Health check
  * if (!emitter.isHealthy()) {
  *     log.warn("Event emitter unhealthy, events may be dropped");
@@ -79,26 +79,26 @@ import io.activej.promise.Promise;
  * @doc.pattern Port
  */
 public interface EventEmitter {
-    
+
     /**
      * Emits an event asynchronously without blocking.
      * Errors are logged but not propagated to avoid impacting the main task flow.
-     * 
+     *
      * @param event The event to emit
      */
     void emit(Event event);
-    
+
     /**
      * Emits an event and returns a promise for guaranteed delivery tracking.
-     * 
+     *
      * @param event The event to emit
      * @return A promise that completes when the event has been delivered
      */
     Promise<Void> emitAsync(Event event);
-    
+
     /**
      * Checks if the emitter is healthy and ready to emit events.
-     * 
+     *
      * @return true if the emitter can accept events
      */
     boolean isHealthy();

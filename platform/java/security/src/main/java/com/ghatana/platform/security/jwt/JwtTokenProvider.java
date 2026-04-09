@@ -36,13 +36,13 @@ import java.util.stream.Collectors;
  */
 public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
-    
+
     private final JWSSigner signer;
     private final JWSVerifier verifier;
     private final long validityInMilliseconds;
     /** Non-null when key rotation is enabled. When set, overrides {@link #signer}/{@link #verifier}. */
     private final JwtKeyManager keyManager;
-    
+
     /**
      * Creates a new JwtTokenProvider with the specified secret key and token validity.
      *
@@ -79,27 +79,27 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
         this.signer = null;
         this.verifier = null;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String createToken(String userId, List<String> roles, Map<String, Object> additionalClaims) {
         try {
             Date now = new Date();
             Date validity = new Date(now.getTime() + validityInMilliseconds);
-            
+
             JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                     .subject(userId)
                     .claim("roles", roles)
                     .issueTime(now)
                     .expirationTime(validity);
-                    
+
             // Add additional claims if provided
             if (additionalClaims != null) {
                 for (Map.Entry<String, Object> entry : additionalClaims.entrySet()) {
                     claimsBuilder.claim(entry.getKey(), entry.getValue());
                 }
             }
-            
+
             final JWSHeader header;
             final JWSSigner activeSigner;
             if (keyManager != null) {
@@ -113,13 +113,13 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
             SignedJWT signedJWT = new SignedJWT(header, claimsBuilder.build());
             signedJWT.sign(activeSigner);
             return signedJWT.serialize();
-            
+
         } catch (JOSEException e) {
             logger.error("Failed to create token", e);
             throw new RuntimeException("Failed to create token", e);
         }
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public boolean validateToken(String token) {
@@ -131,18 +131,18 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
                 logger.warn("Invalid JWT signature");
                 return false;
             }
-            
+
             // Check expiration
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
             Date expirationTime = claims.getExpirationTime();
-            
+
             if (expirationTime == null || expirationTime.before(new Date())) {
                 logger.warn("Expired JWT token");
                 return false;
             }
-            
+
             return true;
-            
+
         } catch (ParseException ex) {
             logger.warn("Malformed JWT token", ex);
         } catch (JOSEException ex) {
@@ -154,7 +154,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
         }
         return false;
     }
-    
+
     /**
      * Extracts the user ID from a JWT token.
      *
@@ -165,20 +165,20 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     public Optional<String> getUserIdFromToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            
+
             if (!verifySignature(signedJWT)) {
                 return Optional.empty();
             }
-            
+
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
             return Optional.ofNullable(claims.getSubject());
-            
+
         } catch (ParseException | JOSEException e) {
             logger.warn("Failed to extract user ID from token", e);
             return Optional.empty();
         }
     }
-    
+
     /**
      * Extracts the roles from a JWT token.
      *
@@ -191,14 +191,14 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
     public List<String> getRolesFromToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            
+
             if (!verifySignature(signedJWT)) {
                 return List.of();
             }
-            
+
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
             Object rolesObj = claims.getClaim("roles");
-            
+
             if (rolesObj instanceof List) {
                 List<?> roles = (List<?>) rolesObj;
                 return roles.stream()
@@ -206,7 +206,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
                         .map(String.class::cast)
                         .collect(Collectors.toList());
             }
-            
+
         } catch (ParseException | JOSEException e) {
             logger.warn("Failed to extract roles from token", e);
         }
@@ -283,4 +283,3 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
         return signedJWT.verify(verifier);
     }
 }
-

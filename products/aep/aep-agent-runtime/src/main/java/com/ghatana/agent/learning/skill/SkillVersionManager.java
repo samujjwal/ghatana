@@ -1,8 +1,6 @@
 package com.ghatana.agent.learning.skill;
 
 import com.ghatana.agent.learning.SkillVersion;
-import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
-import com.ghatana.agent.memory.model.procedure.ProcedureVersion;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;

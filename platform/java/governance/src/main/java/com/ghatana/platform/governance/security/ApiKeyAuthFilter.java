@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Simple API key filter for ingress endpoints.
  * Validates X-API-Key header against an allowlist.
- 
+
  *
  * @doc.type class
  * @doc.purpose Api key auth filter

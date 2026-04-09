@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Base test class for all stack trace parser implementations. 
+/** Base test class for all stack trace parser implementations.
  * @doc.type class
  * @doc.purpose Handles base parser test operations
  * @doc.layer core

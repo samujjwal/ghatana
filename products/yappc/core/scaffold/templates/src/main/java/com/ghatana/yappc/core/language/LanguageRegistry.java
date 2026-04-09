@@ -27,14 +27,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Language registry for managing supported languages and frameworks.
- * 
+ *
  * Provides:
  * - Language discovery and registration
  * - Framework management per language
  * - Build system registry
  * - Testing framework registry
  * - Version management
- * 
+ *
  * @doc.type class
  * @doc.purpose Language and framework registry for YAPPC scaffolding
  * @doc.layer platform
@@ -52,14 +52,14 @@ public class LanguageRegistry {
         this.yamlMapper = new ObjectMapper(new YAMLFactory());
         this.languages = new ConcurrentHashMap<>();
         this.frameworks = new ConcurrentHashMap<>();
-        
+
         // Load built-in languages
         loadBuiltInLanguages();
     }
 
     /**
      * Get all supported languages.
-     * 
+     *
      * @return list of language names
      */
     public List<String> getSupportedLanguages() {
@@ -68,7 +68,7 @@ public class LanguageRegistry {
 
     /**
      * Get language definition by name.
-     * 
+     *
      * @param name language name
      * @return language definition or null if not found
      */
@@ -78,7 +78,7 @@ public class LanguageRegistry {
 
     /**
      * Get all frameworks for a language.
-     * 
+     *
      * @param language language name
      * @return list of framework definitions
      */
@@ -89,7 +89,7 @@ public class LanguageRegistry {
 
     /**
      * Get specific framework for a language.
-     * 
+     *
      * @param language language name
      * @param framework framework name
      * @return framework definition or null if not found
@@ -101,30 +101,30 @@ public class LanguageRegistry {
 
     /**
      * Register a language definition.
-     * 
+     *
      * @param definition language definition
      */
     public void registerLanguage(LanguageDefinition definition) {
         languages.put(definition.name().toLowerCase(), definition);
-        
+
         // Register frameworks
         if (definition.frameworks() != null) {
-            Map<String, FrameworkDefinition> langFrameworks = 
+            Map<String, FrameworkDefinition> langFrameworks =
                 frameworks.computeIfAbsent(definition.name().toLowerCase(), k -> new ConcurrentHashMap<>());
-            
-            definition.frameworks().forEach((name, framework) -> 
+
+            definition.frameworks().forEach((name, framework) ->
                 langFrameworks.put(name.toLowerCase(), framework)
             );
         }
-        
-        log.info("Registered language: {} with {} frameworks", 
-            definition.name(), 
+
+        log.info("Registered language: {} with {} frameworks",
+            definition.name(),
             definition.frameworks() != null ? definition.frameworks().size() : 0);
     }
 
     /**
      * Check if language is supported.
-     * 
+     *
      * @param language language name
      * @return true if supported
      */
@@ -134,7 +134,7 @@ public class LanguageRegistry {
 
     /**
      * Check if framework is supported for language.
-     * 
+     *
      * @param language language name
      * @param framework framework name
      * @return true if supported
@@ -145,7 +145,7 @@ public class LanguageRegistry {
 
     /**
      * Get supported versions for a language.
-     * 
+     *
      * @param language language name
      * @return list of supported versions
      */
@@ -156,7 +156,7 @@ public class LanguageRegistry {
 
     /**
      * Get latest version for a language.
-     * 
+     *
      * @param language language name
      * @return latest version or null
      */
@@ -167,7 +167,7 @@ public class LanguageRegistry {
 
     /**
      * Get build systems for a language.
-     * 
+     *
      * @param language language name
      * @return map of build system definitions
      */
@@ -178,7 +178,7 @@ public class LanguageRegistry {
 
     /**
      * Get package managers for a language.
-     * 
+     *
      * @param language language name
      * @return package management definition
      */
@@ -192,7 +192,7 @@ public class LanguageRegistry {
      */
     private void loadBuiltInLanguages() {
         String[] builtInLanguages = {"go", "typescript", "java", "python", "rust"};
-        
+
         for (String lang : builtInLanguages) {
             try {
                 LanguageDefinition definition = loadLanguageFromResource(lang);
@@ -201,13 +201,13 @@ public class LanguageRegistry {
                 log.warn("Failed to load built-in language {}: {}", lang, e.getMessage());
             }
         }
-        
+
         log.info("Loaded {} built-in languages", languages.size());
     }
 
     /**
      * Load language definition from resource.
-     * 
+     *
      * @param languageName language name
      * @return language definition
      * @throws IOException if loading fails
@@ -215,17 +215,17 @@ public class LanguageRegistry {
     private LanguageDefinition loadLanguageFromResource(String languageName) throws IOException {
         String resourcePath = "languages/" + languageName + ".yaml";
         InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-        
+
         if (stream == null) {
             throw new IOException("Language definition not found: " + resourcePath);
         }
-        
+
         return yamlMapper.readValue(stream, LanguageDefinition.class);
     }
 
     /**
      * Load language definition from file.
-     * 
+     *
      * @param yamlPath path to YAML file
      * @return language definition
      * @throws IOException if loading fails

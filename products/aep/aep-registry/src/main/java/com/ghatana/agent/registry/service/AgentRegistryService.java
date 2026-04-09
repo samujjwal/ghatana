@@ -52,7 +52,7 @@ import java.util.Set;
  * @since 2.0.0
  */
 public interface AgentRegistryService {
-    
+
     // ==================== MANIFEST MANAGEMENT ====================
 
     /**

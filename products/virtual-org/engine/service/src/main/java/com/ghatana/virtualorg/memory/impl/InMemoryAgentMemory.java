@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  *     100,    // short-term size
  *     10000   // long-term max items
  * );
- * 
+ *
  * memory.storeTaskResponse(task, response).getResult();
  * List<MemoryEntry> memories = memory.searchMemory("transaction", 5).getResult();
  * }</pre>

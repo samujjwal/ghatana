@@ -3,17 +3,11 @@
  */
 package com.ghatana.services.auth.integration;
 
-import com.ghatana.services.auth.AuthGatewayLauncher;
 import com.ghatana.services.auth.audit.AuditLogger;
 import com.ghatana.services.auth.mfa.MfaService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.http.HttpClient;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
-import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +37,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     void testFullAuthenticationFlowWithMfa() throws Exception {
         // Step 1: Enroll user in MFA
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USERNAME, "Ghatana"));
-        
+
         assertThat(enrollment.secret()).isNotBlank();
         assertThat(enrollment.qrCodeUri()).contains("otpauth://totp/");
         assertThat(enrollment.backupCodes()).hasSize(10);
@@ -51,13 +45,13 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
         // Step 2: Verify enrollment (in real scenario, user would scan QR and enter code)
         // For testing, we simulate the verification
         boolean verified = runPromise(() -> mfaService.verifyEnrollment(TEST_USERNAME, "123456"));
-        
+
         // Will fail with dummy code, but tests the flow
         assertThat(verified).isFalse();
 
         // Step 3: Log the enrollment event
         runPromise(() -> auditLogger.logMfaEnrolled(TEST_USERNAME, TEST_TENANT));
-        
+
         // Verify audit event was logged
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
         assertThat(events).isNotEmpty();
@@ -70,14 +64,14 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     void testAuthenticationAuditLogging() throws Exception {
         // Log successful login
         runPromise(() -> auditLogger.logLoginSuccess(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "Mozilla/5.0"));
-        
+
         // Log failed login
         runPromise(() -> auditLogger.logLoginFailure(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "Invalid password"));
-        
+
         // Verify both events logged
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
         assertThat(events).hasSizeGreaterThanOrEqualTo(2);
-        
+
         boolean hasSuccess = false;
         boolean hasFailure = false;
         for (AuditLogger.AuditEvent event : events) {
@@ -88,7 +82,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 hasFailure = true;
             }
         }
-        
+
         assertThat(hasSuccess).isTrue();
         assertThat(hasFailure).isTrue();
     }
@@ -99,17 +93,17 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     void testMfaValidationWithRateLimiting() throws Exception {
         // Enroll user
         runPromise(() -> mfaService.enrollUser(TEST_USERNAME, "Ghatana"));
-        
+
         // Attempt multiple failed validations
         for (int i = 0; i < 6; i++) {
             boolean valid = runPromise(() -> mfaService.validateCode(TEST_USERNAME, "000000"));
             assertThat(valid).isFalse();
-            
+
             // Log each failed attempt
             final int attempt = i;
             runPromise(() -> auditLogger.logMfaFailed(TEST_USERNAME, TEST_TENANT, attempt + 1));
         }
-        
+
         // Verify rate limiting kicked in (check audit logs)
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
         long mfaFailures = 0;
@@ -118,7 +112,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 mfaFailures++;
             }
         }
-        
+
         assertThat(mfaFailures).isGreaterThanOrEqualTo(5);
     }
 
@@ -147,15 +141,15 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
         runPromise(() -> auditLogger.logAuthorizationDecision(
             TEST_USERNAME, TEST_TENANT, "/api/projects", "CREATE", true
         ));
-        
+
         // Log access denied
         runPromise(() -> auditLogger.logAuthorizationDecision(
             TEST_USERNAME, TEST_TENANT, "/api/admin", "DELETE", false
         ));
-        
+
         // Verify both logged
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
-        
+
         boolean hasGranted = false;
         boolean hasDenied = false;
         for (AuditLogger.AuditEvent event : events) {
@@ -166,7 +160,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 hasDenied = true;
             }
         }
-        
+
         assertThat(hasGranted).isTrue();
         assertThat(hasDenied).isTrue();
     }
@@ -176,9 +170,9 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     @DisplayName("Integration: Should log rate limiting events")
     void testRateLimitingAuditLogging() throws Exception {
         runPromise(() -> auditLogger.logRateLimited(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "/auth/login"));
-        
+
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
-        
+
         boolean hasRateLimit = false;
         for (AuditLogger.AuditEvent event : events) {
             if (event.eventType() == AuditLogger.AuditEventType.SECURITY_RATE_LIMITED) {
@@ -186,7 +180,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 assertThat(event.severity()).isEqualTo(AuditLogger.AuditSeverity.WARNING);
             }
         }
-        
+
         assertThat(hasRateLimit).isTrue();
     }
 
@@ -195,9 +189,9 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     @DisplayName("Integration: Should log account lockout events")
     void testAccountLockoutAuditLogging() throws Exception {
         runPromise(() -> auditLogger.logAccountLocked(TEST_USERNAME, TEST_TENANT, "Too many failed login attempts"));
-        
+
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10);
-        
+
         boolean hasLockout = false;
         for (AuditLogger.AuditEvent event : events) {
             if (event.eventType() == AuditLogger.AuditEventType.AUTH_ACCOUNT_LOCKED) {
@@ -205,7 +199,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 assertThat(event.severity()).isEqualTo(AuditLogger.AuditSeverity.CRITICAL);
             }
         }
-        
+
         assertThat(hasLockout).isTrue();
     }
 
@@ -214,30 +208,30 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
     @DisplayName("Integration: Should handle complete login-logout cycle with audit trail")
     void testCompleteAuthenticationCycle() throws Exception {
         String sessionId = "test-session-" + System.currentTimeMillis();
-        
+
         // Login
         runPromise(() -> auditLogger.logLoginSuccess(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "Mozilla/5.0"));
-        
+
         // Token issued
         runPromise(() -> auditLogger.logTokenIssued(TEST_USERNAME, TEST_TENANT, "ACCESS", 3600));
-        
+
         // MFA verification
         runPromise(() -> auditLogger.logMfaVerified(TEST_USERNAME, TEST_TENANT));
-        
+
         // Logout
         runPromise(() -> auditLogger.logLogout(TEST_USERNAME, TEST_TENANT, sessionId));
-        
+
         // Verify complete audit trail
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(20);
-        
+
         assertThat(events).hasSizeGreaterThanOrEqualTo(4);
-        
+
         // Verify sequence of events
         boolean hasLogin = false;
         boolean hasToken = false;
         boolean hasMfa = false;
         boolean hasLogout = false;
-        
+
         for (AuditLogger.AuditEvent event : events) {
             switch (event.eventType()) {
                 case AUTH_LOGIN_SUCCESS -> hasLogin = true;
@@ -247,7 +241,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 default -> {} // Ignore other event types
             }
         }
-        
+
         assertThat(hasLogin).isTrue();
         assertThat(hasToken).isTrue();
         assertThat(hasMfa).isTrue();

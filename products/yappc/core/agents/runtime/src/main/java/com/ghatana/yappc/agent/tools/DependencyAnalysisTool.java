@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** Dependency analysis tool (stub). 
+/** Dependency analysis tool (stub).
  * @doc.type class
  * @doc.purpose Handles dependency analysis tool operations
  * @doc.layer core

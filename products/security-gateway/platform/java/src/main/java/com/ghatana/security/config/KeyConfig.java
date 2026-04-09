@@ -15,13 +15,13 @@ public class KeyConfig {
     private final String alias;
     private final String algorithm;
     private final int size;
-    
+
     public KeyConfig(String alias, String algorithm, int size) {
         this.alias = alias;
         this.algorithm = algorithm;
         this.size = size;
     }
-    
+
     public static KeyConfig fromConfig(Config config) {
         return new KeyConfig(
             config.get("alias"),
@@ -29,7 +29,7 @@ public class KeyConfig {
             config.get(ConfigConverters.ofInteger(), "size", 256)
         );
     }
-    
+
     // Getters
     public String getAlias() {
         return alias;

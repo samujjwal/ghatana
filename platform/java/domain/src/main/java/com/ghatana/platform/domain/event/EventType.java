@@ -6,14 +6,13 @@ import com.ghatana.contracts.event.v1.EventStorageHintsPojo;
 import com.ghatana.contracts.event.v1.GovernancePojo;
 import com.ghatana.contracts.event.v1.LifecycleStatusProto;
 import com.ghatana.contracts.event.v1.SemanticVersionPojo;
-import com.ghatana.platform.domain.exception.EventCreationException;
 import com.ghatana.platform.domain.exception.SchemaValidationException;
 
 import java.util.Map;
 
 /**
  * Event type schema definition with validation rules and metadata.
- * 
+ *
  * <p>
  * Defines the structure, validation rules, and metadata for a specific event type.
  * Event types act as schemas that validate incoming events and describe their

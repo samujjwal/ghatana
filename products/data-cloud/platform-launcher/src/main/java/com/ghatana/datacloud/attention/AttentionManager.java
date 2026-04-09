@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.attention;
 
 import com.ghatana.datacloud.DataRecord;
-import com.ghatana.datacloud.EventRecord;
 import com.ghatana.datacloud.attention.SalienceScorer.ScoringContext;
 import com.ghatana.datacloud.workspace.GlobalWorkspace;
 import com.ghatana.datacloud.workspace.SpotlightItem;
@@ -15,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -137,7 +135,7 @@ public class AttentionManager {
         Objects.requireNonNull(score, "score cannot be null");
 
         totalProcessed.incrementAndGet();
-        
+
         ScoringContext context = ScoringContext.builder()
                 .tenantId(record.getTenantId())
                 .build();
@@ -292,7 +290,7 @@ public class AttentionManager {
 
         if (score.getBreakdown() != null && !score.getBreakdown().isEmpty()) {
             sb.append(" - ");
-            score.getBreakdown().forEach((k, v) -> 
+            score.getBreakdown().forEach((k, v) ->
                 sb.append(k).append(": ").append(v).append(", ")
             );
         }

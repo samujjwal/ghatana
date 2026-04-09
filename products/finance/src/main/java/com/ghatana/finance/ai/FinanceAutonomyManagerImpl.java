@@ -24,25 +24,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.pattern Manager
  */
 public class FinanceAutonomyManagerImpl implements AutonomyManager {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(FinanceAutonomyManagerImpl.class);
     private final Map<String, AutonomyLevel> autonomyLevels = new ConcurrentHashMap<>();
     private final Map<String, List<AutonomousDecision>> decisions = new ConcurrentHashMap<>();
-    
+
     @Override
     public void configureAutonomyLevel(String agentId, AutonomyLevel level) {
         autonomyLevels.put(agentId, level);
     }
-    
+
     @Override
     public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request, AgentOrchestrator.KernelAgent agent) {
         AutonomyLevel level = autonomyLevels.getOrDefault(agent.getAgentId(), AutonomyLevel.MEDIUM);
-        
+
         // None and Low autonomy always require review
         if (level == AutonomyLevel.NONE || level == AutonomyLevel.LOW) {
             return true;
         }
-        
+
         // For high-value transactions, always require review
         if (request.getContext() != null && request.getContext().containsKey("amount")) {
             double amount = ((Number) request.getContext().get("amount")).doubleValue();
@@ -50,13 +50,13 @@ public class FinanceAutonomyManagerImpl implements AutonomyManager {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     @Override
     public void recordAutonomousDecision(AutonomousDecision decision) {
-        logger.info("Recording autonomous decision: agent={}, requiresReview={}", 
+        logger.info("Recording autonomous decision: agent={}, requiresReview={}",
             decision.getAgentId(), decision.requiresReview());
         decisions.computeIfAbsent(decision.getAgentId(), k -> new ArrayList<>()).add(decision);
     }
@@ -68,7 +68,7 @@ public class FinanceAutonomyManagerImpl implements AutonomyManager {
             .filter(d -> d.getTimestamp() >= window.getStartTime() && d.getTimestamp() <= window.getEndTime())
             .toList();
     }
-    
+
     @Override
     public AutonomyLevel getAutonomyLevel(String agentId) {
         return autonomyLevels.getOrDefault(agentId, AutonomyLevel.MEDIUM);

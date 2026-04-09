@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *     tracerProvider,
  *     spanExporter
  * );
- * 
+ *
  * // Bind to registry
  * collector.bindTo(meterRegistry);
- * 
+ *
  * // Record errors
  * try {
  *     // Observability operation
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * }</pre>
  *
  * @since 1.0.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Observability metrics collector
@@ -53,12 +53,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.pattern Component
 */
 public class ObservabilityMetricsCollector implements MeterBinder, AutoCloseable {
-    
+
     private final MetricsRegistry metricsRegistry;
     private final SdkTracerProvider tracerProvider;
     private final SpanExporter spanExporter;
     private final AtomicLong lastErrorCount = new AtomicLong(0);
-    
+
     public ObservabilityMetricsCollector(MetricsRegistry metricsRegistry,
                                        SdkTracerProvider tracerProvider,
                                        SpanExporter spanExporter) {
@@ -66,13 +66,13 @@ public class ObservabilityMetricsCollector implements MeterBinder, AutoCloseable
         this.tracerProvider = tracerProvider;
         this.spanExporter = spanExporter;
     }
-    
+
     @Override
     public void bindTo(MeterRegistry registry) {
         // Track JVM metrics
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        
+
         // Memory usage
         Gauge.builder("observability.jvm.memory.used", memoryBean, bean -> (double) bean.getHeapMemoryUsage().getUsed())
             .description("Current used heap memory in bytes")
@@ -92,19 +92,19 @@ public class ObservabilityMetricsCollector implements MeterBinder, AutoCloseable
         Gauge.builder("observability.jvm.threads.peak", threadBean, tb -> (double) tb.getPeakThreadCount())
             .description("Peak live thread count since JVM start")
             .register(registry);
-            
+
         // Track internal metrics
         Gauge.builder("observability.metrics.registry.size", metricsRegistry, r -> (double) r.getMeters().size())
             .description("Number of registered metrics")
             .register(registry);
-            
+
         // Track error rates
-        registry.gauge("observability.errors", 
+        registry.gauge("observability.errors",
                       Tags.of("type", "internal"),
                       lastErrorCount,
                       AtomicLong::get);
     }
-    
+
     /**
      * Record an error in the observability module.
      */
@@ -112,7 +112,7 @@ public class ObservabilityMetricsCollector implements MeterBinder, AutoCloseable
         metricsRegistry.counter("observability.errors", "type", type).increment();
         lastErrorCount.incrementAndGet();
     }
-    
+
     @Override
     public void close() {
         // Clean up resources if needed

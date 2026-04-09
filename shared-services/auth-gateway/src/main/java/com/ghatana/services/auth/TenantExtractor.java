@@ -4,7 +4,6 @@
 package com.ghatana.services.auth;
 
 import com.ghatana.platform.security.port.JwtTokenProvider;
-import com.ghatana.platform.security.model.User;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.promise.Promise;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Map;
 import java.util.Optional;
 
 /**

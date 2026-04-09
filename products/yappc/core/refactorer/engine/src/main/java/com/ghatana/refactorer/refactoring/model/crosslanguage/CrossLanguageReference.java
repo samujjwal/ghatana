@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Represents a reference from one language element to another, potentially across different
  * languages.
- 
+
  * @doc.type class
  * @doc.purpose Handles cross language reference operations
  * @doc.layer core

@@ -5,10 +5,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -17,7 +14,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

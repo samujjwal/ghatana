@@ -6,7 +6,6 @@ import com.ghatana.platform.workflow.WorkflowLifecycleEvent;
 import com.ghatana.platform.workflow.WorkflowLifecycleListener;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine.InMemoryWorkflowStateStore;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine.StepDefinition;
-import com.ghatana.platform.workflow.engine.DurableWorkflowEngine.WorkflowExecution;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine.WorkflowRun;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;

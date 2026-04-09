@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * Principal (User/Agent) ← Assigned Roles → Role ← Permissions
  *
  * Example:
- * User "alice"        Role: ADMIN       Permissions: {READ_EVENTS, WRITE_EVENTS, 
+ * User "alice"        Role: ADMIN       Permissions: {READ_EVENTS, WRITE_EVENTS,
  *                                                      DELETE_EVENTS, MANAGE_USERS}
  *
  * User "bob"          Role: OPERATOR    Permissions: {READ_EVENTS, WRITE_EVENTS}
@@ -215,7 +215,7 @@ public class RbacPolicy {
      * Map<String, Set<String>> perms = new HashMap<>();
      * perms.put("ADMIN", Set.of("READ", "WRITE", "DELETE"));
      * perms.put("USER", Set.of("READ"));
-     * 
+     *
      * RbacPolicy policy = new RbacPolicy(perms);
      * assert policy.isAllowed("ADMIN", "DELETE");  // true
      * assert !policy.isAllowed("USER", "WRITE");   // false
@@ -266,7 +266,7 @@ public class RbacPolicy {
      *     jsonString,
      *     new TypeReference<Map<String, List<String>>>() {}
      * );
-     * 
+     *
      * RbacPolicy policy = RbacPolicy.fromMap(config);
      * }</pre>
      *

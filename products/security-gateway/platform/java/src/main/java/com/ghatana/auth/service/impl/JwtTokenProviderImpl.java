@@ -2,7 +2,6 @@ package com.ghatana.auth.service.impl;
 
 import com.ghatana.auth.core.port.JwtTokenProvider;
 import com.ghatana.auth.core.port.JwtClaims;
-import com.ghatana.auth.exception.JwtValidationException;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -423,15 +422,15 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
         // Safely get string list claims with null handling
         List<String> rolesList = claimsSet.getStringListClaim(CLAIM_ROLES);
         Set<String> roles = new HashSet<>(rolesList != null ? rolesList : Collections.emptyList());
-        
+
         List<String> permissionsList = claimsSet.getStringListClaim(CLAIM_PERMISSIONS);
         Set<String> permissions = new HashSet<>(permissionsList != null ? permissionsList : Collections.emptyList());
-        
+
         // Audience in JWTClaimsSet is a list, but JwtClaims.Builder expects a single string
         // Use the first audience value or a default
         List<String> audienceList = claimsSet.getAudience();
         String audience = (audienceList != null && !audienceList.isEmpty()) ? audienceList.get(0) : AUDIENCE;
-        
+
         return JwtClaims.builder()
                 .tokenId(claimsSet.getJWTID())
                 .subject(claimsSet.getSubject())

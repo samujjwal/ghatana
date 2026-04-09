@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.shared.error;
 
 /**
- * Interface for standardized error reporting during polyfix execution. 
+ * Interface for standardized error reporting during polyfix execution.
  * @doc.type interface
  * @doc.purpose Defines the contract for error reporter
  * @doc.layer core

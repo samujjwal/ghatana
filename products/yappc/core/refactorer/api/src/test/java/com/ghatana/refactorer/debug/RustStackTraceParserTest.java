@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.debug;
 
-/** Tests for {@link RustStackTraceParser}. 
+/** Tests for {@link RustStackTraceParser}.
  * @doc.type class
  * @doc.purpose Handles rust stack trace parser test operations
  * @doc.layer core

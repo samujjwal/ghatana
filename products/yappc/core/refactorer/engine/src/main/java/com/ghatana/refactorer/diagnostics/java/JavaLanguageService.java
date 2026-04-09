@@ -40,11 +40,11 @@ import org.slf4j.LoggerFactory;
  * focused on the behaviours exercised by the current test-suite (syntax errors,
  * unresolved types,
  * and basic type mismatches).
- * 
+ *
  * @doc.type service
  * @doc.language java
  * @doc.tool javac
- 
+
  * @doc.purpose Handles java language service operations
  * @doc.layer core
  * @doc.pattern Service

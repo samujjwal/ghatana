@@ -21,7 +21,7 @@ public class LearningMetrics {
     private final AtomicLong optimizationCycles = new AtomicLong(0);
     private final AtomicLong evolutionCycles = new AtomicLong(0);
     private final AtomicLong errors = new AtomicLong(0);
-    
+
     private final Instant startTime;
 
     public LearningMetrics() {

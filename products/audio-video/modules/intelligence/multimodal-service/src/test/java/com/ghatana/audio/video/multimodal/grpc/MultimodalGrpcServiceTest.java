@@ -457,4 +457,3 @@ class MultimodalGrpcServiceTest {
         Throwable getError() { return error; }
     }
 }
-

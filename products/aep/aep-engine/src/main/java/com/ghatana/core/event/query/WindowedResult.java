@@ -21,7 +21,7 @@ public class WindowedResult {
 
     /**
      * Creates a new windowed result.
-     * 
+     *
      * @param windowStart The start time of the window (inclusive)
      * @param windowEnd The end time of the window (exclusive)
      * @param events The events in this window
@@ -31,7 +31,7 @@ public class WindowedResult {
     /**
      * Creates a new windowed result with just the window bounds and events.
      * This is a convenience constructor that initializes empty aggregations and metadata.
-     * 
+     *
      * @param windowStart The start time of the window (inclusive)
      * @param windowEnd The end time of the window (exclusive)
      * @param events The events in this window
@@ -39,10 +39,10 @@ public class WindowedResult {
     public WindowedResult(Instant windowStart, Instant windowEnd, List<Event> events) {
         this(windowStart, windowEnd, events, Map.of(), Map.of());
     }
-    
+
     /**
      * Creates a new windowed result.
-     * 
+     *
      * @param windowStart The start time of the window (inclusive)
      * @param windowEnd The end time of the window (exclusive)
      * @param events The events in this window
@@ -55,14 +55,14 @@ public class WindowedResult {
             List<Event> events,
             Map<String, Object> aggregations,
             Map<String, Object> metadata) {
-        
+
         this.windowStart = Objects.requireNonNull(windowStart, "windowStart cannot be null");
         this.windowEnd = Objects.requireNonNull(windowEnd, "windowEnd cannot be null");
-        
+
         if (windowEnd.isBefore(windowStart)) {
             throw new IllegalArgumentException("windowEnd must be after windowStart");
         }
-        
+
         this.events = events != null ? List.copyOf(events) : List.of();
         this.aggregations = aggregations != null ? Map.copyOf(aggregations) : Map.of();
         this.metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
@@ -82,7 +82,7 @@ public class WindowedResult {
             Instant windowStart,
             Instant windowEnd,
             Map<String, Object> aggregations) {
-        
+
         return new WindowedResult(windowStart, windowEnd, null, aggregations, null);
     }
 
@@ -109,7 +109,7 @@ public class WindowedResult {
 
     /**
      * Gets a specific aggregation value by name.
-     * 
+     *
      * @param name The name of the aggregation
      * @return The aggregation value, or null if not found
      */
@@ -120,7 +120,7 @@ public class WindowedResult {
 
     /**
      * Gets a specific metadata value by key.
-     * 
+     *
      * @param key The metadata key
      * @return The metadata value, or null if not found
      */

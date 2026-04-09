@@ -8,7 +8,6 @@ import com.ghatana.platform.core.util.PlatformVersion;
 import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -58,7 +56,7 @@ public final class FinancePlatformSdkService {
          * Publish a finance event with compliance metadata.
          * Returns the assigned event-id.
          */
-        Promise<String> publishFinanceEvent(String topic, String eventType, String payloadJson, 
+        Promise<String> publishFinanceEvent(String topic, String eventType, String payloadJson,
                                           FinanceComplianceMetadata compliance);
 
         /** Subscribe a handler to finance events with filtering. */
@@ -66,7 +64,7 @@ public final class FinancePlatformSdkService {
 
         @FunctionalInterface
         interface FinanceEventHandler {
-            Promise<Void> handle(String eventId, String eventType, String payloadJson, 
+            Promise<Void> handle(String eventId, String eventType, String payloadJson,
                                 FinanceComplianceMetadata compliance);
         }
     }
@@ -114,7 +112,7 @@ public final class FinancePlatformSdkService {
     // -----------------------------------------------------------------------
 
     public record FinanceEventClientFacade(FinanceEventBusPort port) {
-        public Promise<String> publish(String topic, String eventType, String payloadJson, 
+        public Promise<String> publish(String topic, String eventType, String payloadJson,
                                      String userId, String tenantId) {
             FinanceComplianceMetadata compliance = new FinanceComplianceMetadata(
                 requireNonBlank(userId, "userId"),
@@ -127,7 +125,7 @@ public final class FinancePlatformSdkService {
                 compliance
             );
         }
-        
+
         public void subscribe(String topic, String consumerGroup, FinanceEventBusPort.FinanceEventHandler handler) {
             requirePort(port, FinanceEventBusPort.class).subscribeFinanceEvents(
                 requireNonBlank(topic, "topic"),
@@ -138,13 +136,13 @@ public final class FinancePlatformSdkService {
     }
 
     public record FinanceConfigClientFacade(FinanceConfigBusPort port) {
-        public Promise<String> get(String namespace, String key) { 
+        public Promise<String> get(String namespace, String key) {
             return requirePort(port, FinanceConfigBusPort.class).getFinanceConfig(
                 requireNonBlank(namespace, "namespace"),
                 requireNonBlank(key, "key")
-            ); 
+            );
         }
-        
+
         public Promise<Void> update(String namespace, String key, String value, String changedBy) {
             return requirePort(port, FinanceConfigBusPort.class).updateFinanceConfig(
                 requireNonBlank(namespace, "namespace"),
@@ -153,11 +151,11 @@ public final class FinancePlatformSdkService {
                 requireNonBlank(changedBy, "changedBy")
             );
         }
-        
-        public Promise<List<String>> listKeys(String namespacePrefix) { 
+
+        public Promise<List<String>> listKeys(String namespacePrefix) {
             return requirePort(port, FinanceConfigBusPort.class).listFinanceConfigKeys(
                 requireNonBlank(namespacePrefix, "namespacePrefix")
-            ); 
+            );
         }
     }
 
@@ -167,7 +165,7 @@ public final class FinancePlatformSdkService {
                 requireNonNullArgument(event, "event")
             );
         }
-        
+
         public Promise<List<FinanceAuditEvent>> query(FinanceAuditQuery query) {
             return requirePort(port, FinanceAuditBusPort.class).queryFinanceEvents(
                 requireNonNullArgument(query, "query")
@@ -182,7 +180,7 @@ public final class FinancePlatformSdkService {
                 requireNonNullArgument(facts, "facts")
             );
         }
-        
+
         public Promise<FinanceComplianceResult> validate(FinanceTransaction transaction) {
             return requirePort(port, FinanceRulesBusPort.class).validateTransaction(
                 requireNonNullArgument(transaction, "transaction")
@@ -191,19 +189,19 @@ public final class FinancePlatformSdkService {
     }
 
     public record FinanceAuthClientFacade(FinanceAuthBusPort port) {
-        public Promise<FinanceAuthClaims> validateToken(String jwt) { 
+        public Promise<FinanceAuthClaims> validateToken(String jwt) {
             return requirePort(port, FinanceAuthBusPort.class).validateFinanceToken(
                 requireNonBlank(jwt, "jwt")
-            ); 
+            );
         }
-        
+
         public Promise<Boolean> hasPermission(String subject, FinancePermission permission) {
             return requirePort(port, FinanceAuthBusPort.class).hasFinancePermission(
                 requireNonBlank(subject, "subject"),
                 requireNonNullArgument(permission, "permission")
             );
         }
-        
+
         public Promise<Boolean> canAccessData(String subject, String dataType, String tenantId) {
             return requirePort(port, FinanceAuthBusPort.class).canAccessFinancialData(
                 requireNonBlank(subject, "subject"),
@@ -399,7 +397,7 @@ public final class FinancePlatformSdkService {
         return Promise.ofBlocking(executor, () -> {
             persistFinanceRegistration(callerServiceName);
             financeSdkClientCreatedTotal.increment();
-            
+
             return new FinanceSdkBundle(
                 new FinanceEventClientFacade(financeEventBusPort),
                 new FinanceConfigClientFacade(financeConfigBusPort),

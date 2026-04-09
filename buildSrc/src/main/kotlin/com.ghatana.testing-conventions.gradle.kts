@@ -46,8 +46,7 @@ val libs = project.extensions.findByType(VersionCatalogsExtension::class.java)?.
 
 // ── JaCoCo Version ────────────────────────────────────────────────────────────
 configure<JacocoPluginExtension> {
-    toolVersion = libs?.findVersion("jacoco")?.orElse(null)?.requiredVersion
-        ?: error("jacoco version not found in libs.versions.toml")
+    toolVersion = "0.8.14"  // Matches libs.versions.jacoco in catalog
 }
 
 // ── Integration Test Profile ──────────────────────────────────────────────────

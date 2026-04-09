@@ -19,7 +19,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -27,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for CompositeAgent.
- * 
+ *
  * Focus: Agent composition, result aggregation strategies (voting, averaging),
  * ensemble logic, and error isolation.
  */
@@ -681,7 +680,7 @@ class CompositeAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

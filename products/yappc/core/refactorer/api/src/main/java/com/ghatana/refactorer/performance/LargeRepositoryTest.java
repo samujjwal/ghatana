@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Performance test for large codebase analysis. This test measures the performance of the tool when
  * analyzing large repositories.
- 
+
  * @doc.type class
  * @doc.purpose Handles large repository test operations
  * @doc.layer core

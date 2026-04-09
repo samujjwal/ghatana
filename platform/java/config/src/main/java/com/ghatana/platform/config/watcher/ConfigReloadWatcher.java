@@ -4,7 +4,6 @@
  */
 package com.ghatana.platform.config.watcher;
 
-import com.ghatana.platform.config.ConfigSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,19 +22,19 @@ import java.util.function.Consumer;
  * @doc.pattern Service
  */
 public class ConfigReloadWatcher implements AutoCloseable {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ConfigReloadWatcher.class);
-    
+
     private final ScheduledExecutorService executor;
     private final long checkIntervalMs;
-    
+
     /**
      * Creates a new config reload watcher with default 30-second check interval.
      */
     public ConfigReloadWatcher() {
         this(30000);
     }
-    
+
     /**
      * Creates a new config reload watcher.
      *
@@ -49,7 +48,7 @@ public class ConfigReloadWatcher implements AutoCloseable {
             return t;
         });
     }
-    
+
     /**
      * Watches a configuration file for changes.
      *
@@ -62,9 +61,9 @@ public class ConfigReloadWatcher implements AutoCloseable {
             log.warn("Cannot watch non-existent file: {}", filePath);
             return;
         }
-        
+
         final long[] lastModified = { file.lastModified() };
-        
+
         executor.scheduleAtFixedRate(() -> {
             try {
                 long currentModified = file.lastModified();
@@ -77,10 +76,10 @@ public class ConfigReloadWatcher implements AutoCloseable {
                 log.error("Error checking file for changes: {}", filePath, e);
             }
         }, checkIntervalMs, checkIntervalMs, TimeUnit.MILLISECONDS);
-        
+
         log.info("Started watching configuration file: {}", filePath);
     }
-    
+
     @Override
     public void close() {
         executor.shutdown();

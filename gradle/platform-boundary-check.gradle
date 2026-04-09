@@ -1,6 +1,6 @@
 /**
  * Platform Boundary Guardrails
- * 
+ *
  * Enforces that platform modules do not depend on products/*
  * This prevents boundary drift and maintains clean architecture.
  *
@@ -26,11 +26,11 @@ def checkPlatformBoundary() {
     def CROSS_CUTTING_SPI_ALLOWLIST = [
         ":products:data-cloud:spi"   // EventLogStore, TenantContext, EntityStore, EventView
     ] as Set
-    
+
     println "Checking platform boundary for ${projectPath}"
-    
+
     def violations = []
-    
+
     // Check build file dependencies
     if (!project.buildFile.exists()) {
         return // No build file (intermediate parent project), skip check
@@ -45,7 +45,7 @@ def checkPlatformBoundary() {
             }
         }
     }
-    
+
     // Check declared project dependencies
     project.configurations.configureEach { config ->
         if (config.name.startsWith("compile") || config.name.startsWith("runtime") || config.name.startsWith("test")) {
@@ -59,7 +59,7 @@ def checkPlatformBoundary() {
                 }
         }
     }
-    
+
     if (!violations.isEmpty()) {
         def errorMessage = """
         ╔══════════════════════════════════════════════════════════════╗
@@ -81,7 +81,7 @@ def checkPlatformBoundary() {
         ║ See: PLATFORM_SHARED_LIBRARIES_REMEDIATION_PLAN_2026-03-13.md ║
         ╚══════════════════════════════════════════════════════════════╝
         """.stripMargin()
-        
+
         throw new GradleException(errorMessage)
     }
 }

@@ -45,7 +45,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new AIAssistServiceImpl(llmProvider, metrics);
-        
+
         when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
@@ -59,7 +59,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             // Given
             String query = "Show me sales data";
             AIAssistService.QueryContext context = new AIAssistService.QueryContext(
-                "tenant-alpha", "user-1", null, "sales", 
+                "tenant-alpha", "user-1", null, "sales",
                 List.of("orders", "customers"), Map.of(), null
             );
 
@@ -145,7 +145,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             }
 
             // When
-            AIAssistService.Explanation result = runPromise(() -> 
+            AIAssistService.Explanation result = runPromise(() ->
                 service.explainResults("SELECT *", largeResults, null));
 
             // Then
@@ -185,7 +185,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         @DisplayName("[TEST-021]: createConversation_creates_new_conversation")
         void createConversation() {
             // When
-            AIAssistService.Conversation result = runPromise(() -> 
+            AIAssistService.Conversation result = runPromise(() ->
                 service.createConversation("tenant-alpha", "user-1"));
 
             // Then
@@ -201,9 +201,9 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         @DisplayName("[TEST-022]: addMessage_adds_message_to_conversation")
         void addMessage() {
             // Given
-            AIAssistService.Conversation conv = runPromise(() -> 
+            AIAssistService.Conversation conv = runPromise(() ->
                 service.createConversation("tenant-alpha", "user-1"));
-            
+
             AIAssistService.Message message = new AIAssistService.Message(
                 "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()
             );
@@ -221,7 +221,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         @DisplayName("[TEST-023]: getConversation_retrieves_conversation")
         void getConversation() {
             // Given
-            AIAssistService.Conversation conv = runPromise(() -> 
+            AIAssistService.Conversation conv = runPromise(() ->
                 service.createConversation("tenant-alpha", "user-1"));
 
             // When
@@ -235,9 +235,9 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         @DisplayName("[TEST-023]: clearConversation_removes_all_messages")
         void clearConversation() {
             // Given
-            AIAssistService.Conversation conv = runPromise(() -> 
+            AIAssistService.Conversation conv = runPromise(() ->
                 service.createConversation("tenant-alpha", "user-1"));
-            
+
             AIAssistService.Message message = new AIAssistService.Message(
                 "msg-1", AIAssistService.MessageRole.USER, "Hello", Instant.now(), Map.of()
             );
@@ -267,7 +267,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
                 "resp-3", "SQL", 10, 5, 5, "stop", 25L, "gpt-4"
             )));
-            
+
             runPromise(() -> service.processQuery("query 1", context));
             runPromise(() -> service.processQuery("query 2", context));
 

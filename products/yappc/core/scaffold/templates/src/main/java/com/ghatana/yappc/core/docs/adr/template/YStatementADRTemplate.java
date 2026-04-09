@@ -32,7 +32,7 @@ import java.util.Map;
  * @doc.pattern Component
  */
 public class YStatementADRTemplate implements ADRTemplate {
-    
+
     @Override
     public ADRTemplateType templateType() {
         return ADRTemplateType.Y_STATEMENT;

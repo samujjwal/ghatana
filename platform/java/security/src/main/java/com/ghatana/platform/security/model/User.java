@@ -57,7 +57,7 @@ public class User {
     private final boolean authenticated;
     private final String authToken;
     private String password;
-    
+
     private User(Builder builder) {
         this.userId = builder.userId;
         this.username = builder.username;
@@ -69,7 +69,7 @@ public class User {
         this.authToken = builder.authToken;
         this.password = builder.password;
     }
-    
+
     public User(String userId, String username, Set<String> roles) {
         this.userId = userId;
         this.username = username;
@@ -81,7 +81,7 @@ public class User {
         this.authToken = "";
         this.password = "";
     }
-    
+
     public User(String username, String email, String password, Set<String> roles) {
         this.userId = UUID.randomUUID().toString();
         this.username = username;
@@ -93,7 +93,7 @@ public class User {
         this.authToken = "";
         this.password = password != null ? password : "";
     }
-    
+
     public void setRoles(Set<String> roles) {
         this.roles = Collections.unmodifiableSet(new HashSet<>(roles));
     }
@@ -132,61 +132,61 @@ public class User {
 
     /**
      * Gets the unique user identifier.
-     * 
+     *
      * @return The user ID
      */
     public String getUserId() {
         return userId;
     }
-    
+
     /**
      * Gets the username.
-     * 
+     *
      * @return The username
      */
     public String getUsername() {
         return username;
     }
-    
+
     /**
      * Gets the user's email address.
-     * 
+     *
      * @return The email address
      */
     public String getEmail() {
         return email;
     }
-    
+
     /**
      * Gets the user's roles.
-     * 
+     *
      * @return An unmodifiable set of role names
      */
     public Set<String> getRoles() {
         return roles;
     }
-    
+
     /**
      * Gets the user's permissions.
-     * 
+     *
      * @return An unmodifiable set of permission strings
      */
     public Set<String> getPermissions() {
         return permissions;
     }
-    
+
     /**
      * Gets the user's attributes.
-     * 
+     *
      * @return An unmodifiable map of user attributes
      */
     public Map<String, Object> getAttributes() {
         return attributes;
     }
-    
+
     /**
      * Gets a specific attribute by name.
-     * 
+     *
      * @param name The attribute name
      * @return The attribute value, or null if not found
      */
@@ -194,46 +194,46 @@ public class User {
     public <T> T getAttribute(String name) {
         return (T) attributes.get(name);
     }
-    
+
     /**
      * Checks if the user is authenticated.
-     * 
+     *
      * @return true if the user is authenticated, false otherwise
      */
     public boolean isAuthenticated() {
         return authenticated;
     }
-    
+
     /**
      * Gets the authentication token associated with this user, if any.
-     * 
+     *
      * @return The authentication token, or null if not available
      */
     public String getAuthToken() {
         return authToken;
     }
-    
+
     /**
      * Gets the authentication token (alias for getAuthToken).
-     * 
+     *
      * @return The authentication token, or null if not available
      */
     public String getToken() {
         return getAuthToken();
     }
-    
+
     /**
      * Gets the refresh token from user attributes.
-     * 
+     *
      * @return The refresh token, or null if not available
      */
     public String getRefreshToken() {
         return getAttribute("refreshToken");
     }
-    
+
     /**
      * Creates a new builder pre-populated with this user's data.
-     * 
+     *
      * @return A new User.Builder instance
      */
     public Builder toBuilder() {
@@ -247,56 +247,56 @@ public class User {
             .authenticated(authenticated)
             .authToken(authToken);
     }
-    
+
     /**
      * Checks if the user has the specified role.
-     * 
+     *
      * @param role The role to check
      * @return true if the user has the role, false otherwise
      */
     public boolean hasRole(String role) {
         return roles.contains(role);
     }
-    
+
     /**
      * Checks if the user has all of the specified roles.
-     * 
+     *
      * @param roles The roles to check
      * @return true if the user has all the roles, false otherwise
      */
     public boolean hasAllRoles(Collection<String> roles) {
         return this.roles.containsAll(roles);
     }
-    
+
     /**
      * Checks if the user has any of the specified roles.
-     * 
+     *
      * @param roles The roles to check
      * @return true if the user has at least one of the roles, false otherwise
      */
     public boolean hasAnyRole(Collection<String> roles) {
         return roles.stream().anyMatch(this.roles::contains);
     }
-    
+
     /**
      * Checks if the user has the specified permission.
-     * 
+     *
      * @param permission The permission to check
      * @return true if the user has the permission, false otherwise
      */
     public boolean hasPermission(String permission) {
         return permissions.contains(permission);
     }
-    
+
     /**
      * Creates a new builder for User.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -308,12 +308,12 @@ public class User {
         User user = (User) o;
         return Objects.equals(userId, user.userId);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(userId);
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder("User{")
@@ -348,14 +348,14 @@ public class User {
         private boolean authenticated = true;
         private String authToken;
         private String password;
-        
+
         /**
          * Creates a new builder instance.
          */
         public Builder() {
             // Default constructor with no parameters
         }
-        
+
         public Builder(User user) {
             this.userId = user.userId;
             this.username = user.username;
@@ -367,7 +367,7 @@ public class User {
             this.authToken = user.authToken;
             this.password = user.password;
         }
-        
+
         public Builder userId(String userId) {
             this.userId = userId;
             return this;
@@ -377,17 +377,17 @@ public class User {
             this.password = password;
             return this;
         }
-        
+
         public Builder username(String username) {
             this.username = username;
             return this;
         }
-        
+
         public Builder email(String email) {
             this.email = email;
             return this;
         }
-        
+
         public Builder roles(Set<String> roles) {
             this.roles.clear();
             if (roles != null) {
@@ -395,21 +395,21 @@ public class User {
             }
             return this;
         }
-        
+
         public Builder addRole(String role) {
             if (role != null) {
                 this.roles.add(role);
             }
             return this;
         }
-        
+
         public Builder addRoles(Collection<String> roles) {
             if (roles != null) {
                 this.roles.addAll(roles);
             }
             return this;
         }
-        
+
         public Builder permissions(Set<String> permissions) {
             this.permissions.clear();
             if (permissions != null) {
@@ -417,21 +417,21 @@ public class User {
             }
             return this;
         }
-        
+
         public Builder addPermission(String permission) {
             if (permission != null) {
                 this.permissions.add(permission);
             }
             return this;
         }
-        
+
         public Builder addPermissions(Collection<String> permissions) {
             if (permissions != null) {
                 this.permissions.addAll(permissions);
             }
             return this;
         }
-        
+
         public Builder attributes(Map<String, Object> attributes) {
             this.attributes.clear();
             if (attributes != null) {
@@ -439,22 +439,22 @@ public class User {
             }
             return this;
         }
-        
+
         public Builder attribute(String name, Object value) {
             this.attributes.put(name, value);
             return this;
         }
-        
+
         public Builder authenticated(boolean authenticated) {
             this.authenticated = authenticated;
             return this;
         }
-        
+
         public Builder authToken(String authToken) {
             this.authToken = authToken;
             return this;
         }
-        
+
         public User build() {
             return new User(this);
         }

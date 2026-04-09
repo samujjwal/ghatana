@@ -13,7 +13,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Handles indexing of Node.js/TypeScript projects, including workspace detection. 
+ * Handles indexing of Node.js/TypeScript projects, including workspace detection.
  * @doc.type class
  * @doc.purpose Handles node indexer operations
  * @doc.layer core

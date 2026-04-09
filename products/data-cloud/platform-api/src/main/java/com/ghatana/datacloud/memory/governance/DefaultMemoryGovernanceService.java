@@ -6,7 +6,6 @@ package com.ghatana.datacloud.memory.governance;
 
 import com.ghatana.agent.framework.memory.MemoryNamespace;
 import com.ghatana.agent.framework.memory.MemoryNamespaceRepository;
-import com.ghatana.agent.framework.memory.MemoryScope;
 import com.ghatana.datacloud.memory.MemoryService;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.Nullable;
@@ -14,12 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Default implementation of {@link MemoryGovernanceService}.

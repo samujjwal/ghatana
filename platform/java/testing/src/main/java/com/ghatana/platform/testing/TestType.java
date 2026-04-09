@@ -3,7 +3,7 @@ package com.ghatana.platform.testing;
 /**
  * Canonical classification for tests across the platform.
  * Combines fine-grained performance types with broader functional categories.
- * 
+ *
  * @doc.type enum
  * @doc.purpose Comprehensive test type classification including functional and performance categories
  * @doc.layer core

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Main API for pattern compilation and lifecycle management.
- * 
+ *
  * <p>This service provides the primary interface for:
  * <ul>
  *   <li><b>Compilation</b>: Submitting pattern specifications for validation and compilation</li>
@@ -21,7 +21,7 @@ import java.util.UUID;
  *   <li><b>Updates</b>: Modifying existing patterns with new specifications</li>
  *   <li><b>Deletion</b>: Permanently removing patterns</li>
  * </ul>
- * 
+ *
  * @doc.pattern Service Pattern (API facade), Promise Pattern (async operations)
  * @doc.compiler-phase Pattern Service (API layer above compiler and storage)
  * @doc.threading Thread-safe; all operations return ActiveJ Promises
@@ -30,7 +30,7 @@ import java.util.UUID;
  * @doc.apiNote Use submitPattern() for new patterns; getDetectionPlan() for execution
  * @doc.limitation No batch operations; submit patterns individually
  * @doc.sideEffects Emits metrics for compilation, activation, and query operations
- * 
+ *
  * <h2>API Operations</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -82,82 +82,81 @@ import java.util.UUID;
  *     <td>Soft delete (status=DELETED), may trigger cleanup</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Typical Usage Flow</b>:
  * <pre>
  * // 1. Submit pattern for compilation
  * Promise&lt;DetectionPlan&gt; compiledPlan = patternService.submitPattern(spec);
- * 
+ *
  * // 2. Activate pattern for execution
  * compiledPlan.then(plan -&gt; patternService.activatePattern(plan.getPatternId()));
- * 
+ *
  * // 3. Query active patterns
- * Promise&lt;List&lt;PatternMetadata&gt;&gt; activePatterns = 
+ * Promise&lt;List&lt;PatternMetadata&gt;&gt; activePatterns =
  *     patternService.listPatterns("tenant-123", PatternStatus.ACTIVE);
- * 
+ *
  * // 4. Deactivate when done
  * patternService.deactivatePattern(patternId);
  * </pre>
  */
 public interface PatternService {
-    
+
     /**
      * Submit a pattern specification for validation and compilation.
-     * 
+     *
      * @param spec The pattern specification to compile
      * @return A promise that resolves to the compiled DetectionPlan
      * @throws PatternValidationException if the specification is invalid
      */
     Promise<DetectionPlan> submitPattern(PatternSpecification spec);
-    
+
     /**
      * Query patterns for a specific tenant and status.
-     * 
+     *
      * @param tenantId The tenant identifier
      * @param status The pattern status to filter by (null for all statuses)
      * @return A promise that resolves to the list of pattern metadata
      */
     Promise<List<PatternMetadata>> listPatterns(String tenantId, PatternStatus status);
-    
+
     /**
      * Activate a pattern for execution.
-     * 
+     *
      * @param patternId The pattern identifier
      * @return A promise that resolves when activation is complete
      */
     Promise<Void> activatePattern(UUID patternId);
-    
+
     /**
      * Deactivate a pattern to stop execution.
-     * 
+     *
      * @param patternId The pattern identifier
      * @return A promise that resolves when deactivation is complete
      */
     Promise<Void> deactivatePattern(UUID patternId);
-    
+
     /**
      * Get the compiled detection plan for a pattern.
-     * 
+     *
      * @param patternId The pattern identifier
      * @return A promise that resolves to the DetectionPlan, or empty if not found
      */
     Promise<DetectionPlan> getDetectionPlan(UUID patternId);
-    
+
     /**
      * Update an existing pattern with a new specification.
-     * 
+     *
      * @param patternId The pattern identifier
      * @param newSpec The new pattern specification
      * @return A promise that resolves to the updated DetectionPlan
      */
     Promise<DetectionPlan> updatePattern(UUID patternId, PatternSpecification newSpec);
-    
+
     /**
      * Delete a pattern permanently.
-     * 
+     *
      * @param patternId The pattern identifier
      * @return A promise that resolves when deletion is complete
      */
     Promise<Void> deletePattern(UUID patternId);
 }
-

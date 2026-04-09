@@ -19,7 +19,7 @@ import java.util.Optional;
  * if (success.authenticated()) {
  *     Principal p = success.principal();
  * }
- * 
+ *
  * // Failure case
  * AuthenticationResult failure = AuthenticationResult.failure(
  *     "Invalid credentials"

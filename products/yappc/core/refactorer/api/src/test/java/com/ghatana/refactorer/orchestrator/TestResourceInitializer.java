@@ -9,7 +9,7 @@ import java.nio.file.StandardCopyOption;
 /**
  * Helper class to initialize test resources before tests run. Ensures that the
  * stacktrace.patterns.json file is available in the test classpath.
- 
+
  * @doc.type class
  * @doc.purpose Handles test resource initializer operations
  * @doc.layer core

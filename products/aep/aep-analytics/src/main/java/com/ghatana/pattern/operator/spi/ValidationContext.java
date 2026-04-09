@@ -18,7 +18,7 @@ import java.util.Map;
  *   <li><b>Global Parameters</b>: Pattern-level configuration passed to operators</li>
  *   <li><b>Metrics Registry</b>: Micrometer registry for validation metrics</li>
  * </ul>
- * 
+ *
  * @doc.pattern Context Object Pattern (validation context), Builder Pattern (construction)
  * @doc.compiler-phase Validation Context (compile-time environment for operator validation)
  * @doc.threading Thread-safe after construction (immutable context)
@@ -27,20 +27,20 @@ import java.util.Map;
  * @doc.immutability Immutable after build(); use builder for modifications
  * @doc.apiNote Pass to operator.validate() during compilation; provides tenant-scoped validation
  * @doc.limitation No runtime context; compile-time only (no event data access)
- * 
+ *
  * <h2>Event Type Registry Integration</h2>
  * <p>The optional {@code EventTypeRegistry} interface enables validation against
  * the event catalog module. If not provided, validation assumes all event types exist
  * (fail-open for backward compatibility).
- * 
+ *
  * <pre>
  * ValidationContext context = ValidationContext.builder()
  *   .patternId(patternId)
  *   .tenantId("tenant-123")
- *   .eventTypeRegistry((eventType, tenant) -&gt; 
+ *   .eventTypeRegistry((eventType, tenant) -&gt;
  *     catalogService.exists(eventType, tenant))
  *   .build();
- * 
+ *
  * // Operators can validate event types during compilation
  * if (!context.eventTypeExists("order.created", tenantId)) {
  *   throw new PatternValidationException("Event type not found");
@@ -56,7 +56,7 @@ public class ValidationContext {
     private final Map<String, Object> globalParameters;
     private final MeterRegistry meterRegistry;
     private final EventTypeRegistry eventTypeRegistry;
-    
+
     /**
      * Interface for event type registry operations.
      *
@@ -92,7 +92,7 @@ public class ValidationContext {
         this.meterRegistry = builder.meterRegistry;
         this.eventTypeRegistry = builder.eventTypeRegistry;
     }
-    
+
     // Getters
     public String getPatternId() { return patternId; }
     public String getTenantId() { return tenantId; }
@@ -101,11 +101,11 @@ public class ValidationContext {
     public Map<String, Object> getGlobalParameters() { return globalParameters; }
     public MeterRegistry getMeterRegistry() { return meterRegistry; }
     public EventTypeRegistry getEventTypeRegistry() { return eventTypeRegistry; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String patternId;
         private String tenantId;
@@ -127,27 +127,27 @@ public class ValidationContext {
             return new ValidationContext(this);
         }
     }
-    
+
     /**
      * Check if a specific event type is available.
-     * 
+     *
      * @param eventType the event type to check
      * @return true if the event type is available
      */
     public boolean isEventTypeAvailable(String eventType) {
         return availableEventTypes != null && availableEventTypes.contains(eventType);
     }
-    
+
     /**
      * Get a global parameter value by key.
-     * 
+     *
      * @param key the parameter key
      * @return the parameter value, or null if not found
      */
     public Object getGlobalParameter(String key) {
         return globalParameters != null ? globalParameters.get(key) : null;
     }
-    
+
     /**
      * Get a global parameter value by key with a default value.
      *
@@ -207,8 +207,3 @@ public class ValidationContext {
                 '}';
     }
 }
-
-
-
-
-

@@ -41,10 +41,10 @@ import java.util.stream.Collectors;
  * @doc.pattern Workflow
  */
 public class CodeReviewWorkflow {
-    
+
     private final WorkflowEngine engine;
     private final Map<AgentRoleProto, VirtualOrgAgent> agents;
-    
+
     /**
      * Creates code review workflow with required agents.
      *
@@ -57,7 +57,7 @@ public class CodeReviewWorkflow {
         this.agents = agents;
         validateRequiredAgents();
     }
-    
+
     private void validateRequiredAgents() {
         List<AgentRoleProto> required = List.of(
             AgentRoleProto.AGENT_ROLE_ENGINEER,
@@ -66,17 +66,17 @@ public class CodeReviewWorkflow {
             AgentRoleProto.AGENT_ROLE_QA_ENGINEER,
             AgentRoleProto.AGENT_ROLE_TEAM_LEAD
         );
-        
+
         List<AgentRoleProto> missing = required.stream()
             .filter(role -> !agents.containsKey(role))
             .collect(Collectors.toList());
-        
+
         if (!missing.isEmpty()) {
             throw new IllegalStateException(
                 "Missing required agents: " + missing);
         }
     }
-    
+
     /**
      * Executes code review workflow for a pull request.
      *
@@ -99,7 +99,7 @@ public class CodeReviewWorkflow {
             .withMetadata("has_architecture_changes", String.valueOf(pullRequest.hasArchitecturalChanges()))
             .withMetadata("test_coverage_pct", String.valueOf(pullRequest.getTestCoveragePct()))
             .build();
-        
+
         WorkflowDefinition workflow = WorkflowDefinition.builder()
             // Step 1: Senior engineer technical review
             .addStep(WorkflowStep.builder()
@@ -108,7 +108,7 @@ public class CodeReviewWorkflow {
                 .executor(agents.get(AgentRoleProto.AGENT_ROLE_SENIOR_ENGINEER))
                 .taskDescription(buildTechnicalReviewTask(pullRequest))
                 .build())
-            
+
             // Step 2: Architect review if needed (conditional)
             .addConditionalStep(
                 "architect_review",
@@ -120,7 +120,7 @@ public class CodeReviewWorkflow {
                     .taskDescription(buildArchitectReviewTask(pullRequest))
                     .dependsOn(List.of("technical_review"))
                     .build())
-            
+
             // Step 3: QA test coverage validation (parallel with architect if both needed)
             .addStep(WorkflowStep.builder()
                 .stepId("qa_validation")
@@ -129,11 +129,11 @@ public class CodeReviewWorkflow {
                 .taskDescription(buildQAValidationTask(pullRequest))
                 .dependsOn(List.of("technical_review"))
                 .build())
-            
+
             // Step 4: Aggregate reviews and check for conflicts
             .<Map<String, Decision>>addAggregationStep("aggregate_reviews",
                 results -> aggregateReviewDecisions(results, pullRequest))
-            
+
             // Step 5: Team lead final approval
             .addStep(WorkflowStep.builder()
                 .stepId("final_approval")
@@ -142,27 +142,27 @@ public class CodeReviewWorkflow {
                 .taskDescription(buildFinalApprovalTask(pullRequest))
                 .dependsOn(List.of("aggregate_reviews"))
                 .build())
-            
+
             .build();
-        
+
         return engine.executeWorkflow(workflow, context);
     }
-    
+
     /**
      * Determines if architect review is required.
      *
      * <p>Triggers: Architectural changes, large PRs (>500 LOC), new design patterns
      */
     private boolean requiresArchitectReview(PullRequest pr) {
-        return pr.hasArchitecturalChanges() 
+        return pr.hasArchitecturalChanges()
             || pr.getLinesOfCode() > 500
             || pr.introducesNewPatterns();
     }
-    
+
     private String buildTechnicalReviewTask(PullRequest pr) {
         return String.format("""
             TASK: Perform technical code review for pull request
-            
+
             PULL REQUEST:
             - ID: %s
             - Title: %s
@@ -170,10 +170,10 @@ public class CodeReviewWorkflow {
             - Lines Changed: %d
             - Files Changed: %d
             - Description: %s
-            
+
             CODE CHANGES:
             %s
-            
+
             REVIEW FOCUS:
             1. Code quality and best practices
             2. Design patterns and SOLID principles
@@ -183,13 +183,13 @@ public class CodeReviewWorkflow {
             6. Code duplication and reusability
             7. Naming and documentation
             8. Complexity and maintainability
-            
+
             DELIVERABLES:
             - Review comments with severity (CRITICAL, HIGH, MEDIUM, LOW)
             - Approval status (APPROVE, REQUEST_CHANGES, COMMENT)
             - Mentoring opportunities for author
             - Estimated fix time for changes
-            
+
             ESCALATION:
             - If architectural concerns → escalate to ARCHITECT_LEAD
             - If security vulnerabilities → escalate to ARCHITECT_LEAD + DEVOPS_LEAD
@@ -204,18 +204,18 @@ public class CodeReviewWorkflow {
             pr.getCodeDiff()
         );
     }
-    
+
     private String buildArchitectReviewTask(PullRequest pr) {
         return String.format("""
             TASK: Perform architectural design review for pull request
-            
+
             PULL REQUEST:
             - ID: %s
             - Title: %s
             - Architectural Changes: %s
             - New Patterns: %s
             - System Impact: %s
-            
+
             ARCHITECTURE REVIEW FOCUS:
             1. Design patterns appropriateness
             2. System architecture alignment
@@ -225,14 +225,14 @@ public class CodeReviewWorkflow {
             6. Technical debt implications
             7. Migration and rollback strategy
             8. Documentation and ADR requirements
-            
+
             DELIVERABLES:
             - Architectural feedback with rationale
             - Design improvement suggestions
             - Risk assessment (LOW, MEDIUM, HIGH, CRITICAL)
             - Documentation requirements
             - Follow-up work items
-            
+
             DECISION:
             - APPROVE: Design is sound, ready to proceed
             - REQUEST_CHANGES: Design issues must be addressed
@@ -245,22 +245,22 @@ public class CodeReviewWorkflow {
             pr.getSystemImpactDescription()
         );
     }
-    
+
     private String buildQAValidationTask(PullRequest pr) {
         return String.format("""
             TASK: Validate test coverage and quality for pull request
-            
+
             PULL REQUEST:
             - ID: %s
             - Title: %s
             - Lines Changed: %d
             - Current Test Coverage: %.1f%%
-            
+
             TEST COVERAGE ANALYSIS:
             - Unit Tests: %d tests
             - Integration Tests: %d tests
             - E2E Tests: %d tests
-            
+
             VALIDATION CRITERIA:
             1. Test coverage >= 80%% (current: %.1f%%)
             2. All new code paths covered
@@ -270,13 +270,13 @@ public class CodeReviewWorkflow {
             6. Test execution time reasonable (<5 min for unit)
             7. Mock/stub usage appropriate
             8. Test documentation clear
-            
+
             DELIVERABLES:
             - Coverage assessment (PASS/FAIL with threshold)
             - Missing test scenarios
             - Test quality feedback
             - Recommendation (APPROVE/BLOCK/REQUEST_IMPROVEMENTS)
-            
+
             ESCALATION:
             - If coverage < 80%% → BLOCK merge (quality gate)
             - If critical paths untested → BLOCK merge
@@ -292,21 +292,21 @@ public class CodeReviewWorkflow {
             pr.getTestCoveragePct()
         );
     }
-    
+
     private String buildFinalApprovalTask(PullRequest pr) {
         return String.format("""
             TASK: Final approval decision for pull request merge
-            
+
             PULL REQUEST:
             - ID: %s
             - Title: %s
             - Author: %s
-            
+
             REVIEW SUMMARY:
             - Technical Review: %s
             - Architecture Review: %s
             - QA Validation: %s
-            
+
             TEAM LEAD CONSIDERATIONS:
             1. All reviewers approved (or conflicts resolved)
             2. Team workload and sprint goals
@@ -314,13 +314,13 @@ public class CodeReviewWorkflow {
             4. Coordination with other PRs
             5. Deployment schedule alignment
             6. Author learning and growth
-            
+
             DECISION OPTIONS:
             - APPROVE_AND_MERGE: All clear, merge immediately
             - APPROVE_SCHEDULE: Approved but schedule for later
             - REQUEST_CHANGES: Address review feedback first
             - ESCALATE: Conflicts or risks require management review
-            
+
             DELIVERABLES:
             - Final merge decision
             - Merge timing recommendation
@@ -335,7 +335,7 @@ public class CodeReviewWorkflow {
             "PENDING"
         );
     }
-    
+
     /**
      * Aggregates review decisions from all reviewers.
      *
@@ -348,14 +348,14 @@ public class CodeReviewWorkflow {
     private Decision aggregateReviewDecisions(
             Map<String, Decision> stepResults,
             PullRequest pr) {
-        
+
         Decision technicalReview = stepResults.get("technical_review");
         Decision architectReview = stepResults.get("architect_review");
         Decision qaValidation = stepResults.get("qa_validation");
-        
+
         List<String> blockers = new ArrayList<>();
         List<String> concerns = new ArrayList<>();
-        
+
         // Check technical review
         if (technicalReview.getType() == DecisionType.ESCALATE) {
             return Decision.builder()
@@ -367,7 +367,7 @@ public class CodeReviewWorkflow {
         if (technicalReview.getType() == DecisionType.REJECT) {
             blockers.add("Technical review: " + technicalReview.getReasoning());
         }
-        
+
         // Check architect review if present
         if (architectReview != null) {
             if (architectReview.getType() == DecisionType.ESCALATE) {
@@ -381,12 +381,12 @@ public class CodeReviewWorkflow {
                 blockers.add("Architecture review: " + architectReview.getReasoning());
             }
         }
-        
+
         // Check QA validation (quality gate)
         if (qaValidation.getType() == DecisionType.REJECT) {
             blockers.add("QA validation failed: " + qaValidation.getReasoning());
         }
-        
+
         // Aggregate results
         if (!blockers.isEmpty()) {
             return Decision.builder()
@@ -395,7 +395,7 @@ public class CodeReviewWorkflow {
                 // TODO: Add metadata field to Decision model if needed
                 .build();
         }
-        
+
         // All reviews passed
         return Decision.builder()
             .type(DecisionType.APPROVE)
@@ -404,7 +404,7 @@ public class CodeReviewWorkflow {
             // TODO: Add metadata field to Decision model if needed
             .build();
     }
-    
+
     private double calculateAggregateConfidence(Decision... decisions) {
         return Arrays.stream(decisions)
             .filter(Objects::nonNull)

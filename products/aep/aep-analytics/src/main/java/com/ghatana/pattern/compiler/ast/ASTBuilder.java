@@ -16,11 +16,11 @@ import java.util.UUID;
 
 /**
  * Builder for constructing Abstract Syntax Trees (AST) from operator specifications.
- * 
+ *
  * <p>The ASTBuilder transforms a flat operator specification tree into a hierarchical
  * Abstract Syntax Tree that captures the semantic structure of the pattern. This
  * intermediate representation enables easier analysis, transformation, and optimization.
- * 
+ *
  * @doc.pattern Builder Pattern (AST construction), Visitor Pattern (tree traversal)
  * @doc.compiler-phase AST Building (second phase after validation)
  * @doc.threading Thread-safe; each build() call operates on independent data structures
@@ -29,7 +29,7 @@ import java.util.UUID;
  * @doc.apiNote Build AST after successful validation; AST is immutable once constructed
  * @doc.limitation No AST rewriting or transformation; use DAGOptimizer for graph transformations
  * @doc.sideEffects Emits metrics for AST build success/failure
- * 
+ *
  * <h2>AST Structure</h2>
  * <pre>
  * AST
@@ -40,7 +40,7 @@ import java.util.UUID;
  *  │   └── Metadata (operator config, depth, type)
  *  └── Metadata (pattern-level info)
  * </pre>
- * 
+ *
  * <p><b>Node Types:</b>
  * <ul>
  *   <li><b>Leaf Nodes</b>: Event selectors (no children)</li>
@@ -50,27 +50,27 @@ import java.util.UUID;
  * </ul>
  */
 public class ASTBuilder {
-    
+
     private final OperatorRegistry operatorRegistry;
     private final MetricsCollector metrics;
-    
+
     // Metrics
-    
-    
+
+
     private final Timer astBuildTimer;
-    
+
     public ASTBuilder(OperatorRegistry operatorRegistry, MeterRegistry meterRegistry) {
         this.operatorRegistry = operatorRegistry;
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
-        
+
         // Initialize metrics
         // Counters migrated to MetricsCollector
-        
+
         // See metrics field for counter operations
-        
+
         this.astBuildTimer = Timer.builder("pattern.compiler.ast.build.time").register(meterRegistry);
     }
-    
+
     /**
      * Build an AST from an operator specification.
      *
@@ -168,23 +168,23 @@ public class ASTBuilder {
             throw new PatternValidationException("AST construction with PRIMARY_EVENT failed", e);
         }
     }
-    
+
     private ASTNode buildNode(OperatorSpec operatorSpec, int depth) throws PatternValidationException {
         if (operatorSpec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null");
         }
-        
+
         String type = operatorSpec.getType();
         if (type == null || type.trim().isEmpty()) {
             throw new PatternValidationException("Operator type cannot be null or empty");
         }
-        
+
         // Generate unique ID if not provided
         String id = operatorSpec.getId();
         if (id == null || id.trim().isEmpty()) {
             id = generateNodeId(type, depth);
         }
-        
+
         // Build children nodes
         List<ASTNode> children = new ArrayList<>();
         if (operatorSpec.getOperands() != null) {
@@ -192,15 +192,15 @@ public class ASTBuilder {
                 if (operand == null) {
                     throw new PatternValidationException("Operator operand cannot be null");
                 }
-                
+
                 ASTNode childNode = buildNode(operand, depth + 1);
                 children.add(childNode);
             }
         }
-        
+
         // Create metadata for the node
         Map<String, Object> metadata = createNodeMetadata(operatorSpec, depth);
-        
+
         return ASTNode.builder()
                 .type(type)
                 .id(id)
@@ -210,11 +210,11 @@ public class ASTBuilder {
                 .depth(depth)
                 .build();
     }
-    
+
     private String generateNodeId(String type, int depth) {
         return String.format("%s_%d_%s", type, depth, UUID.randomUUID().toString().substring(0, 8));
     }
-    
+
     private Map<String, Object> createNodeMetadata(OperatorSpec operatorSpec, int depth) {
         return Map.of(
             "depth", depth,
@@ -223,7 +223,7 @@ public class ASTBuilder {
             "hasMetadata", operatorSpec.getMetadata() != null && !operatorSpec.getMetadata().isEmpty()
         );
     }
-    
+
     private Map<String, Object> createASTMetadata(OperatorSpec operatorSpec) {
         return Map.of(
             "rootType", operatorSpec.getType(),
@@ -246,8 +246,3 @@ public class ASTBuilder {
         );
     }
 }
-
-
-
-
-

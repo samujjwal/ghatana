@@ -171,4 +171,3 @@ public final class PipelinePerformancePredictor {
         public PipelinePerformancePredictor build() { return new PipelinePerformancePredictor(this); }
     }
 }
-

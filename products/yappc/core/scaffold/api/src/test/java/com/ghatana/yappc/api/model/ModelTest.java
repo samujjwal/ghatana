@@ -20,9 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -89,7 +87,7 @@ class ModelTest {
         @Test
         @DisplayName("Should throw on missing projectName")
         void shouldThrowOnMissingProjectName() {
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                     CreateRequest.builder()
                             .packName("java-service-spring-gradle")
                             .build()

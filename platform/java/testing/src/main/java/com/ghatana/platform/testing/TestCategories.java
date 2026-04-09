@@ -5,7 +5,7 @@ import java.lang.annotation.*;
 
 /**
  * Test category annotations for different types of tests.
- * 
+ *
  * @doc.type class
  * @doc.purpose Container for test category annotations (unit, integration, performance)
  * @doc.layer core

@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  * and .pyw file extensions with asynchronous processing.
  *
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.type class
  * @doc.purpose Handles python language service operations
  * @doc.layer core

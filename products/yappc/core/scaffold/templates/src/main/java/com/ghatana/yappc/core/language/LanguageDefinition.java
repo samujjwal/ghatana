@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * Language definition with all metadata.
- * 
+ *
  * @doc.type record
  * @doc.purpose Complete language definition with versions, frameworks, and tools
  * @doc.layer platform

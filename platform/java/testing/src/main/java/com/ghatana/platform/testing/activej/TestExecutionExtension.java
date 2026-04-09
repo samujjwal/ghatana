@@ -4,13 +4,12 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 /**
  * JUnit 5 extension that provides a TestExecutionContext for each test method.
  * This ensures proper cleanup of all resources including EventLoops, connections, etc.
- * 
+ *
  * Usage:
  * <pre>
  * &#64;ExtendWith(TestExecutionExtension.class)
@@ -22,7 +21,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  *     }
  * }
  * </pre>
- 
+
  *
  * @doc.type class
  * @doc.purpose Test execution extension
@@ -31,7 +30,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 */
 public class TestExecutionExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
-    private static final ExtensionContext.Namespace NAMESPACE = 
+    private static final ExtensionContext.Namespace NAMESPACE =
         ExtensionContext.Namespace.create(TestExecutionExtension.class);
 
     @Override

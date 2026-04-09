@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Coordinates indexing of TypeScript/JavaScript projects and their dependencies. 
+ * Coordinates indexing of TypeScript/JavaScript projects and their dependencies.
  * @doc.type class
  * @doc.purpose Handles project indexer operations
  * @doc.layer core

@@ -25,7 +25,7 @@ gradle.projectsEvaluated {
             if (extractProtoTask) {
                 task.mustRunAfter(extractProtoTask)
             }
-            
+
             def extractIncludeProtoTask = tasks.findByName('extractIncludeProto')
             if (extractIncludeProtoTask) {
                 task.mustRunAfter(extractIncludeProtoTask)
@@ -270,7 +270,7 @@ gradle.projectsEvaluated {
             }
         }
     }
-    
+
     // Fix test GenerateProtoTask dependencies
     tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { task ->
         if (task.name =~ /Test/ && !(task.name =~ /Fixtures/)) {
@@ -278,14 +278,14 @@ gradle.projectsEvaluated {
             if (extractTestProtoTask) {
                 task.mustRunAfter(extractTestProtoTask)
             }
-            
+
             def extractTestIncludeProtoTask = tasks.findByName('extractTestIncludeProto')
             if (extractTestIncludeProtoTask) {
                 task.mustRunAfter(extractTestIncludeProtoTask)
             }
         }
     }
-    
+
     // Fix test fixtures GenerateProtoTask dependencies (for modules with java-test-fixtures)
     tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { task ->
         if (task.name =~ /TestFixtures/) {
@@ -293,14 +293,14 @@ gradle.projectsEvaluated {
             if (extractTestFixturesProtoTask) {
                 task.mustRunAfter(extractTestFixturesProtoTask)
             }
-            
+
             def extractTestFixturesIncludeProtoTask = tasks.findByName('extractTestFixturesIncludeProto')
             if (extractTestFixturesIncludeProtoTask) {
                 task.mustRunAfter(extractTestFixturesIncludeProtoTask)
             }
         }
     }
-    
+
     // Fix ProcessResources tasks for test fixtures (depends on generated proto code)
     tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { task ->
         if (task.name == 'processTestFixturesResources') {

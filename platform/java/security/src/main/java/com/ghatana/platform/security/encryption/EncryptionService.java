@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Service that provides encryption/decryption operations for different storage types.
  * Integrates with KeyManager for secure key management.
- 
+
  *
  * @doc.type class
  * @doc.purpose Encryption service
@@ -17,10 +17,10 @@ import org.slf4j.LoggerFactory;
 */
 public class EncryptionService {
     private static final Logger logger = LoggerFactory.getLogger(EncryptionService.class);
-    
+
     private final EncryptionProvider encryptionProvider;
     private final Eventloop eventloop;
-    
+
     /**
      * Creates a new EncryptionService with the specified encryption provider and event loop.
      *
@@ -30,10 +30,10 @@ public class EncryptionService {
     public EncryptionService(EncryptionProvider encryptionProvider, Eventloop eventloop) {
         this.encryptionProvider = encryptionProvider;
         this.eventloop = eventloop;
-        logger.info("Initialized EncryptionService with provider: {}", 
+        logger.info("Initialized EncryptionService with provider: {}",
             encryptionProvider.getClass().getSimpleName());
     }
-    
+
     /**
      * Encrypts the given data asynchronously.
      *
@@ -53,7 +53,7 @@ public class EncryptionService {
                 return new EncryptionException("Failed to encrypt data", e);
             });
     }
-    
+
     /**
      * Decrypts the given data asynchronously.
      *
@@ -73,7 +73,7 @@ public class EncryptionService {
                 return new EncryptionException("Failed to decrypt data", e);
             });
     }
-    
+
     /**
      * Encrypts the given data with a specific key ID.
      *

@@ -10,15 +10,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpMethod;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -94,7 +91,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void responseVersionMustMatchRequest() {
             // Request: GET /api/v1/users
             // Response: {version: "v1", ...}
-            
+
             String requestVersion = "v1";
             String responseVersion = "v1";
 
@@ -117,7 +114,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // 1. Old endpoint still works
             // 2. Response includes Deprecation: true header
             // 3. Response includes Documentation header with migration URL
-            
+
             String headerName = "Deprecation";
             String headerValue = "true";
 
@@ -130,7 +127,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void deprecationMustDocumentMigration() {
             // GET /api/v1/users (deprecated)
             // Response header: Link: </api/v2/users>; rel="successor-version"
-            
+
             // Or in response body:
             // {
             //   "deprecation": {
@@ -139,7 +136,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             //     "newEndpoint": "/api/v2/users"
             //   }
             // }
-            
+
             String newEndpoint = "/api/v2/users";
             assertThat(newEndpoint).isNotBlank();
         }
@@ -150,7 +147,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // V1: {id, name, email}
             // V2: {id, name, email, phoneNumber} (added optional field)
             // V1 client: ignores phoneNumber, works fine
-            
+
             // V1 expected fields must exist in V2
             String v1Fields = "id,name,email";
             String v2Fields = "id,name,email,phoneNumber";
@@ -166,7 +163,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // V1: {id, name, email, deprecated_field}
             // V2: {id, name, email} (removed deprecated_field)
             // This is a breaking change → V1 → V2 = major version
-            
+
             String v1Version = "v1";
             String v2Version = "v2"; // Major bump (v1 to v2)
 
@@ -258,7 +255,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void responseStructureMustBeConsistent() throws IOException {
             // All success responses: { data: {...}, status: "success", timestamp: "..." }
             // All error responses: { error: {...}, status: "error", timestamp: "..." }
-            
+
             String successResponse = "{\"data\": {\"id\": 1}, \"status\": \"success\"}";
             JsonNode success = objectMapper.readTree(successResponse);
 
@@ -293,7 +290,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void largeResponsesMustBePaginated() {
             // Response with 10,000 items should be paginated
             // Contract: max items per page (typically 100-1000)
-            
+
             int itemsPerPage = 100;
             int totalItems = 10_000;
             int expectedPages = totalItems / itemsPerPage;
@@ -316,7 +313,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // Success: 200, 201, 204
             // Client error: 400, 401, 403, 404
             // Server error: 500, 502, 503
-            
+
             int successCode = 200;
             int createdCode = 201;
             int clientErrorCode = 400;
@@ -333,7 +330,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // 200: should have response body
             // 204: should NOT have response body
             // 404: should have error body
-            
+
             int okWithBody = 200;
             int noContent = 204;
             int notFound = 404;
@@ -347,7 +344,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void contentTypeMustMatch() {
             // If Content-Type: application/json, body must be JSON
             // If Content-Type: text/plain, body must be text
-            
+
             String jsonContentType = "application/json";
             String jsonBody = "{\"key\": \"value\"}";
 
@@ -369,7 +366,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void getMustBeIdempotent() {
             // GET /api/v1/users (read-only, safe, idempotent)
             // No side effects, can be called multiple times
-            
+
             String method = HttpMethod.GET.toString();
             assertThat(method).isEqualTo("GET");
         }
@@ -379,7 +376,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void postMustCreate() {
             // POST /api/v1/users (creates new user)
             // Response: 201 Created with Location header
-            
+
             String method = HttpMethod.POST.toString();
             assertThat(method).isEqualTo("POST");
         }
@@ -388,7 +385,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         @DisplayName("PATCH must partially update resource")
         void patchMustPartiallyUpdate() {
             // PATCH /api/v1/users/:id (update specific fields)
-            
+
             String method = HttpMethod.PATCH.toString();
             assertThat(method).isEqualTo("PATCH");
         }
@@ -398,7 +395,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void deleteMustRemove() {
             // DELETE /api/v1/users/:id (delete user)
             // Can be idempotent (repeated deletes are safe)
-            
+
             String method = HttpMethod.DELETE.toString();
             assertThat(method).isEqualTo("DELETE");
         }
@@ -408,7 +405,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void putMustReplace() {
             // PUT /api/v1/users/:id (replace entire user)
             // Less common than PATCH for partial updates
-            
+
             String method = HttpMethod.PUT.toString();
             assertThat(method).isEqualTo("PUT");
         }
@@ -427,7 +424,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void requestMustRespectBodyLimit() {
             // Typical limit: 10MB for request body
             // Typical limit: 100KB for individual field
-            
+
             int maxBodySize = 10 * 1024 * 1024; // 10MB
             int requestSize = 5 * 1024 * 1024; // 5MB
 
@@ -449,7 +446,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         void responseSizeMustBeReasonable() {
             // Typical limit: 100MB for streaming response
             // Paginated response: max 50MB per page
-            
+
             int maxPageSize = 50 * 1024 * 1024; // 50MB
             assertThat(maxPageSize).isGreaterThan(1024);
         }

@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * Simple logging-based audit event sink for development and testing.
  * In production, this would be replaced with a more robust implementation
  * that writes to persistent storage or forwards to an external audit system.
- 
+
  *
  * @doc.type class
  * @doc.purpose Logging audit event sink
@@ -29,14 +29,14 @@ import org.slf4j.LoggerFactory;
 */
 public class LoggingAuditEventSink implements AuditEventSink {
     private static final Logger auditLogger = LoggerFactory.getLogger("AUDIT");
-    
+
     @Override
     public void emit(AuditEvent event) throws AuditException {
         try {
             String action = event.getDetails() != null ? (String) event.getDetails().get("action") : "UNKNOWN";
             String status = Boolean.TRUE.equals(event.getSuccess()) ? "SUCCESS" : "FAILURE";
-            
-            auditLogger.info("AUDIT: {} | Principal: {} | Resource: {} | Action: {} | Status: {} | Details: {}", 
+
+            auditLogger.info("AUDIT: {} | Principal: {} | Resource: {} | Action: {} | Status: {} | Details: {}",
                            event.getEventType(),
                            event.getPrincipal(),
                            event.getResourceId(),
@@ -47,12 +47,12 @@ public class LoggingAuditEventSink implements AuditEventSink {
             throw new AuditException("Failed to emit audit event to log", e);
         }
     }
-    
+
     @Override
     public void flush() throws AuditException {
         // No buffering in this implementation, so flush is a no-op
     }
-    
+
     @Override
     public void close() throws AuditException {
         // No resources to close in this implementation

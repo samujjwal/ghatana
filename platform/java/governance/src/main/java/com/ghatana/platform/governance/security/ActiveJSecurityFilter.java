@@ -11,11 +11,11 @@ import java.util.function.Function;
 
 /**
  * ActiveJ-compatible security filter for tenant isolation and authentication.
- * 
+ *
  * <p>Extracts principal from HTTP request (headers, JWT, API key) and
  * establishes TenantContext for the request lifecycle. Designed for use
  * with ActiveJ's RoutingServlet.
- * 
+ *
  * <h2>Usage with ActiveJ RoutingServlet</h2>
  * <pre>{@code
  * // Create filter
@@ -25,12 +25,12 @@ import java.util.function.Function;
  *     .excludePath("/health")
  *     .excludePath("/metrics")
  *     .build();
- * 
+ *
  * // Wrap handler
  * RoutingServlet servlet = RoutingServlet.create(eventloop)
  *     .map("/api/*", filter.wrap(apiHandler));
  * }</pre>
- * 
+ *
  * <h2>Principal Extraction</h2>
  * The filter uses a {@link PrincipalExtractor} to extract principal from request:
  * <ul>
@@ -39,7 +39,7 @@ import java.util.function.Function;
  *   <li>Session from cookie</li>
  *   <li>Custom extraction logic</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose ActiveJ security filter for tenant isolation
  * @doc.layer core
@@ -73,7 +73,7 @@ public class ActiveJSecurityFilter {
 
     /**
      * Wrap a handler with security filtering.
-     * 
+     *
      * <p>The returned function can be used directly with ActiveJ routing.
      *
      * @param handler the handler to wrap
@@ -81,25 +81,25 @@ public class ActiveJSecurityFilter {
      */
     public Function<HttpRequest, Promise<HttpResponse>> wrap(
             Function<HttpRequest, Promise<HttpResponse>> handler) {
-        
+
         return request -> {
             String path = request.getPath();
-            
+
             // Check excluded paths
             if (isExcluded(path)) {
                 return handler.apply(request);
             }
-            
+
             // Extract principal
             return principalExtractor.extract(request)
                 .then(optionalPrincipal -> {
                     if (requireAuthentication && optionalPrincipal.isEmpty()) {
                         return Promise.of(unauthorizedHandler.apply(request));
                     }
-                    
+
                     // Set tenant context and invoke handler
                     Principal principal = optionalPrincipal.orElse(null);
-                    
+
                     if (principal != null) {
                         try (AutoCloseable scope = TenantContext.scope(principal)) {
                             return handler.apply(request);
@@ -136,7 +136,7 @@ public class ActiveJSecurityFilter {
      */
     @FunctionalInterface
     public interface PrincipalExtractor {
-        
+
         /**
          * Extract principal from request.
          *
@@ -154,14 +154,14 @@ public class ActiveJSecurityFilter {
                 String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
                 String userId = request.getHeader(io.activej.http.HttpHeaders.of("X-User-Id"));
                 String roles = request.getHeader(io.activej.http.HttpHeaders.of("X-User-Roles"));
-                
+
                 if (tenantId == null || userId == null) {
                     return Promise.of(Optional.empty());
                 }
-                
-                List<String> roleList = roles != null ? 
+
+                List<String> roleList = roles != null ?
                     List.of(roles.split(",")) : List.of();
-                
+
                 Principal principal = new Principal(userId, roleList, tenantId);
                 return Promise.of(Optional.of(principal));
             };
@@ -181,11 +181,11 @@ public class ActiveJSecurityFilter {
                         apiKey = null;
                     }
                 }
-                
+
                 if (apiKey == null) {
                     return Promise.of(Optional.empty());
                 }
-                
+
                 String finalApiKey = apiKey;
                 Optional<Principal> principal = resolver.resolve(finalApiKey);
                 return Promise.of(principal);
@@ -200,9 +200,9 @@ public class ActiveJSecurityFilter {
         private PrincipalExtractor principalExtractor = PrincipalExtractor.fromHeaders();
         private boolean requireAuthentication = true;
         private final java.util.ArrayList<String> excludedPaths = new java.util.ArrayList<>();
-        private Function<HttpRequest, HttpResponse> unauthorizedHandler = 
+        private Function<HttpRequest, HttpResponse> unauthorizedHandler =
             request -> HttpResponse.ofCode(401).withBody("Unauthorized".getBytes()).build();
-        private Function<HttpRequest, HttpResponse> forbiddenHandler = 
+        private Function<HttpRequest, HttpResponse> forbiddenHandler =
             request -> HttpResponse.ofCode(403).withBody("Forbidden".getBytes()).build();
 
         /**

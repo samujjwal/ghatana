@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Knowledge Graph node model for CLI creation.
  * Stub for compilation — bridges to YAPPC domain model.
- 
+
  * @doc.type class
  * @doc.purpose Handles knowledge graph node operations
  * @doc.layer core

@@ -9,7 +9,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -219,4 +218,3 @@ public final class CustomVocabularyManager {
      */
     public record VocabularyTerm(String original, String normalised, double weight) {}
 }
-

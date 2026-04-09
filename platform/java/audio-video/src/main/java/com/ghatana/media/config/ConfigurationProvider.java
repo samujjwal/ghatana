@@ -264,7 +264,7 @@ public final class ConfigurationProvider {
     public void reload() {
         synchronized (lock) {
             fileProperties.clear();
-            
+
             initialized = false;
             initialize();
             LOG.info("Configuration reloaded");

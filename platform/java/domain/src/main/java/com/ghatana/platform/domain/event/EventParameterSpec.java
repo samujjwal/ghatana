@@ -214,14 +214,14 @@ public class EventParameterSpec {
      * Cannot be null for top-level parameters.
      */
     private String name;
-    
+
     /**
      * The expected type of the parameter value.
      * This determines how the parameter value will be validated, coerced, and processed.
      * Determines behavior of itemsSpec, valueSpec, properties fields.
      */
     private EventParameterType type;
-    
+
     /**
      * Human-readable description of the parameter.
      * Should provide sufficient information for users to understand the parameter's purpose,
@@ -229,7 +229,7 @@ public class EventParameterSpec {
      * Used in API documentation and schema browsers.
      */
     private String description;
-    
+
     /**
      * The default value for this parameter if no value is provided.
      * Type of this object must match the specified parameter type.
@@ -237,14 +237,14 @@ public class EventParameterSpec {
      * If null and required=false, parameter is optional.
      */
     private Object defaultValue;
-    
+
     /**
      * Whether this parameter is required.
      * If true, the parameter must be provided when creating an event of this type.
      * If false, parameter is optional and defaults to defaultValue if not provided.
      */
     private boolean required;
-    
+
     /**
      * Set of allowed values for this parameter (if applicable).
      * If non-null and non-empty, the parameter value must be one of these values.
@@ -252,42 +252,42 @@ public class EventParameterSpec {
      * Useful for external/dynamic enumerations loaded at runtime.
      */
     private LinkedHashSet<Object> enumValues;
-    
+
     /**
      * The data classification level for this parameter.
      * Used for security and access control enforcement (encryption, logging redaction, etc.).
      * Propagates to stored events for compliance auditing.
      */
     private DataClassificationProto dataClassification;
-    
+
     /**
      * Information about this parameter's deprecation status.
      * If non-null, indicates that this parameter is deprecated and provides
      * information about alternatives and removal timeline for migration planning.
      */
     private DeprecationInfoPojo deprecation;
-    
+
     /**
      * Whether this parameter should be indexed for faster querying.
      * Indexed parameters can be efficiently filtered in queries (O(log n)) but increase storage requirements.
      * Set to true for frequently-queried fields (user IDs, timestamps) and false for large/rare fields.
      */
     private boolean indexed;
-    
+
     /**
      * Format specification for the parameter value.
      * The interpretation depends on the parameter type.
      * Examples: "yyyy-MM-dd" for DATE types, "uuid" for STRING types, "json" for object serialization.
      */
     private String format;
-    
+
     /**
      * Specification for array item types.
      * Required and only meaningful when type=ARRAY.
      * Defines the schema for each element in the array (recursive support).
      */
     private EventParameterSpec itemsSpec;
-    
+
     /**
      * Specification for map value types.
      * Required and only meaningful when type=MAP.
@@ -295,7 +295,7 @@ public class EventParameterSpec {
      * Values can be of any type including nested maps/arrays (recursive support).
      */
     private EventParameterSpec valueSpec;
-    
+
     /**
      * Specification for object properties.
      * Required and only meaningful when type=OBJECT.
@@ -309,19 +309,19 @@ public class EventParameterSpec {
             .type(EventParameterType.STRING)
             .required(false)
             .build();
-            
+
     public static final EventParameterSpec EVENT_CONFIDENCE = EventParameterSpec.builder()
             .name("confidence")
             .type(EventParameterType.DOUBLE)
             .required(false)
             .build();
-            
+
     public static final EventParameterSpec EVENT_PROVENANCE = EventParameterSpec.builder()
             .name("provenance")
             .type(EventParameterType.ARRAY)
             .required(false)
             .build();
-            
+
     public static final EventParameterSpec EVENT_AUDIT_TRAIL = EventParameterSpec.builder()
             .name("auditTrailEnabled")
             .type(EventParameterType.BOOLEAN)

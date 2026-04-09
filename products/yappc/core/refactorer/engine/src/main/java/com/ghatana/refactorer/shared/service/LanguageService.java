@@ -10,12 +10,12 @@ import java.util.List;
 
 /**
  * Language-specific diagnostic and fix service interface using ActiveJ Promise-based async operations.
- * 
+ *
  * <p>All methods return {@link Promise} to support non-blocking I/O and parallel processing.
  * Implementations should use {@code Promises.runBlocking(reactor, () -> ...)} for blocking operations.
- * 
+ *
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for language service
  * @doc.layer core
@@ -28,7 +28,7 @@ public interface LanguageService {
 
     /**
      * Asynchronously diagnose files and return a list of diagnostics.
-     * 
+     *
      * @param context the project context containing configuration and resources
      * @param files the list of files to diagnose
      * @return a Promise resolving to a list of unified diagnostics
@@ -37,7 +37,7 @@ public interface LanguageService {
 
     /**
      * Asynchronously plan fixes for a given diagnostic.
-     * 
+     *
      * @param diagnostic the diagnostic to fix
      * @param context the project context
      * @return a Promise resolving to a list of fix actions

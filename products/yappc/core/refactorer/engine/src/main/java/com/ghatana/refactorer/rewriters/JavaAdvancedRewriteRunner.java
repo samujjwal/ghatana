@@ -22,7 +22,7 @@ import org.openrewrite.internal.lang.NonNull;
 /**
  * Adapter around existing OpenRewriteRunner for advanced migrations. This class is a placeholder to
  * wire recipe packs defined under config/rewriters.
- 
+
  * @doc.type class
  * @doc.purpose Handles java advanced rewrite runner operations
  * @doc.layer core

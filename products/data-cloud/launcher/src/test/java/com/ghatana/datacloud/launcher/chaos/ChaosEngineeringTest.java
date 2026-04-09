@@ -15,11 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
-import java.net.SocketException;
-import java.nio.file.FileSystemException;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -153,7 +149,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
             List<String> eventIds = harness.publishEventsWithBuffering(TENANT_ID, events);
 
             assertThat(eventIds).hasSize(100);
-            
+
             // Events not persisted yet
             assertThat(harness.getEventCount(TENANT_ID)).isEqualTo(0);
 
@@ -246,7 +242,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
             chaos.injectNetworkPartition("region-a", "region-b");
 
             // Writes to region B should fail (isolated)
-            assertThatThrownBy(() -> runPromise(() -> 
+            assertThatThrownBy(() -> runPromise(() ->
                     harness.createRecordInRegion("region-b", "test-id")))
                     .isInstanceOf(NetworkPartitionException.class);
 
@@ -263,7 +259,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
 
             // Writes during partition
             runPromise(() -> harness.createRecordInRegion("region-a", "a-only"));
-            
+
             Thread.sleep(100);
 
             // Heal partition

@@ -9,7 +9,7 @@ import lombok.Value;
 
 /**
  * Immutable temporal information for events with multiple time dimensions.
- * 
+ *
  * <p>
  * Encapsulates comprehensive temporal metadata for events. Events have multiple
  * time dimensions: when they occurred (occurrence time), when they were detected
@@ -90,7 +90,7 @@ import lombok.Value;
 @Builder
 @Value
 public class EventTime {
-    
+
     private GTimeInterval occurrenceTime;
     private GTimestamp detectionTimePoint;
     private GTimeValue validDuration;

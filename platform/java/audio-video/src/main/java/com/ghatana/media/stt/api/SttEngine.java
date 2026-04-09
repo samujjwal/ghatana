@@ -9,11 +9,8 @@ package com.ghatana.media.stt.api;
 import com.ghatana.media.common.*;
 import io.activej.promise.Promise;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * Speech-to-Text Engine interface for transcription and adaptation.

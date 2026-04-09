@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public class AuditService {
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
-    
+
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
     private final String currentUser;
@@ -58,7 +58,7 @@ public class AuditService {
         try {
             Map<String, Object> auditDetails = details != null ? new HashMap<>(details) : new HashMap<>();
             auditDetails.put("message", message);
-            
+
             String detailsJson;
             try {
                 detailsJson = objectMapper.writeValueAsString(auditDetails);
@@ -66,7 +66,7 @@ public class AuditService {
                 log.warn("Failed to serialize audit details for agent {}: {}", agentId, e.getMessage());
                 detailsJson = "{\"error\":\"Failed to serialize details\"}";
             }
-            
+
             // Insert audit event using native SQL
             entityManager.createNativeQuery(
                     "INSERT INTO agent_audit_log (agent_id, action, actor, timestamp, details) VALUES (?, ?, ?, ?, ?::jsonb)")
@@ -76,9 +76,9 @@ public class AuditService {
                     .setParameter(4, Instant.now())
                     .setParameter(5, detailsJson)
                     .executeUpdate();
-            
+
             if (log.isDebugEnabled()) {
-                log.debug("Audit event logged: agent={}, action={}, actor={}, details={}", 
+                log.debug("Audit event logged: agent={}, action={}, actor={}, details={}",
                     agentId, action, currentUser, detailsJson);
             }
         } catch (Exception e) {
@@ -101,7 +101,7 @@ public class AuditService {
                 "FROM agent_audit_log " +
                 "WHERE agent_id = ? " +
                 "ORDER BY timestamp DESC " +
-                "LIMIT ? OFFSET ?", 
+                "LIMIT ? OFFSET ?",
                 "AuditEventMapping")
                 .setParameter(1, agentId)
                 .setParameter(2, limit)

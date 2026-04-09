@@ -4,7 +4,6 @@ import com.ghatana.yappc.ai.requirements.api.config.RequirementsConfig;
 import com.ghatana.yappc.ai.requirements.api.http.RequirementsHttpServer;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +16,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.DockerClientFactory;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -36,7 +34,7 @@ import java.util.concurrent.ExecutionException;
  * class MyIntegrationTest extends AbstractIntegrationTest {
  *     @Test
  *     void shouldCreateWorkspace() throws Exception {
- *         HttpResponse response = performPost("/api/v1/workspaces", 
+ *         HttpResponse response = performPost("/api/v1/workspaces",
  *             "{\"name\": \"Test Workspace\"}");
  *         assertThat(response.getCode()).isEqualTo(201);
  *     }
@@ -62,19 +60,19 @@ import java.util.concurrent.ExecutionException;
 @Testcontainers(disabledWithoutDocker = true)
 @Tag("integration")
 public abstract class AbstractIntegrationTest extends EventloopTestBase {
-    
+
     /** Test database username. Never null. */
     protected static final String TEST_DB_USER = "test";
-    
+
     /** Test database password. Never null. */
     protected static final String TEST_DB_PASSWORD = "test";
-    
+
     /** Test database name. Never null. */
     protected static final String TEST_DB_NAME = "ai_requirements_test";
-    
+
     /** Test Redis password. Never null. */
     protected static final String TEST_REDIS_PASSWORD = "test";
-    
+
     /** PostgreSQL test container. Managed by Testcontainers. */
     @Container
     protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
@@ -82,23 +80,23 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         .withPassword(TEST_DB_PASSWORD)
         .withDatabaseName(TEST_DB_NAME)
         .waitingFor(Wait.forListeningPort());
-    
+
     /** Redis test container. Managed by Testcontainers. */
     @Container
     protected static final GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
         .withExposedPorts(6379)
         .waitingFor(Wait.forListeningPort());
-    
+
     /** HTTP client for making requests to the server. Initialized in setUpAll(). */
     protected static HttpClient httpClient;
-    
+
     /** HTTP server instance under test. Initialized in setUpAll(). */
     protected static RequirementsHttpServer httpServer;
-    
+
     /** Configuration for the HTTP server. Initialized in setUpAll(). */
     protected static RequirementsConfig config;
     private static boolean dockerAvailable = true;
-    
+
     /**
      * Initialize test infrastructure before all tests run.
      *
@@ -123,23 +121,23 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         Assumptions.assumeTrue(dockerAvailable, "Skipping API integration tests because Docker is unavailable");
 
         // Set environment variables for test containers
-        System.setProperty("requirements.DB_URL", "jdbc:postgresql://" + postgres.getHost() + ":" 
+        System.setProperty("requirements.DB_URL", "jdbc:postgresql://" + postgres.getHost() + ":"
             + postgres.getFirstMappedPort() + "/" + TEST_DB_NAME);
         System.setProperty("requirements.DB_USER", TEST_DB_USER);
         System.setProperty("requirements.DB_PASSWORD", TEST_DB_PASSWORD);
-        
+
         // Initialize configuration with test container settings
         config = new RequirementsConfig();
-        
+
         // Initialize HTTP client
-        httpClient = HttpClient.builder(io.activej.reactor.Reactor.getCurrentReactor(), 
-            io.activej.dns.DnsClient.builder(io.activej.reactor.Reactor.getCurrentReactor(), 
+        httpClient = HttpClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
+            io.activej.dns.DnsClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
                 java.net.InetAddress.getLoopbackAddress()).build()).build();
-        
+
         // Run database migrations
         runDatabaseMigrations();
     }
-    
+
     /**
      * Clean up test data before each test to ensure isolation.
      *
@@ -150,7 +148,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         // Clear test data before each test
         cleanupTestData();
     }
-    
+
     /**
      * Run database migrations to create test schema.
      *
@@ -173,7 +171,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
             throw new RuntimeException("Failed to run migrations", e);
         }
     }
-    
+
     /**
      * Clean up test data to ensure test isolation.
      *
@@ -194,7 +192,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
             statement.execute("TRUNCATE TABLE users CASCADE");
         }
     }
-    
+
     /**
      * Perform HTTP GET request to the test server.
      *
@@ -207,7 +205,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         return httpClient.request(io.activej.http.HttpRequest.get("http://localhost:8080" + path).build())
             .toCompletableFuture().get();
     }
-    
+
     /**
      * Perform HTTP POST request to the test server.
      *
@@ -223,7 +221,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
             .build())
             .toCompletableFuture().get();
     }
-    
+
     /**
      * Perform HTTP PUT request to the test server.
      *
@@ -239,7 +237,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
             .build())
             .toCompletableFuture().get();
     }
-    
+
     /**
      * Perform HTTP DELETE request to the test server.
      *

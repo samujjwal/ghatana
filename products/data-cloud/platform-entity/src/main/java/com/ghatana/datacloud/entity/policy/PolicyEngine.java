@@ -15,14 +15,14 @@ import java.util.Map;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * PolicyEngine engine = new OpaPolicyEngine(opaClient);
- * 
+ *
  * Map<String, Object> input = Map.of(
  *     "tenantId", "tenant-123",
  *     "operation", "schema_change",
  *     "userId", "user-456"
  * );
  *
- * PolicyDecision decision = runPromise(() -> 
+ * PolicyDecision decision = runPromise(() ->
  *     engine.evaluate("schema_change", input)
  * );
  *

@@ -217,4 +217,3 @@ public class HttpDataCloudClient extends ManagedDataCloudClient {
         log.info("HttpDataCloudClient closed");
     }
 }
-

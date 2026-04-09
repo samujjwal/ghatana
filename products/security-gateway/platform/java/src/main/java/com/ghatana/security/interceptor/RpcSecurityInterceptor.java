@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
  * Handles security for RPC requests, including authentication and authorization.
  * This interceptor works with the SecurityRpcHandler to secure RPC endpoints.
  * Migrated to use PolicyService for modern policy-based access control.
- 
+
  *
  * @doc.type class
  * @doc.purpose Rpc security interceptor
@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 */
 public class RpcSecurityInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(RpcSecurityInterceptor.class);
-    
+
     private final PolicyService policyService;
     private final JwtTokenProvider jwtTokenProvider;
     private final SecurityAuditLogger auditLogger;
@@ -75,18 +75,18 @@ public class RpcSecurityInterceptor {
 
         try {
             Set<String> roles = getRoles(userId);
-            
+
             // Create a Principal for PolicyService (using "default" as tenantId)
             Principal principal = new Principal("default", roles.stream().toList());
-            
+
             boolean authorized = policyService.isAuthorized(principal, permission, resource);
-            
+
             if (authorized) {
                 auditLogger.logAccessGranted(userId, permission, resource);
             } else {
                 auditLogger.logAccessDenied(userId, resource, "Insufficient permissions");
             }
-            
+
             return authorized;
         } catch (Exception e) {
             logger.error("Authorization error for user {}: {}", userId, e.getMessage(), e);

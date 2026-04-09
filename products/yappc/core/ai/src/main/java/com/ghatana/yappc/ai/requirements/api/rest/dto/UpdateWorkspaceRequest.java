@@ -5,7 +5,7 @@ package com.ghatana.yappc.ai.requirements.api.rest.dto;
  *
  * @param name Workspace name (optional)
  * @param description Workspace description (optional)
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for update workspace request
  * @doc.layer core
@@ -13,4 +13,3 @@ package com.ghatana.yappc.ai.requirements.api.rest.dto;
 */
 public record UpdateWorkspaceRequest(String name, String description) {
 }
-

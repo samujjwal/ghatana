@@ -50,17 +50,17 @@ public class EnvConfig {
     public static final String S3_BUCKET = "S3_BUCKET";
 
     private final Map<String, String> config;
-    
+
     public EnvConfig() {
         this.config = new HashMap<>();
         loadDefaultValues();
     }
-    
+
     public EnvConfig(Map<String, String> initialConfig) {
         this.config = new HashMap<>(initialConfig);
         loadDefaultValues();
     }
-    
+
     private void loadDefaultValues() {
         // Load from system environment
         System.getenv().forEach((key, value) -> {
@@ -70,15 +70,15 @@ public class EnvConfig {
             }
         });
     }
-    
+
     public String get(String key) {
         return config.get(key);
     }
-    
+
     public String get(String key, String defaultValue) {
         return config.getOrDefault(key, defaultValue);
     }
-    
+
     public int getInt(String key, int defaultValue) {
         String value = config.get(key);
         if (value == null) {
@@ -92,7 +92,7 @@ public class EnvConfig {
                     + "' which cannot be parsed as an integer", e);
         }
     }
-    
+
     public boolean getBoolean(String key, boolean defaultValue) {
         String value = config.get(key);
         if (value == null) {
@@ -104,7 +104,7 @@ public class EnvConfig {
         }
         return Boolean.parseBoolean(value);
     }
-    
+
     public long getLong(String key, long defaultValue) {
         String value = config.get(key);
         if (value == null) {
@@ -117,11 +117,11 @@ public class EnvConfig {
             return defaultValue;
         }
     }
-    
+
     public void set(String key, String value) {
         config.put(key, value);
     }
-    
+
     public boolean contains(String key) {
         return config.containsKey(key);
     }
@@ -281,7 +281,7 @@ public class EnvConfig {
     public String s3Bucket() {
         return get(S3_BUCKET, "aep-storage");
     }
-    
+
     public Map<String, String> getAll() {
         return new HashMap<>(config);
     }
@@ -316,7 +316,7 @@ public class EnvConfig {
     public String aepDcBaseUrl() {
         return get("dc.base.url", System.getenv().getOrDefault("AEP_DC_BASE_URL", "http://localhost:8085"));
     }
-    
+
     @Override
     public String toString() {
         return "EnvConfig{" +

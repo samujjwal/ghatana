@@ -13,7 +13,6 @@ import com.ghatana.agent.registry.AgentFrameworkRegistry;
 import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineEdge;
-import com.ghatana.core.pipeline.PipelineStage;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 

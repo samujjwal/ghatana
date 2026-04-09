@@ -37,4 +37,3 @@ public interface AgentInvoker {
     @NotNull
     Promise<AgentResult<Object>> invoke(@NotNull String agentId, @NotNull Object input, @NotNull AgentContext ctx);
 }
-

@@ -10,7 +10,7 @@ public interface IPatternSpec {
      * @return List of sub-patterns that make up this pattern
      */
     List<IPatternSpec> getPatterns();
-    
+
     /**
      * Accepts a visitor for this pattern.
      */

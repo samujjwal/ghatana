@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Cache policy analyzer for optimizing build caching strategies.
- * 
+ *
  * FUTURE ENHANCEMENT: ML-driven cache optimization planned for Phase 4+.
  * Currently provides basic cache policy recommendations.
  *
@@ -20,7 +20,7 @@ public class CachePolicyAnalyzer {
 
     /**
      * Analyze cache performance metrics.
-     * 
+     *
      * FUTURE: Will use ML models for advanced analysis.
      * Currently provides basic policy recommendations.
      *
@@ -34,7 +34,7 @@ public class CachePolicyAnalyzer {
 
     /**
      * Recommend cache policy improvements.
-     * 
+     *
      * FUTURE: Will provide ML-driven optimization suggestions.
      * Currently returns current policy.
      *

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -156,7 +155,7 @@ class PositionCalculationTest {
     }
 
     record Trade(String tradeId, String symbol, String side, long quantity, BigDecimal price) {}
-    
+
     record Position(String symbol, long quantity, BigDecimal averagePrice) {
         boolean isLong() { return quantity > 0; }
         boolean isShort() { return quantity < 0; }
@@ -179,7 +178,7 @@ class PositionCalculationTest {
                 }
             }
 
-            BigDecimal avgPrice = totalBought > 0 
+            BigDecimal avgPrice = totalBought > 0
                 ? totalCost.divide(BigDecimal.valueOf(totalBought), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
@@ -197,7 +196,7 @@ class PositionCalculationTest {
                 }
             }
 
-            return totalQty > 0 
+            return totalQty > 0
                 ? totalValue.divide(BigDecimal.valueOf(totalQty), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         }
@@ -218,7 +217,7 @@ class PositionCalculationTest {
                     BigDecimal newCost = avgCost.multiply(BigDecimal.valueOf(heldQuantity))
                         .add(trade.price().multiply(BigDecimal.valueOf(trade.quantity())));
                     heldQuantity += trade.quantity();
-                    avgCost = heldQuantity > 0 
+                    avgCost = heldQuantity > 0
                         ? newCost.divide(BigDecimal.valueOf(heldQuantity), 2, java.math.RoundingMode.HALF_UP)
                         : BigDecimal.ZERO;
                 } else {
@@ -236,9 +235,9 @@ class PositionCalculationTest {
                 .filter(p -> p.quantity() > 0)
                 .map(p -> p.averagePrice().multiply(BigDecimal.valueOf(p.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
             long totalLong = positions.stream().filter(p -> p.quantity() > 0).mapToLong(Position::quantity).sum();
-            BigDecimal avgPrice = totalLong > 0 
+            BigDecimal avgPrice = totalLong > 0
                 ? weightedAvg.divide(BigDecimal.valueOf(totalLong), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 

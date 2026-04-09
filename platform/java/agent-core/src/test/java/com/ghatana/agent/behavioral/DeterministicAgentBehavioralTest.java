@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for DeterministicAgent.
- * 
+ *
  * Focus: Actual processing correctness, not structural validation.
  * Tests deterministic behavior, confidence scoring, explanation generation,
  * and state management.
@@ -585,12 +585,12 @@ class DeterministicAgentBehavioralTest {
             runPromise(() -> agent.initialize(config));
 
             // Test with double
-            AgentResult<?> doubleResult = runPromise(() -> 
+            AgentResult<?> doubleResult = runPromise(() ->
                 agent.process(agentContext, Map.of("value", 75.5)));
             assertThat(doubleResult.isSuccess()).isTrue();
 
             // Test with int
-            AgentResult<?> intResult = runPromise(() -> 
+            AgentResult<?> intResult = runPromise(() ->
                 agent.process(agentContext, Map.of("value", 60)));
             assertThat(intResult.isSuccess()).isTrue();
         }
@@ -654,7 +654,7 @@ class DeterministicAgentBehavioralTest {
             Instant end = Instant.now();
 
             Duration latency = Duration.between(start, end);
-            
+
             // Deterministic should be sub-millisecond
             assertThat(latency).isLessThan(Duration.ofMillis(100));
         }
@@ -672,7 +672,7 @@ class DeterministicAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

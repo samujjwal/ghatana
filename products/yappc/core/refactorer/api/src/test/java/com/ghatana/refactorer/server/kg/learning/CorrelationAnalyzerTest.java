@@ -5,11 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for CorrelationAnalyzer. 
+/** Unit tests for CorrelationAnalyzer.
  * @doc.type class
  * @doc.purpose Handles correlation analyzer test operations
  * @doc.layer core

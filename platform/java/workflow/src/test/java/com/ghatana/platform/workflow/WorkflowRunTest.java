@@ -7,7 +7,6 @@ package com.ghatana.platform.workflow;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;

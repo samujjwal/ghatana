@@ -41,22 +41,22 @@ import java.util.stream.Collectors;
  * <pre>{@code
  * // Initialize registry
  * ConnectorRegistry registry = ConnectorRegistry.initialize(metricsRegistry);
- * 
+ *
  * // Register connectors
  * registry.register(new KafkaConnector("events-ingress"));
  * registry.register(new FileConnector("audit-log"));
- * 
+ *
  * // Lifecycle management
  * registry.initializeAll()
  *     .then(() -> registry.startAll())
  *     .whenResult(() -> logger.info("All connectors started"));
- * 
+ *
  * // Health monitoring
  * registry.checkHealth()
- *     .whenResult(results -> 
+ *     .whenResult(results ->
  *         results.forEach((name, health) ->
  *             logger.info("{}: {}", name, health.isHealthy())));
- * 
+ *
  * // Shutdown
  * registry.stopAll()
  *     .whenComplete(() -> logger.info("All connectors stopped"));
@@ -77,17 +77,17 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 public class ConnectorRegistry {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ConnectorRegistry.class);
     private static final AtomicReference<ConnectorRegistry> INSTANCE = new AtomicReference<>();
-    
+
     private final Map<String, Connector> connectors = new ConcurrentHashMap<>();
     private final MetricsRegistry metricsRegistry;
-    
+
     private ConnectorRegistry(MetricsRegistry metricsRegistry) {
         this.metricsRegistry = metricsRegistry;
     }
-    
+
     /**
      * Initialize the global connector registry.
      */
@@ -96,7 +96,7 @@ public class ConnectorRegistry {
         INSTANCE.set(registry);
         return registry;
     }
-    
+
     /**
      * Get the global connector registry instance.
      */
@@ -107,7 +107,7 @@ public class ConnectorRegistry {
         }
         return registry;
     }
-    
+
     /**
      * Register a connector.
      */
@@ -115,16 +115,16 @@ public class ConnectorRegistry {
         if (connector == null) {
             throw new IllegalArgumentException("Connector cannot be null");
         }
-        
+
         String name = connector.getName();
         if (connectors.containsKey(name)) {
             throw new IllegalArgumentException("Connector with name '" + name + "' already registered");
         }
-        
+
         connectors.put(name, connector);
         logger.info("Registered connector: {} (type: {})", name, connector.getType());
     }
-    
+
     /**
      * Unregister a connector.
      */
@@ -133,26 +133,26 @@ public class ConnectorRegistry {
         if (connector == null) {
             return Promise.complete();
         }
-        
+
         logger.info("Unregistering connector: {}", name);
         return connector.stop()
             .whenComplete(() -> logger.info("Unregistered connector: {}", name));
     }
-    
+
     /**
      * Get a connector by name.
      */
     public Optional<Connector> getConnector(String name) {
         return Optional.ofNullable(connectors.get(name));
     }
-    
+
     /**
      * Get all connectors.
      */
     public Set<Connector> getConnectors() {
         return Collections.unmodifiableSet(connectors.values().stream().collect(Collectors.toSet()));
     }
-    
+
     /**
      * Get connectors by type.
      */
@@ -161,13 +161,13 @@ public class ConnectorRegistry {
             .filter(c -> c.getType().equals(type))
             .collect(Collectors.toUnmodifiableSet());
     }
-    
+
     /**
      * Initialize all registered connectors.
      */
     public Promise<Void> initializeAll() {
         logger.info("Initializing {} connectors", connectors.size());
-        
+
         return Promises.all(
             connectors.values().stream()
                 .map(connector -> {
@@ -178,13 +178,13 @@ public class ConnectorRegistry {
                 .toList()
         ).toVoid();
     }
-    
+
     /**
      * Start all registered connectors.
      */
     public Promise<Void> startAll() {
         logger.info("Starting {} connectors", connectors.size());
-        
+
         return Promises.all(
             connectors.values().stream()
                 .map(connector -> {
@@ -195,13 +195,13 @@ public class ConnectorRegistry {
                 .toList()
         ).toVoid();
     }
-    
+
     /**
      * Stop all registered connectors.
      */
     public Promise<Void> stopAll() {
         logger.info("Stopping {} connectors", connectors.size());
-        
+
         return Promises.all(
             connectors.values().stream()
                 .map(connector -> {
@@ -212,14 +212,14 @@ public class ConnectorRegistry {
                 .toList()
         ).toVoid();
     }
-    
+
     /**
      * Check health of all connectors.
      */
     public Promise<Map<String, Connector.HealthCheckResult>> checkHealth() {
         return Promise.ofCallback(cb -> {
             Map<String, Connector.HealthCheckResult> results = new ConcurrentHashMap<>();
-            
+
             Promises.all(
                 connectors.values().stream()
                     .map(connector -> connector.check()
@@ -233,7 +233,7 @@ public class ConnectorRegistry {
             ).whenComplete(() -> cb.accept(results, null));
         });
     }
-    
+
     /**
      * Get metrics for all connectors.
      */

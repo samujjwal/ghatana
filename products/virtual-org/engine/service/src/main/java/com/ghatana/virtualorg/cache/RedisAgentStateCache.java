@@ -48,13 +48,13 @@ import java.util.stream.Collectors;
  *     6379,
  *     password
  * );
- * 
+ *
  * // Set agent state
  * cache.setState("agent-123", AgentStateProto.BUSY);
- * 
+ *
  * // Get agent state
  * AgentStateProto state = cache.getState("agent-123");
- * 
+ *
  * // Set metadata
  * cache.setMetadata("agent-123", Map.of("role", "engineer"));
  * }</pre>

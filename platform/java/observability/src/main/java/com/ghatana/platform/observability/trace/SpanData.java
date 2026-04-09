@@ -12,7 +12,7 @@ import java.util.Objects;
  * (parent/trace IDs), and status information. This is the fundamental building block of
  * distributed tracing.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Immutable</b>: All fields final, defensive copies for collections</li>
@@ -21,7 +21,7 @@ import java.util.Objects;
  *   <li><b>Validated</b>: Canonical constructor validates required fields and constraints</li>
  *   <li><b>Builder Pattern</b>: Fluent API via {@link SpanDataBuilder}</li>
  * </ul>
- * 
+ *
  * <h2>Span Hierarchy</h2>
  * Spans form a tree structure within a trace:
  * <ul>
@@ -29,20 +29,20 @@ import java.util.Objects;
  *   <li><b>Child Span</b>: Has parent (parentSpanId set) - nested operation</li>
  *   <li><b>Trace</b>: Collection of spans sharing same traceId</li>
  * </ul>
- * 
+ *
  * <h2>Status Values (OpenTelemetry)</h2>
  * <ul>
  *   <li><b>OK</b>: Operation completed successfully</li>
  *   <li><b>ERROR</b>: Operation failed (exception, timeout, etc.)</li>
  *   <li><b>UNSET</b>: Status not explicitly set (default)</li>
  * </ul>
- * 
+ *
  * <h2>Tags vs Logs</h2>
  * <ul>
  *   <li><b>Tags</b>: Key-value metadata about the span (e.g., http.method=GET, db.statement=SELECT)</li>
  *   <li><b>Logs</b>: Timestamped events within the span (e.g., cache.hit, exception.message)</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // HTTP request span
@@ -81,7 +81,7 @@ import java.util.Objects;
  * System.out.println("Is error: " + httpSpan.isError());    // false
  * System.out.println("Duration: " + httpSpan.durationMs() + "ms");  // 100
  * }</pre>
- * 
+ *
  * <h2>Validation Rules</h2>
  * <ul>
  *   <li>spanId must not be null or blank</li>
@@ -92,7 +92,7 @@ import java.util.Objects;
  *   <li>durationMs must be non-negative</li>
  *   <li>status must be one of: OK, ERROR, UNSET</li>
  * </ul>
- * 
+ *
  * <h2>Common Tags (OTEL Conventions)</h2>
  * <ul>
  *   <li><b>HTTP</b>: http.method, http.status_code, http.url, http.target</li>
@@ -114,7 +114,7 @@ import java.util.Objects;
  * @param statusMessage  Optional human-readable status message (e.g., error details)
  * @param tags           Key-value metadata (e.g., http.method, db.statement)
  * @param logs           Timestamped log entries within the span
- * 
+ *
  * @author Ghatana Team
  * @version 1.0
  * @since 1.0

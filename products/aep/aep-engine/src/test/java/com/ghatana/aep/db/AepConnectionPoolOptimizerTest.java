@@ -130,4 +130,3 @@ class AepConnectionPoolOptimizerTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
-

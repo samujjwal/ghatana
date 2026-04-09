@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Processes refactoring operations and handles their execution. 
+ * Processes refactoring operations and handles their execution.
  * @doc.type class
  * @doc.purpose Handles refactoring processor operations
  * @doc.layer core

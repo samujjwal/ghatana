@@ -38,10 +38,10 @@ public class PatternEvolutionHistory {
         if (evolutionSteps.size() < 2) {
             return 0.0;
         }
-        
+
         double initialFitness = evolutionSteps.get(0).getFitnessScore();
         double currentFitness = evolutionSteps.get(evolutionSteps.size() - 1).getFitnessScore();
-        
+
         return currentFitness - initialFitness;
     }
 

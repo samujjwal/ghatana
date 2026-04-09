@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.RecordType;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
-import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.infrastructure.audit.DataCloudAuditLogger;

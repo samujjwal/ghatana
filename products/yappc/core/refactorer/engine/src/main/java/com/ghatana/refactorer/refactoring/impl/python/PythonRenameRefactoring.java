@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Python implementation of {@link RenameRefactoring}. 
+ * Python implementation of {@link RenameRefactoring}.
  * @doc.type class
  * @doc.purpose Handles python rename refactoring operations
  * @doc.layer core

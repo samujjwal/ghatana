@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  * Configuration for consistency enforcement.
- 
+
  * @doc.type class
  * @doc.purpose Handles consistency config operations
  * @doc.layer core

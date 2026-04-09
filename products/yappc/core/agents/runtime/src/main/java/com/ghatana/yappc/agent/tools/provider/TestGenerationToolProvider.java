@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles test generation tool provider operations
  * @doc.layer core
@@ -207,37 +207,37 @@ public class TestGenerationToolProvider implements ToolProvider {
         import org.junit.jupiter.api.Test;
         import org.junit.jupiter.api.BeforeEach;
         import static org.junit.jupiter.api.Assertions.*;
-        
+
         /**
          * Unit tests for %s.%s()
          * Framework: %s
          */
         class %s {
-            
+
             private %s target;
-            
+
             @BeforeEach
             void setUp() {
                 target = new %s();
             }
-            
+
             @Test
             void %s_shouldHandleValidInput() {
                 // Given
                 // TODO: Set up valid input
-                
+
                 // When
                 // var result = target.%s();
-                
+
                 // Then
                 // assertNotNull(result);
             }
-            
+
             @Test
             void %s_shouldHandleEdgeCase_EmptyInput() {
                 // TODO: Test empty/null input handling
             }
-            
+
             @Test
             void %s_shouldThrowExceptionForInvalidInput() {
                 // TODO: Test exception cases
@@ -259,29 +259,29 @@ public class TestGenerationToolProvider implements ToolProvider {
         import org.testcontainers.containers.PostgreSQLContainer;
         import org.testcontainers.junit.jupiter.Container;
         import org.testcontainers.junit.jupiter.Testcontainers;
-        
+
         /**
          * Integration tests for %s
          * Framework: %s
          */
         @Testcontainers
         class %sIntegrationTest {
-            
+
             @Container
             static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
                 .withDatabaseName("test_db")
                 .withUsername("test")
                 .withPassword("test");
-            
+
             @Test
             void shouldSaveAndRetrieveEntity() {
                 // Given - container is running
                 // TODO: Set up repository with container config
-                
+
                 // When - save entity
                 // Then - can retrieve it
             }
-            
+
             @Test
             void shouldHandleConcurrentAccess() {
                 // TODO: Test concurrent operations
@@ -293,24 +293,24 @@ public class TestGenerationToolProvider implements ToolProvider {
   private String generateE2ETestCode(String userFlow, String framework) {
     return String.format("""
         import { test, expect } from '@playwright/test';
-        
+
         /**
          * E2E test for: %s
          * Framework: %s
          */
         test.describe('User Flow: %s', () => {
-            
+
             test.beforeEach(async ({ page }) => {
                 await page.goto('/');
             });
-            
+
             test('complete user flow', async ({ page }) => {
                 // Given - user is on home page
                 await expect(page).toHaveTitle(/Home/);
-                
+
                 // When - perform actions
                 // TODO: Implement flow steps
-                
+
                 // Then - verify outcome
                 // await expect(page.locator('.success')).toBeVisible();
             });
@@ -324,14 +324,14 @@ public class TestGenerationToolProvider implements ToolProvider {
         import com.pholser.junit.quickcheck.Property;
         import com.pholser.junit.quickcheck.runner.JUnitQuickcheck;
         import org.junit.runner.RunWith;
-        
+
         /**
          * Property-based tests for %s
          * Property: %s
          */
         @RunWith(JUnitQuickcheck.class)
         class %sPropertyTest {
-            
+
             @Property
             void %sHoldsForAllInputs(/* @From(ValueGenerator.class) String input */) {
                 // Given - arbitrary input

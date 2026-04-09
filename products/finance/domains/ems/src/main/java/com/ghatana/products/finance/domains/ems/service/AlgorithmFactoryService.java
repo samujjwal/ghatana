@@ -4,7 +4,6 @@ import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
 import java.util.concurrent.Executor;
-import javax.sql.DataSource;
 
 /**
  * @doc.type    Service (Application)

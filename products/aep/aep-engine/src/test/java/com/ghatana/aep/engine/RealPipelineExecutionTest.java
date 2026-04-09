@@ -28,7 +28,7 @@ class RealPipelineExecutionTest {
     @DisplayName("Should execute pipeline with operators")
     void shouldExecutePipelineWithOperators() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -37,7 +37,7 @@ class RealPipelineExecutionTest {
     void shouldHandleDataFlowThroughPipeline() {
         AepEngine engine = Aep.forTesting();
         AepEngine.Event event = new AepEngine.Event("test-type", Map.of("data", "value"), Map.of(), Instant.now());
-        
+
         assertThat(event).isNotNull();
     }
 
@@ -45,7 +45,7 @@ class RealPipelineExecutionTest {
     @DisplayName("Should handle operator chaining")
     void shouldHandleOperatorChaining() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -53,7 +53,7 @@ class RealPipelineExecutionTest {
     @DisplayName("Should handle parallel execution")
     void shouldHandleParallelExecution() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -61,7 +61,7 @@ class RealPipelineExecutionTest {
     @DisplayName("Should handle pipeline state management")
     void shouldHandlePipelineStateManagement() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -69,7 +69,7 @@ class RealPipelineExecutionTest {
     @DisplayName("Should handle pipeline termination")
     void shouldHandlePipelineTermination() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

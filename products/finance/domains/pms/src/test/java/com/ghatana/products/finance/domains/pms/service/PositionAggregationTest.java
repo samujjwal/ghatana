@@ -137,7 +137,7 @@ class PositionAggregationTest {
     record PositionWithCurrency(String symbol, long quantity, BigDecimal averagePrice, String currency) {}
     record PositionWithStrategy(String symbol, long quantity, BigDecimal averagePrice, String strategy) {}
     record PositionWithHierarchy(String symbol, long quantity, BigDecimal averagePrice, String portfolio, String strategy) {}
-    
+
     record AggregatedPosition(String symbol, long totalQuantity, BigDecimal weightedAvgPrice) {}
     record AccountAggregate(String account, int positionCount, BigDecimal totalValue) {}
     record SectorAggregate(java.util.Map<String, BigDecimal> sectors) {}
@@ -213,16 +213,16 @@ class PositionAggregationTest {
             BigDecimal totalValue = positions.stream()
                 .map(p -> p.averagePrice().multiply(BigDecimal.valueOf(p.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
             BigDecimal maxValue = positions.stream()
                 .map(p -> p.averagePrice().multiply(BigDecimal.valueOf(p.quantity())))
                 .max(BigDecimal::compareTo)
                 .orElse(BigDecimal.ZERO);
-            
-            double topPercentage = totalValue.compareTo(BigDecimal.ZERO) > 0 
-                ? maxValue.divide(totalValue, 4, java.math.RoundingMode.HALF_UP).doubleValue() 
+
+            double topPercentage = totalValue.compareTo(BigDecimal.ZERO) > 0
+                ? maxValue.divide(totalValue, 4, java.math.RoundingMode.HALF_UP).doubleValue()
                 : 0.0;
-            
+
             return new ConcentrationMetrics(topPercentage, 0.0);
         }
 

@@ -162,7 +162,7 @@ public interface AgentMetrics {
     double getCpuUtilization();
     int getActiveThreads();
     Map<String, Object> getCustomMetrics();
-    
+
     /**
      * Gets the current health status of the agent.
      *

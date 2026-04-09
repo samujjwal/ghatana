@@ -2,15 +2,12 @@ package com.ghatana.yappc.ai.requirements.api.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.security.model.User;
-import com.ghatana.yappc.ai.requirements.api.rest.dto.CreateWorkspaceRequest;
 import com.ghatana.yappc.ai.requirements.application.workspace.WorkspaceService;
 import com.ghatana.yappc.ai.requirements.domain.workspace.Workspace;
 import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceMember;
 import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceRole;
 import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceSettings;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,10 +22,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 /**
@@ -136,4 +131,3 @@ class WorkspaceControllerTest extends EventloopTestBase {
             .build();
     }
 }
-

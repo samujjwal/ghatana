@@ -57,7 +57,7 @@ public record RawPluginConfig(
             Map<String, String> labels,
             Map<String, String> annotations
     ) {
-        
+
 
     public RawPluginMetadata    {
         labels = labels != null ? Map.copyOf(labels) : Map.of();

@@ -15,7 +15,7 @@ import io.activej.promise.Promise;
 public interface ValidationService {
     /**
      * Validates shape specification using all registered validators.
-     * 
+     *
      * @param spec The shape specification to validate
      * @return Promise of validation result
      */
@@ -23,16 +23,16 @@ public interface ValidationService {
 
     /**
      * Validates with fine-grained control over which validators to run.
-     * 
+     *
      * @param spec The shape specification
      * @param config Configuration to include/exclude specific validators
      * @return Promise of validation result
      */
     Promise<LifecycleValidationResult> validate(ShapeSpec spec, ValidationConfig config);
-    
+
     /**
      * Validates with custom policy constraints.
-     * 
+     *
      * @param spec The shape specification
      * @param policy Custom validation policy
      * @return Promise of validation result

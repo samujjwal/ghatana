@@ -2,7 +2,6 @@ package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;

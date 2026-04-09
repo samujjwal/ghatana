@@ -5,20 +5,16 @@
 package com.ghatana.datacloud.infrastructure.storage;
 
 import com.clickhouse.client.ClickHouseClient;
-import com.clickhouse.client.ClickHouseConfig;
 import com.clickhouse.client.ClickHouseCredentials;
-import com.clickhouse.client.ClickHouseException;
 import com.clickhouse.client.ClickHouseNode;
 import com.clickhouse.data.ClickHouseFormat;
 import com.clickhouse.client.ClickHouseProtocol;
-import com.clickhouse.client.ClickHouseRequest;
 import com.clickhouse.client.ClickHouseResponse;
 import com.clickhouse.data.ClickHouseRecord;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
-import com.ghatana.datacloud.entity.storage.StorageProfile;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -26,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

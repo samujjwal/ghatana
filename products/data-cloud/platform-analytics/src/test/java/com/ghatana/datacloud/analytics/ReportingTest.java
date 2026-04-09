@@ -36,7 +36,7 @@ class ReportingTest {
             .format(ReportFormat.JSON)
             .query("SELECT * FROM sales")
             .build();
-        
+
         assertThat(definition).isNotNull();
         assertThat(definition.getName()).isEqualTo("weekly-sales");
         assertThat(definition.getType()).isEqualTo(ReportType.QUERY);
@@ -52,7 +52,7 @@ class ReportingTest {
             .formattedBody("name,price\nProduct A,100\n")
             .rowCount(1)
             .build();
-        
+
         assertThat(result).isNotNull();
         assertThat(result.getFormat()).isEqualTo(ReportFormat.CSV);
         assertThat(result.getFormattedBody()).contains("name,price");
@@ -67,7 +67,7 @@ class ReportingTest {
             .format(ReportFormat.CSV)
             .collection("products")
             .build();
-        
+
         assertThat(definition).isNotNull();
         assertThat(definition.getType()).isEqualTo(ReportType.ENTITY_EXPORT);
         assertThat(definition.getCollection()).isEqualTo("products");
@@ -77,7 +77,7 @@ class ReportingTest {
     @DisplayName("Should handle report scheduling")
     void shouldHandleReportScheduling() {
         String schedule = "0 0 * * *"; // Daily at midnight
-        
+
         assertThat(schedule).isNotNull();
         assertThat(schedule).contains("*");
     }
@@ -93,7 +93,7 @@ class ReportingTest {
             .executionTime(Duration.ZERO)
             .contentType("application/json")
             .build();
-        
+
         assertThat(result).isNotNull();
         assertThat(result.getRowCount()).isEqualTo(0);
     }
@@ -109,7 +109,7 @@ class ReportingTest {
             .rows(List.of(Map.of("key", "value")))
             .rowCount(1)
             .build();
-        
+
         assertThat(result.getReportId()).isEqualTo(reportId);
         assertThat(result.getRowCount()).isEqualTo(1);
     }

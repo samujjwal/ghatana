@@ -291,7 +291,7 @@ class SecurityContextTest extends EventloopTestBase {
      *        AND JwtTokenProvider returns valid JWT claims
      * WHEN: authenticate() is called
      * THEN: Returns the request without exception
-     * 
+     *
      * Note: SecurityContext setting is tested separately in integration tests
      * due to Promise/Eventloop complexity. This test focuses on filter not throwing.
      */
@@ -391,8 +391,8 @@ class SecurityContextTest extends EventloopTestBase {
                         return;
                     }
                     // Or RuntimeException wrapping AuthenticationException
-                    if (ex instanceof RuntimeException && 
-                        ex.getMessage() != null && 
+                    if (ex instanceof RuntimeException &&
+                        ex.getMessage() != null &&
                         ex.getMessage().contains("Invalid signature")) {
                         return;
                     }

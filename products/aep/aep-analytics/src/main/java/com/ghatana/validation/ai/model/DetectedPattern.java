@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * Represents a pattern detected in the event stream.
- 
+
  *
  * @doc.type class
  * @doc.purpose Detected pattern
@@ -20,7 +20,7 @@ public class DetectedPattern {
     private final double confidence;
     private final Map<String, Object> metadata;
 
-    public DetectedPattern(String id, String name, String patternType, String description, 
+    public DetectedPattern(String id, String name, String patternType, String description,
                           double confidence, Map<String, Object> metadata) {
         this.id = Objects.requireNonNull(id, "ID cannot be null");
         this.name = Objects.requireNonNull(name, "Name cannot be null");
@@ -44,7 +44,7 @@ public class DetectedPattern {
     public String getDescription() { return description; }
     public double confidence() { return confidence; }
     public Map<String, Object> getMetadata() { return Map.copyOf(metadata); }
-    
+
     // Alias methods for compatibility
     public String getId() { return id(); }
     public String getName() { return name(); }

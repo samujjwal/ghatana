@@ -2,7 +2,7 @@ package com.ghatana.platform.security.oauth2.exception;
 
 /**
  * Exception thrown when token introspection fails.
- 
+
  *
  * @doc.type class
  * @doc.purpose Token introspection exception
@@ -10,7 +10,7 @@ package com.ghatana.platform.security.oauth2.exception;
  * @doc.pattern Exception
 */
 public class TokenIntrospectionException extends RuntimeException {
-    
+
     /**
      * Constructs a new token introspection exception with the specified detail message.
      *

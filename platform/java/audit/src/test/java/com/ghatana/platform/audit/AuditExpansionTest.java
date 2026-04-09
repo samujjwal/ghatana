@@ -317,7 +317,7 @@ class AuditExpansionTest extends EventloopTestBase {
         void concurrentRecording() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 for (int i = 0; i < 25; i++) {
                     final int idx = i;
                     AuditEvent event = AuditEvent.builder()

@@ -49,14 +49,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * <h2>Usage Example</h2>
  * <pre>{@code
  * AutonomyController controller = new DefaultAutonomyController();
- * 
+ *
  * // Gate an action
  * GateRequest request = GateRequest.builder()
  *     .actionType("alert.auto-resolve")
  *     .tenantId("tenant-123")
  *     .impactScore(0.3)
  *     .build();
- * 
+ *
  * controller.gate(request)
  *     .whenResult(decision -> {
  *         if (decision.canProceed()) {

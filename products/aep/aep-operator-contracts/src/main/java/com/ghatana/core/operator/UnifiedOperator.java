@@ -71,13 +71,13 @@ import java.util.Map;
  * <pre>{@code
  * public class FilterOperator extends AbstractOperator {
  *     private final Predicate<Event> predicate;
- *     
+ *
  *     public FilterOperator(OperatorId id, Predicate<Event> predicate) {
  *         super(id, OperatorType.STREAM, "Filter", "Filters events by predicate",
  *               List.of("event.filter"), meterRegistry);
  *         this.predicate = predicate;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         if (predicate.test(event)) {
@@ -96,16 +96,16 @@ import java.util.Map;
  * public class SequenceOperator extends AbstractOperator {
  *     private final List<String> sequence = List.of("login.failed", "transaction");
  *     private final StateStore<String, List<Event>> nfaState;
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         String userId = event.getPayload().getString("userId");
  *         List<Event> partialMatch = nfaState.get(userId).orElse(new ArrayList<>());
- *         
+ *
  *         // Check if event matches next expected type in sequence
  *         if (event.getType().equals(sequence.get(partialMatch.size()))) {
  *             partialMatch.add(event);
- *             
+ *
  *             if (partialMatch.size() == sequence.size()) {
  *                 // Complete match - emit pattern.matched event
  *                 Event matchEvent = Event.builder()
@@ -113,7 +113,7 @@ import java.util.Map;
  *                     .addPayload("pattern", "fraud-sequence")
  *                     .addPayload("events", partialMatch)
  *                     .build();
- *                 
+ *
  *                 nfaState.remove(userId); // Reset NFA state
  *                 return Promise.of(OperatorResult.of(matchEvent));
  *             } else {
@@ -135,21 +135,21 @@ import java.util.Map;
  * public class FrequentSequenceMiner extends AbstractOperator {
  *     private final StateStore<String, Long> sequenceCounts;
  *     private final double minSupport = 0.1;
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         // Extract sequence from event
  *         List<String> sequence = event.getPayload().getList("sequence");
  *         String sequenceKey = String.join("→", sequence);
- *         
+ *
  *         // Increment sequence count
  *         long count = sequenceCounts.get(sequenceKey).orElse(0L) + 1;
  *         sequenceCounts.put(sequenceKey, count);
- *         
+ *
  *         // Calculate support (count / total events)
  *         long totalEvents = getTotalEventCount();
  *         double support = (double) count / totalEvents;
- *         
+ *
  *         if (support >= minSupport) {
  *             // Emit pattern.discovered event
  *             Event discoveredPattern = Event.builder()
@@ -158,7 +158,7 @@ import java.util.Map;
  *                 .addPayload("support", support)
  *                 .addPayload("count", count)
  *                 .build();
- *             
+ *
  *             return Promise.of(OperatorResult.of(discoveredPattern));
  *         } else {
  *             return Promise.of(OperatorResult.empty());
@@ -172,24 +172,24 @@ import java.util.Map;
  * // Create operator
  * UnifiedOperator operator = new FilterOperator(...);
  * assert operator.getState() == OperatorState.CREATED;
- * 
+ *
  * // Initialize with configuration
  * OperatorConfig config = OperatorConfig.builder()
  *     .withProperty("batchSize", "100")
  *     .withTimeout(Duration.ofSeconds(5))
  *     .build();
- * 
+ *
  * operator.initialize(config).getResult();
  * assert operator.getState() == OperatorState.INITIALIZED;
- * 
+ *
  * // Start operator
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
  * assert operator.isHealthy();
- * 
+ *
  * // Process events
  * OperatorResult result = operator.process(event).getResult();
- * 
+ *
  * // Graceful shutdown
  * operator.stop().getResult();
  * assert operator.getState() == OperatorState.STOPPED;
@@ -200,16 +200,16 @@ import java.util.Map;
  * // Register operator in catalog
  * OperatorCatalog catalog = new EventCloudOperatorCatalog(...);
  * catalog.register(filterOperator);
- * 
+ *
  * // Discover by type
  * List<UnifiedOperator> streamOps = catalog.findByType(OperatorType.STREAM);
- * 
+ *
  * // Discover by capability
  * List<UnifiedOperator> filterOps = catalog.findByCapability("event.filter");
- * 
+ *
  * // Discover by event type (what can process login events)
  * List<UnifiedOperator> loginOps = catalog.findByEventType("login.failed");
- * 
+ *
  * // Get operator by ID
  * OperatorId id = OperatorId.parse("ghatana:stream:filter:1.0.0");
  * Optional<UnifiedOperator> op = catalog.get(id);
@@ -222,10 +222,10 @@ import java.util.Map;
  * assert operatorEvent.getType().equals("operator.registered");
  * assert operatorEvent.getMetadata().get("operatorId")
  *     .equals("ghatana:stream:filter:1.0.0");
- * 
+ *
  * // Store in EventCloud
  * eventCloud.append("operator-registry", operatorEvent);
- * 
+ *
  * // Deserialize from EventCloud
  * EventCloud.EventStream events = eventCloud.scan("operator-registry", 0);
  * events.forEach(event -> {
@@ -246,13 +246,13 @@ import java.util.Map;
  *     .operator(minerOperator)        // LEARNING: Learn frequent sequences
  *     .onError((event, error) -> deadLetterQueue.send(event, error))
  *     .build();
- * 
+ *
  * // Initialize all operators
  * pipeline.initialize(config).getResult();
- * 
+ *
  * // Start pipeline
  * pipeline.start().getResult();
- * 
+ *
  * // Process event through pipeline
  * OperatorResult result = pipeline.process(event).getResult();
  * }</pre>
@@ -351,12 +351,12 @@ import java.util.Map;
  * @see OperatorResult
  * @see OperatorConfig
  * @see OperatorException
- * 
+ *
  * @doc.type interface
  * @doc.purpose Unified interface for Stream, Pattern, and Learning operators in Event Processing System
  * @doc.layer core
  * @doc.pattern Strategy (operator as pluggable algorithm)
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
@@ -369,45 +369,45 @@ public interface UnifiedOperator {
 
     /**
      * Get unique operator identifier (immutable).
-     * 
+     *
      * <p>Format: {@code {namespace}:{type}:{name}:{version}}
      * <p>Example: {@code ghatana:stream:filter:1.0.0}
-     * 
+     *
      * @return operator ID
      */
     OperatorId getId();
 
     /**
      * Get human-readable operator name.
-     * 
+     *
      * @return operator name (e.g., "Filter Events by Type")
      */
     String getName();
 
     /**
      * Get operator type classification.
-     * 
+     *
      * @return operator type (STREAM, PATTERN, or LEARNING)
      */
     OperatorType getType();
 
     /**
      * Get operator version (semantic versioning).
-     * 
+     *
      * @return version string (e.g., "1.2.3")
      */
     String getVersion();
 
     /**
      * Get operator description (for catalog/UI).
-     * 
+     *
      * @return description
      */
     String getDescription();
 
     /**
      * Get operator capabilities (for discovery).
-     * 
+     *
      * <p>Example capabilities:
      * <ul>
      *   <li>{@code event.filter} - Can filter events</li>
@@ -415,7 +415,7 @@ public interface UnifiedOperator {
      *   <li>{@code pattern.seq} - Can detect sequences</li>
      *   <li>{@code learning.discovery} - Can discover patterns</li>
      * </ul>
-     * 
+     *
      * @return set of capability strings
      */
     List<String> getCapabilities();
@@ -426,16 +426,16 @@ public interface UnifiedOperator {
 
     /**
      * Process a single event (ActiveJ Promise-based).
-     * 
+     *
      * <p>All operators MUST return a Promise to enable non-blocking execution.
-     * 
+     *
      * <p><b>Execution Model:</b>
      * <ul>
      *   <li><b>Stream operators</b>: Transform/filter/aggregate input event</li>
      *   <li><b>Pattern operators</b>: Update NFA state, emit match events</li>
      *   <li><b>Learning operators</b>: Update model state, emit insights</li>
      * </ul>
-     * 
+     *
      * @param event input event
      * @return Promise of processing result (may contain 0, 1, or multiple output events)
      */
@@ -443,10 +443,10 @@ public interface UnifiedOperator {
 
     /**
      * Process a batch of events for efficiency.
-     * 
+     *
      * <p>Default implementation processes events sequentially. Operators SHOULD
      * override this for batch optimizations (e.g., vectorized operations, batched state updates).
-     * 
+     *
      * @param events input events
      * @return Promise of batch processing result
      */
@@ -455,7 +455,7 @@ public interface UnifiedOperator {
         List<Promise<OperatorResult>> promises = events.stream()
             .map(this::process)
             .toList();
-        
+
         return Promises.toList(promises).map(results -> {
             OperatorResult.Builder builder = OperatorResult.builder().success();
             results.forEach(builder::mergeWith);
@@ -567,21 +567,21 @@ public interface UnifiedOperator {
 
     /**
      * Check operator health status.
-     * 
+     *
      * <p>Used for:
      * <ul>
      *   <li>Load balancing decisions</li>
      *   <li>Circuit breaker triggers</li>
      *   <li>Monitoring alerts</li>
      * </ul>
-     * 
+     *
      * @return true if operator is healthy and ready to process events
      */
     boolean isHealthy();
 
     /**
      * Get current operator lifecycle state.
-     * 
+     *
      * @return lifecycle state (CREATED, INITIALIZED, RUNNING, STOPPED, FAILED)
      */
     OperatorState getState();
@@ -592,7 +592,7 @@ public interface UnifiedOperator {
 
     /**
      * Serialize operator to Event for EventCloud storage.
-     * 
+     *
      * <p>Event structure:
      * <pre>
      * {
@@ -610,21 +610,21 @@ public interface UnifiedOperator {
      *   }
      * }
      * </pre>
-     * 
+     *
      * @return Event representation
      */
     Event toEvent();
 
     /**
      * Deserialize operator from Event.
-     * 
+     *
      * <p>Inverse of {@link #toEvent()}. Used for:
      * <ul>
      *   <li>Loading operators from catalog</li>
      *   <li>Recreating pipelines from EventCloud</li>
      *   <li>Version migration</li>
      * </ul>
-     * 
+     *
      * @param event Event representation
      * @return UnifiedOperator instance
      * @throws OperatorException if deserialization fails
@@ -641,7 +641,7 @@ public interface UnifiedOperator {
 
     /**
      * Get operator metrics for monitoring.
-     * 
+     *
      * <p>Standard metrics:
      * <ul>
      *   <li>{@code operator.process.count} - Total events processed</li>
@@ -649,23 +649,23 @@ public interface UnifiedOperator {
      *   <li>{@code operator.process.errors} - Error count by type</li>
      *   <li>{@code operator.state.size} - State store size (bytes)</li>
      * </ul>
-     * 
+     *
      * @return metrics map
      */
     Map<String, Object> getMetrics();
 
     /**
      * Get operator internal state for debugging.
-     * 
+     *
      * <p>DO NOT expose sensitive data (passwords, keys).
-     * 
+     *
      * @return state snapshot (for admin/debug only)
      */
     Map<String, Object> getInternalState();
 
     /**
      * Get operator configuration.
-     * 
+     *
      * @return current configuration
      */
     OperatorConfig getConfig();
@@ -676,28 +676,28 @@ public interface UnifiedOperator {
 
     /**
      * Get operator metadata (tags, labels, owner).
-     * 
+     *
      * <p>Used for:
      * <ul>
      *   <li>Discovery and filtering</li>
      *   <li>Organizational grouping</li>
      *   <li>RBAC policies</li>
      * </ul>
-     * 
+     *
      * @return metadata map
      */
     Map<String, String> getMetadata();
 
     /**
      * Check if operator requires state (stateful vs stateless).
-     * 
+     *
      * <p>Stateful operators:
      * <ul>
      *   <li>WindowOperator (aggregation state)</li>
      *   <li>PatternOperator (NFA state)</li>
      *   <li>LearningOperator (model state)</li>
      * </ul>
-     * 
+     *
      * @return true if operator maintains state
      */
     default boolean isStateful() {
@@ -706,14 +706,14 @@ public interface UnifiedOperator {
 
     /**
      * Get operator dependencies (other operators this operator uses).
-     * 
+     *
      * <p>Used for:
      * <ul>
      *   <li>Dependency resolution</li>
      *   <li>Catalog validation</li>
      *   <li>Pipeline optimization</li>
      * </ul>
-     * 
+     *
      * @return list of operator IDs this operator depends on
      */
     default List<OperatorId> getDependencies() {

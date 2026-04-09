@@ -5,7 +5,6 @@
 package com.ghatana.agent.probabilistic;
 
 import com.ghatana.agent.AgentConfig;
-import com.ghatana.agent.AgentType;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;

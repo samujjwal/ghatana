@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * UNTIL operator that matches until a termination condition is met.
- * 
+ *
  * <p>This operator matches when its first operand occurs until the second operand (termination
  * condition) occurs. For example, UNTIL(A, B) matches when event A repeats until event B occurs,
  * then terminates the pattern. Essential for conditional termination and unbounded matching.
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Temporal Termination Operator - Conditional termination (UNTIL) for unbounded
@@ -53,7 +53,7 @@ import java.util.Map;
  *                  .parameter("inclusive", true)
  *                  .parameter("strict", false)
  *                  .build()
- *              
+ *
  *              // Match API calls until rate limit error (strict)
  *              OperatorSpec.builder()
  *                  .type("UNTIL")
@@ -72,7 +72,7 @@ import java.util.Map;
  *                 execution layer. Does not provide runtime matching logic.
  */
 public class UntilOperator implements Operator {
-    
+
     private static final String TYPE = "UNTIL";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -82,107 +82,102 @@ public class UntilOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for UNTIL operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for UntilOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount != 2) {
             throw new PatternValidationException(
                 String.format("UNTIL operator requires exactly 2 operands, got %d", operandCount));
         }
-        
+
         // Validate operands
         if (spec.getOperands() != null && spec.getOperands().size() == 2) {
             OperatorSpec operand1 = spec.getOperands().get(0);
             OperatorSpec operand2 = spec.getOperands().get(1);
-            
+
             if (operand1 == null) {
                 throw new PatternValidationException("UNTIL operator first operand cannot be null");
             }
-            
+
             if (operand2 == null) {
                 throw new PatternValidationException("UNTIL operator second operand cannot be null");
             }
-            
+
             if (operand1.getType() == null || operand1.getType().trim().isEmpty()) {
                 throw new PatternValidationException("UNTIL operator first operand must have a valid type");
             }
-            
+
             if (operand2.getType() == null || operand2.getType().trim().isEmpty()) {
                 throw new PatternValidationException("UNTIL operator second operand must have a valid type");
             }
         } else {
             throw new PatternValidationException("UNTIL operator must have exactly two operands");
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             return;
         }
-        
+
         // Validate maxTimeWindow parameter if present
         Object maxTimeWindow = parameters.get("maxTimeWindow");
         if (maxTimeWindow != null) {
             if (!(maxTimeWindow instanceof Number)) {
                 throw new PatternValidationException("UNTIL operator maxTimeWindow parameter must be a number");
             }
-            
+
             long maxTimeWindowMs = ((Number) maxTimeWindow).longValue();
             if (maxTimeWindowMs <= 0) {
                 throw new PatternValidationException("UNTIL operator maxTimeWindow parameter must be positive");
             }
         }
-        
+
         // Validate inclusive parameter if present
         Object inclusive = parameters.get("inclusive");
         if (inclusive != null && !(inclusive instanceof Boolean)) {
             throw new PatternValidationException("UNTIL operator inclusive parameter must be a boolean");
         }
-        
+
         // Validate strict parameter if present
         Object strict = parameters.get("strict");
         if (strict != null && !(strict instanceof Boolean)) {
             throw new PatternValidationException("UNTIL operator strict parameter must be a boolean");
         }
-        
+
         // Validate allowEmpty parameter if present
         Object allowEmpty = parameters.get("allowEmpty");
         if (allowEmpty != null && !(allowEmpty instanceof Boolean)) {
             throw new PatternValidationException("UNTIL operator allowEmpty parameter must be a boolean");
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

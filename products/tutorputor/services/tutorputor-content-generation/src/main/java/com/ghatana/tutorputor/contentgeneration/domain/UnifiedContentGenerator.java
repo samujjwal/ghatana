@@ -7,8 +7,8 @@ import java.util.*;
  * Unified content generation interface combining capabilities from ai-service and content-explorer.
  *
  * <p><b>Purpose</b><br>
- * Defines contract for generating educational content including claims, examples, 
- * simulations, animations, and comprehensive learning packages. Supports streaming 
+ * Defines contract for generating educational content including claims, examples,
+ * simulations, animations, and comprehensive learning packages. Supports streaming
  * responses, batch generation, and model configuration using platform LLMGateway.
  *
  * <p><b>Usage</b><br>
@@ -19,7 +19,7 @@ import java.util.*;
  *     .gradeLevel("HIGH_SCHOOL")
  *     .domain("PHYSICS")
  *     .build();
- * 
+ *
  * Promise<CompleteContentPackage> result = generator.generateCompletePackage(request);
  * }</pre>
  *

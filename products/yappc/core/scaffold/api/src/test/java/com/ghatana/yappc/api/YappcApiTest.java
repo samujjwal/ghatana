@@ -68,11 +68,11 @@ class YappcApiTest {
     @DisplayName("Should create API with default configuration")
     void shouldCreateApiWithDefaults() {
         YappcApi defaultApi = YappcApi.create();
-        
+
         assertThat(defaultApi).isNotNull();
         assertThat(defaultApi.isReady()).isTrue();
         assertThat(defaultApi.getVersion()).isEqualTo("1.0.0");
-        
+
         defaultApi.shutdown();
     }
 
@@ -84,10 +84,10 @@ class YappcApiTest {
                 .workspacePath(tempDir)
                 .enableCache(true)
                 .build();
-        
+
         assertThat(builtApi).isNotNull();
         assertThat(builtApi.isReady()).isTrue();
-        
+
         builtApi.shutdown();
     }
 
@@ -95,7 +95,7 @@ class YappcApiTest {
     @DisplayName("Should provide pack service")
     void shouldProvidePackService() {
         PackService packService = api.packs();
-        
+
         assertThat(packService).isNotNull();
         assertThat(packService.list()).isNotNull();
     }
@@ -104,7 +104,7 @@ class YappcApiTest {
     @DisplayName("Should provide project service")
     void shouldProvideProjectService() {
         ProjectService projectService = api.projects();
-        
+
         assertThat(projectService).isNotNull();
     }
 
@@ -112,10 +112,10 @@ class YappcApiTest {
     @DisplayName("Should provide template service")
     void shouldProvideTemplateService() {
         TemplateService templateService = api.templates();
-        
+
         assertThat(templateService).isNotNull();
         assertThat(templateService.getAvailableHelpers()).contains(
-                "lowercase", "uppercase", "capitalize", 
+                "lowercase", "uppercase", "capitalize",
                 "camelCase", "pascalCase", "snakeCase", "kebabCase"
         );
     }
@@ -124,7 +124,7 @@ class YappcApiTest {
     @DisplayName("Should provide dependency service")
     void shouldProvideDependencyService() {
         DependencyService dependencyService = api.dependencies();
-        
+
         assertThat(dependencyService).isNotNull();
     }
 
@@ -132,7 +132,7 @@ class YappcApiTest {
     @DisplayName("Should report not ready after shutdown")
     void shouldReportNotReadyAfterShutdown() {
         api.shutdown();
-        
+
         assertThat(api.isReady()).isFalse();
     }
 

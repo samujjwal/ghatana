@@ -54,7 +54,7 @@ public record CompiledObjectSchema(
             FieldType type,
             String format
     ) {
-        
+
 
     public CompiledPropertyConfig {
         Objects.requireNonNull(name, "Property name cannot be null");

@@ -1,7 +1,6 @@
 package com.ghatana.platform.domain.event;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 

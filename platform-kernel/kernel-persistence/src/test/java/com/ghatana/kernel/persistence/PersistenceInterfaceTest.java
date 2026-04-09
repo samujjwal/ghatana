@@ -34,27 +34,27 @@ class PersistenceInterfaceTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             // Create
             registry.registerModule("test-module", "1.0.0", "REGISTERED");
-            
+
             // Read
             Optional<JdbcModuleRegistry.ModuleRegistration> module = registry.getModule("test-module");
             assertThat(module).isPresent();
             assertThat(module.get().moduleId()).isEqualTo("test-module");
-            
+
             // Update
             registry.registerModule("test-module", "2.0.0", "STARTED");
             module = registry.getModule("test-module");
             assertThat(module.get().moduleVersion()).isEqualTo("2.0.0");
-            
+
             // Delete
             registry.removeModule("test-module");
             module = registry.getModule("test-module");
@@ -70,18 +70,18 @@ class PersistenceInterfaceTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             // Test repository pattern abstraction
             registry.registerModule("repo-test", "1.0.0", "REGISTERED");
             assertThat(registry.getModule("repo-test")).isPresent();
-            
+
             // Test list operation
             assertThat(registry.listModules()).hasSize(1);
         } catch (SQLException e) {
@@ -96,7 +96,7 @@ class PersistenceInterfaceTest {
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
         ResultSet mockResultSet = mock(ResultSet.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
@@ -107,13 +107,13 @@ class PersistenceInterfaceTest {
             when(mockResultSet.getString("module_version")).thenReturn("1.0.0");
             when(mockResultSet.getString("module_status")).thenReturn("REGISTERED");
             when(mockResultSet.getLong("updated_at")).thenReturn(System.currentTimeMillis());
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.registerModule("mapping-test", "1.0.0", "REGISTERED");
-            
+
             Optional<JdbcModuleRegistry.ModuleRegistration> module = registry.getModule("mapping-test");
             assertThat(module).isPresent();
-            
+
             // Verify entity mapping
             JdbcModuleRegistry.ModuleRegistration registration = module.get();
             assertThat(registration.moduleId()).isEqualTo("mapping-test");
@@ -131,16 +131,16 @@ class PersistenceInterfaceTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.registerModule("query-test-1", "1.0.0", "REGISTERED");
             registry.registerModule("query-test-2", "2.0.0", "STARTED");
-            
+
             // Test query abstraction through list operation
             assertThat(registry.listModules()).hasSize(2);
         } catch (SQLException e) {
@@ -154,18 +154,18 @@ class PersistenceInterfaceTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             // Test connection lifecycle
             registry.ensureSchema();
             verify(mockDataSource, atLeastOnce()).getConnection();
-            
+
             // Test connection reuse
             registry.registerModule("conn-test", "1.0.0", "REGISTERED");
             verify(mockConnection, atLeast(2)).prepareStatement(anyString());
@@ -179,23 +179,23 @@ class PersistenceInterfaceTest {
     void shouldHandleErrorScenarios() {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
-        
+
         try {
             // Test connection failure
             when(mockDataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> registry.ensureSchema()
             );
-            
+
             // Test query failure
             reset(mockDataSource);
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("Query failed"));
-            
+
             org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> registry.registerModule("error-test", "1.0.0", "REGISTERED")

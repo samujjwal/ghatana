@@ -1,7 +1,6 @@
 package com.ghatana.products.finance.domains.sanctions.adapter;
 
 import com.ghatana.products.finance.domains.sanctions.domain.SanctionsEntry;
-import com.ghatana.products.finance.domains.sanctions.domain.SanctionsListType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

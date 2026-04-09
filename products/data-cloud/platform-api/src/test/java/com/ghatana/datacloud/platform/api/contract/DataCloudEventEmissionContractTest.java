@@ -15,13 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -312,7 +310,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
             // Entity state transitions must be ordered:
             // create → update → update → delete
             // Never: update → create (invalid)
-            
+
             List<String> validSequence = List.of(
                     "entity.created",
                     "entity.updated",
@@ -394,7 +392,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
             // Contract: if operation succeeds, event must be published
             // Event may be published multiple times (exactly-once is hard)
             // Consumer must be idempotent
-            
+
             DomainEvent event = new DomainEvent();
             event.id = "evt-unique-456";
             event.eventType = "entity.created";
@@ -409,7 +407,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         void failedOperationMustNotPublish() {
             // If entity creation fails (validation error, etc)
             // entity.created event must NOT be published
-            
+
             // Contract: events only for successful operations
             assertThat("validation error").isNotBlank();
         }
@@ -420,9 +418,9 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
             // Either:
             // 1. Operation succeeds AND event is published, OR
             // 2. Operation fails AND no event is published
-            // 
+            //
             // Not: Operation succeeds but event is lost
-            
+
             boolean operationSucceeded = true;
             boolean eventPublished = true;
 
@@ -467,7 +465,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         void eventRetentionMustRespectPolicy() {
             // Contract: events deleted after configured retention period
             // (e.g., 90 days, 1 year, or indefinite per tenant policy)
-            
+
             long createdTime = System.currentTimeMillis() - (365 * 24 * 60 * 60 * 1000); // 1 year ago
             long currentTime = System.currentTimeMillis();
             long ageMs = currentTime - createdTime;
@@ -480,7 +478,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         void eventsMustRespectLitigationHold() {
             // Contract: if tenant is under litigation hold, events cannot be deleted
             // Must be retained until hold is released
-            
+
             boolean litigationHold = true;
             boolean canDelete = !litigationHold;
 

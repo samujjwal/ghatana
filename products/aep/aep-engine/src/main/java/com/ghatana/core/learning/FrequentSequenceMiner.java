@@ -318,4 +318,3 @@ public class FrequentSequenceMiner {
         return new Builder();
     }
 }
-

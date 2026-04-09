@@ -346,4 +346,3 @@ public class BatchingOperator extends AbstractOperator {
         return new Builder();
     }
 }
-

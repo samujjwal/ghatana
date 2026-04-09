@@ -13,7 +13,7 @@ class AgentIdTest {
     @Test
     void testOf() {
         AgentId id = AgentId.of("test-agent-id");
-        
+
         assertEquals("test-agent-id", id.value());
         assertEquals("test-agent-id", id.raw());
     }
@@ -22,7 +22,7 @@ class AgentIdTest {
     void testRandom() {
         AgentId id1 = AgentId.random();
         AgentId id2 = AgentId.random();
-        
+
         assertNotNull(id1.value());
         assertNotNull(id2.value());
         assertNotEquals(id1.value(), id2.value());
@@ -54,7 +54,7 @@ class AgentIdTest {
         AgentId id1 = AgentId.of("same-id");
         AgentId id2 = AgentId.of("same-id");
         AgentId id3 = AgentId.of("different-id");
-        
+
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
     }
@@ -63,14 +63,14 @@ class AgentIdTest {
     void testHashCode() {
         AgentId id1 = AgentId.of("same-id");
         AgentId id2 = AgentId.of("same-id");
-        
+
         assertEquals(id1.hashCode(), id2.hashCode());
     }
 
     @Test
     void testToString() {
         AgentId id = AgentId.of("test-id");
-        
+
         assertEquals("test-id", id.toString());
     }
 }

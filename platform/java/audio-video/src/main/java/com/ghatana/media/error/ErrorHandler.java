@@ -10,7 +10,6 @@ import com.ghatana.platform.core.exception.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -110,7 +109,7 @@ public final class ErrorHandler {
         if (throwable instanceof ResourceNotFoundException) {
             return "NOT_FOUND";
         }
-        if (throwable instanceof SecurityException || 
+        if (throwable instanceof SecurityException ||
             throwable instanceof UnauthorizedException) {
             return "SECURITY";
         }

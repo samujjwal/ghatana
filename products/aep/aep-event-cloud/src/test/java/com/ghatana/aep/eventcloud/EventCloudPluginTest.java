@@ -7,7 +7,6 @@ package com.ghatana.aep.eventcloud;
 import com.ghatana.aep.eventcloud.channel.EventChannel;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
@@ -22,9 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

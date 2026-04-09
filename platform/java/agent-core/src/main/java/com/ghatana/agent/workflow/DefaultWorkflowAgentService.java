@@ -1,6 +1,5 @@
 package com.ghatana.agent.workflow;
 
-import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;

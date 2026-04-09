@@ -2,7 +2,7 @@ package com.ghatana.yappc.framework.api.services;
 
 import java.util.Map;
 
-/** Telemetry provider configuration contract. 
+/** Telemetry provider configuration contract.
  * @doc.type interface
  * @doc.purpose Defines the contract for telemetry configuration
  * @doc.layer core

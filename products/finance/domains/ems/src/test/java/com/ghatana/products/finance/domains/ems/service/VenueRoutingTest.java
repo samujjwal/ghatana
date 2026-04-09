@@ -28,19 +28,19 @@ import static org.mockito.Mockito.*;
 class VenueRoutingTest {
 
     private SmartOrderRouterService routerService;
-    
+
     @Mock
     private SmartOrderRouterService.RoutingStore routingStore;
-    
+
     @Mock
     private EventBusPort eventBusPort;
-    
+
     @Mock
     private ExchangeAdapterPort nasdaqAdapter;
-    
+
     @Mock
     private ExchangeAdapterPort nyseAdapter;
-    
+
     @Mock
     private ExchangeAdapterPort nepseAdapter;
 

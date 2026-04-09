@@ -63,7 +63,7 @@ class ReportServiceImplTest extends EventloopTestBase {
                 .withFormat("CSV")
                 .withQuery("SELECT * FROM sales WHERE month = '2024-01'");
 
-            when(repository.save(any(Report.class))).thenAnswer(invocation -> 
+            when(repository.save(any(Report.class))).thenAnswer(invocation ->
                 Promise.of(invocation.getArgument(0)));
 
             // When
@@ -199,7 +199,7 @@ class ReportServiceImplTest extends EventloopTestBase {
                 .withCreatedBy("system");
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(existing));
-            when(repository.save(any(Report.class))).thenAnswer(invocation -> 
+            when(repository.save(any(Report.class))).thenAnswer(invocation ->
                 Promise.of(invocation.getArgument(0)));
 
             // When

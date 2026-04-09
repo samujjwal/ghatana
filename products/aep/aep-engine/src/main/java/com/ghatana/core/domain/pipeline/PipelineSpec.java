@@ -6,10 +6,10 @@ import java.util.Objects;
 
 /**
  * Pipeline specification for stream processing.
- * 
+ *
  * <p>Defines the structure and configuration of a data processing pipeline
  * including stages, connectors, and execution parameters.
- * 
+ *
  * @doc.type class
  * @doc.purpose Pipeline specification for stream processing
  * @doc.layer core
@@ -22,10 +22,10 @@ public class PipelineSpec {
     private final List<PipelineStageSpec> stages;
     private final PipelineConfiguration configuration;
     private final boolean enabled;
-    
+
     /**
      * Creates a new pipeline specification.
-     * 
+     *
      * @param id Pipeline identifier
      * @param name Pipeline name
      * @param tenantId Tenant identifier
@@ -44,46 +44,46 @@ public class PipelineSpec {
         this.configuration = configuration;
         this.enabled = enabled;
     }
-    
+
     /**
      * Gets the pipeline identifier.
-     * 
+     *
      * @return pipeline ID
      */
     public String getId() {
         return id;
     }
-    
+
     /**
      * Gets the pipeline name.
-     * 
+     *
      * @return pipeline name
      */
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets the tenant identifier.
-     * 
+     *
      * @return tenant ID
      */
     public String getTenantId() {
         return tenantId;
     }
-    
+
     /**
      * Gets the pipeline description.
-     * 
+     *
      * @return pipeline description
      */
     public String getDescription() {
         return description;
     }
-    
+
     /**
      * Gets the pipeline stages.
-     * 
+     *
      * @return list of pipeline stages
      */
     public List<PipelineStageSpec> getStages() {
@@ -101,51 +101,51 @@ public class PipelineSpec {
 
     /**
      * Gets the pipeline configuration.
-     * 
+     *
      * @return pipeline configuration
      */
     public PipelineConfiguration getConfiguration() {
         return configuration;
     }
-    
+
     /**
      * Checks if the pipeline is enabled.
-     * 
+     *
      * @return true if enabled
      */
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     /**
      * Adds a stage to the pipeline.
-     * 
+     *
      * @param stage stage to add
      */
     public void addStage(PipelineStageSpec stage) {
         Objects.requireNonNull(stage, "Stage cannot be null");
         stages.add(stage);
     }
-    
+
     /**
      * Removes a stage from the pipeline.
-     * 
+     *
      * @param stage stage to remove
      * @return true if stage was removed
      */
     public boolean removeStage(PipelineStageSpec stage) {
         return stages.remove(stage);
     }
-    
+
     /**
      * Gets the number of stages in the pipeline.
-     * 
+     *
      * @return stage count
      */
     public int getStageCount() {
         return stages.size();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -153,18 +153,18 @@ public class PipelineSpec {
         PipelineSpec that = (PipelineSpec) o;
         return id.equals(that.id) && tenantId.equals(that.tenantId);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(id, tenantId);
     }
-    
+
     @Override
     public String toString() {
         return String.format("PipelineSpec{id='%s', name='%s', tenant='%s', stages=%d, enabled=%s}",
             id, name, tenantId, stages.size(), enabled);
     }
-    
+
     /**
      * Pipeline configuration.
      */
@@ -173,14 +173,14 @@ public class PipelineSpec {
         private final long timeoutMs;
         private final String executionMode;
         private final boolean checkpointing;
-        
+
         public PipelineConfiguration(int maxRetries, long timeoutMs, String executionMode, boolean checkpointing) {
             this.maxRetries = maxRetries;
             this.timeoutMs = timeoutMs;
             this.executionMode = executionMode;
             this.checkpointing = checkpointing;
         }
-        
+
         public int getMaxRetries() { return maxRetries; }
         public long getTimeoutMs() { return timeoutMs; }
         public String getExecutionMode() { return executionMode; }

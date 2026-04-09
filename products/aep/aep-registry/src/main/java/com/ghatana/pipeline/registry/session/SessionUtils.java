@@ -23,13 +23,13 @@ import java.util.function.Supplier;
  * @since 2.0.0
  */
 public final class SessionUtils {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SessionUtils.class);
-    
+
     private SessionUtils() {
         // Utility class, no instances
     }
-    
+
     /**
      * Get the current session, or empty if not available.
      */
@@ -38,7 +38,7 @@ public final class SessionUtils {
             .filter(RequestContext::hasSession)
             .map(RequestContext::getSession);
     }
-    
+
     /**
      * Get the current user ID, or empty if not available.
      */
@@ -46,7 +46,7 @@ public final class SessionUtils {
         return getCurrentSession()
             .map(SessionState::getUserId);
     }
-    
+
     /**
      * Get the current tenant ID, or empty if not available.
      */
@@ -54,7 +54,7 @@ public final class SessionUtils {
         return getCurrentSession()
             .map(SessionState::getTenantId);
     }
-    
+
     /**
      * Execute a task with the current session, or throw an exception if no session is available.
      */
@@ -63,7 +63,7 @@ public final class SessionUtils {
             .orElseThrow(() -> new IllegalStateException("No active session"));
         return task.apply(session);
     }
-    
+
     /**
      * Execute a task with the current session, or return a default value if no session is available.
      */
@@ -72,7 +72,7 @@ public final class SessionUtils {
             .map(task)
             .orElse(defaultValue);
     }
-    
+
     /**
      * Execute a task with the current session, or execute a default task if no session is available.
      */
@@ -81,7 +81,7 @@ public final class SessionUtils {
             .map(task)
             .orElseGet(defaultTask);
     }
-    
+
     /**
      * Execute a task with the current user ID, or throw an exception if no user ID is available.
      */
@@ -90,7 +90,7 @@ public final class SessionUtils {
             .orElseThrow(() -> new IllegalStateException("No user ID in session"));
         return task.apply(userId);
     }
-    
+
     /**
      * Execute a task with the current tenant ID, or throw an exception if no tenant ID is available.
      */
@@ -99,23 +99,23 @@ public final class SessionUtils {
             .orElseThrow(() -> new IllegalStateException("No tenant ID in session"));
         return task.apply(tenantId);
     }
-    
+
     /**
      * Execute a task with the current user ID and tenant ID, or throw an exception if either is not available.
      */
     public static <T> T withUserAndTenant(BiFunction<String, String, T> task) {
         SessionState session = getCurrentSession()
             .orElseThrow(() -> new IllegalStateException("No active session"));
-        
+
         String userId = Optional.ofNullable(session.getUserId())
             .orElseThrow(() -> new IllegalStateException("No user ID in session"));
-        
+
         String tenantId = Optional.ofNullable(session.getTenantId())
             .orElseThrow(() -> new IllegalStateException("No tenant ID in session"));
-        
+
         return task.apply(userId, tenantId);
     }
-    
+
     /**
      * Functional interface for a function that takes two arguments.
      */

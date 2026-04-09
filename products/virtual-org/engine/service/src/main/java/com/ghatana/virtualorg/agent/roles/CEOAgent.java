@@ -8,7 +8,6 @@ import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Chief Executive Officer Agent for strategic leadership and executive decision-making.
@@ -143,35 +141,35 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
      */
     private static final String CEO_SYSTEM_PROMPT = """
         You are the CEO of a software development organization. Your role is to:
-        
+
         1. SET STRATEGIC DIRECTION
            - Define company vision and long-term strategy
            - Set quarterly OKRs and strategic priorities
            - Make final decisions on product direction and market positioning
-        
+
         2. EXECUTIVE DECISION-MAKING
            - Approve major product launches and initiatives
            - Resolve conflicts between CTO, CPO, and CFO
            - Make final go/no-go decisions on strategic investments
            - Approve budget allocations and resource commitments
-        
+
         3. STAKEHOLDER MANAGEMENT
            - Communicate vision to all teams
            - Align cross-functional efforts toward strategic goals
            - Build strategic partnerships
-        
+
         4. DECISION FRAMEWORK
            - Prioritize decisions by strategic impact and business value
            - Balance short-term execution with long-term vision
            - Consider input from CTO (technical), CPO (product), CFO (financial)
            - Make data-driven decisions with clear rationale
            - Document decision context for organizational learning
-        
+
         5. ESCALATION HANDLING
            - You are the final decision maker (no upward escalation)
            - Resolve conflicts by evaluating strategic alignment
            - Ensure decisions support company vision and OKRs
-        
+
         When processing tasks:
         - Analyze strategic impact and business value
         - Consider inputs from executive team (CTO, CPO, CFO)
@@ -236,12 +234,12 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
     @Override
     protected void onStart() throws Exception {
         log.info("CEO Agent starting: {}", getAgentId());
-        
+
         // Initialize CEO-specific resources
         // - Load company vision and strategic priorities from memory
         // - Subscribe to executive-level events (product launches, budget reviews)
         // - Initialize strategic metrics tracking
-        
+
         // Emit agent started event (handled by base class event emission)
         log.debug("CEO Agent ready for strategic decision-making");
     }
@@ -255,12 +253,12 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
     @Override
     protected void onStop() throws Exception {
         log.info("CEO Agent stopping: {}", getAgentId());
-        
+
         // Persist strategic context and decisions
         // - Save current strategic priorities to long-term memory
         // - Archive pending decisions for next startup
         // - Emit agent stopped event
-        
+
         log.debug("CEO Agent stopped gracefully");
     }
 
@@ -292,8 +290,8 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
     @NotNull
     protected Promise<TaskResponseProto> doProcessTask(@NotNull TaskRequestProto request) {
         TaskProto task = request.getTask();
-        
-        log.info("CEO processing strategic task: taskId={}, type={}, title={}", 
+
+        log.info("CEO processing strategic task: taskId={}, type={}, title={}",
             task.getTaskId(), task.getType(), task.getTitle());
 
         // Record task processing start for metrics
@@ -305,7 +303,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
         // Chain all async operations using ActiveJ Promise
         Promise<TaskResponseProto> resultPromise = memory.retrieveContext(task)
             .then(context -> {
-                log.debug("Retrieved strategic context for task {}: {} chars", 
+                log.debug("Retrieved strategic context for task {}: {} chars",
                     task.getTaskId(), context.length());
 
                 // Build LLM prompt with strategic context
@@ -321,7 +319,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
                 );
             })
             .then(llmResponse -> {
-                log.debug("LLM reasoning complete for task {}: {} tokens used", 
+                log.debug("LLM reasoning complete for task {}: {} tokens used",
                     task.getTaskId(), llmResponse.tokensUsed());
 
                 // Extract decision from LLM response
@@ -329,7 +327,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
 
                 // Check if decision requires escalation (CEO never escalates, but might consult)
                 if (shouldConsultBoard(decision, task)) {
-                    log.warn("CEO decision may require board consultation: taskId={}, type={}", 
+                    log.warn("CEO decision may require board consultation: taskId={}, type={}",
                         task.getTaskId(), decision.getType());
                     // Future: Trigger board consultation workflow
                 }
@@ -359,7 +357,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
                 // Record metrics
                 recordTaskMetrics(task, startTime, true);
 
-                log.info("CEO completed strategic decision: taskId={}, decision={}, confidence={}", 
+                log.info("CEO completed strategic decision: taskId={}, decision={}, confidence={}",
                     task.getTaskId(), decision.getType(), decision.getConfidence());
 
                 return response;
@@ -367,7 +365,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
 
         // Handle errors with side effects only (ActiveJ Promise pattern)
         resultPromise.whenException(error -> {
-            log.error("CEO failed to process task: taskId={}, error={}", 
+            log.error("CEO failed to process task: taskId={}, error={}",
                 task.getTaskId(), error.getMessage(), error);
             recordTaskMetrics(task, startTime, false);
         });
@@ -394,18 +392,18 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
      */
     private String buildCEOPrompt(TaskProto task, String context) {
         StringBuilder prompt = new StringBuilder();
-        
+
         prompt.append("STRATEGIC DECISION REQUEST\n");
         prompt.append("==========================\n\n");
-        
+
         prompt.append("Task: ").append(task.getTitle()).append("\n");
         prompt.append("Description: ").append(task.getDescription()).append("\n");
         prompt.append("Type: ").append(task.getType()).append("\n\n");
-        
+
         prompt.append("COMPANY CONTEXT\n");
         prompt.append("---------------\n");
         prompt.append(context).append("\n\n");
-        
+
         prompt.append("DECISION REQUIRED\n");
         prompt.append("-----------------\n");
         prompt.append("Please analyze this strategic decision and provide:\n");
@@ -415,7 +413,7 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
         prompt.append("4. Alignment with company vision and OKRs\n");
         prompt.append("5. Confidence level (0.0-1.0)\n");
         prompt.append("6. Key success metrics to track\n");
-        
+
         return prompt.toString();
     }
 
@@ -453,8 +451,8 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
         // - Acquisitions or major investments
         // - Strategic partnerships with significant risk
         // - Decisions with confidence < 0.5 and high strategic impact
-        
-        return decision.getConfidence() < 0.5f && 
+
+        return decision.getConfidence() < 0.5f &&
                (task.getType() == TaskTypeProto.TASK_TYPE_BUDGET_APPROVAL ||
                 task.getType() == TaskTypeProto.TASK_TYPE_BUDGET_APPROVAL);
     }
@@ -468,17 +466,17 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
      * @return refined decision after tool execution
      */
     private Promise<DecisionProto> executeToolsAndRefine(
-            LLMResponse llmResponse, 
+            LLMResponse llmResponse,
             TaskProto task,
             DecisionProto preliminaryDecision) {
-        
+
         // Execute tools asynchronously
         return toolExecutor.executeTools(llmResponse.getToolCalls(), task)
             .then(toolResults -> {
                 // Refine decision based on tool results
-                String refinedRationale = preliminaryDecision.getReasoning() + 
+                String refinedRationale = preliminaryDecision.getReasoning() +
                     "\n\nTool Results:\n" + DecisionExtractor.formatToolResults(toolResults);
-                
+
                 return Promise.of(preliminaryDecision.toBuilder()
                     .setReasoning(refinedRationale)
                     .build());
@@ -487,16 +485,16 @@ public class CEOAgent extends AbstractVirtualOrgAgent {
 
     private void recordTaskMetrics(TaskProto task, Instant startTime, boolean success) {
         long durationMs = Instant.now().toEpochMilli() - startTime.toEpochMilli();
-        
+
         meterRegistry.counter("virtualorg.ceo.tasks",
             "type", task.getType().name(),
             "status", success ? "success" : "failure"
         ).increment();
-        
+
         meterRegistry.timer("virtualorg.ceo.task.duration",
             "type", task.getType().name()
         ).record(java.time.Duration.ofMillis(durationMs));
-        
+
         if (success) {
             tasksCompleted.incrementAndGet();
         } else {

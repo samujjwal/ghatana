@@ -1,7 +1,6 @@
 package com.ghatana.core.operator;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -54,7 +53,7 @@ import java.util.Optional;
  *     .withTimeout(Duration.ofSeconds(5))
  *     .withMaxBatchSize(500)
  *     .build();
- * 
+ *
  * // Pass to operator during initialization
  * operator.initialize(config).getResult();
  * }</pre>
@@ -64,10 +63,10 @@ import java.util.Optional;
  * // Get duration property with default fallback
  * Duration windowSize = config.getDuration("windowSize")
  *     .orElse(Duration.ofMinutes(1));
- * 
+ *
  * // Get string property with default
  * String partitionKey = config.getString("partitionBy", "tenantId");
- * 
+ *
  * // Get int property with validation
  * int batchSize = config.getInt("batchSize")
  *     .filter(size -> size > 0 && size <= 1000)
@@ -85,7 +84,7 @@ import java.util.Optional;
  *     .withProperty("maxPartialMatches", "1000")
  *     .withTimeout(Duration.ofSeconds(10))
  *     .build();
- * 
+ *
  * PatternOperator seqOp = new SequenceOperator(operatorId);
  * seqOp.initialize(seqConfig).getResult();
  * }</pre>
@@ -100,7 +99,7 @@ import java.util.Optional;
  *     .withTimeout(Duration.ofMinutes(5))  // Batch processing timeout
  *     .withMaxBatchSize(10000)              // Large batches for mining
  *     .build();
- * 
+ *
  * FrequentSequenceMiner miner = new FrequentSequenceMiner(operatorId);
  * miner.initialize(aprioriConfig).getResult();
  * }</pre>
@@ -113,14 +112,14 @@ import java.util.Optional;
  *     .withTimeout(Duration.ofSeconds(10))
  *     .withMaxBatchSize(100)
  *     .build();
- * 
+ *
  * // Production config (longer timeouts, optimized batch size)
  * OperatorConfig prodConfig = OperatorConfig.builder()
  *     .withProperty("logLevel", "WARN")
  *     .withTimeout(Duration.ofSeconds(30))
  *     .withMaxBatchSize(1000)
  *     .build();
- * 
+ *
  * // Select config based on environment
  * String env = System.getenv("ENV");
  * OperatorConfig config = "production".equals(env) ? prodConfig : devConfig;
@@ -137,22 +136,22 @@ import java.util.Optional;
  *                 .orElseThrow(() -> new OperatorConfigurationException(
  *                     "Missing required config: windowSize"
  *                 ));
- *             
+ *
  *             if (windowSize.isNegative() || windowSize.isZero()) {
  *                 throw new OperatorConfigurationException(
  *                     "Invalid windowSize: must be positive, got " + windowSize
  *                 );
  *             }
- *             
+ *
  *             // Optional properties with defaults
  *             Duration slideInterval = config.getDuration("slideInterval", windowSize);
  *             int maxEventsPerWindow = config.getInt("maxEventsPerWindow", 10000);
- *             
+ *
  *             // Initialize window state
  *             this.windowSize = windowSize;
  *             this.slideInterval = slideInterval;
  *             this.maxEventsPerWindow = maxEventsPerWindow;
- *             
+ *
  *             return Promise.complete();
  *         } catch (Exception e) {
  *             return Promise.ofException(new OperatorConfigurationException(
@@ -170,16 +169,16 @@ import java.util.Optional;
  * // Load from properties file
  * Properties props = new Properties();
  * props.load(new FileInputStream("operator.properties"));
- * 
+ *
  * OperatorConfig.Builder builder = OperatorConfig.builder();
- * props.forEach((key, value) -> 
+ * props.forEach((key, value) ->
  *     builder.withProperty(key.toString(), value.toString())
  * );
- * 
+ *
  * // Add global timeouts
  * builder.withTimeout(Duration.parse(props.getProperty("timeout", "PT30S")));
  * builder.withMaxBatchSize(Integer.parseInt(props.getProperty("batchSize", "1000")));
- * 
+ *
  * OperatorConfig config = builder.build();
  * }</pre>
  *
@@ -246,12 +245,12 @@ import java.util.Optional;
  * @see UnifiedOperator
  * @see OperatorConfigurationException
  * @see AbstractOperator
- * 
+ *
  * @doc.type class
  * @doc.purpose Configuration for operators with type-safe accessors and resource limits
  * @doc.layer core
  * @doc.pattern Builder (fluent API for construction)
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
@@ -263,13 +262,13 @@ import java.util.Optional;
  *     .withProperty("partitionBy", "userId")
  *     .withTimeout(Duration.ofSeconds(5))
  *     .build();
- * 
+ *
  * Duration window = config.getDuration("windowSize").orElse(Duration.ofMinutes(1));
  * String partitionKey = config.getString("partitionBy").orElse("tenantId");
  * }</pre>
  */
 public final class OperatorConfig {
-    
+
     private final Map<String, String> properties;
     private final Duration processingTimeout;
     private final int maxBatchSize;
@@ -282,7 +281,7 @@ public final class OperatorConfig {
 
     /**
      * Get all configuration properties.
-     * 
+     *
      * @return unmodifiable properties map
      */
     public Map<String, String> getProperties() {
@@ -291,7 +290,7 @@ public final class OperatorConfig {
 
     /**
      * Get string property by key.
-     * 
+     *
      * @param key property key
      * @return optional value
      */
@@ -301,7 +300,7 @@ public final class OperatorConfig {
 
     /**
      * Get string property or default.
-     * 
+     *
      * @param key property key
      * @param defaultValue default if missing
      * @return property value or default
@@ -312,7 +311,7 @@ public final class OperatorConfig {
 
     /**
      * Get integer property.
-     * 
+     *
      * @param key property key
      * @return optional integer value
      */
@@ -322,7 +321,7 @@ public final class OperatorConfig {
 
     /**
      * Get integer property or default.
-     * 
+     *
      * @param key property key
      * @param defaultValue default if missing
      * @return property value or default
@@ -333,7 +332,7 @@ public final class OperatorConfig {
 
     /**
      * Get long property.
-     * 
+     *
      * @param key property key
      * @return optional long value
      */
@@ -343,7 +342,7 @@ public final class OperatorConfig {
 
     /**
      * Get long property or default.
-     * 
+     *
      * @param key property key
      * @param defaultValue default if missing
      * @return property value or default
@@ -354,7 +353,7 @@ public final class OperatorConfig {
 
     /**
      * Get boolean property.
-     * 
+     *
      * @param key property key
      * @return optional boolean value
      */
@@ -364,7 +363,7 @@ public final class OperatorConfig {
 
     /**
      * Get boolean property or default.
-     * 
+     *
      * @param key property key
      * @param defaultValue default if missing
      * @return property value or default
@@ -375,9 +374,9 @@ public final class OperatorConfig {
 
     /**
      * Get duration property.
-     * 
+     *
      * <p>Supports formats: "5s", "30m", "1h", "PT5S" (ISO-8601)
-     * 
+     *
      * @param key property key
      * @return optional duration value
      */
@@ -387,7 +386,7 @@ public final class OperatorConfig {
 
     /**
      * Get duration property or default.
-     * 
+     *
      * @param key property key
      * @param defaultValue default if missing
      * @return property value or default
@@ -398,7 +397,7 @@ public final class OperatorConfig {
 
     /**
      * Get processing timeout.
-     * 
+     *
      * @return timeout duration
      */
     public Duration getProcessingTimeout() {
@@ -407,7 +406,7 @@ public final class OperatorConfig {
 
     /**
      * Get max batch size.
-     * 
+     *
      * @return max batch size
      */
     public int getMaxBatchSize() {
@@ -416,9 +415,9 @@ public final class OperatorConfig {
 
     /**
      * Parse duration from string.
-     * 
+     *
      * <p>Formats: "5s", "30m", "1h", "PT5S"
-     * 
+     *
      * @param value duration string
      * @return parsed duration
      */
@@ -426,7 +425,7 @@ public final class OperatorConfig {
         if (value.startsWith("PT") || value.startsWith("P")) {
             return Duration.parse(value);
         }
-        
+
         long amount = Long.parseLong(value.replaceAll("[^0-9]", ""));
         if (value.endsWith("s")) {
             return Duration.ofSeconds(amount);
@@ -437,13 +436,13 @@ public final class OperatorConfig {
         } else if (value.endsWith("d")) {
             return Duration.ofDays(amount);
         }
-        
+
         return Duration.parse(value);
     }
 
     /**
      * Create empty config.
-     * 
+     *
      * @return empty config
      */
     public static OperatorConfig empty() {
@@ -452,7 +451,7 @@ public final class OperatorConfig {
 
     /**
      * Create config builder.
-     * 
+     *
      * @return new builder
      */
     public static Builder builder() {
@@ -463,7 +462,7 @@ public final class OperatorConfig {
      * OperatorConfig Builder.
      */
     public static final class Builder {
-        
+
         private final Map<String, String> properties = new HashMap<>();
         private Duration processingTimeout = Duration.ofSeconds(30);
         private int maxBatchSize = 1000;
@@ -472,7 +471,7 @@ public final class OperatorConfig {
 
         /**
          * Set property.
-         * 
+         *
          * @param key property key
          * @param value property value
          * @return this builder
@@ -487,7 +486,7 @@ public final class OperatorConfig {
 
         /**
          * Set multiple properties.
-         * 
+         *
          * @param properties properties map
          * @return this builder
          */
@@ -499,7 +498,7 @@ public final class OperatorConfig {
 
         /**
          * Set processing timeout.
-         * 
+         *
          * @param timeout timeout duration
          * @return this builder
          */
@@ -510,7 +509,7 @@ public final class OperatorConfig {
 
         /**
          * Set max batch size.
-         * 
+         *
          * @param maxBatchSize max batch size
          * @return this builder
          */
@@ -524,7 +523,7 @@ public final class OperatorConfig {
 
         /**
          * Build immutable OperatorConfig.
-         * 
+         *
          * @return operator config
          */
         public OperatorConfig build() {

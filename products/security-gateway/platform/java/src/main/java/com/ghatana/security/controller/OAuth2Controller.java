@@ -36,7 +36,7 @@ import static io.activej.http.HttpMethod.POST;
 
 /**
  * Handles OAuth2 authentication endpoints.
- 
+
  *
  * @doc.type class
  * @doc.purpose Oauth2controller
@@ -50,15 +50,15 @@ public class OAuth2Controller extends AbstractModule {
     private static final String OAUTH_FLOW_COOKIE = "ghatana_oauth_flow";
     private static final Duration OAUTH_FLOW_TTL = Duration.ofMinutes(10);
     private static final int OAUTH_RATE_LIMIT_PER_MINUTE = 30;
-    
+
     private final OAuth2Provider oauth2Provider;
     private final TokenIntrospector tokenIntrospector;
     private final OidcSessionManager sessionManager;
     private final ExecutorService executorService;
     private final RateLimiter oauthRateLimiter;
     private final Map<String, PendingOAuthFlow> pendingFlows;
-    
-    public OAuth2Controller(OAuth2Provider oauth2Provider, 
+
+    public OAuth2Controller(OAuth2Provider oauth2Provider,
                           TokenIntrospector tokenIntrospector,
                           OidcSessionManager sessionManager) {
         this.oauth2Provider = oauth2Provider;
@@ -74,7 +74,7 @@ public class OAuth2Controller extends AbstractModule {
         );
         this.pendingFlows = new ConcurrentHashMap<>();
     }
-    
+
     @Provides
     public RoutingServlet servlet(Reactor reactor) {
         return RoutingServlet.builder(reactor)
@@ -87,7 +87,7 @@ public class OAuth2Controller extends AbstractModule {
             .with(POST, "/oauth2/logout", this::handleLogout)
             .build();
     }
-    
+
     private Promise<HttpResponse> handleAuthorize(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -105,10 +105,10 @@ public class OAuth2Controller extends AbstractModule {
                     authResponse.getNonce(),
                     Instant.now().plus(OAUTH_FLOW_TTL)
                 ));
-                
+
                 request.attach(SESSION_STATE, authResponse.getState());
                 request.attach(SESSION_NONCE, authResponse.getNonce());
-                
+
                 HttpResponse response = HttpResponse.redirect302(authResponse.getAuthorizationUrl())
                     .withHeader(HttpHeaders.SET_COOKIE, HttpHeaderValue.of(buildFlowCookie(flowId, isSecureRequest(request), false)))
                     .build();
@@ -121,7 +121,7 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     private String buildRedirectUri(HttpRequest request) {
         String host = request.getHeader(HttpHeaders.HOST);
         if (host == null || host.isBlank()) {
@@ -130,7 +130,7 @@ public class OAuth2Controller extends AbstractModule {
         String scheme = host.contains("localhost") ? "http" : "https";
         return scheme + "://" + host + "/oauth2/callback";
     }
-    
+
     private Promise<HttpResponse> handleCallback(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -161,7 +161,7 @@ public class OAuth2Controller extends AbstractModule {
                         .withHeader(HttpHeaders.SET_COOKIE, HttpHeaderValue.of(buildFlowCookie("expired", isSecureRequest(request), true)))
                         .build();
                 }
-                
+
                 String storedState = request.getAttachment(SESSION_STATE);
                 String expectedState = storedState != null ? storedState : pendingFlow.state();
                 if (!timingSafeEquals(expectedState, state)) {
@@ -171,7 +171,7 @@ public class OAuth2Controller extends AbstractModule {
                         .build();
                     return response;
                 }
-                
+
                 HttpResponse response = HttpResponse.ofCode(200)
                     .withJson("{\"success\":true,\"code\":\"" + code + "\"}")
                     .withHeader(HttpHeaders.SET_COOKIE, HttpHeaderValue.of(buildFlowCookie(flowId, isSecureRequest(request), true)))
@@ -185,7 +185,7 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     private Promise<HttpResponse> handleRefresh(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -210,7 +210,7 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     private Promise<HttpResponse> handleIntrospect(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -235,7 +235,7 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     private Promise<HttpResponse> handleRevoke(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -260,7 +260,7 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     private Promise<HttpResponse> handleLogout(HttpRequest request) {
         return Promise.ofBlocking(executorService, () -> {
             try {
@@ -285,10 +285,10 @@ public class OAuth2Controller extends AbstractModule {
             }
         });
     }
-    
+
     /**
      * Parses form data from the request body.
-     * 
+     *
      * @param formData The form data string (e.g., "key1=value1&key2=value2")
      * @return A map of parameter names to their values
      */
@@ -297,13 +297,13 @@ public class OAuth2Controller extends AbstractModule {
         if (formData == null || formData.isEmpty()) {
             return params;
         }
-        
+
         String[] pairs = formData.split("&");
         for (String pair : pairs) {
             int idx = pair.indexOf("=");
             try {
                 String key = idx > 0 ? URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8) : pair;
-                String value = idx > 0 && pair.length() > idx + 1 ? 
+                String value = idx > 0 && pair.length() > idx + 1 ?
                     URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8) : "";
                 if (!key.isEmpty()) {
                     params.put(key, value);

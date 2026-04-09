@@ -4,8 +4,6 @@
  */
 package com.ghatana.aep.connector.config;
 
-import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Shared TLS (Transport Layer Security) configuration used across all connector types.

@@ -7,27 +7,26 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.Optional;
 
 /**
  * Storage adapter for Refactorer module.
- * 
+ *
  * <p>Replaces LMDB storage with data-cloud backend.
- * 
+ *
  * @doc.type class
  * @doc.purpose Refactorer storage adapter
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
 public class RefactorerStorageAdapter {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(RefactorerStorageAdapter.class);
     private static final String COLLECTION = "refactorer_storage";
-    
+
     private final DataCloudClient client;
     private final YappcEntityMapper mapper;
-    
+
     public RefactorerStorageAdapter(
         @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
@@ -36,7 +35,7 @@ public class RefactorerStorageAdapter {
         this.mapper = mapper;
         LOG.info("Initialized RefactorerStorageAdapter");
     }
-    
+
     /**
      * Stores key-value data.
      */
@@ -45,7 +44,7 @@ public class RefactorerStorageAdapter {
         LOG.debug("Storing refactorer data for key: {}", key);
         return Promise.complete();
     }
-    
+
     /**
      * Retrieves value by key.
      */
@@ -54,7 +53,7 @@ public class RefactorerStorageAdapter {
         LOG.debug("Retrieving refactorer data for key: {}", key);
         return Promise.of(Optional.empty());
     }
-    
+
     /**
      * Deletes value by key.
      */
@@ -63,7 +62,7 @@ public class RefactorerStorageAdapter {
         LOG.debug("Deleting refactorer data for key: {}", key);
         return Promise.of(true);
     }
-    
+
     /**
      * Lists all keys in storage.
      */
@@ -72,7 +71,7 @@ public class RefactorerStorageAdapter {
         LOG.debug("Listing all refactorer storage keys");
         return Promise.of(java.util.List.of());
     }
-    
+
     /**
      * Clears all storage.
      */

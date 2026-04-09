@@ -28,10 +28,10 @@ import java.util.List;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * AgentMemory memory = new PgVectorAgentMemory(config);
- * 
+ *
  * // Retrieve relevant context
  * String context = memory.getRelevantContext(task).getResult();
- * 
+ *
  * // Store new memory
  * memory.storeTaskResponse(task, response).getResult();
  * }</pre>
@@ -98,7 +98,7 @@ public interface AgentMemory {
      */
     @NotNull
     Promise<Void> clearAll();
-    
+
     /**
      * Stores a decision in memory.
      *
@@ -111,7 +111,7 @@ public interface AgentMemory {
         // Default no-op implementation
         return Promise.complete();
     }
-    
+
     /**
      * Executes tools and returns results.
      *

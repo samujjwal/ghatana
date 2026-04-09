@@ -6,7 +6,6 @@ package com.ghatana.datacloud.scaling;
 
 import com.ghatana.datacloud.observability.DataCloudMetrics;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -18,11 +17,10 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Plugin auto-scaler implementation for Data-Cloud.
- * 
+ *
  * <p>Provides automatic scaling of plugin instances based on load metrics,
  * queue depths, and predictive algorithms. Supports both horizontal scaling
  * (adding/removing instances) and vertical scaling (adjusting resources).
@@ -252,7 +250,7 @@ public class PluginAutoScaler implements AutoScaler {
     @Override
     public Promise<Void> registerPolicy(ScalingPolicy policy) {
         Objects.requireNonNull(policy, "policy");
-        
+
         policies.put(policy.policyId(), policy);
         pluginPolicies.computeIfAbsent(policy.pluginId(), k -> new CopyOnWriteArrayList<>())
             .add(policy.policyId());
@@ -386,7 +384,7 @@ public class PluginAutoScaler implements AutoScaler {
             ScalingPolicy policy,
             int currentInstances,
             ResourceAllocation currentResources) {
-        
+
         // Get metric samples
         ConcurrentLinkedQueue<MetricSnapshot> samples = metricHistory.computeIfAbsent(
             pluginId + ":" + trigger.metricName(),
@@ -459,7 +457,7 @@ public class PluginAutoScaler implements AutoScaler {
             ScalingPolicy policy,
             int currentInstances,
             ResourceAllocation currentResources) {
-        
+
         // Get queue depth from metrics
         double queueDepth = getQueueDepth(pluginId, trigger.queueName());
 
@@ -514,7 +512,7 @@ public class PluginAutoScaler implements AutoScaler {
             ScalingPolicy policy,
             int currentInstances,
             ResourceAllocation currentResources) {
-        
+
         // Simple schedule evaluation - in production, use cron parser
         // For now, just check if current instances match target
         if (currentInstances == trigger.targetInstances()) {
@@ -541,7 +539,7 @@ public class PluginAutoScaler implements AutoScaler {
             ScalingPolicy policy,
             int currentInstances,
             ResourceAllocation currentResources) {
-        
+
         if (!config.enablePredictiveScaling()) {
             return new ScalingRecommendation(
                 pluginId, ScaleDirection.NONE, policy.scaleType(),
@@ -727,7 +725,7 @@ public class PluginAutoScaler implements AutoScaler {
 
             } catch (Exception e) {
                 scaleFailureCounter.increment();
-                
+
                 ScalingEvent failedEvent = createEvent(
                     pluginId, recommendation.direction(), recommendation.type(),
                     previousInstances, previousInstances,
@@ -762,7 +760,7 @@ public class PluginAutoScaler implements AutoScaler {
             .orElse(null);
 
         ScalingLimits limits = anyPolicy != null ? anyPolicy.limits() : ScalingLimits.defaults();
-        
+
         int clampedTarget = Math.max(limits.minInstances(), Math.min(targetInstances, limits.maxInstances()));
 
         int currentInstances = executor.getCurrentInstances(pluginId);
@@ -780,12 +778,12 @@ public class PluginAutoScaler implements AutoScaler {
 
     @Override
     public Promise<ScalingEvent> adjustResources(
-            String pluginId, 
-            ResourceAllocation targetResources, 
+            String pluginId,
+            ResourceAllocation targetResources,
             String reason) {
-        
+
         ResourceAllocation currentResources = executor.getCurrentResources(pluginId);
-        
+
         ScaleDirection direction;
         if (targetResources.memoryMb() > currentResources.memoryMb() ||
             targetResources.cpuCores() > currentResources.cpuCores()) {
@@ -834,7 +832,7 @@ public class PluginAutoScaler implements AutoScaler {
     }
 
     private void recordHistory(String pluginId, ScalingEvent event) {
-        ConcurrentLinkedQueue<ScalingEvent> pluginHistory = 
+        ConcurrentLinkedQueue<ScalingEvent> pluginHistory =
             history.computeIfAbsent(pluginId, k -> new ConcurrentLinkedQueue<>());
         pluginHistory.offer(event);
         while (pluginHistory.size() > MAX_HISTORY_PER_PLUGIN) {
@@ -852,7 +850,7 @@ public class PluginAutoScaler implements AutoScaler {
             ResourceAllocation currentResources = executor.getCurrentResources(pluginId);
             Instant cooldownEnd = cooldowns.get(pluginId);
             boolean inCooldown = cooldownEnd != null && Instant.now().isBefore(cooldownEnd);
-            
+
             state = new ScalingState(
                 pluginId,
                 currentInstances,
@@ -870,7 +868,7 @@ public class PluginAutoScaler implements AutoScaler {
     public Promise<Map<String, ScalingState>> getAllStates() {
         try {
             Map<String, ScalingState> allStates = new HashMap<>(states);
-            
+
             // Add states for plugins without recorded state
             for (String pluginId : executor.getManagedPlugins()) {
                 allStates.putIfAbsent(pluginId, new ScalingState(
@@ -881,7 +879,7 @@ public class PluginAutoScaler implements AutoScaler {
                     null, null, true
                 ));
             }
-            
+
             return Promise.of(allStates);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -1007,7 +1005,7 @@ public class PluginAutoScaler implements AutoScaler {
         }
 
         log.debug("Running auto-scaling evaluation...");
-        
+
         for (String pluginId : executor.getManagedPlugins()) {
             try {
                 ScalingRecommendation recommendation = evaluate(pluginId).getResult();

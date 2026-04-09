@@ -7,13 +7,10 @@
 package com.ghatana.datacloud.agent;
 
 import com.ghatana.agent.AgentConfig;
-import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.TypedAgent;
-import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -34,7 +31,7 @@ class AgentRegistrationTest {
     void shouldRegisterAgents() {
         TypedAgent<?, ?> agent = mock(TypedAgent.class);
         AgentConfig config = mock(AgentConfig.class);
-        
+
         assertThat(agent).isNotNull();
         assertThat(config).isNotNull();
     }
@@ -43,7 +40,7 @@ class AgentRegistrationTest {
     @DisplayName("Should deregister agents")
     void shouldDeregisterAgents() {
         String agentId = UUID.randomUUID().toString();
-        
+
         assertThat(agentId).isNotNull();
         assertThat(agentId).isNotBlank();
     }
@@ -53,7 +50,7 @@ class AgentRegistrationTest {
     void shouldHandleAgentLifecycle() {
         String state = "ACTIVE";
         String[] states = {"REGISTERED", "ACTIVE", "INACTIVE", "DEREGISTERED"};
-        
+
         assertThat(state).isIn(states);
     }
 
@@ -62,7 +59,7 @@ class AgentRegistrationTest {
     void shouldHandleAgentState() {
         boolean active = true;
         boolean registered = true;
-        
+
         assertThat(active).isTrue();
         assertThat(registered).isTrue();
     }
@@ -72,7 +69,7 @@ class AgentRegistrationTest {
     void shouldHandleRegistrationFailures() {
         TypedAgent<?, ?> agent = null;
         AgentConfig config = null;
-        
+
         assertThat(agent).isNull();
         assertThat(config).isNull();
     }
@@ -85,7 +82,7 @@ class AgentRegistrationTest {
             "namespace", "data-cloud",
             "capabilities", Set.of("anomaly-detection")
         );
-        
+
         assertThat(metadata).isNotEmpty();
         assertThat(metadata).containsKey("version");
         assertThat(metadata).containsKey("namespace");

@@ -36,7 +36,7 @@ import com.ghatana.platform.domain.auth.TenantId;
  *     .serverPort(8080)
  *     .path("/webhook/events")
  *     .build();
- * 
+ *
  * // Webhook accessible at: http://localhost:8080/webhook/events
  *
  * // 2. Webhook with Basic Auth
@@ -47,7 +47,7 @@ import com.ghatana.platform.domain.auth.TenantId;
  *     .basicAuthUsername("webhook_user")
  *     .basicAuthPassword("secret_password")
  *     .build();
- * 
+ *
  * // Clients must send: Authorization: Basic base64(webhook_user:secret_password)
  *
  * // 3. Webhook with Bearer token
@@ -57,7 +57,7 @@ import com.ghatana.platform.domain.auth.TenantId;
  *     .path("/webhook/api")
  *     .bearerToken("sk_live_abc123...")
  *     .build();
- * 
+ *
  * // Clients must send: Authorization: Bearer sk_live_abc123...
  *
  * // 4. Production configuration with limits
@@ -92,7 +92,7 @@ import com.ghatana.platform.domain.auth.TenantId;
  *         .path("/webhook/users")
  *         .bearerToken("user_webhook_token")
  *         .build(),
- *     
+ *
  *     "order.created", HttpWebhookSourceConfig.builder()
  *         .tenantId(tenantId)
  *         .serverPort(8080)
@@ -108,10 +108,10 @@ import com.ghatana.platform.domain.auth.TenantId;
  *     .path("/webhook")
  *     .bearerToken("webhook_token")
  *     .build();
- * 
+ *
  * HttpWebhookEventSource source = new HttpWebhookEventSource(config);
  * source.start();  // Starts HTTP server on port 8080
- * 
+ *
  * // External system POSTs events:
  * // POST http://localhost:8080/webhook
  * // Authorization: Bearer webhook_token
@@ -220,7 +220,7 @@ public final class HttpWebhookSourceConfig {
     private static final String DEFAULT_PATH = "/webhook";
     private static final int DEFAULT_MAX_CONTENT_LENGTH = 1024 * 1024;
     private static final int DEFAULT_READ_TIMEOUT = 30000;
-    
+
     private final TenantId tenantId;
     private final int serverPort;
     private final String path;
@@ -229,7 +229,7 @@ public final class HttpWebhookSourceConfig {
     private final String bearerToken;
     private final int maxContentLength;
     private final int readTimeout;
-    
+
     private HttpWebhookSourceConfig(Builder builder) {
         if (builder.tenantId == null) {
             throw new IllegalArgumentException("TenantId cannot be null");
@@ -249,14 +249,14 @@ public final class HttpWebhookSourceConfig {
         if (builder.readTimeout < 0) {
             throw new IllegalArgumentException("Read timeout cannot be negative");
         }
-        
+
         boolean hasUsername = builder.basicAuthUsername != null;
         boolean hasPassword = builder.basicAuthPassword != null;
         if (hasUsername != hasPassword) {
             throw new IllegalArgumentException(
                 "Both username and password must be set together for basic auth");
         }
-        
+
         this.tenantId = builder.tenantId;
         this.serverPort = builder.serverPort;
         this.path = builder.path;
@@ -266,43 +266,43 @@ public final class HttpWebhookSourceConfig {
         this.maxContentLength = builder.maxContentLength;
         this.readTimeout = builder.readTimeout;
     }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public TenantId getTenantId() {
         return tenantId;
     }
-    
+
     public int getServerPort() {
         return serverPort;
     }
-    
+
     public String getPath() {
         return path;
     }
-    
+
     public String getBasicAuthUsername() {
         return basicAuthUsername;
     }
-    
+
     public String getBasicAuthPassword() {
         return basicAuthPassword;
     }
-    
+
     public String getBearerToken() {
         return bearerToken;
     }
-    
+
     public int getMaxContentLength() {
         return maxContentLength;
     }
-    
+
     public int getReadTimeout() {
         return readTimeout;
     }
-    
+
     @Override
     public String toString() {
         return "HttpWebhookSourceConfig{" +
@@ -315,7 +315,7 @@ public final class HttpWebhookSourceConfig {
                 ", readTimeout=" + readTimeout +
                 '}';
     }
-    
+
     public static final class Builder {
         private TenantId tenantId;
         private int serverPort = DEFAULT_SERVER_PORT;
@@ -325,46 +325,46 @@ public final class HttpWebhookSourceConfig {
         private String bearerToken;
         private int maxContentLength = DEFAULT_MAX_CONTENT_LENGTH;
         private int readTimeout = DEFAULT_READ_TIMEOUT;
-        
+
         private Builder() {
         }
-        
+
         public Builder withTenantId(TenantId tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-        
+
         public Builder withServerPort(int serverPort) {
             this.serverPort = serverPort;
             return this;
         }
-        
+
         public Builder withPath(String path) {
             this.path = path;
             return this;
         }
-        
+
         public Builder withBasicAuth(String username, String password) {
             this.basicAuthUsername = username;
             this.basicAuthPassword = password;
             return this;
         }
-        
+
         public Builder withBearerToken(String token) {
             this.bearerToken = token;
             return this;
         }
-        
+
         public Builder withMaxContentLength(int maxContentLength) {
             this.maxContentLength = maxContentLength;
             return this;
         }
-        
+
         public Builder withReadTimeout(int readTimeout) {
             this.readTimeout = readTimeout;
             return this;
         }
-        
+
         public HttpWebhookSourceConfig build() {
             return new HttpWebhookSourceConfig(this);
         }

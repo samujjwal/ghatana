@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Utility class for building test projects with various file structures. 
+/** Utility class for building test projects with various file structures.
  * @doc.type class
  * @doc.purpose Handles test project builder operations
  * @doc.layer core

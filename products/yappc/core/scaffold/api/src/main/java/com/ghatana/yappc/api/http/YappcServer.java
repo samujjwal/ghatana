@@ -16,10 +16,6 @@
 
 package com.ghatana.yappc.api.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import com.ghatana.yappc.api.YappcApi;
@@ -30,7 +26,6 @@ import com.ghatana.yappc.api.http.websocket.WebSocketManager;
 import com.ghatana.yappc.core.plugin.PluginManager;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
-import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

@@ -10,7 +10,6 @@ import com.ghatana.platform.http.server.security.TenantExtractor;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.pipeline.registry.ingress.IngressConnectorRouter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -19,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 

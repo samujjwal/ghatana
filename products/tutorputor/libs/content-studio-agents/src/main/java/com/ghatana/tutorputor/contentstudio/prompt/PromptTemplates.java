@@ -1,12 +1,11 @@
 package com.ghatana.tutorputor.contentstudio.prompt;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Production-ready prompt templates for TutorPutor content generation.
- * 
+ *
  * <p>These prompts are carefully designed to generate high-quality educational
  * content that is:
  * <ul>
@@ -34,20 +33,20 @@ public final class PromptTemplates {
     public static String buildClaimsPrompt(String topic, String domain, String gradeLevel, int maxClaims) {
       String gradeLevelDescription = getGradeLevelDescription(gradeLevel);
       String domainDescription = getDomainDescription(domain);
-        
+
         return String.format("""
             You are an expert educational content designer creating learning claims for a %s curriculum.
-            
+
             ## Task
             Generate %d distinct, testable learning claims for the topic: "%s"
-            
+
             ## Requirements
             1. Each claim must be a single, verifiable statement of what a learner will know or be able to do
             2. Claims must progress through Bloom's Taxonomy levels (Remember → Understand → Apply → Analyze → Evaluate → Create)
             3. Language must be appropriate for %s students
             4. Claims must be specific to %s domain
             5. Each claim must be independently assessable
-            
+
             ## Output Format (JSON)
             ```json
             {
@@ -61,7 +60,7 @@ public final class PromptTemplates {
               ]
             }
             ```
-            
+
             ## Bloom's Taxonomy Levels
             - REMEMBER: Recall facts and basic concepts
             - UNDERSTAND: Explain ideas or concepts
@@ -69,7 +68,7 @@ public final class PromptTemplates {
             - ANALYZE: Draw connections among ideas
             - EVALUATE: Justify a decision or course of action
             - CREATE: Produce new or original work
-            
+
             Generate exactly %d claims, ensuring coverage across multiple Bloom's levels.
             """,
             domainDescription,
@@ -89,36 +88,36 @@ public final class PromptTemplates {
                             String gradeLevel, String domain) {
         return String.format("""
             You are an instructional design expert analyzing what types of supporting content a learning claim requires.
-            
+
             ## Learning Claim
             "%s"
-            
+
             ## Claim Characteristics
             - Bloom's Level: %s
             - Grade Level: %s
             - Domain: %s
-            
+
             ## Task
             Analyze what types of supporting content would best help learners master this claim.
-            
+
             ## Content Types to Consider
-            
+
             ### Examples
             - REAL_WORLD: Concrete, relatable scenarios from everyday life
             - PROBLEM_SOLVING: Worked examples with step-by-step solutions
             - ANALOGY: Comparisons to familiar concepts
             - CASE_STUDY: In-depth exploration of a specific instance
-            
+
             ### Simulations
             - PARAMETER_EXPLORATION: Interactive adjustment of variables
             - PREDICTION: Guess-then-verify experiments
             - CONSTRUCTION: Building/assembling virtual models
-            
+
             ### Animations
             - TWO_D: 2D visual explanations
             - THREE_D: 3D spatial visualizations
             - TIMELINE: Sequential process illustrations
-            
+
             ## Output Format (JSON)
             ```json
             {
@@ -145,7 +144,7 @@ public final class PromptTemplates {
               }
             }
             ```
-            
+
             Consider:
             - Higher Bloom's levels (APPLY+) typically need more examples and simulations
             - Abstract concepts benefit from animations
@@ -168,28 +167,28 @@ public final class PromptTemplates {
       String typesList = List.of(exampleType).stream()
         .map(PromptTemplates::getExampleTypeDescription)
             .collect(Collectors.joining(", "));
-        
+
         return String.format("""
             You are an expert educational content creator generating examples for a learning claim.
-            
+
             ## Learning Claim
             Reference: %s
             Claim: "%s"
-            
+
             ## Target Audience
             - Grade Level: %s
             - Domain: %s
-            
+
             ## Requirements
             Generate %d examples of the following types: %s
-            
+
             Each example must:
             1. Directly support understanding the claim
             2. Be age-appropriate and culturally sensitive
             3. Include clear learning points
             4. Connect to real-world applications where possible
             5. Be factually accurate and verifiable
-            
+
             ## Output Format (JSON)
             ```json
             {
@@ -207,7 +206,7 @@ public final class PromptTemplates {
               ]
             }
             ```
-            
+
             Ensure examples are diverse, engaging, and pedagogically effective.
             """,
             "C1",
@@ -226,17 +225,17 @@ public final class PromptTemplates {
     public static String buildSimulationPrompt(String topic, String domain, String gradeLevel) {
         return String.format("""
             You are an expert simulation designer creating an interactive physics/science simulation.
-            
+
             ## Learning Claim
             Reference: %s
             Claim: "%s"
-            
+
             ## Simulation Requirements
             - Grade Level: %s
             - Domain: %s
             - Interaction Type: %s
             - Complexity: %s
-            
+
             ## Available Entity Types
             - BALL: Spherical object with mass and velocity
             - BOX: Rectangular rigid body
@@ -248,10 +247,10 @@ public final class PromptTemplates {
             - WALL: Static vertical barrier
             - LEVER: Rotatable bar with fulcrum
             - WHEEL: Rotating circular object
-            
+
             ## Task
             Design a simulation manifest that helps learners explore and understand the claim.
-            
+
             ## Output Format (JSON)
             ```json
             {
@@ -304,7 +303,7 @@ public final class PromptTemplates {
               }
             }
             ```
-            
+
             Design an engaging, educational simulation appropriate for the grade level.
             """,
             "C1",
@@ -323,18 +322,18 @@ public final class PromptTemplates {
     public static String buildAnimationPrompt(String topic, String domain, String gradeLevel) {
         return String.format("""
             You are an expert educational animator creating keyframe-based animations.
-            
+
             ## Learning Claim
             Reference: %s
             Claim: "%s"
-            
+
             ## Animation Requirements
             - Type: %s
             - Duration: %d seconds
-            
+
             ## Task
             Create a detailed animation specification with keyframes that visually explains the claim.
-            
+
             ## Output Format (JSON)
             ```json
             {
@@ -372,7 +371,7 @@ public final class PromptTemplates {
               }
             }
             ```
-            
+
             Create smooth, educational keyframe transitions that clearly illustrate the concept.
             Include at least 5 keyframes for a good animation flow.
             """,

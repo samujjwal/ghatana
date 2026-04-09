@@ -118,7 +118,7 @@ public final class SurveillanceDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Surveillance Domain module");
-        
+
             started = true;
             log.info("Surveillance Domain module started successfully");
         return Promise.complete();
@@ -127,7 +127,7 @@ public final class SurveillanceDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Surveillance Domain module");
-        
+
             started = false;
             log.info("Surveillance Domain module stopped successfully");
         return Promise.complete();

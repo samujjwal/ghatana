@@ -99,7 +99,7 @@ public class EventDesignController {
                     existing.setDocument(json.get("definition").asText());
                 }
             });
-            
+
             return Promise.of(opt
                     .map(updated -> ResponseBuilder.ok().json(objectMapper.valueToTree(updated)).build())
                     .orElseGet(() -> ResponseBuilder.notFound()
@@ -196,7 +196,7 @@ public class EventDesignController {
                 }
                 existing.touchUpdated(userId);
             });
-            
+
             return Promise.of(opt
                     .map(updated -> ResponseBuilder.ok().json(objectMapper.valueToTree(updated)).build())
                     .orElseGet(() -> ResponseBuilder.notFound()
@@ -278,7 +278,7 @@ public class EventDesignController {
         long start = System.currentTimeMillis();
 
         Optional<ConnectorBinding> opt = eventDesignService.getBinding(bindingId);
-        
+
         if (opt.isEmpty()) {
             return Promise.of(ResponseBuilder.notFound()
                     .json(ErrorResponse.of(404, "NOT_FOUND", "Binding not found: " + bindingId))
@@ -286,7 +286,7 @@ public class EventDesignController {
         }
 
         ConnectorBinding binding = opt.get();
-        
+
         return Promise.complete().map($ -> {
 
             try {

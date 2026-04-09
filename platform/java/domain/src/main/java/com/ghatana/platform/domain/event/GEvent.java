@@ -1,10 +1,5 @@
 package com.ghatana.platform.domain.event;
 
-import com.ghatana.platform.domain.event.Location;
-import com.ghatana.platform.domain.event.EventId;
-import com.ghatana.platform.domain.event.EventRelations;
-import com.ghatana.platform.domain.event.EventStats;
-import com.ghatana.platform.domain.event.EventTime;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

@@ -4,12 +4,7 @@ import com.ghatana.tts.engine.TtsSynthesisEngine.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -112,7 +107,7 @@ class TextToSpeechServiceTest {
                     "unsupported-voice-xyz",
                     "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f
             );
-            
+
             assertThatThrownBy(() -> engine.synthesize(SIMPLE_TEXT, unsupportedVoice, AudioEncoding.MP3))
                     .isInstanceOf(SynthesisException.class)
                     .hasMessageContaining("Unsupported voice");
@@ -122,7 +117,7 @@ class TextToSpeechServiceTest {
         @DisplayName("single character text is accepted")
         void singleCharacterText_isAccepted() {
             SynthesisResult result = engine.synthesize("A", defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.audioContent()).isNotEmpty();
         }
@@ -141,7 +136,7 @@ class TextToSpeechServiceTest {
         @DisplayName("synthesis succeeds for all supported encodings")
         void synthesisSucceedsForAllEncodings(TtsSynthesisEngine.AudioEncoding encoding) {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, encoding);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.encoding()).isEqualTo(encoding);
@@ -151,7 +146,7 @@ class TextToSpeechServiceTest {
         @DisplayName("PCM_16BIT encoding produces valid output")
         void pcm16BitEncodingProducesValidOutput() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_16BIT);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.sampleRateHz()).isGreaterThan(8000);
             assertThat(result.encoding()).isEqualTo(AudioEncoding.PCM_16BIT);
@@ -161,7 +156,7 @@ class TextToSpeechServiceTest {
         @DisplayName("MP3 encoding produces valid output")
         void mp3EncodingProducesValidOutput() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.encoding()).isEqualTo(AudioEncoding.MP3);
         }
@@ -170,7 +165,7 @@ class TextToSpeechServiceTest {
         @DisplayName("OPUS encoding produces valid output")
         void opusEncodingProducesValidOutput() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.OPUS);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.encoding()).isEqualTo(AudioEncoding.OPUS);
         }
@@ -179,7 +174,7 @@ class TextToSpeechServiceTest {
         @DisplayName("PCM_32BIT encoding produces valid output")
         void pcm32BitEncodingProducesValidOutput() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_32BIT);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.encoding()).isEqualTo(AudioEncoding.PCM_32BIT);
         }
@@ -189,7 +184,7 @@ class TextToSpeechServiceTest {
         void differentEncodingsProduceDifferentOutput() {
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_16BIT);
-            
+
             // Different encodings should produce different byte sequences
             assertThat(r1.audioContent()).as("MP3 content").isNotEmpty();
             assertThat(r2.audioContent()).as("PCM content").isNotEmpty();
@@ -209,7 +204,7 @@ class TextToSpeechServiceTest {
         void defaultVoiceIsUsed() {
             VoiceConfig voice = VoiceConfig.defaults();
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, voice, AudioEncoding.MP3);
-            
+
             assertThat(result.voiceId()).isEqualTo(voice.voiceId());
         }
 
@@ -219,7 +214,7 @@ class TextToSpeechServiceTest {
             for (String voiceId : SUPPORTED_VOICES) {
                 VoiceConfig voice = new VoiceConfig(voiceId, "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f);
                 SynthesisResult result = engine.synthesize(SIMPLE_TEXT, voice, AudioEncoding.MP3);
-                
+
                 assertThat(result.voiceId()).isEqualTo(voiceId);
                 assertThat(result.audioContent()).isNotEmpty();
             }
@@ -230,10 +225,10 @@ class TextToSpeechServiceTest {
         void differentVoicesMayProduceDifferentAudio() {
             VoiceConfig voice1 = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f);
             VoiceConfig voice2 = new VoiceConfig("en-US-standard-b", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f);
-            
+
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, voice1, AudioEncoding.MP3);
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, voice2, AudioEncoding.MP3);
-            
+
             assertThat(r1.voiceId()).isNotEqualTo(r2.voiceId());
         }
 
@@ -242,7 +237,7 @@ class TextToSpeechServiceTest {
         void voiceConfigParametersArePreserved() {
             VoiceConfig voice = new VoiceConfig("en-US-standard-a", "en-US", "MALE", 1.5f, 2.0f, 5.0f);
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, voice, AudioEncoding.MP3);
-            
+
             assertThat(result.voiceId()).isEqualTo(voice.voiceId());
         }
     }
@@ -262,7 +257,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.5f, 0.0f, 0.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, fasterVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.voiceId()).isEqualTo(fasterVoice.voiceId());
         }
@@ -274,7 +269,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 0.8f, 0.0f, 0.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, slowerVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -285,7 +280,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 5.0f, 0.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, higherPitch, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -296,7 +291,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, -5.0f, 0.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, lowerPitch, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -307,7 +302,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 6.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, louderVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -318,7 +313,7 @@ class TextToSpeechServiceTest {
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, -6.0f
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, quieterVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -332,7 +327,7 @@ class TextToSpeechServiceTest {
                     3.0f     // louder volume
             );
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, customVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
     }
@@ -349,7 +344,7 @@ class TextToSpeechServiceTest {
         @DisplayName("simple punctuation is handled correctly")
         void simplePunctuationIsHandled() {
             SynthesisResult result = engine.synthesize(PUNCTUATION_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -357,7 +352,7 @@ class TextToSpeechServiceTest {
         @DisplayName("special characters are handled without error")
         void specialCharactersAreHandled() {
             SynthesisResult result = engine.synthesize(SPECIAL_CHARS_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -366,7 +361,7 @@ class TextToSpeechServiceTest {
         void numbersAreSynthesized() {
             String numberText = "The number is 42. Call 555-1234 for more info.";
             SynthesisResult result = engine.synthesize(numberText, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -375,7 +370,7 @@ class TextToSpeechServiceTest {
         void emailAddressesAreHandled() {
             String emailText = "Contact us at support@example.com for assistance.";
             SynthesisResult result = engine.synthesize(emailText, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -384,7 +379,7 @@ class TextToSpeechServiceTest {
         void urlsAreHandled() {
             String urlText = "Visit https://www.example.com for more information.";
             SynthesisResult result = engine.synthesize(urlText, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -392,7 +387,7 @@ class TextToSpeechServiceTest {
         @DisplayName("SSML content is processed")
         void ssmlContentIsProcessed() {
             SynthesisResult result = engine.synthesize(SSML_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -401,7 +396,7 @@ class TextToSpeechServiceTest {
         void quotesAreHandled() {
             String quoteText = "He said, \"Hello, world!\" with emphasis.";
             SynthesisResult result = engine.synthesize(quoteText, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
 
@@ -410,7 +405,7 @@ class TextToSpeechServiceTest {
         void apostrophesAreHandled() {
             String apostropheText = "It's what you're looking for, isn't it?";
             SynthesisResult result = engine.synthesize(apostropheText, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
         }
     }
@@ -427,7 +422,7 @@ class TextToSpeechServiceTest {
         @DisplayName("result contains non-empty audio content")
         void resultContainsNonEmptyAudio() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.isEmpty()).isFalse();
         }
@@ -436,7 +431,7 @@ class TextToSpeechServiceTest {
         @DisplayName("sample rate is valid (within typical range)")
         void sampleRateIsValid() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.sampleRateHz())
                     .isBetween(8000, 48000); // Common sample rates
         }
@@ -445,7 +440,7 @@ class TextToSpeechServiceTest {
         @DisplayName("duration is non-negative and reasonable")
         void durationIsReasonable() {
             SynthesisResult result = engine.synthesize(LONG_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.duration()).isNotNull();
             assertThat(result.duration().toMillis()).isGreaterThanOrEqualTo(0);
             assertThat(result.duration().toMillis()).isLessThan(120_000); // < 2 minutes for test text
@@ -455,7 +450,7 @@ class TextToSpeechServiceTest {
         @DisplayName("processing time is recorded and non-negative")
         void processingTimeIsRecorded() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.processingSeconds()).isGreaterThanOrEqualTo(0.0);
         }
 
@@ -464,7 +459,7 @@ class TextToSpeechServiceTest {
         void audioDurationIncreasesWithText() {
             SynthesisResult short_ = engine.synthesize("Hello", defaultVoice, AudioEncoding.MP3);
             SynthesisResult long_ = engine.synthesize(LONG_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             // Longer text should result in longer audio
             assertThat(long_.duration()).isGreaterThanOrEqualTo(short_.duration());
         }
@@ -473,7 +468,7 @@ class TextToSpeechServiceTest {
         @DisplayName("isEmpty() reflects actual audio content")
         void isEmptyReflectsContent() {
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(result.isEmpty())
                     .isEqualTo(result.audioContent() == null || result.audioContent().length == 0);
         }
@@ -492,7 +487,7 @@ class TextToSpeechServiceTest {
         void sameInputProducesDeterministicOutput() {
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3);
-            
+
             assertThat(r1.audioContent()).isEqualTo(r2.audioContent());
             assertThat(r1.duration()).isEqualTo(r2.duration());
         }
@@ -502,10 +497,10 @@ class TextToSpeechServiceTest {
         void sameTextDifferentVoicesProducesDifferentAudio() {
             VoiceConfig v1 = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f);
             VoiceConfig v2 = new VoiceConfig("en-US-standard-b", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f);
-            
+
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, v1, AudioEncoding.MP3);
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, v2, AudioEncoding.MP3);
-            
+
             // Different voices should produce different audio
             assertThat(r1.voiceId()).isNotEqualTo(r2.voiceId());
         }
@@ -529,7 +524,7 @@ class TextToSpeechServiceTest {
         @DisplayName("engine returns all supported voices")
         void engineReturnsSupportedVoices() {
             Set<String> voices = engine.getSupportedVoiceIds();
-            
+
             assertThat(voices).isNotEmpty();
             assertThat(voices).containsAll(SUPPORTED_VOICES);
         }
@@ -539,7 +534,7 @@ class TextToSpeechServiceTest {
         void supportedVoicesAreImmutable() {
             Set<String> voices1 = engine.getSupportedVoiceIds();
             Set<String> voices2 = engine.getSupportedVoiceIds();
-            
+
             assertThat(voices1).isEqualTo(voices2);
             // Verify it's a copy, not the same reference
             assertThat(voices1).isNotSameAs(SUPPORTED_VOICES);
@@ -559,7 +554,7 @@ class TextToSpeechServiceTest {
         void defaultVoiceConfigCanBeUsed() {
             VoiceConfig defaults = VoiceConfig.defaults();
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaults, AudioEncoding.MP3);
-            
+
             assertThat(result.audioContent()).isNotEmpty();
             assertThat(result.voiceId()).isEqualTo(defaults.voiceId());
         }
@@ -568,7 +563,7 @@ class TextToSpeechServiceTest {
         @DisplayName("default voice has reasonable prosody values")
         void defaultVoiceHasReasonableProsody() {
             VoiceConfig defaults = VoiceConfig.defaults();
-            
+
             assertThat(defaults.speakingRate()).isEqualTo(1.0f);
             assertThat(defaults.pitch()).isEqualTo(0.0f);
             assertThat(defaults.volumeGainDb()).isEqualTo(0.0f);

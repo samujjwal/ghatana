@@ -6,36 +6,36 @@ import java.util.function.Supplier;
 
 /**
  * Enforces tenant isolation for multi-tenant operations.
- * 
+ *
  * <p>Provides explicit tenant validation and enforcement mechanisms
  * to prevent cross-tenant data access. Used at repository and service
  * layer boundaries to ensure all operations respect tenant isolation.
- * 
+ *
  * <h2>Usage Patterns</h2>
  * <pre>{@code
  * // At repository layer - validate before query
  * TenantIsolationEnforcer enforcer = TenantIsolationEnforcer.forCurrentTenant();
- * 
+ *
  * public List<Order> findAll() {
  *     enforcer.requireAuthenticated();
- *     return db.query("SELECT * FROM orders WHERE tenant_id = ?", 
+ *     return db.query("SELECT * FROM orders WHERE tenant_id = ?",
  *         enforcer.getTenantIdOrThrow());
  * }
- * 
+ *
  * // Validate entity belongs to current tenant before returning
  * public Order findById(String id) {
  *     Order order = db.findById(id);
  *     enforcer.validateTenantAccess(order.getTenantId());
  *     return order;
  * }
- * 
+ *
  * // Execute with explicit tenant context
  * TenantIsolationEnforcer.executeAs(tenantId, principal, () -> {
  *     // Code runs with specified tenant context
  *     return processOrder();
  * });
  * }</pre>
- * 
+ *
  * <h2>Security Model</h2>
  * <ul>
  *   <li>Fails fast if no tenant context is set (prevents default fallback in production)</li>
@@ -43,7 +43,7 @@ import java.util.function.Supplier;
  *   <li>Provides audit logging hooks for tenant isolation violations</li>
  *   <li>Supports explicit tenant override for admin/system operations</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Enforce tenant isolation at data access boundaries
  * @doc.layer core
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 public class TenantIsolationEnforcer {
 
     private static final String DEFAULT_TENANT = "default-tenant";
-    
+
     private final boolean strictMode;
     private final TenantViolationHandler violationHandler;
 
@@ -93,7 +93,7 @@ public class TenantIsolationEnforcer {
      */
     public String getTenantIdOrThrow() {
         String tenantId = TenantContext.getCurrentTenantId();
-        
+
         if (strictMode && DEFAULT_TENANT.equals(tenantId)) {
             Optional<Principal> principal = TenantContext.current();
             if (principal.isEmpty()) {
@@ -101,7 +101,7 @@ public class TenantIsolationEnforcer {
                     "No tenant context set. Ensure TenantContext.scope() is called at request entry point.");
             }
         }
-        
+
         return tenantId;
     }
 
@@ -139,21 +139,21 @@ public class TenantIsolationEnforcer {
     public void requireRole(String... roles) {
         requireAuthenticated();
         Principal principal = TenantContext.current().get();
-        
+
         for (String role : roles) {
             if (principal.hasRole(role)) {
                 return;
             }
         }
-        
+
         throw new TenantIsolationException(
-            "Access denied. Required roles: " + String.join(", ", roles) + 
+            "Access denied. Required roles: " + String.join(", ", roles) +
             ". Principal roles: " + principal.getRoles());
     }
 
     /**
      * Validate that the entity's tenant matches the current tenant.
-     * 
+     *
      * <p>Call this before returning any entity from a repository to ensure
      * the caller has access to the entity.
      *
@@ -162,11 +162,11 @@ public class TenantIsolationEnforcer {
      */
     public void validateTenantAccess(String entityTenantId) {
         String currentTenantId = getTenantIdOrThrow();
-        
+
         if (!currentTenantId.equals(entityTenantId)) {
             TenantViolation violation = new TenantViolation(
-                currentTenantId, 
-                entityTenantId, 
+                currentTenantId,
+                entityTenantId,
                 TenantContext.current().map(Principal::getName).orElse("unknown"),
                 "Cross-tenant access attempt"
             );
@@ -176,7 +176,7 @@ public class TenantIsolationEnforcer {
 
     /**
      * Execute code with explicit tenant context.
-     * 
+     *
      * <p>Use for admin/system operations that need to access specific tenant data.
      *
      * @param tenantId tenant to execute as
@@ -186,9 +186,9 @@ public class TenantIsolationEnforcer {
      * @return operation result
      */
     public static <T> T executeAs(String tenantId, Principal principal, Supplier<T> operation) {
-        Principal effectivePrincipal = principal != null ? principal : 
+        Principal effectivePrincipal = principal != null ? principal :
             new Principal("system", java.util.List.of("system"), tenantId);
-        
+
         try (AutoCloseable scope = TenantContext.scope(effectivePrincipal)) {
             return operation.get();
         } catch (Exception e) {
@@ -224,7 +224,7 @@ public class TenantIsolationEnforcer {
      */
     @FunctionalInterface
     public interface TenantViolationHandler {
-        
+
         /**
          * Throw exception on violation (default for production).
          */
@@ -252,7 +252,7 @@ public class TenantIsolationEnforcer {
      */
     public static class TenantIsolationException extends RuntimeException {
         private static final long serialVersionUID = 1L;
-        
+
         public TenantIsolationException(String message) {
             super(message);
         }

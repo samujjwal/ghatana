@@ -7,7 +7,6 @@
 package com.ghatana.platform.http.server.contract;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.http.HttpException;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -299,7 +298,7 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
             String clientCorrelationId = "trace-xyz-789";
             // Server receives X-Correlation-ID: trace-xyz-789
             // Server response should include same X-Correlation-ID
-            
+
             assertThat(clientCorrelationId).isNotBlank();
         }
 
@@ -308,7 +307,7 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
         void serverMustGenerateCorrelationIdIfMissing() {
             // Client doesn't send X-Correlation-ID
             // Server generates one: UUID or similar
-            
+
             String generatedId = "auto-generated-" + System.nanoTime();
             assertThat(generatedId).isNotBlank();
         }
@@ -339,7 +338,7 @@ class HttpSecurityHeaderContractTest extends EventloopTestBase {
         void responseMustRespectAcceptEncoding() {
             // If client sends Accept-Encoding: gzip, deflate
             // Server should use gzip if available for large payloads
-            
+
             String supportedEncodings = "gzip, deflate";
             assertThat(supportedEncodings).contains("gzip");
         }

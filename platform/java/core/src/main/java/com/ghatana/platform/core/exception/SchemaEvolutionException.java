@@ -38,7 +38,7 @@ package com.ghatana.platform.core.exception;
  * // 1. Detecting incompatible schema change
  * SchemaVersion oldSchema = registry.getSchema("user", 1);
  * SchemaVersion newSchema = SchemaVersion.of("user", 2);
- * 
+ *
  * if (!oldSchema.isCompatibleWith(newSchema)) {
  *     throw new SchemaEvolutionException(
  *         "Schema change breaks compatibility: " +
@@ -123,9 +123,9 @@ package com.ghatana.platform.core.exception;
  * @doc.pattern domain-exception schema-versioning compatibility-checking
  */
 public class SchemaEvolutionException extends BaseException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Constructs a SchemaEvolutionException with an error message.
      *
@@ -148,7 +148,7 @@ public class SchemaEvolutionException extends BaseException {
     /**
      * Constructs a SchemaEvolutionException with message and root cause.
      *
-     * <p>Use when catching a lower-level exception (MigrationException, 
+     * <p>Use when catching a lower-level exception (MigrationException,
      * SchemaRegistryException) during schema evolution and converting to
      * SchemaEvolutionException for uniform handling.
      *
@@ -191,7 +191,7 @@ public class SchemaEvolutionException extends BaseException {
     public SchemaEvolutionException(Throwable cause) {
         super(ErrorCode.VALIDATION_ERROR, cause);
     }
-    
+
     /**
      * Constructs a SchemaEvolutionException with custom error code and message.
      *

@@ -24,7 +24,7 @@ import org.openrewrite.java.JavaParser;
  * Executes OpenRewrite recipes on source files with proper error handling and file management.
  *
  * <p>This class is thread-safe and handles atomic file writes to prevent partial updates.
- 
+
  * @doc.type class
  * @doc.purpose Handles open rewrite runner operations
  * @doc.layer core

@@ -24,21 +24,21 @@ import java.util.UUID;
  */
 @DisplayName("Data-Cloud Integration Tests")
 class DataCloudIntegrationTest {
-    
+
     @Mock
     private DataCloudClient client;
-    
+
     private YappcEntityMapper mapper;
     private YappcDataCloudRepository<TestEntity> repository;
-    
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         mapper = new YappcEntityMapper(objectMapper);
-        
+
         repository = new YappcDataCloudRepository<>(
             client,
             mapper,
@@ -46,16 +46,16 @@ class DataCloudIntegrationTest {
             TestEntity.class
         );
     }
-    
+
     @Test
     @DisplayName("Should initialize data-cloud repository successfully")
     void shouldInitializeRepository() {
         // Given - repository is initialized in setUp
-        
+
         // Then - no exceptions should be thrown
         assert repository != null;
     }
-    
+
     record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> {
         @Override public UUID getId() { return id; }
     }

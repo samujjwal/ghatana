@@ -6,13 +6,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
-import io.activej.common.exception.MalformedDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.*;
 
 /**

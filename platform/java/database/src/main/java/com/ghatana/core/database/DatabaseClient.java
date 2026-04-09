@@ -26,7 +26,7 @@ import java.util.Map;
  * <h3>Usage Example:</h3>
  * <pre>{@code
  * DatabaseClient client = ...;
- * 
+ *
  * // Start client
  * client.start().then($ -> {
  *     // Query documents
@@ -36,7 +36,7 @@ import java.util.Map;
  *         10
  *     );
  * }).whenComplete(() -> client.close());
- * 
+ *
  * // Insert document
  * Map<String, Object> doc = Map.of(
  *     "tenantId", "tenant-123",
@@ -44,7 +44,7 @@ import java.util.Map;
  *     "email", "john@example.com"
  * );
  * Promise<Void> inserted = client.insert("users", doc);
- * 
+ *
  * // Update documents
  * Promise<Void> updated = client.update(
  *     "users",
@@ -65,7 +65,7 @@ import java.util.Map;
  * @doc.purpose Async database client for document operations
  * @doc.layer core
  * @doc.pattern Repository
- * 
+ *
  * @see io.activej.promise.Promise
  * @see com.ghatana.platform.core.client.AsyncClient
  * @see com.ghatana.platform.core.client.ConnectionManager

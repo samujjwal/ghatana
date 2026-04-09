@@ -55,17 +55,17 @@ import java.util.concurrent.ConcurrentHashMap;
  *     - Latency: ~100ms (local + central)
  *     - Consistency: Strong (cross-instance visible immediately)
  *     - Use case: Critical data, compliance-sensitive operations</li>
- *   
+ *
  *   <li><b>BATCHED</b>: Writes accumulated, synced periodically
  *     - Latency: ~1ms + batch latency (default 5sec)
  *     - Consistency: Eventual (batch sync delay)
  *     - Use case: High-throughput, eventual consistency acceptable</li>
- *   
+ *
  *   <li><b>PERIODIC</b>: Full store synced at intervals
  *     - Latency: ~1ms (no sync wait)
  *     - Consistency: Eventual (interval delay)
  *     - Use case: High-throughput, best effort durability</li>
- *   
+ *
  *   <li><b>ON_CHECKPOINT</b>: Sync only during explicit checkpoints
  *     - Latency: ~1ms (checkpoint time is separate)
  *     - Consistency: Checkpoint-based (strong for snapshotted state)
@@ -88,7 +88,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <h2>Example: Aggregator with State</h2>
  * {@code
  * // Setup hybrid store with local cache + Redis central
- * HybridStateStore<String, AggregateValue> store = 
+ * HybridStateStore<String, AggregateValue> store =
  *     HybridStateStore.builder()
  *         .localStore(new InMemoryStateStore<>())
  *         .centralStore(new RedisStateStore<>(redis))
@@ -516,4 +516,3 @@ public class HybridStateStore<K, V> implements StateStore<K, V> {
         return new Builder<>();
     }
 }
-

@@ -282,6 +282,3 @@ public final class VideoAnalysisService {
         }
     }
 }
-
-
-

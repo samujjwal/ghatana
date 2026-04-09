@@ -14,12 +14,12 @@ public class EventHistoryMeta {
      * The unique identifier of the event history.
      */
     private final String id;
-    
+
     /**
      * The type of the event history, which determines its behavior and storage characteristics.
      */
     private final String type;
-    
+
     /**
      * Indicates whether the event history is currently open and available for operations.
      */

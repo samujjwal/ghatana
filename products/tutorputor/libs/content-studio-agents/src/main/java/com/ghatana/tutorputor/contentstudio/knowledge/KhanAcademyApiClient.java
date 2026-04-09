@@ -21,11 +21,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Production-ready Khan Academy API client for supplementary educational content.
- * 
+ *
  * <p>Khan Academy provides free educational videos and exercises. This client:
  * <ul>
  *   <li>Searches for educational videos by topic</li>
@@ -45,10 +44,10 @@ public class KhanAcademyApiClient {
     private static final String KHAN_API_URL = "https://www.khanacademy.org/api/internal";
     private static final String KHAN_GRAPHQL_URL = "https://www.khanacademy.org/api/internal/graphql";
     private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-    
+
     private final HttpClient httpClient;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter searchRequestsCounter;
     private final Counter videoRequestsCounter;
@@ -65,7 +64,7 @@ public class KhanAcademyApiClient {
     public KhanAcademyApiClient(HttpClient httpClient, MeterRegistry meterRegistry) {
         this.httpClient = httpClient;
         this.meterRegistry = meterRegistry;
-        
+
         this.searchRequestsCounter = Counter.builder("tutorputor.khan.search.requests")
             .description("Number of Khan Academy search requests")
             .register(meterRegistry);
@@ -94,7 +93,7 @@ public class KhanAcademyApiClient {
     public Promise<List<KhanSearchResult>> search(String topic, ContentType contentType, int limit) {
         Instant start = Instant.now();
         searchRequestsCounter.increment();
-        
+
         String typeFilter = contentType != null ? "&type=" + contentType.name().toLowerCase() : "";
         String url = String.format(
             "%s/search?query=%s%s&limit=%d",
@@ -103,7 +102,7 @@ public class KhanAcademyApiClient {
             typeFilter,
             Math.min(limit, 20)
         );
-        
+
         LOG.debug("Searching Khan Academy for topic: {}, type: {}", topic, contentType);
 
         Promise<List<KhanSearchResult>> promise = httpClient.request(
@@ -132,9 +131,9 @@ public class KhanAcademyApiClient {
     public Promise<List<KhanVideo>> getVideos(String topic, int limit) {
         Instant start = Instant.now();
         videoRequestsCounter.increment();
-        
+
         LOG.debug("Fetching Khan Academy videos for topic: {}", topic);
-        
+
         return search(topic, ContentType.VIDEO, limit)
             .map(results -> results.stream()
                 .map(r -> new KhanVideo(
@@ -159,9 +158,9 @@ public class KhanAcademyApiClient {
     public Promise<List<KhanExercise>> getExercises(String topic, int limit) {
         Instant start = Instant.now();
         exerciseRequestsCounter.increment();
-        
+
         LOG.debug("Fetching Khan Academy exercises for topic: {}", topic);
-        
+
         return search(topic, ContentType.EXERCISE, limit)
             .map(results -> results.stream()
                 .map(r -> new KhanExercise(
@@ -184,9 +183,9 @@ public class KhanAcademyApiClient {
      */
     public Promise<SupplementaryContentResult> findSupplementaryContent(
             String claimText, List<ContentType> preferredTypes) {
-        
+
         LOG.info("Finding Khan Academy supplementary content for claim");
-        
+
         List<Promise<List<KhanSearchResult>>> searches = preferredTypes.stream()
             .map(type -> search(claimText, type, 3))
             .toList();
@@ -197,7 +196,7 @@ public class KhanAcademyApiClient {
                 for (List<KhanSearchResult> results : resultLists) {
                     allResults.addAll(results);
                 }
-                
+
                 if (allResults.isEmpty()) {
                     return new SupplementaryContentResult(
                         false,
@@ -207,11 +206,11 @@ public class KhanAcademyApiClient {
                         List.of()
                     );
                 }
-                
+
                 List<String> videoLinks = new ArrayList<>();
                 List<String> exerciseLinks = new ArrayList<>();
                 List<String> articleLinks = new ArrayList<>();
-                
+
                 for (KhanSearchResult result : allResults) {
                     switch (result.contentType()) {
                         case VIDEO -> videoLinks.add(result.url());
@@ -219,7 +218,7 @@ public class KhanAcademyApiClient {
                         case ARTICLE -> articleLinks.add(result.url());
                     }
                 }
-                
+
                 return new SupplementaryContentResult(
                     true,
                     "Found " + allResults.size() + " supplementary resources",
@@ -239,16 +238,16 @@ public class KhanAcademyApiClient {
      */
     public Promise<LearningPath> getLearningPath(String topic, String gradeLevel) {
         LOG.debug("Building learning path for topic: {} at grade: {}", topic, gradeLevel);
-        
+
         // Get a mix of content types for a complete learning path
         return search(topic, null, 10)
             .map(results -> {
                 List<LearningPathStep> steps = new ArrayList<>();
                 int order = 1;
-                
+
                 // First, add introductory videos
                 for (KhanSearchResult result : results) {
-                    if (result.contentType() == ContentType.VIDEO && 
+                    if (result.contentType() == ContentType.VIDEO &&
                         (result.title().toLowerCase().contains("intro") ||
                          result.title().toLowerCase().contains("overview"))) {
                         steps.add(new LearningPathStep(
@@ -261,10 +260,10 @@ public class KhanAcademyApiClient {
                         if (order > 2) break;
                     }
                 }
-                
+
                 // Then add core content
                 for (KhanSearchResult result : results) {
-                    if (result.contentType() == ContentType.VIDEO && 
+                    if (result.contentType() == ContentType.VIDEO &&
                         !result.title().toLowerCase().contains("intro")) {
                         steps.add(new LearningPathStep(
                             order++,
@@ -276,7 +275,7 @@ public class KhanAcademyApiClient {
                         if (order > 5) break;
                     }
                 }
-                
+
                 // Add practice exercises
                 for (KhanSearchResult result : results) {
                     if (result.contentType() == ContentType.EXERCISE) {
@@ -290,7 +289,7 @@ public class KhanAcademyApiClient {
                         if (order > 8) break;
                     }
                 }
-                
+
                 return new LearningPath(
                     topic,
                     gradeLevel,
@@ -306,15 +305,15 @@ public class KhanAcademyApiClient {
 
     private List<KhanSearchResult> parseSearchResults(String json, Instant start) {
         List<KhanSearchResult> results = new ArrayList<>();
-        
+
         try {
             JsonNode root = MAPPER.readTree(json);
             JsonNode hits = root.isArray() ? root : root.path("results");
-            
+
             if (hits.isArray()) {
                 for (JsonNode hit : hits) {
                     ContentType type = parseContentType(hit.path("kind").asText());
-                    
+
                     results.add(new KhanSearchResult(
                         hit.path("id").asText(),
                         hit.path("title").asText(),
@@ -326,21 +325,21 @@ public class KhanAcademyApiClient {
                     ));
                 }
             }
-            
+
             apiLatencyTimer.record(Duration.between(start, Instant.now()));
             LOG.debug("Khan Academy search returned {} results", results.size());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse Khan Academy search results", e);
             apiErrorsCounter.increment();
         }
-        
+
         return results;
     }
 
     private ContentType parseContentType(String kind) {
         if (kind == null) return ContentType.ARTICLE;
-        
+
         return switch (kind.toLowerCase()) {
             case "video" -> ContentType.VIDEO;
             case "exercise" -> ContentType.EXERCISE;
@@ -353,7 +352,7 @@ public class KhanAcademyApiClient {
     private String buildUrl(JsonNode node) {
         String slug = node.path("slug").asText("");
         String path = node.path("relative_url").asText("");
-        
+
         if (!path.isEmpty()) {
             return "https://www.khanacademy.org" + path;
         } else if (!slug.isEmpty()) {

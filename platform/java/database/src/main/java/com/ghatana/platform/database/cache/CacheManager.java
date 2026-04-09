@@ -28,17 +28,17 @@ import java.util.Set;
  * <h2>Usage Example:</h2>
  * <pre>{@code
  * CacheManager cache = new RedisCacheManager(jedisPool, objectMapper, "tenant1");
- * 
+ *
  * // Simple get/put
  * cache.put("user:123", user, Duration.ofMinutes(5))
  *     .then(() -> cache.get("user:123", User.class))
  *     .whenResult(opt -> opt.ifPresent(u -> logger.info("Found: {}", u)));
- * 
+ *
  * // Get-or-compute pattern
  * cache.getOrCompute("config", Config.class, Duration.ofHours(1),
  *     () -> loadConfigFromDatabase())
  *     .whenResult(config -> logger.info("Config loaded"));
- * 
+ *
  * // Pattern-based operations
  * cache.clearPattern("session:*")
  *     .whenResult(deleted -> logger.info("Cleared {} sessions", deleted));
@@ -64,7 +64,7 @@ import java.util.Set;
  * @doc.pattern Port (Hexagonal Architecture)
  */
 public interface CacheManager {
-    
+
     /**
      * Get a value from cache.
      *
@@ -75,7 +75,7 @@ public interface CacheManager {
      * @throws IllegalArgumentException if key is null or empty
      */
     <T> Promise<Optional<T>> get(String key, Class<T> type);
-    
+
     /**
      * Put a value in cache with default TTL.
      *
@@ -85,7 +85,7 @@ public interface CacheManager {
      * @return Promise that completes when value is cached
      */
     <T> Promise<Void> put(String key, T value);
-    
+
     /**
      * Put a value in cache with specific TTL.
      *
@@ -96,7 +96,7 @@ public interface CacheManager {
      * @return Promise that completes when value is cached
      */
     <T> Promise<Void> put(String key, T value, Duration ttl);
-    
+
     /**
      * Remove a value from cache.
      *
@@ -104,7 +104,7 @@ public interface CacheManager {
      * @return Promise of true if key existed and was deleted, false otherwise
      */
     Promise<Boolean> remove(String key);
-    
+
     /**
      * Check if key exists in cache.
      *
@@ -112,7 +112,7 @@ public interface CacheManager {
      * @return Promise of true if key exists, false otherwise
      */
     Promise<Boolean> exists(String key);
-    
+
     /**
      * Get all keys matching a pattern.
      * <p><strong>Warning:</strong> O(N) operation - use sparingly in production.
@@ -121,7 +121,7 @@ public interface CacheManager {
      * @return Promise of Set of matching keys (without namespace prefix)
      */
     Promise<Set<String>> keys(String pattern);
-    
+
     /**
      * Clear all cache entries.
      * <p><strong>Warning:</strong> O(N) operation - destructive.
@@ -129,7 +129,7 @@ public interface CacheManager {
      * @return Promise that completes when all entries are cleared
      */
     Promise<Void> clear();
-    
+
     /**
      * Clear all cache entries matching a pattern.
      * <p><strong>Warning:</strong> O(N) operation - use sparingly.
@@ -138,14 +138,14 @@ public interface CacheManager {
      * @return Promise of number of keys deleted
      */
     Promise<Long> clearPattern(String pattern);
-    
+
     /**
      * Get cache statistics.
      *
      * @return current cache statistics (immutable snapshot)
      */
     CacheStats getStats();
-    
+
     /**
      * Get or compute a value if not present in cache.
      * <p>If key exists, returns cached value. If not, executes supplier,
@@ -159,7 +159,7 @@ public interface CacheManager {
      * @return Promise of computed or cached value
      */
     <T> Promise<T> getOrCompute(String key, Class<T> type, java.util.function.Supplier<Promise<T>> supplier);
-    
+
     /**
      * Get or compute a value with specific TTL if not present in cache.
      *
@@ -171,7 +171,7 @@ public interface CacheManager {
      * @return Promise of computed or cached value
      */
     <T> Promise<T> getOrCompute(String key, Class<T> type, Duration ttl, java.util.function.Supplier<Promise<T>> supplier);
-    
+
     /**
      * Increment a numeric value in cache.
      * <p>If key doesn't exist, initializes to 0 then increments to 1.
@@ -180,7 +180,7 @@ public interface CacheManager {
      * @return Promise of new value after increment
      */
     Promise<Long> increment(String key);
-    
+
     /**
      * Increment a numeric value by a specific amount.
      *
@@ -189,7 +189,7 @@ public interface CacheManager {
      * @return Promise of new value after increment
      */
     Promise<Long> increment(String key, long delta);
-    
+
     /**
      * Set expiration time for a key.
      *
@@ -198,7 +198,7 @@ public interface CacheManager {
      * @return Promise of true if expiration was set, false if key doesn't exist
      */
     Promise<Boolean> expire(String key, Duration ttl);
-    
+
     /**
      * Get time to live for a key.
      *
@@ -206,7 +206,7 @@ public interface CacheManager {
      * @return Promise of TTL (ZERO if key doesn't exist, MAX_VALUE if no expiration)
      */
     Promise<Duration> ttl(String key);
-    
+
     /**
      * Cache statistics interface.
      * <p>Provides immutable snapshot of cache performance metrics.
@@ -221,35 +221,35 @@ public interface CacheManager {
          * @return hit count since cache initialization
          */
         long getHitCount();
-        
+
         /**
          * Total number of cache misses.
          *
          * @return miss count since cache initialization
          */
         long getMissCount();
-        
+
         /**
          * Cache hit rate (hits / total requests).
          *
          * @return hit rate between 0.0 and 1.0
          */
         double getHitRate();
-        
+
         /**
          * Total number of entries evicted (via TTL or manual deletion).
          *
          * @return eviction count since cache initialization
          */
         long getEvictionCount();
-        
+
         /**
          * Current number of entries in cache.
          *
          * @return cache size, or -1 if not supported by implementation
          */
         long getSize();
-        
+
         /**
          * Average time to load (compute) values via getOrCompute().
          *

@@ -273,4 +273,3 @@ public final class FeedbackLearningService {
     return counters;
   }
 }
-

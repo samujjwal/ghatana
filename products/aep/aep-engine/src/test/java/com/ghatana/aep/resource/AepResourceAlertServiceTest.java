@@ -139,4 +139,3 @@ class AepResourceAlertServiceTest {
         return new AepCpuOptimizer.CpuSnapshot(Instant.now(), processCpu, processCpu, 4, false);
     }
 }
-

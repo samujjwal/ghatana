@@ -8,7 +8,6 @@ import com.ghatana.yappc.domain.shape.DomainModel;
 import com.ghatana.yappc.domain.shape.EntitySpec;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.ValidationConfig;
-import com.ghatana.yappc.domain.validate.ValidationIssue;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +43,7 @@ class ValidationServiceTest extends EventloopTestBase {
         auditLogger = mock(AuditLogger.class);
         metrics = mock(MetricsCollector.class);
         service = new ValidationServiceImpl(policyEngine, auditLogger, metrics);
-        
+
         when(auditLogger.log(any(Map.class)))
                 .thenReturn(Promise.complete());
     }
@@ -52,7 +51,7 @@ class ValidationServiceTest extends EventloopTestBase {
     @Nested
     @DisplayName("Validation Without Config")
     class ValidateWithoutConfig {
-        
+
         @Test
         @DisplayName("should pass validation for valid shape spec")
         void shouldValidateValidShapeSpec() {
@@ -75,15 +74,15 @@ class ValidationServiceTest extends EventloopTestBase {
                     .workflows(List.of())
                     .integrations(List.of())
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec));
-            
+
             assertNotNull(result);
             assertNotNull(result.validatedAt());
             assertNotNull(result.issues());
             verify(auditLogger, times(1)).log(any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should fail validation for null domain model")
         void shouldFailWhenDomainModelNull() {
@@ -93,14 +92,14 @@ class ValidationServiceTest extends EventloopTestBase {
                     .intentRef("intent-123")
                     .domainModel(null)
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec));
-            
+
             assertNotNull(result);
             assertFalse(result.passed());
             assertTrue(result.issues().stream().anyMatch(issue -> issue.id().equals("schema-001")));
         }
-        
+
         @Test
         @DisplayName("should fail validation for empty entities")
         void shouldFailWhenEntitiesEmpty() {
@@ -116,35 +115,35 @@ class ValidationServiceTest extends EventloopTestBase {
                     .workflows(List.of())
                     .integrations(List.of())
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec));
-            
+
             assertNotNull(result);
             assertFalse(result.passed());
             assertTrue(result.issues().stream()
                     .anyMatch(issue -> issue.id().equals("schema-001")));
         }
-        
+
         @Test
         @DisplayName("should record validation timer metric")
         void shouldRecordTimerMetric() {
             ShapeSpec spec = validShapeSpec("tenant-1");
-            
+
             runPromise(() -> service.validate(spec));
-            
+
             verify(metrics, atLeastOnce()).recordTimer(
                     eq("yappc.validate.execute"),
                     anyLong(),
                     any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should increment success counter")
         void shouldIncrementSuccessCounter() {
             ShapeSpec spec = validShapeSpec("tenant-2");
-            
+
             runPromise(() -> service.validate(spec));
-            
+
             verify(metrics, atLeastOnce()).recordTimer(
                     eq("yappc.validate.execute"),
                     anyLong(),
@@ -155,7 +154,7 @@ class ValidationServiceTest extends EventloopTestBase {
     @Nested
     @DisplayName("Validation With Custom Config")
     class ValidateWithCustomConfig {
-        
+
         @Test
         @DisplayName("should validate with excluded validators")
         void shouldValidateWithExcludedValidators() {
@@ -163,24 +162,24 @@ class ValidationServiceTest extends EventloopTestBase {
             ValidationConfig config = ValidationConfig.builder()
                     .excludedIds(Set.of("security", "compliance"))
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec, config));
-            
+
             assertNotNull(result);
             verify(auditLogger, times(1)).log(any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should handle null config by using default")
         void shouldHandleNullConfig() {
             ShapeSpec spec = validShapeSpec("tenant-abc");
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec, null));
-            
+
             assertNotNull(result);
             verify(auditLogger, times(1)).log(any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should apply failFast option from config")
         void shouldApplyFailFastOption() {
@@ -188,13 +187,13 @@ class ValidationServiceTest extends EventloopTestBase {
             ValidationConfig config = ValidationConfig.builder()
                     .failFast(true)
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec, config));
-            
+
             assertNotNull(result);
             verify(auditLogger, times(1)).log(any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should respect excluded IDs from config")
         void shouldRespectExcludedIds() {
@@ -202,9 +201,9 @@ class ValidationServiceTest extends EventloopTestBase {
             ValidationConfig config = ValidationConfig.builder()
                     .excludedIds(Set.of("penalty-001", "penalty-002"))
                     .build();
-            
+
             LifecycleValidationResult result = runPromise(() -> service.validate(spec, config));
-            
+
             assertNotNull(result);
             assertTrue(result.issues().size() <= 5);
         }
@@ -213,33 +212,33 @@ class ValidationServiceTest extends EventloopTestBase {
     @Nested
     @DisplayName("Policy Engine Integration")
     class PolicyEngineIntegration {
-        
+
         @Test
         @DisplayName("should invoke policy engine for policy validation")
         void shouldInvokePolicyEngine() {
             ShapeSpec spec = validShapeSpec("tenant-abc");
             PolicySpecMock policySpec = new PolicySpecMock();
-            
+
             when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.of(true));
-            
+
             runPromise(() -> service.validate(spec, ValidationConfig.defaultConfig()));
-            
+
             // Service should attempt policy evaluation if policy spec exists
             verify(auditLogger, times(1)).log(any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should handle policy engine failures gracefully")
         void shouldHandlePolicyEngineFailure() {
             ShapeSpec spec = validShapeSpec("tenant-abc");
             PolicySpecMock policySpec = new PolicySpecMock();
-            
+
             when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.ofException(new RuntimeException("Policy evaluation failed")));
-            
+
             // Service should not crash on policy failure
-            assertDoesNotThrow(() -> 
+            assertDoesNotThrow(() ->
                 runPromise(() -> service.validate(spec, ValidationConfig.defaultConfig())));
         }
     }
@@ -247,30 +246,30 @@ class ValidationServiceTest extends EventloopTestBase {
     @Nested
     @DisplayName("Tenant Isolation")
     class TenantIsolation {
-        
+
         @Test
         @DisplayName("should tag metrics with tenant ID")
         void shouldTagMetricsWithTenant() {
             ShapeSpec spec1 = validShapeSpec("tenant-1");
             ShapeSpec spec2 = validShapeSpec("tenant-2");
-            
+
             runPromise(() -> service.validate(spec1));
             runPromise(() -> service.validate(spec2));
-            
+
             verify(metrics, atLeast(2)).recordTimer(
                     eq("yappc.validate.execute"),
                     anyLong(),
                     any(Map.class));
         }
-        
+
         @Test
         @DisplayName("should include tenant in audit log")
         void shouldIncludeTenantInAudit() {
             ShapeSpec spec = validShapeSpec("tenant-secure");
-            
+
             runPromise(() -> service.validate(spec));
-            
-            verify(auditLogger, times(1)).log(argThat(map -> 
+
+            verify(auditLogger, times(1)).log(argThat(map ->
                 map.containsKey("tenant") || map.values().toString().contains("tenant-secure")));
         }
     }
@@ -278,19 +277,19 @@ class ValidationServiceTest extends EventloopTestBase {
     @Nested
     @DisplayName("Error Handling")
     class ErrorHandling {
-        
+
         @Test
         @DisplayName("should handle audit logger failures")
         void shouldHandleAuditLoggerFailure() {
             when(auditLogger.log(any(Map.class)))
                     .thenReturn(Promise.ofException(new RuntimeException("Audit failed")));
-            
+
             ShapeSpec spec = validShapeSpec("tenant-abc");
-            
-            assertDoesNotThrow(() -> 
+
+            assertDoesNotThrow(() ->
                 runPromise(() -> service.validate(spec)));
         }
-        
+
         @Test
         @DisplayName("should increment failure counter on validation error")
         void shouldIncrementFailureCounter() {
@@ -300,9 +299,9 @@ class ValidationServiceTest extends EventloopTestBase {
                     .intentRef(null)  // Invalid: null intentRef
                     .domainModel(null)
                     .build();
-            
+
             runPromise(() -> service.validate(spec));
-            
+
             verify(metrics, atLeastOnce()).recordTimer(
                     anyString(),
                     anyLong(),

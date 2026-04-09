@@ -43,7 +43,7 @@ import java.util.Objects;
  *     .retentionYears(7)
  *     .objectLockEnabled(true)
  *     .build();
- * 
+ *
  * // Development configuration with LocalStack
  * S3ArchiveConfig devConfig = S3ArchiveConfig.forLocalStack(
  *     "eventcloud-archive-dev", "http://localhost:4566");

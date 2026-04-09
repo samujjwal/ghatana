@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for DiffRenderer.
- 
+
  * @doc.type class
  * @doc.purpose Handles diff renderer test operations
  * @doc.layer core
@@ -46,9 +46,9 @@ class DiffRendererTest {
     void testRenderIdenticalTexts() {
         String original = "line1\nline2\nline3";
         String modified = "line1\nline2\nline3";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("--- original"));
         assertTrue(diff.contains("+++ modified"));
@@ -70,9 +70,9 @@ class DiffRendererTest {
     void testRenderLineAdded() {
         String original = "line1\nline2";
         String modified = "line1\nline2\nline3";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("  line2"));
@@ -84,9 +84,9 @@ class DiffRendererTest {
     void testRenderLineRemoved() {
         String original = "line1\nline2\nline3";
         String modified = "line1\nline2";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("  line2"));
@@ -98,9 +98,9 @@ class DiffRendererTest {
     void testRenderLineChanged() {
         String original = "line1\nline2\nline3";
         String modified = "line1\nmodified line2\nline3";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("- line2"));
@@ -113,9 +113,9 @@ class DiffRendererTest {
     void testRenderMultipleChanges() {
         String original = "line1\nline2\nline3\nline4";
         String modified = "line1\nmodified line2\nline3\nline5";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("- line2"));
@@ -130,9 +130,9 @@ class DiffRendererTest {
     void testRenderEmptyOriginal() {
         String original = "";
         String modified = "line1\nline2";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("+ line1"));
         assertTrue(diff.contains("+ line2"));
@@ -143,9 +143,9 @@ class DiffRendererTest {
     void testRenderEmptyModified() {
         String original = "line1\nline2";
         String modified = "";
-        
+
         String diff = renderer.render(original, modified);
-        
+
         assertNotNull(diff);
         assertTrue(diff.contains("- line1"));
         assertTrue(diff.contains("- line2"));
@@ -173,9 +173,9 @@ class DiffRendererTest {
             " unchanged line",
             "+another added line"
         );
-        
+
         String result = renderer.renderPatch(patches);
-        
+
         assertNotNull(result);
         assertTrue(result.contains("[+] added line"));
         assertTrue(result.contains("    unchanged line"));
@@ -190,9 +190,9 @@ class DiffRendererTest {
             " unchanged line",
             "-another deleted line"
         );
-        
+
         String result = renderer.renderPatch(patches);
-        
+
         assertNotNull(result);
         assertTrue(result.contains("[-] deleted line"));
         assertTrue(result.contains("    unchanged line"));
@@ -208,9 +208,9 @@ class DiffRendererTest {
             "-deleted line",
             "+added line"
         );
-        
+
         String result = renderer.renderPatch(patches);
-        
+
         assertNotNull(result);
         assertTrue(result.contains("[@] @@ -1,3 +1,3 @@"));
         assertTrue(result.contains("    unchanged line"));
@@ -229,9 +229,9 @@ class DiffRendererTest {
             " context line 2",
             "+added line"
         );
-        
+
         String result = renderer.renderPatch(patches);
-        
+
         assertNotNull(result);
         assertTrue(result.contains("[@]"));
         assertTrue(result.contains("[+]"));

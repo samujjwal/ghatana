@@ -10,7 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -72,7 +71,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
         // WHEN: Initialize with timeout
         long startTime = System.currentTimeMillis();
-        
+
         // In production, timeout would be enforced
         // For testing, we verify the adapter is still initializing
         assertThat(adapter.isInitialized()).isFalse();
@@ -87,7 +86,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         // WHEN: Initialize with exponential backoff
         long startTime = System.currentTimeMillis();
         Promise<Void> initPromise = adapter.initializeWithExponentialBackoff(context, 5);
-        
+
         runPromise(() -> initPromise);
         long duration = System.currentTimeMillis() - startTime;
 
@@ -125,7 +124,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
         // THEN: Circuit is open, fast-fail without calling service
         assertThat(adapter.isCircuitOpen()).isTrue();
-        
+
         assertThatThrownBy(() -> runPromise(() -> adapter.callService()))
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("Circuit breaker is open");

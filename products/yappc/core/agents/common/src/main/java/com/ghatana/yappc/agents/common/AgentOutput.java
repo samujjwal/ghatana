@@ -19,22 +19,22 @@ public abstract class AgentOutput {
      * Unique identifier for this output response.
      */
     private String responseId;
-    
+
     /**
      * Status of the agent execution.
      */
     private ExecutionStatus status;
-    
+
     /**
      * Timestamp when this output was created.
      */
     private Long timestamp;
-    
+
     /**
      * Optional error message if execution failed.
      */
     private String errorMessage;
-    
+
     /**
      * Execution status enum.
      */

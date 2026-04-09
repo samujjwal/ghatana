@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory implementation of AuthenticationProvider for demonstration and testing.
  * In a production environment, this would be replaced with a database-backed implementation.
- 
+
  *
  * @doc.type class
  * @doc.purpose In memory user service

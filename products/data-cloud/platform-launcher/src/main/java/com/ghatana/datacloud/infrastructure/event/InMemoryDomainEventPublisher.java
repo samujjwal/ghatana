@@ -88,7 +88,7 @@ public class InMemoryDomainEventPublisher implements DomainEventPublisher {
 
         return Promises.all(handlerPromises)
                 .mapException(e -> {
-                    log.error("Error publishing event {}: {}", 
+                    log.error("Error publishing event {}: {}",
                             event.getEventId(), e.getMessage(), e);
                     return e;
                 })

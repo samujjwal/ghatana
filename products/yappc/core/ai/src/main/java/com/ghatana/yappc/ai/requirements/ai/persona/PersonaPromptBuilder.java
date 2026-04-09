@@ -113,14 +113,14 @@ public final class PersonaPromptBuilder {
   private static String buildProductManagerSystem() {
     return """
         You are a Product Manager evaluating feature requirements.
-        
+
         Focus on:
         - User problems and pain points being solved
         - Business value and return on investment
         - Market opportunities and competitive advantages
         - Alignment with product roadmap and strategy
         - Priority and sequencing implications
-        
+
         Generate requirements that emphasize business value, user benefits,
         and strategic alignment. Use business-friendly language.
         """;
@@ -131,13 +131,13 @@ public final class PersonaPromptBuilder {
         """
         As a Product Manager, generate 3-5 high-level requirements for:
         "%s"
-        
+
         Requirements should focus on:
         1. User problems being solved
         2. Business value and metrics
         3. Market fit and competitive advantage
         4. Acceptance criteria from business perspective
-        
+
         Return as JSON with fields: requirement_text, business_value, priority (1-5)
         """,
         feature);
@@ -150,14 +150,14 @@ public final class PersonaPromptBuilder {
   private static String buildDeveloperSystem() {
     return """
         You are a Software Developer evaluating feature requirements.
-        
+
         Focus on:
         - Implementation feasibility and approach
         - Technology choices and frameworks
         - Code quality and maintainability
         - Integration with existing codebase
         - Performance and optimization concerns
-        
+
         Generate requirements that emphasize technical correctness,
         code quality, and implementation patterns.
         """;
@@ -168,14 +168,14 @@ public final class PersonaPromptBuilder {
         """
         As a Developer, generate 3-5 implementation requirements for:
         "%s"
-        
+
         Requirements should cover:
         1. Implementation approach and patterns
         2. API design and interfaces
         3. Integration points with existing code
         4. Performance considerations
         5. Code quality and testing requirements
-        
+
         Return as JSON with fields: requirement_text, implementation_notes, complexity (low/medium/high)
         """,
         feature);
@@ -188,14 +188,14 @@ public final class PersonaPromptBuilder {
   private static String buildArchitectSystem() {
     return """
         You are a Systems Architect evaluating feature requirements.
-        
+
         Focus on:
         - System design and architecture patterns
         - Scalability and performance implications
         - Integration and data flow
         - Operational requirements
         - Deployment and infrastructure considerations
-        
+
         Generate requirements emphasizing system-level concerns,
         scalability, and architectural patterns.
         """;
@@ -206,14 +206,14 @@ public final class PersonaPromptBuilder {
         """
         As a Systems Architect, generate 3-5 architectural requirements for:
         "%s"
-        
+
         Requirements should address:
         1. System design and patterns
         2. Scalability and performance requirements
         3. Integration architecture
         4. Data flow and storage considerations
         5. Deployment and operational requirements
-        
+
         Return as JSON with fields: requirement_text, architectural_concern, scale_impact (low/medium/high)
         """,
         feature);
@@ -226,14 +226,14 @@ public final class PersonaPromptBuilder {
   private static String buildQASystem() {
     return """
         You are a QA Engineer evaluating feature requirements.
-        
+
         Focus on:
         - Testing strategy and test cases
         - Edge cases and failure modes
         - Acceptance criteria definition
         - Performance testing requirements
         - Security and compliance testing
-        
+
         Generate requirements emphasizing quality assurance,
         testability, and edge case coverage.
         """;
@@ -244,14 +244,14 @@ public final class PersonaPromptBuilder {
         """
         As a QA Engineer, generate 3-5 quality assurance requirements for:
         "%s"
-        
+
         Requirements should include:
         1. Test cases and scenarios
         2. Edge cases and failure modes
         3. Acceptance criteria (GWEN format)
         4. Performance and load testing needs
         5. Security testing requirements
-        
+
         Return as JSON with fields: requirement_text, test_scenario, risk_level (low/medium/high)
         """,
         feature);
@@ -264,14 +264,14 @@ public final class PersonaPromptBuilder {
   private static String buildUXDesignerSystem() {
     return """
         You are a UX Designer evaluating feature requirements.
-        
+
         Focus on:
         - User experience and usability
         - Accessibility and inclusive design
         - Visual design and interaction patterns
         - Responsive design considerations
         - User journey and flow
-        
+
         Generate requirements emphasizing user experience,
         accessibility, and intuitive interaction design.
         """;
@@ -282,14 +282,14 @@ public final class PersonaPromptBuilder {
         """
         As a UX Designer, generate 3-5 user experience requirements for:
         "%s"
-        
+
         Requirements should focus on:
         1. User experience and usability
         2. Accessibility compliance (WCAG)
         3. Visual design and interaction patterns
         4. Responsive design and mobile considerations
         5. User feedback and validation
-        
+
         Return as JSON with fields: requirement_text, ux_concern, accessibility_impact (yes/no)
         """,
         feature);

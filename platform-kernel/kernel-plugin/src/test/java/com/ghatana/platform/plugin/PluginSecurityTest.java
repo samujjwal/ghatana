@@ -5,7 +5,6 @@
 
 package com.ghatana.platform.plugin;
 
-import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -14,9 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Represents lightweight metadata about a pattern for querying and listing purposes.
- * 
+ *
  * <p>PatternMetadata is a lightweight projection of PatternSpecification containing
  * only queryable fields. Used for:
  * <ul>
@@ -17,7 +17,7 @@ import java.util.UUID;
  *   <li>Pattern catalog views showing status, timestamps, labels</li>
  *   <li>Quick status checks (isActive, isCompiled, isActivated)</li>
  * </ul>
- * 
+ *
  * @doc.pattern Value Object Pattern (immutable metadata), Projection Pattern (lightweight view)
  * @doc.compiler-phase Pattern Metadata (query projection for pattern catalog)
  * @doc.threading Thread-safe after construction (immutable value object)
@@ -27,7 +27,7 @@ import java.util.UUID;
  * @doc.serialization JSON serializable via Jackson annotations
  * @doc.apiNote Use for listing patterns without fetching full specifications
  * @doc.limitation No operator tree or runtime config; fetch PatternSpecification/DetectionPlan for full details
- * 
+ *
  * <h2>Metadata Fields</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -93,43 +93,43 @@ import java.util.UUID;
  * </table>
  */
 public class PatternMetadata {
-    
+
     @JsonProperty("id")
     private UUID id;
-    
+
     @JsonProperty("tenantId")
     private String tenantId;
-    
+
     @JsonProperty("name")
     private String name;
-    
+
     @JsonProperty("version")
     private int version;
-    
+
     @JsonProperty("description")
     private String description;
-    
+
     @JsonProperty("labels")
     private List<String> labels;
-    
+
     @JsonProperty("priority")
     private int priority;
-    
+
     @JsonProperty("status")
     private PatternStatus status;
-    
+
     @JsonProperty("createdAt")
     private Instant createdAt;
-    
+
     @JsonProperty("updatedAt")
     private Instant updatedAt;
-    
+
     @JsonProperty("activatedAt")
     private Instant activatedAt;
-    
+
     @JsonProperty("compiledAt")
     private Instant compiledAt;
-    
+
     @JsonProperty("metadata")
     private Map<String, Object> metadata;
 
@@ -138,7 +138,7 @@ public class PatternMetadata {
 
     // Default constructor for JSON deserialization
     public PatternMetadata() {}
-    
+
     // Builder pattern constructor
     public PatternMetadata(Builder builder) {
         this.id = builder.id;
@@ -156,7 +156,7 @@ public class PatternMetadata {
         this.metadata = builder.metadata;
         this.eventTypes = builder.eventTypes;
     }
-    
+
     // Getters
     public UUID getId() { return id; }
     public String getTenantId() { return tenantId; }
@@ -192,7 +192,7 @@ public class PatternMetadata {
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private UUID id;
         private String tenantId;
@@ -228,34 +228,34 @@ public class PatternMetadata {
             return new PatternMetadata(this);
         }
     }
-    
+
     /**
      * Check if the pattern is currently active.
-     * 
+     *
      * @return true if the pattern is active
      */
     public boolean isActive() {
         return status == PatternStatus.ACTIVE;
     }
-    
+
     /**
      * Check if the pattern has been compiled.
-     * 
+     *
      * @return true if the pattern has been compiled
      */
     public boolean isCompiled() {
         return compiledAt != null;
     }
-    
+
     /**
      * Check if the pattern has been activated.
-     * 
+     *
      * @return true if the pattern has been activated
      */
     public boolean isActivated() {
         return activatedAt != null;
     }
-    
+
     @Override
     public String toString() {
         return "PatternMetadata{" +
@@ -268,4 +268,3 @@ public class PatternMetadata {
                 '}';
     }
 }
-

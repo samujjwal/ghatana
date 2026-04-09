@@ -14,7 +14,7 @@ class NotNullValidatorTest {
     @Test
     void testValidateNull() {
         ValidationResult result = validator.validate(null, "field");
-        
+
         assertFalse(result.isValid());
         assertEquals(1, result.getErrors().size());
         assertEquals("NOT_NULL", result.getErrors().get(0).getCode());
@@ -23,7 +23,7 @@ class NotNullValidatorTest {
     @Test
     void testValidateNonNull() {
         ValidationResult result = validator.validate("value", "field");
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }
@@ -37,7 +37,7 @@ class NotNullValidatorTest {
     void testSingleton() {
         NotNullValidator instance1 = NotNullValidator.instance();
         NotNullValidator instance2 = NotNullValidator.instance();
-        
+
         assertSame(instance1, instance2);
     }
 }

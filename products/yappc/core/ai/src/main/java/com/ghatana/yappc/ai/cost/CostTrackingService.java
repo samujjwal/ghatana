@@ -21,7 +21,7 @@ public class CostTrackingService {
     private final Map<String, UserCostState> userCosts = new ConcurrentHashMap<>();
 
     public record ModelPricing(double inputCostPer1k, double outputCostPer1k) {}
-    
+
     public record UsageRecord(
         String model,
         int inputTokens,

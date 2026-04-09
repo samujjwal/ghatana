@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * LakehouseConnector connector = new LakehouseConnector(
  *         metricsCollector);

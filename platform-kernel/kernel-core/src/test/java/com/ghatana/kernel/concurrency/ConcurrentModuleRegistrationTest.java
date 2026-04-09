@@ -162,7 +162,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
         TestModule moduleA = new TestModule("module-a", "1.0.0");
         TestModule moduleB = new TestModule("module-b", "1.0.0");
         TestModule moduleC = new TestModule("module-c", "1.0.0");
-        
+
         moduleC.addDependency(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleB.addDependency(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false));
 
@@ -277,7 +277,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
         // THEN: All modules registered, capability count is correct
         assertThat(successCount.get()).isEqualTo(moduleCount);
         assertThat(registry.getAllModules()).hasSize(moduleCount);
-        
+
         // Multiple modules can provide the same capability
         List<KernelModule> modulesWithCapability = registry.getModulesByCapability(
             createTestCapability(capabilityId)

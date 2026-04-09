@@ -79,28 +79,28 @@ import java.util.Set;
  * @doc.pattern Port
  */
 public interface OrganizationalAgent {
-    
+
     /**
      * Gets the organizational role of this agent.
      *
      * @return the role (never null)
      */
     Role getRole();
-    
+
     /**
      * Gets the decision-making authority of this agent.
      *
      * @return the authority (never null)
      */
     Authority getAuthority();
-    
+
     /**
      * Gets the escalation path for decisions beyond this agent's authority.
      *
      * @return the escalation path (may be empty)
      */
     EscalationPath getEscalationPath();
-    
+
     /**
      * Checks if this agent has authority for a given decision.
      *
@@ -110,7 +110,7 @@ public interface OrganizationalAgent {
     default boolean hasAuthority(String decisionType) {
         return getAuthority().canDecide(decisionType);
     }
-    
+
     /**
      * Checks if this agent is in a leadership layer.
      *
@@ -119,7 +119,7 @@ public interface OrganizationalAgent {
     default boolean isLeadership() {
         return getRole().isLeadership();
     }
-    
+
     /**
      * Handles an event based on this agent's role and authority.
      *

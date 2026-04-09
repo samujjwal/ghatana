@@ -12,7 +12,6 @@ import io.activej.inject.annotation.Provides;
 import io.activej.inject.annotation.Inject;
 import io.activej.inject.module.AbstractModule;
 import io.activej.launcher.Launcher;
-import io.activej.promise.Promise;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -20,44 +19,42 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Canvas AI Server
- * 
+ *
  * ActiveJ/gRPC server for Canvas AI operations.
  * Hosts validation and code generation services.
- * 
+ *
  * @doc.type class
  * @doc.purpose Main server for Canvas AI backend
  * @doc.layer platform
  * @doc.pattern Server
  */
 public class CanvasAIServer extends Launcher {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(CanvasAIServer.class);
     private static final int PORT = 50051;  // Standard gRPC port
-    
+
     private Server server;
-    
+
     @Inject
     private CanvasAIServiceImpl canvasAIService;
-    
+
     @Override
     protected void run() throws Exception {
         logger.info("Starting Canvas AI Server on port {}", PORT);
-        
+
         // Build gRPC server with injected service
         server = ServerBuilder.forPort(PORT)
             .addService(canvasAIService)
             .build()
             .start();
-        
+
         logger.info("Canvas AI Server started successfully on port {}", PORT);
-        
+
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Shutting down Canvas AI Server...");
@@ -67,18 +64,18 @@ public class CanvasAIServer extends Launcher {
                 logger.error("Error during shutdown", e);
             }
         }));
-        
+
         // Wait for termination
         server.awaitTermination();
     }
-    
+
     private void stopServer() throws InterruptedException {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             logger.info("Canvas AI Server shut down successfully");
         }
     }
-    
+
     @Override
     protected io.activej.inject.module.Module getModule() {
         return new AbstractModule() {
@@ -86,7 +83,7 @@ public class CanvasAIServer extends Launcher {
             MeterRegistry meterRegistry() {
                 return new SimpleMeterRegistry();
             }
-            
+
             @Provides
             MetricsCollector metricsCollector(MeterRegistry registry) {
                 return new SimpleMetricsCollector(registry);
@@ -101,12 +98,12 @@ public class CanvasAIServer extends Launcher {
             IDnsClient dnsClient(Eventloop eventloop) {
                 return DnsClient.builder(eventloop, InetAddress.getLoopbackAddress()).build();
             }
-            
+
             @Provides
             HttpClient httpClient(Eventloop eventloop, IDnsClient dnsClient) {
                 return HttpClient.create(eventloop, dnsClient);
             }
-            
+
             @Provides
             LLMConfiguration openAIConfig() {
                 String apiKey = System.getenv("OPENAI_API_KEY");
@@ -122,7 +119,7 @@ public class CanvasAIServer extends Launcher {
                     .maxRetries(3)
                     .build();
             }
-            
+
             @Provides
             LLMConfiguration anthropicConfig() {
                 String apiKey = System.getenv("ANTHROPIC_API_KEY");
@@ -138,7 +135,7 @@ public class CanvasAIServer extends Launcher {
                     .maxRetries(3)
                     .build();
             }
-            
+
             @Provides
             ToolAwareCompletionService openAIProvider(
                     LLMConfiguration openAIConfig,
@@ -146,7 +143,7 @@ public class CanvasAIServer extends Launcher {
                     MetricsCollector metricsCollector) {
                 return new ToolAwareOpenAICompletionService(openAIConfig, httpClient, metricsCollector);
             }
-            
+
             @Provides
             ToolAwareCompletionService anthropicProvider(
                     LLMConfiguration anthropicConfig,
@@ -154,7 +151,7 @@ public class CanvasAIServer extends Launcher {
                     MetricsCollector metricsCollector) {
                 return new ToolAwareAnthropicCompletionService(anthropicConfig, httpClient, metricsCollector);
             }
-            
+
             @Provides
             LLMGateway llmGateway(
                     ToolAwareCompletionService openAIProvider,
@@ -167,24 +164,24 @@ public class CanvasAIServer extends Launcher {
                     .metrics(metricsCollector)
                     .build();
             }
-            
+
             @Provides
             PromptTemplateManager promptTemplateManager() {
                 return new PromptTemplateManager();
             }
-            
+
             @Provides
             CanvasValidationService canvasValidationService(MetricsCollector metrics) {
                 return new CanvasValidationService(metrics);
             }
-            
+
             @Provides
             CanvasGenerationService canvasGenerationService(LLMGateway llmGateway,
                                                            PromptTemplateManager promptTemplates,
                                                            MetricsCollector metrics) {
                 return new CanvasGenerationService(llmGateway, promptTemplates, metrics);
             }
-            
+
             @Provides
             CanvasAIServiceImpl canvasAIService(CanvasValidationService validationService,
                                                CanvasGenerationService generationService,
@@ -193,7 +190,7 @@ public class CanvasAIServer extends Launcher {
             }
         };
     }
-    
+
     public static void main(String[] args) throws Exception {
         CanvasAIServer launcher = new CanvasAIServer();
         launcher.launch(args);

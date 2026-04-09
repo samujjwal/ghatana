@@ -5,14 +5,13 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
-import com.ghatana.platform.testing.activej.EventloopTestUtil;
 
 import java.time.Duration;
 
 /**
  * JUnit 5 extension that manages an ActiveJ Eventloop thread per test.
  * Injects an {@link EventloopTestUtil.EventloopRunner} parameter when requested.
- * 
+ *
  * @doc.type class
  * @doc.purpose JUnit 5 extension for managing ActiveJ Eventloop lifecycle per test
  * @doc.layer core

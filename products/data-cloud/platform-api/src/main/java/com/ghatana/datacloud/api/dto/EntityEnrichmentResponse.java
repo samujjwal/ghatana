@@ -47,7 +47,7 @@ public record EntityEnrichmentResponse(
 
     /**
      * Gets field name being enriched.
-     * 
+     *
      * @return Field name
      */
     public String fieldName() {
@@ -56,7 +56,7 @@ public record EntityEnrichmentResponse(
 
     /**
      * Gets suggested value for field.
-     * 
+     *
      * @return Suggested value
      */
     public Object suggestedValue() {
@@ -65,7 +65,7 @@ public record EntityEnrichmentResponse(
 
     /**
      * Gets reason for suggestion.
-     * 
+     *
      * @return Explanation text
      */
     public String reason() {
@@ -74,7 +74,7 @@ public record EntityEnrichmentResponse(
 
     /**
      * Gets confidence score (0.0-1.0).
-     * 
+     *
      * @return Confidence between 0 and 1
      */
     public double confidence() {
@@ -83,7 +83,7 @@ public record EntityEnrichmentResponse(
 
     /**
      * Gets whether suggestion should be auto-applied (confidence >= 0.9).
-     * 
+     *
      * @return true if high confidence, false otherwise
      */
     public boolean shouldAutoApply() {

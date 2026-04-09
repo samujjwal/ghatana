@@ -5,7 +5,7 @@ import com.ghatana.pattern.api.exception.PatternValidationException;
 
 /**
  * Service Provider Interface (SPI) for pattern detection operators.
- * 
+ *
  * <p>This interface defines the contract for operators that can be used in pattern detection.
  * Operators are responsible for:
  * <ul>
@@ -13,17 +13,17 @@ import com.ghatana.pattern.api.exception.PatternValidationException;
  *   <li><b>Validation</b>: Compile-time validation of operator specifications</li>
  *   <li><b>Type Registry</b>: Registration with OperatorRegistry for discovery</li>
  * </ul>
- * 
+ *
  * <p><b>Important</b>: This SPI is for <b>compilation-time</b> operations only.
  * Actual execution logic is handled by the runtime engine (not part of this interface).
- * 
+ *
  * @doc.pattern Service Provider Interface (SPI), Strategy Pattern (pluggable operators)
  * @doc.compiler-phase Operator SPI (validation and metadata for compilation)
  * @doc.threading Thread-safe (stateless operators preferred)
  * @doc.performance O(1) metadata access; O(n) validation where n=operand count
  * @doc.apiNote Implement this interface to create custom operators; register with OperatorRegistry
  * @doc.limitation No runtime execution in SPI; see runtime engine for execution logic
- * 
+ *
  * <h2>Built-in Operator Types</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -81,39 +81,39 @@ import com.ghatana.pattern.api.exception.PatternValidationException;
  *     <td>Windowed aggregation</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Design Reference:</b>
  * This SPI implements the Unified Operator Model from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Unified Operator Model" for operator integration.
  */
 public interface Operator {
-    
+
     /**
      * Get the operator type identifier.
-     * 
+     *
      * @return the operator type (e.g., "SEQ", "AND", "OR", "NOT", "WITHIN", "REPEAT", "WINDOW", "UNTIL")
      */
     String getType();
-    
+
     /**
      * Get metadata about this operator for validation and compilation.
-     * 
+     *
      * @return the operator metadata
      */
     OperatorMetadata getMetadata();
-    
+
     /**
      * Validate the operator specification during compilation.
-     * 
+     *
      * @param spec the operator specification to validate
      * @param context the validation context
      * @throws PatternValidationException if validation fails
      */
     void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException;
-    
+
     /**
      * Check if this operator supports the given specification.
-     * 
+     *
      * @param spec the operator specification
      * @return true if the operator supports the specification
      */
@@ -121,8 +121,3 @@ public interface Operator {
         return getType().equals(spec.getType());
     }
 }
-
-
-
-
-

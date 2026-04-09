@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * Standard HTTP response wrapper for consistent API responses.
- * 
+ *
  * Provides a unified response format across all endpoints.
  *
  * @param <T> the type of the response data
@@ -29,47 +29,47 @@ public record HttpResponse<T>(
         @NotNull Instant timestamp,
         @Nullable Map<String, Object> meta
 ) {
-    
+
     private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-    
+
     /**
      * Create a successful response with data.
      */
     public static <T> HttpResponse<T> ok(@NotNull T data) {
         return new HttpResponse<>(true, data, null, Instant.now(), null);
     }
-    
+
     /**
      * Create a successful response with data and metadata.
      */
     public static <T> HttpResponse<T> ok(@NotNull T data, @NotNull Map<String, Object> meta) {
         return new HttpResponse<>(true, data, null, Instant.now(), meta);
     }
-    
+
     /**
      * Create a successful response with no data.
      */
     public static <Void> HttpResponse<Void> ok() {
         return new HttpResponse<>(true, null, null, Instant.now(), null);
     }
-    
+
     /**
      * Create an error response.
      */
     public static <T> HttpResponse<T> error(@NotNull String code, @NotNull String message) {
         return new HttpResponse<>(false, null, new ErrorInfo(code, message, null), Instant.now(), null);
     }
-    
+
     /**
      * Create an error response with details.
      */
     public static <T> HttpResponse<T> error(
-            @NotNull String code, 
-            @NotNull String message, 
+            @NotNull String code,
+            @NotNull String message,
             @Nullable Map<String, Object> details) {
         return new HttpResponse<>(false, null, new ErrorInfo(code, message, details), Instant.now(), null);
     }
-    
+
     /**
      * Create an error response from an exception.
      */
@@ -78,42 +78,42 @@ public record HttpResponse<T>(
         String message = throwable.getMessage() != null ? throwable.getMessage() : "An error occurred";
         return error(code, message);
     }
-    
+
     /**
      * Create a not found error response.
      */
     public static <T> HttpResponse<T> notFound(@NotNull String message) {
         return error("NOT_FOUND", message);
     }
-    
+
     /**
      * Create a bad request error response.
      */
     public static <T> HttpResponse<T> badRequest(@NotNull String message) {
         return error("BAD_REQUEST", message);
     }
-    
+
     /**
      * Create an unauthorized error response.
      */
     public static <T> HttpResponse<T> unauthorized(@NotNull String message) {
         return error("UNAUTHORIZED", message);
     }
-    
+
     /**
      * Create a forbidden error response.
      */
     public static <T> HttpResponse<T> forbidden(@NotNull String message) {
         return error("FORBIDDEN", message);
     }
-    
+
     /**
      * Create an internal server error response.
      */
     public static <T> HttpResponse<T> internalError(@NotNull String message) {
         return error("INTERNAL_ERROR", message);
     }
-    
+
     /**
      * Serialize this response to JSON.
      */
@@ -124,7 +124,7 @@ public record HttpResponse<T>(
             return "{\"success\":false,\"error\":{\"code\":\"SERIALIZATION_ERROR\",\"message\":\"Failed to serialize response\"}}";
         }
     }
-    
+
     /**
      * Error information for error responses.
      */

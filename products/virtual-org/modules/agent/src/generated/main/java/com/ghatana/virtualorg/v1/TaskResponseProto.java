@@ -56,7 +56,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       taskId_ = s;
@@ -72,7 +72,7 @@ private static final long serialVersionUID = 0L;
       getTaskIdBytes() {
     java.lang.Object ref = taskId_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       taskId_ = b;
@@ -106,7 +106,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       result_ = s;
@@ -122,7 +122,7 @@ private static final long serialVersionUID = 0L;
       getResultBytes() {
     java.lang.Object ref = result_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       result_ = b;
@@ -145,7 +145,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       errorMessage_ = s;
@@ -161,7 +161,7 @@ private static final long serialVersionUID = 0L;
       getErrorMessageBytes() {
     java.lang.Object ref = errorMessage_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       errorMessage_ = b;
@@ -665,7 +665,7 @@ private static final long serialVersionUID = 0L;
         getTaskIdBytes() {
       java.lang.Object ref = taskId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         taskId_ = b;
@@ -769,7 +769,7 @@ private static final long serialVersionUID = 0L;
         getResultBytes() {
       java.lang.Object ref = result_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         result_ = b;
@@ -841,7 +841,7 @@ private static final long serialVersionUID = 0L;
         getErrorMessageBytes() {
       java.lang.Object ref = errorMessage_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         errorMessage_ = b;
@@ -996,7 +996,7 @@ private static final long serialVersionUID = 0L;
      * <code>.com.ghatana.virtualorg.v1.AgentMetricsProto metrics = 5;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.ghatana.virtualorg.v1.AgentMetricsProto, com.ghatana.virtualorg.v1.AgentMetricsProto.Builder, com.ghatana.virtualorg.v1.AgentMetricsProtoOrBuilder> 
+        com.ghatana.virtualorg.v1.AgentMetricsProto, com.ghatana.virtualorg.v1.AgentMetricsProto.Builder, com.ghatana.virtualorg.v1.AgentMetricsProtoOrBuilder>
         getMetricsFieldBuilder() {
       if (metricsBuilder_ == null) {
         metricsBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
@@ -1071,4 +1071,3 @@ private static final long serialVersionUID = 0L;
   }
 
 }
-

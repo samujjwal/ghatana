@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Composition engine for generating multi-module projects.
- * 
+ *
  * Handles module dependency resolution, integration generation, and lifecycle hooks.
- * 
+ *
  * @doc.type class
  * @doc.purpose Composition engine for universal multi-module project generation
  * @doc.layer platform
@@ -55,7 +55,7 @@ public class CompositionEngine {
      * @param variables global variables for generation
      * @return composition generation result
      * @throws CompositionException if generation fails
-     * 
+     *
      * @doc.purpose Generate multi-module project from composition
      * @doc.layer platform
      */
@@ -63,14 +63,14 @@ public class CompositionEngine {
             CompositionDefinition composition,
             Path outputPath,
             Map<String, Object> variables) throws CompositionException {
-        
+
         log.info("Generating composition '{}' to: {}", composition.metadata().name(), outputPath);
 
         try {
             Files.createDirectories(outputPath);
 
             // Resolve module dependencies
-            List<PackMetadata.ModuleDefinition> orderedModules = 
+            List<PackMetadata.ModuleDefinition> orderedModules =
                 resolveModuleDependencies(composition.modules());
 
             // Execute pre-generation hooks
@@ -96,7 +96,7 @@ public class CompositionEngine {
             if (composition.integrations() != null) {
                 for (PackMetadata.IntegrationDefinition integration : composition.integrations()) {
                     if (shouldGenerateIntegration(integration, moduleOutputs, variables)) {
-                        IntegrationResult result = 
+                        IntegrationResult result =
                             generateIntegration(integration, outputPath, moduleOutputs, variables);
                         integrationResults.add(result);
                     }
@@ -127,7 +127,7 @@ public class CompositionEngine {
      */
     private List<PackMetadata.ModuleDefinition> resolveModuleDependencies(
             List<PackMetadata.ModuleDefinition> modules) throws CompositionException {
-        
+
         Map<String, PackMetadata.ModuleDefinition> moduleMap = new HashMap<>();
         for (PackMetadata.ModuleDefinition module : modules) {
             moduleMap.put(module.id(), module);
@@ -153,7 +153,7 @@ public class CompositionEngine {
             Set<String> visited,
             Set<String> visiting,
             List<PackMetadata.ModuleDefinition> sorted) throws CompositionException {
-        
+
         if (visiting.contains(module.id())) {
             throw new CompositionException("Circular dependency detected involving module: " + module.id());
         }
@@ -185,7 +185,7 @@ public class CompositionEngine {
     private boolean isModuleEnabled(
             PackMetadata.ModuleDefinition module,
             Map<String, Object> variables) {
-        
+
         if (module.enabled() != null && !module.enabled()) {
             return false;
         }
@@ -204,7 +204,7 @@ public class CompositionEngine {
             PackMetadata.ModuleDefinition module,
             Path outputPath,
             Map<String, Object> globalVariables) throws PackException {
-        
+
         log.info("Generating module '{}' using pack '{}'", module.id(), module.pack());
 
         // Load pack
@@ -219,7 +219,7 @@ public class CompositionEngine {
 
         // Generate module
         Path modulePath = outputPath.resolve(module.path());
-        PackEngine.GenerationResult result = 
+        PackEngine.GenerationResult result =
             packEngine.generateFromPack(pack, modulePath, mergedVariables);
 
         return new ModuleResult(
@@ -239,9 +239,9 @@ public class CompositionEngine {
             PackMetadata.IntegrationDefinition integration,
             Map<String, Map<String, String>> moduleOutputs,
             Map<String, Object> variables) {
-        
+
         // Check if both modules exist
-        if (!moduleOutputs.containsKey(integration.from()) || 
+        if (!moduleOutputs.containsKey(integration.from()) ||
             !moduleOutputs.containsKey(integration.to())) {
             return false;
         }
@@ -262,8 +262,8 @@ public class CompositionEngine {
             Path outputPath,
             Map<String, Map<String, String>> moduleOutputs,
             Map<String, Object> variables) {
-        
-        log.info("Generating integration '{}' from '{}' to '{}'", 
+
+        log.info("Generating integration '{}' from '{}' to '{}'",
             integration.id(), integration.from(), integration.to());
 
         List<String> generatedFiles = new ArrayList<>();
@@ -319,7 +319,7 @@ public class CompositionEngine {
             List<String> hooks,
             Path workingDir,
             Map<String, Object> variables) {
-        
+
         if (hooks == null || hooks.isEmpty()) {
             return;
         }
@@ -338,7 +338,7 @@ public class CompositionEngine {
     /**
      * Evaluate a condition expression.
      * Supports simple variable checks and boolean expressions.
-     * 
+     *
      * @param condition condition expression (e.g., "enabled", "!disabled", "env == 'prod'")
      * @param variables variable context
      * @return true if condition evaluates to true
@@ -347,14 +347,14 @@ public class CompositionEngine {
         if (condition == null || condition.isBlank()) {
             return true;
         }
-        
+
         String trimmed = condition.trim();
-        
+
         // Handle negation
         if (trimmed.startsWith("!")) {
             return !evaluateCondition(trimmed.substring(1), variables);
         }
-        
+
         // Handle equality checks
         if (trimmed.contains("==")) {
             String[] parts = trimmed.split("==");
@@ -364,7 +364,7 @@ public class CompositionEngine {
                 return left.equals(right);
             }
         }
-        
+
         // Handle inequality checks
         if (trimmed.contains("!=")) {
             String[] parts = trimmed.split("!=");
@@ -374,7 +374,7 @@ public class CompositionEngine {
                 return !left.equals(right);
             }
         }
-        
+
         // Simple variable check
         Object value = variables.get(trimmed);
         if (value instanceof Boolean) {
@@ -385,7 +385,7 @@ public class CompositionEngine {
         }
         return value != null;
     }
-    
+
     /**
      * Resolve a variable value from the context.
      */
@@ -397,7 +397,7 @@ public class CompositionEngine {
     /**
      * Resolve pack path from pack name.
      * Searches in standard pack locations.
-     * 
+     *
      * @param packName name of the pack
      * @return resolved pack path
      */
@@ -409,14 +409,14 @@ public class CompositionEngine {
             Path.of(".yappc", "packs", packName),
             Path.of(System.getProperty("user.home"), ".yappc", "packs", packName)
         );
-        
+
         for (Path path : searchPaths) {
             if (Files.exists(path) && Files.isDirectory(path)) {
                 log.debug("Resolved pack '{}' to: {}", packName, path);
                 return path;
             }
         }
-        
+
         // Default to packs directory
         Path defaultPath = Path.of("packs", packName);
         log.warn("Pack '{}' not found in standard locations, using default: {}", packName, defaultPath);
@@ -425,7 +425,7 @@ public class CompositionEngine {
 
     /**
      * Load integration template from templates directory.
-     * 
+     *
      * @param templateName name of the template file
      * @return template content
      */
@@ -437,14 +437,14 @@ public class CompositionEngine {
                 Path.of("core", "src", "main", "resources", "templates", "integrations", templateName),
                 Path.of(".yappc", "templates", "integrations", templateName)
             );
-            
+
             for (Path path : templatePaths) {
                 if (Files.exists(path)) {
                     log.debug("Loading integration template from: {}", path);
                     return Files.readString(path);
                 }
             }
-            
+
             log.warn("Integration template not found: {}", templateName);
             return "";
         } catch (IOException e) {
@@ -455,7 +455,7 @@ public class CompositionEngine {
 
     /**
      * Resolve target path for integration template based on integration type.
-     * 
+     *
      * @param integration integration definition
      * @param templateName template file name
      * @return resolved target path
@@ -463,9 +463,9 @@ public class CompositionEngine {
     private String resolveIntegrationTargetPath(
             PackMetadata.IntegrationDefinition integration,
             String templateName) {
-        
+
         String basePath = "integrations/" + integration.id();
-        
+
         // Customize path based on integration type
         return switch (integration.type()) {
             case API_CLIENT -> basePath + "/api/" + templateName;
@@ -482,7 +482,7 @@ public class CompositionEngine {
     private int calculateTotalFiles(
             List<ModuleResult> moduleResults,
             List<IntegrationResult> integrationResults) {
-        
+
         int total = 0;
         for (ModuleResult result : moduleResults) {
             total += result.filesGenerated();

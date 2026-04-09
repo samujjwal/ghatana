@@ -43,10 +43,10 @@ public class FinanceAIGovernanceTest {
 
         // Create fraud detection agent with injector-managed inference wiring
         fraudDetectionAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
-        
+
         // Register fraud detection agent
         orchestrator.registerAgent(fraudDetectionAgent);
-        
+
         // Set up approved model
         ModelApprovalRecord approval = new ModelApprovalRecord();
         approval.setModelId("fraud-detection-v2");
@@ -68,7 +68,7 @@ public class FinanceAIGovernanceTest {
     @Test
     public void testModelApproval_ApprovedModel_ShouldAllow() {
         ModelGovernanceService.ModelApproval approval = governance.getModelApproval("fraud-detection-v2");
-        
+
         assertNotNull(approval);
         assertTrue(approval.isApproved());
         assertEquals("system", approval.getApprover());
@@ -78,26 +78,26 @@ public class FinanceAIGovernanceTest {
     @Test
     public void testModelUsage_UnapprovedModel_ShouldThrow() {
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
-            "req-1", 
-            "detect_fraud", 
-            Map.of("amount", 1000), 
+            "req-1",
+            "detect_fraud",
+            Map.of("amount", 1000),
             Map.of()
         );
-        
+
         assertThrows(ModelNotApprovedException.class, () -> {
             governance.validateModelUsage("unapproved-model", request);
         });
     }
-    
+
     @Test
     public void testModelUsage_ApprovedModel_ShouldSucceed() {
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
-            "req-1", 
-            "detect_fraud", 
-            Map.of("amount", 1000), 
+            "req-1",
+            "detect_fraud",
+            Map.of("amount", 1000),
             Map.of()
         );
-        
+
         assertDoesNotThrow(() -> {
             governance.validateModelUsage("fraud-detection-v2", request);
         });
@@ -111,27 +111,27 @@ public class FinanceAIGovernanceTest {
             "currency", "USD",
             "location", "NEW_YORK"
         );
-        
+
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             UUID.randomUUID().toString(),
             "detect_fraud",
             transactionData,
             Map.of("tenant_id", "tenant-1")
         );
-        
+
         AgentOrchestrator.KernelAgent agent = orchestrator.getAgent("finance.fraud-detection");
         assertNotNull(agent);
-        
+
         AgentOrchestrator.AgentResponse response = agent.execute(request);
-        
+
         assertTrue(response.isSuccess());
         assertNotNull(response.getResult());
-        
+
         FraudDetectionResult result = (FraudDetectionResult) response.getResult();
         assertFalse(result.isFraudulent());
         assertEquals("LOW", result.getRiskLevel());
     }
-    
+
     @Test
     public void testFraudDetection_HighRiskTransaction_ShouldDetect() {
         Map<String, Object> transactionData = Map.of(
@@ -140,25 +140,25 @@ public class FinanceAIGovernanceTest {
             "currency", "BTC",
             "location", "UNKNOWN"
         );
-        
+
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             UUID.randomUUID().toString(),
             "detect_fraud",
             transactionData,
             Map.of("tenant_id", "tenant-1")
         );
-        
+
         AgentOrchestrator.KernelAgent agent = orchestrator.getAgent("finance.fraud-detection");
         AgentOrchestrator.AgentResponse response = agent.execute(request);
-        
+
         assertTrue(response.isSuccess());
-        
+
         FraudDetectionResult result = (FraudDetectionResult) response.getResult();
         assertTrue(result.isFraudulent());
         assertEquals("HIGH", result.getRiskLevel());
         assertTrue(result.getFraudScore() > 0.8);
     }
-    
+
     @Test
     public void testAutonomyManager_HighValueTransaction_RequiresReview() {
         Map<String, Object> transactionData = Map.of(
@@ -166,20 +166,20 @@ public class FinanceAIGovernanceTest {
             "amount", 150000.0,
             "currency", "USD"
         );
-        
+
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             UUID.randomUUID().toString(),
             "detect_fraud",
             transactionData,
             Map.of("tenant_id", "tenant-1", "amount", 150000.0)
         );
-        
+
         AgentOrchestrator.KernelAgent agent = orchestrator.getAgent("finance.fraud-detection");
-        
+
         boolean requiresReview = autonomyManager.requiresHumanReview(request, agent);
         assertTrue(requiresReview, "High-value transactions should require human review");
     }
-    
+
     @Test
     public void testAutonomyManager_LowValueTransaction_NoReviewRequired() {
         Map<String, Object> transactionData = Map.of(
@@ -187,38 +187,38 @@ public class FinanceAIGovernanceTest {
             "amount", 500.0,
             "currency", "USD"
         );
-        
+
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             UUID.randomUUID().toString(),
             "detect_fraud",
             transactionData,
             Map.of("tenant_id", "tenant-1", "amount", 500.0)
         );
-        
+
         AgentOrchestrator.KernelAgent agent = orchestrator.getAgent("finance.fraud-detection");
-        
+
         boolean requiresReview = autonomyManager.requiresHumanReview(request, agent);
         assertFalse(requiresReview, "Low-value transactions should not require human review");
     }
-    
+
     @Test
     public void testModelPerformanceRecording() {
-        ModelGovernanceService.ModelPerformanceMetrics metrics = 
+        ModelGovernanceService.ModelPerformanceMetrics metrics =
             new ModelGovernanceService.ModelPerformanceMetrics(
                 0.92,  // confidence
                 0.96,  // accuracy
                 45L,   // latency
                 Map.of("test_run", 1.0)
             );
-        
+
         assertDoesNotThrow(() -> {
             governance.recordModelPerformance("fraud-detection-v2", metrics);
         });
     }
-    
+
     @Test
     public void testModelRegistration() {
-        ModelGovernanceService.ModelRegistration registration = 
+        ModelGovernanceService.ModelRegistration registration =
             new ModelGovernanceService.ModelRegistration(
                 "new-fraud-model-v3",
                 "Advanced Fraud Detection Model",
@@ -226,18 +226,18 @@ public class FinanceAIGovernanceTest {
                 "classification",
                 Map.of("sox_compliant", true, "accuracy", 0.97)
             );
-        
+
         assertDoesNotThrow(() -> {
             governance.registerModel(registration);
         });
-        
+
         ModelGovernanceService.ModelMetadata metadata = governance.getModelMetadata("new-fraud-model-v3");
         assertNotNull(metadata);
         assertEquals("new-fraud-model-v3", metadata.getModelId());
         assertEquals("Advanced Fraud Detection Model", metadata.getName());
         assertEquals("classification", modelRepository.findByModelId("new-fraud-model-v3").getType());
     }
-    
+
     @Test
     public void testSOXComplianceValidation() {
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
@@ -246,7 +246,7 @@ public class FinanceAIGovernanceTest {
             Map.of("report_type", "quarterly"),
             Map.of()
         );
-        
+
         // Should throw because model lacks SOX compliance for financial operations
         assertThrows(ModelNotApprovedException.class, () -> {
             governance.validateModelUsage("fraud-detection-v2", request);

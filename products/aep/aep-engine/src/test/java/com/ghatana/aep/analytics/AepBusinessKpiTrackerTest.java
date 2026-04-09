@@ -251,4 +251,3 @@ class AepBusinessKpiTrackerTest {
         tracker.printReport(TENANT);
     }
 }
-

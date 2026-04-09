@@ -663,7 +663,7 @@ public class DependencyGraphExtractor {
             String license,
             long size,
             Map<String, String> metadata) {
-        
+
 
     public enum DependencyPhase {
         COMPILE,

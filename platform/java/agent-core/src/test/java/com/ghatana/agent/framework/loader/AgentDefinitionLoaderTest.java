@@ -367,10 +367,10 @@ class AgentDefinitionLoaderTest {
                         style: prose
                     """;
             AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml);
-            
+
             assertThat(def.getInputContract()).isNotNull();
             assertThat(def.getInputContract().typeName()).isEqualTo("RequestEvent");
-            
+
             assertThat(def.getOutputContract()).isNotNull();
             assertThat(def.getOutputContract().uiAst()).isNotNull();
             assertThat(def.getOutputContract().uiAst()).containsEntry("component", "Markdown");

@@ -6,7 +6,6 @@ import com.ghatana.datacloud.entity.observability.Span;
 import com.ghatana.datacloud.entity.observability.SpanStatus;
 import com.ghatana.datacloud.entity.observability.TraceContext;
 import io.activej.promise.Promise;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import org.slf4j.Logger;

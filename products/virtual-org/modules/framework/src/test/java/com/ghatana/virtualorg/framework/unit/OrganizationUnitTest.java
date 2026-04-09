@@ -4,7 +4,6 @@ import com.ghatana.platform.types.identity.Identifier;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.virtualorg.framework.AbstractOrganization;
-import com.ghatana.virtualorg.framework.DepartmentType;
 import com.ghatana.virtualorg.framework.event.EventPublisher;
 import io.activej.eventloop.Eventloop;
 import org.junit.jupiter.api.BeforeEach;

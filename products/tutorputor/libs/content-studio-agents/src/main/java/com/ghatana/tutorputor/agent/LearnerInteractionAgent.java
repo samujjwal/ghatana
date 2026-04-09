@@ -9,16 +9,14 @@ import com.ghatana.agent.framework.memory.Preference;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Learner Interaction Agent implementing GAA lifecycle for adaptive tutoring.
- * 
+ *
  * <p>This agent handles real-time learner interactions:
  * <ul>
  *   <li><b>PERCEIVE</b>: Understand learner's action, context, and state</li>
@@ -27,7 +25,7 @@ import java.util.Map;
  *   <li><b>CAPTURE</b>: Record interaction and update learner model</li>
  *   <li><b>REFLECT</b>: Identify learning patterns and adjust strategy</li>
  * </ul>
- * 
+ *
  * <p><b>Adaptive Features:</b>
  * <ul>
  *   <li>Real-time performance tracking</li>
@@ -60,7 +58,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
 
     /**
      * Phase 1: PERCEIVE - Understands the learner's action and context.
-     * 
+     *
      * <p>Analysis includes:
      * <ul>
      *   <li>Understanding the action type (answer, hint request, navigation)</li>
@@ -74,20 +72,20 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
     protected LearnerAction perceive(
             @NotNull LearnerAction action,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().info("PERCEIVE: Learner {} performed {} on topic {}",
             action.learnerId(), action.actionType(), action.topicId());
-        
+
         // Validate action
         validateAction(action);
-        
+
         // Enrich action with learner state
         return enrichWithLearnerState(action, context);
     }
 
     /**
      * Phase 3: ACT - Delivers the tutoring response to the learner.
-     * 
+     *
      * <p>Actions include:
      * <ul>
      *   <li>Formatting response for delivery</li>
@@ -101,22 +99,22 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
     protected Promise<TutoringResponse> act(
             @NotNull TutoringResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().info("ACT: Delivering {} response with difficulty {}",
             response.responseType(), response.adjustedDifficulty());
-        
+
         // Record action metrics
-        context.recordMetric("tutorputor.interaction.response_type", 
+        context.recordMetric("tutorputor.interaction.response_type",
             responseTypeToValue(response.responseType()));
-        context.recordMetric("tutorputor.interaction.difficulty", 
+        context.recordMetric("tutorputor.interaction.difficulty",
             difficultyToValue(response.adjustedDifficulty()));
-        
+
         return Promise.of(response);
     }
 
     /**
      * Phase 4: CAPTURE - Records the interaction and updates learner model.
-     * 
+     *
      * <p>Captures:
      * <ul>
      *   <li>Interaction episode with full context</li>
@@ -131,13 +129,13 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             @NotNull LearnerAction action,
             @NotNull TutoringResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().debug("CAPTURE: Recording interaction for learner {}",
             action.learnerId());
-        
+
         // Calculate performance score for this interaction
         double performanceScore = calculatePerformanceScore(action, response);
-        
+
         // Build interaction episode
         Episode episode = Episode.builder()
             .agentId(getAgentId())
@@ -161,7 +159,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             ))
             .reward(performanceScore)
             .build();
-        
+
         // Store episode and update learner knowledge model
         return context.getMemoryStore().storeEpisode(episode)
             .then(stored -> updateLearnerKnowledge(action, performanceScore, context));
@@ -169,7 +167,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
 
     /**
      * Phase 5: REFLECT - Analyzes learning patterns and adjusts strategy.
-     * 
+     *
      * <p>Reflection includes:
      * <ul>
      *   <li>Analyzing learning velocity</li>
@@ -184,32 +182,32 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             @NotNull LearnerAction action,
             @NotNull TutoringResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().debug("REFLECT: Analyzing learning patterns for {} (async)",
             action.learnerId());
-        
+
         // Query recent interactions for this agent
         MemoryFilter filter = MemoryFilter.builder()
             .agentId(getAgentId())
             .build();
-        
+
         return context.getMemoryStore().queryEpisodes(filter, 20)
             .then(episodes -> {
                 // Filter to this learner
                 List<Episode> learnerEpisodes = episodes.stream()
                     .filter(e -> action.learnerId().equals(e.getContext().get("learnerId")))
                     .toList();
-                
+
                 if (learnerEpisodes.size() < 5) {
                     return Promise.complete();
                 }
-                
+
                 // Analyze patterns
                 LearningPattern pattern = analyzeLearningPattern(learnerEpisodes);
-                
+
                 context.recordMetric("tutorputor.learner.success_rate", pattern.successRate());
                 context.recordMetric("tutorputor.learner.avg_time_per_item", pattern.avgTimeMs());
-                
+
                 // Update learner preferences based on observed patterns
                 if (pattern.preferredContentType() != null) {
                     return updateLearnerPreference(
@@ -219,7 +217,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
                         context
                     );
                 }
-                
+
                 return Promise.complete();
             });
     }
@@ -263,37 +261,37 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
                 return "rushed";
             }
         }
-        
+
         if (action.hintLevel() != null && action.hintLevel() >= 3) {
             return "frustrated";
         }
-        
-        if (action.isCorrect() != null && action.isCorrect() && 
+
+        if (action.isCorrect() != null && action.isCorrect() &&
             action.attemptNumber() != null && action.attemptNumber() == 1) {
             return "confident";
         }
-        
+
         return "neutral";
     }
 
     private double calculatePerformanceScore(LearnerAction action, TutoringResponse response) {
         double score = 0.5; // Base score
-        
+
         // Correctness contribution
         if (action.isCorrect() != null && action.isCorrect()) {
             score += 0.3;
-            
+
             // Bonus for first attempt
             if (action.attemptNumber() != null && action.attemptNumber() == 1) {
                 score += 0.1;
             }
-            
+
             // Bonus for no hints
             if (action.hintLevel() == null || action.hintLevel() == 0) {
                 score += 0.1;
             }
         }
-        
+
         // Time efficiency (not too fast, not too slow)
         if (action.timeSpentMs() != null) {
             long time = action.timeSpentMs();
@@ -301,7 +299,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
                 score += 0.05;
             }
         }
-        
+
         return Math.min(1.0, Math.max(0.0, score));
     }
 
@@ -328,7 +326,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             LearnerAction action,
             double performanceScore,
             AgentContext context) {
-        
+
         // Store knowledge state as a fact (triple format)
         Fact knowledgeFact = Fact.builder()
             .agentId(getAgentId())
@@ -342,7 +340,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
                 "attemptCount", action.attemptNumber() != null ? action.attemptNumber() : 1
             ))
             .build();
-        
+
         return context.getMemoryStore().storeFact(knowledgeFact)
             .map(f -> null);
     }
@@ -353,14 +351,14 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             .filter(e -> Boolean.TRUE.equals(e.getContext().get("isCorrect")))
             .count();
         double successRate = (double) correctCount / episodes.size();
-        
+
         // Calculate average time
         double avgTime = episodes.stream()
             .filter(e -> e.getContext().get("timeSpentMs") != null)
             .mapToLong(e -> ((Number) e.getContext().get("timeSpentMs")).longValue())
             .average()
             .orElse(30000);
-        
+
         // Find preferred content type (most successful)
         String preferredType = episodes.stream()
             .filter(e -> Boolean.TRUE.equals(e.getContext().get("isCorrect")))
@@ -368,7 +366,7 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             .filter(t -> t != null)
             .reduce((a, b) -> a) // Just take the first for now
             .orElse(null);
-        
+
         return new LearningPattern(successRate, avgTime, preferredType);
     }
 
@@ -377,14 +375,14 @@ public class LearnerInteractionAgent extends BaseAgent<LearnerAction, TutoringRe
             String key,
             String value,
             AgentContext context) {
-        
+
         Preference pref = Preference.builder()
             .agentId(getAgentId())
             .namespace("learner:" + learnerId)
             .key(key)
             .value(value)
             .build();
-        
+
         return context.getMemoryStore().storePreference(pref)
             .map(p -> null);
     }

@@ -8,7 +8,6 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Manages Glacier restore operations for archived events.
@@ -41,16 +40,16 @@ import java.util.concurrent.ForkJoinPool;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * GlacierRestoreManager restoreManager = new GlacierRestoreManager(s3Client, config);
- * 
+ *
  * // Initiate restore
  * String archiveKey = "eventcloud/archives/tenant-1/2024/01/events.parquet";
  * restoreManager.initiateRestore(archiveKey, RestoreTier.STANDARD).getResult();
- * 
+ *
  * // Poll for completion
  * while (!restoreManager.isRestoreComplete(archiveKey).getResult()) {
  *     Thread.sleep(Duration.ofMinutes(5).toMillis());
  * }
- * 
+ *
  * // Download restored object
  * byte[] data = restoreManager.downloadRestored(archiveKey).getResult();
  * }</pre>
@@ -100,7 +99,7 @@ public class GlacierRestoreManager {
                     .build());
 
             StorageClass storageClass = headResponse.storageClass();
-            
+
             // Check if object is in Glacier
             if (!isGlacierStorageClass(storageClass)) {
                 log.info("Object {} is not in Glacier (storage class: {}), no restore needed",
@@ -122,7 +121,7 @@ public class GlacierRestoreManager {
 
             // Initiate restore
             Tier tier = mapRestoreTier(restoreTier);
-            
+
             RestoreObjectRequest restoreRequest = RestoreObjectRequest.builder()
                     .bucket(config.getBucketName())
                     .key(key)
@@ -166,7 +165,7 @@ public class GlacierRestoreManager {
                     .build());
 
             String restore = headResponse.restore();
-            
+
             if (restore == null) {
                 // Not in Glacier or never restored
                 StorageClass storageClass = headResponse.storageClass();
@@ -175,7 +174,7 @@ public class GlacierRestoreManager {
 
             boolean complete = restore.contains("ongoing-request=\"false\"");
             log.debug("Restore status for key={}: complete={}, restore={}", key, complete, restore);
-            
+
             return Promise.of(complete);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -279,8 +278,8 @@ public class GlacierRestoreManager {
                 int start = restoreHeader.indexOf("expiry-date=\"") + 13;
                 int end = restoreHeader.indexOf("\"", start);
                 String dateStr = restoreHeader.substring(start, end);
-                
-                java.time.format.DateTimeFormatter formatter = 
+
+                java.time.format.DateTimeFormatter formatter =
                         java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
                 return java.time.ZonedDateTime.parse(dateStr, formatter).toInstant();
             }

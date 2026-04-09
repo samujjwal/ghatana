@@ -12,7 +12,6 @@ import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
 import com.ghatana.yappc.agent.StepBudget;
 import com.ghatana.yappc.agent.StepContext;
-import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.WorkflowStep;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import io.activej.promise.Promise;

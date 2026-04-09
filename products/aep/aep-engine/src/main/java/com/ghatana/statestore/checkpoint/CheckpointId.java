@@ -9,17 +9,17 @@ import java.util.UUID;
  * Immutable value object containing checkpoint ID, type, and creation timestamp.
  */
 public final class CheckpointId {
-    
+
     private final String id;
     private final CheckpointType type;
     private final Instant createdAt;
-    
+
     private CheckpointId(String id, CheckpointType type, Instant createdAt) {
         this.id = Objects.requireNonNull(id, "Checkpoint ID cannot be null");
         this.type = Objects.requireNonNull(type, "Checkpoint type cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "Created timestamp cannot be null");
     }
-    
+
     /**
      * Create a new checkpoint ID.
      */
@@ -30,7 +30,7 @@ public final class CheckpointId {
             Instant.now()
         );
     }
-    
+
     /**
      * Create a new checkpoint ID with specific ID.
      */
@@ -62,34 +62,34 @@ public final class CheckpointId {
             Instant.now()
         );
     }
-    
+
     /**
      * Restore a checkpoint ID from stored values.
      */
     public static CheckpointId restore(String id, CheckpointType type, Instant createdAt) {
         return new CheckpointId(id, type, createdAt);
     }
-    
+
     public String getId() {
         return id;
     }
-    
+
     public CheckpointType getType() {
         return type;
     }
-    
+
     public Instant getCreatedAt() {
         return createdAt;
     }
-    
+
     public boolean isCheckpoint() {
         return type == CheckpointType.CHECKPOINT;
     }
-    
+
     public boolean isSavepoint() {
         return type == CheckpointType.SAVEPOINT;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,12 +98,12 @@ public final class CheckpointId {
         return Objects.equals(id, that.id) &&
                type == that.type;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(id, type);
     }
-    
+
     @Override
     public String toString() {
         return String.format("CheckpointId{id='%s', type=%s, createdAt=%s}", id, type, createdAt);

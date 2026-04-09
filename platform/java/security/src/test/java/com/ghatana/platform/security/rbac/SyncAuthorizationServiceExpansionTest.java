@@ -33,7 +33,7 @@ class SyncAuthorizationServiceExpansionTest {
         registry.registerRole("EDITOR", Set.of("read", "write", "publish"));
         registry.registerRole("USER", Set.of("read", "write"));
         registry.registerRole("VIEWER", Set.of("read"));
-        
+
         authService = new SyncAuthorizationService(registry);
     }
 
@@ -50,7 +50,7 @@ class SyncAuthorizationServiceExpansionTest {
         void multiRoleUnion() {
             // User has both VIEWER and EDITOR roles
             User user = new User("u1", "multi-role", Set.of("VIEWER", "EDITOR"));
-            
+
             // Should have permissions from both roles
             assertThat(authService.hasPermission(user, "read")).isTrue();      // from VIEWER
             assertThat(authService.hasPermission(user, "write")).isTrue();     // from EDITOR
@@ -63,11 +63,11 @@ class SyncAuthorizationServiceExpansionTest {
         void roleOrderIndependent() {
             User user1 = new User("u2", "role-order-1", Set.of("ADMIN", "VIEWER"));
             User user2 = new User("u3", "role-order-2", Set.of("VIEWER", "ADMIN"));
-            
+
             // Both users should have the same permissions regardless of role order
             assertThat(authService.hasPermission(user1, "delete")).isTrue();
             assertThat(authService.hasPermission(user2, "delete")).isTrue();
-            
+
             assertThat(authService.hasPermission(user1, "read")).isTrue();
             assertThat(authService.hasPermission(user2, "read")).isTrue();
         }
@@ -85,7 +85,7 @@ class SyncAuthorizationServiceExpansionTest {
         @DisplayName("User with empty role set has no permissions")
         void emptyRoleSetNoPermissions() {
             User user = new User("u4", "no-roles", Set.of());
-            
+
             assertThat(authService.hasPermission(user, "read")).isFalse();
             assertThat(authService.hasPermission(user, "write")).isFalse();
             // When querying with at least one permission on user without roles
@@ -107,18 +107,18 @@ class SyncAuthorizationServiceExpansionTest {
             // ADMIN has: read, write, delete, manage
             // VIEWER has: read
             User user = new User("u5", "admin-viewer", Set.of("ADMIN", "VIEWER"));
-            
+
             // All permissions present
             assertThat(authService.hasAllPermissions(user, "read", "write", "delete"))
                 .isTrue();
-            
+
             // Any of these satisfied
             assertThat(authService.hasAnyPermission(user, "publish", "delete"))
                 .isTrue();
-            
+
             // Single permission
             assertThat(authService.hasPermission(user, "manage")).isTrue();
-            
+
             // Missing permission
             assertThat(authService.hasPermission(user, "publish")).isFalse();
         }
@@ -137,9 +137,9 @@ class SyncAuthorizationServiceExpansionTest {
         void dynamicRoleAddition() {
             // Create a new role after service initialization
             registry.registerRole("MODERATOR", Set.of("read", "write", "delete"));
-            
+
             User user = new User("u6", "moderator", Set.of("MODERATOR"));
-            
+
             // Should immediately have permissions from new role
             assertThat(authService.hasPermission(user, "read")).isTrue();
             assertThat(authService.hasPermission(user, "delete")).isTrue();
@@ -162,9 +162,9 @@ class SyncAuthorizationServiceExpansionTest {
             registry.registerRole("DATA_READER", Set.of("read:data", "read:logs"));
             registry.registerRole("DATA_WRITER", Set.of("write:data"));
             registry.registerRole("AUDITOR", Set.of("read:logs", "read:audit"));
-            
+
             User auditor = new User("u7", "auditor", Set.of("AUDITOR", "DATA_READER"));
-            
+
             // Should have union of all permissions
             assertThat(authService.hasPermission(auditor, "read:data")).isTrue();      // from DATA_READER
             assertThat(authService.hasPermission(auditor, "read:logs")).isTrue();      // from both

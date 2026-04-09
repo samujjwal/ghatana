@@ -37,7 +37,7 @@ import java.util.Optional;
  * <pre>
  *     Sources                    Collector                    Processing
  *     ───────                    ─────────                    ──────────
- *     
+ *
  *     User ────────┐
  *                  │
  *     System ──────┼────►  Buffer ────► Batch ────► LearningLoop

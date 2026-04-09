@@ -2,7 +2,6 @@ package com.ghatana.audio.video.common.security;
 
 import com.ghatana.audio.video.common.platform.AuthGatewayClient;
 import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;

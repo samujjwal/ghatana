@@ -7,7 +7,6 @@ package com.ghatana.platform.resilience;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 

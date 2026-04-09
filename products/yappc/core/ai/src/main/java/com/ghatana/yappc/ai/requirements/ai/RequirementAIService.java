@@ -15,12 +15,10 @@ import com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionStatus;
 import com.ghatana.ai.vectorstore.VectorSearchResult;
 import com.ghatana.ai.vectorstore.VectorStore;
 import io.activej.promise.Promise;
-import jdk.jfr.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
@@ -549,8 +547,8 @@ public class RequirementAIService {
             String jsonContent = extractJsonContent(content);
 
             JsonNode rootNode = objectMapper.readTree(jsonContent);
-            JsonNode requirementsNode = rootNode.has("requirements") 
-                ? rootNode.get("requirements") 
+            JsonNode requirementsNode = rootNode.has("requirements")
+                ? rootNode.get("requirements")
                 : rootNode;
 
             if (requirementsNode.isArray()) {
@@ -610,14 +608,14 @@ public class RequirementAIService {
     }
 
     private String getTextOrDefault(JsonNode node, String field, String defaultValue) {
-        return node.has(field) && !node.get(field).isNull() 
-            ? node.get(field).asText() 
+        return node.has(field) && !node.get(field).isNull()
+            ? node.get(field).asText()
             : defaultValue;
     }
 
     private double getDoubleOrDefault(JsonNode node, String field, double defaultValue) {
-        return node.has(field) && !node.get(field).isNull() 
-            ? node.get(field).asDouble() 
+        return node.has(field) && !node.get(field).isNull()
+            ? node.get(field).asDouble()
             : defaultValue;
     }
 
@@ -639,7 +637,7 @@ public class RequirementAIService {
         // Fallback: parse line-by-line for numbered requirements
         List<GeneratedRequirement> requirements = new ArrayList<>();
         String[] lines = content.split("\n");
-        
+
         for (String line : lines) {
             line = line.trim();
             // Match patterns like "1. ", "- ", "* "
@@ -657,31 +655,31 @@ public class RequirementAIService {
                 }
             }
         }
-        
+
         logger.debug("Fallback parsing extracted {} requirements", requirements.size());
         return Promise.of(requirements);
     }
 
     private Promise<List<AISuggestion>> parseSuggestions(String content) {
         List<AISuggestion> suggestions = new ArrayList<>();
-        
+
         try {
             String jsonContent = extractJsonContent(content);
             JsonNode rootNode = objectMapper.readTree(jsonContent);
-            JsonNode suggestionsNode = rootNode.has("suggestions") 
-                ? rootNode.get("suggestions") 
+            JsonNode suggestionsNode = rootNode.has("suggestions")
+                ? rootNode.get("suggestions")
                 : rootNode;
 
             if (suggestionsNode.isArray()) {
                 for (JsonNode suggNode : suggestionsNode) {
-                    String suggestionText = getTextOrDefault(suggNode, "suggestion", 
-                        getTextOrDefault(suggNode, "text", 
+                    String suggestionText = getTextOrDefault(suggNode, "suggestion",
+                        getTextOrDefault(suggNode, "text",
                             getTextOrDefault(suggNode, "description", "")));
-                    
+
                     if (!suggestionText.isEmpty()) {
                         float relevance = (float) getDoubleOrDefault(suggNode, "relevance", 0.7);
                         float priority = (float) getDoubleOrDefault(suggNode, "priority", 0.5);
-                        
+
                         suggestions.add(new AISuggestion(
                             "temp-" + UUID.randomUUID().toString().substring(0, 8),
                             suggestionText,
@@ -718,7 +716,7 @@ public class RequirementAIService {
                 }
             }
         }
-        
+
         logger.debug("Parsed {} suggestions from LLM response", suggestions.size());
         return Promise.of(suggestions);
     }
@@ -752,30 +750,30 @@ public class RequirementAIService {
             JsonNode rootNode = objectMapper.readTree(jsonContent);
 
             RequirementQualityResult.Builder builder = RequirementQualityResult.builder()
-                .overallScore(getDoubleOrDefault(rootNode, "overallScore", 
-                    getDoubleOrDefault(rootNode, "overall_score", 
+                .overallScore(getDoubleOrDefault(rootNode, "overallScore",
+                    getDoubleOrDefault(rootNode, "overall_score",
                         getDoubleOrDefault(rootNode, "score", 0.7))))
-                .clarityScore(getDoubleOrDefault(rootNode, "clarityScore", 
-                    getDoubleOrDefault(rootNode, "clarity_score", 
+                .clarityScore(getDoubleOrDefault(rootNode, "clarityScore",
+                    getDoubleOrDefault(rootNode, "clarity_score",
                         getDoubleOrDefault(rootNode, "clarity", 0.7))))
-                .completenessScore(getDoubleOrDefault(rootNode, "completenessScore", 
-                    getDoubleOrDefault(rootNode, "completeness_score", 
+                .completenessScore(getDoubleOrDefault(rootNode, "completenessScore",
+                    getDoubleOrDefault(rootNode, "completeness_score",
                         getDoubleOrDefault(rootNode, "completeness", 0.7))))
-                .testabilityScore(getDoubleOrDefault(rootNode, "testabilityScore", 
-                    getDoubleOrDefault(rootNode, "testability_score", 
+                .testabilityScore(getDoubleOrDefault(rootNode, "testabilityScore",
+                    getDoubleOrDefault(rootNode, "testability_score",
                         getDoubleOrDefault(rootNode, "testability", 0.7))))
-                .consistencyScore(getDoubleOrDefault(rootNode, "consistencyScore", 
-                    getDoubleOrDefault(rootNode, "consistency_score", 
+                .consistencyScore(getDoubleOrDefault(rootNode, "consistencyScore",
+                    getDoubleOrDefault(rootNode, "consistency_score",
                         getDoubleOrDefault(rootNode, "consistency", 0.8))));
 
             // Parse issues
             if (rootNode.has("issues") && rootNode.get("issues").isArray()) {
                 for (JsonNode issueNode : rootNode.get("issues")) {
                     String category = getTextOrDefault(issueNode, "category", "general");
-                    String description = getTextOrDefault(issueNode, "description", 
+                    String description = getTextOrDefault(issueNode, "description",
                         issueNode.isTextual() ? issueNode.asText() : "");
                     boolean critical = issueNode.has("critical") && issueNode.get("critical").asBoolean();
-                    
+
                     if (!description.isEmpty()) {
                         builder.addIssue(new RequirementQualityResult.QualityIssue(category, description, critical));
                     }
@@ -785,8 +783,8 @@ public class RequirementAIService {
             // Parse recommendations
             if (rootNode.has("recommendations") && rootNode.get("recommendations").isArray()) {
                 for (JsonNode recNode : rootNode.get("recommendations")) {
-                    String recommendation = recNode.isTextual() 
-                        ? recNode.asText() 
+                    String recommendation = recNode.isTextual()
+                        ? recNode.asText()
                         : getTextOrDefault(recNode, "text", getTextOrDefault(recNode, "description", ""));
                     builder.addRecommendation(recommendation);
                 }

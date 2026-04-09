@@ -3,7 +3,7 @@ package com.ghatana.datacloud.spi;
 /**
  * SPI-level encryption service contract exposed to plugins.
  * Implementations in infrastructure can adapt to this interface.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Encryption service
@@ -21,4 +21,3 @@ public interface EncryptionService {
         };
     }
 }
-

@@ -49,13 +49,13 @@ import java.util.Map;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * GitTool git = new GitTool(eventloop, 60);
- * 
+ *
  * // Get repository status
  * ToolResult status = git.execute(Map.of(
  *     "operation", "status",
  *     "repoPath", "/path/to/repo"
  * )).getResult();
- * 
+ *
  * // Commit changes
  * ToolResult commit = git.execute(Map.of(
  *     "operation", "commit",

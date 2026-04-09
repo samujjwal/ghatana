@@ -6,7 +6,6 @@
  */
 package com.ghatana.datacloud.event;
 
-import com.ghatana.datacloud.spi.EventLogStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +26,7 @@ class EventCloudTest {
     void shouldManageEventCloud() {
         String cloudId = "cloud-123";
         String tenantId = "tenant-123";
-        
+
         assertThat(cloudId).isNotNull();
         assertThat(tenantId).isNotNull();
     }
@@ -37,7 +36,7 @@ class EventCloudTest {
     void shouldHandleEventPersistence() {
         boolean persisted = true;
         String storageType = "PostgreSQL";
-        
+
         assertThat(persisted).isTrue();
         assertThat(storageType).isNotNull();
     }
@@ -47,7 +46,7 @@ class EventCloudTest {
     void shouldHandleEventTtl() {
         Duration ttl = Duration.ofDays(7);
         Duration maxTtl = Duration.ofDays(30);
-        
+
         assertThat(ttl).isLessThan(maxTtl);
     }
 
@@ -56,7 +55,7 @@ class EventCloudTest {
     void shouldHandleEventPartitioning() {
         int partitionCount = 10;
         int minPartitions = 1;
-        
+
         assertThat(partitionCount).isGreaterThanOrEqualTo(minPartitions);
     }
 
@@ -65,7 +64,7 @@ class EventCloudTest {
     void shouldHandleCloudFailures() {
         boolean failed = false;
         String error = null;
-        
+
         assertThat(failed).isFalse();
         assertThat(error).isNull();
     }
@@ -75,7 +74,7 @@ class EventCloudTest {
     void shouldHandleCloudRecovery() {
         boolean recovered = true;
         long recoveryTimeMs = 5000L;
-        
+
         assertThat(recovered).isTrue();
         assertThat(recoveryTimeMs).isPositive();
     }

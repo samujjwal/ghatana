@@ -1,6 +1,5 @@
 package com.ghatana.eventprocessing.registry;
 
-import com.ghatana.platform.domain.event.Event;
 
 import java.util.UUID;
 

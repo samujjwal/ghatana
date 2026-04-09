@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.model;
 
 /**
- * Represents a Python element that can be refactored. 
+ * Represents a Python element that can be refactored.
  * @doc.type class
  * @doc.purpose Handles python element operations
  * @doc.layer core

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * A2A envelope for agent-to-agent communication. Provides a standardized message format for
  * WebSocket communication.
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for envelope
  * @doc.layer core

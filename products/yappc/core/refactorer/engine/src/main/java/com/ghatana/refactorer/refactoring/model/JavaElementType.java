@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.model;
 
 /**
- * Represents the type of a Java element. 
+ * Represents the type of a Java element.
  * @doc.type enum
  * @doc.purpose Enumerates java element type values
  * @doc.layer core

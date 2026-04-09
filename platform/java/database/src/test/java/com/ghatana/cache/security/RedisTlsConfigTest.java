@@ -3,7 +3,6 @@ package com.ghatana.cache.security;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.*;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

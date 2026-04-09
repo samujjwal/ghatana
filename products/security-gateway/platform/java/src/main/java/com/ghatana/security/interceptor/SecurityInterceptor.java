@@ -40,7 +40,7 @@ public class SecurityInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(SecurityInterceptor.class);
     private static final HttpHeader CORRELATION_ID_HEADER = HttpHeaders.of("X-Correlation-ID");
     private static final String CORRELATION_ID_MDC_KEY = "correlationId";
-    
+
     private final PolicyService policyService;
     private final JwtTokenProvider jwtTokenProvider;
     private final SecurityAuditLogger auditLogger;
@@ -84,7 +84,7 @@ public class SecurityInterceptor {
             )
             : null;
     }
-    
+
     /**
      * Intercepts and processes an HTTP request, applying security checks.
      *
@@ -104,7 +104,7 @@ public class SecurityInterceptor {
                     .map(response -> withCorrelationHeader(response, correlationId))
                     .whenComplete(($, e) -> MDC.remove(CORRELATION_ID_MDC_KEY));
         }
-        
+
         String path = request.getPath();
         String method = request.getMethod().toString();
 
@@ -153,7 +153,7 @@ public class SecurityInterceptor {
                     .map(response -> withCorrelationHeader(response, correlationId))
                     .whenComplete(($, e) -> MDC.remove(CORRELATION_ID_MDC_KEY));
         }
-        
+
         // Check if the user is authenticated
         if (userId == null || userId.isEmpty()) {
             logger.warn("Unauthenticated access attempt to {} {}", method, path);
@@ -180,17 +180,17 @@ public class SecurityInterceptor {
                     .whenComplete(($, e) -> MDC.remove(CORRELATION_ID_MDC_KEY));
             }
         }
-        
+
         // Check authorization
         String requiredPermission = determineRequiredPermission(request);
         if (requiredPermission != null) {
             // Create a Principal for PolicyService (using "default" as tenantId; extract from header if available)
             String tenantId = TenantExtractor.fromHttpOrDefault(request, "default");
             Principal principal = new Principal(userId, userRoles.stream().toList(), tenantId);
-            
+
             // Use the request path as the resource (can be customized based on your needs)
             String resource = request.getPath();
-            
+
             if (!policyService.isAuthorized(principal, requiredPermission, resource)) {
                 logger.warn("Unauthorized access attempt by user {} to {} {}", userId, request.getMethod(), request.getPath());
                 auditLogger.logAccessDenied(userId, request.getPath(), "Insufficient permissions");
@@ -234,20 +234,20 @@ public class SecurityInterceptor {
         }
         return builder.build();
     }
-    
+
     /**
      * Extracts the user ID from the request (e.g., from JWT token).
-     * 
+     *
      * @param request the HTTP request
      * @return the user ID, or null if not authenticated
      */
     private String extractUserId(HttpRequest request) {
         return request.getHeader(HttpHeaders.of("X-User-Id"));
     }
-    
+
     /**
      * Extracts the user's roles from the request.
-     * 
+     *
      * @param request the HTTP request
      * @return a set of role names assigned to the user
      */
@@ -255,22 +255,22 @@ public class SecurityInterceptor {
         String rolesHeader = request.getHeader(HttpHeaders.of("X-User-Roles"));
         return rolesHeader != null ? Set.of(rolesHeader.split(",")) : Set.of();
     }
-    
+
     /**
      * Determines the required permission for the given request.
-     * 
+     *
      * @param request the HTTP request
      * @return the required permission, or null if no specific permission is required
      */
     private String determineRequiredPermission(HttpRequest request) {
         String path = request.getPath();
         String method = request.getMethod().toString().toLowerCase();
-        
+
         // Skip permission check for public endpoints
         if (isPublicEndpoint(path, method)) {
             return null;
         }
-        
+
         // Map HTTP methods to CRUD operations
         String operation;
         switch (method) {
@@ -290,7 +290,7 @@ public class SecurityInterceptor {
             default:
                 return null;
         }
-        
+
         // Create a permission string in the format "operation:resource"
         // For example: "read:users", "update:profile", etc.
         String normalized = path;
@@ -302,10 +302,10 @@ public class SecurityInterceptor {
         String resource = normalized.replaceAll("/\\d+$", "").replace("/", ":");
         return String.format("%s:%s", operation, resource);
     }
-    
+
     /**
      * Checks if the endpoint is public and doesn't require authentication.
-     * 
+     *
      * @param path the request path
      * @param method the HTTP method
      * @return true if the endpoint is public, false otherwise
@@ -316,10 +316,10 @@ public class SecurityInterceptor {
                path.equals("/api/health") ||
                path.startsWith("/public/");
     }
-    
+
     /**
      * Adds security headers to the response.
-     * 
+     *
      * @param response the HTTP response
      * @return the response with security headers
      */
@@ -332,10 +332,10 @@ public class SecurityInterceptor {
                         "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
                                 "style-src 'self' 'unsafe-inline'; img-src 'self' data:");
     }
-    
+
     /**
      * Adds rate limit headers to the response.
-     * 
+     *
      * @param response the HTTP response
      * @param clientIp the client IP address
      * @return the response with rate limit headers
@@ -371,7 +371,7 @@ public class SecurityInterceptor {
             return "unknown";
         }
     }
-    
+
     /**
      * Functional interface for the next handler in the interceptor chain.
      */

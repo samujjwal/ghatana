@@ -6,7 +6,6 @@
 package com.ghatana.datacloud.embedded;
 
 import com.ghatana.datacloud.embedded.EmbeddableDataCloud.EmbeddedEventStream;
-import com.ghatana.datacloud.embedded.EmbeddableDataCloud.EmbeddedStore;
 import com.ghatana.datacloud.record.Record;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.*;

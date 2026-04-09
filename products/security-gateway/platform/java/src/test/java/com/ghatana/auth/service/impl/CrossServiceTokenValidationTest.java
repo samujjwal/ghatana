@@ -1,7 +1,6 @@
 package com.ghatana.auth.service.impl;
 
 import com.ghatana.auth.core.port.JwtClaims;
-import com.ghatana.auth.core.port.JwtTokenProvider;
 import com.ghatana.auth.core.port.JwtTokenProvider.JwtValidationException;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;

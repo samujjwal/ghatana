@@ -7,7 +7,6 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
-import com.ghatana.platform.governance.security.TenantContext;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

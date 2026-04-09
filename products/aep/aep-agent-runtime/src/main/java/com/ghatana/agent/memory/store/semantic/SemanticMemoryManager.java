@@ -1,8 +1,5 @@
 package com.ghatana.agent.memory.store.semantic;
 
-import com.ghatana.agent.memory.model.Provenance;
-import com.ghatana.agent.memory.model.Validity;
-import com.ghatana.agent.memory.model.ValidityStatus;
 import com.ghatana.agent.memory.model.fact.EnhancedFact;
 import com.ghatana.agent.memory.model.fact.FactVersion;
 import com.ghatana.agent.memory.store.MemoryPlane;

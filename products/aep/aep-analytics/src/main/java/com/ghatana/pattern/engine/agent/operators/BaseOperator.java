@@ -1,7 +1,6 @@
 package com.ghatana.pattern.engine.agent.operators;
 
 import com.ghatana.core.operator.AbstractOperator;
-import com.ghatana.core.operator.OperatorConfig;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.OperatorType;

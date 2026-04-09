@@ -57,17 +57,17 @@ public class QueryParserAgent extends AbstractAIAgent<QueryParserInput, QueryPar
 
     private static final String PARSER_PROMPT = """
             Parse the following natural language query into a structured format.
-            
+
             Query: "%s"
             Context Route: %s
             Persona: %s
-            
+
             Extract:
             1. Intent: SEARCH | FILTER | COMMAND | QUESTION | NAVIGATE
             2. Entities: item IDs, phases, statuses, priorities, assignees, dates, tags
             3. Filters: Convert entities into filter criteria
             4. Confidence: Your confidence in the parsing (0-1)
-            
+
             Respond in JSON format:
             {
               "intent": "...",

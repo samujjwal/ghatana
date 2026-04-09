@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * Interface for edge deployment support in Data-Cloud.
- * 
+ *
  * <p>Enables lightweight Data-Cloud deployments at the edge with
  * selective sync, offline capabilities, and central coordination.
  *
@@ -443,19 +443,19 @@ public interface EdgeDeployment {
     interface EdgeHook {
         /** Called when edge connects to central */
         default void onConnect() {}
-        
+
         /** Called when edge disconnects from central */
         default void onDisconnect() {}
-        
+
         /** Called before sync starts */
         default void beforeSync(SyncDirection direction) {}
-        
+
         /** Called after sync completes */
         default void afterSync(EdgeSyncEvent event) {}
-        
+
         /** Called when sync fails */
         default void onSyncFailure(SyncDirection direction, Throwable error) {}
-        
+
         /** Called when mode changes */
         default void onModeChange(EdgeMode oldMode, EdgeMode newMode) {}
     }

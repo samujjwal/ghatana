@@ -34,9 +34,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 2.0.0
  */
 public class StatefulnessAuditor {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(StatefulnessAuditor.class);
-    
+
     // Classes that are known to be stateful and should be externalized
     private static final Set<String> STATEFUL_CLASSES = Set.of(
         "java.util.HashMap",
@@ -51,60 +51,60 @@ public class StatefulnessAuditor {
         "java.util.concurrent.ConcurrentSkipListMap",
         "java.util.concurrent.ConcurrentSkipListSet"
     );
-    
+
     // Classes that are known to be thread-local and should be externalized
     private static final Set<String> THREAD_LOCAL_CLASSES = Set.of(
         "java.lang.ThreadLocal",
         "java.lang.InheritableThreadLocal"
     );
-    
+
     // Packages to scan
     private final List<String> packagesToScan;
-    
+
     // Results
     private final List<StatefulComponent> statefulComponents = new ArrayList<>();
-    
+
     /**
      * Create a new statefulness auditor.
      */
     public StatefulnessAuditor(List<String> packagesToScan) {
         this.packagesToScan = packagesToScan;
     }
-    
+
     /**
      * Audit the application for statefulness.
      */
     public List<StatefulComponent> audit() {
         statefulComponents.clear();
-        
+
         // Find all classes in the packages to scan
         List<Class<?>> classes = findClasses();
-        
+
         // Check each class for statefulness
         for (Class<?> clazz : classes) {
             checkClass(clazz);
         }
-        
+
         return statefulComponents;
     }
-    
+
     /**
      * Find all classes in the packages to scan.
      */
     private List<Class<?>> findClasses() {
         List<Class<?>> classes = new ArrayList<>();
-        
+
         for (String packageName : packagesToScan) {
             try {
                 String packagePath = packageName.replace('.', '/');
                 ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-                
+
                 // Get the package directory
                 Enumeration<java.net.URL> resources = classLoader.getResources(packagePath);
                 while (resources.hasMoreElements()) {
                     java.net.URL resource = resources.nextElement();
                     File directory = new File(resource.getFile());
-                    
+
                     // Find all class files in the directory
                     try (Stream<Path> paths = Files.walk(Paths.get(directory.toURI()))) {
                         List<Class<?>> packageClasses = paths
@@ -116,13 +116,13 @@ public class StatefulnessAuditor {
                                     .replace("/", ".")
                                     .replace("\\", ".")
                                     .replace(".class", "");
-                                
+
                                 if (className.startsWith(".")) {
                                     className = className.substring(1);
                                 }
-                                
+
                                 className = packageName + "." + className;
-                                
+
                                 try {
                                     return Class.forName(className);
                                 } catch (ClassNotFoundException e) {
@@ -132,7 +132,7 @@ public class StatefulnessAuditor {
                             })
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
-                        
+
                         classes.addAll(packageClasses);
                     }
                 }
@@ -140,10 +140,10 @@ public class StatefulnessAuditor {
                 LOG.error("Failed to scan package: {}", packageName, e);
             }
         }
-        
+
         return classes;
     }
-    
+
     /**
      * Check a class for statefulness.
      */
@@ -152,7 +152,7 @@ public class StatefulnessAuditor {
         if (clazz.isInterface() || clazz.isEnum() || Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
-        
+
         // Check fields for statefulness
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
@@ -160,7 +160,7 @@ public class StatefulnessAuditor {
             if (Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) {
                 continue;
             }
-            
+
             // Check if field type is stateful
             Class<?> fieldType = field.getType();
             if (isStatefulType(fieldType)) {
@@ -171,7 +171,7 @@ public class StatefulnessAuditor {
                     StatefulnessType.MUTABLE_STATE
                 ));
             }
-            
+
             // Check if field is thread-local
             if (isThreadLocalType(fieldType)) {
                 statefulComponents.add(new StatefulComponent(
@@ -182,11 +182,11 @@ public class StatefulnessAuditor {
                 ));
             }
         }
-        
+
         // Check singleton pattern
         checkSingleton(clazz);
     }
-    
+
     /**
      * Check if a class implements the singleton pattern.
      */
@@ -195,7 +195,7 @@ public class StatefulnessAuditor {
             // Check for INSTANCE field
             try {
                 Field instanceField = clazz.getDeclaredField("INSTANCE");
-                if (Modifier.isStatic(instanceField.getModifiers()) && 
+                if (Modifier.isStatic(instanceField.getModifiers()) &&
                     instanceField.getType().equals(clazz)) {
                     statefulComponents.add(new StatefulComponent(
                         clazz.getName(),
@@ -208,11 +208,11 @@ public class StatefulnessAuditor {
             } catch (NoSuchFieldException e) {
                 // Ignore
             }
-            
+
             // Check for instance field
             try {
                 Field instanceField = clazz.getDeclaredField("instance");
-                if (Modifier.isStatic(instanceField.getModifiers()) && 
+                if (Modifier.isStatic(instanceField.getModifiers()) &&
                     instanceField.getType().equals(clazz)) {
                     statefulComponents.add(new StatefulComponent(
                         clazz.getName(),
@@ -225,7 +225,7 @@ public class StatefulnessAuditor {
             } catch (NoSuchFieldException e) {
                 // Ignore
             }
-            
+
             // Check for getInstance method
             try {
                 clazz.getDeclaredMethod("getInstance");
@@ -242,7 +242,7 @@ public class StatefulnessAuditor {
             LOG.warn("Failed to check singleton pattern for class: {}", clazz.getName(), e);
         }
     }
-    
+
     /**
      * Check if a type is stateful.
      */
@@ -252,7 +252,7 @@ public class StatefulnessAuditor {
                Collection.class.isAssignableFrom(type) ||
                ConcurrentHashMap.class.isAssignableFrom(type);
     }
-    
+
     /**
      * Check if a type is thread-local.
      */
@@ -260,7 +260,7 @@ public class StatefulnessAuditor {
         return THREAD_LOCAL_CLASSES.contains(type.getName()) ||
                ThreadLocal.class.isAssignableFrom(type);
     }
-    
+
     /**
      * Generate a report of stateful components.
      */
@@ -272,11 +272,11 @@ public class StatefulnessAuditor {
         report.append("- Mutable state: ").append(countByType(StatefulnessType.MUTABLE_STATE)).append("\n");
         report.append("- Thread-local: ").append(countByType(StatefulnessType.THREAD_LOCAL)).append("\n");
         report.append("- Singletons: ").append(countByType(StatefulnessType.SINGLETON)).append("\n\n");
-        
+
         report.append("## Stateful Components\n\n");
         report.append("| Class | Field | Type | Statefulness |\n");
         report.append("|-------|-------|------|-------------|\n");
-        
+
         for (StatefulComponent component : statefulComponents) {
             report.append("| ")
                 .append(component.getClassName()).append(" | ")
@@ -284,15 +284,15 @@ public class StatefulnessAuditor {
                 .append(component.getFieldType()).append(" | ")
                 .append(component.getType()).append(" |\n");
         }
-        
+
         report.append("\n## Recommendations\n\n");
         report.append("1. Externalize mutable state to Redis or a database.\n");
         report.append("2. Replace thread-local variables with request-scoped context.\n");
         report.append("3. Convert singletons to dependency-injected components.\n");
-        
+
         return report.toString();
     }
-    
+
     /**
      * Count stateful components by type.
      */
@@ -301,7 +301,7 @@ public class StatefulnessAuditor {
             .filter(component -> component.getType() == type)
             .count();
     }
-    
+
     /**
      * Stateful component information.
      */
@@ -310,31 +310,31 @@ public class StatefulnessAuditor {
         private final String fieldName;
         private final String fieldType;
         private final StatefulnessType type;
-        
+
         public StatefulComponent(String className, String fieldName, String fieldType, StatefulnessType type) {
             this.className = className;
             this.fieldName = fieldName;
             this.fieldType = fieldType;
             this.type = type;
         }
-        
+
         public String getClassName() {
             return className;
         }
-        
+
         public String getFieldName() {
             return fieldName;
         }
-        
+
         public String getFieldType() {
             return fieldType;
         }
-        
+
         public StatefulnessType getType() {
             return type;
         }
     }
-    
+
     /**
      * Types of statefulness.
      */

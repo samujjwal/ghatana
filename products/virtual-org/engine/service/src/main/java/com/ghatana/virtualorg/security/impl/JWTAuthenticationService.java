@@ -5,7 +5,6 @@ import com.ghatana.virtualorg.security.AuthenticationService;
 import com.ghatana.virtualorg.security.Principal;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
@@ -76,19 +75,19 @@ public class JWTAuthenticationService implements AuthenticationService {
 
                 SignedJWT signedJWT = SignedJWT.parse(token);
                 MACVerifier verifier = new MACVerifier(secretKey.getEncoded());
-                
+
                 if (!signedJWT.verify(verifier)) {
                     throw new SecurityException("Invalid signature");
                 }
-                
+
                 JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
 
                 String principalId = claimsSet.getSubject();
                 String principalType = claimsSet.getStringClaim("type");
-                
+
                 @SuppressWarnings("unchecked")
                 Set<String> roles = new HashSet<>((java.util.Collection<String>) claimsSet.getStringListClaim("roles"));
-                
+
                 Principal principal = new Principal(
                     principalId,
                     Enum.valueOf(com.ghatana.virtualorg.security.PrincipalType.class, principalType),
@@ -192,18 +191,18 @@ public class JWTAuthenticationService implements AuthenticationService {
 
                 SignedJWT signedJWT = SignedJWT.parse(token);
                 MACVerifier verifier = new MACVerifier(secretKey.getEncoded());
-                
+
                 if (!signedJWT.verify(verifier)) {
                     return Optional.empty();
                 }
-                
+
                 JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
                 String principalId = claimsSet.getSubject();
                 String principalType = claimsSet.getStringClaim("type");
-                
+
                 @SuppressWarnings("unchecked")
                 Set<String> roles = new HashSet<>((java.util.Collection<String>) claimsSet.getStringListClaim("roles"));
-                
+
                 Principal principal = new Principal(
                     principalId,
                     Enum.valueOf(com.ghatana.virtualorg.security.PrincipalType.class, principalType),
@@ -229,7 +228,7 @@ public class JWTAuthenticationService implements AuthenticationService {
                         // Revoke the old token first
                         revokedTokens.add(token);
                         LOG.debug("Token revoked during refresh");
-                        
+
                         // Generate new token
                         return generateToken(principal.get(), defaultExpirySeconds);
                     } else {
@@ -243,4 +242,3 @@ public class JWTAuthenticationService implements AuthenticationService {
             );
     }
 }
-

@@ -51,7 +51,7 @@ class OrderKernelIntegrationTest {
     void shouldUseKernelConfigResolver() {
         // GIVEN: OMS configuration from Kernel
         String configKey = "oms.order.max_quantity";
-        
+
         // WHEN: Resolve configuration
         BigDecimal maxQuantity = resolveConfig(configKey, BigDecimal.class);
 

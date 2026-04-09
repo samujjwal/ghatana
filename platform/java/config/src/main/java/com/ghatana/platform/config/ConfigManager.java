@@ -16,7 +16,7 @@ import java.util.Optional;
 
 /**
  * Configuration manager that combines multiple configuration sources.
- * 
+ *
  * Provides a unified view of configuration properties from multiple sources.
  * Sources are searched in the order they were added.
  *
@@ -26,12 +26,12 @@ import java.util.Optional;
  * @doc.pattern Service
  */
 public class ConfigManager implements ConfigSource {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ConfigManager.class);
-    
+
     private final List<ConfigSource> sources;
     private final String name;
-    
+
     /**
      * Creates a new ConfigManager with the specified name.
      *
@@ -41,7 +41,7 @@ public class ConfigManager implements ConfigSource {
         this.name = name;
         this.sources = new ArrayList<>();
     }
-    
+
     /**
      * Creates a new ConfigManager with the specified name and sources.
      *
@@ -52,7 +52,7 @@ public class ConfigManager implements ConfigSource {
         this.name = name;
         this.sources = new ArrayList<>(sources);
     }
-    
+
     /**
      * Adds a configuration source to the manager.
      * Sources are searched in the order they are added.
@@ -65,7 +65,7 @@ public class ConfigManager implements ConfigSource {
         sources.add(source);
         return this;
     }
-    
+
     /**
      * Adds multiple configuration sources to the manager.
      *
@@ -77,7 +77,7 @@ public class ConfigManager implements ConfigSource {
         this.sources.addAll(sources);
         return this;
     }
-    
+
     /**
      * Removes a configuration source from the manager.
      *
@@ -89,7 +89,7 @@ public class ConfigManager implements ConfigSource {
         sources.remove(source);
         return this;
     }
-    
+
     /**
      * Clears all configuration sources from the manager.
      *
@@ -100,7 +100,7 @@ public class ConfigManager implements ConfigSource {
         sources.clear();
         return this;
     }
-    
+
     /**
      * Gets the configuration sources.
      *
@@ -110,7 +110,7 @@ public class ConfigManager implements ConfigSource {
     public List<ConfigSource> getSources() {
         return new ArrayList<>(sources);
     }
-    
+
     @Override
     @NotNull
     public Optional<String> getString(@NotNull String key) {
@@ -122,7 +122,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Integer> getInt(@NotNull String key) {
@@ -134,7 +134,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Long> getLong(@NotNull String key) {
@@ -146,7 +146,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Double> getDouble(@NotNull String key) {
@@ -158,7 +158,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Boolean> getBoolean(@NotNull String key) {
@@ -170,7 +170,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<String[]> getStringArray(@NotNull String key) {
@@ -182,7 +182,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<Map<String, String>> getMap(@NotNull String key) {
@@ -194,7 +194,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public <T> Optional<T> getObject(@NotNull String key, @NotNull Class<T> type) {
@@ -206,7 +206,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Optional<ConfigSource> getConfig(@NotNull String key) {
@@ -218,7 +218,7 @@ public class ConfigManager implements ConfigSource {
         }
         return Optional.empty();
     }
-    
+
     @Override
     @NotNull
     public Map<String, Object> getAll() {
@@ -230,7 +230,7 @@ public class ConfigManager implements ConfigSource {
         }
         return result;
     }
-    
+
     @Override
     public boolean hasKey(@NotNull String key) {
         for (ConfigSource source : sources) {
@@ -240,13 +240,13 @@ public class ConfigManager implements ConfigSource {
         }
         return false;
     }
-    
+
     @Override
     @NotNull
     public String getName() {
         return name;
     }
-    
+
     /**
      * Creates a default configuration manager with standard sources.
      * Sources are searched in order: system properties, environment variables, config file (if specified)
@@ -258,13 +258,13 @@ public class ConfigManager implements ConfigSource {
     @NotNull
     public static ConfigManager createDefault(@NotNull String name, String configFilePath) {
         ConfigManager manager = new ConfigManager(name);
-        
+
         // Add system properties source
         manager.addSource(new SystemPropertiesConfigSource());
-        
+
         // Add environment variables source
         manager.addSource(new EnvironmentConfigSource());
-        
+
         // Add configuration file source if specified
         if (configFilePath != null && !configFilePath.isEmpty()) {
             try {
@@ -273,10 +273,10 @@ public class ConfigManager implements ConfigSource {
                 log.warn("Failed to load configuration file: {}", configFilePath, e);
             }
         }
-        
+
         return manager;
     }
-    
+
     /**
      * Creates a default configuration manager with standard sources.
      *

@@ -18,10 +18,8 @@ package com.ghatana.yappc.core.rca;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.yappc.core.error.ErrorSeverity;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
 
 /**
  * Day 26: Normalized build log representation for RCA analysis. Converts

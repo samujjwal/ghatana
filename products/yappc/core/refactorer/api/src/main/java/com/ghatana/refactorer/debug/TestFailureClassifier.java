@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  * Classifies test failures by analyzing stack traces and error messages to provide actionable
  * suggestions for fixing issues. Uses pattern matching to identify common error types across
  * multiple programming languages.
- 
+
  * @doc.type class
  * @doc.purpose Handles test failure classifier operations
  * @doc.layer core

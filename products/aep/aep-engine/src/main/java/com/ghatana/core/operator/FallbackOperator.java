@@ -337,4 +337,3 @@ public class FallbackOperator extends AbstractOperator {
         return new Builder();
     }
 }
-

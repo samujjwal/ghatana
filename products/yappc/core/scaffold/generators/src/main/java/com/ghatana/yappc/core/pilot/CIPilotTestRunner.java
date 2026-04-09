@@ -70,7 +70,7 @@ public class CIPilotTestRunner {
     /**
  * Runs pilot tests against all configured repositories. */
     public Promise<PilotTestSuite> runPilotTests() {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     List<PilotTestResult> results = new ArrayList<>();
                     String suiteId = generateSuiteId();

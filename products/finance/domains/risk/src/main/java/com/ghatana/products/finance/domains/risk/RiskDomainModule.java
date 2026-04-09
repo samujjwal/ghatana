@@ -102,7 +102,7 @@ public final class RiskDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Risk Domain module");
-        
+
             started = true;
             log.info("Risk Domain module started successfully");
         return Promise.complete();
@@ -111,7 +111,7 @@ public final class RiskDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Risk Domain module");
-        
+
             started = false;
             log.info("Risk Domain module stopped successfully");
         return Promise.complete();

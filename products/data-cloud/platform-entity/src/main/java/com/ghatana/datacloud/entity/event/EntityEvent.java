@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.entity.event;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
 
 /**

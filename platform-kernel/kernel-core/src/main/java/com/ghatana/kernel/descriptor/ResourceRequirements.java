@@ -1,7 +1,6 @@
 package com.ghatana.kernel.descriptor;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Defines resource requirements for kernel components.
@@ -17,7 +16,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class ResourceRequirements {
-    
+
     private final int minCpuCores;
     private final int maxCpuCores;
     private final long minMemoryMb;

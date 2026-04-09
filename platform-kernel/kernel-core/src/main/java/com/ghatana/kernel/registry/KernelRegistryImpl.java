@@ -6,7 +6,6 @@ import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

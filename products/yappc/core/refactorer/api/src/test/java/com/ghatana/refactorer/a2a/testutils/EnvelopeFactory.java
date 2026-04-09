@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Test data factory for A2A envelopes. Provides builders and sample data for testing A2A
  * communication.
- 
+
  * @doc.type class
  * @doc.purpose Handles envelope factory operations
  * @doc.layer core

@@ -13,7 +13,7 @@
         </Console>
 
         <!-- File Appender -->
-        <RollingFile name="File" fileName="${LOG_DIR}/security.log" 
+        <RollingFile name="File" fileName="${LOG_DIR}/security.log"
                      filePattern="${ARCHIVE_PATTERN}">
             <PatternLayout>
                 <Pattern>${LOG_PATTERN}</Pattern>
@@ -70,7 +70,7 @@
         <!-- JWT and OAuth2 logging -->
         <Logger name="com.nimbusds" level="warn"/>
         <Logger name="io.jsonwebtoken" level="warn"/>
-        
+
         <!-- Reduce noise from other libraries -->
         <Logger name="org.apache" level="warn"/>
         <Logger name="io.netty" level="warn"/>

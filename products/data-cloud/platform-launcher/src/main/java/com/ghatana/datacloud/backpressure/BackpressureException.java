@@ -28,12 +28,12 @@ import com.ghatana.platform.core.exception.ServiceUnavailableException;
  */
 public class BackpressureException extends ServiceUnavailableException {
     private static final long serialVersionUID = 1L;
-    
+
     private static final long DEFAULT_RETRY_MS = 1000;
-    
+
     private final long suggestedRetryMs;
     private final BackpressureReason reason;
-    
+
     /**
      * Create exception with message.
      *
@@ -44,7 +44,7 @@ public class BackpressureException extends ServiceUnavailableException {
         this.suggestedRetryMs = DEFAULT_RETRY_MS;
         this.reason = BackpressureReason.SYSTEM_OVERLOADED;
     }
-    
+
     /**
      * Create exception with message and retry time.
      *
@@ -56,7 +56,7 @@ public class BackpressureException extends ServiceUnavailableException {
         this.suggestedRetryMs = suggestedRetryMs;
         this.reason = BackpressureReason.SYSTEM_OVERLOADED;
     }
-    
+
     /**
      * Create exception with message, retry time, and reason.
      *
@@ -69,7 +69,7 @@ public class BackpressureException extends ServiceUnavailableException {
         this.suggestedRetryMs = suggestedRetryMs;
         this.reason = reason;
     }
-    
+
     /**
      * Create exception with message and cause.
      *
@@ -81,7 +81,7 @@ public class BackpressureException extends ServiceUnavailableException {
         this.suggestedRetryMs = DEFAULT_RETRY_MS;
         this.reason = BackpressureReason.SYSTEM_OVERLOADED;
     }
-    
+
     /**
      * Get suggested retry time in milliseconds.
      *
@@ -90,7 +90,7 @@ public class BackpressureException extends ServiceUnavailableException {
     public long getSuggestedRetryMs() {
         return suggestedRetryMs;
     }
-    
+
     /**
      * Get backpressure reason.
      *
@@ -99,7 +99,7 @@ public class BackpressureException extends ServiceUnavailableException {
     public BackpressureReason getReason() {
         return reason;
     }
-    
+
     /**
      * Get HTTP status code for this exception.
      *
@@ -108,7 +108,7 @@ public class BackpressureException extends ServiceUnavailableException {
     public int getHttpStatusCode() {
         return 503;
     }
-    
+
     /**
      * Reasons for backpressure.
      */

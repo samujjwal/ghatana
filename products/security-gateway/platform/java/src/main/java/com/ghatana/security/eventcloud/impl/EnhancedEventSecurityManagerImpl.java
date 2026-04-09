@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * Implementation of EnhancedEventSecurityManager that consolidates security
  * functionality from event-core EventCloudSecurityManager with the existing
  * EventCloud security infrastructure.
- 
+
  *
  * @doc.type class
  * @doc.purpose Enhanced event security manager implementation
@@ -40,16 +40,16 @@ import java.util.stream.Collectors;
  * @doc.pattern Component
 */
 public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityManager {
-    
+
     private static final Logger log = LoggerFactory.getLogger(EnhancedEventSecurityManagerImpl.class);
     private static final ObjectMapper JSON_MAPPER = JsonUtils.getDefaultMapper();
-    
+
     private final KeyManager keyManager;
     private final EncryptionService encryptionService;
     private final EncryptedStorageService storageService;
     private final PolicyService policyService;
     private final Metrics metrics;
-    
+
     // Dedicated executor for security operations
     private final Executor securityExecutor = Executors.newCachedThreadPool(runnable -> {
         Thread thread = new Thread(runnable, "enhanced-security");
@@ -57,7 +57,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         thread.setPriority(Thread.NORM_PRIORITY);
         return thread;
     });
-    
+
     // Cache for user principals and permissions (bounded LRU)
     private static final int MAX_PRINCIPAL_CACHE_SIZE = 10_000;
     private final Map<String, Principal> principalCache = Collections.synchronizedMap(
@@ -74,10 +74,10 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     return size() > MAX_PRINCIPAL_CACHE_SIZE;
                 }
             });
-    
+
     // Security metrics tracking
     private final Map<String, Long> operationMetrics = new ConcurrentHashMap<>();
-    
+
     /**
      * Constructor for EnhancedEventSecurityManagerImpl.
      */
@@ -94,7 +94,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         this.policyService = policyService;
         this.metrics = metrics;
     }
-    
+
     // ==================== EVENT ENCRYPTION ====================
 
     @Override
@@ -105,19 +105,19 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         if (tenantId == null || tenantId.trim().isEmpty()) {
             return Promise.ofException(new IllegalArgumentException("Tenant ID cannot be null or empty"));
         }
-        
+
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
                 long startTime = System.currentTimeMillis();
-                
+
                 // Serialize event to JSON
                 byte[] eventData = JSON_MAPPER.writeValueAsBytes(event);
-                
+
                 // Get tenant-specific encryption key
                 String keyId = getTenantKeyId(tenantId);
-                
+
                 return new Object[]{eventData, keyId, startTime};
-                
+
             } catch (Exception e) {
                 log.error("Failed to serialize event for tenant {}: {}", tenantId, e.getMessage(), e);
                 metrics.counter("security.event.encryption.errors").increment();
@@ -128,17 +128,17 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
             byte[] eventData = (byte[]) arr[0];
             String keyId = (String) arr[1];
             long startTime = (long) arr[2];
-            
+
             return encryptionService.encryptAsync(eventData)
                 .map(encryptedData -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    metrics.timer("security.event.encryption.duration").record(duration, 
+                    metrics.timer("security.event.encryption.duration").record(duration,
                         java.util.concurrent.TimeUnit.MILLISECONDS);
                     incrementOperationMetric("encryptionOperations");
-                    
-                    log.debug("Encrypted event for tenant {}: {} bytes -> {} bytes", 
+
+                    log.debug("Encrypted event for tenant {}: {} bytes -> {} bytes",
                         tenantId, eventData.length, encryptedData.length);
-                    
+
                     return encryptedData;
                 });
         });
@@ -152,7 +152,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         if (tenantId == null || tenantId.trim().isEmpty()) {
             return Promise.ofException(new IllegalArgumentException("Tenant ID cannot be null or empty"));
         }
-        
+
         return Promise.ofBlocking(securityExecutor, () -> {
             // Get tenant-specific decryption key
             return getTenantKeyId(tenantId);
@@ -163,7 +163,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                 try {
                     Event event = JSON_MAPPER.readValue(decryptedData, Event.class);
                     incrementOperationMetric("decryptionOperations");
-                    log.debug("Decrypted event for tenant {}: {} bytes -> {} bytes", 
+                    log.debug("Decrypted event for tenant {}: {} bytes -> {} bytes",
                         tenantId, encryptedData.length, decryptedData.length);
                     return event;
                 } catch (Exception e) {
@@ -194,7 +194,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                 return new RuntimeException("Transmission decryption failed", e);
             });
     }
-    
+
     // ==================== ACCESS CONTROL ====================
 
     @Override
@@ -202,7 +202,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         if (userId == null || event == null || operation == null) {
             return Promise.of(false);
         }
-        
+
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
                 Principal principal = getPrincipal(userId);
@@ -210,23 +210,23 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     incrementOperationMetric("accessDenials");
                     return false;
                 }
-                
+
                 // Check basic event access permission
                 String permission = "event:" + operation.name().toLowerCase();
                 boolean hasAccess = policyService.isAuthorized(principal, permission, event.getType());
-                
+
                 // Additional checks for sensitive event types
                 if (hasAccess && isSensitiveEventType(event.getType())) {
                     hasAccess = policyService.isAuthorized(principal, "sensitive:event:access", event.getType());
                 }
-                
+
                 if (!hasAccess) {
                     incrementOperationMetric("accessDenials");
                     log.debug("Access denied for user {} to event {} (operation: {})", userId, event.getId(), operation);
                 }
-                
+
                 return hasAccess;
-                
+
             } catch (Exception e) {
                 log.error("Error validating event access for user {}: {}", userId, e.getMessage(), e);
                 incrementOperationMetric("accessDenials");
@@ -240,7 +240,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         if (userId == null || eventType == null || operation == null) {
             return Promise.of(false);
         }
-        
+
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
                 Principal principal = getPrincipal(userId);
@@ -248,17 +248,17 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     incrementOperationMetric("accessDenials");
                     return false;
                 }
-                
+
                 String permission = "eventtype:" + operation.name().toLowerCase();
                 boolean hasAccess = policyService.isAuthorized(principal, permission, eventType);
-                
+
                 if (!hasAccess) {
                     incrementOperationMetric("accessDenials");
                     log.debug("Access denied for user {} to event type {} (operation: {})", userId, eventType, operation);
                 }
-                
+
                 return hasAccess;
-                
+
             } catch (Exception e) {
                 log.error("Error validating event type access for user {}: {}", userId, e.getMessage(), e);
                 incrementOperationMetric("accessDenials");
@@ -272,7 +272,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         if (userId == null || tenantId == null || operation == null) {
             return Promise.of(false);
         }
-        
+
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
                 Principal principal = getPrincipal(userId);
@@ -280,17 +280,17 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     incrementOperationMetric("accessDenials");
                     return false;
                 }
-                
+
                 String permission = "tenant:" + operation.name().toLowerCase();
                 boolean hasAccess = policyService.isAuthorized(principal, permission, tenantId);
-                
+
                 if (!hasAccess) {
                     incrementOperationMetric("accessDenials");
                     log.debug("Access denied for user {} to tenant {} (operation: {})", userId, tenantId, operation);
                 }
-                
+
                 return hasAccess;
-                
+
             } catch (Exception e) {
                 log.error("Error validating tenant access for user {}: {}", userId, e.getMessage(), e);
                 incrementOperationMetric("accessDenials");
@@ -298,7 +298,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
             }
         });
     }
-    
+
     // ==================== SECURE QUERIES ====================
 
     @Override
@@ -309,9 +309,9 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                 if (principal == null) {
                     return Collections.emptyMap();
                 }
-                
+
                 Map<String, Object> filteredParams = new HashMap<>(queryParameters);
-                
+
                 // Apply tenant filtering if user doesn't have cross-tenant access
                 if (!policyService.isAuthorized(principal, "tenant:cross_access", null)) {
                     // Extract user's allowed tenants and filter
@@ -320,15 +320,15 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                         filteredParams.put("tenantFilter", allowedTenants);
                     }
                 }
-                
+
                 // Apply event type filtering based on permissions
                 Set<String> allowedEventTypes = getUserAllowedEventTypes(userId);
                 if (!allowedEventTypes.isEmpty()) {
                     filteredParams.put("eventTypeFilter", allowedEventTypes);
                 }
-                
+
                 return filteredParams;
-                
+
             } catch (Exception e) {
                 log.error("Error applying security filters for user {}: {}", userId, e.getMessage(), e);
                 return Collections.emptyMap();
@@ -344,13 +344,13 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                 if (principal == null) {
                     return Collections.emptyList();
                 }
-                
+
                 List<Event> redactedEvents = new ArrayList<>();
-                
+
                 for (Event event : events) {
                     // Check if user has permission to see sensitive data
                     boolean canSeeSensitive = policyService.isAuthorized(principal, "sensitive:data:view", event.getType());
-                    
+
                     if (canSeeSensitive) {
                         redactedEvents.add(event);
                     } else {
@@ -359,20 +359,20 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                         redactedEvents.add(redactedEvent);
                     }
                 }
-                
+
                 return redactedEvents;
-                
+
             } catch (Exception e) {
                 log.error("Error redacting sensitive data for user {}: {}", userId, e.getMessage(), e);
                 return Collections.emptyList();
             }
         });
     }
-    
+
     // ==================== AUDIT & MONITORING ====================
 
     @Override
-    public Promise<Void> auditEventAccess(String userId, AccessOperation operation, String eventId, 
+    public Promise<Void> auditEventAccess(String userId, AccessOperation operation, String eventId,
                                          boolean success, Map<String, Object> additionalInfo) {
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
@@ -382,18 +382,18 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                 auditData.put("eventId", eventId);
                 auditData.put("success", success);
                 auditData.put("timestamp", System.currentTimeMillis());
-                
+
                 if (additionalInfo != null) {
                     auditData.putAll(additionalInfo);
                 }
-                
+
                 // Store audit log (implementation depends on audit storage)
                 storageService.storeSecurely("audit_log", JSON_MAPPER.writeValueAsBytes(auditData));
-                
+
                 incrementOperationMetric("auditLogEntries");
-                
+
                 return null;
-                
+
             } catch (Exception e) {
                 log.error("Error recording audit log for user {}: {}", userId, e.getMessage(), e);
                 throw new RuntimeException("Audit logging failed", e);
@@ -421,7 +421,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
             }
         });
     }
-    
+
     // ==================== KEY MANAGEMENT ====================
 
     @Override
@@ -430,12 +430,12 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
             try {
                 String keyId = getTenantKeyId(tenantId);
                 keyManager.rotateKey();
-                
+
                 log.info("Rotated encryption keys for tenant: {}", tenantId);
                 metrics.counter("security.key.rotations").increment();
-                
+
                 return null;
-                
+
             } catch (Exception e) {
                 log.error("Error rotating keys for tenant {}: {}", tenantId, e.getMessage(), e);
                 throw new RuntimeException("Key rotation failed", e);
@@ -448,17 +448,17 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
                 String keyId = getTenantKeyId(tenantId);
-                
+
                 // Validate key health (implementation depends on KeyManager capabilities)
                 boolean healthy = keyManager.isKeyHealthy(keyId);
                 long keyAge = keyManager.getKeyAge(keyId);
                 long lastRotation = keyManager.getLastRotationTime(keyId);
-                
+
                 List<String> issues = new ArrayList<>();
                 if (keyAge > 90 * 24 * 60 * 60 * 1000) { // 90 days
                     issues.add("Key is older than 90 days");
                 }
-                
+
                 return new KeyHealthStatus(
                     tenantId,
                     healthy && issues.isEmpty(),
@@ -467,7 +467,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     issues,
                     Map.of("keyId", keyId)
                 );
-                
+
             } catch (Exception e) {
                 log.error("Error validating key health for tenant {}: {}", tenantId, e.getMessage(), e);
                 return new KeyHealthStatus(
@@ -481,17 +481,17 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
             }
         });
     }
-    
+
     // ==================== HELPER METHODS ====================
-    
+
     private String getTenantKeyId(String tenantId) {
         return "tenant:" + tenantId + ":encryption";
     }
-    
+
     private String getServiceKeyId(String serviceId) {
         return "service:" + serviceId + ":transport";
     }
-    
+
     private Principal getPrincipal(String userId) {
         // Load from cache; if absent, build a minimal Principal for the user.
         // The tenantId is extracted from the cache key pattern "tenantId:userId"
@@ -526,15 +526,15 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
     public void registerPrincipal(String userId, Principal principal) {
         principalCache.put(userId, principal);
     }
-    
+
     private boolean isSensitiveEventType(String eventType) {
         // Define sensitive event types
-        return eventType.contains("pii") || 
-               eventType.contains("financial") || 
+        return eventType.contains("pii") ||
+               eventType.contains("financial") ||
                eventType.contains("health") ||
                eventType.startsWith("sensitive.");
     }
-    
+
     private Set<String> getUserAllowedTenants(String userId) {
         // Determine tenant scope from the cached principal.
         // A principal with tenantId constrains the user to that tenant only.
@@ -547,18 +547,18 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         // Fall back to the user's own ID scope if tenantId is not set
         return Set.of(userId);
     }
-    
+
     private Set<String> getUserAllowedEventTypes(String userId) {
         // Implementation would query user's event type permissions
         return Set.of(); // Empty means no filtering
     }
-    
+
     private Event redactEventSensitiveFields(Event event) {
         // Implementation would redact sensitive fields based on configuration
         // For now, return the original event
         return event;
     }
-    
+
     private void incrementOperationMetric(String metricName) {
         operationMetrics.merge(metricName, 1L, Long::sum);
     }

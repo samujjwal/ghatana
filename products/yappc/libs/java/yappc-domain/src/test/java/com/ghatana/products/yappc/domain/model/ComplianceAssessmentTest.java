@@ -458,10 +458,10 @@ class ComplianceAssessmentTest {
                     .naControls(10)
                     .build();
 
-            int sumOfParts = assessment.getPassedControls() + 
-                            assessment.getFailedControls() + 
+            int sumOfParts = assessment.getPassedControls() +
+                            assessment.getFailedControls() +
                             assessment.getNaControls();
-            
+
             assertThat(sumOfParts).isEqualTo(assessment.getTotalControls());
         }
     }

@@ -18,14 +18,14 @@ import java.util.Objects;
 
 /**
  * Production-ready LLM gateway builder for agent-framework.
- * 
+ *
  * @doc.type class
  * @doc.purpose Helper for building production LLM gateways with real providers
  * @doc.layer core
  * @doc.pattern Builder
- * 
+ *
  * <p>Simplifies creation of LLM gateways with OpenAI and other providers.</p>
- * 
+ *
  * <h3>Usage Example</h3>
  * <pre>{@code
  * // Simple OpenAI gateway
@@ -34,7 +34,7 @@ import java.util.Objects;
  *     .apiKey(System.getenv("OPENAI_API_KEY"))
  *     .model("gpt-4")
  *     .build();
- * 
+ *
  * // Multi-provider with fallback
  * LLMGenerator.LLMGateway gateway = ProductionLLMGatewayBuilder
  *     .create(eventloop, metrics)
@@ -44,22 +44,22 @@ import java.util.Objects;
  * }</pre>
  */
 public class ProductionLLMGatewayBuilder {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ProductionLLMGatewayBuilder.class);
-    
+
     private final Eventloop eventloop;
     private final MetricsCollector metrics;
     private final DefaultLLMGateway.Builder gatewayBuilder;
-    
+
     private ProductionLLMGatewayBuilder(Eventloop eventloop, MetricsCollector metrics) {
         this.eventloop = Objects.requireNonNull(eventloop);
         this.metrics = Objects.requireNonNull(metrics);
         this.gatewayBuilder = DefaultLLMGateway.builder().metrics(metrics);
     }
-    
+
     /**
      * Creates a builder for multi-provider gateway.
-     * 
+     *
      * @param eventloop ActiveJ eventloop
      * @param metrics Metrics collector
      * @return Builder instance
@@ -70,10 +70,10 @@ public class ProductionLLMGatewayBuilder {
             @NotNull MetricsCollector metrics) {
         return new ProductionLLMGatewayBuilder(eventloop, metrics);
     }
-    
+
     /**
      * Quick builder for OpenAI-only gateway.
-     * 
+     *
      * @param eventloop ActiveJ eventloop
      * @param httpClient HTTP client for API calls
      * @param metrics Metrics collector
@@ -86,10 +86,10 @@ public class ProductionLLMGatewayBuilder {
             @NotNull MetricsCollector metrics) {
         return new OpenAIBuilder(eventloop, httpClient, metrics);
     }
-    
+
     /**
      * Adds OpenAI provider.
-     * 
+     *
      * @param httpClient HTTP client
      * @param apiKey OpenAI API key
      * @param model Model name (e.g., "gpt-4")
@@ -100,7 +100,7 @@ public class ProductionLLMGatewayBuilder {
             @NotNull HttpClient httpClient,
             @NotNull String apiKey,
             @NotNull String model) {
-        
+
         LLMConfiguration config = LLMConfiguration.builder()
                 .apiKey(apiKey)
                 .modelName(model)
@@ -109,19 +109,19 @@ public class ProductionLLMGatewayBuilder {
                 .timeoutSeconds(30)
                 .maxRetries(3)
                 .build();
-        
+
         ToolAwareOpenAICompletionService service = new ToolAwareOpenAICompletionService(
                 config, httpClient, metrics);
-        
+
         gatewayBuilder.addProvider("openai", service);
         log.info("Added OpenAI provider with model: {}", model);
-        
+
         return this;
     }
-    
+
     /**
      * Adds Anthropic provider.
-     * 
+     *
      * @param httpClient HTTP client
      * @param apiKey Anthropic API key
      * @param model Model name (e.g., "claude-3-opus-20240229")
@@ -132,7 +132,7 @@ public class ProductionLLMGatewayBuilder {
             @NotNull HttpClient httpClient,
             @NotNull String apiKey,
             @NotNull String model) {
-        
+
         LLMConfiguration config = LLMConfiguration.builder()
                 .apiKey(apiKey)
                 .modelName(model)
@@ -141,19 +141,19 @@ public class ProductionLLMGatewayBuilder {
                 .timeoutSeconds(30)
                 .maxRetries(3)
                 .build();
-        
+
         ToolAwareAnthropicCompletionService service = new ToolAwareAnthropicCompletionService(
                 config, httpClient, metrics);
-        
+
         gatewayBuilder.addProvider("anthropic", service);
         log.info("Added Anthropic provider with model: {}", model);
-        
+
         return this;
     }
-    
+
     /**
      * Sets the primary provider.
-     * 
+     *
      * @param providerName Provider name
      * @return This builder
      */
@@ -162,10 +162,10 @@ public class ProductionLLMGatewayBuilder {
         gatewayBuilder.defaultProvider(providerName);
         return this;
     }
-    
+
     /**
      * Sets fallback order.
-     * 
+     *
      * @param providers Provider names in fallback order
      * @return This builder
      */
@@ -174,10 +174,10 @@ public class ProductionLLMGatewayBuilder {
         gatewayBuilder.fallbackOrder(providers);
         return this;
     }
-    
+
     /**
      * Builds the LLM gateway.
-     * 
+     *
      * @return Configured gateway adapted for agent-framework
      */
     @NotNull
@@ -185,7 +185,7 @@ public class ProductionLLMGatewayBuilder {
         LLMGateway underlyingGateway = gatewayBuilder.build();
         return LLMGatewayFactory.create(underlyingGateway);
     }
-    
+
     /**
      * Simplified builder for OpenAI-only setup.
      */
@@ -197,43 +197,43 @@ public class ProductionLLMGatewayBuilder {
         private String model = "gpt-4";
         private double temperature = 0.7;
         private int maxTokens = 2000;
-        
+
         OpenAIBuilder(Eventloop eventloop, HttpClient httpClient, MetricsCollector metrics) {
             this.eventloop = eventloop;
             this.httpClient = httpClient;
             this.metrics = metrics;
         }
-        
+
         @NotNull
         public OpenAIBuilder apiKey(@NotNull String apiKey) {
             this.apiKey = apiKey;
             return this;
         }
-        
+
         @NotNull
         public OpenAIBuilder model(@NotNull String model) {
             this.model = model;
             return this;
         }
-        
+
         @NotNull
         public OpenAIBuilder temperature(double temperature) {
             this.temperature = temperature;
             return this;
         }
-        
+
         @NotNull
         public OpenAIBuilder maxTokens(int maxTokens) {
             this.maxTokens = maxTokens;
             return this;
         }
-        
+
         @NotNull
         public LLMGenerator.LLMGateway build() {
             if (apiKey == null || apiKey.isEmpty()) {
                 throw new IllegalStateException("OpenAI API key is required");
             }
-            
+
             LLMConfiguration config = LLMConfiguration.builder()
                     .apiKey(apiKey)
                     .modelName(model)
@@ -242,16 +242,16 @@ public class ProductionLLMGatewayBuilder {
                     .timeoutSeconds(30)
                     .maxRetries(3)
                     .build();
-            
+
             ToolAwareOpenAICompletionService service = new ToolAwareOpenAICompletionService(
                     config, httpClient, metrics);
-            
+
             LLMGateway gateway = DefaultLLMGateway.builder()
                     .addProvider("openai", service)
                     .defaultProvider("openai")
                     .metrics(metrics)
                     .build();
-            
+
             log.info("Created OpenAI gateway with model: {}", model);
             return LLMGatewayFactory.create(gateway);
         }

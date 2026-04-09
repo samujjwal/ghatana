@@ -39,7 +39,7 @@ class ClickHouseTraceStorageExpansionTest {
                 .withBatchSize(1000)
                 .withFlushInterval(Duration.ofSeconds(5))
                 .build();
-        
+
         baseTime = Instant.now();
     }
 
@@ -183,9 +183,9 @@ class ClickHouseTraceStorageExpansionTest {
     // HELPER METHODS
     // ============================================
 
-    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId, 
+    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId,
                                     String operation, String status) {
-        return new SpanData(traceId, spanId, parentSpanId, operation, 
+        return new SpanData(traceId, spanId, parentSpanId, operation,
             baseTime, baseTime.plusMillis(100), status);
     }
 

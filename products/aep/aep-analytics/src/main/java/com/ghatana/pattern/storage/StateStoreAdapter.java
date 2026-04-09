@@ -7,15 +7,14 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Adapter for pattern-specific state persistence with namespaced key management.
- * 
+ *
  * <p>Wraps a generic {@link StateStore} to provide pattern-scoped state management with automatic
  * key namespacing. All keys are prefixed with "tenantId:patternId:" to ensure isolation between
  * patterns and tenants.
- * 
+ *
  * @doc.type class
  * @doc.purpose Wraps a generic StateStore with pattern-scoped namespacing for pattern state isolation
  * @doc.layer product
@@ -25,7 +24,7 @@ import java.util.stream.Collectors;
  * @doc.namespacing <strong>Key Namespacing Strategy:</strong>
  *                  <ul>
  *                    <li><strong>Format:</strong> "{tenantId}:{patternId}:{userKey}"</li>
- *                    <li><strong>Example:</strong> "tenant-123:pattern-456:window:count" → 
+ *                    <li><strong>Example:</strong> "tenant-123:pattern-456:window:count" →
  *                        "tenant-123:pattern-456:window:count"</li>
  *                    <li><strong>Isolation:</strong> Different patterns/tenants have separate namespaces,
  *                        preventing key collisions</li>
@@ -115,7 +114,7 @@ import java.util.stream.Collectors;
  *              // Create adapter for pattern state
  *              StateStoreAdapter adapter = new StateStoreAdapter(
  *                  stateStore, "tenant-123", UUID.fromString("pattern-456"));
- *              
+ *
  *              // Store window aggregate with TTL
  *              adapter.set("window:count", 42L, Duration.ofMinutes(5))
  *                  .whenComplete((void, error) -> {
@@ -123,7 +122,7 @@ import java.util.stream.Collectors;
  *                          System.out.println("Window count saved");
  *                      }
  *                  });
- *              
+ *
  *              // Retrieve window count
  *              adapter.get("window:count")
  *                  .whenComplete((count, error) -> {
@@ -131,7 +130,7 @@ import java.util.stream.Collectors;
  *                          System.out.println("Count: " + count.get());
  *                      }
  *                  });
- *              
+ *
  *              // Check if state exists
  *              adapter.exists("window:count")
  *                  .whenComplete((exists, error) -> {
@@ -140,7 +139,7 @@ import java.util.stream.Collectors;
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Checkpoint and Recovery:</strong>
  *              <pre>
  *              // Create checkpoint before risky operation
@@ -149,10 +148,10 @@ import java.util.stream.Collectors;
  *                  .whenComplete((void, error) -> {
  *                      if (error == null) {
  *                          System.out.println("Checkpoint created");
- *                          
+ *
  *                          // Perform risky state update
  *                          updatePatternState();
- *                          
+ *
  *                          // If update fails, rollback to checkpoint
  *                          if (updateFailed) {
  *                              adapter.restoreFromCheckpoint(checkpointId)
@@ -163,7 +162,7 @@ import java.util.stream.Collectors;
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Bulk Operations:</strong>
  *              <pre>
  *              // Initialize pattern state in one operation
@@ -172,12 +171,12 @@ import java.util.stream.Collectors;
  *                  "window:count", 0L,
  *                  "match:last", Instant.EPOCH
  *              );
- *              
+ *
  *              adapter.setAll(initialState)
  *                  .whenComplete((void, error) -> {
  *                      System.out.println("Pattern state initialized");
  *                  });
- *              
+ *
  *              // List all state keys for debugging
  *              adapter.keys()
  *                  .whenComplete((keys, error) -> {
@@ -195,20 +194,20 @@ import java.util.stream.Collectors;
  *                 </ul>
  */
 public class StateStoreAdapter {
-    
+
     private final StateStore stateStore;
     private final String tenantId;
     private final String patternId;
-    
+
     public StateStoreAdapter(StateStore stateStore, String tenantId, String patternId) {
         this.stateStore = stateStore;
         this.tenantId = tenantId;
         this.patternId = patternId;
     }
-    
+
     /**
      * Get a state value by key.
-     * 
+     *
      * @param key the state key
      * @return a promise that resolves to the state value, or null if not found
      */
@@ -217,10 +216,10 @@ public class StateStoreAdapter {
         return stateStore.get(namespacedKey, byte[].class)
                 .map(opt -> opt.orElse(null));
     }
-    
+
     /**
      * Set a state value by key.
-     * 
+     *
      * @param key the state key
      * @param value the state value
      * @return a promise that resolves when the operation is complete
@@ -229,10 +228,10 @@ public class StateStoreAdapter {
         String namespacedKey = createNamespacedKey(key);
         return stateStore.put(namespacedKey, value);
     }
-    
+
     /**
      * Set a state value by key with TTL.
-     * 
+     *
      * @param key the state key
      * @param value the state value
      * @param ttl the time-to-live
@@ -242,10 +241,10 @@ public class StateStoreAdapter {
         String namespacedKey = createNamespacedKey(key);
         return stateStore.put(namespacedKey, value, Optional.of(ttl));
     }
-    
+
     /**
      * Delete a state value by key.
-     * 
+     *
      * @param key the state key
      * @return a promise that resolves when the operation is complete
      */
@@ -254,10 +253,10 @@ public class StateStoreAdapter {
         return stateStore.delete(namespacedKey)
                 .map(result -> null);  // Convert Boolean to Void
     }
-    
+
     /**
      * Check if a state key exists.
-     * 
+     *
      * @param key the state key
      * @return a promise that resolves to true if the key exists
      */
@@ -265,30 +264,30 @@ public class StateStoreAdapter {
         String namespacedKey = createNamespacedKey(key);
         return stateStore.exists(namespacedKey);
     }
-    
+
     /**
      * Get all state keys for this pattern.
-     * 
+     *
      * @return a promise that resolves to the set of keys
      */
     public Promise<Set<String>> keys() {
         String prefix = createKeyPrefix();
         return stateStore.getKeysByPrefix(prefix, 0);
     }
-    
+
     /**
      * Get all state key-value pairs for this pattern.
-     * 
+     *
      * @return a promise that resolves to the map of key-value pairs
      */
     public Promise<Map<String, byte[]>> getAll() {
         String prefix = createKeyPrefix();
         return keys().then(keys -> stateStore.getAll(keys, byte[].class));
     }
-    
+
     /**
      * Delete all state for this pattern.
-     * 
+     *
      * @return a promise that resolves when the operation is complete
      */
     public Promise<Void> deleteAll() {
@@ -296,10 +295,10 @@ public class StateStoreAdapter {
         return keys().then(keys -> stateStore.deleteAll(keys))
                 .map(count -> null);  // Convert Long to Void
     }
-    
+
     /**
      * Set multiple state values atomically.
-     * 
+     *
      * @param values the map of key-value pairs to set
      * @return a promise that resolves when the operation is complete
      */
@@ -311,10 +310,10 @@ public class StateStoreAdapter {
         }
         return promise;
     }
-    
+
     /**
      * Set multiple state values atomically with TTL.
-     * 
+     *
      * @param values the map of key-value pairs to set
      * @param ttl the time-to-live
      * @return a promise that resolves when the operation is complete
@@ -327,10 +326,10 @@ public class StateStoreAdapter {
         }
         return promise;
     }
-    
+
     /**
      * Create a checkpoint for this pattern's state.
-     * 
+     *
      * @param checkpointId the checkpoint identifier
      * @return a promise that resolves when the checkpoint is created
      */
@@ -338,10 +337,10 @@ public class StateStoreAdapter {
         String namespacedCheckpointId = createNamespacedKey(checkpointId);
         return stateStore.createCheckpoint(namespacedCheckpointId);
     }
-    
+
     /**
      * Restore state from a checkpoint.
-     * 
+     *
      * @param checkpointId the checkpoint identifier
      * @return a promise that resolves when the state is restored
      */
@@ -349,44 +348,39 @@ public class StateStoreAdapter {
         String namespacedCheckpointId = createNamespacedKey(checkpointId);
         return stateStore.restoreFromCheckpoint(namespacedCheckpointId);
     }
-    
+
     /**
      * Get the underlying StateStore instance.
-     * 
+     *
      * @return the StateStore instance
      */
     public StateStore getStateStore() {
         return stateStore;
     }
-    
+
     /**
      * Get the tenant ID for this adapter.
-     * 
+     *
      * @return the tenant ID
      */
     public String getTenantId() {
         return tenantId;
     }
-    
+
     /**
      * Get the pattern ID for this adapter.
-     * 
+     *
      * @return the pattern ID
      */
     public String getPatternId() {
         return patternId;
     }
-    
+
     private String createNamespacedKey(String key) {
         return String.format("%s:%s:%s", tenantId, patternId, key);
     }
-    
+
     private String createKeyPrefix() {
         return String.format("%s:%s:", tenantId, patternId);
     }
 }
-
-
-
-
-

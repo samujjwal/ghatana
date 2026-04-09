@@ -1,6 +1,5 @@
 package com.ghatana.platform.observability.example;
 
-import com.ghatana.platform.observability.OpenTelemetryTracingProvider;
 import com.ghatana.platform.observability.Traced;
 import com.ghatana.platform.observability.TracingManager;
 import com.ghatana.platform.observability.TracingProvider;
@@ -15,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Example application that demonstrates how to use the tracing functionality.
  * This class shows how to create and use tracing providers and spans.
- 
+
  *
  * @doc.type class
  * @doc.purpose Tracing example
@@ -44,13 +43,13 @@ public class TracingExample {
     public static void main(String[] args) throws Exception {
         // Create a tracing manager
         TracingManager tracingManager = TracingManager.createDefault("tracing-example", "1.0.0");
-        
+
         // Get a tracing provider
         TracingProvider tracingProvider = tracingManager.getProvider("example-provider");
-        
+
         // Create an example
         TracingExample example = new TracingExample(tracingProvider);
-        
+
         // Run the examples
         example.runBasicExample();
         example.runNestedSpansExample();
@@ -58,7 +57,7 @@ public class TracingExample {
         example.runErrorExample();
         example.runUtilsExample();
         example.runAnnotationExample();
-        
+
         // Wait for spans to be exported
         TimeUnit.SECONDS.sleep(2);
     }
@@ -68,10 +67,10 @@ public class TracingExample {
      */
     public void runBasicExample() {
         System.out.println("\nRunning basic example...");
-        
+
         // Create a span
         Span span = tracingProvider.createSpan("basic-example");
-        
+
         try (Scope scope = span.makeCurrent()) {
             // Do some work
             System.out.println("Doing some work in the basic example...");
@@ -87,18 +86,18 @@ public class TracingExample {
      */
     public void runNestedSpansExample() {
         System.out.println("\nRunning nested spans example...");
-        
+
         // Create a parent span
         Span parentSpan = tracingProvider.createSpan("parent-span");
-        
+
         try (Scope parentScope = parentSpan.makeCurrent()) {
             // Do some work in the parent span
             System.out.println("Doing some work in the parent span...");
             sleep(100);
-            
+
             // Create a child span
             Span childSpan = tracingProvider.createChildSpan("child-span", parentSpan);
-            
+
             try (Scope childScope = childSpan.makeCurrent()) {
                 // Do some work in the child span
                 System.out.println("Doing some work in the child span...");
@@ -107,7 +106,7 @@ public class TracingExample {
                 // End the child span
                 childSpan.end();
             }
-            
+
             // Do some more work in the parent span
             System.out.println("Doing some more work in the parent span...");
             sleep(100);
@@ -122,21 +121,21 @@ public class TracingExample {
      */
     public void runAttributesExample() {
         System.out.println("\nRunning attributes example...");
-        
+
         // Create a span with attributes
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("string-attribute", "string-value");
         attributes.put("boolean-attribute", true);
         attributes.put("int-attribute", 42);
         attributes.put("double-attribute", 3.14);
-        
+
         Span span = tracingProvider.createSpan("attributes-example", attributes);
-        
+
         try (Scope scope = span.makeCurrent()) {
             // Do some work
             System.out.println("Doing some work in the attributes example...");
             sleep(100);
-            
+
             // Add more attributes
             span.setAttribute("another-attribute", "another-value");
         } finally {
@@ -150,15 +149,15 @@ public class TracingExample {
      */
     public void runErrorExample() {
         System.out.println("\nRunning error example...");
-        
+
         // Create a span
         Span span = tracingProvider.createSpan("error-example");
-        
+
         try (Scope scope = span.makeCurrent()) {
             // Do some work
             System.out.println("Doing some work in the error example...");
             sleep(100);
-            
+
             // Simulate an error
             try {
                 throw new RuntimeException("Simulated error");
@@ -166,7 +165,7 @@ public class TracingExample {
                 // Record the error in the span
                 span.recordException(e);
                 span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, e.getMessage());
-                
+
                 // Log the error
                 System.out.println("Error: " + e.getMessage());
             }
@@ -181,22 +180,22 @@ public class TracingExample {
      */
     public void runUtilsExample() {
         System.out.println("\nRunning utils example...");
-        
+
         // Use TracingUtils.withSpan with a runnable
         TracingUtils.withSpan(tracingProvider, "utils-runnable-example", () -> {
             System.out.println("Doing some work in the utils runnable example...");
             sleep(100);
         });
-        
+
         // Use TracingUtils.withSpan with a supplier
         String result = TracingUtils.withSpan(tracingProvider, "utils-supplier-example", (java.util.function.Supplier<String>) () -> {
             System.out.println("Doing some work in the utils supplier example...");
             sleep(100);
             return "result";
         });
-        
+
         System.out.println("Result: " + result);
-        
+
         // Use TracingUtils.withSpan with a callable
         try {
             result = TracingUtils.withSpan(tracingProvider, "utils-callable-example", (java.util.concurrent.Callable<String>) () -> {
@@ -204,7 +203,7 @@ public class TracingExample {
                 sleep(100);
                 return "result";
             });
-            
+
             System.out.println("Result: " + result);
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
@@ -216,10 +215,10 @@ public class TracingExample {
      */
     public void runAnnotationExample() {
         System.out.println("\nRunning annotation example...");
-        
+
         // Call a method annotated with @Traced
         tracedMethod();
-        
+
         // Call a method annotated with @Traced with parameters
         tracedMethodWithParameters("param1", 42);
     }

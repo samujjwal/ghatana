@@ -3,14 +3,13 @@ package com.ghatana.platform.testing.data;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
  * Builder for generating random test data.
- * 
+ *
  * <p>Provides fluent API for generating random values of various types (strings, numbers, dates, collections).
  * Useful for creating test fixtures and randomized property-based tests.
  *
@@ -40,16 +39,16 @@ public class RandomDataBuilder {
     private static final String ALPHA_NUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final String NUMERIC = "0123456789";
-    
+
     private final Random random;
-    
+
     /**
      * Creates a new RandomDataBuilder with a new Random instance.
      */
     public RandomDataBuilder() {
         this(new Random());
     }
-    
+
     /**
      * Creates a new RandomDataBuilder with the specified Random instance.
      *
@@ -58,7 +57,7 @@ public class RandomDataBuilder {
     public RandomDataBuilder(Random random) {
         this.random = Objects.requireNonNull(random, "Random cannot be null");
     }
-    
+
     /**
      * Creates a DataGenerator that generates random strings.
      *
@@ -68,7 +67,7 @@ public class RandomDataBuilder {
     public DataGenerator<String> string(int length) {
         return string(ALPHA_NUMERIC, length, length);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random strings with a length between min and max.
      *
@@ -79,7 +78,7 @@ public class RandomDataBuilder {
     public DataGenerator<String> string(int minLength, int maxLength) {
         return string(ALPHA_NUMERIC, minLength, maxLength);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random strings from the given characters.
      *
@@ -92,7 +91,7 @@ public class RandomDataBuilder {
         if (minLength < 0 || maxLength < minLength) {
             throw new IllegalArgumentException("Invalid length range: [" + minLength + ", " + maxLength + "]");
         }
-        
+
         return () -> {
             int length = minLength == maxLength ? minLength : minLength + random.nextInt(maxLength - minLength + 1);
             return random.ints(length, 0, chars.length())
@@ -101,7 +100,7 @@ public class RandomDataBuilder {
                     .toString();
         };
     }
-    
+
     /**
      * Creates a DataGenerator that generates random alphanumeric strings.
      *
@@ -111,7 +110,7 @@ public class RandomDataBuilder {
     public DataGenerator<String> alphaNumeric(int length) {
         return string(ALPHA_NUMERIC, length, length);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random alphabetic strings.
      *
@@ -121,7 +120,7 @@ public class RandomDataBuilder {
     public DataGenerator<String> alphabetic(int length) {
         return string(ALPHA, length, length);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random numeric strings.
      *
@@ -131,7 +130,7 @@ public class RandomDataBuilder {
     public DataGenerator<String> numeric(int length) {
         return string(NUMERIC, length, length);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random integers.
      *
@@ -145,7 +144,7 @@ public class RandomDataBuilder {
         }
         return () -> random.nextInt((max - min) + 1) + min;
     }
-    
+
     /**
      * Creates a DataGenerator that generates random longs.
      *
@@ -159,7 +158,7 @@ public class RandomDataBuilder {
         }
         return () -> ThreadLocalRandom.current().nextLong(min, max + 1);
     }
-    
+
     /**
      * Creates a DataGenerator that generates random doubles.
      *
@@ -173,7 +172,7 @@ public class RandomDataBuilder {
         }
         return () -> min + (max - min) * random.nextDouble();
     }
-    
+
     /**
      * Creates a DataGenerator that generates random booleans.
      *
@@ -182,7 +181,7 @@ public class RandomDataBuilder {
     public DataGenerator<Boolean> bool() {
         return random::nextBoolean;
     }
-    
+
     /**
      * Creates a DataGenerator that generates random dates.
      *
@@ -193,10 +192,10 @@ public class RandomDataBuilder {
     public DataGenerator<LocalDate> date(LocalDate startInclusive, LocalDate endExclusive) {
         long startEpochDay = startInclusive.toEpochDay();
         long endEpochDay = endExclusive.toEpochDay();
-        
+
         return () -> LocalDate.ofEpochDay(ThreadLocalRandom.current().nextLong(startEpochDay, endEpochDay));
     }
-    
+
     /**
      * Creates a DataGenerator that generates random date-times.
      *
@@ -207,13 +206,13 @@ public class RandomDataBuilder {
     public DataGenerator<LocalDateTime> dateTime(LocalDateTime startInclusive, LocalDateTime endExclusive) {
         long startEpochSecond = startInclusive.toEpochSecond(ZoneOffset.UTC);
         long endEpochSecond = endExclusive.toEpochSecond(ZoneOffset.UTC);
-        
+
         return () -> {
             long randomEpochSecond = ThreadLocalRandom.current().nextLong(startEpochSecond, endEpochSecond);
             return LocalDateTime.ofEpochSecond(randomEpochSecond, 0, ZoneOffset.UTC);
         };
     }
-    
+
     /**
      * Creates a DataGenerator that generates random enum constants.
      *
@@ -226,10 +225,10 @@ public class RandomDataBuilder {
         if (values == null || values.length == 0) {
             throw new IllegalArgumentException("Enum class " + enumClass.getName() + " has no constants");
         }
-        
+
         return () -> values[random.nextInt(values.length)];
     }
-    
+
     /**
      * Creates a DataGenerator that selects a random element from the given values.
      *
@@ -242,10 +241,10 @@ public class RandomDataBuilder {
         if (values == null || values.length == 0) {
             throw new IllegalArgumentException("Values cannot be empty");
         }
-        
+
         return () -> values[random.nextInt(values.length)];
     }
-    
+
     /**
      * Creates a DataGenerator that selects a random element from the given collection.
      *
@@ -257,11 +256,11 @@ public class RandomDataBuilder {
         if (values == null || values.isEmpty()) {
             throw new IllegalArgumentException("Values cannot be empty");
         }
-        
+
         List<T> valueList = new ArrayList<>(values);
         return () -> valueList.get(random.nextInt(valueList.size()));
     }
-    
+
     /**
      * Creates a DataGenerator that generates a list of values.
      *
@@ -275,7 +274,7 @@ public class RandomDataBuilder {
         if (minSize < 0 || maxSize < minSize) {
             throw new IllegalArgumentException("Invalid size range: [" + minSize + ", " + maxSize + "]");
         }
-        
+
         return () -> {
             int size = minSize == maxSize ? minSize : minSize + random.nextInt(maxSize - minSize + 1);
             return IntStream.range(0, size)
@@ -283,7 +282,7 @@ public class RandomDataBuilder {
                     .collect(Collectors.toList());
         };
     }
-    
+
     /**
      * Creates a DataGenerator that generates a set of values.
      *
@@ -297,7 +296,7 @@ public class RandomDataBuilder {
         return list(elementGenerator, minSize, maxSize)
                 .map(HashSet::new);
     }
-    
+
     /**
      * Creates a DataGenerator that generates a map of key-value pairs.
      *
@@ -314,7 +313,7 @@ public class RandomDataBuilder {
             DataGenerator<V> valueGenerator,
             int minSize,
             int maxSize) {
-        
+
         return () -> {
             int size = minSize == maxSize ? minSize : minSize + random.nextInt(maxSize - minSize + 1);
             Map<K, V> result = new HashMap<>();
@@ -324,7 +323,7 @@ public class RandomDataBuilder {
             return result;
         };
     }
-    
+
     /**
      * Creates a DataGenerator that generates values based on a list of weighted generators.
      *
@@ -337,7 +336,7 @@ public class RandomDataBuilder {
         if (weightedGenerators == null || weightedGenerators.length == 0) {
             throw new IllegalArgumentException("Weighted generators cannot be empty");
         }
-        
+
         int totalWeight = 0;
         for (Pair<Integer, DataGenerator<T>> pair : weightedGenerators) {
             if (pair.getFirst() <= 0) {
@@ -345,24 +344,24 @@ public class RandomDataBuilder {
             }
             totalWeight += pair.getFirst();
         }
-        
+
         int finalTotalWeight = totalWeight;
         return () -> {
             int randomValue = random.nextInt(finalTotalWeight);
             int currentWeight = 0;
-            
+
             for (Pair<Integer, DataGenerator<T>> pair : weightedGenerators) {
                 currentWeight += pair.getFirst();
                 if (randomValue < currentWeight) {
                     return pair.getSecond().generate();
                 }
             }
-            
+
             // This should never happen if the weights are correct
             throw new IllegalStateException("Failed to select a generator");
         };
     }
-    
+
     /**
      * Creates a DataGenerator that generates values using the specified supplier.
      *
@@ -373,7 +372,7 @@ public class RandomDataBuilder {
     public static <T> DataGenerator<T> fromSupplier(Supplier<T> supplier) {
         return supplier::get;
     }
-    
+
     /**
      * A simple pair class for holding two values.
      *
@@ -383,20 +382,20 @@ public class RandomDataBuilder {
     public static class Pair<A, B> {
         private final A first;
         private final B second;
-        
+
         private Pair(A first, B second) {
             this.first = first;
             this.second = second;
         }
-        
+
         public static <A, B> Pair<A, B> of(A first, B second) {
             return new Pair<>(first, second);
         }
-        
+
         public A getFirst() {
             return first;
         }
-        
+
         public B getSecond() {
             return second;
         }

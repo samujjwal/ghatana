@@ -11,23 +11,23 @@ import java.util.UUID;
 
 /**
  * AI workflow orchestration service.
- * 
+ *
  * <p>Coordinates execution of multi-step AI workflows with state management
  * and error handling.
- * 
+ *
  * @doc.type class
  * @doc.purpose Workflow orchestration for AI operations
  * @doc.layer product
  * @doc.pattern Orchestrator
  */
 public class WorkflowOrchestrator {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowOrchestrator.class);
-    
+
     public WorkflowOrchestrator() {
         LOG.info("Initialized WorkflowOrchestrator");
     }
-    
+
     /**
      * Executes a workflow with given steps.
      */
@@ -43,7 +43,7 @@ public class WorkflowOrchestrator {
             "stepCount", steps.size()
         ));
     }
-    
+
     /**
      * Executes a single workflow step.
      */
@@ -60,7 +60,7 @@ public class WorkflowOrchestrator {
             "status", "completed"
         ));
     }
-    
+
     /**
      * Retrieves workflow status.
      */
@@ -72,7 +72,7 @@ public class WorkflowOrchestrator {
             "status", "active"
         ));
     }
-    
+
     /**
      * Cancels a running workflow.
      */
@@ -81,7 +81,7 @@ public class WorkflowOrchestrator {
         LOG.debug("Cancelling workflow: {}", workflowId);
         return Promise.of(true);
     }
-    
+
     /**
      * Pauses a running workflow.
      */
@@ -90,7 +90,7 @@ public class WorkflowOrchestrator {
         LOG.debug("Pausing workflow: {}", workflowId);
         return Promise.of(true);
     }
-    
+
     /**
      * Resumes a paused workflow.
      */

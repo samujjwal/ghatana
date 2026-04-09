@@ -1,7 +1,6 @@
 package com.ghatana.agent.learning.consolidation;
 
 import com.ghatana.agent.memory.model.MemoryItemType;
-import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.MemoryQuery;

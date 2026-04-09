@@ -186,4 +186,3 @@ class FacialRecognitionServiceTest {
         assertThat(d1.faceId()).isNotEqualTo(d2.faceId());
     }
 }
-

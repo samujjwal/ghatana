@@ -210,4 +210,3 @@ class TaskValidatorTest {
         assertThat(result.isValid()).isTrue();
     }
 }
-

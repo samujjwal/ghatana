@@ -406,7 +406,7 @@ public class CreateCommand implements Callable<Integer> {
 
             // Write state file
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            Files.writeString(stateDir.resolve("state.json"), 
+            Files.writeString(stateDir.resolve("state.json"),
                     mapper.writerWithDefaultPrettyPrinter().writeValueAsString(state));
 
             // Add .yappc to .gitignore if not already

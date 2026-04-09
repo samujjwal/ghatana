@@ -25,7 +25,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Simple query
  * RecordQuery query = RecordQuery.forCollection("users")

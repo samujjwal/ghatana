@@ -20,7 +20,7 @@ import java.util.Optional;
 
 /**
  * TutorPutor Content Generation Agent implementing GAA lifecycle.
- * 
+ *
  * <p>This agent handles the complete content generation workflow:
  * <ul>
  *   <li><b>PERCEIVE</b>: Validates request, enriches with learner context</li>
@@ -29,7 +29,7 @@ import java.util.Optional;
  *   <li><b>CAPTURE</b>: Stores generation episode with quality metrics</li>
  *   <li><b>REFLECT</b>: Learns from learner feedback, improves prompts</li>
  * </ul>
- * 
+ *
  * <p><b>Adaptive Features:</b>
  * <ul>
  *   <li>Personalization based on learner history</li>
@@ -53,7 +53,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
     private final KnowledgeBaseService knowledgeBaseService;
     private final ContentQualityValidator qualityValidator;
     private final LearnerProfileHttpClient learnerProfileClient;
-    
+
     /**
      * Creates a new ContentGenerationAgent.
      *
@@ -81,7 +81,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
 
     /**
      * Phase 1: PERCEIVE - Validates and enriches the content generation request.
-     * 
+     *
      * <p>Enrichment includes:
      * <ul>
      *   <li>Loading learner profile from memory</li>
@@ -95,20 +95,20 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
     protected ContentGenerationRequest perceive(
             @NotNull ContentGenerationRequest request,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().info("PERCEIVE: Processing request for topic '{}' at grade {}",
             request.topic(), request.gradeLevel());
-        
+
         // Validate required fields
         validateRequest(request);
-        
+
         // Create enriched request with learner context
         return enrichWithLearnerContext(request, context);
     }
 
     /**
      * Phase 3: ACT - Validates generated content and checks curriculum alignment.
-     * 
+     *
      * <p>Actions include:
      * <ul>
      *   <li>Fact-checking claims against knowledge base</li>
@@ -122,20 +122,20 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
     protected Promise<ContentGenerationResponse> act(
             @NotNull ContentGenerationResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().info("ACT: Validating generated content quality");
-        
+
         // Validate content quality
         return qualityValidator.validate(response, context)
             .map(validationResult -> {
                 if (!validationResult.passed()) {
                     context.getLogger().warn("Content quality validation failed: {}",
                         validationResult.issues());
-                    
+
                     // Return response with validation warnings
                     return response.withValidationIssues(validationResult.issues());
                 }
-                
+
                 context.getLogger().info("ACT: Content passed quality validation");
                 return response;
             })
@@ -146,9 +146,9 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
                         validatedResponse.domain(),
                         validatedResponse.gradeLevel())
                     .map(alignment -> {
-                        context.recordMetric("tutorputor.content.curriculum_alignment", 
+                        context.recordMetric("tutorputor.content.curriculum_alignment",
                             alignment.confidenceScore());
-                        
+
                         return validatedResponse.withCurriculumAlignment(
                             alignment.aligned(),
                             alignment.alignedTopics());
@@ -158,7 +158,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
 
     /**
      * Phase 4: CAPTURE - Stores the generation episode with quality metrics.
-     * 
+     *
      * <p>Captures:
      * <ul>
      *   <li>Request and response details</li>
@@ -173,9 +173,9 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             @NotNull ContentGenerationRequest request,
             @NotNull ContentGenerationResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().debug("CAPTURE: Storing content generation episode");
-        
+
         // Build context map with all relevant metadata
         Map<String, Object> episodeContext = Map.of(
             "topic", request.topic(),
@@ -188,7 +188,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             "generationTimeMs", response.generationTimeMs(),
             "tokenCount", response.tokenCount()
         );
-        
+
         // Build detailed episode
         Episode episode = Episode.builder()
             .agentId(getAgentId())
@@ -200,7 +200,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             .tags(List.of("content-generation", request.domain(), request.contentType().name()))
             .reward(response.qualityScore()) // Use quality score as reward
             .build();
-        
+
         // Store episode
         return context.getMemoryStore().storeEpisode(episode)
             .then(stored -> {
@@ -218,7 +218,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
                             "gradeLevel", request.gradeLevel()
                         ))
                         .build();
-                    
+
                     return context.getMemoryStore().storeFact(fact)
                         .map(f -> null);
                 }
@@ -228,7 +228,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
 
     /**
      * Phase 5: REFLECT - Analyzes generation patterns and improves prompts.
-     * 
+     *
      * <p>Reflection includes:
      * <ul>
      *   <li>Analyzing quality trends</li>
@@ -243,7 +243,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             @NotNull ContentGenerationRequest request,
             @NotNull ContentGenerationResponse response,
             @NotNull AgentContext context) {
-        
+
         context.getLogger().debug("REFLECT: Analyzing generation patterns (async)");
 
         Promise<Void> immediateLearnerReflection = Promise.complete();
@@ -264,7 +264,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
                 updateLearnerModel(request.learnerId(), request, response, qualityScore, context)
             );
         }
-        
+
         return immediateLearnerReflection.then($ -> reflectOnRecentEpisodes(request, context));
     }
 
@@ -286,7 +286,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
     private ContentGenerationRequest enrichWithLearnerContext(
             ContentGenerationRequest request,
             AgentContext context) {
-        
+
         if (request.learnerId() == null) {
             // Anonymous request, no enrichment possible
             return request;
@@ -298,7 +298,7 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
         List<String> preferences = loadLearnerPreferences(snapshot, context);
         String adjustedDifficulty = adjustDifficultyForLearner(snapshot, request, context);
         List<String> knowledgeGaps = detectKnowledgeGaps(snapshot, request.topic(), context);
-        
+
         return new ContentGenerationRequest(
             request.topic(),
             request.domain(),
@@ -547,14 +547,14 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             List<Episode> episodes,
             double avgQuality,
             AgentContext context) {
-        context.getLogger().info("Extracting successful generation patterns from {} episodes", 
+        context.getLogger().info("Extracting successful generation patterns from {} episodes",
             episodes.size());
-        
+
         // In production, this would:
         // 1. Use LLM to analyze successful prompts
         // 2. Extract common patterns
         // 3. Store as procedural memory (Policy)
-        
+
         Policy pattern = Policy.builder()
             .agentId("ContentGenerationAgent")
             .situation("content generation quality >= " + HIGH_CONFIDENCE_THRESHOLD)
@@ -570,22 +570,22 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
                 )
             ))
             .build();
-        
+
         return context.getMemoryStore().storePolicy(pattern)
             .map(p -> null);
     }
 
     private Promise<Void> identifyFailurePatterns(List<Episode> episodes, AgentContext context) {
-        context.getLogger().warn("Identifying failure patterns from {} episodes", 
+        context.getLogger().warn("Identifying failure patterns from {} episodes",
             episodes.size());
-        
+
         // In production, this would:
         // 1. Analyze low-quality generations
         // 2. Identify common issues
         // 3. Flag for human review
-        
+
         context.recordMetric("tutorputor.reflection.failure_analysis_triggered", 1);
-        
+
         return Promise.complete();
     }
 }

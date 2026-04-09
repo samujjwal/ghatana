@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Java stack trace parser that handles standard Java stack traces with optional
  * configuration-driven patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles java stack trace parser operations
  * @doc.layer core

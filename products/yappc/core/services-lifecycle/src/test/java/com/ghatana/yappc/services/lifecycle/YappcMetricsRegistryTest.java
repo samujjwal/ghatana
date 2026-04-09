@@ -1,8 +1,6 @@
 package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.platform.observability.MetricsProvider;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

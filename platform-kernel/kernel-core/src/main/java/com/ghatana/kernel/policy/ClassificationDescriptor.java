@@ -14,7 +14,7 @@ import java.util.Set;
  * <p>Per KERNEL_CANONICALIZATION_DECISIONS.md §5.1, this replaces the hardcoded
  * product-id branching in services with policy-driven resolution.</p>
  *
- * <p>ClassificationDescriptor is a value object that encapsulates the domain, sensitivity level, 
+ * <p>ClassificationDescriptor is a value object that encapsulates the domain, sensitivity level,
  * compliance tags, and metadata of classified data or actions.</p>
  *
  * @doc.type class

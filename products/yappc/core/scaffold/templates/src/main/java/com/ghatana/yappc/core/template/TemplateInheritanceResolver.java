@@ -26,14 +26,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Template inheritance resolver for YAPPC scaffolding.
- * 
+ *
  * Resolves template inheritance chains with override strategies:
  * - REPLACE: Child template replaces parent completely
  * - MERGE: Child template merges with parent
  * - APPEND: Child template appends to parent
- * 
+ *
  * Template resolution order: global → language → framework → project
- * 
+ *
  * @doc.type class
  * @doc.purpose Template inheritance resolution with override strategies
  * @doc.layer platform
@@ -57,7 +57,7 @@ public class TemplateInheritanceResolver {
 
     /**
      * Register a template search path with priority.
-     * 
+     *
      * @param level template level (global, language, framework, project)
      * @param path path to template directory
      */
@@ -68,19 +68,19 @@ public class TemplateInheritanceResolver {
 
     /**
      * Resolve template inheritance chain and return final template content.
-     * 
+     *
      * @param templateName template name to resolve
      * @param strategy override strategy to use
      * @return resolved template content
      * @throws TemplateException if resolution fails
      */
-    public String resolveTemplate(String templateName, OverrideStrategy strategy) 
+    public String resolveTemplate(String templateName, OverrideStrategy strategy)
             throws TemplateException {
-        
+
         log.debug("Resolving template: {} with strategy: {}", templateName, strategy);
 
         List<TemplateSource> sources = findTemplateSources(templateName);
-        
+
         if (sources.isEmpty()) {
             throw new TemplateException("Template not found: " + templateName);
         }
@@ -129,22 +129,22 @@ public class TemplateInheritanceResolver {
      * Apply inheritance strategy to merge template sources.
      */
     private String applyInheritanceStrategy(
-            List<TemplateSource> sources, 
+            List<TemplateSource> sources,
             OverrideStrategy strategy) {
-        
+
         switch (strategy) {
             case REPLACE:
                 // Use the most specific (last) template
                 return sources.get(sources.size() - 1).content();
-                
+
             case MERGE:
                 // Merge templates with block replacement
                 return mergeTemplates(sources);
-                
+
             case APPEND:
                 // Append all templates
                 return appendTemplates(sources);
-                
+
             default:
                 return sources.get(sources.size() - 1).content();
         }
@@ -152,7 +152,7 @@ public class TemplateInheritanceResolver {
 
     /**
      * Merge templates using block replacement.
-     * 
+     *
      * Blocks are defined as: {{#block blockName}}...{{/block}}
      * Child templates can override parent blocks.
      */

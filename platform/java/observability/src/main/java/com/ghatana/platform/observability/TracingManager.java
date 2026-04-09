@@ -85,7 +85,7 @@ public class TracingManager {
      * Thread-safe via {@code computeIfAbsent}.</p>
      */
     private final Map<String, TracingProvider> providers = new HashMap<>();
-    
+
     /**
      * The OpenTelemetry instance for span export and context propagation.
      */

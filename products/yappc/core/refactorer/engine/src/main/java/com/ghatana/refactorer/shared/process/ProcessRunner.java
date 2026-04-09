@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Helper class to run external processes. 
+ * Helper class to run external processes.
  * @doc.type class
  * @doc.purpose Handles process runner operations
  * @doc.layer core

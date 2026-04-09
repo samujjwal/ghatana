@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.application.nlq;
 
-import java.util.List;
 
 /**
  * Component for QueryPlan

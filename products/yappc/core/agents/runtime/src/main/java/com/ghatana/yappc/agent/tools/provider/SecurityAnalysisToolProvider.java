@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles security analysis tool provider operations
  * @doc.layer core

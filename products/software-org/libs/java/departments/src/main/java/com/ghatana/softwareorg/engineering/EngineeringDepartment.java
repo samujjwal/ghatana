@@ -5,7 +5,6 @@ import com.ghatana.virtualorg.framework.event.EventPublisher;
 import com.ghatana.softwareorg.domain.common.BaseSoftwareOrgDepartment;
 import com.ghatana.platform.types.identity.Identifier;
 
-import java.util.Map;
 
 /**
  * Engineering Department for software-org.

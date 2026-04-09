@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author YAPPC Team
  * @version 1.0.0
  * @since 1.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles embedded lifecycle service operations
  * @doc.layer core
@@ -22,33 +22,33 @@ import java.util.concurrent.ConcurrentHashMap;
 * @doc.gaa.lifecycle perceive
 */
 final class EmbeddedLifecycleService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedLifecycleService.class);
-    
+
     private final YAPPCConfig config;
     private final Map<String, LifecycleState> projectStates;
     private volatile boolean initialized = false;
-    
+
     EmbeddedLifecycleService(YAPPCConfig config) {
         this.config = config;
         this.projectStates = new ConcurrentHashMap<>();
     }
-    
+
     void initialize() {
         logger.info("Initializing embedded lifecycle service");
         initialized = true;
     }
-    
+
     void shutdown() {
         logger.info("Shutting down embedded lifecycle service");
         projectStates.clear();
         initialized = false;
     }
-    
+
     boolean isHealthy() {
         return initialized;
     }
-    
+
     Promise<LifecycleState> getState(String projectId) {
         return Promise.ofCallback(cb -> {
             try {
@@ -56,7 +56,7 @@ final class EmbeddedLifecycleService {
                     projectId,
                     id -> new LifecycleState(id, "planning", "active")
                 );
-                
+
                 logger.debug("Retrieved lifecycle state for project: {}", projectId);
                 cb.set(state);
             } catch (Exception e) {
@@ -65,7 +65,7 @@ final class EmbeddedLifecycleService {
             }
         });
     }
-    
+
     Promise<PhaseResult> advancePhase(String projectId, AdvancePhaseRequest request) {
         return Promise.ofCallback(cb -> {
             try {
@@ -74,11 +74,11 @@ final class EmbeddedLifecycleService {
                     request.getTargetPhase(),
                     "active"
                 );
-                
+
                 projectStates.put(projectId, newState);
-                
+
                 logger.info("Advanced project {} to phase: {}", projectId, request.getTargetPhase());
-                
+
                 PhaseResult result = new PhaseResult(projectId, request.getTargetPhase(), true);
                 cb.set(result);
             } catch (Exception e) {

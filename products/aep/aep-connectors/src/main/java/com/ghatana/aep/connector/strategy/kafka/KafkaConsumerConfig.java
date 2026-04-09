@@ -5,8 +5,6 @@
 package com.ghatana.aep.connector.strategy.kafka;
 
 import com.ghatana.aep.connector.config.ConnectorConfig;
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.config.TlsConfig;
 
 import java.util.Objects;
 

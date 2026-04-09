@@ -15,11 +15,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Runs `cargo check` to analyze Rust code and parse the JSON output.
- * 
+ *
  * @doc.type runner
  * @doc.language rust
  * @doc.tool cargo
- 
+
  * @doc.purpose Handles cargo runner operations
  * @doc.layer core
  * @doc.pattern ValueObject

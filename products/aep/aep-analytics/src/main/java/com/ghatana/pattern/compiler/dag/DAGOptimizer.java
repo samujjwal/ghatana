@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * Optimizer for operator DAGs to improve performance and reduce complexity.
- * 
+ *
  * <p>The DAGOptimizer applies multiple optimization passes to improve pattern
  * execution performance:
  * <ol>
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  *   <li><b>Operator Reordering</b>: Push filters earlier, delay expensive operations</li>
  *   <li><b>Unreachable Pruning</b>: Remove nodes disconnected from root</li>
  * </ol>
- * 
+ *
  * @doc.pattern Visitor Pattern (DAG traversal), Strategy Pattern (optimization passes)
  * @doc.compiler-phase Optimization (fourth phase after DAG generation)
  * @doc.threading Thread-safe; each optimize() call operates on independent DAG
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @doc.apiNote Apply optimization after DAG construction; multiple passes may be needed
  * @doc.limitation No cost-based optimization; heuristic-based transformations only
  * @doc.sideEffects Mutates input DAG; emits metrics for optimization success/failure
- * 
+ *
  * <h2>Optimization Passes</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -68,30 +68,30 @@ import java.util.stream.Collectors;
  * </table>
  */
 public class DAGOptimizer {
-    
+
     private final OperatorRegistry operatorRegistry;
     private final MetricsCollector metrics;
-    
+
     // Metrics
-    
-    
+
+
     private final Timer optimizationTimer;
-    
+
     public DAGOptimizer(OperatorRegistry operatorRegistry, MeterRegistry meterRegistry) {
         this.operatorRegistry = operatorRegistry;
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
-        
+
         // Initialize metrics
         // Counters migrated to MetricsCollector
-        
+
         // See metrics field for counter operations
-        
+
         this.optimizationTimer = Timer.builder("pattern.compiler.optimization.time").register(meterRegistry);
     }
-    
+
     /**
      * Optimize a DAG for better performance.
-     * 
+     *
      * @param dag the DAG to optimize
      * @throws PatternValidationException if optimization fails
      */
@@ -99,7 +99,7 @@ public class DAGOptimizer {
         if (dag == null) {
             throw new PatternValidationException("DAG cannot be null");
         }
-        
+
         try {
             optimizationTimer.recordCallable(() -> {
                 try {
@@ -108,10 +108,10 @@ public class DAGOptimizer {
                     mergeAdjacentWindows(dag);
                     reorderOperators(dag);
                     pruneUnreachableNodes(dag);
-                    
+
                     metrics.incrementCounter("pattern.compiler.optimization.success");
                     return null;
-                    
+
                 } catch (Exception e) {
                     metrics.incrementCounter("pattern.compiler.optimization.failure");
                     if (e instanceof PatternValidationException) {
@@ -127,7 +127,7 @@ public class DAGOptimizer {
             throw new PatternValidationException("DAG optimization failed", e);
         }
     }
-    
+
     /**
      * Remove redundant nodes from the DAG.
      *
@@ -344,8 +344,3 @@ public class DAGOptimizer {
                "FILTER".equals(operatorType);
     }
 }
-
-
-
-
-

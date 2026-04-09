@@ -2,7 +2,7 @@ package com.ghatana.yappc.agent.tools;
 
 /**
  * Gradle build tool wrapper (stub).
- * 
+ *
  * @doc.type class
  * @doc.purpose Provides Gradle build operations as agent tools
  * @doc.layer product

@@ -22,11 +22,11 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Runs TypeScript compiler (TSC) to collect type checking diagnostics.
- * 
+ *
  * @doc.type runner
  * @doc.language typescript
  * @doc.tool tsc
- 
+
  * @doc.purpose Handles tsc runner operations
  * @doc.layer core
  * @doc.pattern Implementation

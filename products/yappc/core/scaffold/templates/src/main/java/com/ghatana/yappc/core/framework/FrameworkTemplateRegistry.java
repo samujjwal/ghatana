@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 /**
  * Registry for framework-specific templates.
  * Discovers, loads, and manages templates for various frameworks.
- * 
+ *
  * @doc.type class
  * @doc.purpose Manage framework-specific templates
  * @doc.layer platform
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 public class FrameworkTemplateRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(FrameworkTemplateRegistry.class);
-    
+
     private final Map<String, FrameworkTemplate> templates = new ConcurrentHashMap<>();
     private final Map<String, List<FrameworkTemplate>> frameworkIndex = new ConcurrentHashMap<>();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
@@ -71,9 +71,9 @@ public class FrameworkTemplateRegistry {
      */
     public void registerTemplate(FrameworkTemplate template) {
         log.debug("Registering template: {}", template.id());
-        
+
         templates.put(template.id(), template);
-        
+
         frameworkIndex
             .computeIfAbsent(template.framework(), k -> new ArrayList<>())
             .add(template);
@@ -88,15 +88,15 @@ public class FrameworkTemplateRegistry {
      */
     public List<FrameworkTemplate> findTemplates(String framework, String version) {
         List<FrameworkTemplate> frameworkTemplates = frameworkIndex.get(framework);
-        
+
         if (frameworkTemplates == null) {
             return List.of();
         }
-        
+
         if ("*".equals(version)) {
             return new ArrayList<>(frameworkTemplates);
         }
-        
+
         return frameworkTemplates.stream()
             .filter(t -> version.equals(t.version()) || "*".equals(t.version()))
             .collect(Collectors.toList());
@@ -152,29 +152,29 @@ public class FrameworkTemplateRegistry {
      */
     public ValidationResult validateTemplate(FrameworkTemplate template) {
         List<String> errors = new ArrayList<>();
-        
+
         if (template.id() == null || template.id().isBlank()) {
             errors.add("Template ID is required");
         }
-        
+
         if (template.framework() == null || template.framework().isBlank()) {
             errors.add("Framework is required");
         }
-        
+
         if (template.name() == null || template.name().isBlank()) {
             errors.add("Template name is required");
         }
-        
+
         if (template.templatePath() == null || !Files.exists(template.templatePath())) {
             errors.add("Template file does not exist: " + template.templatePath());
         }
-        
+
         if (template.metadata() != null) {
             if (template.metadata().author() == null || template.metadata().author().isBlank()) {
                 errors.add("Template author is required");
             }
         }
-        
+
         return new ValidationResult(errors.isEmpty(), errors);
     }
 
@@ -183,21 +183,21 @@ public class FrameworkTemplateRegistry {
      */
     private void discoverTemplates() {
         log.info("Discovering templates from {} search paths", searchPaths.size());
-        
+
         for (Path searchPath : searchPaths) {
             if (!Files.exists(searchPath)) {
                 log.debug("Search path does not exist: {}", searchPath);
                 continue;
             }
-            
+
             try {
                 discoverTemplatesInPath(searchPath);
             } catch (IOException e) {
                 log.error("Failed to discover templates in: {}", searchPath, e);
             }
         }
-        
-        log.info("Discovered {} templates for {} frameworks", 
+
+        log.info("Discovered {} templates for {} frameworks",
             templates.size(), frameworkIndex.size());
     }
 
@@ -220,21 +220,21 @@ public class FrameworkTemplateRegistry {
             // Expected: frameworks/{framework}/{category}/{template-name}.hbs
             Path relativePath = getRelativePath(templatePath);
             String[] parts = relativePath.toString().split("/");
-            
+
             if (parts.length < 3) {
                 log.warn("Invalid template path structure: {}", templatePath);
                 return;
             }
-            
+
             String framework = parts[0];
             String category = parts[1];
             String fileName = parts[parts.length - 1];
             String templateName = fileName.replace(".hbs", "");
-            
+
             // Try to load metadata file
             Path metadataPath = templatePath.getParent().resolve(templateName + ".meta.yaml");
             TemplateMetadata metadata = loadMetadata(metadataPath);
-            
+
             // Create template
             FrameworkTemplate template = new FrameworkTemplate(
                 generateTemplateId(framework, category, templateName),
@@ -248,10 +248,10 @@ public class FrameworkTemplateRegistry {
                 metadata != null ? metadata.dependencies() : List.of(),
                 metadata
             );
-            
+
             registerTemplate(template);
             log.debug("Loaded template: {}", template.id());
-            
+
         } catch (Exception e) {
             log.error("Failed to load template: {}", templatePath, e);
         }
@@ -264,7 +264,7 @@ public class FrameworkTemplateRegistry {
         if (!Files.exists(metadataPath)) {
             return null;
         }
-        
+
         try {
             return yamlMapper.readValue(metadataPath.toFile(), TemplateMetadata.class);
         } catch (IOException e) {

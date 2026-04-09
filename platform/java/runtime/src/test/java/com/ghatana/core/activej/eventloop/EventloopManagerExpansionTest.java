@@ -6,7 +6,6 @@ package com.ghatana.core.activej.eventloop;
 
 import io.activej.eventloop.Eventloop;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -77,7 +76,7 @@ class EventloopManagerExpansionTest {
             for (int i = 0; i < 100; i++) {
                 EventloopManager.getCurrentEventloop();
                 assertThat(EventloopManager.hasEventloop()).isTrue();
-                
+
                 EventloopManager.clearCurrentEventloop();
                 assertThat(EventloopManager.hasEventloop()).isFalse();
                 assertThat(EventloopManager.getActiveCount()).isEqualTo(0);
@@ -102,7 +101,7 @@ class EventloopManagerExpansionTest {
         @DisplayName("Shutdown timeout parameter respected")
         void shutdownTimeoutRespected() {
             EventloopManager.create();
-            
+
             long start = System.currentTimeMillis();
             boolean success = EventloopManager.shutdownAll(Duration.ofMillis(100));
             long elapsed = System.currentTimeMillis() - start;

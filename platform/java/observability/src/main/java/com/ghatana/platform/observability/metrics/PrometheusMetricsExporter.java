@@ -6,9 +6,6 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Prometheus metrics exporter providing HTTP /metrics endpoint for Prometheus server scraping.
@@ -30,7 +27,7 @@ import java.nio.charset.StandardCharsets;
  * <pre>{@code
  * // Example 1: Basic exporter with /metrics HTTP endpoint
  * PrometheusMetricsExporter exporter = new PrometheusMetricsExporter();
- * 
+ *
  * // HTTP server exposes /metrics endpoint
  * HttpServer server = HttpServer.builder(eventloop, request -> {
  *     if (request.getPath().equals("/metrics")) {
@@ -42,7 +39,7 @@ import java.nio.charset.StandardCharsets;
  *     }
  *     return Promise.of(HttpResponse.ofCode(404).build());
  * }).withListenPort(8080).build();
- * 
+ *
  * server.listen();
  * // Prometheus scrapes http://localhost:8080/metrics every 15s
  * }</pre>
@@ -50,14 +47,14 @@ import java.nio.charset.StandardCharsets;
  * <pre>{@code
  * // Example 2: Common tags for environment/service identification
  * PrometheusMetricsExporter exporter = new PrometheusMetricsExporter();
- * 
+ *
  * exporter.commonTags(
  *     "service", "event-ingestion",
  *     "environment", "production",
  *     "region", "us-east-1",
  *     "version", "2.1.0"
  * );
- * 
+ *
  * // All metrics include these tags:
  * // http_requests_total{service="event-ingestion",environment="production",...} 1234
  * }</pre>
@@ -65,10 +62,10 @@ import java.nio.charset.StandardCharsets;
  * <pre>{@code
  * // Example 3: Integration with existing Micrometer registry
  * MeterRegistry existingRegistry = new SimpleMeterRegistry();
- * 
+ *
  * // Record some metrics
  * Counter.builder("requests.total").register(existingRegistry).increment();
- * 
+ *
  * // Export to Prometheus format
  * PrometheusMetricsExporter exporter = PrometheusMetricsExporter.create(existingRegistry);
  * String metrics = exporter.scrape();
@@ -79,7 +76,7 @@ import java.nio.charset.StandardCharsets;
  * // Example 4: Global registry registration (platform-wide metrics)
  * PrometheusMetricsExporter exporter = new PrometheusMetricsExporter();
  * exporter.registerToGlobal();
- * 
+ *
  * // Metrics registered to Metrics.globalRegistry automatically appear in scrape
  * Counter.builder("app.events.processed")
  *     .register(Metrics.globalRegistry)
@@ -94,10 +91,10 @@ import java.nio.charset.StandardCharsets;
  * //     prometheus.io/scrape: "true"
  * //     prometheus.io/port: "8080"
  * //     prometheus.io/path: "/metrics"
- * 
+ *
  * PrometheusMetricsExporter exporter = new PrometheusMetricsExporter();
  * exporter.commonTags("pod", System.getenv("HOSTNAME"));
- * 
+ *
  * // Prometheus auto-discovers and scrapes this pod
  * }</pre>
  *
@@ -108,7 +105,7 @@ import java.nio.charset.StandardCharsets;
  * # TYPE http_requests_total counter
  * http_requests_total{method="GET",status="200",service="event-service"} 1234.0
  * http_requests_total{method="POST",status="201",service="event-service"} 567.0
- * 
+ *
  * # HELP http_request_duration_seconds HTTP request latency distribution
  * # TYPE http_request_duration_seconds histogram
  * http_request_duration_seconds_bucket{le="0.01"} 50
@@ -117,7 +114,7 @@ import java.nio.charset.StandardCharsets;
  * http_request_duration_seconds_bucket{le="+Inf"} 250
  * http_request_duration_seconds_sum 50.5
  * http_request_duration_seconds_count 250
- * 
+ *
  * # HELP jvm_memory_used_bytes JVM memory used
  * # TYPE jvm_memory_used_bytes gauge
  * jvm_memory_used_bytes{area="heap"} 536870912.0
@@ -176,25 +173,25 @@ import java.nio.charset.StandardCharsets;
  * @doc.pattern Adapter
  */
 public class PrometheusMetricsExporter {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(PrometheusMetricsExporter.class);
-    
+
     private final PrometheusMeterRegistry prometheusRegistry;
-    
+
     /**
      * Create a new PrometheusMetricsExporter with an existing Prometheus registry.
      */
     public PrometheusMetricsExporter(PrometheusMeterRegistry prometheusRegistry) {
         this.prometheusRegistry = prometheusRegistry;
     }
-    
+
     /**
      * Create a new PrometheusMetricsExporter with a new Prometheus registry.
      */
     public PrometheusMetricsExporter() {
         this.prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     }
-    
+
     /**
      * Create a new PrometheusMetricsExporter with an existing MeterRegistry.
      * If the registry is already a PrometheusMeterRegistry, it will be used directly.
@@ -208,21 +205,21 @@ public class PrometheusMetricsExporter {
             return new PrometheusMetricsExporter();
         }
     }
-    
+
     /**
      * Get the Prometheus registry.
      */
     public PrometheusMeterRegistry getRegistry() {
         return prometheusRegistry;
     }
-    
+
     /**
      * Scrape metrics in Prometheus format.
      */
     public String scrape() {
         return prometheusRegistry.scrape();
     }
-    
+
     /**
      * Scrape metrics in Prometheus format with custom parameters.
      */
@@ -231,14 +228,14 @@ public class PrometheusMetricsExporter {
         // For compatibility, ignore flags and delegate to default scrape().
         return prometheusRegistry.scrape();
     }
-    
+
     /**
      * Register this registry with the global composite registry.
      */
     public void registerToGlobal() {
         io.micrometer.core.instrument.Metrics.globalRegistry.add(prometheusRegistry);
     }
-    
+
     /**
      * Add common tags to all metrics.
      */

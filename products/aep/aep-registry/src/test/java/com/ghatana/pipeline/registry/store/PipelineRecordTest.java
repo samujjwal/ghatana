@@ -120,4 +120,3 @@ class PipelineRecordTest {
                 .hasMessageContaining("deserialize");
     }
 }
-

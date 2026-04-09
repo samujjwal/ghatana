@@ -20,7 +20,7 @@ import io.activej.promise.Promise;
  *     .withInput("pullRequest", prData)
  *     .withTenantId("acme-corp")
  *     .build();
- * 
+ *
  * WorkflowResult result = workflow.execute(context).getResult();
  * if (result.isSuccess()) {
  *     // Process successful result

@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * Represents a suggested pattern for event detection.
- 
+
  *
  * @doc.type class
  * @doc.purpose Pattern suggestion
@@ -51,7 +51,7 @@ public class PatternSuggestion {
     public String patternType() { return patternType; }
     public String recommendationReason() { return recommendationReason; }
     public Map<String, Double> featureScores() { return Map.copyOf(featureScores); }
-    
+
     // Alias methods for compatibility
     public String getId() { return id(); }
     public String getName() { return name(); }
@@ -148,7 +148,7 @@ public class PatternSuggestion {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, confidenceScore, parameters, 
+        return Objects.hash(id, name, description, confidenceScore, parameters,
                           patternType, recommendationReason, featureScores);
     }
 

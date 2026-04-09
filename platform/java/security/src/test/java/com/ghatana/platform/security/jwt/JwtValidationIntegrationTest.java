@@ -9,12 +9,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for JWT validation — verifies token validation

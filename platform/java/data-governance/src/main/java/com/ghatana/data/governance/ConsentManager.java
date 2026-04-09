@@ -6,7 +6,6 @@ package com.ghatana.data.governance;
 
 import io.activej.promise.Promise;
 
-import java.util.Optional;
 
 /**
  * Tracks consent status for data subjects within a tenant.

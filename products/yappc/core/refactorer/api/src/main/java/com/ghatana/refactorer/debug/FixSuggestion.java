@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Represents a suggested fix for a code issue with associated metadata for scoring confidence and
  * applying the fix.
- 
+
  * @doc.type class
  * @doc.purpose Handles fix suggestion operations
  * @doc.layer core

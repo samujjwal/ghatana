@@ -18,13 +18,13 @@ public class PatternPerformanceMetrics {
     private final AtomicLong falsePositives = new AtomicLong(0);
     private final AtomicLong falseNegatives = new AtomicLong(0);
     private final AtomicLong totalExecutionTime = new AtomicLong(0);
-    
+
     private volatile double accuracy = 0.0;
     private volatile double precision = 0.0;
     private volatile double recall = 0.0;
     private volatile double f1Score = 0.0;
     private volatile double averageExecutionTime = 0.0;
-    
+
     private final Instant creationTime;
 
     public PatternPerformanceMetrics() {
@@ -36,23 +36,23 @@ public class PatternPerformanceMetrics {
     public long getFalsePositives() { return falsePositives.get(); }
     public long getFalseNegatives() { return falseNegatives.get(); }
     public long getTotalExecutionTime() { return totalExecutionTime.get(); }
-    
+
     public double getAccuracy() { return accuracy; }
     public double getPrecision() { return precision; }
     public double getRecall() { return recall; }
     public double getF1Score() { return f1Score; }
     public double getAverageExecutionTime() { return averageExecutionTime; }
-    
+
     public Instant getCreationTime() { return creationTime; }
 
     public void recordExecution(long executionTimeMs, boolean matched, boolean isTruePositive, boolean isFalseNegative) {
         totalExecutions.incrementAndGet();
         totalExecutionTime.addAndGet(executionTimeMs);
-        
+
         if (matched) {
             successfulMatches.incrementAndGet();
         }
-        
+
         if (isTruePositive) {
             // True positive - correctly identified match
         } else if (isFalseNegative) {
@@ -60,7 +60,7 @@ public class PatternPerformanceMetrics {
         } else if (matched && !isTruePositive) {
             falsePositives.incrementAndGet();
         }
-        
+
         updateCalculatedMetrics();
     }
 
@@ -81,29 +81,29 @@ public class PatternPerformanceMetrics {
         long matches = successfulMatches.get();
         long fp = falsePositives.get();
         long fn = falseNegatives.get();
-        
+
         // Average execution time
         if (total > 0) {
             averageExecutionTime = (double) totalExecutionTime.get() / total;
         }
-        
+
         // Accuracy
         long truePositives = matches - fp;
         if (total > 0) {
             accuracy = (double) (truePositives + (total - matches - fn)) / total;
         }
-        
+
         // Precision
         if (matches > 0) {
             precision = (double) truePositives / matches;
         }
-        
+
         // Recall
         long actualPositives = truePositives + fn;
         if (actualPositives > 0) {
             recall = (double) truePositives / actualPositives;
         }
-        
+
         // F1 Score
         if (precision + recall > 0) {
             f1Score = 2 * (precision * recall) / (precision + recall);

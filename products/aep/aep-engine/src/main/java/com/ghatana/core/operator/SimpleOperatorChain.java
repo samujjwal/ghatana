@@ -262,4 +262,3 @@ public class SimpleOperatorChain extends AbstractOperator implements OperatorCha
                 .build();
     }
 }
-

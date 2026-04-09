@@ -18,7 +18,7 @@ package com.ghatana.auth.exception;
  * } catch (InvalidJwtException e) {
  *     throw new InvalidTokenException("Token validation failed", e);
  * }
- * 
+ *
  * if (isTokenRevoked(token)) {
  *     throw new InvalidTokenException("Token has been revoked");
  * }
@@ -43,7 +43,7 @@ package com.ghatana.auth.exception;
  * @doc.pattern Exception
  */
 public class InvalidTokenException extends AuthenticationException {
-    
+
     /**
      * Create exception with message.
      *
@@ -52,7 +52,7 @@ public class InvalidTokenException extends AuthenticationException {
     public InvalidTokenException(String message) {
         super(message);
     }
-    
+
     /**
      * Create exception with message and cause.
      *

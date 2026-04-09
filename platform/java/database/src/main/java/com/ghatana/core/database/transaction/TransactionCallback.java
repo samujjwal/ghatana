@@ -30,16 +30,16 @@ package com.ghatana.core.database.transaction;
  *     em.persist(user);
  *     return user;
  * };
- * 
+ *
  * // Use with TransactionManager
  * User user = transactionManager.execute(createUser);
- * 
+ *
  * // Complex multi-step callback
  * TransactionCallback<EntityManager, Order> processOrder = em -> {
  *     // Step 1: Create order
  *     Order order = new Order(customerId);
  *     em.persist(order);
- *     
+ *
  *     // Step 2: Reserve inventory
  *     for (OrderLine line : order.getLines()) {
  *         Product product = em.find(Product.class, line.getProductId());
@@ -49,26 +49,26 @@ package com.ghatana.core.database.transaction;
  *         product.decrementStock(line.getQuantity());
  *         em.merge(product);
  *     }
- *     
+ *
  *     // Step 3: Update customer
  *     Customer customer = em.find(Customer.class, customerId);
  *     customer.addOrder(order);
  *     em.merge(customer);
- *     
+ *
  *     return order; // All-or-nothing: success=commit, exception=rollback
  * };
- * 
+ *
  * // With custom transaction context
  * public class TransactionContext {
  *     private final EntityManager em;
  *     private final AuditLogger auditLogger;
- *     
+ *
  *     public TransactionContext(EntityManager em, AuditLogger logger) {
  *         this.em = em;
  *         this.auditLogger = logger;
  *     }
  * }
- * 
+ *
  * TransactionCallback<TransactionContext, Void> auditedOperation = ctx -> {
  *     ctx.auditLogger.log("Starting operation");
  *     // Perform operation

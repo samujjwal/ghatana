@@ -2,7 +2,6 @@ package com.ghatana.yappc.ai.cost;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.cost.CostRepository.CostEvent;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

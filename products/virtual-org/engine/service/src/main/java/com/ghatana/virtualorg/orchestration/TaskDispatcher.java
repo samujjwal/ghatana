@@ -49,18 +49,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * TaskQueue queue = new TaskQueue(100);
  * TaskDispatcher dispatcher = new TaskDispatcher(queue);
- * 
+ *
  * // Register agents by role
  * dispatcher.registerAgent(seniorEngineer1);
  * dispatcher.registerAgent(seniorEngineer2);
  * dispatcher.registerAgent(architect);
- * 
+ *
  * // Dispatch task - automatically routes to available senior engineer
  * TaskProto task = TaskProto.newBuilder()
  *     .setTaskId("task-123")
  *     .setType("CODE_REVIEW")
  *     .build();
- * 
+ *
  * TaskResponseProto response = dispatcher.dispatch(task).getResult();
  * }</pre>
  *

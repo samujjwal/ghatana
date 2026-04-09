@@ -61,7 +61,7 @@ public final class AddResult {
         return new Builder();
     }
 
-    public static AddResult success(Path projectPath, String feature, String type, 
+    public static AddResult success(Path projectPath, String feature, String type,
                                     List<String> filesCreated, List<String> dependenciesAdded) {
         return builder()
                 .success(true)

@@ -19,7 +19,6 @@ import com.ghatana.services.featurestore.exception.FeatureExtractionException;
 import com.ghatana.services.featurestore.exception.FeatureIngestException;
 import com.ghatana.services.featurestore.exception.FeatureStoreWriteException;
 import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;

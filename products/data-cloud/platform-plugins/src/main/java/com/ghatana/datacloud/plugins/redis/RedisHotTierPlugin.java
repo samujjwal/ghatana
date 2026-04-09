@@ -68,7 +68,7 @@ import java.util.concurrent.atomic.LongAdder;
  *
  * <p>
  * <b>Architecture</b><br>
- * 
+ *
  * <pre>
  * [Append Request] → [Disruptor RingBuffer] → [Batch Handler] → [Redis XADD]
  *                                                    ↓
@@ -77,7 +77,7 @@ import java.util.concurrent.atomic.LongAdder;
  *
  * <p>
  * <b>Key Format</b><br>
- * 
+ *
  * <pre>
  * Stream Key: ec:stream:{tenantId}:{streamName}
  * Event Key:  ec:event:{tenantId}:{eventId}

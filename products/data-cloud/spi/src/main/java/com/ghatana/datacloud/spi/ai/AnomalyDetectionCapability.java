@@ -379,4 +379,3 @@ public interface AnomalyDetectionCapability {
         INFO
     }
 }
-

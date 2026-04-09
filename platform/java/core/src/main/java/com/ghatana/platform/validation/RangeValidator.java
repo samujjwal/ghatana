@@ -36,7 +36,7 @@ public final class RangeValidator<T extends Comparable<T>> implements Validator<
         }
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
             return ValidationResult.failure(
-                new ValidationError("OUT_OF_RANGE", 
+                new ValidationError("OUT_OF_RANGE",
                     fieldName + " must be between " + min + " and " + max, fieldName, value)
             );
         }

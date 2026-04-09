@@ -1,6 +1,5 @@
 package com.ghatana.platform.governance;
 
-import com.ghatana.platform.governance.RetentionPolicy;
 
 import java.util.Collections;
 import java.util.HashSet;

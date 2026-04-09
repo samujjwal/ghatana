@@ -7,11 +7,11 @@ import java.time.Duration;
 
 /**
  * Interface for managing client connections and connection pooling.
- * 
+ *
  * <p>Provides common connection management patterns including connection pooling,
  * health monitoring, and resource cleanup. Implementations should handle connection
  * lifecycle, pool sizing, and connection validation.</p>
- * 
+ *
  * <h3>Design Principles:</h3>
  * <ul>
  *   <li><b>Pooled</b>: Efficient connection reuse</li>
@@ -19,11 +19,11 @@ import java.time.Duration;
  *   <li><b>Configurable</b>: Pool size and timeout configuration</li>
  *   <li><b>Thread-safe</b>: Concurrent access support</li>
  * </ul>
- * 
+ *
  * <h3>Usage Example:</h3>
  * <pre>{@code
  * ConnectionManager<Connection> manager = ...;
- * 
+ *
  * // Get connection from pool
  * manager.getConnection()
  *     .then(connection -> {
@@ -38,17 +38,17 @@ import java.time.Duration;
  * @doc.purpose Connection pooling and lifecycle management
  * @doc.layer core
  * @doc.pattern Connection Pool
- * 
+ *
  * @since 1.0.0
  */
 public interface ConnectionManager<T> {
 
     /**
      * Get a connection from the pool.
-     * 
+     *
      * <p>Returns a connection from the pool, creating a new one if necessary.
      * The connection should be released back to the pool after use.</p>
-     * 
+     *
      * @return Promise resolving to a connection
      */
     @NotNull
@@ -56,10 +56,10 @@ public interface ConnectionManager<T> {
 
     /**
      * Get a connection from the pool with timeout.
-     * 
+     *
      * <p>Returns a connection from the pool, creating a new one if necessary.
      * If no connection is available within the timeout, the promise fails.</p>
-     * 
+     *
      * @param timeout maximum time to wait for a connection
      * @return Promise resolving to a connection
      */
@@ -70,10 +70,10 @@ public interface ConnectionManager<T> {
 
     /**
      * Release a connection back to the pool.
-     * 
+     *
      * <p>Returns the connection to the pool for reuse. The connection should
      * not be used after calling this method.</p>
-     * 
+     *
      * @param connection the connection to release
      * @return Promise that completes when the connection is released
      */
@@ -82,10 +82,10 @@ public interface ConnectionManager<T> {
 
     /**
      * Validate a connection.
-     * 
+     *
      * <p>Checks if the connection is still valid and usable. Invalid connections
      * should be discarded and not returned to the pool.</p>
-     * 
+     *
      * @param connection the connection to validate
      * @return Promise resolving to true if valid, false otherwise
      */
@@ -96,7 +96,7 @@ public interface ConnectionManager<T> {
 
     /**
      * Get the number of active connections.
-     * 
+     *
      * @return the number of connections currently in use
      */
     default int getActiveConnections() {
@@ -105,7 +105,7 @@ public interface ConnectionManager<T> {
 
     /**
      * Get the number of idle connections.
-     * 
+     *
      * @return the number of connections available in the pool
      */
     default int getIdleConnections() {
@@ -114,7 +114,7 @@ public interface ConnectionManager<T> {
 
     /**
      * Get the total number of connections.
-     * 
+     *
      * @return the total number of connections (active + idle)
      */
     default int getTotalConnections() {
@@ -123,7 +123,7 @@ public interface ConnectionManager<T> {
 
     /**
      * Close all connections and shutdown the pool.
-     * 
+     *
      * @return Promise that completes when all connections are closed
      */
     @NotNull

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Scores the confidence of fix suggestions based on various factors including: - Pattern match
  * strength - Historical success rate - Language-specific heuristics - Contextual relevance
- 
+
  * @doc.type class
  * @doc.purpose Handles confidence scorer operations
  * @doc.layer core

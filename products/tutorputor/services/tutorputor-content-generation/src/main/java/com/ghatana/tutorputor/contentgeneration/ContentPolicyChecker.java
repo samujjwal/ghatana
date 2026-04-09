@@ -16,15 +16,15 @@ import java.util.Set;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * ContentPolicyChecker checker = new InMemoryContentPolicyChecker();
- * 
+ *
  * // Check content against policy
  * Promise<PolicyCheckResult> result = checker.checkPolicy(
  *     "User input text", PolicyType.PROFANITY);
- * 
+ *
  * // Detect PII
  * Promise<List<PIIDetection>> piiResults = checker.detectPII(
  *     "Email: user@example.com, SSN: 123-45-6789");
- * 
+ *
  * // Classify content type
  * Promise<ContentClassification> classification = checker.classifyContent(
  *     "Spam message with suspicious links");

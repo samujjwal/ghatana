@@ -34,13 +34,13 @@ package com.ghatana.virtualorg.security;
  * <pre>{@code
  * // Create agent principal
  * Principal agent = Principal.of("agent-123", PrincipalType.AGENT);
- * 
+ *
  * // Create user principal
  * Principal user = Principal.of("user-456", PrincipalType.USER);
- * 
+ *
  * // Create system principal
  * Principal system = Principal.of("metrics-collector", PrincipalType.SYSTEM);
- * 
+ *
  * // Check principal type for authorization
  * if (principal.getType() == PrincipalType.SYSTEM) {
  *     // Allow elevated system operations
@@ -60,7 +60,7 @@ package com.ghatana.virtualorg.security;
 public enum PrincipalType {
     /**
      * An AI agent (autonomous system actor).
-     * 
+     *
      * <p>Characteristics:
      * - Has defined role and authority
      * - Operates within organizational hierarchy
@@ -71,7 +71,7 @@ public enum PrincipalType {
 
     /**
      * A human user (interactive human operator).
-     * 
+     *
      * <p>Characteristics:
      * - Has user account with credentials
      * - Subject to role-based access control (RBAC)
@@ -82,7 +82,7 @@ public enum PrincipalType {
 
     /**
      * An external service or system.
-     * 
+     *
      * <p>Characteristics:
      * - Third-party integration (GitHub, Jira, Slack, etc.)
      * - Service-to-service authentication
@@ -93,7 +93,7 @@ public enum PrincipalType {
 
     /**
      * System-level operations (platform processes).
-     * 
+     *
      * <p>Characteristics:
      * - Internal platform components
      * - Elevated privileges for infrastructure

@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Production-grade test runner for HTTP servers with automatic lifecycle management and ActiveJ Eventloop integration.
@@ -45,10 +44,10 @@ import java.util.concurrent.CompletableFuture;
  *
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
  *     runner.start();
- *     
+ *
  *     HttpResponse response = runner.get("/users/123");
  *     assertEquals(200, response.getCode());
- *     
+ *
  *     String json = new String(response.getBody().asArray());
  *     assertTrue(json.contains("\"id\":\"123\""));
  * }
@@ -56,10 +55,10 @@ import java.util.concurrent.CompletableFuture;
  * // 2. POST request with JSON body
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
  *     runner.start();
- *     
- *     HttpResponse response = runner.post("/users", 
+ *
+ *     HttpResponse response = runner.post("/users",
  *         "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}");
- *     
+ *
  *     assertEquals(201, response.getCode());
  *     assertEquals("application/json", response.getHeader("Content-Type"));
  * }
@@ -67,7 +66,7 @@ import java.util.concurrent.CompletableFuture;
  * // 3. Custom timeout (1 minute for slow operations)
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, Duration.ofMinutes(1))) {
  *     runner.start();
- *     
+ *
  *     HttpResponse response = runner.get("/slow-operation");
  *     assertEquals(200, response.getCode());
  * }
@@ -75,16 +74,16 @@ import java.util.concurrent.CompletableFuture;
  * // 4. External client testing with base URL
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
  *     runner.start();
- *     
+ *
  *     String baseUrl = runner.getBaseUrl();
  *     // → "http://localhost:12345"
- *     
+ *
  *     // Use with OkHttp, Apache HttpClient, etc.
  *     OkHttpClient client = new OkHttpClient();
  *     Request request = new Request.Builder()
  *         .url(baseUrl + "/users/123")
  *         .build();
- *     
+ *
  *     Response externalResponse = client.newCall(request).execute();
  *     assertEquals(200, externalResponse.code());
  * }
@@ -96,7 +95,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, eventloopRunner)) {
  *     runner.start();
- *     
+ *
  *     HttpResponse response = runner.get("/api/data");
  *     assertEquals(200, response.getCode());
  * }
@@ -105,21 +104,21 @@ import java.util.concurrent.CompletableFuture;
  * // 6. Multiple request methods
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
  *     runner.start();
- *     
+ *
  *     // GET
  *     HttpResponse getResponse = runner.get("/users/123");
- *     
+ *
  *     // POST
- *     HttpResponse postResponse = runner.post("/users", 
+ *     HttpResponse postResponse = runner.post("/users",
  *         "{\"name\":\"Jane\"}");
- *     
+ *
  *     // PUT
- *     HttpResponse putResponse = runner.put("/users/123", 
+ *     HttpResponse putResponse = runner.put("/users/123",
  *         "{\"name\":\"Jane Updated\"}");
- *     
+ *
  *     // DELETE
  *     HttpResponse deleteResponse = runner.delete("/users/123");
- *     
+ *
  *     assertEquals(200, getResponse.getCode());
  *     assertEquals(201, postResponse.getCode());
  *     assertEquals(200, putResponse.getCode());
@@ -130,16 +129,16 @@ import java.util.concurrent.CompletableFuture;
  * @Test
  * void testUserEndpoint() throws Exception {
  *     AsyncServlet servlet = createUserServlet();
- *     
+ *
  *     try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) {
  *         runner.start();
- *         
+ *
  *         HttpResponse response = runner.get("/users");
  *         assertEquals(200, response.getCode());
- *         
+ *
  *         User[] users = objectMapper.readValue(
  *             response.getBody().asArray(), User[].class);
- *         
+ *
  *         assertTrue(users.length > 0);
  *     }
  * }
@@ -218,14 +217,14 @@ import java.util.concurrent.CompletableFuture;
  */
 @Slf4j
 public class HttpServerTestRunner implements AutoCloseable {
-    
+
     private final AsyncServlet servlet;
     private final EventloopTestRunner eventloopRunner;
     private final boolean ownsEventloopRunner;
     private HttpServer server;
     private int port;
     private boolean started = false;
-    
+
     private HttpServerTestRunner(AsyncServlet servlet, EventloopTestRunner eventloopRunner) {
         this(servlet, eventloopRunner, true);
     }
@@ -235,21 +234,21 @@ public class HttpServerTestRunner implements AutoCloseable {
         this.eventloopRunner = eventloopRunner;
         this.ownsEventloopRunner = ownsEventloopRunner;
     }
-    
+
     /**
      * Creates a test runner for the given servlet.
      * Uses default timeout of 10 seconds.
-     * 
+     *
      * @param servlet The servlet to test
      * @return A new test runner
      */
     public static HttpServerTestRunner create(AsyncServlet servlet) {
         return create(servlet, Duration.ofSeconds(10));
     }
-    
+
     /**
      * Creates a test runner with custom timeout.
-     * 
+     *
      * @param servlet The servlet to test
      * @param timeout The timeout for operations
      * @return A new test runner
@@ -260,7 +259,7 @@ public class HttpServerTestRunner implements AutoCloseable {
             .watchdogEvery(Duration.ofSeconds(2))
             .threadName("http-test")
             .build();
-        
+
         return new HttpServerTestRunner(servlet, eventloopRunner);
     }
 
@@ -272,7 +271,7 @@ public class HttpServerTestRunner implements AutoCloseable {
     public static HttpServerTestRunner create(AsyncServlet servlet, EventloopTestRunner eventloopRunner) {
         return new HttpServerTestRunner(servlet, eventloopRunner, false);
     }
-    
+
     /**
      * Starts the HTTP server on a random available port.
      */
@@ -280,40 +279,40 @@ public class HttpServerTestRunner implements AutoCloseable {
         if (started) {
             return;
         }
-        
+
         eventloopRunner.start();
-        
+
         // Find available port
         this.port = findAvailablePort();
-        
+
         // Create and start server
         eventloopRunner.runBlocking(() -> {
             server = HttpServer.builder(eventloopRunner.eventloop(), servlet)
                 .withListenAddress(new InetSocketAddress("127.0.0.1", port))
                 .withAcceptOnce()
                 .build();
-            
+
             server.listen();
             log.info("Test HTTP server started on port {}", port);
             return null;
         });
-        
+
         started = true;
     }
-    
+
     /**
      * Executes a GET request.
-     * 
+     *
      * @param path The request path
      * @return The HTTP response
      */
     public HttpResponse get(String path) {
         return request(HttpRequest.get("http://127.0.0.1:" + port + path).build());
     }
-    
+
     /**
      * Executes a POST request with body.
-     * 
+     *
      * @param path The request path
      * @param body The request body
      * @return The HTTP response
@@ -326,7 +325,7 @@ public class HttpServerTestRunner implements AutoCloseable {
 
     /**
      * Executes a PUT request with body.
-     * 
+     *
      * @param path The request path
      * @param body The request body
      * @return The HTTP response
@@ -339,7 +338,7 @@ public class HttpServerTestRunner implements AutoCloseable {
 
     /**
      * Executes a DELETE request.
-     * 
+     *
      * @param path The request path
      * @return The HTTP response
      */
@@ -347,10 +346,10 @@ public class HttpServerTestRunner implements AutoCloseable {
         HttpRequest.Builder builder = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://127.0.0.1:" + port + path);
         return request(builder.build());
     }
-    
+
     /**
      * Executes a custom HTTP request.
-     * 
+     *
      * @param request The HTTP request
      * @return The HTTP response
      */
@@ -358,37 +357,37 @@ public class HttpServerTestRunner implements AutoCloseable {
         if (!started) {
             start();
         }
-        
+
         return eventloopRunner.runPromise(() -> servlet.serve(request));
     }
-    
+
     /**
      * Gets the base URL of the test server.
-     * 
+     *
      * @return The base URL (e.g., http://127.0.0.1:12345)
      */
     public String getBaseUrl() {
         return "http://127.0.0.1:" + port;
     }
-    
+
     /**
      * Gets the port the server is listening on.
-     * 
+     *
      * @return The port number
      */
     public int getPort() {
         return port;
     }
-    
+
     /**
      * Gets the underlying eventloop test runner.
-     * 
+     *
      * @return The eventloop runner
      */
     public EventloopTestRunner getEventloopRunner() {
         return eventloopRunner;
     }
-    
+
     @Override
     public void close() {
         if (server != null) {
@@ -403,7 +402,7 @@ public class HttpServerTestRunner implements AutoCloseable {
         }
         started = false;
     }
-    
+
     private int findAvailablePort() {
         try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
             return socket.getLocalPort();

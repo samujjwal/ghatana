@@ -689,4 +689,3 @@ public class DefaultContextGateway implements ContextGateway {
                 .build();
     }
 }
-

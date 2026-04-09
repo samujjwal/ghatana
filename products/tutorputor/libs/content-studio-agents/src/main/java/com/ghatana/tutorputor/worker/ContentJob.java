@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Immutable content job representation.
- * 
+ *
  * <p>Represents a unit of work in the content generation pipeline.
  * Jobs are immutable and use a builder pattern for creation.
  *
@@ -32,7 +32,7 @@ public record ContentJob(
     @Nullable Instant completedAt,
     @Nullable Map<String, String> metadata
 ) {
-    
+
     /**
      * Job types for content generation.
      */
@@ -67,7 +67,7 @@ public record ContentJob(
      * @return a new job with the ID set
      */
     public ContentJob withId(String id) {
-        return new ContentJob(id, type, tenantId, requesterId, priority, 
+        return new ContentJob(id, type, tenantId, requesterId, priority,
             payload, attempts, error, result, createdAt, completedAt, metadata);
     }
 
@@ -78,7 +78,7 @@ public record ContentJob(
      * @return a new job with attempts updated
      */
     public ContentJob withAttempts(int attempts) {
-        return new ContentJob(id, type, tenantId, requesterId, priority, 
+        return new ContentJob(id, type, tenantId, requesterId, priority,
             payload, attempts, error, result, createdAt, completedAt, metadata);
     }
 
@@ -89,7 +89,7 @@ public record ContentJob(
      * @return a new job with error set
      */
     public ContentJob withError(String error) {
-        return new ContentJob(id, type, tenantId, requesterId, priority, 
+        return new ContentJob(id, type, tenantId, requesterId, priority,
             payload, attempts, error, result, createdAt, completedAt, metadata);
     }
 
@@ -100,7 +100,7 @@ public record ContentJob(
      * @return a new job with result set
      */
     public ContentJob withResult(Object result) {
-        return new ContentJob(id, type, tenantId, requesterId, priority, 
+        return new ContentJob(id, type, tenantId, requesterId, priority,
             payload, attempts, error, result, createdAt, completedAt, metadata);
     }
 
@@ -111,7 +111,7 @@ public record ContentJob(
      * @return a new job with completedAt set
      */
     public ContentJob withCompletedAt(Instant completedAt) {
-        return new ContentJob(id, type, tenantId, requesterId, priority, 
+        return new ContentJob(id, type, tenantId, requesterId, priority,
             payload, attempts, error, result, createdAt, completedAt, metadata);
     }
 
@@ -199,9 +199,9 @@ public record ContentJob(
             if (requesterId == null) {
                 throw new IllegalStateException("Requester ID is required");
             }
-            
+
             String finalId = id != null ? id : UUID.randomUUID().toString();
-            
+
             return new ContentJob(finalId, type, tenantId, requesterId, priority,
                 payload, attempts, error, result, createdAt, completedAt, metadata);
         }

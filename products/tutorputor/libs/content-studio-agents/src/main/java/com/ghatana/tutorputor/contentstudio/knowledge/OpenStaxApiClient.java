@@ -21,11 +21,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Production-ready OpenStax API client for curriculum-aligned educational content.
- * 
+ *
  * <p>OpenStax provides free, peer-reviewed textbooks. This client:
  * <ul>
  *   <li>Searches for relevant textbook content</li>
@@ -45,10 +44,10 @@ public class OpenStaxApiClient {
     private static final String OPENSTAX_API_URL = "https://openstax.org/api/v2";
     private static final String OPENSTAX_SEARCH_URL = "https://openstax.org/rex/api/search";
     private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-    
+
     private final HttpClient httpClient;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter searchRequestsCounter;
     private final Counter bookRequestsCounter;
@@ -64,7 +63,7 @@ public class OpenStaxApiClient {
     public OpenStaxApiClient(HttpClient httpClient, MeterRegistry meterRegistry) {
         this.httpClient = httpClient;
         this.meterRegistry = meterRegistry;
-        
+
         this.searchRequestsCounter = Counter.builder("tutorputor.openstax.search.requests")
             .description("Number of OpenStax search requests")
             .register(meterRegistry);
@@ -90,14 +89,14 @@ public class OpenStaxApiClient {
     public Promise<List<OpenStaxSearchResult>> search(String topic, String subject, int limit) {
         Instant start = Instant.now();
         searchRequestsCounter.increment();
-        
+
         String url = String.format(
             "%s?q=%s&per_page=%d",
             OPENSTAX_SEARCH_URL,
             URLEncoder.encode(topic, StandardCharsets.UTF_8),
             Math.min(limit, 20)
         );
-        
+
         LOG.debug("Searching OpenStax for topic: {}, subject: {}", topic, subject);
 
         Promise<List<OpenStaxSearchResult>> promise = httpClient.request(
@@ -123,9 +122,9 @@ public class OpenStaxApiClient {
     public Promise<List<OpenStaxBook>> listBooks() {
         Instant start = Instant.now();
         bookRequestsCounter.increment();
-        
+
         String url = OPENSTAX_API_URL + "/pages";
-        
+
         LOG.debug("Fetching OpenStax book list");
 
         Promise<List<OpenStaxBook>> promise = httpClient.request(
@@ -153,11 +152,11 @@ public class OpenStaxApiClient {
      */
     public Promise<CurriculumAlignmentResult> findAlignedContent(
             String claimText, String domain, String gradeLevel) {
-        
+
         LOG.info("Finding OpenStax content aligned to claim in domain: {}", domain);
-        
+
         String subject = mapDomainToSubject(domain);
-        
+
         return search(claimText, subject, 5)
             .map(results -> {
                 if (results.isEmpty()) {
@@ -169,12 +168,12 @@ public class OpenStaxApiClient {
                         null
                     );
                 }
-                
+
                 // Score alignment based on result relevance
                 double totalScore = 0;
                 List<String> alignedTopics = new ArrayList<>();
                 String primarySource = null;
-                
+
                 for (OpenStaxSearchResult result : results) {
                     totalScore += result.relevance();
                     alignedTopics.add(result.title());
@@ -182,13 +181,13 @@ public class OpenStaxApiClient {
                         primarySource = result.url();
                     }
                 }
-                
+
                 double avgScore = totalScore / results.size();
-                
+
                 return new CurriculumAlignmentResult(
                     avgScore > 0.3,
                     avgScore,
-                    avgScore > 0.3 
+                    avgScore > 0.3
                         ? "Claim aligns with OpenStax curriculum content"
                         : "Limited curriculum alignment found",
                     alignedTopics,
@@ -206,20 +205,20 @@ public class OpenStaxApiClient {
      */
     public Promise<List<PrerequisiteRecommendation>> getPrerequisites(String topic, String domain) {
         LOG.debug("Fetching prerequisites for topic: {} in domain: {}", topic, domain);
-        
+
         // Search for the topic and extract related concepts
         return search(topic + " introduction fundamentals", mapDomainToSubject(domain), 10)
             .map(results -> {
                 List<PrerequisiteRecommendation> prerequisites = new ArrayList<>();
-                
+
                 for (OpenStaxSearchResult result : results) {
                     // Filter for introductory/foundational content
                     String titleLower = result.title().toLowerCase();
-                    if (titleLower.contains("introduction") || 
+                    if (titleLower.contains("introduction") ||
                         titleLower.contains("fundamentals") ||
                         titleLower.contains("basic") ||
                         titleLower.contains("overview")) {
-                        
+
                         prerequisites.add(new PrerequisiteRecommendation(
                             result.title(),
                             result.snippet(),
@@ -228,7 +227,7 @@ public class OpenStaxApiClient {
                         ));
                     }
                 }
-                
+
                 return prerequisites;
             });
     }
@@ -239,18 +238,18 @@ public class OpenStaxApiClient {
 
     private List<OpenStaxSearchResult> parseSearchResults(String json, Instant start) {
         List<OpenStaxSearchResult> results = new ArrayList<>();
-        
+
         try {
             JsonNode root = MAPPER.readTree(json);
             JsonNode hits = root.path("hits");
-            
+
             if (hits.isArray()) {
                 for (JsonNode hit : hits) {
                     JsonNode source = hit.path("_source");
-                    
+
                     results.add(new OpenStaxSearchResult(
                         source.path("title").asText(),
-                        source.path("content").asText("").substring(0, 
+                        source.path("content").asText("").substring(0,
                             Math.min(500, source.path("content").asText("").length())),
                         source.path("book_title").asText(""),
                         source.path("url").asText(""),
@@ -258,25 +257,25 @@ public class OpenStaxApiClient {
                     ));
                 }
             }
-            
+
             apiLatencyTimer.record(Duration.between(start, Instant.now()));
             LOG.debug("OpenStax search returned {} results", results.size());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse OpenStax search results", e);
             apiErrorsCounter.increment();
         }
-        
+
         return results;
     }
 
     private List<OpenStaxBook> parseBookList(String json, Instant start) {
         List<OpenStaxBook> books = new ArrayList<>();
-        
+
         try {
             JsonNode root = MAPPER.readTree(json);
             JsonNode items = root.path("items");
-            
+
             if (items.isArray()) {
                 for (JsonNode item : items) {
                     if ("books".equals(item.path("type").asText())) {
@@ -284,22 +283,22 @@ public class OpenStaxApiClient {
                             item.path("id").asText(),
                             item.path("title").asText(),
                             item.path("slug").asText(),
-                            item.path("subjects").isArray() 
+                            item.path("subjects").isArray()
                                 ? parseSubjects(item.path("subjects"))
                                 : List.of()
                         ));
                     }
                 }
             }
-            
+
             apiLatencyTimer.record(Duration.between(start, Instant.now()));
             LOG.debug("OpenStax returned {} books", books.size());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse OpenStax book list", e);
             apiErrorsCounter.increment();
         }
-        
+
         return books;
     }
 
@@ -313,7 +312,7 @@ public class OpenStaxApiClient {
 
     private String mapDomainToSubject(String domain) {
         if (domain == null) return "";
-        
+
         return switch (domain.toUpperCase()) {
             case "MATH" -> "Math";
             case "SCIENCE" -> "Science";

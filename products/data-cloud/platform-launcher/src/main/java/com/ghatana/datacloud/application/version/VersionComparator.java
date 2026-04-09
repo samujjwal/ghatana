@@ -20,7 +20,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * VersionComparator comparator = new VersionComparator();
  * VersionDiff diff = comparator.compare(entityV1, entityV2);

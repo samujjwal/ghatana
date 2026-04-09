@@ -23,12 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * WorkflowEngine engine = new WorkflowEngine();
  * engine.registerWorkflow(new CodeReviewWorkflow());
  * engine.registerWorkflow(new DailyStandupWorkflow());
- * 
+ *
  * WorkflowContext context = WorkflowContext.builder()
  *     .withTenantId("acme-corp")
  *     .withInput("teamId", "team-123")
  *     .build();
- * 
+ *
  * WorkflowResult result = engine.execute("daily-standup", context).getResult();
  * }</pre>
  *
@@ -60,14 +60,14 @@ public class WorkflowEngine {
      */
     public void registerWorkflow(Workflow workflow) {
         String name = workflow.getMetadata().getName();
-        
+
         if (workflows.containsKey(name)) {
             throw new IllegalArgumentException(
                 "Workflow already registered: " + name);
         }
-        
+
         workflows.put(name, workflow);
-        log.info("Registered workflow: {} (version {})", 
+        log.info("Registered workflow: {} (version {})",
             name, workflow.getMetadata().getVersion());
     }
 
@@ -86,17 +86,17 @@ public class WorkflowEngine {
      */
     public Promise<WorkflowResult> execute(String workflowName, WorkflowContext context) {
         Workflow workflow = workflows.get(workflowName);
-        
+
         if (workflow == null) {
             log.error("Workflow not found: {}", workflowName);
             return Promise.of(WorkflowResult.failure(
                 "Workflow not found: " + workflowName
             ).build());
         }
-        
-        log.info("Executing workflow: {} for tenant: {}", 
+
+        log.info("Executing workflow: {} for tenant: {}",
             workflowName, context.getTenantId());
-        
+
         // Validate → Execute → Cleanup (always)
         Promise<WorkflowResult> executionPromise = workflow.validate(context)
             .then(() -> workflow.execute(context))
@@ -104,7 +104,7 @@ public class WorkflowEngine {
                 // Always cleanup, even on error
                 workflow.cleanup(context)
                     .whenException(cleanupError -> {
-                        log.warn("Cleanup failed for workflow: {}", 
+                        log.warn("Cleanup failed for workflow: {}",
                             workflowName, cleanupError);
                     });
             });
@@ -129,9 +129,9 @@ public class WorkflowEngine {
     public Promise<WorkflowResult> executeWorkflow(WorkflowDefinition workflow, WorkflowContext context) {
         // TODO: Implement workflow definition execution
         // For now, return a stub success result
-        log.warn("executeWorkflow stub called for workflow: {}", 
+        log.warn("executeWorkflow stub called for workflow: {}",
             workflow != null ? "defined" : "null");
-        
+
         return Promise.of(WorkflowResult.success()
             .withOutput("result", "Workflow definition execution not yet implemented")
             .build());
@@ -163,7 +163,7 @@ public class WorkflowEngine {
      */
     public Map<String, WorkflowMetadata> getAllMetadata() {
         Map<String, WorkflowMetadata> metadata = new ConcurrentHashMap<>();
-        workflows.forEach((name, workflow) -> 
+        workflows.forEach((name, workflow) ->
             metadata.put(name, workflow.getMetadata()));
         return metadata;
     }

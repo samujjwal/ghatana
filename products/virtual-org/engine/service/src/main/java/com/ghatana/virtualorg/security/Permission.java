@@ -34,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * <pre>{@code
  * Permission perm = Permission.parse("task:read");
  * boolean matches = perm.matches("task:read");   // true
- * 
+ *
  * Permission wildcard = Permission.parse("task:*");
  * boolean matches = wildcard.matches("task:write"); // true
  * }</pre>

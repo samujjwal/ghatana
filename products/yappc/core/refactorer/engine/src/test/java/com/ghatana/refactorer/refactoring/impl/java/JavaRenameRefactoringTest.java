@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
  *
  * <p>Note: These tests are designed to work with the specific behavior of the JavaRenameRefactoring
  * implementation, which uses JavaParser to analyze and modify Java source code.
- 
+
  * @doc.type class
  * @doc.purpose Handles java rename refactoring test operations
  * @doc.layer core

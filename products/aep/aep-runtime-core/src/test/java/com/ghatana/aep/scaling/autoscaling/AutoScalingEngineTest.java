@@ -4,7 +4,6 @@
  */
 package com.ghatana.aep.scaling.autoscaling;
 
-import com.ghatana.aep.scaling.models.AutoScalingModels;
 import com.ghatana.aep.scaling.cluster.ClusterManagementModels.ClusterMetrics;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.CostOptimizationResult;
 import com.ghatana.aep.scaling.autoscaling.ScalingOperationModels.PredictiveScalingRecommendation;

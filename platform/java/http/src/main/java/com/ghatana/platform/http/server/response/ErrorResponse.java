@@ -111,7 +111,7 @@ import java.util.Map;
  *     .message("Password must contain at least one digit")
  *     .rejectedValue("weakpass")
  *     .build());
- * 
+ *
  * ErrorResponse error = ErrorResponse.builder()
  *     .status(400)
  *     .code("VALIDATION_ERROR")
@@ -263,53 +263,53 @@ import java.util.Map;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
-    
+
     /**
      * HTTP status code
      */
     int status;
-    
+
     /**
      * Error code for programmatic handling
      */
     String code;
-    
+
     /**
      * Human-readable error message
      */
     String message;
-    
+
     /**
      * Optional detailed error information (string or structured)
      */
     String details;
-    
+
     /**
      * Optional structured details map
      */
     Map<String, Object> detailsMap;
-    
+
     /**
      * Timestamp when the error occurred
      */
     @Builder.Default
     Instant timestamp = Instant.now();
-    
+
     /**
      * Request path that caused the error
      */
     String path;
-    
+
     /**
      * Trace ID for distributed tracing
      */
     String traceId;
-    
+
     /**
      * List of validation errors (for validation failures)
      */
     List<ValidationError> validationErrors;
-    
+
     /**
      * Creates a simple error response with status and message.
      */
@@ -319,7 +319,7 @@ public class ErrorResponse {
             .message(message)
             .build();
     }
-    
+
     /**
      * Creates an error response with status, code, and message.
      */
@@ -330,7 +330,7 @@ public class ErrorResponse {
             .message(message)
             .build();
     }
-    
+
     /**
      * Creates a 400 Bad Request error.
      */
@@ -342,7 +342,7 @@ public class ErrorResponse {
             .path(path)
             .build();
     }
-    
+
     /**
      * Creates a 404 Not Found error.
      */
@@ -354,7 +354,7 @@ public class ErrorResponse {
             .path(path)
             .build();
     }
-    
+
     /**
      * Creates a 500 Internal Server Error.
      */
@@ -366,7 +366,7 @@ public class ErrorResponse {
             .path(path)
             .build();
     }
-    
+
     /**
      * Validation error detail.
      */
@@ -378,12 +378,12 @@ public class ErrorResponse {
          * Field that failed validation
          */
         String field;
-        
+
         /**
          * Validation error message
          */
         String message;
-        
+
         /**
          * The rejected value
          */

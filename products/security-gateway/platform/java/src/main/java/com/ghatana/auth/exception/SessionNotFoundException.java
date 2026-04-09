@@ -14,7 +14,7 @@ package com.ghatana.auth.exception;
  * if (session.isEmpty()) {
  *     throw new SessionNotFoundException("Session not found: " + sessionId);
  * }
- * 
+ *
  * // In HTTP adapter
  * promise.whenException(SessionNotFoundException.class, ex -> {
  *     return ResponseBuilder.unauthorized()
@@ -44,7 +44,7 @@ package com.ghatana.auth.exception;
  * @doc.pattern Exception
  */
 public class SessionNotFoundException extends AuthenticationException {
-    
+
     /**
      * Create exception with message.
      *

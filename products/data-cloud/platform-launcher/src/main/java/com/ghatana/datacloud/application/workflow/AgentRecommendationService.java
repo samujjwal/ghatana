@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.ghatana.platform.observability.util.BlockingExecutors.blockingExecutor;
 
 /**
  * Agentic Workflow Co-Pilot Recommendation Service.

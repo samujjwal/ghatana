@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.bytebuf.ByteBuf;
-import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -24,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 /**
  * @doc.type class

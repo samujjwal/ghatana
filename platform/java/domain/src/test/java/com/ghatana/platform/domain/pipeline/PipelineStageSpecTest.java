@@ -43,7 +43,7 @@ class PipelineStageSpecTest {
     void shouldHandleNullValues() {
         // Given
         PipelineStageSpec stageSpec = new PipelineStageSpec();
-        
+
         // Then
         assertThat(stageSpec.getName()).isNull();
         assertThat(stageSpec.getWorkflow()).isNull();

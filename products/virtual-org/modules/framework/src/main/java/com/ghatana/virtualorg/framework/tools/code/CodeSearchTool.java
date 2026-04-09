@@ -9,7 +9,6 @@ import io.activej.promise.Promise;
 
 import static com.ghatana.virtualorg.framework.util.BlockingExecutors.blockingExecutor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -261,8 +260,8 @@ public class CodeSearchTool implements AgentTool {
             List<String> context
     ) {
         Map<String, Object> toMap
-            
-        
+
+
             () {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("file", file);

@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.config.model;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 

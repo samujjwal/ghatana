@@ -20,25 +20,25 @@ import java.time.Instant;
  * @doc.pattern ValueObject
  */
 public record GTimestamp(Instant value) {
-    
+
     public GTimestamp {
         if (value == null) {
             throw new IllegalArgumentException("Timestamp value cannot be null");
         }
     }
-    
+
     public static GTimestamp now() {
         return new GTimestamp(Instant.now());
     }
-    
+
     public static GTimestamp of(Instant instant) {
         return new GTimestamp(instant);
     }
-    
+
     public static GTimestamp ofEpochMilli(long epochMilli) {
         return new GTimestamp(Instant.ofEpochMilli(epochMilli));
     }
-    
+
     public Instant toInstant() {
         return value;
     }

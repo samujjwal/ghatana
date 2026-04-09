@@ -9,13 +9,13 @@ import java.util.Map;
 
 /**
  * Storage adapter interface for graph data persistence.
- * 
+ *
  * <p>Abstracts the underlying storage mechanism for graph nodes and edges.
  * Implementations can use Data-Cloud EntityRepository, dedicated graph databases,
  * or other storage backends.
- * 
+ *
  * <p><b>Thread Safety:</b> All operations must be thread-safe
- * 
+ *
  * <p><b>Responsibilities:</b>
  * <ul>
  *   <li>Persist and retrieve graph nodes and edges</li>
@@ -24,39 +24,39 @@ import java.util.Map;
  *   <li>Ensure multi-tenant isolation</li>
  *   <li>Handle batch operations efficiently</li>
  * </ul>
- * 
+ *
  * @doc.type interface
  * @doc.purpose Storage abstraction for graph data
  * @doc.layer storage
  * @doc.pattern Adapter, Repository
  */
 public interface GraphStorageAdapter {
-    
+
     /**
      * Initializes the storage adapter with configuration.
      */
     void initialize(Map<String, Object> config);
-    
+
     /**
      * Starts the storage adapter.
      */
     void start();
-    
+
     /**
      * Stops the storage adapter.
      */
     void stop();
-    
+
     /**
      * Shuts down the storage adapter and releases resources.
      */
     void shutdown();
-    
+
     /**
      * Checks if the storage adapter is healthy.
      */
     boolean isHealthy();
-    
+
     // Node operations
     GraphNode createNode(GraphNode node);
     GraphNode getNode(String nodeId, String tenantId);
@@ -65,7 +65,7 @@ public interface GraphStorageAdapter {
     List<GraphNode> queryNodes(GraphQuery query);
     List<GraphNode> batchCreateNodes(List<GraphNode> nodes);
     int batchDeleteNodes(List<String> nodeIds, String tenantId);
-    
+
     // Edge operations
     GraphEdge createEdge(GraphEdge edge);
     GraphEdge getEdge(String edgeId, String tenantId);

@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -142,43 +140,43 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
 
     private static final String CPO_SYSTEM_PROMPT = """
         You are the CPO (Chief Product Officer) of a software development organization. Your role is to:
-        
+
         1. PRODUCT STRATEGY & VISION
            - Define and evolve product vision and strategy
            - Own product roadmap and feature prioritization
            - Align product with market needs and business goals
            - Drive product differentiation and competitive positioning
-        
+
         2. FEATURE PRIORITIZATION & DELIVERY
            - Prioritize features by customer value and business impact
            - Make go/no-go decisions on feature launches
            - Balance customer requests with strategic direction
            - Manage product backlog and sprint planning
-        
+
         3. CUSTOMER SUCCESS
            - Champion customer needs and feedback
            - Own product metrics (adoption, retention, NPS, satisfaction)
            - Drive continuous product improvement
            - Manage customer escalations and critical issues
-        
+
         4. CROSS-FUNCTIONAL COLLABORATION
            - Work with CTO on product/tech tradeoffs
            - Collaborate with CFO on pricing and revenue strategy
            - Partner with Marketing/Sales on go-to-market
            - Coordinate with Engineering on delivery timelines
-        
+
         5. DECISION FRAMEWORK
            - Evaluate decisions by: customer value, business impact, market timing
            - Use data-driven prioritization (user research, analytics, feedback)
            - Balance short-term wins with long-term product vision
            - Consider technical feasibility and resource constraints
-        
+
         6. ESCALATION HANDLING
            - Escalate budget >$50K to CEO
            - Escalate strategic pivots to CEO
            - Consult CTO on product/tech conflicts
            - Resolve PM escalations on feature prioritization
-        
+
         When processing tasks:
         - Analyze customer value and business impact
         - Consider market positioning and competitive landscape
@@ -236,8 +234,8 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
     @NotNull
     protected Promise<TaskResponseProto> doProcessTask(@NotNull TaskRequestProto request) {
         TaskProto task = request.getTask();
-        
-        log.info("CPO processing product task: taskId={}, type={}, title={}", 
+
+        log.info("CPO processing product task: taskId={}, type={}, title={}",
             task.getTaskId(), task.getType(), task.getTitle());
 
         Instant startTime = Instant.now();
@@ -246,7 +244,7 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
         Promise<TaskResponseProto> resultPromise = memory.retrieveContext(task)
             .then(context -> {
                 String prompt = buildCPOPrompt(task, context);
-                return llmClient.complete(CPO_SYSTEM_PROMPT, prompt, tools, 
+                return llmClient.complete(CPO_SYSTEM_PROMPT, prompt, tools,
                     llmConfig.getTemperature(), llmConfig.getMaxTokens());
             })
             .then(llmResponse -> {
@@ -267,7 +265,7 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
                 if (decision.getType() == DecisionTypeProto.DECISION_TYPE_ESCALATED) {
                     return Promise.of(decision);
                 }
-                
+
                 return memory.storeDecision(decision, task).map(stored -> decision);
             })
             .map(decision -> {
@@ -299,10 +297,10 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
         prompt.append("PRODUCT DECISION REQUEST\n=======================\n\n");
         prompt.append("Task: ").append(task.getTitle()).append("\n");
         prompt.append("Description: ").append(task.getDescription()).append("\n\n");
-        
+
         prompt.append("PRODUCT CONTEXT\n----------------\n");
         prompt.append(context).append("\n\n");
-        
+
         prompt.append("DECISION REQUIRED\n------------------\n");
         prompt.append("Analyze and provide:\n");
         prompt.append("1. Recommendation (approve/reject/modify)\n");
@@ -312,7 +310,7 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
         prompt.append("5. Risks and mitigation strategies\n");
         prompt.append("6. Success metrics\n");
         prompt.append("7. Confidence level (0.0-1.0)\n");
-        
+
         return prompt.toString();
     }
 
@@ -329,15 +327,15 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
         if (task.getType() == TaskTypeProto.TASK_TYPE_BUDGET_APPROVAL) {
             return extractBudgetAmount(task.getDescription()) > getBudgetLimitUsd();
         }
-        
+
         // Escalate strategic product pivots
         String desc = task.getDescription().toLowerCase();
         if (desc.contains("pivot") || desc.contains("strategic shift")) {
             return true;
         }
-        
+
         // Escalate low confidence on critical decisions
-        return decision.getConfidence() < 0.4f && 
+        return decision.getConfidence() < 0.4f &&
                task.getType() == TaskTypeProto.TASK_TYPE_DEPLOYMENT;
     }
 
@@ -352,7 +350,7 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
             LLMResponse llmResponse, TaskProto task, DecisionProto decision) {
         return toolExecutor.executeTools(llmResponse.getToolCalls(), task)
             .map(toolResults -> decision.toBuilder()
-                .setReasoning(decision.getReasoning() + "\n\nTool Results:\n" + 
+                .setReasoning(decision.getReasoning() + "\n\nTool Results:\n" +
                     DecisionExtractor.formatToolResults(toolResults))
                 .build());
     }
@@ -372,23 +370,23 @@ public class CPOAgent extends AbstractVirtualOrgAgent {
 
     private void recordTaskMetrics(TaskProto task, Instant startTime, boolean success) {
         long durationMs = Instant.now().toEpochMilli() - startTime.toEpochMilli();
-        
+
         meterRegistry.counter("virtualorg.cpo.tasks",
             "type", task.getType().name(),
             "status", success ? "success" : "failure"
         ).increment();
-        
+
         meterRegistry.timer("virtualorg.cpo.task.duration",
             "type", task.getType().name()
         ).record(java.time.Duration.ofMillis(durationMs));
-        
+
         if (success) {
             tasksCompleted.incrementAndGet();
         } else {
             tasksFailed.incrementAndGet();
         }
     }
-    
+
     /**
      * Helper to get budget limit from authority limits map.
      */

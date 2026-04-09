@@ -1,9 +1,6 @@
 package com.ghatana.tutorputor.contentgeneration;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.tutorputor.contentgeneration.MediaAttachment;
-import com.ghatana.tutorputor.contentgeneration.MediaStore;
-import com.ghatana.tutorputor.contentgeneration.MediaUrl;
 import io.activej.promise.Promise;
 
 import java.io.InputStream;
@@ -22,16 +19,16 @@ import java.util.UUID;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * MediaService service = new MediaService(mediaStore, metricsCollector);
- * 
+ *
  * // Upload file
  * Promise<MediaAttachment> upload = service.upload(
- *     "tenant-123", entityId, "image.jpg", "image/jpeg", 
+ *     "tenant-123", entityId, "image.jpg", "image/jpeg",
  *     524288, inputStream, "user-123");
- * 
+ *
  * // Generate access URL
  * Promise<MediaUrl> url = service.getUrl(
  *     "tenant-123", storageKey, Duration.ofHours(1));
- * 
+ *
  * // Delete file
  * Promise<Void> delete = service.delete("tenant-123", storageKey);
  * }</pre>

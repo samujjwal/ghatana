@@ -5,7 +5,6 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

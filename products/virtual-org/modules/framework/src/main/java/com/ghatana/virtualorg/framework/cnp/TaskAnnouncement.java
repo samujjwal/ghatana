@@ -1,7 +1,6 @@
 package com.ghatana.virtualorg.framework.cnp;
 
 import com.ghatana.virtualorg.framework.task.TaskDefinition;
-import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.util.Map;

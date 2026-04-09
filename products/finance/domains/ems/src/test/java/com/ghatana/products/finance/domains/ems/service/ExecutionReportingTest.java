@@ -3,8 +3,6 @@ package com.ghatana.products.finance.domains.ems.service;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.service.ExecutionReportService.ExecutionReport;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,16 +33,16 @@ class ExecutionReportingTest extends EventloopTestBase {
     private ExecutionReportService reportService;
     private FixProtocolService fixProtocolService;
     private ExecutionQualityService qualityService;
-    
+
     @Mock
     private DataSource dataSource;
-    
+
     @Mock
     private ExecutionReportService.PostTradeNotifyPort postTradePort;
-    
+
     @Mock
     private ExecutionReportService.CalendarPort calendarPort;
-    
+
     private SimpleMeterRegistry meterRegistry;
     private Executor executor;
 
@@ -53,15 +51,15 @@ class ExecutionReportingTest extends EventloopTestBase {
         MockitoAnnotations.openMocks(this);
         meterRegistry = new SimpleMeterRegistry();
         executor = Runnable::run;
-        
+
         reportService = new ExecutionReportService(
-            dataSource, 
-            executor, 
-            postTradePort, 
-            calendarPort, 
+            dataSource,
+            executor,
+            postTradePort,
+            calendarPort,
             meterRegistry
         );
-        
+
         fixProtocolService = new FixProtocolService();
         qualityService = new ExecutionQualityService();
 
@@ -74,7 +72,7 @@ class ExecutionReportingTest extends EventloopTestBase {
     void shouldGenerateExecutionReportWithAllFields() {
         String fillId = UUID.randomUUID().toString();
         String orderId = UUID.randomUUID().toString();
-        
+
         ExecutionReport report = new ExecutionReport(
             UUID.randomUUID().toString(),
             orderId,
@@ -107,9 +105,9 @@ class ExecutionReportingTest extends EventloopTestBase {
     void shouldCalculateCommissionFeesCorrectly() {
         double grossAmount = 15050.00;
         double commissionRate = 0.001;
-        
+
         double commission = grossAmount * commissionRate;
-        
+
         assertThat(commission).isEqualTo(15.05);
     }
 
@@ -120,9 +118,9 @@ class ExecutionReportingTest extends EventloopTestBase {
         double commission = 15.05;
         double sebiTurnover = 7.53;
         double stampDuty = 3.01;
-        
+
         double netAmount = grossAmount - commission - sebiTurnover - stampDuty;
-        
+
         assertThat(netAmount).isEqualTo(15024.41);
     }
 
@@ -295,7 +293,7 @@ class ExecutionReportingTest extends EventloopTestBase {
     }
 
     static class ExecutionQualityService {
-        ExecutionMetrics calculateMetrics(BigDecimal orderPrice, BigDecimal executionPrice, 
+        ExecutionMetrics calculateMetrics(BigDecimal orderPrice, BigDecimal executionPrice,
                                           BigDecimal quantity, Instant orderTime, Instant executionTime) {
             BigDecimal priceImprovement = orderPrice.subtract(executionPrice);
             long executionSpeed = executionTime.toEpochMilli() - orderTime.toEpochMilli();
@@ -308,7 +306,7 @@ class ExecutionReportingTest extends EventloopTestBase {
         }
 
         RegulatoryReport generateRegulatoryReport(String orderId, String symbol, ExecutionSide side,
-                                                  BigDecimal quantity, BigDecimal price, 
+                                                  BigDecimal quantity, BigDecimal price,
                                                   String venue, Instant executedAt) {
             return new RegulatoryReport(orderId, symbol, side, quantity, price, venue, executedAt);
         }
@@ -322,7 +320,7 @@ class ExecutionReportingTest extends EventloopTestBase {
 
     record ExecutionMetrics(BigDecimal priceImprovement, long executionSpeed) {}
     record FillRateMetrics(BigDecimal fillRate) {}
-    record RegulatoryReport(String orderId, String symbol, ExecutionSide side, 
+    record RegulatoryReport(String orderId, String symbol, ExecutionSide side,
                            BigDecimal quantity, BigDecimal price, String venue, Instant executedAt) {}
     record VenueStatistics(String venue, BigDecimal averagePrice) {}
 }

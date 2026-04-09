@@ -23,7 +23,7 @@ import java.util.Objects;
  *     .ownerId("user-789")
  *     .status(ProjectStatus.ACTIVE)
  *     .build();
- *     
+ *
  * // Check access
  * if (project.hasAccess(userId, workspace)) {
  *     // User can work on this project

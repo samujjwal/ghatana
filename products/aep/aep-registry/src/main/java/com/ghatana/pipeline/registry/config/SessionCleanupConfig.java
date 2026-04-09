@@ -24,19 +24,19 @@ import java.util.concurrent.TimeUnit;
  * @since 2.0.0
  */
 public class SessionCleanupConfig extends AbstractModule {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SessionCleanupConfig.class);
-    
+
     @Provides
     ScheduledExecutorService sessionCleanupScheduler(SessionManager sessionManager) {
         LOG.info("Configuring session cleanup scheduler");
-        
+
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "session-cleanup");
             thread.setDaemon(true);
             return thread;
         });
-        
+
         // Schedule cleanup task to run every 15 minutes
         scheduler.scheduleAtFixedRate(() -> {
             try {
@@ -48,7 +48,7 @@ public class SessionCleanupConfig extends AbstractModule {
                 LOG.error("Unexpected error in session cleanup task", e);
             }
         }, 15, 15, TimeUnit.MINUTES);
-        
+
         // Add shutdown hook to clean up scheduler
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down session cleanup scheduler");
@@ -62,7 +62,7 @@ public class SessionCleanupConfig extends AbstractModule {
                 Thread.currentThread().interrupt();
             }
         }));
-        
+
         return scheduler;
     }
 }

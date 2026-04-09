@@ -28,7 +28,7 @@ import java.util.Objects;
  * // Create blocklist entry
  * Blocklisted blocked = new Blocklisted("fingerprint123", Instant.now().plusDays(30));
  * }</pre>
- 
+
  * @doc.type class
  * @doc.purpose Handles memory models operations
  * @doc.layer core

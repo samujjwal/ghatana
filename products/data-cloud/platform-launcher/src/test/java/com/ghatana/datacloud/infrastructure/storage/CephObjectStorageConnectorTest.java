@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.infrastructure.storage;
 
 import com.ghatana.datacloud.entity.Entity;
-import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

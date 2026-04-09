@@ -138,7 +138,7 @@ public class AgentRegistrationDto {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, version, implementationType, implementationUri, 
+        return Objects.hash(name, description, version, implementationType, implementationUri,
                           tenantId, deprecated, inputSchema, outputSchema, configSchema, tags);
     }
 
@@ -232,7 +232,7 @@ public class AgentRegistrationDto {
     }
 
     // Proto conversion removed during contract alignment.
-    
+
     /**
      * Validates that all required fields are present and valid.
      * @throws IllegalArgumentException if validation fails

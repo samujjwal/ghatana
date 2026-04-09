@@ -9,7 +9,7 @@ import io.activej.promise.Promise;
  * <p>Defines contract for components that react to events with Promise-based
  * async processing. Handlers declare supported event types and process matching
  * events asynchronously.</p>
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for event handler
  * @doc.layer core

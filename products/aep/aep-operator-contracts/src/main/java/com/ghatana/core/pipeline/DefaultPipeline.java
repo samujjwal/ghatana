@@ -178,13 +178,13 @@ public class DefaultPipeline implements Pipeline {
     public Event toEvent() {
         // Serialize pipeline to GEvent("pipeline.registered") containing full DAG
         Map<String, Object> payload = new LinkedHashMap<>();
-        
+
         // Add pipeline metadata
         payload.put("id", id);
         payload.put("version", version);
         payload.put("name", name);
         payload.put("description", description);
-        
+
         // Add createdAt from metadata if present, otherwise use current time
         Object createdAtObj = metadata.get("createdAt");
         if (createdAtObj != null) {
@@ -192,7 +192,7 @@ public class DefaultPipeline implements Pipeline {
         } else {
             payload.put("createdAt", Instant.now().toString());
         }
-        
+
         // Serialize stages: list of objects with stageId, operatorId, config
         List<Map<String, Object>> stageList = new ArrayList<>();
         for (PipelineStage stage : stages) {
@@ -203,7 +203,7 @@ public class DefaultPipeline implements Pipeline {
             stageList.add(stageData);
         }
         payload.put("stages", stageList);
-        
+
         // Serialize edges: list of objects with from, to, label
         List<Map<String, Object>> edgeList = new ArrayList<>();
         for (PipelineEdge edge : edges) {
@@ -214,10 +214,10 @@ public class DefaultPipeline implements Pipeline {
             edgeList.add(edgeData);
         }
         payload.put("edges", edgeList);
-        
+
         // Add remaining metadata
         payload.put("metadata", new LinkedHashMap<>(metadata));
-        
+
         // Create and return event with headers using Lombok builder
         String tenantId = (String) metadata.getOrDefault("tenantId", "default");
         return Event.builder()
@@ -386,10 +386,10 @@ public class DefaultPipeline implements Pipeline {
                         String operatorIdStr = operatorIdObj.toString();
                         OperatorId operatorId = OperatorId.parse(operatorIdStr);
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> config = configObj instanceof Map 
-                            ? (Map<String, Object>) configObj 
+                        Map<String, Object> config = configObj instanceof Map
+                            ? (Map<String, Object>) configObj
                             : new HashMap<>();
-                        
+
                         stages.add(new PipelineStage(stageId, operatorId, config));
                     }
                 }
@@ -417,8 +417,8 @@ public class DefaultPipeline implements Pipeline {
 
         // Restore metadata
         @SuppressWarnings("unchecked")
-        Map<String, Object> metadata = metadataObj instanceof Map 
-            ? (Map<String, Object>) metadataObj 
+        Map<String, Object> metadata = metadataObj instanceof Map
+            ? (Map<String, Object>) metadataObj
             : new HashMap<>();
 
         // Create and return pipeline

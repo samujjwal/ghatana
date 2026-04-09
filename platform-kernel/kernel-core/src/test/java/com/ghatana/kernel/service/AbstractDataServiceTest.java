@@ -178,14 +178,14 @@ class AbstractDataServiceTest extends EventloopTestBase {
     @Test
     @DisplayName("validateRequired throws for null value")
     void testValidateRequiredThrowsForNull() {
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(IllegalArgumentException.class,
             () -> service.testValidateRequired(null, "testField"));
     }
 
     @Test
     @DisplayName("validateRequired throws for blank string")
     void testValidateRequiredThrowsForBlank() {
-        assertThrows(IllegalArgumentException.class, 
+        assertThrows(IllegalArgumentException.class,
             () -> service.testValidateRequired("", "testField"));
     }
 
@@ -236,7 +236,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     @DisplayName("createAuditMetadata creates proper metadata map")
     void testCreateAuditMetadata() {
         Map<String, String> metadata = service.testCreateAuditMetadata("key1", "value1", "key2", "value2");
-        
+
         assertNotNull(metadata);
         assertTrue(metadata.containsKey("timestamp"));
         assertTrue(metadata.containsKey("service"));

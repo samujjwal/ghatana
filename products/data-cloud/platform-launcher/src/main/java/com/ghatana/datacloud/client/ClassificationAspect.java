@@ -103,7 +103,7 @@ public final class ClassificationAspect implements AIAspect<Record, Record> {
     @Override
     public Promise<Record> process(Record input, AIAspectContext context) {
         String text = textExtractor.apply(input);
-        
+
         if (text == null || text.isBlank()) {
             return Promise.of(input);
         }

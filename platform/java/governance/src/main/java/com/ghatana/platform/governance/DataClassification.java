@@ -4,7 +4,7 @@ package com.ghatana.platform.governance;
  * Defines the sensitivity level of data within an event.
  * This classification helps determine the appropriate handling,
  * storage, and access controls for the data.
- 
+
  *
  * @doc.type enum
  * @doc.purpose Data classification

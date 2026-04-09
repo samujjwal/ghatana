@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Comprehensive tests for ContentGenerationServiceImpl.
- * 
+ *
  * <p>Tests all gRPC methods with:
  * <ul>
  *   <li>Successful responses with valid JSON</li>
@@ -105,7 +105,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   ]
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 500, 100, 600)));
 
@@ -121,7 +121,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<GenerateClaimsResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.generateClaims(request, new StreamObserver<>() {
                 @Override
                 public void onNext(GenerateClaimsResponse response) {
@@ -147,12 +147,12 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             assertThat(response).isNotNull();
             assertThat(response.getRequestId()).isEqualTo("test-123");
             assertThat(response.getClaimsList()).hasSize(3);
-            
+
             LearningClaim claim1 = response.getClaims(0);
             assertThat(claim1.getClaimRef()).isEqualTo("C1");
             assertThat(claim1.getText()).contains("Newton's first law");
             assertThat(claim1.getBloomLevel()).isEqualTo("REMEMBER");
-            
+
             assertThat(response.getValidation().getValid()).isTrue();
             assertThat(response.getMetadata().getModelName()).isEqualTo("gpt-4");
         }
@@ -163,7 +163,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // GIVEN
             String llmResponse = """
                 Here are the learning claims:
-                
+
                 ```json
                 {
                   "claims": [
@@ -175,10 +175,10 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   ]
                 }
                 ```
-                
+
                 These claims are appropriate for the grade level.
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 200, 50, 250)));
 
@@ -190,7 +190,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<GenerateClaimsResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.generateClaims(request, new StreamObserver<>() {
                 @Override
                 public void onNext(GenerateClaimsResponse response) {
@@ -230,7 +230,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.generateClaims(request, new StreamObserver<>() {
                 @Override
                 public void onNext(GenerateClaimsResponse response) {
@@ -294,7 +294,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   }
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 300, 75, 375)));
 
@@ -309,7 +309,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<AnalyzeContentNeedsResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.analyzeContentNeeds(request, new StreamObserver<>() {
                 @Override
                 public void onNext(AnalyzeContentNeedsResponse response) {
@@ -333,17 +333,17 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             AnalyzeContentNeedsResponse response = responseRef.get();
             assertThat(response).isNotNull();
             assertThat(response.getRequestId()).isEqualTo("needs-123");
-            
+
             ContentNeeds needs = response.getContentNeeds();
             assertThat(needs.getExamples().getRequired()).isTrue();
             assertThat(needs.getExamples().getTypesList()).containsExactly("REAL_WORLD", "PROBLEM_SOLVING");
             assertThat(needs.getExamples().getCount()).isEqualTo(3);
             assertThat(needs.getExamples().getNecessity()).isEqualTo(0.95);
-            
+
             assertThat(needs.getSimulation().getRequired()).isTrue();
             assertThat(needs.getSimulation().getInteractionType()).isEqualTo("PARAMETER_EXPLORATION");
             assertThat(needs.getSimulation().getComplexity()).isEqualTo("MEDIUM");
-            
+
             assertThat(needs.getAnimation().getRequired()).isFalse();
         }
     }
@@ -384,7 +384,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   ]
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 400, 100, 500)));
 
@@ -402,7 +402,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<GenerateExamplesResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.generateExamples(request, new StreamObserver<>() {
                 @Override
                 public void onNext(GenerateExamplesResponse response) {
@@ -426,7 +426,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             GenerateExamplesResponse response = responseRef.get();
             assertThat(response).isNotNull();
             assertThat(response.getExamplesList()).hasSize(2);
-            
+
             Example ex1 = response.getExamples(0);
             assertThat(ex1.getExampleId()).isEqualTo("EX1");
             assertThat(ex1.getType()).isEqualTo("REAL_WORLD");
@@ -500,7 +500,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   }
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 600, 150, 750)));
 
@@ -517,7 +517,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<GenerateSimulationResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.generateSimulation(request, new StreamObserver<>() {
                 @Override
                 public void onNext(GenerateSimulationResponse response) {
@@ -540,13 +540,13 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // THEN
             GenerateSimulationResponse response = responseRef.get();
             assertThat(response).isNotNull();
-            
+
             SimulationManifest manifest = response.getManifest();
             assertThat(manifest.getTitle()).isEqualTo("Newton's First Law Demonstration");
             assertThat(manifest.getEntitiesList()).hasSize(2);
             assertThat(manifest.getStepsList()).hasSize(2);
             assertThat(manifest.getKeyframesList()).hasSize(2);
-            
+
             Entity ball = manifest.getEntities(0);
             assertThat(ball.getId()).isEqualTo("ball1");
             assertThat(ball.getEntityType()).isEqualTo("BALL");
@@ -589,7 +589,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   ]
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 300, 75, 375)));
 
@@ -606,7 +606,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<ValidateContentResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.validateContent(request, new StreamObserver<>() {
                 @Override
                 public void onNext(ValidateContentResponse response) {
@@ -632,10 +632,10 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             assertThat(response.getStatus()).isEqualTo("valid");
             assertThat(response.getOverallScore()).isEqualTo(87);
             assertThat(response.getCanPublish()).isTrue();
-            
+
             assertThat(response.getDimensionScoresMap()).containsEntry("educational", 90);
             assertThat(response.getDimensionScoresMap()).containsEntry("safety", 95);
-            
+
             assertThat(response.getIssuesList()).hasSize(1);
             assertThat(response.getIssues(0).getDimension()).isEqualTo("accessibility");
             assertThat(response.getIssues(0).getSeverity()).isEqualTo("warning");
@@ -675,7 +675,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   ]
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 300, 75, 375)));
 
@@ -687,7 +687,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<ValidateContentResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.validateContent(request, new StreamObserver<>() {
                 @Override
                 public void onNext(ValidateContentResponse response) {
@@ -754,7 +754,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
                   "overall_confidence": 0.90
                 }
                 """;
-            
+
             when(mockLLMGateway.complete(any(CompletionRequest.class)))
               .thenReturn(Promise.of(completion(llmResponse, "gpt-4", 350, 85, 435)));
 
@@ -773,7 +773,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             // WHEN
             AtomicReference<EnhanceContentResponse> responseRef = new AtomicReference<>();
             CountDownLatch latch = new CountDownLatch(1);
-            
+
             service.enhanceContent(request, new StreamObserver<>() {
                 @Override
                 public void onNext(EnhanceContentResponse response) {
@@ -800,7 +800,7 @@ class ContentGenerationServiceImplTest extends EventloopTestBase {
             assertThat(response.getOverallConfidence()).isEqualTo(0.90);
             assertThat(response.getEnhancementsList()).hasSize(2);
             assertThat(response.getEnhancementCount()).isEqualTo(2);
-            
+
             Enhancement enh1 = response.getEnhancements(0);
             assertThat(enh1.getType()).isEqualTo("engagement");
             assertThat(enh1.getTitle()).isEqualTo("Add Interactive Quiz");

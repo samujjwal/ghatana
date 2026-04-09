@@ -37,7 +37,7 @@ public record PipelineExecutionResult(
         Objects.requireNonNull(pipelineId, "pipelineId cannot be null");
         Objects.requireNonNull(inputEvent, "inputEvent cannot be null");
         Objects.requireNonNull(outputEvents, "outputEvents cannot be null");
-        
+
         if (processingTimeMs < 0) {
             throw new IllegalArgumentException("processingTimeMs cannot be negative");
         }

@@ -21,10 +21,10 @@ import java.util.Objects;
  *     ),
  *     PolicyType.PROFANITY
  * );
- * 
+ *
  * if (!result.passed()) {
  *     // Handle violations
- *     result.getViolations().forEach(v -> 
+ *     result.getViolations().forEach(v ->
  *         log.warn("Violation: {} at position {}", v.matchedText(), v.position()));
  * }
  * }</pre>

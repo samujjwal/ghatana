@@ -23,9 +23,9 @@ import java.util.Optional;
  * @since 2.0.0
  */
 public class SessionAwareService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SessionAwareService.class);
-    
+
     /**
      * Get user preferences from the session.
      */
@@ -40,7 +40,7 @@ public class SessionAwareService {
             return preferences;
         }, new HashMap<>());
     }
-    
+
     /**
      * Save user preferences to the session.
      */
@@ -50,7 +50,7 @@ public class SessionAwareService {
             return null;
         });
     }
-    
+
     /**
      * Get the last accessed page from the session.
      */
@@ -58,15 +58,15 @@ public class SessionAwareService {
         return SessionUtils.getCurrentSession()
             .map(session -> session.getAttribute("lastAccessedPage"));
     }
-    
+
     /**
      * Set the last accessed page in the session.
      */
     public void setLastAccessedPage(String page) {
-        SessionUtils.getCurrentSession().ifPresent(session -> 
+        SessionUtils.getCurrentSession().ifPresent(session ->
             session.setAttribute("lastAccessedPage", page));
     }
-    
+
     /**
      * Perform a tenant-specific operation.
      */
@@ -77,7 +77,7 @@ public class SessionAwareService {
             return "Operation '" + operation + "' completed for tenant '" + tenantId + "'";
         });
     }
-    
+
     /**
      * Perform a user-specific operation.
      */
@@ -88,20 +88,20 @@ public class SessionAwareService {
             return "Operation '" + operation + "' completed for user '" + userId + "'";
         });
     }
-    
+
     /**
      * Perform an operation that requires both user and tenant context.
      */
     public String performContextualOperation(String operation) {
         return SessionUtils.withUserAndTenant((userId, tenantId) -> {
-            LOG.info("Performing operation '{}' for user '{}' in tenant '{}'", 
+            LOG.info("Performing operation '{}' for user '{}' in tenant '{}'",
                 operation, userId, tenantId);
             // Contextual logic here
-            return "Operation '" + operation + "' completed for user '" + userId + 
+            return "Operation '" + operation + "' completed for user '" + userId +
                 "' in tenant '" + tenantId + "'";
         });
     }
-    
+
     /**
      * Store an audit entry in the request context.
      */
@@ -112,19 +112,19 @@ public class SessionAwareService {
                 auditEntries = new HashMap<>();
                 context.setAttribute("auditEntries", auditEntries);
             }
-            
+
             @SuppressWarnings("unchecked")
             Map<String, Object> entries = (Map<String, Object>) auditEntries;
-            
+
             Map<String, String> entry = new HashMap<>();
             entry.put("action", action);
             entry.put("result", result);
             entry.put("timestamp", String.valueOf(System.currentTimeMillis()));
-            
+
             entries.put(String.valueOf(entries.size() + 1), entry);
         });
     }
-    
+
     /**
      * Get all audit entries from the request context.
      */

@@ -31,9 +31,9 @@ class PatientServiceTest {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
         AuditTrailService auditTrail = new PHRAuditTrailServiceImpl();
         recordsRepository = new PatientRecordRepository();
-        
+
         patientService = new PatientService(telemetry, auditTrail, recordsRepository);
-        
+
         TenantSecurityContext context = TenantSecurityContext.builder()
             .tenantId("tenant-1")
             .userId("provider-1")
@@ -41,7 +41,7 @@ class PatientServiceTest {
             .role("HEALTHCARE_PROVIDER")
             .permission("read:patient-records")
             .build();
-        
+
         SecurityContextHolder.setContext(context);
     }
 
@@ -53,7 +53,7 @@ class PatientServiceTest {
     @Test
     void testGetRecords() {
         PatientRecords records = patientService.getRecords("patient-1");
-        
+
         assertNotNull(records);
     }
 
@@ -63,9 +63,9 @@ class PatientServiceTest {
             "diagnosis", "Hypertension",
             "treatment", "Medication prescribed"
         );
-        
+
         assertDoesNotThrow(() -> patientService.createRecord("patient-1", recordData));
-        
+
         PatientRecords records = recordsRepository.findByPatientId("patient-1");
         assertEquals(1, records.size());
     }

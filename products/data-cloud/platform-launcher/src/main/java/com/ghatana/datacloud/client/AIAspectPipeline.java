@@ -17,7 +17,6 @@
 package com.ghatana.datacloud.client;
 
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 
 import java.util.ArrayList;
 import java.util.Collections;

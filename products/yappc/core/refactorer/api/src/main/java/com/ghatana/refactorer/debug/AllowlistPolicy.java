@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Immutable allowlist policy for SafeExec. Backed by config/debug/safe-commands.allowlist.json 
+ * Immutable allowlist policy for SafeExec. Backed by config/debug/safe-commands.allowlist.json
  * @doc.type class
  * @doc.purpose Handles allowlist policy operations
  * @doc.layer core

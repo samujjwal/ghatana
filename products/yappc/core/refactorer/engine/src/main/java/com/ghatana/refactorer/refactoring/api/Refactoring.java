@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.api;
 
 /**
- * Base interface for all refactoring operations. 
+ * Base interface for all refactoring operations.
  * @doc.type interface
  * @doc.purpose Defines the contract for refactoring
  * @doc.layer core

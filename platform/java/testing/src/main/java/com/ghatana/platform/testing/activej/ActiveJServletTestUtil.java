@@ -13,7 +13,7 @@ import io.activej.promise.Promise;
  *     runner.start();
  *     HttpResponse resp = ActiveJServletTestUtil.serve(servlet, request, runner);
  *   }
- * 
+ *
  * @doc.type class
  * @doc.purpose Convenience helpers for testing ActiveJ AsyncServlets with managed Eventloop
  * @doc.layer core

@@ -1,7 +1,6 @@
 package com.ghatana.pipeline.runtime.adapter;
 
 import com.ghatana.pipeline.registry.connector.ConnectorOperator;
-import io.activej.promise.Promise;
 
 /**
  * Runtime representation of a pipeline stage with operators and connectors.

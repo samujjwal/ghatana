@@ -35,7 +35,7 @@ import io.activej.promise.Promise;
  *     private final KafkaProducer<String, byte[]> producer;
  *     private final String topic;
  *     private final EventSerializer serializer;
- *     
+ *
  *     public ProductionKafkaProducer(
  *             String bootstrapServers,
  *             String topic) {
@@ -49,30 +49,30 @@ import io.activej.promise.Promise;
  *         props.put("batch.size", 16384);
  *         props.put("compression.type", "snappy");
  *         props.put("enable.idempotence", "true");
- *         
+ *
  *         this.producer = new KafkaProducer<>(props);
  *         this.topic = topic;
  *         this.serializer = new EventSerializer();
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord record) {
  *         return Promise.ofFuture(executor, () -> {
  *             String key = record.id().value();
  *             byte[] value = serializer.serialize(record);
- *             
- *             ProducerRecord<String, byte[]> kafkaRecord = 
+ *
+ *             ProducerRecord<String, byte[]> kafkaRecord =
  *                 new ProducerRecord<>(topic, key, value);
- *             
+ *
  *             RecordMetadata metadata = producer.send(kafkaRecord).get();
- *             
+ *
  *             logger.debug("Event sent to partition {} offset {}",
  *                 metadata.partition(), metadata.offset());
- *             
+ *
  *             return null;
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         producer.flush();
@@ -84,7 +84,7 @@ import io.activej.promise.Promise;
  * public class MockKafkaProducer implements KafkaProducerAdapter {
  *     private final List<EventRecord> sentEvents = new ArrayList<>();
  *     private volatile boolean closed = false;
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord record) {
  *         if (closed) {
@@ -95,12 +95,12 @@ import io.activej.promise.Promise;
  *         sentEvents.add(record);
  *         return Promise.complete();
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         closed = true;
  *     }
- *     
+ *
  *     public List<EventRecord> getSentEvents() {
  *         return new ArrayList<>(sentEvents);
  *     }
@@ -111,10 +111,10 @@ import io.activej.promise.Promise;
  *     @Test
  *     void shouldSendEvent() {
  *         MockKafkaProducer adapter = new MockKafkaProducer();
- *         
+ *
  *         EventRecord event = createTestEvent("user.created");
  *         Promise<Void> result = adapter.send(event);
- *         
+ *
  *         assertThat(result).succeedsWithin(Duration.ofSeconds(1));
  *         assertThat(adapter.getSentEvents()).hasSize(1);
  *         assertThat(adapter.getSentEvents().get(0)).isEqualTo(event);
@@ -125,27 +125,27 @@ import io.activej.promise.Promise;
  * public class PartitioningKafkaProducer implements KafkaProducerAdapter {
  *     private final KafkaProducerAdapter delegate;
  *     private final Function<EventRecord, Integer> partitioner;
- *     
+ *
  *     public PartitioningKafkaProducer(
  *             KafkaProducerAdapter delegate,
  *             Function<EventRecord, Integer> partitioner) {
  *         this.delegate = delegate;
  *         this.partitioner = partitioner;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord record) {
  *         // Apply custom partitioning logic
  *         Integer partition = partitioner.apply(record);
- *         
+ *
  *         // Add partition metadata
  *         EventRecord partitionedRecord = record.withMetadata(
  *             "partition", String.valueOf(partition)
  *         );
- *         
+ *
  *         return delegate.send(partitionedRecord);
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         delegate.close();
@@ -156,14 +156,14 @@ import io.activej.promise.Promise;
  * public class MetricsKafkaProducer implements KafkaProducerAdapter {
  *     private final KafkaProducerAdapter delegate;
  *     private final MetricsCollector metrics;
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord record) {
  *         long start = System.nanoTime();
- *         
+ *
  *         return delegate.send(record).whenComplete((v, e) -> {
  *             long durationMs = (System.nanoTime() - start) / 1_000_000;
- *             
+ *
  *             if (e == null) {
  *                 metrics.recordTimer("kafka.send.duration", durationMs);
  *                 metrics.incrementCounter("kafka.events.sent",
@@ -175,7 +175,7 @@ import io.activej.promise.Promise;
  *             }
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         delegate.close();
@@ -186,22 +186,22 @@ import io.activej.promise.Promise;
  * public class CompressingKafkaProducer implements KafkaProducerAdapter {
  *     private final KafkaProducerAdapter delegate;
  *     private final Compressor compressor;
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord record) {
  *         // Compress event payload before sending
  *         byte[] payload = serialize(record);
  *         byte[] compressed = compressor.compress(payload);
- *         
+ *
  *         EventRecord compressedRecord = record.withMetadata(
  *             "compression", compressor.algorithm(),
  *             "original_size", String.valueOf(payload.length),
  *             "compressed_size", String.valueOf(compressed.length)
  *         );
- *         
+ *
  *         return delegate.send(compressedRecord);
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         delegate.close();

@@ -3,7 +3,6 @@ package com.ghatana.datacloud.infrastructure.cache;
 import com.ghatana.datacloud.entity.CollectionRepository;
 import com.ghatana.datacloud.entity.MetaCollection;
 import com.ghatana.platform.observability.MetricsCollector;
-import io.activej.async.function.AsyncSupplier;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.slf4j.Logger;
@@ -148,9 +147,9 @@ public class CacheWarmupService {
                 // Warm up each tenant sequentially to avoid overload
                 // Start with an empty list of results
                 Promise<List<WarmupResult>> resultPromise = Promise.of(new ArrayList<>());
-                
+
                 for (String tenantId : tenantIds) {
-                    resultPromise = resultPromise.then(results -> 
+                    resultPromise = resultPromise.then(results ->
                         warmupTenant(tenantId, maxJitter)
                             .map(result -> {
                                 results.add(result);
@@ -158,7 +157,7 @@ public class CacheWarmupService {
                             })
                     );
                 }
-                
+
                 return resultPromise;
             })
             .map(results -> {
@@ -171,7 +170,7 @@ public class CacheWarmupService {
                 metrics.getMeterRegistry()
                     .timer("cache.warmup.duration")
                     .record(Duration.ofMillis(duration));
-                    
+
                 metrics.incrementCounter("cache.warmup.completed",
                     "success", String.valueOf(combined.successCount()),
                     "errors", String.valueOf(combined.errorCount()));

@@ -330,7 +330,7 @@ public final class EventloopTestUtil {
         private void ensureStarted() {
             if (!started.get()) {
                 start();
-        
+
             }}
 
         // ---- Public helpers -----------------------------------------------------

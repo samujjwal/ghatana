@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     .withBatchSize(10000)              // Flush after 10k spans
  *     .withFlushInterval(Duration.ofSeconds(10))  // Or after 10s
  *     .build();
- * 
+ *
  * // Store spans (batched automatically)
  * SpanData span = SpanData.builder()
  *     .traceId("trace-123")
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     .durationNs(150_000_000L)  // 150ms
  *     .status("SUCCESS")
  *     .build();
- * 
+ *
  * storage.storeSpan(span).whenComplete((unused, ex) -> {
  *     if (ex != null) {
  *         logger.error("Failed to store span", ex);
@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <pre>{@code
  * // Example 2: Query traces by service/operation/status
  * ClickHouseTraceStorage storage = getStorage();
- * 
+ *
  * TraceQuery query = TraceQuery.builder()
  *     .withServiceName("api-gateway")
  *     .withOperationName("POST /api/orders")
@@ -74,12 +74,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     .withTimeRange(Instant.now().minus(Duration.ofHours(1)), Instant.now())
  *     .withLimit(100)
  *     .build();
- * 
+ *
  * storage.queryTraces(query).whenComplete((traces, ex) -> {
  *     if (ex == null) {
  *         traces.forEach(trace -> {
  *             log.info("Trace {} spans: {}, duration: {}ms",
- *                 trace.getTraceId(), trace.getSpans().size(), 
+ *                 trace.getTraceId(), trace.getSpans().size(),
  *                 trace.getDuration().toMillis());
  *         });
  *     }
@@ -90,35 +90,35 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <pre>{@code
  * // Example 3: Calculate latency percentiles (P50/P95/P99)
  * ClickHouseTraceStorage storage = getStorage();
- * 
+ *
  * // Calculate for specific service
  * TraceStatistics stats = storage.calculateStatistics(
  *     "api-gateway",
  *     Instant.now().minus(Duration.ofHours(24)),
  *     Instant.now()
  * ).getResult();
- * 
+ *
  * log.info("Service: {}", stats.getServiceName());
  * log.info("Total spans: {}", stats.getTotalSpans());
  * log.info("P50 latency: {}ms", stats.getP50Duration().toMillis());
  * log.info("P95 latency: {}ms", stats.getP95Duration().toMillis());
  * log.info("P99 latency: {}ms", stats.getP99Duration().toMillis());
  * log.info("Error rate: {}%", stats.getErrorRate() * 100);
- * 
+ *
  * // ClickHouse uses quantile functions:
- * // SELECT quantile(0.50)(durationNs), quantile(0.95)(durationNs), 
+ * // SELECT quantile(0.50)(durationNs), quantile(0.95)(durationNs),
  * //        quantile(0.99)(durationNs) FROM spans WHERE ...
  * }</pre>
  *
  * <pre>{@code
  * // Example 4: Batch span insertion (higher throughput)
  * ClickHouseTraceStorage storage = getStorage();
- * 
+ *
  * List<SpanData> spans = new ArrayList<>();
  * for (int i = 0; i < 1000; i++) {
  *     spans.add(createTestSpan());
  * }
- * 
+ *
  * storage.storeSpans(spans).whenComplete((unused, ex) -> {
  *     if (ex == null) {
  *         log.info("Stored {} spans", spans.size());
@@ -130,7 +130,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <pre>{@code
  * // Example 5: Graceful shutdown with buffer flush
  * ClickHouseTraceStorage storage = getStorage();
- * 
+ *
  * // Application shutdown hook
  * Runtime.getRuntime().addShutdownHook(new Thread(() -> {
  *     try {
@@ -215,16 +215,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @doc.pattern Adapter
  */
 public class ClickHouseTraceStorage implements TraceStorage {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ClickHouseTraceStorage.class);
-    
+
     private final ClickHouseClient client;
     private final ClickHouseConfig config;
     private final ObjectMapper objectMapper;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final SpanBuffer spanBuffer;
     private final Executor blockingExecutor;
-    
+
     private ClickHouseTraceStorage(Builder builder) {
         this.config = Objects.requireNonNull(builder.cfg, "Config cannot be null");
         this.client = ClickHouseClient.newInstance();
@@ -232,10 +232,10 @@ public class ClickHouseTraceStorage implements TraceStorage {
         this.spanBuffer = new SpanBuffer(config.getBatchSize(), config.getFlushInterval());
         this.blockingExecutor = Executors.newFixedThreadPool(2,
             r -> { Thread t = new Thread(r, "clickhouse-io"); t.setDaemon(true); return t; });
-        
+
         logger.info("ClickHouseTraceStorage initialized with config: {}", config);
     }
-    
+
     /**
      * Returns a new builder for creating ClickHouseTraceStorage instances.
      *
@@ -244,17 +244,17 @@ public class ClickHouseTraceStorage implements TraceStorage {
     public static Builder builder() {
         return new Builder();
     }
-    
+
     @Override
     public Promise<Void> storeSpan(SpanData span) {
         if (span == null) {
             return Promise.ofException(new IllegalArgumentException("Span cannot be null"));
         }
-        
+
         if (closed.get()) {
             return Promise.ofException(new IllegalStateException("Storage is closed"));
         }
-        
+
         try {
             boolean shouldFlush;
             synchronized (this) {
@@ -270,17 +270,17 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.ofException(ex);
         }
     }
-    
+
     @Override
     public Promise<Void> storeSpans(List<SpanData> spans) {
         if (spans == null || spans.isEmpty()) {
             return Promise.ofException(new IllegalArgumentException("Spans list cannot be null or empty"));
         }
-        
+
         if (closed.get()) {
             return Promise.ofException(new IllegalStateException("Storage is closed"));
         }
-        
+
         try {
             boolean shouldFlush;
             synchronized (this) {
@@ -298,24 +298,24 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.ofException(ex);
         }
     }
-    
+
     @Override
     public Promise<List<TraceInfo>> queryTraces(TraceQuery query) {
         if (query == null) {
             return Promise.ofException(new IllegalArgumentException("Query cannot be null"));
         }
-        
+
         if (closed.get()) {
             return Promise.ofException(new IllegalStateException("Storage is closed"));
         }
-        
+
         try {
             // Build and execute query
             String sql = buildTraceQuery(query);
             logger.debug("Executing trace query: {}", sql);
-            
+
             List<TraceInfo> traces = executeTraceQuery(sql);
-            
+
             logger.debug("Query returned {} traces", traces.size());
             return Promise.of(traces);
         } catch (Exception ex) {
@@ -323,24 +323,24 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.ofException(ex);
         }
     }
-    
+
     @Override
     public Promise<TraceStatistics> getStatistics(TraceQuery query) {
         if (query == null) {
             return Promise.ofException(new IllegalArgumentException("Query cannot be null"));
         }
-        
+
         if (closed.get()) {
             return Promise.ofException(new IllegalStateException("Storage is closed"));
         }
-        
+
         try {
             // Build and execute statistics query
             String sql = buildStatisticsQuery(query);
             logger.debug("Executing statistics query: {}", sql);
-            
+
             TraceStatistics statistics = executeStatisticsQuery(sql);
-            
+
             logger.debug("Statistics query completed");
             return Promise.of(statistics);
         } catch (Exception ex) {
@@ -348,13 +348,13 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.ofException(ex);
         }
     }
-    
+
     @Override
     public Promise<Boolean> isHealthy() {
         if (closed.get()) {
             return Promise.of(false);
         }
-        
+
         return Promise.ofBlocking(blockingExecutor, () -> {
             try (Connection conn = getConnection();
                  Statement stmt = conn.createStatement();
@@ -366,16 +366,16 @@ public class ClickHouseTraceStorage implements TraceStorage {
             }
         });
     }
-    
+
     @Override
     public Promise<Void> close() {
         if (!closed.compareAndSet(false, true)) {
             return Promise.complete(); // Already closed
         }
-        
+
         try {
             logger.info("Closing ClickHouseTraceStorage");
-            
+
             // Flush remaining spans
             List<SpanData> remaining;
             synchronized (this) {
@@ -389,12 +389,12 @@ public class ClickHouseTraceStorage implements TraceStorage {
                     logger.warn("Failed to flush {} remaining spans on close", remaining.size(), flushEx);
                 }
             }
-            
+
             // Close client
             if (client != null) {
                 client.close();
             }
-            
+
             logger.info("ClickHouseTraceStorage closed successfully");
             return Promise.complete();
         } catch (Exception ex) {
@@ -402,7 +402,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return Promise.ofException(ex);
         }
     }
-    
+
     /**
      * Flushes the span buffer to ClickHouse.
      * The buffer drain is performed under the instance lock; the actual ClickHouse
@@ -416,7 +416,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
         if (spans.isEmpty()) {
             return Promise.complete();
         }
-        
+
         final List<SpanData> toInsert = spans;
         return Promise.ofBlocking(blockingExecutor, () -> {
             try {
@@ -429,22 +429,22 @@ public class ClickHouseTraceStorage implements TraceStorage {
             return null;
         });
     }
-    
+
     /**
      * Executes a trace query and parses results into TraceInfo objects.
      */
     private List<TraceInfo> executeTraceQuery(String sql) throws SQLException {
         List<TraceInfo> traces = new ArrayList<>();
-        
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             while (rs.next()) {
                 // ClickHouse DateTime64(9) is returned as a Timestamp with nanosecond precision
                 Instant startTime = rs.getTimestamp("startTime").toInstant();
                 Instant endTime = rs.getTimestamp("endTime").toInstant();
-                
+
                 TraceInfo trace = TraceInfo.builder()
                         .withTraceId(rs.getString("traceId"))
                         .withServiceName(rs.getString("serviceName"))
@@ -458,10 +458,10 @@ public class ClickHouseTraceStorage implements TraceStorage {
                 traces.add(trace);
             }
         }
-        
+
         return traces;
     }
-    
+
     /**
      * Executes a statistics query and parses results into TraceStatistics object.
      */
@@ -469,7 +469,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             if (rs.next()) {
                 return TraceStatistics.builder()
                         .withTotalTraces((int) rs.getLong("totalTraces"))
@@ -484,7 +484,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
                         .build();
             }
         }
-        
+
         // Return empty statistics if no results
         return TraceStatistics.builder()
                 .withTotalTraces(0)
@@ -498,7 +498,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
                 .withP99DurationMs(0)
                 .build();
     }
-    
+
     /**
      * Inserts spans into ClickHouse using a JDBC PreparedStatement batch for SQL-injection safety.
      */
@@ -537,19 +537,19 @@ public class ClickHouseTraceStorage implements TraceStorage {
             logger.debug("Inserted {} spans into ClickHouse", spans.size());
         }
     }
-    
+
     /**
      * Gets a connection from the ClickHouse client.
      */
     private Connection getConnection() throws SQLException {
-        String jdbcUrl = String.format("jdbc:clickhouse://%s:%d/%s", 
+        String jdbcUrl = String.format("jdbc:clickhouse://%s:%d/%s",
             config.getHost(), config.getPort(), config.getDatabase());
         return DriverManager.getConnection(jdbcUrl);
     }
-    
+
     /**
      * Builds a SQL SELECT query based on TraceQuery parameters.
-     * 
+     *
      * Supports filtering by:
      * - serviceName
      * - operationName
@@ -560,22 +560,22 @@ public class ClickHouseTraceStorage implements TraceStorage {
      */
     private String buildTraceQuery(TraceQuery query) {
         StringBuilder sql = new StringBuilder("SELECT * FROM observability.traces WHERE 1=1");
-        
+
         // Service name filter
         if (query.getServiceName().isPresent()) {
             sql.append(" AND serviceName = '").append(escapeString(query.getServiceName().get())).append("'");
         }
-        
+
         // Operation name filter
         if (query.getOperationName().isPresent()) {
             sql.append(" AND operationName = '").append(escapeString(query.getOperationName().get())).append("'");
         }
-        
+
         // Status filter
         if (query.getStatus().isPresent()) {
             sql.append(" AND status = '").append(escapeString(query.getStatus().get())).append("'");
         }
-        
+
         // Time range filter
         if (query.getStartTime().isPresent()) {
             sql.append(" AND startTime >= '").append(query.getStartTime().get()).append("'");
@@ -583,7 +583,7 @@ public class ClickHouseTraceStorage implements TraceStorage {
         if (query.getEndTime().isPresent()) {
             sql.append(" AND endTime <= '").append(query.getEndTime().get()).append("'");
         }
-        
+
         // Duration range filter (in ms)
         if (query.getMinDurationMs().isPresent()) {
             sql.append(" AND durationMs >= ").append(query.getMinDurationMs().get());
@@ -591,21 +591,21 @@ public class ClickHouseTraceStorage implements TraceStorage {
         if (query.getMaxDurationMs().isPresent()) {
             sql.append(" AND durationMs <= ").append(query.getMaxDurationMs().get());
         }
-        
+
         // Sorting: most recent first
         sql.append(" ORDER BY startTime DESC");
-        
+
         // Pagination
         int limit = Math.min(query.getLimit(), 10000); // Max 10000 results
         int offset = query.getOffset();
         sql.append(" LIMIT ").append(limit).append(" OFFSET ").append(offset);
-        
+
         return sql.toString();
     }
 
     /**
      * Builds a SQL query to calculate statistics.
-     * 
+     *
      * Calculates:
      * - totalTraces count
      * - totalSpans count
@@ -626,27 +626,27 @@ public class ClickHouseTraceStorage implements TraceStorage {
             "  AVG(durationMs) as avgDurationMs " +
             "FROM observability.traces WHERE 1=1"
         );
-        
+
         // Apply same filters as trace query
         if (query.getServiceName().isPresent()) {
             sql.append(" AND serviceName = '").append(escapeString(query.getServiceName().get())).append("'");
         }
-        
+
         if (query.getOperationName().isPresent()) {
             sql.append(" AND operationName = '").append(escapeString(query.getOperationName().get())).append("'");
         }
-        
+
         if (query.getStatus().isPresent()) {
             sql.append(" AND status = '").append(escapeString(query.getStatus().get())).append("'");
         }
-        
+
         if (query.getStartTime().isPresent()) {
             sql.append(" AND startTime >= '").append(query.getStartTime().get()).append("'");
         }
         if (query.getEndTime().isPresent()) {
             sql.append(" AND endTime <= '").append(query.getEndTime().get()).append("'");
         }
-        
+
         return sql.toString();
     }
 
@@ -668,32 +668,32 @@ public class ClickHouseTraceStorage implements TraceStorage {
         private int batchSize = 5000;
         private Duration flushInterval = Duration.ofSeconds(5);
         private ClickHouseConfig cfg;
-        
+
         public Builder withHost(String host) {
             this.host = host;
             return this;
         }
-        
+
         public Builder withPort(int port) {
             this.port = port;
             return this;
         }
-        
+
         public Builder withDatabase(String database) {
             this.database = database;
             return this;
         }
-        
+
         public Builder withBatchSize(int batchSize) {
             this.batchSize = batchSize;
             return this;
         }
-        
+
         public Builder withFlushInterval(Duration flushInterval) {
             this.flushInterval = flushInterval;
             return this;
         }
-        
+
         /**
          * Builds the ClickHouseTraceStorage instance.
          */

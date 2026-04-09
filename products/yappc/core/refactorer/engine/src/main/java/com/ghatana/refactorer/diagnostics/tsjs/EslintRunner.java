@@ -28,11 +28,11 @@ import org.apache.logging.log4j.Logger;
  * Runs ESLint on TypeScript/JavaScript files and parses the output. Supports
  * both reporting issues
  * and automatically fixing them.
- * 
+ *
  * @doc.type runner
  * @doc.language typescript,javascript
  * @doc.tool eslint
- 
+
  * @doc.purpose Handles eslint runner operations
  * @doc.layer core
  * @doc.pattern ValueObject
@@ -63,7 +63,7 @@ public class EslintRunner {
      * @return A future that completes with the list of diagnostics
      */
     public Promise<List<UnifiedDiagnostic>> run(Path projectRoot) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     try {
                         Path bridgeScript = getBridgeScriptPath();

@@ -42,7 +42,7 @@ public class PipelineExecutionBenchmark {
     public void setup() {
         engine = new PipelineExecutionEngine();
         UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
-        
+
         OperatorId id = OperatorId.of("benchmark", "test", "noop", "1.0");
         catalog.register(new NoopOperator(id));
 
@@ -78,7 +78,7 @@ public class PipelineExecutionBenchmark {
     @Benchmark
     public void testEventloopBoundedPipelineExecution() {
         eventloop = Eventloop.create().withCurrentThread();
-        
+
         eventloop.post(() -> {
             Promise<List<Object>> compositePromise = Promises.toList(
                     eventBatch.stream()
@@ -99,7 +99,7 @@ public class PipelineExecutionBenchmark {
 
     private static class NoopOperator implements UnifiedOperator {
         private final OperatorId id;
-        
+
         NoopOperator(OperatorId id) {
             this.id = id;
         }

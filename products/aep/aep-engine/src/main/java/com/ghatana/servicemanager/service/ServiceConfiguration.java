@@ -2,14 +2,14 @@ package com.ghatana.servicemanager.service;
 
 /**
  * Configuration for an AEP service.
- * 
+ *
  * @doc.type class
  * @doc.purpose Service configuration model
  * @doc.layer orchestration
  * @doc.pattern Configuration
  */
 public class ServiceConfiguration {
-    
+
     private final String name;
     private final int port;
     private final String mainClass;

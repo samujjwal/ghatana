@@ -14,13 +14,12 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import com.ghatana.refactorer.shared.RefactorerOperationException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Centralized JSON utility providing configured ObjectMapper instances and convenience methods.
- * 
+ *
  * <p>This is the canonical JSON support class for the refactorer modules. Use this instead of
  * creating local JsonUtils/JsonUtil variants.
  *
@@ -30,56 +29,56 @@ import java.util.Map;
  *   <li>{@link #lenientMapper()} - Lenient parsing (ignores unknown properties)</li>
  *   <li>{@link #webhookMapper()} - For webhook payloads (JavaTime support, non-null only)</li>
  * </ul>
- 
+
  * @doc.type class
  * @doc.purpose Handles json support operations
  * @doc.layer core
  * @doc.pattern ValueObject
 */
 public class JsonSupport {
-    
+
     private static final ObjectMapper DEFAULT_MAPPER = createDefaultMapper();
     private static final ObjectMapper LENIENT_MAPPER = createLenientMapper();
     private static final ObjectMapper WEBHOOK_MAPPER = createWebhookMapper();
-    
+
     private JsonSupport() {
         // Utility class
     }
-    
+
     /**
      * Default ObjectMapper with standard configuration.
      */
     public static ObjectMapper defaultMapper() {
         return DEFAULT_MAPPER;
     }
-    
+
     /**
      * Lenient ObjectMapper that ignores unknown properties during deserialization.
      */
     public static ObjectMapper lenientMapper() {
         return LENIENT_MAPPER;
     }
-    
+
     /**
      * Webhook-specific ObjectMapper with JavaTime module and non-null serialization.
      */
     public static ObjectMapper webhookMapper() {
         return WEBHOOK_MAPPER;
     }
-    
+
     private static ObjectMapper createDefaultMapper() {
         ObjectMapper mapper = JsonUtils.getDefaultMapper();
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return mapper;
     }
-    
+
     private static ObjectMapper createLenientMapper() {
         ObjectMapper mapper = JsonUtils.getDefaultMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         return mapper;
     }
-    
+
     private static ObjectMapper createWebhookMapper() {
         ObjectMapper mapper = JsonUtils.getDefaultMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -87,9 +86,9 @@ public class JsonSupport {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         return mapper;
     }
-    
+
     // Convenience methods using default mapper
-    
+
     /**
      * Deserialize JSON string to an object of the specified class.
      */
@@ -99,7 +98,7 @@ public class JsonSupport {
         }
         return DEFAULT_MAPPER.readValue(json, clazz);
     }
-    
+
     /**
      * Deserialize JSON string to an object using a TypeReference.
      */
@@ -109,7 +108,7 @@ public class JsonSupport {
         }
         return DEFAULT_MAPPER.readValue(json, typeRef);
     }
-    
+
     /**
      * Deserialize JSON string to an array of objects of the specified class.
      */
@@ -121,7 +120,7 @@ public class JsonSupport {
         return DEFAULT_MAPPER.readValue(
                 json, DEFAULT_MAPPER.getTypeFactory().constructArrayType(componentType));
     }
-    
+
     /**
      * Deserialize JSON string to a List of objects of the specified class.
      */
@@ -130,14 +129,14 @@ public class JsonSupport {
                 TypeFactory.defaultInstance().constructCollectionType(List.class, clazz);
         return DEFAULT_MAPPER.readValue(json, listType);
     }
-    
+
     /**
      * Serialize an object to a JSON string.
      */
     public static String toJson(Object obj) throws JsonProcessingException {
         return DEFAULT_MAPPER.writeValueAsString(obj);
     }
-    
+
     /**
      * Pretty-print an object as a formatted JSON string.
      */
@@ -148,7 +147,7 @@ public class JsonSupport {
             throw new RefactorerOperationException("Error converting object to JSON", e);
         }
     }
-    
+
     /**
      * Parses a JSON string into a JsonNode.
      */
@@ -158,7 +157,7 @@ public class JsonSupport {
         }
         return DEFAULT_MAPPER.readTree(json);
     }
-    
+
     /**
      * Converts an object to a Map.
      */
@@ -166,7 +165,7 @@ public class JsonSupport {
     public static Map<String, Object> toMap(Object obj) {
         return DEFAULT_MAPPER.convertValue(obj, Map.class);
     }
-    
+
     /**
      * Converts a Map to an object of the specified type.
      */

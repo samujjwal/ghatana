@@ -5,8 +5,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,9 +44,9 @@ class PasswordHasherExpansionTest {
                 longPassword.append("Pass123!");
             }
             String password = longPassword.toString();
-            
+
             String hashed = hasher.hash(password);
-            
+
             // BCrypt limits input to 72 bytes, so it should still work
             assertThat(hashed).startsWith("$2");
             assertThat(hasher.verify(password, hashed)).isTrue();
@@ -60,7 +58,7 @@ class PasswordHasherExpansionTest {
             // 72 bytes is BCrypt's limit - test near this boundary
             String password = "A".repeat(71) + "!";
             String hashed = hasher.hash(password);
-            
+
             assertThat(hasher.verify(password, hashed)).isTrue();
             // Truncated version (72+ chars) might not match due to BCrypt limit
             String truncated = "A".repeat(72);
@@ -81,10 +79,10 @@ class PasswordHasherExpansionTest {
         void unicodePassword() {
             String unicodePassword = "用户密码🔐émoji-security";
             String hashed = hasher.hash(unicodePassword);
-            
+
             assertThat(hashed).startsWith("$2");
             assertThat(hasher.verify(unicodePassword, hashed)).isTrue();
-            
+
             // Different unicode should not match
             String differentUnicode = "用户密码🔒émoji-security"; // Different emoji
             assertThat(hasher.verify(differentUnicode, hashed)).isFalse();
@@ -95,7 +93,7 @@ class PasswordHasherExpansionTest {
         void specialCharacters() {
             String specialPassword = "!@#$%^&*()-_=+[]{};:',.<>?/";
             String hashed = hasher.hash(specialPassword);
-            
+
             assertThat(hashed).startsWith("$2");
             assertThat(hasher.verify(specialPassword, hashed)).isTrue();
         }

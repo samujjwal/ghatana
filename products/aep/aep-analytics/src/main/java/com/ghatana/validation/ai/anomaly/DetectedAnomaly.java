@@ -11,7 +11,7 @@ import java.util.Objects;
  * Internal representation of a detected anomaly used by the validation module.
  * The structure mirrors {@link AIPatternDetectionService.DetectedAnomaly} to
  * simplify conversion when returning results through the service interface.
- 
+
  *
  * @doc.type class
  * @doc.purpose Detected anomaly

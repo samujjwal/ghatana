@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Main configuration class for security components.
- * 
+ *
  * <p>This class provides dependency injection bindings for all security-related components,
  * including authentication providers, JWT utilities, and configuration properties.</p>
- * 
+ *
  * <p>Example usage in an application:</p>
  * <pre>{@code
  * public class AppModule extends AbstractModule {
@@ -37,18 +37,18 @@ import org.slf4j.LoggerFactory;
  */
 public class SecurityConfigurationModule extends AbstractModule {
     private static final Logger log = LoggerFactory.getLogger(SecurityConfigurationModule.class);
-    
+
     private final Config config;
-    
+
     /**
      * Creates a new SecurityModule with the application's root config.
-     * 
+     *
      * @param config The root configuration object
      */
     public SecurityConfigurationModule(Config config) {
         this.config = config.getChild("security");
     }
-    
+
     @Override
     protected void configure() {
         // Bind configuration
@@ -63,55 +63,55 @@ public class SecurityConfigurationModule extends AbstractModule {
         bind(EncryptionProperties.class);
         bind(KeyManagementProperties.class);
         bind(RateLimitProperties.class);
-        
+
         // Bind security components
         bind(JwtTokenProvider.class);
         bind(CompositeAuthenticationProvider.class);
-        
+
         // Make AuthenticationProvider available through the interface
         bind(AuthenticationProvider.class).to(CompositeAuthenticationProvider.class);
     }
-    
+
     @Provides
     SecurityProperties provideSecurityProperties(@SecurityConfig Config config) {
         return new SecurityProperties(config);
     }
-    
+
     @Provides
     JwtProperties provideJwtProperties(SecurityProperties securityProperties) {
         return securityProperties.getJwt();
     }
-    
+
     @Provides
     AuthProperties provideAuthProperties(SecurityProperties securityProperties) {
         return securityProperties.getAuth();
     }
-    
+
     @Provides
     CorsProperties provideCorsProperties(SecurityProperties securityProperties) {
         return securityProperties.getCors();
     }
-    
+
     @Provides
     TlsProperties provideTlsProperties(SecurityProperties securityProperties) {
         return securityProperties.getTls();
     }
-    
+
     @Provides
     EncryptionProperties provideEncryptionProperties(SecurityProperties securityProperties) {
         return securityProperties.getEncryption();
     }
-    
+
     @Provides
     KeyManagementProperties provideKeyManagementProperties(SecurityProperties securityProperties) {
         return securityProperties.getKeyManagement();
     }
-    
+
     @Provides
     RateLimitProperties provideRateLimitProperties(@SecurityConfig Config config) {
         return new RateLimitProperties(config.getChild("rate-limit"));
     }
-    
+
     @Provides
     JwtTokenProvider provideJwtTokenProvider(JwtProperties jwtProps) {
         return new JwtTokenProvider(
@@ -119,7 +119,7 @@ public class SecurityConfigurationModule extends AbstractModule {
             jwtProps.getExpiration().toMillis()
         );
     }
-    
+
     @Provides
     JwtAuthenticationProvider provideJwtAuthenticationProvider(JwtTokenProvider jwtTokenProvider) {
         return new JwtAuthenticationProvider(

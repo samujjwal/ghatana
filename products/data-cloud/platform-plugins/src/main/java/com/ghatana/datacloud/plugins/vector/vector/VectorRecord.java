@@ -44,7 +44,7 @@ import java.util.Map;
  *     .embedding(embeddingService.embed(eventRecord.content()))
  *     .embeddingModel("text-embedding-3-small")
  *     .build();
- * 
+ *
  * float similarity = vectorRecord.cosineSimilarity(otherVector);
  * }</pre>
  *

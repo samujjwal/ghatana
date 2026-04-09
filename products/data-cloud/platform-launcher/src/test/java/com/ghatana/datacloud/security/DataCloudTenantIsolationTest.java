@@ -346,7 +346,7 @@ class DataCloudTenantIsolationTest {
                 for (int i = 0; i < opsPerTenant; i++) {
                     final int idx = i;
                     eventloop.submit(() -> {
-                        client.save(tenant, COLLECTION 
+                        client.save(tenant, COLLECTION
                                 , Map.of("item", "item-" + idx, "tenant", tenant));
                     });
                     eventloop.run();

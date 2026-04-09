@@ -40,10 +40,10 @@
 // dependencies {
 //     integrationTestImplementation sourceSets.main.output
 //     integrationTestImplementation libs.testcontainers.junit.jupiter
-//     
+//
 //     functionalTestImplementation sourceSets.main.output
 //     functionalTestImplementation libs.test.wiremock
-//     
+//
 //     jmhImplementation libs.jmh.core
 //     jmhAnnotationProcessor libs.jmh.generator.annprocess
 // }

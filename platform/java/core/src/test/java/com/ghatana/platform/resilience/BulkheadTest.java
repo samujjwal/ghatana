@@ -35,11 +35,11 @@ class BulkheadTest {
         // Create a bulkhead with 0 permits isn't allowed, so we simulate saturation.
         // Instead, test the direct rejection path using a separate Bulkhead sized 0's equivalent:
         // We can't easily hold a permit across threads synchronously. Use a wrapped approach:
-        
+
         // Simulate full bulkhead by checking: if we acquire manually then try again
         // Direct: create size-1, hold it, then call tryExecuteBlocking which blocks acquire by tryAcquire
         // The tryAcquire() returns false immediately when semaphore is at 0 permits.
-        
+
         // Use a wrapper that occupies the permit during execution:
         java.util.concurrent.CountDownLatch occupying = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(1);

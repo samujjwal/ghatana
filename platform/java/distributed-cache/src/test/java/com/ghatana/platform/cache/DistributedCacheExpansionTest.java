@@ -12,8 +12,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -66,7 +64,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
                 final int idx = i;
                 Optional<String> l1Result = runPromise(() -> l1.get("key-" + idx));
                 Optional<String> l2Result = runPromise(() -> l2.get("key-" + idx));
-                
+
                 assertThat(l1Result).isPresent();
                 assertThat(l2Result).isPresent();
             }
@@ -105,16 +103,16 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         @DisplayName("Value updates propagate to both layers")
         void updatePropagation() {
             runPromise(() -> cache.put("key", "value-1"));
-            
+
             Optional<String> v1 = runPromise(() -> cache.get("key"));
             assertThat(v1).contains("value-1");
 
             // Update
             runPromise(() -> cache.put("key", "value-2"));
-            
+
             Optional<String> v2L1 = runPromise(() -> l1.get("key"));
             Optional<String> v2L2 = runPromise(() -> l2.get("key"));
-            
+
             assertThat(v2L1).contains("value-2");
             assertThat(v2L2).contains("value-2");
         }
@@ -285,7 +283,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         @Test
         @DisplayName("Load caches result in both layers")
         void loadCachesInBothLayers() {
-            String value = runPromise(() -> cache.getOrLoad("key", k -> 
+            String value = runPromise(() -> cache.getOrLoad("key", k ->
                 Promise.of("loaded-value")));
 
             assertThat(value).isEqualTo("loaded-value");
@@ -397,7 +395,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
                         try {
                             for (int i = 0; i < 500; i++) {
                                 final int idx = i;
-                                Optional<String> result = runPromise(() -> 
+                                Optional<String> result = runPromise(() ->
                                     cache.get("hot-" + (idx % 10)));
                                 if (result.isPresent()) {
                                     hitCount.incrementAndGet();
@@ -429,9 +427,9 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         @DisplayName("Values respect TTL in both layers")
         void ttlRespected() {
             Duration shortTtl = Duration.ofMillis(100);
-            InMemoryCacheAdapter<String, String> ttlL1 = 
+            InMemoryCacheAdapter<String, String> ttlL1 =
                 new InMemoryCacheAdapter<>(10, shortTtl);
-            WriteThroughDistributedCache<String, String> ttlCache = 
+            WriteThroughDistributedCache<String, String> ttlCache =
                 new WriteThroughDistributedCache<>(ttlL1, l2);
 
             runPromise(() -> ttlCache.put("expiring", "value"));
@@ -451,9 +449,9 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         @Test
         @DisplayName("Large cache capacity constraints")
         void largeCapacityHandling() {
-            InMemoryCacheAdapter<String, String> smallL1 = 
+            InMemoryCacheAdapter<String, String> smallL1 =
                 new InMemoryCacheAdapter<>(50, Duration.ofMinutes(5));
-            WriteThroughDistributedCache<String, String> smallCache = 
+            WriteThroughDistributedCache<String, String> smallCache =
                 new WriteThroughDistributedCache<>(smallL1, l2);
 
             // Try to exceed capacity
@@ -479,9 +477,9 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         @DisplayName("Very large cache values")
         void veryLargeValues() {
             String largeValue = "x".repeat(10_000);
-            
+
             runPromise(() -> cache.put("large-key", largeValue));
-            
+
             Optional<String> retrieved = runPromise(() -> cache.get("large-key"));
             assertThat(retrieved).isPresent();
             assertThat(retrieved.get()).satisfies(s -> assertThat(s.length()).isEqualTo(10_000));

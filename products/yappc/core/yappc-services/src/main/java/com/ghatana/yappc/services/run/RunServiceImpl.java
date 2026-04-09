@@ -22,34 +22,34 @@ import java.util.UUID;
  * @doc.pattern Service
  */
 public class RunServiceImpl implements RunService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(RunServiceImpl.class);
-    
+
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public RunServiceImpl(
             AuditLogger auditLogger,
             MetricsCollector metrics) {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<RunResult> execute(RunSpec spec) {
         return executeWithObservation(spec, ObservationConfig.defaultConfig());
     }
-    
+
     @Override
     public Promise<RunResult> executeWithObservation(RunSpec spec, ObservationConfig config) {
         long startTime = System.currentTimeMillis();
         Instant startedAt = Instant.now();
-        
+
         return executeTasks(spec)
                 .then(taskResults -> {
                     long duration = System.currentTimeMillis() - startTime;
                     RunStatus status = determineOverallStatus(taskResults);
-                    
+
                     RunResult result = RunResult.builder()
                             .id(UUID.randomUUID().toString())
                             .runSpecRef(spec.id())
@@ -60,11 +60,11 @@ public class RunServiceImpl implements RunService {
                             .metadata(Map.of("duration_ms", String.valueOf(duration),
                                     "environment", spec.environment()))
                             .build();
-                    
+
                     Map<String, String> tags = Map.of("environment", spec.environment(), "status", status.name());
                     metrics.recordTimer("yappc.run.execute", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.run.execute", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("run.execute", spec, result))
                             .map(v -> result);
                 })
@@ -77,20 +77,20 @@ public class RunServiceImpl implements RunService {
                         Map.of("environment", spec.environment()));
                 });
     }
-    
+
     @Override
     public Promise<RunResult> rollback(String deploymentId, String targetVersion) {
         long startTime = System.currentTimeMillis();
-        
+
         return performRollback(deploymentId, targetVersion)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = Map.of("deployment", deploymentId);
                     metrics.recordTimer("yappc.run.rollback", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.run.rollback", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("run.rollback",
-                            Map.of("deploymentId", deploymentId, "targetVersion", targetVersion), 
+                            Map.of("deploymentId", deploymentId, "targetVersion", targetVersion),
                             result))
                             .map(v -> result);
                 })
@@ -103,18 +103,18 @@ public class RunServiceImpl implements RunService {
                         Map.of("deployment", deploymentId));
                 });
     }
-    
+
     @Override
     public Promise<RunResult> promote(String deploymentId, String targetEnvironment) {
         long startTime = System.currentTimeMillis();
-        
+
         return performPromotion(deploymentId, targetEnvironment)
                 .then(result -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = Map.of("deployment", deploymentId, "target", targetEnvironment);
                     metrics.recordTimer("yappc.run.promote", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.run.promote", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("run.promote",
                             Map.of("deploymentId", deploymentId, "targetEnvironment", targetEnvironment),
                             result))
@@ -129,20 +129,20 @@ public class RunServiceImpl implements RunService {
                         Map.of("deployment", deploymentId, "target", targetEnvironment));
                 });
     }
-    
+
     private Promise<List<TaskResult>> executeTasks(RunSpec spec) {
         List<Promise<TaskResult>> taskPromises = new ArrayList<>();
-        
+
         for (RunTask task : spec.tasks()) {
             taskPromises.add(executeTask(task));
         }
-        
+
         return Promises.toList(taskPromises);
     }
-    
+
     private Promise<TaskResult> executeTask(RunTask task) {
         long startTime = System.currentTimeMillis();
-        
+
         return switch (task.type()) {
             case "build" -> executeBuildTask(task);
             case "test" -> executeTestTask(task);
@@ -156,10 +156,10 @@ public class RunServiceImpl implements RunService {
                     .build());
         };
     }
-    
+
     private Promise<TaskResult> executeBuildTask(RunTask task) {
         long startTime = System.currentTimeMillis();
-        
+
         // Simulate build execution
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
@@ -168,10 +168,10 @@ public class RunServiceImpl implements RunService {
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
-    
+
     private Promise<TaskResult> executeTestTask(RunTask task) {
         long startTime = System.currentTimeMillis();
-        
+
         // Simulate test execution
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
@@ -180,10 +180,10 @@ public class RunServiceImpl implements RunService {
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
-    
+
     private Promise<TaskResult> executeDeployTask(RunTask task) {
         long startTime = System.currentTimeMillis();
-        
+
         // Simulate deployment
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
@@ -192,10 +192,10 @@ public class RunServiceImpl implements RunService {
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
-    
+
     private Promise<TaskResult> executeMigrateTask(RunTask task) {
         long startTime = System.currentTimeMillis();
-        
+
         // Simulate migration
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
@@ -204,7 +204,7 @@ public class RunServiceImpl implements RunService {
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
-    
+
     private Promise<RunResult> performRollback(String deploymentId, String targetVersion) {
         return Promise.of(RunResult.builder()
                 .id(UUID.randomUUID().toString())
@@ -216,7 +216,7 @@ public class RunServiceImpl implements RunService {
                 .metadata(Map.of("rollback_to", targetVersion))
                 .build());
     }
-    
+
     private Promise<RunResult> performPromotion(String deploymentId, String targetEnvironment) {
         return Promise.of(RunResult.builder()
                 .id(UUID.randomUUID().toString())
@@ -229,7 +229,7 @@ public class RunServiceImpl implements RunService {
                         "environment", targetEnvironment))
                 .build());
     }
-    
+
     private RunStatus determineOverallStatus(List<TaskResult> taskResults) {
         if (taskResults.stream().allMatch(r -> r.status() == RunStatus.SUCCESS)) {
             return RunStatus.SUCCESS;
@@ -241,5 +241,5 @@ public class RunServiceImpl implements RunService {
             return RunStatus.RUNNING;
         }
     }
-    
+
 }

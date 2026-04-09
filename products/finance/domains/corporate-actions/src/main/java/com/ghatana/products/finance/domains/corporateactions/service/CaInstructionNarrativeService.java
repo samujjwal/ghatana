@@ -2,7 +2,6 @@ package com.ghatana.products.finance.domains.corporateactions.service;
 
 import com.ghatana.platform.audit.AuditBusPort;
 import com.ghatana.platform.audit.AuditEvent;
-import java.util.Map;
 import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;

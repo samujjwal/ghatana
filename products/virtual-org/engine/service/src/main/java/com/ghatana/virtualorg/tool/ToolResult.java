@@ -20,7 +20,7 @@ import java.util.Map;
  *     "File created successfully",
  *     Duration.ofMillis(150)
  * );
- * 
+ *
  * // Failure case
  * ToolResult failure = ToolResult.failure(
  *     "Permission denied",

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for CI snapshot testing runner 
+/** Tests for CI snapshot testing runner
  * @doc.type class
  * @doc.purpose Handles ci snapshot runner test operations
  * @doc.layer core

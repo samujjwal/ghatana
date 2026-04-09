@@ -118,7 +118,7 @@ class FhirInteropKernelPluginTest {
 
         String validPatientJson = "{\"resourceType\":\"Patient\",\"id\":\"1\",\"name\":[{\"family\":\"Test\"}]}";
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("Patient", validPatientJson);
         FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
@@ -135,7 +135,7 @@ class FhirInteropKernelPluginTest {
 
         String validObservationJson = "{\"resourceType\":\"Observation\",\"id\":\"1\",\"status\":\"final\",\"code\":{\"text\":\"test\"},\"subject\":{\"reference\":\"Patient/1\"}}";
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("Observation", validObservationJson);
         FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
@@ -151,7 +151,7 @@ class FhirInteropKernelPluginTest {
 
         String invalidJson = "{\"resourceType\":\"InvalidType\",\"id\":\"1\"}";
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("InvalidType", invalidJson);
         FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
@@ -165,7 +165,7 @@ class FhirInteropKernelPluginTest {
         plugin.install().getResult();
         plugin.start().getResult();
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("Patient", null);
         FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
@@ -179,7 +179,7 @@ class FhirInteropKernelPluginTest {
         plugin.install().getResult();
         plugin.start().getResult();
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("Patient", "");
         FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 
@@ -248,7 +248,7 @@ class FhirInteropKernelPluginTest {
 
         Map<String, String> searchParams = Map.of("name", "Doe");
 
-        Promise<FhirInteropKernelPlugin.SearchResult> promise = 
+        Promise<FhirInteropKernelPlugin.SearchResult> promise =
             plugin.searchResources("Patient", searchParams);
         FhirInteropKernelPlugin.SearchResult result = promise.getResult();
 
@@ -262,7 +262,7 @@ class FhirInteropKernelPluginTest {
         plugin.initialize(mockContext);
         // Don't install or start
 
-        Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+        Promise<FhirInteropKernelPlugin.ValidationResult> promise =
             plugin.validateResource("Patient", "{\"test\":\"data\"}");
 
         assertTrue(promise.isException());
@@ -336,7 +336,7 @@ class FhirInteropKernelPluginTest {
         );
 
         for (Map.Entry<String, String> entry : resourceTypes.entrySet()) {
-            Promise<FhirInteropKernelPlugin.ValidationResult> promise = 
+            Promise<FhirInteropKernelPlugin.ValidationResult> promise =
                 plugin.validateResource(entry.getKey(), entry.getValue());
             FhirInteropKernelPlugin.ValidationResult result = promise.getResult();
 

@@ -38,10 +38,10 @@ import java.util.Map;
  *     memory,
  *     eventloop
  * );
- * 
+ *
  * // Execute task
  * TaskResponseProto response = agent.executeTask(task).getResult();
- * 
+ *
  * // Make decision
  * DecisionProto decision = agent.makeDecision(task).getResult();
  * }</pre>
@@ -58,7 +58,7 @@ public interface VirtualOrgAgent {
 
     /**
      * Gets the unique identifier of this agent.
-     * 
+     *
      * @return the agent ID, never null
      */
     @NotNull

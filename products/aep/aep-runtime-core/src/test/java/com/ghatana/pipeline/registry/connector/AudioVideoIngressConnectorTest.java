@@ -27,7 +27,7 @@ class AudioVideoIngressConnectorTest extends EventloopTestBase {
                 .type(ConnectorSpec.ConnectorType.HTTP_INGRESS)
                 .tenantId("tenant-av")
                 .build();
-                
+
         connector = new AudioVideoIngressConnector(spec, Executors.newSingleThreadExecutor());
     }
 
@@ -35,7 +35,7 @@ class AudioVideoIngressConnectorTest extends EventloopTestBase {
     void shouldProcessAudioVideoStreams() {
         // Initialize
         runPromise(() -> connector.initialize());
-        
+
         // Assert unhealthy before connect
         assertFalse(runPromise(() -> connector.isHealthy()));
 
@@ -49,7 +49,7 @@ class AudioVideoIngressConnectorTest extends EventloopTestBase {
         // Process Stream
         byte[] payload = "dummy-video-frame".getBytes();
         Event resultEvent = runPromise(() -> connector.processStream(payload));
-        
+
         assertNotNull(resultEvent);
         assertEquals("tenant-av", resultEvent.getTenantId());
         assertEquals("audio.video.chunk.embedded", resultEvent.getType());

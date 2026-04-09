@@ -32,11 +32,11 @@ class ExecutionPerformanceTest {
     @DisplayName("Should route orders within latency target")
     void shouldRouteOrdersWithinLatencyTarget() {
         Instant start = Instant.now();
-        
+
         simulateOrderRouting(100);
-        
+
         Duration elapsed = Duration.between(start, Instant.now());
-        
+
         assertThat(elapsed.toMillis()).isLessThan(1000);
     }
 
@@ -45,14 +45,14 @@ class ExecutionPerformanceTest {
     void shouldHandleHighThroughputOrderRouting() {
         int orderCount = 1000;
         Instant start = Instant.now();
-        
+
         for (int i = 0; i < orderCount; i++) {
             simulateOrderRouting(1);
         }
-        
+
         Duration elapsed = Duration.between(start, Instant.now());
         double ordersPerSecond = orderCount / (elapsed.toMillis() / 1000.0);
-        
+
         assertThat(ordersPerSecond).isGreaterThan(500);
     }
 
@@ -60,16 +60,16 @@ class ExecutionPerformanceTest {
     @DisplayName("Should process fills with low latency")
     void shouldProcessFillsWithLowLatency() {
         List<Long> latencies = new ArrayList<>();
-        
+
         for (int i = 0; i < 100; i++) {
             Instant start = Instant.now();
             simulateFillProcessing();
             Duration elapsed = Duration.between(start, Instant.now());
             latencies.add(elapsed.toNanos());
         }
-        
+
         double avgLatencyMs = latencies.stream().mapToLong(Long::longValue).average().orElse(0) / 1_000_000.0;
-        
+
         assertThat(avgLatencyMs).isLessThan(10.0);
     }
 
@@ -77,16 +77,16 @@ class ExecutionPerformanceTest {
     @DisplayName("Should maintain performance under load")
     void shouldMaintainPerformanceUnderLoad() {
         PerformanceMetrics beforeLoad = monitor.captureMetrics();
-        
+
         for (int i = 0; i < 500; i++) {
             simulateOrderRouting(1);
             simulateFillProcessing();
         }
-        
+
         PerformanceMetrics afterLoad = monitor.captureMetrics();
-        
+
         double degradation = (afterLoad.avgLatencyMs() - beforeLoad.avgLatencyMs()) / beforeLoad.avgLatencyMs();
-        
+
         assertThat(degradation).isLessThan(0.20);
     }
 
@@ -94,18 +94,18 @@ class ExecutionPerformanceTest {
     @DisplayName("Should track p95 latency")
     void shouldTrackP95Latency() {
         List<Long> latencies = new ArrayList<>();
-        
+
         for (int i = 0; i < 100; i++) {
             Instant start = Instant.now();
             simulateOrderRouting(1);
             Duration elapsed = Duration.between(start, Instant.now());
             latencies.add(elapsed.toNanos());
         }
-        
+
         latencies.sort(Long::compareTo);
         long p95Index = (long) (latencies.size() * 0.95);
         double p95LatencyMs = latencies.get((int) p95Index) / 1_000_000.0;
-        
+
         assertThat(p95LatencyMs).isLessThan(50.0);
     }
 
@@ -113,18 +113,18 @@ class ExecutionPerformanceTest {
     @DisplayName("Should track p99 latency")
     void shouldTrackP99Latency() {
         List<Long> latencies = new ArrayList<>();
-        
+
         for (int i = 0; i < 100; i++) {
             Instant start = Instant.now();
             simulateOrderRouting(1);
             Duration elapsed = Duration.between(start, Instant.now());
             latencies.add(elapsed.toNanos());
         }
-        
+
         latencies.sort(Long::compareTo);
         long p99Index = (long) (latencies.size() * 0.99);
         double p99LatencyMs = latencies.get((int) p99Index) / 1_000_000.0;
-        
+
         assertThat(p99LatencyMs).isLessThan(100.0);
     }
 
@@ -133,16 +133,16 @@ class ExecutionPerformanceTest {
     void shouldMeasureMemoryEfficiency() {
         Runtime runtime = Runtime.getRuntime();
         long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
-        
+
         List<Object> orders = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             orders.add(createMockOrder());
         }
-        
+
         long memoryAfter = runtime.totalMemory() - runtime.freeMemory();
         long memoryUsed = memoryAfter - memoryBefore;
         long avgMemoryPerOrder = memoryUsed / 1000;
-        
+
         assertThat(avgMemoryPerOrder).isLessThan(10_000);
     }
 
@@ -152,7 +152,7 @@ class ExecutionPerformanceTest {
         AtomicInteger processedCount = new AtomicInteger(0);
         int threadCount = 10;
         int ordersPerThread = 100;
-        
+
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < threadCount; i++) {
             Thread thread = new Thread(() -> {
@@ -164,7 +164,7 @@ class ExecutionPerformanceTest {
             threads.add(thread);
             thread.start();
         }
-        
+
         threads.forEach(t -> {
             try {
                 t.join();
@@ -172,7 +172,7 @@ class ExecutionPerformanceTest {
                 Thread.currentThread().interrupt();
             }
         });
-        
+
         assertThat(processedCount.get()).isEqualTo(threadCount * ordersPerThread);
     }
 
@@ -181,14 +181,14 @@ class ExecutionPerformanceTest {
     void shouldMeasureEventPublishingThroughput() {
         int eventCount = 10000;
         Instant start = Instant.now();
-        
+
         for (int i = 0; i < eventCount; i++) {
             simulateEventPublish();
         }
-        
+
         Duration elapsed = Duration.between(start, Instant.now());
         double eventsPerSecond = eventCount / (elapsed.toMillis() / 1000.0);
-        
+
         assertThat(eventsPerSecond).isGreaterThan(5000);
     }
 
@@ -197,14 +197,14 @@ class ExecutionPerformanceTest {
     void shouldBenchmarkDatabasePersistence() {
         int recordCount = 100;
         Instant start = Instant.now();
-        
+
         for (int i = 0; i < recordCount; i++) {
             simulateDatabaseWrite();
         }
-        
+
         Duration elapsed = Duration.between(start, Instant.now());
         double writesPerSecond = recordCount / (elapsed.toMillis() / 1000.0);
-        
+
         assertThat(writesPerSecond).isGreaterThan(50);
     }
 

@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * Configuration for LLM (Large Language Model) services.
- * 
+ *
  * @doc.type class
  * @doc.purpose Holds configuration parameters for LLM services including API keys and model settings.
  * @doc.layer configuration

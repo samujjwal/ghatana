@@ -13,37 +13,37 @@ public enum LearnedPatternType {
      * Sequential patterns discovered from event sequences.
      */
     SEQUENTIAL("Sequential", "Patterns based on event order and timing"),
-    
+
     /**
      * Frequency patterns based on event occurrence rates.
      */
     FREQUENCY("Frequency", "Patterns based on event frequency and timing"),
-    
+
     /**
      * Correlation patterns between different event types.
      */
     CORRELATION("Correlation", "Patterns based on event co-occurrence and relationships"),
-    
+
     /**
      * Anomaly patterns representing unusual event behavior.
      */
     ANOMALY("Anomaly", "Patterns representing deviations from normal behavior"),
-    
+
     /**
      * Temporal patterns based on time-based event relationships.
      */
     TEMPORAL("Temporal", "Patterns based on temporal relationships and cycles"),
-    
+
     /**
      * Behavioral patterns representing user or system behavior.
      */
     BEHAVIORAL("Behavioral", "Patterns representing characteristic behaviors"),
-    
+
     /**
      * Predictive patterns that can forecast future events.
      */
     PREDICTIVE("Predictive", "Patterns that can predict future events or states"),
-    
+
     /**
      * Composite patterns combining multiple pattern types.
      */

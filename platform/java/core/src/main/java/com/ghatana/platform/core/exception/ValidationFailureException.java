@@ -12,9 +12,9 @@ package com.ghatana.platform.core.exception;
  * @doc.pattern Exception, Data Holder
  */
 public class ValidationFailureException extends BaseException {
-    
+
     private final transient Object validationResult;
-    
+
     /**
      * Creates a new ValidationFailureException with the specified validation result.
      *
@@ -24,7 +24,7 @@ public class ValidationFailureException extends BaseException {
         super(ErrorCode.VALIDATION_ERROR, "Validation failed");
         this.validationResult = validationResult;
     }
-    
+
     /**
      * Creates a new ValidationFailureException with a custom message.
      *
@@ -34,7 +34,7 @@ public class ValidationFailureException extends BaseException {
         super(ErrorCode.VALIDATION_ERROR, message);
         this.validationResult = null;
     }
-    
+
     /**
      * Gets the validation result.
      *

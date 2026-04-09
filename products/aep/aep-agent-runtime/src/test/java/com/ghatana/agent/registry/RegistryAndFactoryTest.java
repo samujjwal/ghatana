@@ -66,7 +66,7 @@ class RegistryAndFactoryTest {
             this.desc = AgentDescriptor.builder()
                     .agentId(id).name(id).version("1.0")
                     .type(type)
-                    .capabilities(capabilities.length > 0 ? 
+                    .capabilities(capabilities.length > 0 ?
                             new HashSet<>(Arrays.asList(capabilities)) : Set.of())
                     .build();
             this.output = output;
@@ -324,7 +324,7 @@ class RegistryAndFactoryTest {
             StubTypedAgent agent = new StubTypedAgent("direct", AgentType.DETERMINISTIC,
                     Map.of("ok", true));
 
-            // Initialize the agent first  
+            // Initialize the agent first
             runOnEventloop(() -> agent.initialize(configFor("direct", AgentType.DETERMINISTIC)));
 
             AgentOperatorFactory factory = new AgentOperatorFactory(registry);

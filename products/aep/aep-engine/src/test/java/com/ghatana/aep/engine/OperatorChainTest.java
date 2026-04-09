@@ -25,7 +25,7 @@ class OperatorChainTest {
     @DisplayName("Should compose operator chain")
     void shouldComposeOperatorChain() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class OperatorChainTest {
     @DisplayName("Should execute operator chain sequentially")
     void shouldExecuteOperatorChainSequentially() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class OperatorChainTest {
     @DisplayName("Should handle operator chain errors")
     void shouldHandleOperatorChainErrors() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class OperatorChainTest {
     @DisplayName("Should handle operator chain rollback")
     void shouldHandleOperatorChainRollback() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class OperatorChainTest {
     @DisplayName("Should handle operator chain state")
     void shouldHandleOperatorChainState() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class OperatorChainTest {
     @DisplayName("Should handle operator chain optimization")
     void shouldHandleOperatorChainOptimization() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

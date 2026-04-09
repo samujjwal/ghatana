@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -245,9 +244,9 @@ class ExecutionKernelIntegrationTest {
             orderRepository.findById(orderId).ifPresent(order -> {
                 long newFilled = order.filledQuantity() + quantity;
                 ExecutionStatus newStatus = newFilled >= 100L ? ExecutionStatus.FILLED : ExecutionStatus.PARTIALLY_FILLED;
-                
+
                 orderRepository.save(new StoredOrder(orderId, newStatus, newFilled, price));
-                
+
                 if (newStatus == ExecutionStatus.FILLED) {
                     eventBus.publish(new ExecutionEvent("ORDER_COMPLETED", orderId, Instant.now()));
                 }
@@ -300,7 +299,7 @@ class ExecutionKernelIntegrationTest {
         }
 
         void executeAlgorithm(String orderId, String algorithm, long quantity) {
-            routeOrder(new ExecutionRequest(orderId, "client-1", "AAPL", ExecutionSide.BUY, 
+            routeOrder(new ExecutionRequest(orderId, "client-1", "AAPL", ExecutionSide.BUY,
                 quantity, BigDecimal.valueOf(150.50), "LIMIT", "DAY", "NASDAQ"));
         }
 

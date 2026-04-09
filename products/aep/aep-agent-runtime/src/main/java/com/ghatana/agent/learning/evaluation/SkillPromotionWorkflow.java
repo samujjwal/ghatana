@@ -1,7 +1,6 @@
 package com.ghatana.agent.learning.evaluation;
 
 import com.ghatana.agent.learning.*;
-import com.ghatana.agent.memory.store.MemoryPlane;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

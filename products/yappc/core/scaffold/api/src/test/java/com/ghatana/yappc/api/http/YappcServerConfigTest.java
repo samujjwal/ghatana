@@ -114,7 +114,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .port(9090)
                     .build();
-            
+
             assertThat(config.getPort()).isEqualTo(9090);
         }
 
@@ -124,7 +124,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .host("127.0.0.1")
                     .build();
-            
+
             assertThat(config.getHost()).isEqualTo("127.0.0.1");
         }
 
@@ -135,7 +135,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .packsPath(customPath)
                     .build();
-            
+
             assertThat(config.getPacksPath()).isEqualTo(customPath);
         }
 
@@ -146,7 +146,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .workspacePath(customPath)
                     .build();
-            
+
             assertThat(config.getWorkspacePath()).isEqualTo(customPath);
         }
 
@@ -156,7 +156,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .enableSwagger(false)
                     .build();
-            
+
             assertThat(config.isEnableSwagger()).isFalse();
         }
 
@@ -166,7 +166,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .enableWebSocket(false)
                     .build();
-            
+
             assertThat(config.isEnableWebSocket()).isFalse();
         }
 
@@ -176,7 +176,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .enableCors(false)
                     .build();
-            
+
             assertThat(config.isEnableCors()).isFalse();
         }
 
@@ -186,7 +186,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .corsOrigin("https://example.com")
                     .build();
-            
+
             assertThat(config.getCorsOrigin()).isEqualTo("https://example.com");
         }
 
@@ -196,7 +196,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .maxRequestSize(5 * 1024 * 1024)
                     .build();
-            
+
             assertThat(config.getMaxRequestSize()).isEqualTo(5 * 1024 * 1024);
         }
 
@@ -206,7 +206,7 @@ class YappcServerConfigTest {
             YappcServerConfig config = YappcServerConfig.builder()
                     .requestTimeoutMs(60000)
                     .build();
-            
+
             assertThat(config.getRequestTimeoutMs()).isEqualTo(60000);
         }
 
@@ -223,7 +223,7 @@ class YappcServerConfigTest {
                     .maxRequestSize(20 * 1024 * 1024)
                     .requestTimeoutMs(45000)
                     .build();
-            
+
             assertThat(config.getPort()).isEqualTo(9090);
             assertThat(config.getHost()).isEqualTo("localhost");
             assertThat(config.isEnableSwagger()).isTrue();

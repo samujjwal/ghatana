@@ -23,12 +23,10 @@ import lombok.Getter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -506,7 +504,7 @@ public class DisasterRecoveryManager {
 
             // Check replication status (use sync version to avoid nested blocking)
             ReplicationHealthReport health = checkReplicationHealthSync();
-            
+
             if (health.getOverallHealth() == HealthStatus.CRITICAL) {
                 checks.add("FAIL: Replication is in critical state");
                 passed = false;

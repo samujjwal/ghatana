@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Integration coverage for the A2A adapter against the service-server gRPC layer. 
+/** Integration coverage for the A2A adapter against the service-server gRPC layer.
  * @doc.type class
  * @doc.purpose Handles a2a web socket handler integration test operations
  * @doc.layer core

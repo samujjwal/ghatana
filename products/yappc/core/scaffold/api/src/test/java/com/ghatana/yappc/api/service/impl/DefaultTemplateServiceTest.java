@@ -224,7 +224,7 @@ class DefaultTemplateServiceTest {
         @Test
         @DisplayName("Should register and use custom helper")
         void shouldRegisterAndUseCustomHelper() {
-            templateService.registerHelper("reverse", input -> 
+            templateService.registerHelper("reverse", input ->
                     new StringBuilder(input).reverse().toString());
 
             String template = "{{reverse name}}";

@@ -33,27 +33,27 @@ public class PromptBuilder {
 
     private static final String DEFAULT_SYSTEM_TEMPLATE = """
         You are {{agentName}}, {{roleDescription}}.
-        
+
         ## Your Identity
         - Name: {{agentName}}
         - Role: {{roleName}}
         - Department: {{departmentId}}
         - Organization: {{organizationId}}
-        
+
         ## Your Persona
         {{personaDescription}}
-        
+
         ## Your Capabilities
         You have access to the following tools:
         {{toolsList}}
-        
+
         ## Guidelines
         1. Think step-by-step before taking action
         2. Use tools when you need to interact with external systems
         3. If unsure, ask for clarification rather than guessing
         4. Report back clearly on what you've done
         5. Escalate if a task is outside your authority
-        
+
         ## Current Context
         {{workingMemoryContext}}
         """;
@@ -61,10 +61,10 @@ public class PromptBuilder {
     private static final String DEFAULT_USER_TEMPLATE = """
         ## Current Situation
         {{eventContext}}
-        
+
         ## Recent History
         {{conversationSummary}}
-        
+
         Please analyze the situation and decide on the best course of action.
         Think through your reasoning step by step, then either:
         - Use a tool to take action

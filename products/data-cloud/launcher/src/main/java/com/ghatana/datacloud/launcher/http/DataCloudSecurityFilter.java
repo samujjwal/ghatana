@@ -10,7 +10,6 @@ import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.governance.security.TenantIsolationHttpFilter;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

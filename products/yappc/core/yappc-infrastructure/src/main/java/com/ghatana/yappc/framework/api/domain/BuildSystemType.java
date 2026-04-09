@@ -1,6 +1,6 @@
 package com.ghatana.yappc.framework.api.domain;
 
-/** Supported build systems for generator plugins. 
+/** Supported build systems for generator plugins.
  * @doc.type enum
  * @doc.purpose Enumerates build system type values
  * @doc.layer core

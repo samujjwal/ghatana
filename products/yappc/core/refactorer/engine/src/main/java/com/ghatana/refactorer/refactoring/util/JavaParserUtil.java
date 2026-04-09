@@ -9,7 +9,7 @@ import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import java.util.Optional;
 
 /**
- * Utility class for working with JavaParser. 
+ * Utility class for working with JavaParser.
  * @doc.type class
  * @doc.purpose Handles java parser util operations
  * @doc.layer core

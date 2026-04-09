@@ -23,7 +23,6 @@ import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.RecordQuery.FilterCondition;
 import com.ghatana.datacloud.RecordQuery.Operator;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,11 +34,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.ghatana.platform.observability.util.BlockingExecutors.blockingExecutor;
 
 /**
  * Vector memory storage plugin implementation.
@@ -63,11 +60,11 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  *     .dimension(384)
  *     .embeddingFunction(text -> embeddingService.embed(text))
  *     .build();
- * 
+ *
  * // Store with embedding
  * plugin.store(eventRecord, "tenant-123")
  *     .whenComplete(() -> System.out.println("Stored"));
- * 
+ *
  * // Semantic search
  * plugin.search(SearchRequest.builder()
  *     .queryText("server error")
@@ -254,12 +251,12 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     @Override
     public Promise<Boolean> exists(RecordQuery query) {
         String tenantId = query.getTenantId();
-        
+
         // Check if there's an ID filter in the query
         Optional<FilterCondition> idFilter = query.getFilters().stream()
                 .filter(f -> "id".equals(f.getField()) && f.getOperator() == Operator.EQUALS)
                 .findFirst();
-        
+
         if (idFilter.isPresent()) {
             String id = idFilter.get().getValue().toString();
             return Promise.of(getTenantStorage(tenantId).containsKey(id));
@@ -280,55 +277,55 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
     }
 
     // ==================== Required StoragePlugin Methods ====================
-    
+
     @Override
     public String getPluginId() {
         return PLUGIN_ID;
     }
-    
+
     @Override
     public String getDisplayName() {
         return "Vector Memory Plugin";
     }
-    
+
     @Override
     public List<RecordType> getSupportedRecordTypes() {
         return List.of(RecordType.ENTITY, RecordType.DOCUMENT);
     }
-    
+
     @Override
     public Promise<HealthStatus> healthCheck() {
         return Promise.of(HealthStatus.ok(Map.of("totalStored", totalStored, "tenants", storage.size())));
     }
-    
+
     @Override
     public Promise<Collection> createCollection(Collection collection) {
         // Vector plugin doesn't need explicit collection management
         return Promise.of(collection);
     }
-    
+
     @Override
     public Promise<Optional<Collection>> getCollection(String tenantId, String name) {
         // Vector plugin doesn't use explicit collections
         return Promise.of(Optional.empty());
     }
-    
+
     @Override
     public Promise<Collection> updateCollection(Collection collection) {
         return Promise.of(collection);
     }
-    
+
     @Override
     public Promise<Void> deleteCollection(String tenantId, String name) {
         // No-op for vector plugin
         return Promise.complete();
     }
-    
+
     @Override
     public Promise<List<Collection>> listCollections(String tenantId) {
         return Promise.of(List.of());
     }
-    
+
     @Override
     public Promise<DataRecord> insert(DataRecord record) {
         try {
@@ -338,12 +335,12 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<BatchResult<UUID>> insertBatch(List<DataRecord> records) {
         int success = 0;
         List<BatchError<UUID>> errors = new ArrayList<>();
-        
+
         for (int i = 0; i < records.size(); i++) {
             try {
                 storeInternal(records.get(i), records.get(i).getTenantId(), null);
@@ -352,15 +349,15 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
                 errors.add(new BatchError<>(i, records.get(i).getId(), "INSERT_ERROR", e.getMessage()));
             }
         }
-        
+
         return Promise.of(new BatchResult<>(records.size(), success, records.size() - success, errors));
     }
-    
+
     @Override
     public Promise<Optional<DataRecord>> getById(String tenantId, String collectionName, UUID id) {
         return retrieve(id.toString(), tenantId);
     }
-    
+
     @Override
     public Promise<List<DataRecord>> getByIds(String tenantId, String collectionName, List<UUID> ids) {
         List<DataRecord> results = new ArrayList<>();
@@ -372,7 +369,7 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
         }
         return Promise.of(results);
     }
-    
+
     @Override
     public Promise<DataRecord> update(DataRecord record) {
         try {
@@ -382,12 +379,12 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<BatchResult<UUID>> updateBatch(List<DataRecord> records) {
         int success = 0;
         List<BatchError<UUID>> errors = new ArrayList<>();
-        
+
         for (int i = 0; i < records.size(); i++) {
             try {
                 storeInternal(records.get(i), records.get(i).getTenantId(), null);
@@ -396,20 +393,20 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
                 errors.add(new BatchError<>(i, records.get(i).getId(), "UPDATE_ERROR", e.getMessage()));
             }
         }
-        
+
         return Promise.of(new BatchResult<>(records.size(), success, records.size() - success, errors));
     }
-    
+
     @Override
     public Promise<Void> delete(String tenantId, String collectionName, UUID id) {
         return delete(id.toString(), tenantId).then(deleted -> Promise.complete());
     }
-    
+
     @Override
     public Promise<BatchResult<UUID>> deleteBatch(String tenantId, String collectionName, List<UUID> ids) {
         int success = 0;
         List<BatchError<UUID>> errors = new ArrayList<>();
-        
+
         for (int i = 0; i < ids.size(); i++) {
             try {
                 UUID id = ids.get(i);
@@ -420,23 +417,23 @@ public class VectorMemoryPlugin implements StoragePlugin<DataRecord>, Similarity
                 errors.add(new BatchError<>(i, ids.get(i), "DELETE_ERROR", e.getMessage()));
             }
         }
-        
+
         return Promise.of(new BatchResult<>(ids.size(), success, ids.size() - success, errors));
     }
-    
+
     @Override
     public Promise<QueryResult<DataRecord>> query(RecordQuery query) {
         List<DataRecord> results = new ArrayList<>();
-        
+
         // Simple implementation - return all records for the tenant
         // In a real implementation, this would parse and execute the query
         getTenantStorage(query.getTenantId()).values().stream()
                 .map(VectorRecord::getRecord)
                 .forEach(results::add);
-        
+
         return Promise.of(QueryResult.of(results));
     }
-    
+
     @Override
     public Promise<Long> count(RecordQuery query) {
         return Promise.of((long) getTenantStorage(query.getTenantId()).size());

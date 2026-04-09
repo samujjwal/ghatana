@@ -6,7 +6,6 @@ package com.ghatana.datacloud.launcher;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Validates Data-Cloud startup configuration before the server accepts traffic.

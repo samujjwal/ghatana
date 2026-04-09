@@ -37,7 +37,7 @@ class JobProgressTrackerTest {
     void shouldTrackJobProgress() {
         // GIVEN
         String jobId = "job-001";
-        
+
         // WHEN
         progressTracker.initializeJob(jobId, 10, "Generate claims for photosynthesis");
         progressTracker.updateProgress(jobId, 3, "Fetching knowledge base");
@@ -99,7 +99,7 @@ class JobProgressTrackerTest {
         CountDownLatch latch = new CountDownLatch(3);
 
         progressTracker.initializeJob(jobId, 5, "Test job");
-        
+
         progressTracker.subscribe(jobId, progress -> {
             updateCount.incrementAndGet();
             latch.countDown();
@@ -123,12 +123,12 @@ class JobProgressTrackerTest {
         AtomicInteger updateCount = new AtomicInteger(0);
 
         progressTracker.initializeJob(jobId, 5, "Test job");
-        
-        JobProgressTracker.Subscription subscription = progressTracker.subscribe(jobId, 
+
+        JobProgressTracker.Subscription subscription = progressTracker.subscribe(jobId,
             progress -> updateCount.incrementAndGet());
 
         progressTracker.updateProgress(jobId, 1, "Step 1");
-        
+
         // WHEN
         subscription.unsubscribe();
         progressTracker.updateProgress(jobId, 2, "Step 2");
@@ -144,7 +144,7 @@ class JobProgressTrackerTest {
         // GIVEN
         String jobId = "job-006";
         progressTracker.initializeJob(jobId, 10, "Long running job");
-        
+
         // Simulate some time passing
         Thread.sleep(100);
         progressTracker.updateProgress(jobId, 5, "Halfway done");
@@ -187,7 +187,7 @@ class JobProgressTrackerTest {
         progressTracker.initializeJob("batch-1", 10, "Job 1");
         progressTracker.initializeJob("batch-2", 10, "Job 2");
         progressTracker.initializeJob("batch-3", 10, "Job 3");
-        
+
         progressTracker.updateProgress("batch-1", 5, "Halfway");
         progressTracker.updateProgress("batch-2", 10, "Done");
         progressTracker.updateProgress("batch-3", 2, "Starting");
@@ -209,7 +209,7 @@ class JobProgressTrackerTest {
         // GIVEN
         String jobId = "job-007";
         progressTracker.initializeJob(jobId, 5, "Timed job");
-        
+
         Thread.sleep(50);
         progressTracker.completeJob(jobId, "Done");
 

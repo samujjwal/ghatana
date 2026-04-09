@@ -27,7 +27,7 @@ import java.util.Map;
  * <p>
  * <b>Usage Example:</b>
  * </p>
- * 
+ *
  * <pre>{@code
  * // Test scenario
  * MetricsCollector noop = new NoopMetricsCollector();

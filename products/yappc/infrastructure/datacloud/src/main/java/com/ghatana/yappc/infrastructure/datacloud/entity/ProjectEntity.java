@@ -37,7 +37,7 @@ import java.util.UUID;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles project entity operations
  * @doc.layer platform

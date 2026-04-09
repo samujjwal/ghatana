@@ -36,15 +36,15 @@ public final class PluginTierEnforcer {
      */
     public void validateTier(PluginTier tier) throws PluginTierViolationException {
         log.debug("Validating plugin tier: {}", tier);
-        
+
         // Check if tier is supported
         if (tier == null) {
             throw new PluginTierViolationException("Plugin tier cannot be null");
         }
-        
+
         // Additional tier validation logic can be added here
         // For now, all tiers are allowed but with different restrictions
-        
+
         log.debug("Plugin tier validated: {}", tier);
     }
 
@@ -99,12 +99,12 @@ public final class PluginTierEnforcer {
      * @param requestedCapability the capability being requested
      * @throws PluginTierViolationException if escalation is detected
      */
-    public void preventTierEscalation(PluginTier currentTier, String requestedCapability) 
+    public void preventTierEscalation(PluginTier currentTier, String requestedCapability)
             throws PluginTierViolationException {
-        
+
         if (!canAccessCapability(currentTier, requestedCapability)) {
             throw new PluginTierViolationException(
-                String.format("Tier %d plugin cannot access capability: %s", 
+                String.format("Tier %d plugin cannot access capability: %s",
                     currentTier.getLevel(), requestedCapability));
         }
     }

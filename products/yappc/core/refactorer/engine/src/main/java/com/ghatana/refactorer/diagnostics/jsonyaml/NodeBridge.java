@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
  * <p>The bridge copies a bundled Node.js script to a temporary location and executes it using the
  * configured Node binary (falls back to {@code node} on the PATH). Callers provide both the schema
  * and target file paths that are forwarded to the script.
- 
+
  * @doc.type class
  * @doc.purpose Handles node bridge operations
  * @doc.layer core

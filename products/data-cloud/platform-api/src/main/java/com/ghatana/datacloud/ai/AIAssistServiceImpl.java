@@ -86,7 +86,7 @@ public class AIAssistServiceImpl implements AIAssistService {
         return llmProvider.complete(request)
             .then(response -> {
                 String generatedSQL = extractSQLFromResponse(response.text());
-                
+
                 GeneratedSQL result = new GeneratedSQL(
                     generatedSQL,
                     "Generated from: " + description,
@@ -105,7 +105,7 @@ public class AIAssistServiceImpl implements AIAssistService {
     }
 
     @Override
-    public Promise<Explanation> explainResults(String query, List<Map<String, Object>> results, 
+    public Promise<Explanation> explainResults(String query, List<Map<String, Object>> results,
                                                 QueryContext context) {
         Objects.requireNonNull(query, "Query required");
         Objects.requireNonNull(results, "Results required");
@@ -138,9 +138,9 @@ public class AIAssistServiceImpl implements AIAssistService {
     @Override
     public Promise<List<QuerySuggestion>> suggestQueries(QueryContext context, int limit) {
         Objects.requireNonNull(context, "Context required");
-        
+
         List<QuerySuggestion> suggestions = new ArrayList<>();
-        
+
         if (context.availableTables() != null) {
             for (String table : context.availableTables()) {
                 suggestions.add(new QuerySuggestion(
@@ -170,11 +170,11 @@ public class AIAssistServiceImpl implements AIAssistService {
     public Promise<Conversation> getConversation(String conversationId) {
         Objects.requireNonNull(conversationId, "Conversation ID required");
         Conversation conversation = conversations.get(conversationId);
-        
+
         if (conversation == null) {
             return Promise.ofException(new IllegalArgumentException("Conversation not found: " + conversationId));
         }
-        
+
         return Promise.of(conversation);
     }
 
@@ -185,7 +185,7 @@ public class AIAssistServiceImpl implements AIAssistService {
 
         String conversationId = UUID.randomUUID().toString();
         Instant now = Instant.now();
-        
+
         Conversation conversation = new Conversation(
             conversationId,
             tenantId,
@@ -255,7 +255,7 @@ public class AIAssistServiceImpl implements AIAssistService {
     @Override
     public Promise<ServiceStatus> getStatus() {
         double avgLatency = requestsProcessed > 0 ? totalLatencyMs / requestsProcessed : 0;
-        
+
         ServiceStatus status = new ServiceStatus(
             true,
             llmProvider.getName(),
@@ -289,14 +289,14 @@ public class AIAssistServiceImpl implements AIAssistService {
     private List<String> validateSQLSafety(String sql) {
         List<String> warnings = new ArrayList<>();
         String upperSQL = sql.toUpperCase();
-        
+
         if (upperSQL.contains("DELETE") || upperSQL.contains("DROP") || upperSQL.contains("TRUNCATE")) {
             warnings.add("Destructive operation detected");
         }
         if (!upperSQL.contains("WHERE")) {
             warnings.add("No WHERE clause - may affect all rows");
         }
-        
+
         return warnings;
     }
 

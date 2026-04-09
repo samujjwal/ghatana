@@ -14,10 +14,10 @@ import java.util.Map;
 
 /**
  * JSON mapper for Knowledge Graph API.
- * 
+ *
  * <p>Handles serialization and deserialization of graph models using Jackson.
  * Configured with proper Java 8 time support and formatting.
- * 
+ *
  * @doc.type class
  * @doc.purpose JSON serialization/deserialization
  * @doc.layer api
@@ -25,14 +25,14 @@ import java.util.Map;
  */
 @Slf4j
 public class JsonMapper {
-    
+
     private final ObjectMapper objectMapper;
-    
+
     public JsonMapper() {
         this.objectMapper = JsonUtils.getPrettyMapper();
         log.info("JsonMapper initialized");
     }
-    
+
     /**
      * Serializes an object to JSON string.
      */
@@ -44,7 +44,7 @@ public class JsonMapper {
             throw new RuntimeException("Failed to serialize to JSON", e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to GraphNode.
      */
@@ -56,7 +56,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid GraphNode JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to list of GraphNodes.
      */
@@ -68,7 +68,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid GraphNode list JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to GraphEdge.
      */
@@ -80,7 +80,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid GraphEdge JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to list of GraphEdges.
      */
@@ -92,7 +92,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid GraphEdge list JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to GraphQuery.
      */
@@ -104,7 +104,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid GraphQuery JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to Map.
      */
@@ -116,7 +116,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid JSON map: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Deserializes JSON string to path request parameters.
      */
@@ -128,7 +128,7 @@ public class JsonMapper {
             throw new IllegalArgumentException("Invalid PathRequest JSON: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Path request DTO.
      */

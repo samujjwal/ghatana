@@ -55,7 +55,7 @@ public class MockAIRCAService implements AIRCAService {
 
     @Override
     public Promise<List<RCAResult>> getSimilarFailures(NormalizedBuildLog buildLog) {
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     // Mock implementation returns empty list
                     return new ArrayList<>();

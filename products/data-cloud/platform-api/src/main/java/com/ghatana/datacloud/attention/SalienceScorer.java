@@ -34,7 +34,7 @@ import java.util.Map;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * SalienceScorer scorer = new MLBasedSalienceScorer(modelRegistry, featureStore);
- * 
+ *
  * SalienceScore score = scorer.score(eventRecord, ScoringContext.builder()
  *     .tenantId("tenant-123")
  *     .includeAnomalyDetection(true)

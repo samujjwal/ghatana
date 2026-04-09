@@ -126,5 +126,3 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
         assertThat(results).isEmpty();
     }
 }
-
-

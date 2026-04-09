@@ -4,11 +4,10 @@ import com.ghatana.platform.core.util.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Configuration for database connections.
- * 
+ *
  * Immutable configuration object that can be built using the fluent builder.
  *
  * @doc.type record
@@ -28,7 +27,7 @@ public record DataSourceConfig(
         @NotNull Duration maxLifetime,
         @NotNull String poolName
 ) {
-    
+
     public DataSourceConfig {
         Preconditions.requireNonBlank(jdbcUrl, "jdbcUrl");
         Preconditions.requireNonNull(username, "username");
@@ -36,21 +35,21 @@ public record DataSourceConfig(
         Preconditions.requireNonBlank(driverClassName, "driverClassName");
         Preconditions.requirePositive(minimumIdle, "minimumIdle");
         Preconditions.requirePositive(maximumPoolSize, "maximumPoolSize");
-        Preconditions.require(minimumIdle <= maximumPoolSize, 
+        Preconditions.require(minimumIdle <= maximumPoolSize,
                 "minimumIdle must be <= maximumPoolSize");
         Preconditions.requireNonNull(connectionTimeout, "connectionTimeout");
         Preconditions.requireNonNull(idleTimeout, "idleTimeout");
         Preconditions.requireNonNull(maxLifetime, "maxLifetime");
         Preconditions.requireNonBlank(poolName, "poolName");
     }
-    
+
     /**
      * Create a new builder.
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Create a builder pre-populated with this config's values.
      */
@@ -67,7 +66,7 @@ public record DataSourceConfig(
                 .maxLifetime(maxLifetime)
                 .poolName(poolName);
     }
-    
+
     /**
      * Builder for DataSourceConfig.
      */
@@ -82,59 +81,59 @@ public record DataSourceConfig(
         private Duration idleTimeout = Duration.ofMinutes(10);
         private Duration maxLifetime = Duration.ofMinutes(30);
         private String poolName = "ghatana-pool";
-        
+
         private Builder() {}
-        
+
         public Builder jdbcUrl(@NotNull String jdbcUrl) {
             this.jdbcUrl = jdbcUrl;
             return this;
         }
-        
+
         public Builder username(@NotNull String username) {
             this.username = username;
             return this;
         }
-        
+
         public Builder password(@NotNull String password) {
             this.password = password;
             return this;
         }
-        
+
         public Builder driverClassName(@NotNull String driverClassName) {
             this.driverClassName = driverClassName;
             return this;
         }
-        
+
         public Builder minimumIdle(int minimumIdle) {
             this.minimumIdle = minimumIdle;
             return this;
         }
-        
+
         public Builder maximumPoolSize(int maximumPoolSize) {
             this.maximumPoolSize = maximumPoolSize;
             return this;
         }
-        
+
         public Builder connectionTimeout(@NotNull Duration connectionTimeout) {
             this.connectionTimeout = connectionTimeout;
             return this;
         }
-        
+
         public Builder idleTimeout(@NotNull Duration idleTimeout) {
             this.idleTimeout = idleTimeout;
             return this;
         }
-        
+
         public Builder maxLifetime(@NotNull Duration maxLifetime) {
             this.maxLifetime = maxLifetime;
             return this;
         }
-        
+
         public Builder poolName(@NotNull String poolName) {
             this.poolName = poolName;
             return this;
         }
-        
+
         /**
          * Configure for PostgreSQL.
          */
@@ -143,7 +142,7 @@ public record DataSourceConfig(
             this.driverClassName = "org.postgresql.Driver";
             return this;
         }
-        
+
         /**
          * Configure for H2 in-memory database.
          */
@@ -152,7 +151,7 @@ public record DataSourceConfig(
             this.driverClassName = "org.h2.Driver";
             return this;
         }
-        
+
         /**
          * Configure for H2 file-based database.
          */
@@ -161,7 +160,7 @@ public record DataSourceConfig(
             this.driverClassName = "org.h2.Driver";
             return this;
         }
-        
+
         public DataSourceConfig build() {
             return new DataSourceConfig(
                     jdbcUrl,

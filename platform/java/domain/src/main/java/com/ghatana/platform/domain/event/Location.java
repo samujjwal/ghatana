@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * Immutable value object representing a geographic location with coordinates.
- * 
+ *
  * <p>
  * Encapsulates geographic coordinates and optional metadata for events and entities.
  * Provides a type-safe, validated container for location information used throughout
@@ -172,14 +172,14 @@ public final class Location {
 
     @Override
     public String toString() {
-        return "Location{" 
-               + "latitude=" + latitude 
-               + ", longitude=" + longitude 
-               + (altitude != null ? ", altitude=" + altitude : "") 
-               + (accuracy != null ? ", accuracy=" + accuracy : "") 
-               + (name != null ? ", name='" + name + '\'' : "") 
+        return "Location{"
+               + "latitude=" + latitude
+               + ", longitude=" + longitude
+               + (altitude != null ? ", altitude=" + altitude : "")
+               + (accuracy != null ? ", accuracy=" + accuracy : "")
+               + (name != null ? ", name='" + name + '\'' : "")
                + '}';
-    
+
     }
 
     /**

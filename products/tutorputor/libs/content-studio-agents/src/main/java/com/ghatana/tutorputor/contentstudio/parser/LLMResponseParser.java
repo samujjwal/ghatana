@@ -18,13 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Production-ready parser for LLM responses into protobuf messages.
- * 
+ *
  * <p>This parser handles the JSON output from LLM responses and converts them
  * into strongly-typed protobuf messages. It includes:
  * <ul>
@@ -57,12 +55,12 @@ public final class LLMResponseParser {
      */
     public static List<LearningClaim> parseClaims(String llmResponse) {
         List<LearningClaim> claims = new ArrayList<>();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode claimsNode = root.get("claims");
-            
+
             if (claimsNode != null && claimsNode.isArray()) {
                 int orderIndex = 0;
                 for (JsonNode claimNode : claimsNode) {
@@ -71,7 +69,7 @@ public final class LLMResponseParser {
                         .setText(getTextOrDefault(claimNode, "text", ""))
                         .setBloomLevel(getTextOrDefault(claimNode, "bloom_level", "UNDERSTAND"))
                         .setOrderIndex(orderIndex);
-                    
+
                     claims.add(builder.build());
                     orderIndex++;
                 }
@@ -79,7 +77,7 @@ public final class LLMResponseParser {
         } catch (Exception e) {
             LOG.error("Failed to parse claims from LLM response", e);
         }
-        
+
         return claims;
     }
 
@@ -92,11 +90,11 @@ public final class LLMResponseParser {
      */
     public static ContentNeeds parseContentNeeds(String llmResponse, String claimRef) {
         ContentNeeds.Builder builder = ContentNeeds.newBuilder();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
-            
+
             // Parse examples needs
             JsonNode examplesNode = root.get("examples");
             if (examplesNode != null) {
@@ -116,7 +114,7 @@ public final class LLMResponseParser {
 
                 builder.setExamples(exampleNeeds.build());
             }
-            
+
             // Parse simulation needs
             JsonNode simNode = root.get("simulation");
             if (simNode != null) {
@@ -129,7 +127,7 @@ public final class LLMResponseParser {
                     .setRationale(getTextOrDefault(simNode, "rationale", ""))
                     .build());
             }
-            
+
             // Parse animation needs
             JsonNode animNode = root.get("animation");
             if (animNode != null) {
@@ -142,11 +140,11 @@ public final class LLMResponseParser {
                     .setRationale(getTextOrDefault(animNode, "rationale", ""))
                     .build());
             }
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse content needs from LLM response", e);
         }
-        
+
         return builder.build();
     }
 
@@ -159,12 +157,12 @@ public final class LLMResponseParser {
      */
     public static List<Example> parseExamples(String llmResponse, String claimRef) {
         List<Example> examples = new ArrayList<>();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode examplesNode = root.get("examples");
-            
+
             if (examplesNode != null && examplesNode.isArray()) {
                 int idx = 1;
                 for (JsonNode exNode : examplesNode) {
@@ -174,7 +172,7 @@ public final class LLMResponseParser {
                         .setTitle(getTextOrDefault(exNode, "title", "Example " + idx))
                         .setDescription(getTextOrDefault(exNode, "description", ""))
                         .setContent(getTextOrDefault(exNode, "solution_content", getTextOrDefault(exNode, "content", "")));
-                    
+
                     // Parse key learning points
                     JsonNode pointsNode = exNode.get("key_learning_points");
                     if (pointsNode != null && pointsNode.isArray()) {
@@ -182,7 +180,7 @@ public final class LLMResponseParser {
                             builder.addTags(point.asText());
                         }
                     }
-                    
+
                     examples.add(builder.build());
                     idx++;
                 }
@@ -190,7 +188,7 @@ public final class LLMResponseParser {
         } catch (Exception e) {
             LOG.error("Failed to parse examples from LLM response", e);
         }
-        
+
         return examples;
     }
 
@@ -203,19 +201,19 @@ public final class LLMResponseParser {
      */
     public static SimulationManifest parseSimulation(String llmResponse, String claimRef) {
         SimulationManifest.Builder builder = SimulationManifest.newBuilder();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode manifestNode = root.has("manifest") ? root.get("manifest") : root;
-            
+
             if (manifestNode != null) {
                 builder.setManifestId(getTextOrDefault(manifestNode, "manifest_id", "manifest"))
                        .setVersion(getTextOrDefault(manifestNode, "version", "v1"))
                        .setDomain(getTextOrDefault(manifestNode, "domain", ""))
                        .setTitle(getTextOrDefault(manifestNode, "name", getTextOrDefault(manifestNode, "title", "Simulation")))
                        .setDescription(getTextOrDefault(manifestNode, "description", ""));
-                
+
                 // Parse entities
                 JsonNode entitiesNode = manifestNode.get("entities");
                 if (entitiesNode != null && entitiesNode.isArray()) {
@@ -239,7 +237,7 @@ public final class LLMResponseParser {
                         builder.addEntities(entityBuilder.build());
                     }
                 }
-                
+
                 // Parse config
                 JsonNode configNode = manifestNode.get("config");
                 if (configNode != null) {
@@ -276,11 +274,11 @@ public final class LLMResponseParser {
                     }
                 }
             }
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse simulation from LLM response", e);
         }
-        
+
         return builder.build();
     }
 
@@ -295,7 +293,7 @@ public final class LLMResponseParser {
         if (response == null || response.isEmpty()) {
             return "{}";
         }
-        
+
         // Try to extract from markdown code block
         int jsonStart = response.indexOf("```json");
         if (jsonStart != -1) {
@@ -305,7 +303,7 @@ public final class LLMResponseParser {
                 return response.substring(start, end).trim();
             }
         }
-        
+
         // Try to extract from any code block
         jsonStart = response.indexOf("```");
         if (jsonStart != -1) {
@@ -315,7 +313,7 @@ public final class LLMResponseParser {
                 return response.substring(start, end).trim();
             }
         }
-        
+
         // Try to find raw JSON
         int braceStart = response.indexOf("{");
         if (braceStart != -1) {
@@ -324,7 +322,7 @@ public final class LLMResponseParser {
                 return response.substring(braceStart, braceEnd + 1);
             }
         }
-        
+
         return response;
     }
 

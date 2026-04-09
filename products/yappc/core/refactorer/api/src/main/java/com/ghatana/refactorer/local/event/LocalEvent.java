@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * Local helper event model used only inside the refactorer product module.
  * Moved here to avoid collisions with the canonical domain Event types.
- 
+
  * @doc.type class
  * @doc.purpose Handles local event operations
  * @doc.layer core

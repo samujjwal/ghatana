@@ -8,7 +8,6 @@ import com.ghatana.kernel.audit.CrossScopeAuditService.AuditEventStore;
 import com.ghatana.kernel.audit.CrossScopeAuditService.CrossScopeAuditEvent;
 import com.ghatana.kernel.audit.CrossScopeAuditService.ScopeAuditRecord;
 import com.ghatana.kernel.policy.*;
-import com.ghatana.kernel.policy.AuditPolicyResolver.AuditPolicy;
 import com.ghatana.kernel.policy.ClassificationDescriptor.SensitivityLevel;
 import com.ghatana.kernel.scope.ScopeDescriptor;
 import com.ghatana.kernel.scope.ScopeType;

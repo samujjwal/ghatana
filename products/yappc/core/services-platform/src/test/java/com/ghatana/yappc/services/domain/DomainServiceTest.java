@@ -85,7 +85,7 @@ class DomainServiceTest extends EventloopTestBase {
                 .name("Product")
                 .attributes(Map.of("sku", "String", "price", "BigDecimal"))
                 .build();
-        
+
         DomainModel created = runPromise(() -> domainService.createModel(spec));
         repository.save(created);
 
@@ -102,10 +102,10 @@ class DomainServiceTest extends EventloopTestBase {
         // Create multiple models
         DomainSpec spec1 = DomainSpec.builder().name("User").attributes(Map.of("id", "Long")).build();
         DomainSpec spec2 = DomainSpec.builder().name("Order").attributes(Map.of("id", "Long")).build();
-        
+
         DomainModel model1 = runPromise(() -> domainService.createModel(spec1));
         DomainModel model2 = runPromise(() -> domainService.createModel(spec2));
-        
+
         repository.save(model1);
         repository.save(model2);
 
@@ -122,7 +122,7 @@ class DomainServiceTest extends EventloopTestBase {
                 .name("Customer")
                 .attributes(Map.of("id", "Long"))
                 .build();
-        
+
         DomainModel model = runPromise(() -> domainService.createModel(spec));
         repository.save(model);
 
@@ -288,14 +288,14 @@ class DomainServiceTest extends EventloopTestBase {
         public Promise<ValidationResult> validateModel(DomainModel model) {
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
                 java.util.List<String> errors = new java.util.ArrayList<>();
-                
+
                 if (model.name() == null || model.name().isEmpty()) {
                     errors.add("Model name is required");
                 }
                 if (model.attributes() == null || model.attributes().isEmpty()) {
                     errors.add("Model must have at least one attribute");
                 }
-                
+
                 return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
             });
         }
@@ -330,14 +330,14 @@ class DomainServiceTest extends EventloopTestBase {
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
                 StringBuilder ddl = new StringBuilder();
                 ddl.append("CREATE TABLE ").append(model.name()).append(" (\n");
-                
+
                 model.attributes().forEach((attr, type) -> {
                     ddl.append("  ").append(attr).append(" ").append(mapToSqlType(type)).append(",\n");
                 });
-                
+
                 ddl.append("  PRIMARY KEY (id)\n");
                 ddl.append(");");
-                
+
                 return ddl.toString();
             });
         }

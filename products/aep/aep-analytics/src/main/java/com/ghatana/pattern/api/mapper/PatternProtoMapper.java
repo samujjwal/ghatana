@@ -7,20 +7,19 @@ import com.ghatana.pattern.api.exception.PatternValidationException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
  * Mapper for bidirectional conversion between Protobuf and Java pattern models.
- * 
+ *
  * <p>This mapper handles conversion between:
  * <ul>
  *   <li>{@code PatternProto} (protobuf wire format from contracts/proto)</li>
  *   <li>{@code PatternSpecification} (Java domain model)</li>
  * </ul>
- * 
+ *
  * @doc.pattern Mapper Pattern (bidirectional transformation), Adapter Pattern (protobuf ↔ Java)
  * @doc.compiler-phase Pattern Mapping (API layer for protobuf serialization)
  * @doc.threading Thread-safe (stateless utility class)
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
  * @doc.serialization Protobuf ↔ Java model conversion with timestamp and metadata mapping
  * @doc.apiNote Use fromProto() for gRPC requests; toProto() for gRPC responses
  * @doc.limitation Lossy conversion: Proto uses string version, Java uses int; some metadata may not round-trip
- * 
+ *
  * <h2>Conversion Details</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -78,16 +77,16 @@ import java.util.stream.Collectors;
  *     <td>Map enum values via mapSelectionMode()</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Design Reference:</b>
  * Protobuf contracts defined in contracts/proto/pattern/v1/pattern.proto.
  * See .github/copilot-instructions.md "Contracts-first" for schema evolution patterns.
  */
 public class PatternProtoMapper {
-    
+
     /**
      * Convert PatternProto to PatternSpecification.
-     * 
+     *
      * @param proto The protobuf pattern
      * @return The pattern specification
      * @throws PatternValidationException if conversion fails
@@ -96,7 +95,7 @@ public class PatternProtoMapper {
         if (proto == null) {
             throw new PatternValidationException("PatternProto cannot be null");
         }
-        
+
         try {
             PatternSpecification.Builder builder = PatternSpecification.builder()
                     .id(proto.getId() != null && !proto.getId().isEmpty() ? UUID.fromString(proto.getId()) : UUID.randomUUID())
@@ -106,12 +105,12 @@ public class PatternProtoMapper {
                     .description(proto.getDescription())
                     .status(mapStatus(proto.getStatus()))
                     .selection(mapSelectionMode(proto.getSelectionMode()));
-            
+
             // Extract labels from map
             if (proto.getLabelsCount() > 0) {
                 builder.labels(proto.getLabelsMap().keySet().stream().collect(Collectors.toList()));
             }
-            
+
             // Convert timestamps
             if (proto.hasCreateTime()) {
                 builder.createdAt(Instant.ofEpochSecond(
@@ -120,7 +119,7 @@ public class PatternProtoMapper {
             } else {
                 builder.createdAt(Instant.now());
             }
-            
+
             if (proto.hasUpdateTime()) {
                 builder.updatedAt(Instant.ofEpochSecond(
                     proto.getUpdateTime().getSeconds(),
@@ -128,7 +127,7 @@ public class PatternProtoMapper {
             } else {
                 builder.updatedAt(Instant.now());
             }
-            
+
             // Extract metadata from Struct - convert to Map<String, Object>
             if (proto.hasMetadata()) {
                 Map<String, Object> metadata = proto.getMetadata().getFieldsMap().entrySet().stream()
@@ -137,16 +136,16 @@ public class PatternProtoMapper {
                         e -> (Object) e.getValue().getStringValue()));
                 builder.metadata(metadata);
             }
-            
+
             return builder.build();
         } catch (Exception e) {
             throw new PatternValidationException("Failed to convert PatternProto to PatternSpecification", e);
         }
     }
-    
+
     /**
      * Convert PatternSpecification to PatternProto.
-     * 
+     *
      * @param spec The pattern specification
      * @return The protobuf pattern
      * @throws PatternValidationException if conversion fails
@@ -155,7 +154,7 @@ public class PatternProtoMapper {
         if (spec == null) {
             throw new PatternValidationException("PatternSpecification cannot be null");
         }
-        
+
         try {
             PatternProto.Builder builder = PatternProto.newBuilder()
                     .setId(spec.getId() != null ? spec.getId().toString() : "")
@@ -165,14 +164,14 @@ public class PatternProtoMapper {
                     .setDescription(spec.getDescription() != null ? spec.getDescription() : "")
                     .setStatus(mapStatusToProto(spec.getStatus()))
                     .setSelectionMode(mapSelectionModeToProto(spec.getSelection()));
-            
+
             // Add labels
             if (spec.getLabels() != null && !spec.getLabels().isEmpty()) {
                 for (String label : spec.getLabels()) {
                     builder.putLabels(label, "true");  // Store labels as map entries
                 }
             }
-            
+
             // Add timestamps using Timestamp proto type
             if (spec.getCreatedAt() != null) {
                 builder.setCreateTime(com.google.protobuf.Timestamp.newBuilder()
@@ -180,37 +179,37 @@ public class PatternProtoMapper {
                         .setNanos(spec.getCreatedAt().getNano())
                         .build());
             }
-            
+
             if (spec.getUpdatedAt() != null) {
                 builder.setUpdateTime(com.google.protobuf.Timestamp.newBuilder()
                         .setSeconds(spec.getUpdatedAt().getEpochSecond())
                         .setNanos(spec.getUpdatedAt().getNano())
                         .build());
             }
-            
+
             // Add metadata as Struct - handle Map<String, Object>
             if (spec.getMetadata() != null && !spec.getMetadata().isEmpty()) {
                 com.google.protobuf.Struct.Builder structBuilder = com.google.protobuf.Struct.newBuilder();
                 for (Map.Entry<String, Object> entry : spec.getMetadata().entrySet()) {
-                    structBuilder.putFields(entry.getKey(), 
+                    structBuilder.putFields(entry.getKey(),
                         com.google.protobuf.Value.newBuilder()
                             .setStringValue(entry.getValue() != null ? entry.getValue().toString() : "")
                             .build());
                 }
                 builder.setMetadata(structBuilder.build());
             }
-            
+
             return builder.build();
         } catch (Exception e) {
             throw new PatternValidationException("Failed to convert PatternSpecification to PatternProto", e);
         }
     }
-    
+
     private static PatternStatus mapStatus(com.ghatana.contracts.pattern.v1.PatternStatus status) {
         if (status == null || status == com.ghatana.contracts.pattern.v1.PatternStatus.PATTERN_STATUS_UNSPECIFIED) {
             return PatternStatus.DRAFT;
         }
-        
+
         return switch (status) {
             case PATTERN_STATUS_DRAFT -> PatternStatus.DRAFT;
             case PATTERN_STATUS_ACTIVE -> PatternStatus.ACTIVE;
@@ -219,12 +218,12 @@ public class PatternProtoMapper {
             default -> PatternStatus.DRAFT;
         };
     }
-    
+
     private static com.ghatana.contracts.pattern.v1.PatternStatus mapStatusToProto(PatternStatus status) {
         if (status == null) {
             return com.ghatana.contracts.pattern.v1.PatternStatus.PATTERN_STATUS_DRAFT;
         }
-        
+
         return switch (status) {
             case DRAFT -> com.ghatana.contracts.pattern.v1.PatternStatus.PATTERN_STATUS_DRAFT;
             case CANDIDATE -> com.ghatana.contracts.pattern.v1.PatternStatus.PATTERN_STATUS_DRAFT;  // Map CANDIDATE to DRAFT
@@ -237,12 +236,12 @@ public class PatternProtoMapper {
             case DELETED -> com.ghatana.contracts.pattern.v1.PatternStatus.PATTERN_STATUS_DEPRECATED;  // Map DELETED to DEPRECATED
         };
     }
-    
+
     private static SelectionMode mapSelectionMode(com.ghatana.contracts.pattern.v1.SelectionMode mode) {
         if (mode == null || mode == com.ghatana.contracts.pattern.v1.SelectionMode.SELECTION_MODE_UNSPECIFIED) {
             return SelectionMode.ALL;
         }
-        
+
         return switch (mode) {
             case SELECTION_MODE_ALL -> SelectionMode.ALL;
             case SELECTION_MODE_FIRST -> SelectionMode.FIRST;
@@ -251,12 +250,12 @@ public class PatternProtoMapper {
             default -> SelectionMode.ALL;
         };
     }
-    
+
     private static com.ghatana.contracts.pattern.v1.SelectionMode mapSelectionModeToProto(SelectionMode mode) {
         if (mode == null) {
             return com.ghatana.contracts.pattern.v1.SelectionMode.SELECTION_MODE_ALL;
         }
-        
+
         return switch (mode) {
             case ALL -> com.ghatana.contracts.pattern.v1.SelectionMode.SELECTION_MODE_ALL;
             case FIRST -> com.ghatana.contracts.pattern.v1.SelectionMode.SELECTION_MODE_FIRST;
@@ -267,7 +266,7 @@ public class PatternProtoMapper {
             case REVERSE_CHRONOLOGICAL -> com.ghatana.contracts.pattern.v1.SelectionMode.SELECTION_MODE_LAST;  // Map to LAST
         };
     }
-    
+
     // ── Window spec mapping ────────────────────────────────────────────────────
 
     /**
@@ -345,8 +344,3 @@ public class PatternProtoMapper {
                 .sum();
     }
 }
-
-
-
-
-

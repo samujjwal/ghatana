@@ -6,7 +6,6 @@ import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.PhaseType;
-import com.ghatana.yappc.domain.generate.DiffResult;
 import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -20,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.ghatana.yappc.api.HttpResponses.*;
@@ -32,14 +30,14 @@ import static com.ghatana.yappc.api.HttpResponses.*;
  * @doc.pattern Controller
  */
 public class GenerationApiController {
-    
+
     private static final Logger log = LoggerFactory.getLogger(GenerationApiController.class);
     private static final int GENERATION_RATE_LIMIT = 30;
-    
+
     private final GenerationService generationService;
     private final YappcArtifactRepository artifactRepository;
     private final RateLimiter generationRateLimiter;
-    
+
     public GenerationApiController(GenerationService generationService, YappcArtifactRepository artifactRepository) {
         this.generationService = generationService;
         this.artifactRepository = artifactRepository;
@@ -51,11 +49,11 @@ public class GenerationApiController {
                 .build()
         );
     }
-    
+
     /**
      * POST /api/v1/yappc/generate
      * Generates artifacts from validated specification.
-     * 
+     *
      * @param request HTTP request with ValidatedSpec JSON body
      * @return Promise of HTTP response with GeneratedArtifacts
      */
@@ -66,13 +64,13 @@ public class GenerationApiController {
         if (throttled != null) {
             return Promise.of(throttled);
         }
-        
+
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
                         ValidatedSpec spec = parseValidatedSpec(json);
-                        
+
                         return generationService.generate(spec)
                                 .map(artifacts -> {
                                     try {
@@ -89,11 +87,11 @@ public class GenerationApiController {
                 })
                 .whenException(e -> log.error("Error generating artifacts", e));
     }
-    
+
     /**
      * POST /api/v1/yappc/generate/diff
      * Regenerates artifacts and computes diff.
-     * 
+     *
      * @param request HTTP request with ValidatedSpec and existing artifacts
      * @return Promise of HTTP response with DiffResult
      */
@@ -113,7 +111,7 @@ public class GenerationApiController {
                         }
                         ValidatedSpec spec = validateSpec(diffRequest.validatedSpec());
                         GeneratedArtifacts existing = validateExistingArtifacts(diffRequest.existingArtifacts());
-                        
+
                         return generationService.regenerateWithDiff(spec, existing)
                                 .map(diff -> {
                                     try {
@@ -130,27 +128,27 @@ public class GenerationApiController {
                 })
                 .whenException(e -> log.error("Diff generation failed", e));
     }
-    
+
     /**
      * GET /api/v1/yappc/generate/artifacts/{id}
      * Retrieves generated artifacts by ID.
-     * 
+     *
      * @param request HTTP request with artifacts ID in path
      * @return Promise of HTTP response with GeneratedArtifacts
      */
     public Promise<HttpResponse> getArtifacts(HttpRequest request) {
         String artifactsId = request.getPathParameter("id");
-        
+
         log.info("Retrieving artifacts: {}", artifactsId);
-        
+
         String[] parts = artifactsId.split(":");
         if (parts.length != 2) {
             return Promise.of(badRequest400("{\"error\": \"Invalid artifacts ID format. Expected: productId:version\"}"));
         }
-        
+
         String productId = parts[0];
         String version = parts[1];
-        
+
         return artifactRepository.getArtifact(productId, PhaseType.GENERATE, version)
                 .map(content -> {
                     try {

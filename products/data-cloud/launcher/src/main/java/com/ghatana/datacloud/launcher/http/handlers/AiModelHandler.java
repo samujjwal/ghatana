@@ -6,7 +6,6 @@ import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.*;
 import io.activej.promise.Promise;

@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Service Integration Test - End-to-End Usage
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration tests showing service usage patterns
  * @doc.layer test
@@ -156,7 +156,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
         when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(createdEntity));
 
-        Entity createResult = runPromise(() -> 
+        Entity createResult = runPromise(() ->
             entityService.createEntity(tenantId, collectionName, createData, userId));
 
         assertThat(createResult.getVersion()).isEqualTo(1);
@@ -174,7 +174,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
             "category", "electronics"
         );
 
-        Entity updateResult = runPromise(() -> 
+        Entity updateResult = runPromise(() ->
             entityService.updateEntity(tenantId, collectionName, entityId, updateData, userId));
 
         assertThat(updateResult.getVersion()).isEqualTo(2);

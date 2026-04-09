@@ -343,7 +343,7 @@ class OrderRiskCheckTest {
             audit.append("Margin check: PASS\n");
             audit.append("Credit limit check: PASS\n");
             audit.append("Exposure limit check: PASS\n");
-            
+
             return new RiskResult(
                 true,
                 audit.toString(),

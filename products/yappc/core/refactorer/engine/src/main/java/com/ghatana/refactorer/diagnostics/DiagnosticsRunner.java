@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Cache key for storing diagnostic results. 
+ * Cache key for storing diagnostic results.
  * @doc.type class
  * @doc.purpose Handles cache key operations
  * @doc.layer core

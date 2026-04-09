@@ -6,7 +6,6 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.OperatorState;
 import com.ghatana.core.operator.OperatorType;
 import com.ghatana.pattern.api.model.DetectionPlan;
-import com.ghatana.pattern.engine.agent.operators.BaseOperator;
 import com.ghatana.pattern.engine.agent.operators.FilterOperator;
 import com.ghatana.pattern.engine.agent.operators.MapOperator;
 import com.ghatana.pattern.engine.agent.operators.StreamOperator;

@@ -20,7 +20,7 @@ import java.util.TreeMap;
  * </p>
  *
  * @since 2.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Consistent hash strategy
@@ -41,7 +41,7 @@ public class ConsistentHashStrategy implements PartitionAssignmentStrategy {
         if (totalConsumers <= 0 || totalPartitions <= 0) {
             return false;
         }
-        
+
         Set<Integer> assigned = getAssignedPartitions(consumerInstanceId, totalConsumers, totalPartitions);
         return assigned.contains(partition);
     }
@@ -62,10 +62,10 @@ public class ConsistentHashStrategy implements PartitionAssignmentStrategy {
             // Hash the consumer+partition combination and assign consistently
             long hashValue = Math.abs((long) (consumerInstanceId + ":" + partition).hashCode());
             int consumerIndex = (int) (hashValue % totalConsumers);
-            
+
             // Get the stable consumer index for the given consumer ID
             int myConsumerIndex = Math.abs(consumerInstanceId.hashCode()) % totalConsumers;
-            
+
             if (consumerIndex == myConsumerIndex) {
                 assigned.add(partition);
             }
@@ -82,7 +82,7 @@ public class ConsistentHashStrategy implements PartitionAssignmentStrategy {
     ) {
         // Build new assignment
         TreeMap<Long, String> ring = buildConsistentHashRing(currentConsumers, VIRTUAL_NODES);
-        
+
         Map<String, Set<Integer>> newConsumerPartitions = new HashMap<>();
         for (String consumer : currentConsumers) {
             newConsumerPartitions.put(consumer, new HashSet<>());
@@ -188,13 +188,13 @@ public class ConsistentHashStrategy implements PartitionAssignmentStrategy {
      */
     private List<String> generateConsumerIds(String currentConsumerId, int totalConsumers) {
         List<String> consumers = new ArrayList<>();
-        
+
         // For deterministic hashing, we need consistent consumer IDs
         // Use index-based IDs that won't collide with real instance names
         for (int i = 0; i < totalConsumers; i++) {
             // Create stable IDs based on current consumer ID root and index
-            String consumerId = String.format("%s_partition_group_%d", 
-                    currentConsumerId.substring(0, Math.min(10, currentConsumerId.length())), 
+            String consumerId = String.format("%s_partition_group_%d",
+                    currentConsumerId.substring(0, Math.min(10, currentConsumerId.length())),
                     i);
             consumers.add(consumerId);
         }

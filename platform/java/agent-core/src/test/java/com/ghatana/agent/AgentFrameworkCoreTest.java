@@ -5,7 +5,6 @@
 package com.ghatana.agent;
 
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.api.DefaultAgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
 import io.activej.eventloop.Eventloop;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

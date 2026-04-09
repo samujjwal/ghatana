@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** Code metrics tool (stub). 
+/** Code metrics tool (stub).
  * @doc.type class
  * @doc.purpose Handles metrics tool operations
  * @doc.layer core

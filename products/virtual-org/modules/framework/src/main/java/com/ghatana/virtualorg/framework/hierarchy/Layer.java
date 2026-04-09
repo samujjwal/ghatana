@@ -39,22 +39,22 @@ public enum Layer {
      * Highest authority, strategic decisions, company direction.
      */
     EXECUTIVE("Executive", 3),
-    
+
     /**
      * Management layer (Architect Lead, DevOps Lead, Product Manager).
      * Tactical decisions, team coordination, resource allocation.
      */
     MANAGEMENT("Management", 2),
-    
+
     /**
      * Individual contributor layer (Engineers, QA, DevOps).
      * Execution, implementation, hands-on work.
      */
     INDIVIDUAL_CONTRIBUTOR("Individual Contributor", 1);
-    
+
     private final String displayName;
     private final int level;
-    
+
     /**
      * Constructor for Layer enum.
      *
@@ -65,7 +65,7 @@ public enum Layer {
         this.displayName = displayName;
         this.level = level;
     }
-    
+
     /**
      * Gets the display name for this layer.
      *
@@ -74,7 +74,7 @@ public enum Layer {
     public String getDisplayName() {
         return displayName;
     }
-    
+
     /**
      * Gets the hierarchy level (higher = more authority).
      *
@@ -83,7 +83,7 @@ public enum Layer {
     public int getLevel() {
         return level;
     }
-    
+
     /**
      * Checks if this layer is leadership (executive or management).
      *
@@ -92,7 +92,7 @@ public enum Layer {
     public boolean isLeadership() {
         return this == EXECUTIVE || this == MANAGEMENT;
     }
-    
+
     /**
      * Checks if this layer has higher authority than another layer.
      *

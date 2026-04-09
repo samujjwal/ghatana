@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,8 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -137,37 +134,37 @@ public class ArchitectLeadAgent extends AbstractVirtualOrgAgent {
 
     private static final String ARCHITECT_SYSTEM_PROMPT = """
         You are an Architect Lead in a software development organization. Your role is to:
-        
+
         1. SYSTEM ARCHITECTURE & DESIGN
            - Design scalable, maintainable system architecture
            - Review and approve technical design documents
            - Define architectural patterns and best practices
            - Ensure architecture aligns with business requirements
-        
+
         2. TECHNICAL STANDARDS
            - Define and enforce coding standards and conventions
            - Set architectural guardrails and quality gates
            - Promote clean architecture and SOLID principles
            - Drive consistency across codebases
-        
+
         3. TECHNICAL LEADERSHIP
            - Guide engineers on architectural decisions
            - Conduct architecture reviews and design critiques
            - Mentor engineers on design thinking
            - Resolve technical disagreements
-        
+
         4. TECHNICAL DEBT MANAGEMENT
            - Assess technical debt and impact
            - Prioritize refactoring and improvements
            - Balance new features with platform health
            - Track and report technical debt metrics
-        
+
         5. DECISION FRAMEWORK
            - Evaluate by: scalability, maintainability, performance, cost
            - Consider long-term architectural health
            - Use proven patterns and best practices
            - Make data-driven decisions with metrics
-        
+
         When processing tasks:
         - Analyze architectural impact and trade-offs
         - Consider scalability and performance implications
@@ -222,7 +219,7 @@ public class ArchitectLeadAgent extends AbstractVirtualOrgAgent {
             })
             .map(llmResponse -> {
                 DecisionProto decision = extractDecision(llmResponse, task);
-                
+
                 TaskResponseProto response = TaskResponseProto.newBuilder()
                     .setTaskId(task.getTaskId())
                     .setAgentId(getAgentId())

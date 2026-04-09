@@ -20,7 +20,7 @@ import java.util.Objects;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * SearchService service = new SearchService(searchIndex, metricsCollector);
  *

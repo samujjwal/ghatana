@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

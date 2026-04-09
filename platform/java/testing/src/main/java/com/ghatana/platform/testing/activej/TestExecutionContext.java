@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Test execution context that manages all resources and provides a unified cleanup mechanism.
  * This helps prevent hanging tests by ensuring all EventLoops, connections, and resources
  * are properly cleaned up even if tests fail or timeout.
- * 
+ *
  * @doc.type class
  * @doc.purpose Resource manager ensuring cleanup of all test resources and EventLoops
  * @doc.layer core
@@ -112,7 +112,7 @@ public final class TestExecutionContext implements AutoCloseable {
             return; // Already closed
         }
 
-        log.debug("Closing test execution context for: {} (duration: {}ms)", 
+        log.debug("Closing test execution context for: {} (duration: {}ms)",
                  testName, System.currentTimeMillis() - startTime);
 
         // Close EventLoop runner first
@@ -153,7 +153,7 @@ public final class TestExecutionContext implements AutoCloseable {
 
         @Override
         public void onStuck(long elapsedMs) {
-            log.warn("EventLoop stuck for test: {} (no progress for {} ms). Consider increasing timeout or checking for blocking operations.", 
+            log.warn("EventLoop stuck for test: {} (no progress for {} ms). Consider increasing timeout or checking for blocking operations.",
                     testName, elapsedMs);
         }
 
@@ -164,7 +164,7 @@ public final class TestExecutionContext implements AutoCloseable {
 
         @Override
         public void onStop(String threadName, EventloopTestUtil.Inspector snapshot) {
-            log.debug("EventLoop stopped for test: {} on thread: {}. Stats: {}", 
+            log.debug("EventLoop stopped for test: {} on thread: {}. Stats: {}",
                      testName, threadName, snapshot.pretty());
         }
     }

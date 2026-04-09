@@ -2,7 +2,6 @@ package com.ghatana.platform.agent.e2e;
 
 import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
-import com.ghatana.agent.AgentResultStatus;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.DeterminismGuarantee;
 import com.ghatana.agent.TypedAgent;

@@ -76,7 +76,7 @@ class IdentityExpansionTest extends EventloopTestBase {
             }
 
             // Verify isolation per tenant
-            Optional<AgentIdentity> result = runPromise(() -> 
+            Optional<AgentIdentity> result = runPromise(() ->
                 identityService.resolve("tenant-5", "agent-2"));
 
             assertThat(result).isPresent();
@@ -138,7 +138,7 @@ class IdentityExpansionTest extends EventloopTestBase {
                 resolver.register(agent);
             }
 
-            Optional<AgentIdentity> result = runPromise(() -> 
+            Optional<AgentIdentity> result = runPromise(() ->
                 identityService.resolve("tenant-50", "agent-0"));
 
             assertThat(result).isPresent();
@@ -166,7 +166,7 @@ class IdentityExpansionTest extends EventloopTestBase {
                     final int idx = i;
                     exec.submit(() -> {
                         try {
-                            String token = runPromise(() -> 
+                            String token = runPromise(() ->
                                 tokenProvider.createToken("t" + idx, "agent-" + idx, Duration.ofMinutes(10)));
                             tokens.add(token);
                         } finally {
@@ -195,9 +195,9 @@ class IdentityExpansionTest extends EventloopTestBase {
                     final int idx = i;
                     exec.submit(() -> {
                         try {
-                            String token = runPromise(() -> 
+                            String token = runPromise(() ->
                                 tokenProvider.createToken("t" + idx, "agent-" + idx, Duration.ofMinutes(10)));
-                            Optional<TokenClaims> claims = runPromise(() -> 
+                            Optional<TokenClaims> claims = runPromise(() ->
                                 tokenProvider.verifyToken(token));
                             if (claims.isPresent()) {
                                 successCount.incrementAndGet();
@@ -220,7 +220,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         void manyTokensSameAgent() {
             for (int i = 0; i < 50; i++) {
                 final int idx = i;
-                String token = runPromise(() -> 
+                String token = runPromise(() ->
                     tokenProvider.createToken("t1", "a1", Duration.ofMinutes(10)));
                 assertThat(token).isNotBlank();
             }
@@ -231,10 +231,10 @@ class IdentityExpansionTest extends EventloopTestBase {
         void tokenCreationScale() {
             for (int i = 0; i < 30; i++) {
                 final int idx = i;
-                String token = runPromise(() -> 
+                String token = runPromise(() ->
                     tokenProvider.createToken("t1", "a" + idx, Duration.ofHours(1)));
-                
-                Optional<TokenClaims> immediateVerify = runPromise(() -> 
+
+                Optional<TokenClaims> immediateVerify = runPromise(() ->
                     tokenProvider.verifyToken(token));
                 assertThat(immediateVerify).isPresent();
                 assertThat(immediateVerify.get().agentId()).isEqualTo("a" + idx);
@@ -455,7 +455,7 @@ class IdentityExpansionTest extends EventloopTestBase {
                 Set.of("read"), Instant.now());
             resolver.register(identity);
 
-            Optional<AgentIdentity> resolved = runPromise(() -> 
+            Optional<AgentIdentity> resolved = runPromise(() ->
                 identityService.resolve(tenant, agent));
 
             assertThat(resolved).isPresent();
@@ -464,10 +464,10 @@ class IdentityExpansionTest extends EventloopTestBase {
         @Test
         @DisplayName("Tokens with reasonable TTL")
         void reasonableTTL() {
-            String token = runPromise(() -> 
+            String token = runPromise(() ->
                 tokenProvider.createToken("t1", "a1", Duration.ofHours(1)));
 
-            Optional<TokenClaims> claims = runPromise(() -> 
+            Optional<TokenClaims> claims = runPromise(() ->
                 tokenProvider.verifyToken(token));
 
             assertThat(claims).isPresent();

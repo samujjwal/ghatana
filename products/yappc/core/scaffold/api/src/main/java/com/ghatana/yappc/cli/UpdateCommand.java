@@ -123,7 +123,7 @@ public class UpdateCommand implements Callable<Integer> {
 
             // Compare versions
             boolean hasUpdates = !currentPackVersion.equals(state.packVersion);
-            
+
             // Check for template changes
             List<TemplateChange> changes = detectChanges(targetProject, currentPack, state);
 
@@ -193,7 +193,7 @@ public class UpdateCommand implements Callable<Integer> {
             saveProjectState(targetProject, state);
 
             log.info("\n✅ Update complete. Applied {} changes, skipped {}.", applied, skipped);
-            
+
             if (skipped > 0) {
                 log.info("   Use --force to overwrite locally modified files.");
             }
@@ -260,7 +260,7 @@ public class UpdateCommand implements Callable<Integer> {
             state.variables = new HashMap<>();
             JsonNode varsNode = json.path("variables");
             if (varsNode.isObject()) {
-                varsNode.fields().forEachRemaining(entry -> 
+                varsNode.fields().forEachRemaining(entry ->
                     state.variables.put(entry.getKey(), entry.getValue().asText()));
             }
 
@@ -268,7 +268,7 @@ public class UpdateCommand implements Callable<Integer> {
             state.fileChecksums = new HashMap<>();
             JsonNode checksumsNode = json.path("fileChecksums");
             if (checksumsNode.isObject()) {
-                checksumsNode.fields().forEachRemaining(entry -> 
+                checksumsNode.fields().forEachRemaining(entry ->
                     state.fileChecksums.put(entry.getKey(), entry.getValue().asText()));
             }
 
@@ -336,7 +336,7 @@ public class UpdateCommand implements Callable<Integer> {
         for (Map.Entry<String, PackMetadata.TemplateFile> entry : metadata.templates().entrySet()) {
             String templateName = entry.getKey();
             PackMetadata.TemplateFile templateSpec = entry.getValue();
-            
+
             String targetPath = templateSpec.target();
             // Substitute variables in target path
             for (Map.Entry<String, Object> var : state.variables.entrySet()) {
@@ -344,7 +344,7 @@ public class UpdateCommand implements Callable<Integer> {
             }
 
             Path filePath = projectPath.resolve(targetPath);
-            
+
             if (!Files.exists(filePath)) {
                 // New file from pack
                 changes.add(new TemplateChange(templateName, targetPath, ChangeType.NEW, null));
@@ -352,7 +352,7 @@ public class UpdateCommand implements Callable<Integer> {
                 // Check if file was modified locally
                 String originalChecksum = state.fileChecksums.get(targetPath);
                 String currentChecksum = calculateChecksum(filePath);
-                
+
                 if (originalChecksum != null && !originalChecksum.equals(currentChecksum)) {
                     changes.add(new TemplateChange(templateName, targetPath, ChangeType.MODIFIED, currentChecksum));
                 } else {

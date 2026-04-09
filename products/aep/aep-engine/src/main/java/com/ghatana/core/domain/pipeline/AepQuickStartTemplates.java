@@ -335,4 +335,3 @@ public final class AepQuickStartTemplates {
                         .build());
     }
 }
-

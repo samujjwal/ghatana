@@ -4,7 +4,6 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.ai.llm.ToolCall;
-import com.ghatana.ai.llm.ToolCallResult;
 import com.ghatana.ai.llm.ToolDefinition;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -24,7 +23,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * Default implementation of the agent runtime engine.

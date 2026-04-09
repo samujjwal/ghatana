@@ -4,18 +4,18 @@ import java.time.Instant;
 
 /**
  * Information about a checkpoint.
- * 
+ *
  * Day 27 Implementation: Metadata for checkpoint tracking and management.
  */
 public class CheckpointInfo {
-    
+
     private final String checkpointId;
     private final Instant creationTime;
     private final long sizeBytes;
     private final String description;
     private final CheckpointStatus status;
-    
-    public CheckpointInfo(String checkpointId, Instant creationTime, long sizeBytes, 
+
+    public CheckpointInfo(String checkpointId, Instant creationTime, long sizeBytes,
                          String description, CheckpointStatus status) {
         this.checkpointId = checkpointId;
         this.creationTime = creationTime;
@@ -23,7 +23,7 @@ public class CheckpointInfo {
         this.description = description;
         this.status = status;
     }
-    
+
     public String getCheckpointId() {
         return checkpointId;
     }
@@ -43,7 +43,7 @@ public class CheckpointInfo {
     public CheckpointStatus getStatus() {
         return status;
     }
-    
+
     @Override
     public String toString() {
         return "CheckpointInfo{" +

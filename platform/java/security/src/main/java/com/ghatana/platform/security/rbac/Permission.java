@@ -14,97 +14,97 @@ public final class Permission {
      * Permission to read resources.
      */
     public static final String READ = "read";
-    
+
     /**
      * Permission to write (create/update) resources.
      */
     public static final String WRITE = "write";
-    
+
     /**
      * Permission to delete resources.
      */
     public static final String DELETE = "delete";
-    
+
     /**
      * Permission to execute operations.
      */
     public static final String EXECUTE = "execute";
-    
+
     /**
      * Permission to administer resources.
      */
     public static final String ADMIN = "admin";
-    
+
     /**
      * Permission to read audit logs.
      */
     public static final String AUDIT_READ = "audit:read";
-    
+
     /**
      * Permission to write audit logs.
      */
     public static final String AUDIT_WRITE = "audit:write";
-    
+
     /**
      * Permission to read user information.
      */
     public static final String USER_READ = "user:read";
-    
+
     /**
      * Permission to write user information.
      */
     public static final String USER_WRITE = "user:write";
-    
+
     /**
      * Permission to manage roles and permissions.
      */
     public static final String ROLE_MANAGE = "role:manage";
-    
+
     /**
      * Permission to read configuration.
      */
     public static final String CONFIG_READ = "config:read";
-    
+
     /**
      * Permission to write configuration.
      */
     public static final String CONFIG_WRITE = "config:write";
-    
+
     /**
      * Permission to read metrics.
      */
     public static final String METRICS_READ = "metrics:read";
-    
+
     /**
      * Permission to write metrics.
      */
     public static final String METRICS_WRITE = "metrics:write";
-    
+
     /**
      * Permission to read events.
      */
     public static final String EVENT_READ = "event:read";
-    
+
     /**
      * Permission to write events.
      */
     public static final String EVENT_WRITE = "event:write";
-    
+
     /**
      * Permission to process events.
      */
     public static final String EVENT_PROCESS = "event:process";
-    
+
     /**
      * Permission to manage agents.
      */
     public static final String AGENT_MANAGE = "agent:manage";
-    
+
     /**
      * Permission to read agent information.
      */
     public static final String AGENT_READ = "agent:read";
-    
+
     /**
      * Permission to execute agents.
      */

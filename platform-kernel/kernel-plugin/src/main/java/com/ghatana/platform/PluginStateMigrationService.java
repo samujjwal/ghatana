@@ -28,13 +28,13 @@ public class PluginStateMigrationService {
      */
     public void migrateState(String pluginId) {
         log.debug("Migrating state for plugin: {}", pluginId);
-        
+
         // In a full implementation, this would:
         // 1. Extract state from old plugin instance
         // 2. Check version compatibility
         // 3. Transform state if needed
         // 4. Inject state into new plugin instance
-        
+
         log.debug("State migrated for plugin: {}", pluginId);
     }
 

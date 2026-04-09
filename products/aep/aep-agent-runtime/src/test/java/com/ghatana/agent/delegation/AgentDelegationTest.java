@@ -6,7 +6,6 @@
  */
 package com.ghatana.agent.delegation;
 
-import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.dispatch.ExecutionTier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,5 @@
 package com.ghatana.plugin.billing;
 
-import io.activej.promise.Promise;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;

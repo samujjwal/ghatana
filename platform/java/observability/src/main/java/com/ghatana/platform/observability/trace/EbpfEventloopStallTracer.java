@@ -1,7 +1,6 @@
 package com.ghatana.platform.observability.trace;
 
 import io.activej.common.time.Stopwatch;
-import io.activej.eventloop.Eventloop;
 import io.activej.eventloop.inspector.EventloopInspector;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -28,7 +27,7 @@ public class EbpfEventloopStallTracer implements EventloopInspector {
     public EbpfEventloopStallTracer(MeterRegistry registry, Duration stallThreshold) {
         this.registry = registry;
         this.stallThresholdMs = stallThreshold.toMillis();
-        
+
         this.stallTimer = Timer.builder("eventloop.stall.duration")
                 .description("Measures durations where the ActiveJ Eventloop executes beyond threshold")
                 .publishPercentiles(0.9, 0.99)
@@ -98,7 +97,7 @@ public class EbpfEventloopStallTracer implements EventloopInspector {
             registry.counter("eventloop.stall.count").increment();
         }
     }
-    
+
     @Override
     public <T extends EventloopInspector> @Nullable T lookup(Class<T> type) {
         return null; // Used for multi-inspector wrapping

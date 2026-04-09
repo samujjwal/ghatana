@@ -38,4 +38,3 @@ public class NegationPattern implements IPatternSpec {
         return visitor.visit(this);
     }
 }
-

@@ -19,7 +19,6 @@ package com.ghatana.yappc.api.service.impl;
 import com.ghatana.yappc.api.YappcConfig;
 import com.ghatana.yappc.api.model.RenderResult;
 import com.ghatana.yappc.api.model.TemplateInfo;
-import com.ghatana.yappc.api.service.PackService;
 import com.ghatana.yappc.api.service.TemplateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +44,10 @@ import java.util.stream.Stream;
 public class DefaultTemplateService implements TemplateService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultTemplateService.class);
-    
+
     // Pattern for {{variableName}} or {{helper variableName}}
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*(\\w+)(?:\\s+(\\w+))?\\s*}}");
-    
+
     private final YappcConfig config;
     private final Map<String, TemplateHelper> helpers = new ConcurrentHashMap<>();
 
@@ -82,17 +81,17 @@ public class DefaultTemplateService implements TemplateService {
         while (matcher.find()) {
             String firstPart = matcher.group(1);
             String secondPart = matcher.group(2);
-            
+
             String replacement;
-            
+
             if (secondPart != null) {
                 // Helper syntax: {{helper variableName}}
                 String helperName = firstPart;
                 String variableName = secondPart;
-                
+
                 Object value = variables.get(variableName);
                 String stringValue = value != null ? value.toString() : "";
-                
+
                 TemplateHelper helper = helpers.get(helperName);
                 if (helper != null) {
                     replacement = helper.apply(stringValue);
@@ -103,9 +102,9 @@ public class DefaultTemplateService implements TemplateService {
             } else {
                 // Simple variable: {{variableName}}
                 String variableName = firstPart;
-                
+
                 // Check if it's a helper with no argument
-                if (helpers.containsKey(variableName) && 
+                if (helpers.containsKey(variableName) &&
                     (variableName.equals("uuid") || variableName.equals("now") || variableName.equals("date"))) {
                     replacement = helpers.get(variableName).apply("");
                 } else {
@@ -113,7 +112,7 @@ public class DefaultTemplateService implements TemplateService {
                     replacement = value != null ? value.toString() : "";
                 }
             }
-            
+
             matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(result);
@@ -136,12 +135,12 @@ public class DefaultTemplateService implements TemplateService {
     public RenderResult renderToFile(Path templatePath, Path outputPath, Map<String, Object> variables) {
         try {
             String content = renderFile(templatePath, variables);
-            
+
             // Ensure parent directories exist
             if (outputPath.getParent() != null) {
                 Files.createDirectories(outputPath.getParent());
             }
-            
+
             Files.writeString(outputPath, content);
             return RenderResult.success(outputPath, content);
         } catch (Exception e) {
@@ -154,7 +153,7 @@ public class DefaultTemplateService implements TemplateService {
     public List<TemplateInfo> listTemplates(String packName) {
         Path packPath = config.getPacksPath().resolve(packName);
         Path templatesPath = packPath.resolve("templates");
-        
+
         if (!Files.exists(templatesPath)) {
             return List.of();
         }
@@ -173,7 +172,7 @@ public class DefaultTemplateService implements TemplateService {
     private TemplateInfo createTemplateInfo(Path templatesRoot, Path templatePath) {
         String relativePath = templatesRoot.relativize(templatePath).toString();
         List<String> variables = getRequiredVariables(templatePath);
-        
+
         return TemplateInfo.of(
                 templatePath.getFileName().toString(),
                 templatePath,
@@ -185,15 +184,15 @@ public class DefaultTemplateService implements TemplateService {
     @Override
     public List<String> getRequiredVariables(Path templatePath) {
         Set<String> variables = new HashSet<>();
-        
+
         try {
             String content = Files.readString(templatePath);
             Matcher matcher = VARIABLE_PATTERN.matcher(content);
-            
+
             while (matcher.find()) {
                 String firstPart = matcher.group(1);
                 String secondPart = matcher.group(2);
-                
+
                 if (secondPart != null) {
                     // Helper syntax - variable is second part
                     if (!isBuiltinNoArgHelper(secondPart)) {
@@ -209,7 +208,7 @@ public class DefaultTemplateService implements TemplateService {
         } catch (IOException e) {
             LOG.warn("Failed to read template for variable extraction: {}", templatePath, e);
         }
-        
+
         return new ArrayList<>(variables);
     }
 
@@ -220,11 +219,11 @@ public class DefaultTemplateService implements TemplateService {
     @Override
     public List<String> getPackRequiredVariables(String packName) {
         Set<String> allVariables = new HashSet<>();
-        
+
         for (TemplateInfo template : listTemplates(packName)) {
             allVariables.addAll(template.variables());
         }
-        
+
         return new ArrayList<>(allVariables);
     }
 
@@ -237,7 +236,7 @@ public class DefaultTemplateService implements TemplateService {
                 // Check for valid helper names
                 String firstPart = matcher.group(1);
                 String secondPart = matcher.group(2);
-                
+
                 if (secondPart != null && !helpers.containsKey(firstPart)) {
                     // Unknown helper
                     return false;

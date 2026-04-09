@@ -11,7 +11,7 @@ import java.util.Optional;
  * distributed traces. All filter fields are optional, allowing queries ranging from
  * "get all traces" to highly specific searches combining multiple filters.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Flexible Filtering</b>: Service, operation, status, duration, time range, tags, span count</li>
@@ -20,18 +20,18 @@ import java.util.Optional;
  *   <li><b>Optional Filters</b>: Each filter is Optional, allowing incremental refinement</li>
  *   <li><b>Vendor-Neutral</b>: Can be implemented by any storage backend</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Simple service query
  * TraceQuery query1 = TraceQuery.forService("api-gateway");
- * 
+ *
  * // Error traces only
  * TraceQuery query2 = TraceQuery.errors();
- * 
+ *
  * // Slow traces (> 100ms)
  * TraceQuery query3 = TraceQuery.slow(100);
- * 
+ *
  * // Complex query with multiple filters
  * TraceQuery query4 = TraceQuery.builder()
  *     .withServiceName("api-gateway")
@@ -54,35 +54,35 @@ import java.util.Optional;
  *     System.out.println("Found " + results.size() + " matching traces");
  * });
  * }</pre>
- * 
+ *
  * <h2>Filter Types</h2>
- * 
+ *
  * <h2>Attribute Filters</h2>
  * <ul>
  *   <li><b>serviceName</b>: Any span in trace must have this service name</li>
  *   <li><b>operationName</b>: Any span in trace must have this operation name</li>
  *   <li><b>status</b>: Overall trace status must match (OK, ERROR, UNSET)</li>
  * </ul>
- * 
+ *
  * <h2>Range Filters</h2>
  * <ul>
  *   <li><b>minDurationMs / maxDurationMs</b>: Trace duration must be within range</li>
  *   <li><b>startTime / endTime</b>: Trace start/end time must be within range</li>
  *   <li><b>minSpanCount / maxSpanCount</b>: Number of spans must be within range</li>
  * </ul>
- * 
+ *
  * <h2>Tag Filters</h2>
  * <ul>
  *   <li><b>tags</b>: Map of key-value pairs, ALL must match at least one span</li>
  *   <li>Example: {http.method=GET, http.status_code=500}</li>
  * </ul>
- * 
+ *
  * <h2>Pagination</h2>
  * <ul>
  *   <li><b>limit</b>: Maximum results to return (default: 100)</li>
  *   <li><b>offset</b>: Number of results to skip (default: 0)</li>
  * </ul>
- * 
+ *
  * <h2>Factory Methods</h2>
  * <ul>
  *   <li><b>all()</b>: Match all traces with default limits</li>
@@ -90,7 +90,7 @@ import java.util.Optional;
  *   <li><b>errors()</b>: Match traces with ERROR status</li>
  *   <li><b>slow(minMs)</b>: Match traces above duration threshold</li>
  * </ul>
- * 
+ *
  * <h2>Implementation Notes</h2>
  * Storage backends should:
  * <ul>

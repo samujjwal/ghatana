@@ -60,7 +60,7 @@ public class PatternCompilationException extends ServiceException {
         if (compilationErrors.size() == 1) {
             return super.toString();
         }
-        return String.format("PatternCompilationException: %s (%d errors)", 
+        return String.format("PatternCompilationException: %s (%d errors)",
                 getMessage(), compilationErrors.size());
     }
 }

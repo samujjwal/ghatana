@@ -1,13 +1,10 @@
 package com.ghatana.platform.database.cache.pubsub;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.database.cache.CacheManager;
 import com.ghatana.platform.database.cache.RedisCacheManager;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisPool;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -21,7 +18,7 @@ import java.util.function.Supplier;
  * Extends {@link RedisCacheManager} with automatic cache invalidation
  * broadcasting via Redis pub/sub. When cache entries are removed or cleared,
  * invalidation messages are published to notify other instances.
- 
+
  *
  * @doc.type class
  * @doc.purpose Redis pub sub cache manager
@@ -30,7 +27,7 @@ import java.util.function.Supplier;
 */
 public class RedisPubSubCacheManager implements CacheManager {
     private static final Logger logger = LoggerFactory.getLogger(RedisPubSubCacheManager.class);
-    
+
     private final CacheManager delegate;
     private final RedisPubSubManager pubSubManager;
     private final String namespace;
@@ -44,13 +41,13 @@ public class RedisPubSubCacheManager implements CacheManager {
      * @param namespace The cache namespace
      * @param instanceId The instance ID for tracking invalidation sources
      */
-    public RedisPubSubCacheManager(CacheManager delegate, RedisPubSubManager pubSubManager, 
+    public RedisPubSubCacheManager(CacheManager delegate, RedisPubSubManager pubSubManager,
                                  String namespace, String instanceId) {
         this.delegate = delegate;
         this.pubSubManager = pubSubManager;
         this.namespace = namespace;
         this.instanceId = instanceId;
-        
+
         // Subscribe to invalidation messages
         this.pubSubManager.subscribe(this::handleRemoteInvalidation);
     }
@@ -59,12 +56,12 @@ public class RedisPubSubCacheManager implements CacheManager {
     public <T> Promise<Optional<T>> get(String key, Class<T> type) {
         return delegate.get(key, type);
     }
-    
+
     @Override
     public <T> Promise<Void> put(String key, T value) {
         return delegate.put(key, value);
     }
-    
+
     @Override
     public <T> Promise<Void> put(String key, T value, Duration ttl) {
         return delegate.put(key, value, ttl);
@@ -100,12 +97,12 @@ public class RedisPubSubCacheManager implements CacheManager {
             });
     }
 
-    
+
     @Override
     public Promise<Boolean> exists(String key) {
         return delegate.exists(key);
     }
-    
+
     @Override
     public <T> Promise<T> getOrCompute(String key, Class<T> type, Supplier<Promise<T>> supplier) {
         return delegate.getOrCompute(key, type, supplier);
@@ -115,17 +112,17 @@ public class RedisPubSubCacheManager implements CacheManager {
     public <T> Promise<T> getOrCompute(String key, Class<T> type, Duration ttl, Supplier<Promise<T>> supplier) {
         return delegate.getOrCompute(key, type, ttl, supplier);
     }
-    
+
     @Override
     public Promise<Long> increment(String key) {
         return delegate.increment(key);
     }
-    
+
     @Override
     public Promise<Long> increment(String key, long delta) {
         return delegate.increment(key, delta);
     }
-    
+
     @Override
     public Promise<Set<String>> keys(String pattern) {
         return delegate.keys(pattern);
@@ -159,11 +156,11 @@ public class RedisPubSubCacheManager implements CacheManager {
     public Promise<Duration> ttl(String key) {
         return delegate.ttl(key);
     }
-    
+
     // ========================================================================
     // Remote Invalidation Handling
     // ========================================================================
-    
+
     /**
      * Handle invalidation message from remote instance
      *
@@ -178,9 +175,9 @@ public class RedisPubSubCacheManager implements CacheManager {
                 message.getNamespace());
             return;
         }
-        
+
         logger.debug("[RedisPubSubCache] Handling remote invalidation: {}", message);
-        
+
         try {
             switch (message.getOperation()) {
                 case INVALIDATE_KEYS:
@@ -191,14 +188,14 @@ public class RedisPubSubCacheManager implements CacheManager {
                             .whenException(e -> logger.error("[RedisPubSubCache] Failed to invalidate key: {}", key, e))
                     );
                     break;
-                    
+
                 case INVALIDATE_PATTERN:
                     // Invalidate keys matching pattern
                     delegate.clearPattern(message.getPattern())
                         .whenResult(deleted -> logger.trace("[RedisPubSubCache] Invalidated pattern: {} (deleted={})", message.getPattern(), deleted))
                         .whenException(e -> logger.error("[RedisPubSubCache] Failed to invalidate pattern: {}", message.getPattern(), e));
                     break;
-                    
+
                 case CLEAR_NAMESPACE:
                     // Clear entire namespace
                     delegate.clear()
@@ -210,7 +207,7 @@ public class RedisPubSubCacheManager implements CacheManager {
             logger.error("[RedisPubSubCache] Failed to apply remote invalidation: {}", message, e);
         }
     }
-    
+
     /**
      * Get pub/sub statistics
      *

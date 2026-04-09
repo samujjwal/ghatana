@@ -104,7 +104,7 @@ public class UserService {
                 .password(hashedPassword)
                 .roles(user.getRoles())
                 .build();
-                
+
         users.put(newUser.getUsername(), newUser);
         return Promise.of(newUser);
     }

@@ -37,21 +37,21 @@ public class PatternEvolutionEngine {
         try {
             // Initialize population
             List<LearnedPattern> population = initializePopulation(patterns);
-            
+
             // Evolve for specified generations
             for (int generation = 0; generation < config.getMaxGenerations(); generation++) {
                 population = evolveGeneration(population);
-                
+
                 // Log progress
                 if (generation % 10 == 0) {
                     double avgFitness = calculateAverageFitness(population);
                     logger.debug("Evolution generation {}: average fitness = {:.3f}", generation, avgFitness);
                 }
             }
-            
+
             // Return best evolved patterns
             return selectBestPatterns(population);
-            
+
         } catch (Exception e) {
             logger.error("Error during pattern evolution: {}", e.getMessage());
             return patterns;
@@ -60,27 +60,27 @@ public class PatternEvolutionEngine {
 
     private List<LearnedPattern> initializePopulation(List<LearnedPattern> patterns) {
         List<LearnedPattern> population = new ArrayList<>();
-        
+
         // Add original patterns
         population.addAll(patterns);
-        
+
         // Generate additional patterns through mutation
         while (population.size() < config.getPopulationSize()) {
             LearnedPattern parent = selectParent(patterns);
             LearnedPattern mutated = mutatePattern(parent);
             population.add(mutated);
         }
-        
+
         return population;
     }
 
     private List<LearnedPattern> evolveGeneration(List<LearnedPattern> population) {
         List<LearnedPattern> newPopulation = new ArrayList<>();
-        
+
         // Elitism: keep best patterns
         int eliteCount = (int) (population.size() * 0.1);
         newPopulation.addAll(selectBestPatterns(population).subList(0, Math.min(eliteCount, population.size())));
-        
+
         // Generate offspring through crossover and mutation
         while (newPopulation.size() < config.getPopulationSize()) {
             if (random.nextDouble() < config.getCrossoverRate()) {
@@ -96,7 +96,7 @@ public class PatternEvolutionEngine {
                 newPopulation.add(mutated);
             }
         }
-        
+
         return newPopulation;
     }
 
@@ -104,11 +104,11 @@ public class PatternEvolutionEngine {
         // Tournament selection
         int tournamentSize = 3;
         List<LearnedPattern> tournament = new ArrayList<>();
-        
+
         for (int i = 0; i < tournamentSize; i++) {
             tournament.add(population.get(random.nextInt(population.size())));
         }
-        
+
         return tournament.stream()
                 .max(Comparator.comparingDouble(LearnedPattern::getFitnessScore))
                 .orElse(tournament.get(0));
@@ -119,14 +119,14 @@ public class PatternEvolutionEngine {
         Map<String, Object> combinedFeatures = new HashMap<>();
         combinedFeatures.putAll(parent1.getFeatures());
         combinedFeatures.putAll(parent2.getFeatures());
-        
+
         // Create new signature
         String newSignature = "EVOLVED_" + parent1.getSignature() + "_x_" + parent2.getSignature();
-        
+
         // Average confidence and support
         double newConfidence = (parent1.getConfidence() + parent2.getConfidence()) / 2.0;
         long newSupport = (parent1.getSupport() + parent2.getSupport()) / 2;
-        
+
         return LearnedPattern.builder()
                 .signature(newSignature)
                 .patternType(parent1.getPatternType()) // Keep parent1's type
@@ -140,9 +140,9 @@ public class PatternEvolutionEngine {
         if (random.nextDouble() > config.getMutationRate()) {
             return pattern; // No mutation
         }
-        
+
         Map<String, Object> mutatedFeatures = new HashMap<>(pattern.getFeatures());
-        
+
         // Apply random mutations
         switch (random.nextInt(4)) {
             case 0:
@@ -175,7 +175,7 @@ public class PatternEvolutionEngine {
                         .features(mutatedFeatures)
                         .build();
         }
-        
+
         return LearnedPattern.builder()
                 .signature("MUTATED_" + pattern.getSignature())
                 .patternType(pattern.getPatternType())
@@ -217,20 +217,20 @@ public class PatternEvolutionEngine {
     private LearnedPattern evolveSequentialPattern(LearnedPattern pattern) {
         // Specialized evolution for sequential patterns
         Map<String, Object> evolvedFeatures = new HashMap<>(pattern.getFeatures());
-        
+
         // Evolve sequence parameters
         if (evolvedFeatures.containsKey("sequence_length")) {
             int currentLength = (Integer) evolvedFeatures.get("sequence_length");
             int newLength = Math.max(2, Math.min(10, currentLength + random.nextInt(3) - 1)); // +/- 1
             evolvedFeatures.put("sequence_length", newLength);
         }
-        
+
         if (evolvedFeatures.containsKey("time_window")) {
             long currentTimeWindow = (Long) evolvedFeatures.get("time_window");
             long newTimeWindow = Math.max(60000, currentTimeWindow + (random.nextInt(5) - 2) * 30000); // +/- 2 minutes
             evolvedFeatures.put("time_window", newTimeWindow);
         }
-        
+
         return LearnedPattern.builder()
                 .signature("EVOLVED_SEQ_" + pattern.getSignature())
                 .patternType(LearnedPatternType.SEQUENTIAL)
@@ -243,20 +243,20 @@ public class PatternEvolutionEngine {
     private LearnedPattern evolveFrequencyPattern(LearnedPattern pattern) {
         // Specialized evolution for frequency patterns
         Map<String, Object> evolvedFeatures = new HashMap<>(pattern.getFeatures());
-        
+
         // Evolve frequency parameters
         if (evolvedFeatures.containsKey("frequency_threshold")) {
             double currentThreshold = (Double) evolvedFeatures.get("frequency_threshold");
             double newThreshold = Math.max(0.1, Math.min(1.0, currentThreshold + (random.nextDouble() - 0.5) * 0.2));
             evolvedFeatures.put("frequency_threshold", newThreshold);
         }
-        
+
         if (evolvedFeatures.containsKey("count_threshold")) {
             int currentThreshold = (Integer) evolvedFeatures.get("count_threshold");
             int newThreshold = Math.max(1, currentThreshold + random.nextInt(5) - 2);
             evolvedFeatures.put("count_threshold", newThreshold);
         }
-        
+
         return LearnedPattern.builder()
                 .signature("EVOLVED_FREQ_" + pattern.getSignature())
                 .patternType(LearnedPatternType.FREQUENCY)

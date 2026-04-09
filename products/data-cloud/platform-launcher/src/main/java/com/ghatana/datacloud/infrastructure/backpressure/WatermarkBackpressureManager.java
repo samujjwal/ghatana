@@ -12,11 +12,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Backpressure Manager for Data-Cloud ingest and processing.
- * 
+ *
  * <p>Implements backpressure handling to prevent system overload during
  * high-throughput data ingestion. Uses bounded queues, flow control signals,
  * and adaptive rate limiting.</p>
- * 
+ *
  * <p><b>Features:</b></p>
  * <ul>
  *   <li>Bounded queues for ingest operations</li>
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>Queue depth monitoring</li>
  *   <li>Metrics collection</li>
  * </ul>
- * 
+ *
  * <p><b>Usage:</b></p>
  * <pre>{@code
  * BackpressureManager backpressure = new BackpressureManager(
@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *         .lowWatermark(0.2)
  *         .build()
  * );
- * 
+ *
  * // Check if we can accept more data
  * FlowControl control = backpressure.checkFlowControl();
  * if (control.canAccept()) {
@@ -45,10 +45,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *     Thread.sleep(control.getBackoffMs());
  * }
  * }</pre>
- * 
+ *
  * <p>DC3-C2: Renamed from {@code BackpressureManager} to clarify this is the
  * high-watermark/low-watermark concrete implementation of {@link BackpressurePort}.
- * 
+ *
  * @doc.type service
  * @doc.purpose Backpressure handling for high-throughput ingest
  * @doc.layer infrastructure
@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class WatermarkBackpressureManager implements BackpressurePort {
     private static final Logger log = LoggerFactory.getLogger(WatermarkBackpressureManager.class);
-    
+
     private final BackpressureConfig config;
     private final BlockingQueue<Object> ingestQueue;
     private final AtomicLong totalProcessed;
@@ -64,10 +64,10 @@ public class WatermarkBackpressureManager implements BackpressurePort {
     private final AtomicLong totalThrottled;
     private volatile long lastAdjustmentTime;
     private volatile int currentRateLimit;
-    
+
     /**
      * Creates backpressure manager with configuration.
-     * 
+     *
      * @param config backpressure configuration
      */
     public WatermarkBackpressureManager(BackpressureConfig config) {
@@ -78,24 +78,24 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         this.totalThrottled = new AtomicLong(0);
         this.lastAdjustmentTime = System.currentTimeMillis();
         this.currentRateLimit = config.getInitialRateLimit();
-        
+
         log.info("BackpressureManager initialized: maxQueue={}, highWater={}, lowWater={}",
             config.getMaxQueueSize(), config.getHighWatermark(), config.getLowWatermark());
     }
-    
+
     /**
      * Checks flow control status and returns control decision.
-     * 
+     *
      * @return flow control decision
      */
     public FlowControl checkFlowControl() {
         int queueSize = ingestQueue.size();
         int maxSize = config.getMaxQueueSize();
         double queueUtilization = (double) queueSize / maxSize;
-        
+
         // Adjust rate limit based on queue depth
         adjustRateLimit(queueUtilization);
-        
+
         // Determine flow control action
         if (queueUtilization >= config.getHighWatermark()) {
             // Queue is full, reject new requests
@@ -106,7 +106,7 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             // Queue is getting full, throttle
             long backoffMs = calculateBackoff(queueUtilization);
             totalThrottled.incrementAndGet();
-            log.debug("Queue high: utilization={}, throttling for {}ms", 
+            log.debug("Queue high: utilization={}, throttling for {}ms",
                 queueUtilization, backoffMs);
             return FlowControl.throttle(backoffMs);
         } else {
@@ -115,18 +115,18 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             return FlowControl.accept();
         }
     }
-    
+
     /**
      * Tries to enqueue an item with backpressure handling.
-     * 
+     *
      * @param item item to enqueue
      * @return promise of enqueue result
      */
     public Promise<EnqueueResult> enqueue(Object item) {
         Objects.requireNonNull(item, "item cannot be null");
-        
+
         FlowControl control = checkFlowControl();
-        
+
         if (!control.canAccept()) {
             if (control.shouldReject()) {
                 return Promise.of(EnqueueResult.rejected("Queue full"));
@@ -155,10 +155,10 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             return Promise.of(EnqueueResult.failed("Interrupted"));
         }
     }
-    
+
     /**
      * Drains items from queue for processing.
-     * 
+     *
      * @param maxItems maximum items to drain
      * @return list of drained items
      */
@@ -167,28 +167,28 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         ingestQueue.drainTo(items, maxItems);
         return items;
     }
-    
+
     /**
      * Gets current queue depth.
-     * 
+     *
      * @return queue size
      */
     public int getQueueDepth() {
         return ingestQueue.size();
     }
-    
+
     /**
      * Gets queue utilization percentage.
-     * 
+     *
      * @return utilization 0.0-1.0
      */
     public double getQueueUtilization() {
         return (double) ingestQueue.size() / config.getMaxQueueSize();
     }
-    
+
     /**
      * Gets backpressure statistics.
-     * 
+     *
      * @return statistics map
      */
     public Map<String, Object> getStats() {
@@ -202,10 +202,10 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             "currentRateLimit", currentRateLimit
         );
     }
-    
+
     /**
      * Adjusts rate limit based on queue utilization.
-     * 
+     *
      * @param utilization queue utilization 0.0-1.0
      */
     private void adjustRateLimit(double utilization) {
@@ -213,9 +213,9 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         if (now - lastAdjustmentTime < config.getAdjustmentIntervalMs()) {
             return;
         }
-        
+
         lastAdjustmentTime = now;
-        
+
         if (utilization >= config.getHighWatermark()) {
             // Reduce rate limit
             currentRateLimit = Math.max(
@@ -232,10 +232,10 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             log.debug("Rate limit increased to {}", currentRateLimit);
         }
     }
-    
+
     /**
      * Calculates backoff time based on queue utilization.
-     * 
+     *
      * @param utilization queue utilization 0.0-1.0
      * @return backoff time in milliseconds
      */
@@ -251,7 +251,7 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             return 1000; // 1s at very high utilization
         }
     }
-    
+
     /**
      * Flow control decision.
      */
@@ -259,7 +259,7 @@ public class WatermarkBackpressureManager implements BackpressurePort {
         private final FlowControlAction action;
         private final String reason;
         private final long backoffMs;
-        
+
         private FlowControl(FlowControlAction action, String reason, long backoffMs) {
             this.action = action;
             this.reason = reason;
@@ -298,48 +298,48 @@ public class WatermarkBackpressureManager implements BackpressurePort {
             return new FlowControl(FlowControlAction.REJECT, reason, 0);
         }
     }
-    
+
     /**
      * Enqueue result.
      */
     public static class EnqueueResult {
         private final EnqueueStatus status;
         private final String message;
-        
+
         private EnqueueResult(EnqueueStatus status, String message) {
             this.status = status;
             this.message = message;
         }
-        
+
         public boolean isSuccess() {
             return status == EnqueueStatus.ACCEPTED;
         }
-        
+
         public EnqueueStatus getStatus() {
             return status;
         }
-        
+
         public String getMessage() {
             return message;
         }
-        
+
         public static EnqueueResult accepted() {
             return new EnqueueResult(EnqueueStatus.ACCEPTED, "Item enqueued");
         }
-        
+
         public static EnqueueResult rejected(String reason) {
             return new EnqueueResult(EnqueueStatus.REJECTED, reason);
         }
-        
+
         public static EnqueueResult failed(String reason) {
             return new EnqueueResult(EnqueueStatus.FAILED, reason);
         }
     }
-    
+
     enum FlowControlAction {
         ACCEPT, THROTTLE, REJECT
     }
-    
+
     enum EnqueueStatus {
         ACCEPTED, REJECTED, FAILED
     }

@@ -16,14 +16,14 @@ import java.util.UUID;
  * @doc.pattern ValueObject
  */
 public record SessionId(String value) {
-    
+
     public SessionId {
         Objects.requireNonNull(value, "SessionId cannot be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("SessionId cannot be blank");
         }
     }
-    
+
     public static SessionId of(String value) {
         return new SessionId(value);
     }

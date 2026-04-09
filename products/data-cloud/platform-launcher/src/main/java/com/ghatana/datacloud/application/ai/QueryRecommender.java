@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.ghatana.platform.observability.util.BlockingExecutors.blockingExecutor;
 
 /**
  * Query recommendations engine.
@@ -385,4 +384,3 @@ public class QueryRecommender {
         }
     }
 }
-

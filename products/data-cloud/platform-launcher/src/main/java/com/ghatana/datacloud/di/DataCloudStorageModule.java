@@ -15,7 +15,6 @@ import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.ghatana.datacloud.workflow.WorkflowRunRepository;
-import com.zaxxer.hikari.HikariDataSource;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;

@@ -11,7 +11,7 @@ import java.util.List;
  * traces. Implementations can use different backends (ClickHouse, Elasticsearch, Cassandra,
  * in-memory) without affecting consumers.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Async Operations</b>: All methods return ActiveJ Promise for non-blocking execution</li>
@@ -21,7 +21,7 @@ import java.util.List;
  *   <li><b>Health Checks</b>: isHealthy() for monitoring</li>
  *   <li><b>Resource Cleanup</b>: close() for graceful shutdown</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Store spans asynchronously
@@ -44,8 +44,8 @@ import java.util.List;
  * storage.queryTraces(query)
  *     .whenResult(traces -> {
  *         System.out.println("Found " + traces.size() + " traces");
- *         traces.forEach(trace -> 
- *             System.out.println("Trace: " + trace.traceId() + 
+ *         traces.forEach(trace ->
+ *             System.out.println("Trace: " + trace.traceId() +
  *                              ", Duration: " + trace.durationMs() + "ms")
  *         );
  *     });
@@ -65,9 +65,9 @@ import java.util.List;
  *         }
  *     });
  * }</pre>
- * 
+ *
  * <h2>Implementation Guidelines</h2>
- * 
+ *
  * <h2>Non-Blocking Operations</h2>
  * All operations must be non-blocking and return Promises. Use Promise.ofBlocking()
  * for blocking I/O:
@@ -81,7 +81,7 @@ import java.util.List;
  *     });
  * }
  * }</pre>
- * 
+ *
  * <h2>Error Handling</h2>
  * Use Promise.ofException() for errors, not throwing:
  * <pre>{@code
@@ -89,7 +89,7 @@ import java.util.List;
  *     return Promise.ofException(new IllegalArgumentException("span must not be null"));
  * }
  * }</pre>
- * 
+ *
  * <h2>Batching Efficiency</h2>
  * storeSpans() should be more efficient than multiple storeSpan() calls:
  * <ul>
@@ -97,7 +97,7 @@ import java.util.List;
  *   <li>Minimize round trips</li>
  *   <li>All-or-nothing semantics (transactional if possible)</li>
  * </ul>
- * 
+ *
  * <h2>Query Optimization</h2>
  * Optimize queries based on available filters:
  * <ul>
@@ -106,7 +106,7 @@ import java.util.List;
  *   <li>Leverage columnar storage for analytics (ClickHouse)</li>
  *   <li>Use full-text search for tag queries (Elasticsearch)</li>
  * </ul>
- * 
+ *
  * <h2>Resource Cleanup</h2>
  * Properly close connections/resources in close():
  * <pre>{@code
@@ -119,7 +119,7 @@ import java.util.List;
  *     });
  * }
  * }</pre>
- * 
+ *
  * <h2>Performance Targets (Production Implementations)</h2>
  * <ul>
  *   <li><b>storeSpan()</b>: < 10ms p99 (async buffering)</li>
@@ -128,7 +128,7 @@ import java.util.List;
  *   <li><b>getStatistics()</b>: < 200ms p99 (pre-aggregated or indexed)</li>
  *   <li><b>isHealthy()</b>: < 100ms p99 (lightweight check)</li>
  * </ul>
- * 
+ *
  * <h2>Storage Backend Examples</h2>
  * <ul>
  *   <li><b>ClickHouse</b>: High-performance columnar storage, excellent for analytics</li>

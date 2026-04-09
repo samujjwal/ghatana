@@ -14,21 +14,21 @@ import java.util.UUID;
 
 /**
  * Data-Cloud adapter for Widget storage.
- * 
+ *
  * <p>Provides Widget CRUD operations using data-cloud as backend.
  * All methods return ActiveJ Promises for non-blocking async execution.
- * 
+ *
  * @doc.type class
  * @doc.purpose Widget data-cloud adapter
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
 public class WidgetDataCloudAdapter {
-    
+
     private static final String COLLECTION = "widget";
-    
+
     private final YappcDataCloudRepository<Widget> repository;
-    
+
     public WidgetDataCloudAdapter(
         @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
@@ -40,7 +40,7 @@ public class WidgetDataCloudAdapter {
             Widget.class
         );
     }
-    
+
     /**
      * Finds widgets by dashboard ID.
      *
@@ -53,7 +53,7 @@ public class WidgetDataCloudAdapter {
         filter.put("dashboardId", dashboardId.toString());
         return repository.findByFilter(filter, null, 1000, 0);
     }
-    
+
     /**
      * Finds a widget by ID within a workspace.
      *
@@ -66,7 +66,7 @@ public class WidgetDataCloudAdapter {
         return repository.findById(id)
             .map(opt -> opt.filter(w -> workspaceId.equals(w.getWorkspaceId())));
     }
-    
+
     /**
      * Finds all widgets for a workspace.
      *
@@ -79,7 +79,7 @@ public class WidgetDataCloudAdapter {
         filter.put("workspaceId", workspaceId.toString());
         return repository.findByFilter(filter, null, 1000, 0);
     }
-    
+
     /**
      * Saves a widget.
      *
@@ -90,7 +90,7 @@ public class WidgetDataCloudAdapter {
     public Promise<Widget> save(@NotNull Widget widget) {
         return repository.save(widget);
     }
-    
+
     /**
      * Deletes a widget by ID.
      *

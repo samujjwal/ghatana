@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.backpressure;
 
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,12 +45,12 @@ import java.util.function.Supplier;
  *     .queueCapacity(1000)
  *     .strategy(BackpressureStrategy.ADAPTIVE)
  *     .build();
- * 
+ *
  * // Execute with backpressure
  * Promise<T> result = bp.execute(() -> {
  *     return expensiveOperation();
  * });
- * 
+ *
  * // Or with priority
  * Promise<T> result = bp.execute(Priority.HIGH, () -> {
  *     return criticalOperation();
@@ -65,7 +64,7 @@ import java.util.function.Supplier;
  */
 public class BackpressureManager {
     private static final Logger log = LoggerFactory.getLogger(BackpressureManager.class);
-    
+
     /**
      * Backpressure strategies.
      */
@@ -79,28 +78,28 @@ public class BackpressureManager {
         /** Dynamically adjust based on load */
         ADAPTIVE
     }
-    
+
     /**
      * Request priority levels.
      */
     public enum Priority {
         LOW(0), NORMAL(1), HIGH(2), CRITICAL(3);
-        
+
         private final int value;
-        
+
         Priority(int value) {
             this.value = value;
         }
-        
+
         public int getValue() { return value; }
     }
-    
+
     // Configuration
     private final int maxConcurrent;
     private final int queueCapacity;
     private final BackpressureStrategy strategy;
     private final Duration timeout;
-    
+
     // State
     private final Semaphore semaphore;
     private final BlockingQueue<PendingRequest<?>> pendingQueue;
@@ -109,7 +108,7 @@ public class BackpressureManager {
     private final AtomicLong droppedRequests;
     private final AtomicLong completedRequests;
     private final AtomicLong failedRequests;
-    
+
     // Adaptive state
     private volatile double currentLoadFactor;
     private volatile int adaptiveLimit;
@@ -125,22 +124,22 @@ public class BackpressureManager {
 
     // Metrics
     private final BackpressureMetrics metrics;
-    
+
     private BackpressureManager(Builder builder) {
         this.maxConcurrent = builder.maxConcurrent;
         this.queueCapacity = builder.queueCapacity;
         this.strategy = builder.strategy;
         this.timeout = builder.timeout;
-        
+
         this.semaphore = new Semaphore(maxConcurrent);
-        this.pendingQueue = new PriorityBlockingQueue<>(queueCapacity, 
+        this.pendingQueue = new PriorityBlockingQueue<>(queueCapacity,
             Comparator.comparingInt(r -> -r.priority.getValue()));
         this.activeRequests = new AtomicInteger(0);
         this.totalRequests = new AtomicLong(0);
         this.droppedRequests = new AtomicLong(0);
         this.completedRequests = new AtomicLong(0);
         this.failedRequests = new AtomicLong(0);
-        
+
         this.currentLoadFactor = 0.0;
         this.adaptiveLimit = maxConcurrent;
         this.metrics = new BackpressureMetrics(this);
@@ -164,7 +163,7 @@ public class BackpressureManager {
             this.adaptiveScheduler = null;
         }
     }
-    
+
     /**
      * Execute operation with backpressure control.
      *
@@ -174,7 +173,7 @@ public class BackpressureManager {
     public <T> Promise<T> execute(Supplier<Promise<T>> operation) {
         return execute(Priority.NORMAL, operation);
     }
-    
+
     /**
      * Execute operation with priority and backpressure control.
      *
@@ -184,7 +183,7 @@ public class BackpressureManager {
      */
     public <T> Promise<T> execute(Priority priority, Supplier<Promise<T>> operation) {
         totalRequests.incrementAndGet();
-        
+
         return switch (strategy) {
             case DROP -> executeWithDrop(priority, operation);
             case BUFFER -> executeWithBuffer(priority, operation);
@@ -192,7 +191,7 @@ public class BackpressureManager {
             case ADAPTIVE -> executeWithAdaptive(priority, operation);
         };
     }
-    
+
     /**
      * Execute synchronously with backpressure.
      *
@@ -202,7 +201,7 @@ public class BackpressureManager {
     public <T> T executeSync(Supplier<T> operation) throws BackpressureException {
         return executeSync(Priority.NORMAL, operation);
     }
-    
+
     /**
      * Execute synchronously with priority and backpressure.
      *
@@ -212,12 +211,12 @@ public class BackpressureManager {
      */
     public <T> T executeSync(Priority priority, Supplier<T> operation) throws BackpressureException {
         totalRequests.incrementAndGet();
-        
+
         if (!tryAcquire(priority)) {
             droppedRequests.incrementAndGet();
             throw new BackpressureException("System overloaded, request rejected");
         }
-        
+
         try {
             activeRequests.incrementAndGet();
             T result = operation.get();
@@ -231,25 +230,25 @@ public class BackpressureManager {
             semaphore.release();
         }
     }
-    
+
     // ==================== Strategy Implementations ====================
-    
+
     private <T> Promise<T> executeWithDrop(Priority priority, Supplier<Promise<T>> operation) {
         if (!semaphore.tryAcquire()) {
             droppedRequests.incrementAndGet();
-            log.warn("Request dropped due to backpressure (active: {}, max: {})", 
+            log.warn("Request dropped due to backpressure (active: {}, max: {})",
                 activeRequests.get(), maxConcurrent);
             return Promise.ofException(new BackpressureException("System overloaded, request dropped"));
         }
-        
+
         return executeWithSemaphore(operation);
     }
-    
+
     private <T> Promise<T> executeWithBuffer(Priority priority, Supplier<Promise<T>> operation) {
         if (semaphore.tryAcquire()) {
             return executeWithSemaphore(operation);
         }
-        
+
         // Try to queue
         if (pendingQueue.size() >= queueCapacity) {
             droppedRequests.incrementAndGet();
@@ -257,23 +256,23 @@ public class BackpressureManager {
                 pendingQueue.size(), queueCapacity);
             return Promise.ofException(new BackpressureException("Queue capacity exceeded"));
         }
-        
+
         // Add to queue and return promise
         CompletableFuture<T> future = new CompletableFuture<>();
         @SuppressWarnings("unchecked")
-        PendingRequest<T> request = new PendingRequest<>(priority, 
-            (Supplier<Promise<Object>>) (Supplier<?>) operation, 
+        PendingRequest<T> request = new PendingRequest<>(priority,
+            (Supplier<Promise<Object>>) (Supplier<?>) operation,
             (CompletableFuture<Object>) (CompletableFuture<?>) future);
-        
+
         pendingQueue.offer(request);
         log.debug("Request queued (queue size: {})", pendingQueue.size());
-        
+
         // Try to process queue
         processQueue();
-        
+
         return Promise.ofFuture(future);
     }
-    
+
     private <T> Promise<T> executeWithThrottle(Priority priority, Supplier<Promise<T>> operation) {
         // Offload the blocking semaphore wait to a dedicated thread pool so that the
         // ActiveJ Eventloop thread is never parked. The acquired permit is transferred
@@ -287,11 +286,11 @@ public class BackpressureManager {
             return null;
         }).then(ignored -> executeWithSemaphore(operation));
     }
-    
+
     private <T> Promise<T> executeWithAdaptive(Priority priority, Supplier<Promise<T>> operation) {
         // Use adaptive limit
         int currentLimit = Math.max(1, adaptiveLimit);
-        
+
         if (activeRequests.get() >= currentLimit) {
             // Check priority - critical always allowed
             if (priority != Priority.CRITICAL) {
@@ -299,7 +298,7 @@ public class BackpressureManager {
                     droppedRequests.incrementAndGet();
                     return Promise.ofException(new BackpressureException("Adaptive limit reached"));
                 }
-                
+
                 // Queue non-critical requests
                 CompletableFuture<T> future = new CompletableFuture<>();
                 @SuppressWarnings("unchecked")
@@ -311,7 +310,7 @@ public class BackpressureManager {
                 return Promise.ofFuture(future);
             }
         }
-        
+
         if (!semaphore.tryAcquire()) {
             // For CRITICAL priority, block until a permit is available — but do so
             // off the Eventloop thread to avoid stalling other in-flight promises.
@@ -327,22 +326,22 @@ public class BackpressureManager {
 
         return executeWithSemaphore(operation);
     }
-    
+
     private <T> Promise<T> executeWithSemaphore(Supplier<Promise<T>> operation) {
         activeRequests.incrementAndGet();
-        
+
         try {
             return operation.get()
                 .whenComplete((result, error) -> {
                     activeRequests.decrementAndGet();
                     semaphore.release();
-                    
+
                     if (error != null) {
                         failedRequests.incrementAndGet();
                     } else {
                         completedRequests.incrementAndGet();
                     }
-                    
+
                     // Process queued requests
                     processQueue();
                 });
@@ -353,7 +352,7 @@ public class BackpressureManager {
             return Promise.ofException(e);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private void processQueue() {
         while (!pendingQueue.isEmpty() && semaphore.tryAcquire()) {
@@ -362,15 +361,15 @@ public class BackpressureManager {
                 semaphore.release();
                 break;
             }
-            
+
             activeRequests.incrementAndGet();
-            
+
             try {
                 request.operation.get()
                     .whenComplete((result, error) -> {
                         activeRequests.decrementAndGet();
                         semaphore.release();
-                        
+
                         if (error != null) {
                             failedRequests.incrementAndGet();
                             request.future.completeExceptionally(error);
@@ -378,7 +377,7 @@ public class BackpressureManager {
                             completedRequests.incrementAndGet();
                             ((CompletableFuture<Object>) request.future).complete(result);
                         }
-                        
+
                         processQueue();
                     });
             } catch (Exception e) {
@@ -389,7 +388,7 @@ public class BackpressureManager {
             }
         }
     }
-    
+
     private boolean tryAcquire(Priority priority) {
         if (priority == Priority.CRITICAL) {
             try {
@@ -401,9 +400,9 @@ public class BackpressureManager {
         }
         return semaphore.tryAcquire();
     }
-    
+
     // ==================== Adaptive Monitoring ====================
-    
+
     private void startAdaptiveMonitoring() {
         adaptiveScheduler.scheduleAtFixedRate(() -> {
             try {
@@ -413,21 +412,21 @@ public class BackpressureManager {
             }
         }, 1, 1, TimeUnit.SECONDS);
     }
-    
+
     private void updateAdaptiveLimit() {
         // Calculate load factor
         int active = activeRequests.get();
         int queued = pendingQueue.size();
         long failed = failedRequests.get();
         long total = totalRequests.get();
-        
+
         double failRate = total > 0 ? (double) failed / total : 0;
         double utilization = (double) active / maxConcurrent;
         double queueUtilization = (double) queued / queueCapacity;
-        
+
         // Weighted load factor
         currentLoadFactor = (utilization * 0.5) + (queueUtilization * 0.3) + (failRate * 0.2);
-        
+
         // Adjust limit based on load
         if (currentLoadFactor > 0.9) {
             // High load - reduce limit
@@ -439,9 +438,9 @@ public class BackpressureManager {
             log.debug("Increasing adaptive limit to {} (load: {:.2f})", adaptiveLimit, currentLoadFactor);
         }
     }
-    
+
     // ==================== Status & Metrics ====================
-    
+
     /**
      * Get current backpressure status.
      *
@@ -462,7 +461,7 @@ public class BackpressureManager {
             strategy
         );
     }
-    
+
     /**
      * Get metrics collector.
      *
@@ -471,7 +470,7 @@ public class BackpressureManager {
     public BackpressureMetrics getMetrics() {
         return metrics;
     }
-    
+
     /**
      * Check if system is under pressure.
      *
@@ -480,7 +479,7 @@ public class BackpressureManager {
     public boolean isUnderPressure() {
         return currentLoadFactor > 0.7 || activeRequests.get() > (maxConcurrent * 0.9);
     }
-    
+
     /**
      * Check if system is healthy.
      *
@@ -489,7 +488,7 @@ public class BackpressureManager {
     public boolean isHealthy() {
         return !isUnderPressure() && semaphore.availablePermits() > 0;
     }
-    
+
     /**
      * Shutdown the backpressure manager.
      */
@@ -515,51 +514,51 @@ public class BackpressureManager {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     // ==================== Builder ====================
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private int maxConcurrent = 100;
         private int queueCapacity = 1000;
         private BackpressureStrategy strategy = BackpressureStrategy.ADAPTIVE;
         private Duration timeout = Duration.ofSeconds(30);
-        
+
         public Builder maxConcurrent(int maxConcurrent) {
             this.maxConcurrent = maxConcurrent;
             return this;
         }
-        
+
         public Builder queueCapacity(int queueCapacity) {
             this.queueCapacity = queueCapacity;
             return this;
         }
-        
+
         public Builder strategy(BackpressureStrategy strategy) {
             this.strategy = strategy;
             return this;
         }
-        
+
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
         }
-        
+
         public BackpressureManager build() {
             return new BackpressureManager(this);
         }
     }
-    
+
     // ==================== Inner Classes ====================
-    
+
     private static class PendingRequest<T> {
         final Priority priority;
         final Supplier<Promise<Object>> operation;
         final CompletableFuture<Object> future;
-        
+
         @SuppressWarnings("unchecked")
         PendingRequest(Priority priority, Supplier<Promise<Object>> operation, CompletableFuture<Object> future) {
             this.priority = priority;
@@ -567,7 +566,7 @@ public class BackpressureManager {
             this.future = future;
         }
     }
-    
+
     /**
      * Backpressure status information.
      */
@@ -587,15 +586,15 @@ public class BackpressureManager {
         public double getUtilization() {
             return (double) activeRequests / maxConcurrent;
         }
-        
+
         public double getQueueUtilization() {
             return (double) queuedRequests / queueCapacity;
         }
-        
+
         public double getSuccessRate() {
             return totalRequests > 0 ? (double) completedRequests / totalRequests : 1.0;
         }
-        
+
         public Map<String, Object> toMap() {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("active_requests", activeRequests);
@@ -615,17 +614,17 @@ public class BackpressureManager {
             return map;
         }
     }
-    
+
     /**
      * Metrics for backpressure monitoring.
      */
     public static class BackpressureMetrics {
         private final BackpressureManager manager;
-        
+
         BackpressureMetrics(BackpressureManager manager) {
             this.manager = manager;
         }
-        
+
         public int getActiveRequests() { return manager.activeRequests.get(); }
         public int getQueuedRequests() { return manager.pendingQueue.size(); }
         public long getTotalRequests() { return manager.totalRequests.get(); }

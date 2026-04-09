@@ -28,14 +28,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Integration template engine for generating cross-module integration code.
- * 
+ *
  * Supports integration types:
  * - API_CLIENT: Generate API client code for frontend-backend communication
  * - DATASOURCE: Generate database connection and repository code
  * - EVENT_STREAM: Generate event streaming integration
  * - SHARED_TYPES: Generate shared type definitions
  * - SERVICE_MESH: Generate service mesh configuration
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration template engine for cross-module code generation
  * @doc.layer platform
@@ -53,14 +53,14 @@ public class IntegrationTemplateEngine {
         this.templateEngine = templateEngine;
         this.integrationTemplatesPath = integrationTemplatesPath;
         this.templateSets = new HashMap<>();
-        
+
         // Load integration template sets
         loadIntegrationTemplateSets();
     }
 
     /**
      * Generate integration code between modules.
-     * 
+     *
      * @param integration integration definition
      * @param fromModule source module metadata
      * @param toModule target module metadata
@@ -73,8 +73,8 @@ public class IntegrationTemplateEngine {
             ModuleMetadata fromModule,
             ModuleMetadata toModule,
             Map<String, Object> variables) throws IntegrationException {
-        
-        log.info("Generating integration '{}' from '{}' to '{}'", 
+
+        log.info("Generating integration '{}' from '{}' to '{}'",
             integration.id(), integration.from(), integration.to());
 
         try {
@@ -123,16 +123,16 @@ public class IntegrationTemplateEngine {
             ModuleMetadata fromModule,
             ModuleMetadata toModule,
             Map<String, Object> variables) {
-        
+
         Map<String, Object> context = new HashMap<>(variables);
-        
+
         // Add integration metadata
         context.put("integration", Map.of(
             "id", integration.id(),
             "name", integration.name(),
             "type", integration.type().name()
         ));
-        
+
         // Add source module metadata
         context.put("from", Map.of(
             "id", fromModule.id(),
@@ -142,7 +142,7 @@ public class IntegrationTemplateEngine {
             "framework", fromModule.framework(),
             "outputs", fromModule.outputs()
         ));
-        
+
         // Add target module metadata
         context.put("to", Map.of(
             "id", toModule.id(),
@@ -152,12 +152,12 @@ public class IntegrationTemplateEngine {
             "framework", toModule.framework(),
             "outputs", toModule.outputs()
         ));
-        
+
         // Add integration-specific variables
         if (integration.variables() != null) {
             context.putAll(integration.variables());
         }
-        
+
         return context;
     }
 
@@ -167,17 +167,17 @@ public class IntegrationTemplateEngine {
     private GeneratedFile generateIntegrationFile(
             IntegrationTemplate template,
             Map<String, Object> context) throws TemplateException, IOException {
-        
+
         // Load template content
         Path templatePath = integrationTemplatesPath.resolve(template.templatePath());
         String templateContent = Files.readString(templatePath);
-        
+
         // Render template
         String content = templateEngine.render(templateContent, context);
-        
+
         // Resolve target path
         String targetPath = templateEngine.render(template.targetPath(), context);
-        
+
         return new GeneratedFile(
             template.name(),
             targetPath,

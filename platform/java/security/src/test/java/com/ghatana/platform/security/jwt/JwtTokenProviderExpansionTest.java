@@ -1,7 +1,6 @@
 package com.ghatana.platform.security.jwt;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,7 +14,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Phase 3 expansion: JWT token provider edge cases and advanced scenarios.
@@ -147,7 +145,7 @@ class JwtTokenProviderExpansionTest extends EventloopTestBase {
                     try {
                         String token = provider.createToken("user-" + index, List.of("USER"), null);
                         String previous = tokens.putIfAbsent(token, "user-" + index);
-                        
+
                         if (previous == null && provider.validateToken(token)) {
                             validTokenCount.incrementAndGet();
                         }
@@ -193,7 +191,7 @@ class JwtTokenProviderExpansionTest extends EventloopTestBase {
         @DisplayName("Token with empty role list can still be validated")
         void emptyRolesValidation() {
             String token = provider.createToken("user-1", List.of(), null);
-            
+
             assertThat(provider.validateToken(token)).isTrue();
             assertThat(provider.getRolesFromToken(token)).isEmpty();
             assertThat(provider.getUserIdFromToken(token))

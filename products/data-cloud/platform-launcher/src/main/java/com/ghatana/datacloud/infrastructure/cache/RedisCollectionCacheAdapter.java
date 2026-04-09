@@ -7,7 +7,6 @@ import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScanCursor;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -15,11 +14,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ForkJoinPool;
 
-import java.time.Duration;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Redis cache adapter for MetaCollection objects using Lettuce.

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Manages task delegation from one agent to another.
  * Handles agent discovery, task routing, and result aggregation.
- * 
+ *
  * <p><b>Responsibilities:</b>
  * <ul>
  *   <li>Find suitable agents for tasks</li>
@@ -16,11 +16,11 @@ import java.util.List;
  *   <li>Track delegation status</li>
  *   <li>Aggregate results</li>
  * </ul>
- * 
+ *
  * <p><b>Example:</b>
  * <pre>{@code
  * DelegationManager delegationMgr = ...;
- * 
+ *
  * // Delegate task to specialist
  * Promise<Result> result = delegationMgr.delegate(
  *     DelegationRequest.builder()
@@ -32,17 +32,17 @@ import java.util.List;
  *     context
  * );
  * }</pre>
- * 
+ *
  * @doc.type interface
  * @doc.purpose Agent task delegation management
  * @doc.layer framework
  * @doc.pattern Mediator
  */
 public interface DelegationManager {
-    
+
     /**
      * Delegates a task to another agent.
-     * 
+     *
      * @param request Delegation request
      * @param context Execution context
      * @param <TResult> Result type
@@ -52,10 +52,10 @@ public interface DelegationManager {
     <TResult> Promise<TResult> delegate(
         @NotNull DelegationRequest<TResult> request,
         @NotNull com.ghatana.agent.framework.api.AgentContext context);
-    
+
     /**
      * Delegates tasks to multiple agents in parallel.
-     * 
+     *
      * @param requests List of delegation requests
      * @param context Execution context
      * @param <TResult> Result type
@@ -65,10 +65,10 @@ public interface DelegationManager {
     <TResult> Promise<List<TResult>> delegateParallel(
         @NotNull List<DelegationRequest<TResult>> requests,
         @NotNull com.ghatana.agent.framework.api.AgentContext context);
-    
+
     /**
      * Finds agents matching criteria.
-     * 
+     *
      * @param criteria Search criteria
      * @param context Execution context
      * @return Promise of matching agents
@@ -77,10 +77,10 @@ public interface DelegationManager {
     Promise<List<AgentInfo>> findAgents(
         @NotNull AgentCriteria criteria,
         @NotNull com.ghatana.agent.framework.api.AgentContext context);
-    
+
     /**
      * Gets status of a delegation.
-     * 
+     *
      * @param delegationId Delegation ID
      * @param context Execution context
      * @return Promise of delegation status
@@ -89,10 +89,10 @@ public interface DelegationManager {
     Promise<DelegationStatus> getStatus(
         @NotNull String delegationId,
         @NotNull com.ghatana.agent.framework.api.AgentContext context);
-    
+
     /**
      * Cancels a pending delegation.
-     * 
+     *
      * @param delegationId Delegation ID
      * @param context Execution context
      * @return Promise of cancellation result

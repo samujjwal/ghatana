@@ -1,6 +1,5 @@
 package com.ghatana.products.finance.domains.posttrade.service;
 
-import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;

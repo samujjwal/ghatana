@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Server
  */
 public class YappcHttpServer extends HttpServerLauncher {
-    
+
     private static final Logger log = LoggerFactory.getLogger(YappcHttpServer.class);
-    
+
     @Provides
     AsyncServlet servlet(
             Eventloop eventloop,
@@ -30,32 +30,32 @@ public class YappcHttpServer extends HttpServerLauncher {
             ShapeApiController shapeController,
             ValidationApiController validationController,
             GenerationApiController generationController) {
-        
+
         return RoutingServlet.builder(eventloop)
                 // Health check
-                .with(HttpMethod.GET, "/health", request -> 
+                .with(HttpMethod.GET, "/health", request ->
                     Promise.of(HttpResponse.ok200().withPlainText("OK").build()))
-                
+
                 // Intent endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/intent/capture", authFilter.secure(intentController::captureIntent))
                 .with(HttpMethod.POST, "/api/v1/yappc/intent/analyze", authFilter.secure(intentController::analyzeIntent))
                 .with(HttpMethod.GET, "/api/v1/yappc/intent/:id", authFilter.secure(intentController::getIntent))
-                
+
                 // Shape endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/shape/derive", authFilter.secure(shapeController::deriveShape))
                 .with(HttpMethod.POST, "/api/v1/yappc/shape/model", authFilter.secure(shapeController::generateSystemModel))
                 .with(HttpMethod.GET, "/api/v1/yappc/shape/:id", authFilter.secure(shapeController::getShape))
-                
+
                 // Validation endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/validate", authFilter.secure(validationController::validate))
                 .with(HttpMethod.POST, "/api/v1/yappc/validate/with-config", authFilter.secure(validationController::validateWithConfig))
                 .with(HttpMethod.POST, "/api/v1/yappc/validate/with-policy", authFilter.secure(validationController::validateWithPolicy))
-                
+
                 // Generation endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/generate", authFilter.secure(generationController::generateArtifacts))
                 .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", authFilter.secure(generationController::regenerateWithDiff))
                 .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", authFilter.secure(generationController::getArtifacts))
-                
+
                 // API info
                 .with(HttpMethod.GET, "/api/v1/yappc/info", request ->
                     Promise.of(HttpResponse.ok200().withJson("""
@@ -72,7 +72,7 @@ public class YappcHttpServer extends HttpServerLauncher {
     YappcApiAuthFilter yappcApiAuthFilter() {
         return YappcApiAuthFilter.fromEnvironment();
     }
-    
+
     public static void main(String[] args) throws Exception {
         log.info("Starting YAPPC HTTP Server...");
         Launcher launcher = new YappcHttpServer();

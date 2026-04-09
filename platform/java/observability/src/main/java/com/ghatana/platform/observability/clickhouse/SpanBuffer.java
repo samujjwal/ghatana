@@ -26,11 +26,11 @@ import java.util.*;
  * <pre>{@code
  * // Example 1: Basic buffer usage with size-based flush
  * SpanBuffer buffer = new SpanBuffer(5000, Duration.ofSeconds(5));
- * 
+ *
  * // Add spans one by one
  * for (SpanData span : incomingSpans) {
  *     buffer.add(span);
- *     
+ *
  *     // Check if flush needed (size trigger)
  *     if (buffer.shouldFlush()) {
  *         List<SpanData> batch = buffer.flush();
@@ -44,7 +44,7 @@ import java.util.*;
  * <pre>{@code
  * // Example 2: Time-based flush (periodic background task)
  * SpanBuffer buffer = new SpanBuffer(10000, Duration.ofSeconds(30));
- * 
+ *
  * // Background flush task (every 1 second)
  * scheduler.scheduleAtFixedRate(() -> {
  *     if (buffer.shouldFlush()) {
@@ -55,14 +55,14 @@ import java.util.*;
  *         }
  *     }
  * }, 0, 1, TimeUnit.SECONDS);
- * 
+ *
  * // Flush happens after 30s even if only 100 spans buffered
  * }</pre>
  *
  * <pre>{@code
  * // Example 3: Manual flush on shutdown
  * SpanBuffer buffer = new SpanBuffer(5000, Duration.ofSeconds(5));
- * 
+ *
  * // Shutdown hook
  * Runtime.getRuntime().addShutdownHook(new Thread(() -> {
  *     List<SpanData> remaining = buffer.flush();
@@ -80,7 +80,7 @@ import java.util.*;
  *     10000,                        // Flush after 10k spans
  *     Duration.ofSeconds(5)         // Or after 5 seconds
  * );
- * 
+ *
  * // Memory usage: ~10k spans * ~2KB = ~20MB buffer
  * // Typical flush: Every 5s at 50k spans/sec = 250k spans → 25 batches
  * }</pre>
@@ -92,7 +92,7 @@ import java.util.*;
  *     1000,                         // Flush after 1k spans
  *     Duration.ofSeconds(2)         // Or after 2 seconds
  * );
- * 
+ *
  * // Spans persisted within 2s maximum (vs 30s with large buffer)
  * }</pre>
  *
@@ -153,34 +153,34 @@ import java.util.*;
  * @doc.pattern Buffer
  */
 public class SpanBuffer {
-    
+
     /**
      * Logger for buffer operations and flush events.
      */
     private static final Logger LOG = LoggerFactory.getLogger(SpanBuffer.class);
-    
+
     /**
      * Internal span accumulation list (mutable).
      * Pre-sized to maxSize to avoid reallocation.
      */
     private final List<SpanData> buffer;
-    
+
     /**
      * Maximum buffer size (size-based flush trigger).
      */
     private final int maxSize;
-    
+
     /**
      * Maximum time interval before forced flush (time-based flush trigger).
      */
     private final Duration flushInterval;
-    
+
     /**
      * Timestamp of last flush operation (used for time-based trigger calculation).
      * Updated on every flush() call.
      */
     private Instant lastFlushTime;
-    
+
     /**
      * Constructs a SpanBuffer with configured batch size and flush interval.
      * <p>
@@ -199,7 +199,7 @@ public class SpanBuffer {
         this.flushInterval = Objects.requireNonNull(flushInterval, "Flush interval cannot be null");
         this.lastFlushTime = Instant.now();
     }
-    
+
     /**
      * Adds a span to the buffer.
      * <p>
@@ -227,7 +227,7 @@ public class SpanBuffer {
         }
         buffer.add(span);
     }
-    
+
     /**
      * Checks if the buffer should be flushed based on size or time triggers.
      * <p>
@@ -249,11 +249,11 @@ public class SpanBuffer {
         if (buffer.size() >= maxSize) {
             return true;
         }
-        
+
         Duration elapsed = Duration.between(lastFlushTime, Instant.now());
         return elapsed.compareTo(flushInterval) >= 0;
     }
-    
+
     /**
      * Flushes the buffer and returns its contents.
      * <p>
@@ -280,7 +280,7 @@ public class SpanBuffer {
         LOG.debug("Flushed {} spans from buffer", flushed.size());
         return flushed;
     }
-    
+
     /**
      * Checks if the buffer is empty (no buffered spans).
      *
@@ -290,7 +290,7 @@ public class SpanBuffer {
     public boolean isEmpty() {
         return buffer.isEmpty();
     }
-    
+
     /**
      * Gets the current number of buffered spans.
      *

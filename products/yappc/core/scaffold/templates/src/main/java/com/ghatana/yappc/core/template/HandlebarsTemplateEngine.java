@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Full Handlebars template engine implementation with advanced features.
- * 
+ *
  * Provides:
  * - Conditional rendering (if/unless/each/with)
  * - Partial templates support
@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * - Template inheritance
  * - Custom helpers
  * - Expression evaluation
- * 
+ *
  * @doc.type class
  * @doc.purpose Full-featured Handlebars template engine for YAPPC scaffolding
  * @doc.layer platform
@@ -70,19 +70,19 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
     public HandlebarsTemplateEngine(Path templateBasePath) {
         this.objectMapper = JsonUtils.getDefaultMapper();
         this.customHelpers = new HashMap<>();
-        
+
         // Configure Handlebars
-        TemplateLoader loader = templateBasePath != null 
+        TemplateLoader loader = templateBasePath != null
             ? new FileTemplateLoader(templateBasePath.toFile())
             : new FileTemplateLoader(".", "");
-        
+
         this.handlebars = new Handlebars(loader);
         this.handlebars.setPrettyPrint(true);
         this.handlebars.setInfiniteLoops(false);
-        
+
         // Register default helpers
         registerDefaultHelpers();
-        
+
         log.info("HandlebarsTemplateEngine initialized");
     }
 
@@ -121,7 +121,7 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
     @Override
     public void registerHelper(String name, TemplateHelper helper) {
         customHelpers.put(name, helper);
-        
+
         // Register with Handlebars
         handlebars.registerHelper(name, new Helper<Object>() {
             @Override
@@ -130,7 +130,7 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
                 return helper.apply(context, helperOptions);
             }
         });
-        
+
         log.debug("Registered custom helper: {}", name);
     }
 
@@ -141,7 +141,7 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
 
     /**
      * Register a Handlebars partial template.
-     * 
+     *
      * @param name partial name
      * @param content partial content
      * @throws TemplateException if registration fails
@@ -246,7 +246,7 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
         });
 
         // Date/time helpers
-        registerHelper("year", (context, options) -> 
+        registerHelper("year", (context, options) ->
             String.valueOf(Year.now().getValue()));
 
         registerHelper("date", (context, options) -> {
@@ -255,7 +255,7 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
         });
 
         // Utility helpers
-        registerHelper("uuid", (context, options) -> 
+        registerHelper("uuid", (context, options) ->
             UUID.randomUUID().toString());
 
         registerHelper("json", (context, options) -> {

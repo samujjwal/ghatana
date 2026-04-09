@@ -56,7 +56,7 @@ public class WindowOperator extends AbstractStreamOperator {
         this.aggregator = Objects.requireNonNull(aggregator, "Aggregator must not be null");
         this.windows = new ConcurrentHashMap<>();
         this.windowStartTimes = new ConcurrentHashMap<>();
-        
+
         if (windowSize.isNegative() || windowSize.isZero()) {
             throw new IllegalArgumentException("Window size must be positive");
         }
@@ -73,23 +73,23 @@ public class WindowOperator extends AbstractStreamOperator {
     @Override
     public Promise<OperatorResult> process(Event event) {
         Objects.requireNonNull(event, "Event must not be null");
-        
+
         try {
             long eventTime = event.getTimestamp().toEpochMilli();
             String windowKey = calculateWindowKey(eventTime);
-            
+
             // Get or create window
             List<Event> window = windows.computeIfAbsent(windowKey, k -> {
                 windowStartTimes.put(k, eventTime);
                 return new ArrayList<>();
             });
-            
+
             window.add(event);
-            
+
             // Check if window is complete (reached window end time)
             long windowStart = windowStartTimes.get(windowKey);
             long windowEnd = windowStart + windowSize.toMillis();
-            
+
             if (eventTime >= windowEnd) {
                 // Window is complete, emit aggregated result
                 Event aggregated = aggregator.apply(new ArrayList<>(window));
@@ -125,20 +125,20 @@ public class WindowOperator extends AbstractStreamOperator {
         payload.put("name", getName());
         payload.put("version", getVersion());
         payload.put("description", getDescription());
-        
+
         Map<String, Object> config = new HashMap<>();
         config.put("windowSizeMs", windowSize.toMillis());
         config.put("slideSizeMs", slideSize.toMillis());
         config.put("windowType", windowSize.equals(slideSize) ? "tumbling" : "sliding");
         payload.put("config", config);
-        
+
         List<String> capabilities = List.of("stream.window", "event.aggregate");
         payload.put("capabilities", capabilities);
-        
+
         Map<String, String> headers = new HashMap<>();
         headers.put("operatorId", getId().toString());
         headers.put("tenantId", getId().getNamespace());
-        
+
         return GEvent.builder()
             .type("operator.registered")
             .headers(headers)

@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
@@ -49,7 +48,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     @DisplayName("[D006]: write_with_leader_ack_achieves_durability")
     void writeWithLeaderAckAchievesDurability() {
         EventDurabilityService.Event event = new EventDurabilityService.Event(
-            "evt-001", "test.event", "tenant-alpha", 
+            "evt-001", "test.event", "tenant-alpha",
             "{\"data\":\"test\"}".getBytes(), System.currentTimeMillis()
         );
 

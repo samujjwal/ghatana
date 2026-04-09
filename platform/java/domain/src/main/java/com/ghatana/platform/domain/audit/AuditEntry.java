@@ -182,7 +182,7 @@ public class AuditEntry implements Serializable, Comparable<AuditEntry> {
     public int compareTo(AuditEntry other) {
         return Long.compare(this.timestamp, other.timestamp);
     }
-    
+
     /**
      * Creates a new instance of AuditEntry with the specified notes.
      *

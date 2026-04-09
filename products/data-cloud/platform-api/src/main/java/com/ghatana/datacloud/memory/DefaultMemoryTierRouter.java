@@ -53,16 +53,16 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * <h2>Usage Example</h2>
- * 
+ *
  * <pre>{@code
  * MemoryTierRouter<EventRecord> router = new DefaultMemoryTierRouter<>();
- * 
+ *
  * // Route a record
  * SalienceScore score = SalienceScore.builder()
  *         .overallScore(0.85)
  *         .priorityLevel(SalienceScore.PriorityLevel.HIGH)
  *         .build();
- * 
+ *
  * router.route(eventRecord, score)
  *         .whenResult(result -> {
  *             System.out.println("Placed in: " + result.targetTier());

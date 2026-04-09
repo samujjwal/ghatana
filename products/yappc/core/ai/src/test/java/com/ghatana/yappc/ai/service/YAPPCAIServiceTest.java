@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Test suite for YAPPCAIService.
- * 
+ *
  * @doc.type test
  * @doc.purpose AI service functionality validation
  */

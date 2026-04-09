@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Configuration-aware collection service that integrates YAML-based configs
@@ -429,7 +427,7 @@ public class ConfigAwareCollectionService {
      */
     public record ValidationResult(boolean valid, List<ValidationError> errors) {
 
-        
+
 
     public boolean isValid() {
         return valid;

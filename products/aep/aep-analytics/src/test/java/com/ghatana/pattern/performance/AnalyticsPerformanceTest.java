@@ -25,7 +25,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should handle high throughput")
     void shouldHandleHighThroughput() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should measure processing latency")
     void shouldMeasureProcessingLatency() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should monitor resource usage")
     void shouldMonitorResourceUsage() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should handle concurrent queries")
     void shouldHandleConcurrentQueries() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should optimize query performance")
     void shouldOptimizeQueryPerformance() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class AnalyticsPerformanceTest {
     @DisplayName("Should handle performance degradation")
     void shouldHandlePerformanceDegradation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

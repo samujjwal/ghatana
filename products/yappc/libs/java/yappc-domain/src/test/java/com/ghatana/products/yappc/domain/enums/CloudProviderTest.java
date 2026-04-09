@@ -208,7 +208,7 @@ class CloudProviderTest {
         @DisplayName("fromShortCode handles null gracefully")
         void fromShortCodeHandlesNull() {
             // Depending on implementation, this may throw or return OTHER
-            // Based on the current implementation, it will iterate and compare, 
+            // Based on the current implementation, it will iterate and compare,
             // which will fail on null.equalsIgnoreCase()
             // If the implementation doesn't handle null, we should catch NPE
             try {

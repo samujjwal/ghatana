@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 */
 public class OidcSessionManager implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(OidcSessionManager.class);
-    
+
     private final Cache<String, OidcSession> sessionCache;
     private final Map<String, String> userSessionMap = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler;
@@ -72,7 +72,7 @@ public class OidcSessionManager implements AutoCloseable {
     public OidcSessionManager(Duration sessionTimeout, TokenRevocationHandler revocationHandler) {
         this.sessionTimeout = Objects.requireNonNull(sessionTimeout, "sessionTimeout cannot be null");
         this.revocationHandler = revocationHandler;
-        
+
         // Initialize the session cache with the specified timeout
         this.sessionCache = Caffeine.newBuilder()
             .expireAfterAccess(sessionTimeout)
@@ -81,27 +81,27 @@ public class OidcSessionManager implements AutoCloseable {
                     OidcSession session = (OidcSession) value;
                     logger.debug("Session {} expired for user {}", key, session.getUserId());
                     userSessionMap.remove(session.getUserId(), key);
-                    
+
                     // Revoke tokens on session expiry
                     revokeSessionTokens(session);
                 }
             })
             .build();
-            
+
         // Initialize the scheduler for background tasks
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "oidc-session-cleanup");
             t.setDaemon(true);
             return t;
         });
-        
+
         // Schedule periodic cleanup of expired sessions
         this.scheduler.scheduleAtFixedRate(
             this::cleanupExpiredSessions,
             1, 1, TimeUnit.HOURS
         );
     }
-    
+
     /**
      * Create a new session for the user.
      *
@@ -116,10 +116,10 @@ public class OidcSessionManager implements AutoCloseable {
         Objects.requireNonNull(user, "User cannot be null");
         Objects.requireNonNull(idToken, "ID token cannot be null");
         Objects.requireNonNull(accessToken, "Access token cannot be null");
-        
+
         // Generate a new session ID
         String sessionId = generateSessionId();
-        
+
         // Create a new session
         OidcSession session = new OidcSession(
             sessionId,  // Add sessionId as the first parameter
@@ -131,24 +131,24 @@ public class OidcSessionManager implements AutoCloseable {
             Instant.now(),
             Instant.now().plus(sessionTimeout)
         );
-        
+
         // Invalidate any existing session for this user
         String existingSessionId = userSessionMap.get(user.getUserId());
         if (existingSessionId != null) {
             logger.debug("Invalidating existing session {} for user {}", existingSessionId, user.getUserId());
             sessionCache.invalidate(existingSessionId);
         }
-        
+
         // Store the new session
         sessionCache.put(sessionId, session);
         userSessionMap.put(user.getUserId(), sessionId);
-        
-        logger.info("Created new session {} for user {} (expires: {})", 
+
+        logger.info("Created new session {} for user {} (expires: {})",
             sessionId, user.getUserId(), session.getExpiresAt());
-            
+
         return sessionId;
     }
-    
+
     /**
      * Get a session by ID asynchronously.
      *
@@ -158,7 +158,7 @@ public class OidcSessionManager implements AutoCloseable {
     public Promise<Optional<OidcSession>> getSessionAsync(String sessionId) {
         return Promise.of(getSession(sessionId));
     }
-    
+
     /**
      * Get a session by ID.
      *
@@ -169,25 +169,25 @@ public class OidcSessionManager implements AutoCloseable {
         if (sessionId == null || sessionId.isEmpty()) {
             return Optional.empty();
         }
-        
+
         OidcSession session = sessionCache.getIfPresent(sessionId);
         if (session == null) {
             return Optional.empty();
         }
-        
+
         // Check if the session is expired
         if (session.getExpiresAt().isBefore(Instant.now())) {
             logger.debug("Session {} is expired", sessionId);
             sessionCache.invalidate(sessionId);
             return Optional.empty();
         }
-        
+
         // Update last accessed time
         session.setLastAccessed(Instant.now());
-        
+
         return Optional.of(session);
     }
-    
+
     /**
      * Get a session by user ID.
      *
@@ -201,7 +201,7 @@ public class OidcSessionManager implements AutoCloseable {
         }
         return getSession(sessionId);
     }
-    
+
     /**
      * Invalidate a session asynchronously.
      *
@@ -211,7 +211,7 @@ public class OidcSessionManager implements AutoCloseable {
     public Promise<Boolean> invalidateSessionAsync(String sessionId) {
         return Promise.of(invalidateSession(sessionId));
     }
-    
+
     /**
      * Invalidate a session.
      *
@@ -222,22 +222,22 @@ public class OidcSessionManager implements AutoCloseable {
         if (sessionId == null || sessionId.isEmpty()) {
             return false;
         }
-        
+
         OidcSession session = sessionCache.getIfPresent(sessionId);
         if (session != null) {
             logger.debug("Invalidating session {} for user {}", sessionId, session.getUserId());
             sessionCache.invalidate(sessionId);
             userSessionMap.remove(session.getUserId(), sessionId);
-            
+
             // Revoke tokens associated with the session
             revokeSessionTokens(session);
-            
+
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Invalidate all sessions for a user.
      *
@@ -248,16 +248,16 @@ public class OidcSessionManager implements AutoCloseable {
         if (userId == null || userId.isEmpty()) {
             return 0;
         }
-        
+
         String sessionId = userSessionMap.remove(userId);
         if (sessionId != null) {
             sessionCache.invalidate(sessionId);
             return 1;
         }
-        
+
         return 0;
     }
-    
+
     /**
      * Clean up expired sessions.
      * This is called periodically by the scheduler.
@@ -270,7 +270,7 @@ public class OidcSessionManager implements AutoCloseable {
             logger.error("Error during session cleanup", e);
         }
     }
-    
+
     /**
      * Invalidate all sessions for a user.
      *
@@ -282,7 +282,7 @@ public class OidcSessionManager implements AutoCloseable {
             invalidateSession(sessionId);
         }
     }
-    
+
     /**
      * Refresh a session with new tokens.
      *
@@ -303,12 +303,12 @@ public class OidcSessionManager implements AutoCloseable {
                 session.getCreatedAt(),
                 Instant.now().plus(sessionTimeout)
             );
-            
+
             sessionCache.put(sessionId, refreshedSession);
             return refreshedSession;
         });
     }
-    
+
     /**
      * Get the number of active sessions.
      *
@@ -317,10 +317,10 @@ public class OidcSessionManager implements AutoCloseable {
     public long getActiveSessionCount() {
         return sessionCache.estimatedSize();
     }
-    
+
     /**
      * Generate a new session ID.
-     * 
+     *
      * @return A new unique session ID
      */
     private String generateSessionId() {
@@ -371,7 +371,7 @@ public class OidcSessionManager implements AutoCloseable {
             logger.error("Error during shutdown", e);
         }
     }
-    
+
     /**
      * Represents an OIDC session with user authentication details and token information.
      */
@@ -527,7 +527,7 @@ public class OidcSessionManager implements AutoCloseable {
                     '}';
         }
     }
-    
+
     /**
      * Exception thrown when an OIDC session operation fails.
      */

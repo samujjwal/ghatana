@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for integration tests that require both HTTP and gRPC access to the service-server.
- 
+
  * @doc.type class
  * @doc.purpose Handles integration test support operations
  * @doc.layer core

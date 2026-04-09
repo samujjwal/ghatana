@@ -82,37 +82,37 @@ import java.util.concurrent.atomic.AtomicReference;
  * @doc.pattern Singleton, Registry
  */
 public final class MetricsRegistry {
-    
+
     /**
      * Singleton instance holder using AtomicReference for thread-safe initialization.
      */
     private static final AtomicReference<MetricsRegistry> INSTANCE = new AtomicReference<>();
-    
+
     /**
      * Micrometer MeterRegistry for JVM-based metrics collection.
      */
     private final MeterRegistry meterRegistry;
-    
+
     /**
      * OpenTelemetry Meter for OTLP-based metrics export.
      */
     private final Meter otelMeter;
-    
+
     /**
      * Service name for common tags (e.g., "ingress", "validation").
      */
     private final String serviceName;
-    
+
     /**
      * Environment name for common tags (e.g., "prod", "staging", "dev").
      */
     private final String environment;
-    
+
     /**
      * Service version for common tags (e.g., "1.0.0").
      */
     private final String version;
-    
+
     /**
      * Private constructor to enforce singleton pattern.
      *
@@ -124,7 +124,7 @@ public final class MetricsRegistry {
      * @param environment the environment (e.g., "prod")
      * @param version the service version (e.g., "1.0.0")
      */
-    private MetricsRegistry(MeterRegistry meterRegistry, OpenTelemetry openTelemetry, 
+    private MetricsRegistry(MeterRegistry meterRegistry, OpenTelemetry openTelemetry,
                            String serviceName, String environment, String version) {
         this.meterRegistry = meterRegistry;
         this.otelMeter = openTelemetry.getMeterProvider()
@@ -135,7 +135,7 @@ public final class MetricsRegistry {
         this.environment = environment;
         this.version = version;
     }
-    
+
     /**
      * Initializes the global metrics registry.
      *
@@ -151,17 +151,17 @@ public final class MetricsRegistry {
      * @param version the service version (e.g., "1.0.0")
      * @return the initialized MetricsRegistry instance
      */
-    public static synchronized MetricsRegistry initialize(MeterRegistry meterRegistry, 
+    public static synchronized MetricsRegistry initialize(MeterRegistry meterRegistry,
                                                          OpenTelemetry openTelemetry,
-                                                         String serviceName, 
-                                                         String environment, 
+                                                         String serviceName,
+                                                         String environment,
                                                          String version) {
-        MetricsRegistry registry = new MetricsRegistry(meterRegistry, openTelemetry, 
+        MetricsRegistry registry = new MetricsRegistry(meterRegistry, openTelemetry,
                                                       serviceName, environment, version);
         INSTANCE.set(registry);
         return registry;
     }
-    
+
     /**
      * Gets the global metrics registry instance.
      *
@@ -177,7 +177,7 @@ public final class MetricsRegistry {
         }
         return registry;
     }
-    
+
     /**
      * Creates common tags for all metrics.
      *
@@ -192,18 +192,18 @@ public final class MetricsRegistry {
             "version", version
         );
     }
-    
+
     // ============================================================================
     // Ingress Module Metrics
     // ============================================================================
-    
+
     public Counter ingressRequestsTotal(String method, String endpoint) {
         return Counter.builder("ingress.requests.total")
             .description("Total HTTP requests received")
             .tags(commonTags().and("method", method, "endpoint", endpoint))
             .register(meterRegistry);
     }
-    
+
     public Timer ingressLatency(String method, String endpoint) {
         return Timer.builder("ingress.latency")
             .description("Request processing latency")
@@ -211,23 +211,23 @@ public final class MetricsRegistry {
             .publishPercentiles(0.5, 0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     public Counter ingressAuthFailures() {
         return Counter.builder("ingress.auth.failures.total")
             .description("Authentication failures")
             .tags(commonTags())
             .register(meterRegistry);
     }
-    
+
     public Counter ingressRateLimitHits() {
         return Counter.builder("ingress.rate_limit.hits.total")
             .description("Rate limit violations")
             .tags(commonTags())
             .register(meterRegistry);
     }
-    
+
     // EventLog Module Metrics
-    
+
     public Timer eventlogAppendLatency(String partitionId) {
         return Timer.builder("eventlog.append.latency")
             .description("Event append latency")
@@ -235,51 +235,51 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     public Counter eventlogAppendTotal(String partitionId) {
         return Counter.builder("eventlog.append.total")
             .description("Total events appended")
             .tags(commonTags().and("partition_id", partitionId))
             .register(meterRegistry);
     }
-    
+
     public Counter eventlogAppendFailures(String partitionId) {
         return Counter.builder("eventlog.append.failures.total")
             .description("Failed append operations")
             .tags(commonTags().and("partition_id", partitionId))
             .register(meterRegistry);
     }
-    
+
     public Gauge eventlogBacklogSize(String partitionId, java.util.function.Supplier<Number> valueSupplier) {
         return Gauge.builder("eventlog.backlog.size", valueSupplier)
             .description("Current backlog size per partition")
             .tags(commonTags().and("partition_id", partitionId))
             .register(meterRegistry);
     }
-    
+
     // Validation Module Metrics
-    
+
     public Counter validationEventsProcessed(String eventType) {
         return Counter.builder("validation.events.processed.total")
             .description("Events processed")
             .tags(commonTags().and("event_type", eventType))
             .register(meterRegistry);
     }
-    
+
     public Counter validationEventsPassed(String eventType) {
         return Counter.builder("validation.events.passed.total")
             .description("Events that passed validation")
             .tags(commonTags().and("event_type", eventType))
             .register(meterRegistry);
     }
-    
+
     public Counter validationEventsFailed(String eventType, String reason) {
         return Counter.builder("validation.events.failed.total")
             .description("Events that failed validation")
             .tags(commonTags().and("event_type", eventType, "reason", reason))
             .register(meterRegistry);
     }
-    
+
     public Timer validationLatency(String eventType) {
         return Timer.builder("validation.latency")
             .description("Validation processing latency")
@@ -287,9 +287,9 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     // AI-specific metrics (Phase 1)
-    
+
     public Timer validationVectorizationLatency(String modelId) {
         return Timer.builder("validation.vectorization.latency")
             .description("Vectorization processing time")
@@ -297,14 +297,14 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     public Counter validationVectorizationErrors(String modelId, String errorType) {
         return Counter.builder("validation.vectorization.errors.total")
             .description("Vectorization failures")
             .tags(commonTags().and("model_id", modelId, "error_type", errorType))
             .register(meterRegistry);
     }
-    
+
     public Timer validationSimilaritySearchLatency() {
         return Timer.builder("validation.similarity.search.latency")
             .description("Similarity search latency")
@@ -312,23 +312,23 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     // Pattern Module Metrics
-    
+
     public Counter patternEvaluationsTotal(String patternId) {
         return Counter.builder("pattern.evaluations.total")
             .description("Pattern evaluations performed")
             .tags(commonTags().and("pattern_id", patternId))
             .register(meterRegistry);
     }
-    
+
     public Counter patternMatchesTotal(String patternId) {
         return Counter.builder("pattern.matches.total")
             .description("Pattern matches found")
             .tags(commonTags().and("pattern_id", patternId))
             .register(meterRegistry);
     }
-    
+
     public Timer patternEngineLatency(String patternType) {
         return Timer.builder("pattern.engine.latency")
             .description("Pattern engine processing latency")
@@ -336,55 +336,55 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     // Routing Module Metrics
-    
+
     public Counter routingDeliveriesTotal(String endpointType) {
         return Counter.builder("routing.deliveries.total")
             .description("Delivery attempts")
             .tags(commonTags().and("endpoint_type", endpointType))
             .register(meterRegistry);
     }
-    
+
     public Counter routingDeliveriesSuccess(String endpointType) {
         return Counter.builder("routing.deliveries.success.total")
             .description("Successful deliveries")
             .tags(commonTags().and("endpoint_type", endpointType))
             .register(meterRegistry);
     }
-    
+
     public Counter routingDeliveriesFailed(String endpointType, String reason) {
         return Counter.builder("routing.deliveries.failed.total")
             .description("Failed deliveries")
             .tags(commonTags().and("endpoint_type", endpointType, "reason", reason))
             .register(meterRegistry);
     }
-    
+
     public Gauge routingDlqSize(String endpointType, java.util.function.Supplier<Number> valueSupplier) {
         return Gauge.builder("routing.dlq.size", valueSupplier)
             .description("Dead letter queue size")
             .tags(commonTags().and("endpoint_type", endpointType))
             .register(meterRegistry);
     }
-    
+
     // Observability Module Metrics
-    
+
     public Counter obsAnomalySignals(String detectorType) {
         return Counter.builder("obs.anomaly.signals.total")
             .description("Anomaly signals detected")
             .tags(commonTags().and("detector_type", detectorType))
             .register(meterRegistry);
     }
-    
+
     public Counter obsAlertsTotal(String alertType, String severity) {
         return Counter.builder("obs.alerts.fired.total")
             .description("Alerts fired")
             .tags(commonTags().and("alert_type", alertType, "severity", severity))
             .register(meterRegistry);
     }
-    
+
     // Admin Module Metrics
-    
+
     public Timer adminApiLatency(String operation) {
         return Timer.builder("admin.api.latency")
             .description("Admin API latency")
@@ -392,40 +392,40 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     public Counter adminRbacDenials(String resource, String action) {
         return Counter.builder("admin.rbac.denials.total")
             .description("RBAC access denials")
             .tags(commonTags().and("resource", resource, "action", action))
             .register(meterRegistry);
     }
-    
+
     // Security Module Metrics
-    
+
     public Counter securityJwtValidations() {
         return Counter.builder("security.jwt.validations.total")
             .description("JWT validations")
             .tags(commonTags())
             .register(meterRegistry);
     }
-    
+
     public Counter securityJwtFailures(String reason) {
         return Counter.builder("security.jwt.failures.total")
             .description("JWT validation failures")
             .tags(commonTags().and("reason", reason))
             .register(meterRegistry);
     }
-    
+
     // Utility methods
-    
+
     public MeterRegistry getMeterRegistry() {
         return meterRegistry;
     }
-    
+
     public Meter getOtelMeter() {
         return otelMeter;
     }
-    
+
     /**
      * Create a custom timer with the service's common tags.
      */
@@ -436,7 +436,7 @@ public final class MetricsRegistry {
             .publishPercentiles(0.95, 0.99)
             .register(meterRegistry);
     }
-    
+
     /**
      * Create a custom counter with the service's common tags.
      */

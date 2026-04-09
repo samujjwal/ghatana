@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
  * TypeScript/JavaScript implementation of {@link RenameRefactoring}. This implementation requires
  * J2V8 native library to be available at runtime. If J2V8 is not available, the refactoring
  * operations will fail gracefully.
- 
+
  * @doc.type class
  * @doc.purpose Handles type script rename refactoring operations
  * @doc.layer core

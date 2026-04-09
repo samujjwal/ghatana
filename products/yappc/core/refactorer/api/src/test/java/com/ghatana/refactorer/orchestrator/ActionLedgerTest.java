@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for {@link ActionLedger} class. 
+/** Tests for {@link ActionLedger} class.
  * @doc.type class
  * @doc.purpose Handles action ledger test operations
  * @doc.layer core

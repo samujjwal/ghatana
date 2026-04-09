@@ -25,7 +25,7 @@ import java.util.Map;
  * @doc.pattern Utility
  */
 public final class JsonAssertions {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Configuration jsonPathConfig = Configuration.builder()
             .jsonProvider(new JacksonJsonNodeJsonProvider())
@@ -65,14 +65,14 @@ public final class JsonAssertions {
         try {
             JsonNode expectedNode = objectMapper.readTree(expectedJson);
             JsonNode actualNode = objectMapper.readTree(actualJson);
-            
+
             // Convert both to maps for comparison with proper type information
             @SuppressWarnings("unchecked")
-            Map<String, Object> expectedMap = objectMapper.convertValue(expectedNode, 
+            Map<String, Object> expectedMap = objectMapper.convertValue(expectedNode,
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-                
+
             @SuppressWarnings("unchecked")
-            Map<String, Object> actualMap = objectMapper.convertValue(actualNode, 
+            Map<String, Object> actualMap = objectMapper.convertValue(actualNode,
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
             // Check that all expected entries exist in the actual map
@@ -94,16 +94,16 @@ public final class JsonAssertions {
     public static <T> void assertJsonPath(String json, String jsonPath, T expected) {
         DocumentContext context = JsonPath.parse(json, jsonPathConfig);
         Object value = context.read(jsonPath);
-        
+
         // Special handling for null values
         if (expected == null) {
             assertThat(value).isNull();
             return;
         }
-        
+
         // Convert value to string for comparison if it's not null
         String valueStr = value != null ? value.toString() : null;
-        
+
         // Handle different expected types
         if (expected instanceof Integer) {
             if (value instanceof Number) {
@@ -161,7 +161,7 @@ public final class JsonAssertions {
     public static void assertJsonArraySize(String json, String jsonPath, int expectedSize) {
         DocumentContext context = JsonPath.parse(json, jsonPathConfig);
         Object result;
-        
+
         try {
             result = context.read(jsonPath);
         } catch (Exception e) {

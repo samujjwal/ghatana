@@ -4,7 +4,7 @@ import java.util.Map;
 
 /**
  * Represents a job that can be executed by the job queue.
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for job
  * @doc.layer core

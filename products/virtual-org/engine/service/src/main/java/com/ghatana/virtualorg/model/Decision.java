@@ -47,11 +47,11 @@ public record Decision(
     public Decision {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(rationale, "rationale");
-        
+
         if (confidence < 0.0 || confidence > 1.0) {
             throw new IllegalArgumentException("confidence must be between 0.0 and 1.0");
         }
-        
+
         if (type == DecisionType.ESCALATE && (escalationTarget == null || escalationTarget.isBlank())) {
             throw new IllegalArgumentException("escalationTarget required for ESCALATE decision");
         }

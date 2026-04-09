@@ -8,7 +8,7 @@ import java.security.Key;
 /**
  * Manages cryptographic keys used for encryption and decryption.
  * Provides methods to retrieve, generate, and manage keys in a secure manner.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Key manager
@@ -22,7 +22,7 @@ public interface KeyManager {
      * @return A promise that completes with the current key
      */
     Promise<Key> getCurrentKey();
-    
+
     /**
      * Gets a specific version of a key.
      *
@@ -30,14 +30,14 @@ public interface KeyManager {
      * @return A promise that completes with the requested key
      */
     Promise<Key> getKey(String keyId);
-    
+
     /**
      * Gets the ID of the current key.
      *
      * @return The ID of the current key
      */
     String getCurrentKeyId();
-    
+
     /**
      * Generates a new key and makes it the current key.
      *
@@ -68,7 +68,7 @@ public interface KeyManager {
      * @return The last rotation time in milliseconds since epoch
      */
     long getLastRotationTime(String keyId);
-    
+
     /**
      * Gets the current key as a SecretKey.
      *
@@ -77,7 +77,7 @@ public interface KeyManager {
     default Promise<SecretKey> getCurrentSecretKey() {
         return getCurrentKey().map(key -> (SecretKey) key);
     }
-    
+
     /**
      * Gets a specific version of a key as a SecretKey.
      *

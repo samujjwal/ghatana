@@ -5,10 +5,10 @@ import com.ghatana.platform.core.exception.ErrorCode;
 
 /**
  * Exception thrown when there is an error during event creation.
- * 
+ *
  * <p>Use this exception in event-related modules when event instantiation,
  * validation, or persistence fails during the creation process.</p>
- * 
+ *
  * @see EventProcessingException
  * @doc.type exception
  * @doc.purpose Event creation failure exception (instantiation, validation, persistence)
@@ -16,9 +16,9 @@ import com.ghatana.platform.core.exception.ErrorCode;
  * @doc.pattern Exception, Event Creation Error
  */
 public class EventCreationException extends BaseException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Constructs a new event creation exception with the specified detail message.
      *
@@ -27,7 +27,7 @@ public class EventCreationException extends BaseException {
     public EventCreationException(String message) {
         super(ErrorCode.EVENT_VALIDATION_ERROR, message);
     }
-    
+
     /**
      * Constructs a new event creation exception with the specified detail message and cause.
      *
@@ -37,7 +37,7 @@ public class EventCreationException extends BaseException {
     public EventCreationException(String message, Throwable cause) {
         super(ErrorCode.EVENT_VALIDATION_ERROR, message, cause);
     }
-    
+
     /**
      * Constructs a new event creation exception with the specified cause.
      *
@@ -46,7 +46,7 @@ public class EventCreationException extends BaseException {
     public EventCreationException(Throwable cause) {
         super(ErrorCode.EVENT_VALIDATION_ERROR, cause);
     }
-    
+
     /**
      * Constructs a new event creation exception with a specific error code and message.
      *
@@ -57,4 +57,3 @@ public class EventCreationException extends BaseException {
         super(errorCode, message);
     }
 }
-

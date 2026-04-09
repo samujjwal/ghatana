@@ -11,7 +11,7 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Focused REST integration tests validating shared `JobService` lifecycle flows. 
+/** Focused REST integration tests validating shared `JobService` lifecycle flows.
  * @doc.type class
  * @doc.purpose Handles rest integration test operations
  * @doc.layer core

@@ -198,7 +198,7 @@ public class ConnectorAdminController {
                 }
                 existing.setUpdatedAt(Instant.now());
             });
-            
+
             return Promise.of(opt
                     .map(updated -> ResponseBuilder.ok().json(objectMapper.valueToTree(updated)).build())
                     .orElseGet(() -> ResponseBuilder.notFound()

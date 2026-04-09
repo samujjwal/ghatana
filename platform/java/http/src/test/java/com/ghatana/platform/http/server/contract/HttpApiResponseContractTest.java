@@ -322,7 +322,7 @@ class HttpApiResponseContractTest extends EventloopTestBase {
             // Contract: max payload typically 10MB
             // This is validated at servlet level, not in response builder
             // but the contract is that 413 must be returned for oversized payloads
-            
+
             assertThat(413).as("Payload Too Large status code").isGreaterThan(400);
         }
 
@@ -353,7 +353,7 @@ class HttpApiResponseContractTest extends EventloopTestBase {
         void responseContentTypeShouldMatchAccept() {
             // Client: Accept: application/json
             // Server: Content-Type: application/json (match)
-            
+
             HttpResponse response = ResponseBuilder.ok()
                     .json(new TestData("test"))
                     .build();

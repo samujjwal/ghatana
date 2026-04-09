@@ -95,7 +95,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(mockEntity));
 
             // WHEN
-            Map<String, Object> result = runPromise(() -> 
+            Map<String, Object> result = runPromise(() ->
                 mutations.createEntity(TENANT_ID, COLLECTION_NAME, inputData, USER_ID));
 
             // THEN
@@ -115,7 +115,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             Map<String, Object> data = Map.of("key", "value");
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createEntity(null, COLLECTION_NAME, data, USER_ID))
             ).isInstanceOf(NullPointerException.class)
              .hasMessageContaining("tenantId is required");
@@ -128,7 +128,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             Map<String, Object> data = Map.of("key", "value");
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createEntity("  ", COLLECTION_NAME, data, USER_ID))
             ).hasMessageContaining("tenantId cannot be empty");
         }
@@ -140,7 +140,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             Map<String, Object> data = Map.of("key", "value");
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createEntity(TENANT_ID, null, data, USER_ID))
             ).isInstanceOf(NullPointerException.class)
              .hasMessageContaining("collectionName is required");
@@ -150,7 +150,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         @DisplayName("should reject empty data")
         void shouldRejectEmptyData() {
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, Collections.emptyMap(), USER_ID))
             ).hasMessageContaining("data cannot be empty");
         }
@@ -162,7 +162,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             Map<String, Object> data = Map.of("key", "value");
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, data, null))
             ).isInstanceOf(NullPointerException.class)
              .hasMessageContaining("userId is required");
@@ -194,7 +194,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(updatedEntity));
 
             // WHEN
-            Map<String, Object> result = runPromise(() -> 
+            Map<String, Object> result = runPromise(() ->
                 mutations.updateEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), updateData, USER_ID));
 
             // THEN
@@ -211,7 +211,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             Map<String, Object> data = Map.of("key", "value");
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.updateEntity(TENANT_ID, COLLECTION_NAME, "invalid-uuid", data, USER_ID))
             ).hasMessageContaining("Invalid entity ID format");
         }
@@ -229,7 +229,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(null));
 
             // WHEN
-            Boolean result = runPromise(() -> 
+            Boolean result = runPromise(() ->
                 mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID.toString(), USER_ID));
 
             // THEN
@@ -241,7 +241,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         @DisplayName("should reject invalid UUID")
         void shouldRejectInvalidUuid() {
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, "bad-uuid", USER_ID))
             ).hasMessageContaining("Invalid entity ID format");
         }
@@ -275,7 +275,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(created));
 
             // WHEN
-            Map<String, Object> result = runPromise(() -> 
+            Map<String, Object> result = runPromise(() ->
                 mutations.createCollection(TENANT_ID, name, description, USER_ID));
 
             // THEN
@@ -291,7 +291,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         @DisplayName("should reject null name")
         void shouldRejectNullName() {
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createCollection(TENANT_ID, null, "desc", USER_ID))
             ).isInstanceOf(NullPointerException.class)
              .hasMessageContaining("name is required");
@@ -301,7 +301,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         @DisplayName("should reject empty name")
         void shouldRejectEmptyName() {
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.createCollection(TENANT_ID, "  ", "desc", USER_ID))
             ).hasMessageContaining("name cannot be empty");
         }
@@ -341,7 +341,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(updated));
 
             // WHEN
-            Map<String, Object> result = runPromise(() -> 
+            Map<String, Object> result = runPromise(() ->
                 mutations.updateCollection(TENANT_ID, name, newDescription, USER_ID));
 
             // THEN
@@ -360,7 +360,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(Optional.empty()));
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.updateCollection(TENANT_ID, "nonexistent", "desc", USER_ID))
             ).isInstanceOf(IllegalStateException.class)
              .hasMessageContaining("Collection not found");
@@ -391,7 +391,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(null));
 
             // WHEN
-            Boolean result = runPromise(() -> 
+            Boolean result = runPromise(() ->
                 mutations.deleteCollection(TENANT_ID, name, USER_ID));
 
             // THEN
@@ -408,7 +408,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .thenReturn(Promise.of(Optional.empty()));
 
             // WHEN/THEN
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 runPromise(() -> mutations.deleteCollection(TENANT_ID, "nonexistent", USER_ID))
             ).isInstanceOf(IllegalStateException.class)
              .hasMessageContaining("Collection not found");

@@ -396,4 +396,3 @@ public interface RecommendationCapability {
         PARTIALLY_APPLIED
     }
 }
-

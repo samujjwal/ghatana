@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.core.activej.eventloop.EventloopManager;
 import com.ghatana.platform.http.server.filter.FilterChain;
-import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.eventloop.Eventloop;
@@ -65,7 +64,7 @@ import java.util.function.Function;
  *             .map(user -> ResponseBuilder.ok().json(user));
  *     })
  *     .build();
- * 
+ *
  * server.listen();
  *
  * // 2. Production server with filters and error handling
@@ -112,7 +111,7 @@ import java.util.function.Function;
  *     .withCustomHealthCheck(() -> {
  *         boolean dbHealthy = databaseHealthCheck.check();
  *         boolean kafkaHealthy = kafkaHealthCheck.check();
- *         
+ *
  *         if (dbHealthy && kafkaHealthy) {
  *             return ResponseBuilder.ok().json(Map.of(
  *                 "status", "UP",
@@ -139,10 +138,10 @@ import java.util.function.Function;
  *             return Promise.of(ResponseBuilder.error(400)
  *                 .json(ErrorResponse.of("Missing X-Tenant-Id header")));
  *         }
- *         
+ *
  *         // Set tenant context
  *         TenantContext.setCurrentTenant(tenantId);
- *         
+ *
  *         // Continue chain
  *         return next.apply(request)
  *             .whenComplete(() -> TenantContext.clear());
@@ -158,20 +157,20 @@ import java.util.function.Function;
  * @Test
  * void testHttpServer() {
  *     Eventloop testEventloop = Eventloop.create();
- *     
+ *
  *     HttpServer server = HttpServerBuilder.create()
  *         .withEventloop(testEventloop)
  *         .withPort(0)  // Random port
  *         .addRoute(HttpMethod.GET, "/test", request ->
  *             Promise.of(ResponseBuilder.ok().text("test")))
  *         .build();
- *     
+ *
  *     server.listen();
- *     
+ *
  *     // Make test requests
  *     int port = server.getListenAddress().getPort();
  *     // ... test with port
- *     
+ *
  *     server.close();
  * }
  *
@@ -276,38 +275,38 @@ import java.util.function.Function;
  */
 @Slf4j
 public final class HttpServerBuilder {
-    
+
     private String host = "0.0.0.0";
     private int port = 8080;
     private Eventloop eventloop;
     private Duration shutdownTimeout = Duration.ofSeconds(30);
-    
+
     private String healthCheckPath = "/health";
     private String metricsPath = "/metrics";
     private boolean enableHealthCheck = true;
     private boolean enableMetrics = true;
     private java.util.function.Supplier<String> metricsSupplier;
-    
+
     private final RoutingServlet routingServlet = new RoutingServlet();
     private final List<FilterChain.Filter> filters = new ArrayList<>();
     private final ObjectMapper objectMapper = createObjectMapper();
-    
+
     private HttpServerBuilder() {
         // Use builder() factory method
     }
-    
+
     /**
      * Creates a new HTTP server builder.
-     * 
+     *
      * @return A new builder instance
      */
     public static HttpServerBuilder create() {
         return new HttpServerBuilder();
     }
-    
+
     /**
      * Sets the host to bind to.
-     * 
+     *
      * @param host The host address (default: 0.0.0.0)
      * @return This builder
      */
@@ -315,11 +314,11 @@ public final class HttpServerBuilder {
         this.host = Objects.requireNonNull(host, "host");
         return this;
     }
-    
+
     /**
      * Sets the port to listen on.
      * Use port 0 to have the OS assign an available port.
-     * 
+     *
      * @param port The port number (default: 8080), or 0 for ephemeral port
      * @return This builder
      */
@@ -330,11 +329,11 @@ public final class HttpServerBuilder {
         this.port = port;
         return this;
     }
-    
+
     /**
      * Sets the eventloop to use.
      * If not set, uses {@link EventloopManager#getCurrentEventloop()}.
-     * 
+     *
      * @param eventloop The eventloop
      * @return This builder
      */
@@ -342,10 +341,10 @@ public final class HttpServerBuilder {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop");
         return this;
     }
-    
+
     /**
      * Sets the graceful shutdown timeout.
-     * 
+     *
      * @param timeout The shutdown timeout (default: 30 seconds)
      * @return This builder
      */
@@ -353,10 +352,10 @@ public final class HttpServerBuilder {
         this.shutdownTimeout = Objects.requireNonNull(timeout, "timeout");
         return this;
     }
-    
+
     /**
      * Sets the health check endpoint path.
-     * 
+     *
      * @param path The health check path (default: /health)
      * @return This builder
      */
@@ -365,20 +364,20 @@ public final class HttpServerBuilder {
         this.enableHealthCheck = true;
         return this;
     }
-    
+
     /**
      * Disables the health check endpoint.
-     * 
+     *
      * @return This builder
      */
     public HttpServerBuilder withoutHealthCheck() {
         this.enableHealthCheck = false;
         return this;
     }
-    
+
     /**
      * Sets the metrics endpoint path.
-     * 
+     *
      * @param path The metrics path (default: /metrics)
      * @return This builder
      */
@@ -402,37 +401,37 @@ public final class HttpServerBuilder {
         this.enableMetrics = true;
         return this;
     }
-    
+
     /**
      * Disables the metrics endpoint.
-     * 
+     *
      * @return This builder
      */
     public HttpServerBuilder withoutMetrics() {
         this.enableMetrics = false;
         return this;
     }
-    
+
     /**
      * Adds a route that handles requests synchronously.
-     * 
+     *
      * @param method The HTTP method
      * @param path The path pattern (supports :param syntax)
      * @param handler The request handler
      * @return This builder
      */
     public HttpServerBuilder addRoute(
-            HttpMethod method, 
-            String path, 
+            HttpMethod method,
+            String path,
             Function<HttpRequest, HttpResponse> handler) {
-        
+
         routingServlet.addRoute(method, path, handler);
         return this;
     }
-    
+
     /**
      * Adds a route that handles requests asynchronously with promises.
-     * 
+     *
      * @param method The HTTP method
      * @param path The path pattern (supports :param syntax)
      * @param handler The async request handler
@@ -442,15 +441,15 @@ public final class HttpServerBuilder {
             HttpMethod method,
             String path,
             Function<HttpRequest, Promise<HttpResponse>> handler) {
-        
+
         routingServlet.addAsyncRoute(method, path, handler);
         return this;
     }
-    
+
     /**
      * Adds a filter to the filter chain.
      * Filters are executed in the order they are added.
-     * 
+     *
      * @param filter The filter to add
      * @return This builder
      */
@@ -458,11 +457,11 @@ public final class HttpServerBuilder {
         filters.add(Objects.requireNonNull(filter, "filter"));
         return this;
     }
-    
+
     /**
      * Merges routes from another RoutingServlet into this server's servlet.
      * Allows modular route organization by feature/controller.
-     * 
+     *
      * @param servlet The RoutingServlet to merge routes from
      * @return This builder
      */
@@ -472,10 +471,10 @@ public final class HttpServerBuilder {
         log.debug("Merged servlet with {} routes", servlet.getRouteCount());
         return this;
     }
-    
+
     /**
      * Sets a custom ObjectMapper for JSON serialization.
-     * 
+     *
      * @param objectMapper The ObjectMapper
      * @return This builder
      */
@@ -484,23 +483,23 @@ public final class HttpServerBuilder {
         log.warn("Custom ObjectMapper not yet fully supported");
         return this;
     }
-    
+
     /**
      * Builds the HTTP server.
-     * 
+     *
      * @return A configured HTTP server ready to start
      */
     public HttpServer build() {
         // Use provided eventloop or get current
         Eventloop loop = eventloop != null ? eventloop : EventloopManager.getCurrentEventloop();
-        
+
         // Add built-in endpoints
         if (enableHealthCheck) {
-            routingServlet.addRoute(HttpMethod.GET, healthCheckPath, req -> 
+            routingServlet.addRoute(HttpMethod.GET, healthCheckPath, req ->
                 ResponseBuilder.ok().text("OK").build()
             );
         }
-        
+
         if (enableMetrics) {
             routingServlet.addRoute(HttpMethod.GET, metricsPath, req -> {
                 String body = metricsSupplier != null
@@ -509,32 +508,32 @@ public final class HttpServerBuilder {
                 return ResponseBuilder.ok().text(body).build();
             });
         }
-        
+
         // Build servlet with filter chain
         AsyncServlet servlet = buildServletWithFilters();
-        
+
         // Create and configure HTTP server
         HttpServer server = HttpServer.builder(loop, servlet)
             .withListenAddress(new InetSocketAddress(host, port))
             .build();
-        
+
         log.info("HTTP server configured on {}:{}", host, port);
         return server;
     }
-    
+
     private AsyncServlet buildServletWithFilters() {
         AsyncServlet baseServlet = routingServlet;
-        
+
         // Wrap with filters in reverse order (last filter wraps first)
         for (int i = filters.size() - 1; i >= 0; i--) {
             FilterChain.Filter filter = filters.get(i);
             AsyncServlet current = baseServlet;
             baseServlet = request -> filter.apply(request, current);
         }
-        
+
         return baseServlet;
     }
-    
+
     private static ObjectMapper createObjectMapper() {
         return JsonUtils.getDefaultMapper();
     }

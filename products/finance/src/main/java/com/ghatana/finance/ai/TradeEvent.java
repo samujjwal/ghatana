@@ -2,7 +2,6 @@ package com.ghatana.finance.ai;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Trade event data for fraud detection.

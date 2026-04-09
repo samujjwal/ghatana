@@ -22,12 +22,12 @@ import java.util.Map;
 
 /**
  * Framework template definition.
- * 
+ *
  * @doc.type record
  * @doc.purpose Define framework-specific template
  * @doc.layer platform
  * @doc.pattern Value Object
- * 
+ *
  * @param id Unique template identifier
  * @param framework Framework name (e.g., "react", "spring-boot", "express")
  * @param version Framework version (use "*" for any version)
@@ -58,11 +58,11 @@ public record FrameworkTemplate(
         if (!this.framework.equals(framework)) {
             return false;
         }
-        
+
         if ("*".equals(this.version) || "*".equals(version)) {
             return true;
         }
-        
+
         return this.version.equals(version);
     }
 

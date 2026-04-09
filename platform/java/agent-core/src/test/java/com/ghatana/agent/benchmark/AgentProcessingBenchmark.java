@@ -20,7 +20,6 @@ import io.activej.promise.Promise;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -111,7 +110,7 @@ public class AgentProcessingBenchmark {
 
     @Benchmark
     public void deterministicProcessing(Blackhole bh) {
-        AgentResult<?> result = runOnEventloop(() -> 
+        AgentResult<?> result = runOnEventloop(() ->
                 deterministicAgent.process(ctx, Map.of("temperature", 150)));
         bh.consume(result);
     }

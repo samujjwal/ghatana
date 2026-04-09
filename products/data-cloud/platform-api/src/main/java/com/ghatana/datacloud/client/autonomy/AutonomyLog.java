@@ -26,4 +26,3 @@ public class AutonomyLog {
     Map<String, Object> context;
     Instant timestamp;
 }
-

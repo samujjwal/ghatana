@@ -3,7 +3,6 @@ package com.ghatana.platform.http.server.testing;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URLEncoder;
@@ -41,18 +40,18 @@ import java.util.Map;
  * // 1. Create JSON request
  * User user = new User("John Doe", "john@example.com");
  * HttpRequest request = HttpTestUtils.createJsonRequest(
- *     HttpMethod.POST, 
- *     "/api/users", 
+ *     HttpMethod.POST,
+ *     "/api/users",
  *     user
  * );
- * 
+ *
  * HttpResponse response = runner.execute(request);
  * assertEquals(201, response.getCode());
  *
  * // 2. Parse JSON response
  * HttpResponse response = runner.get("/api/users/123");
  * User user = HttpTestUtils.parseJsonResponse(response, User.class);
- * 
+ *
  * assertEquals("123", user.getId());
  * assertEquals("John Doe", user.getName());
  *
@@ -66,7 +65,7 @@ import java.util.Map;
  *     "username", "johndoe",
  *     "password", "secret123"
  * );
- * 
+ *
  * HttpRequest request = HttpTestUtils.createFormRequest("/login", formData);
  * HttpResponse response = runner.execute(request);
  * assertEquals(200, response.getCode());
@@ -74,24 +73,24 @@ import java.util.Map;
  * // 5. Create request with custom headers
  * HttpRequest.Builder builder = HttpTestUtils.createRequest(
  *     HttpMethod.GET, "/api/protected");
- * 
+ *
  * HttpRequest request = builder
  *     .withHeader("Authorization", "Bearer " + token)
  *     .withHeader("X-Tenant-Id", "tenant-123")
  *     .build();
- * 
+ *
  * HttpResponse response = runner.execute(request);
  *
  * // 6. Parse response array
  * HttpResponse response = runner.get("/api/users");
  * User[] users = HttpTestUtils.parseJsonResponse(response, User[].class);
- * 
+ *
  * assertTrue(users.length > 0);
  * assertEquals("John Doe", users[0].getName());
  *
  * // 7. Assert multiple response properties
  * HttpResponse response = runner.post("/api/users", userJson);
- * 
+ *
  * HttpTestUtils.assertStatus(response, 201);
  * HttpTestUtils.assertHeader(response, "Location", "/api/users/124");
  * HttpTestUtils.assertContentType(response, "application/json");
@@ -104,29 +103,29 @@ import java.util.Map;
  *     ))
  *     .shippingAddress(new Address("123 Main St", "City", "12345"))
  *     .build();
- * 
+ *
  * HttpRequest request = HttpTestUtils.createJsonRequest(
  *     HttpMethod.POST, "/api/orders", order);
- * 
+ *
  * HttpResponse response = runner.execute(request);
  * assertEquals(201, response.getCode());
  *
  * // 9. Parse error response
  * HttpResponse response = runner.get("/api/users/999");
- * 
+ *
  * HttpTestUtils.assertStatus(response, 404);
- * 
+ *
  * ErrorResponse error = HttpTestUtils.parseJsonResponse(
  *     response, ErrorResponse.class);
- * 
+ *
  * assertEquals("NOT_FOUND", error.getCode());
  * assertEquals("User not found", error.getMessage());
  *
  * // 10. Create request with query parameters
- * HttpRequest request = HttpTestUtils.createRequest(HttpMethod.GET, 
+ * HttpRequest request = HttpTestUtils.createRequest(HttpMethod.GET,
  *     "/api/users?page=1&size=10&sort=name")
  *     .build();
- * 
+ *
  * HttpResponse response = runner.execute(request);
  * }</pre>
  *
@@ -195,7 +194,7 @@ import java.util.Map;
  * User user = HttpTestUtils.parseJsonResponse(response, User.class);
  *
  * // Pattern 3: Form login, verify success
- * HttpRequest request = HttpTestUtils.createFormRequest("/login", 
+ * HttpRequest request = HttpTestUtils.createFormRequest("/login",
  *     Map.of("username", "john", "password", "secret"));
  * HttpResponse response = runner.execute(request);
  * HttpTestUtils.assertStatus(response, 200);
@@ -243,16 +242,16 @@ import java.util.Map;
  */
 @Slf4j
 public final class HttpTestUtils {
-    
+
     private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
-    
+
     private HttpTestUtils() {
         throw new UnsupportedOperationException("Utility class");
     }
-    
+
     /**
      * Creates a JSON request with the given object as body.
-     * 
+     *
      * @param method The HTTP method
      * @param path The request path
      * @param body The object to serialize as JSON
@@ -269,10 +268,10 @@ public final class HttpTestUtils {
             throw new RuntimeException("Failed to create JSON request", e);
         }
     }
-    
+
     /**
      * Creates a basic HTTP request with common headers.
-     * 
+     *
      * @param method The HTTP method
      * @param path The request path
      * @return The HTTP request with common headers
@@ -283,10 +282,10 @@ public final class HttpTestUtils {
         commonHeaders().forEach((k, v) -> builder.withHeader(io.activej.http.HttpHeaders.of(k), v));
         return builder;
     }
-    
+
     /**
      * Creates a multipart form data request.
-     * 
+     *
      * @param fields The form fields
      * @return The HTTP request
      */
@@ -298,14 +297,14 @@ public final class HttpTestUtils {
             }
             body.append(key).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
         });
-        
+
         HttpRequest.Builder builder = HttpRequest.post(path)
             .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), "application/x-www-form-urlencoded")
             .withBody(body.toString().getBytes(StandardCharsets.UTF_8));
-        
+
         return builder.build();
     }
-    
+
     private static ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

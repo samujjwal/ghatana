@@ -12,11 +12,11 @@ import java.util.UUID;
 /**
  * Represents a pattern specification that defines the structure and behavior
  * of an event pattern to be detected.
- * 
+ *
  * <p>PatternSpecification is the declarative input to the pattern compiler. It describes
  * WHAT pattern to detect (not HOW to execute it). The compiler transforms this specification
  * into an executable DetectionPlan.
- * 
+ *
  * @doc.pattern Value Object Pattern (immutable specification), Builder Pattern (construction)
  * @doc.compiler-phase PatternSpecification (input to compilation pipeline)
  * @doc.threading Thread-safe after construction (immutable specification)
@@ -26,7 +26,7 @@ import java.util.UUID;
  * @doc.serialization JSON serializable via Jackson; suitable for storage/API
  * @doc.apiNote Create via builder pattern; validate before compilation
  * @doc.versioning Version field enables pattern evolution and backward compatibility
- * 
+ *
  * <h2>Pattern Specification Fields</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -80,46 +80,46 @@ import java.util.UUID;
  *     <td>Execution priority (higher = earlier execution)</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Design Reference:</b>
  * This specification format implements the pattern model from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Contracts-first" for schema evolution patterns.
  */
 public class PatternSpecification {
-    
+
     @JsonProperty("id")
     private UUID id;
-    
+
     @JsonProperty("tenantId")
     private String tenantId;
-    
+
     @JsonProperty("name")
     private String name;
-    
+
     @JsonProperty("version")
     private int version;
-    
+
     @JsonProperty("description")
     private String description;
-    
+
     @JsonProperty("labels")
     private List<String> labels;
-    
+
     @JsonProperty("priority")
     private int priority;
-    
+
     @JsonProperty("activation")
     private boolean activation;
-    
+
     @JsonProperty("status")
     private PatternStatus status;
-    
+
     @JsonProperty("selection")
     private SelectionMode selection;
-    
+
     @JsonProperty("window")
     private PatternWindowSpec window;
-    
+
     @JsonProperty("operator")
     private com.ghatana.pattern.api.model.OperatorSpec operator;
 
@@ -128,19 +128,19 @@ public class PatternSpecification {
 
     @JsonProperty("whereClause")
     private String whereClause;
-    
+
     @JsonProperty("createdAt")
     private Instant createdAt;
-    
+
     @JsonProperty("updatedAt")
     private Instant updatedAt;
-    
+
     @JsonProperty("metadata")
     private Map<String, Object> metadata;
-    
+
     // Default constructor for JSON deserialization
     public PatternSpecification() {}
-    
+
     // Builder pattern constructor
     public PatternSpecification(Builder builder) {
         this.id = builder.id;
@@ -161,7 +161,7 @@ public class PatternSpecification {
         this.updatedAt = builder.updatedAt;
         this.metadata = builder.metadata;
     }
-    
+
     // Getters
     public UUID getId() { return id; }
     public String getTenantId() { return tenantId; }
@@ -180,7 +180,7 @@ public class PatternSpecification {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Map<String, Object> getMetadata() { return metadata; }
-    
+
     // Setters
     public void setId(UUID id) { this.id = id; }
     public void setTenantId(String tenantId) { this.tenantId = tenantId; }
@@ -199,11 +199,11 @@ public class PatternSpecification {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private UUID id;
         private String tenantId;
@@ -222,7 +222,7 @@ public class PatternSpecification {
         private Instant createdAt = Instant.now();
         private Instant updatedAt = Instant.now();
         private Map<String, Object> metadata;
-        
+
         public Builder id(UUID id) { this.id = id; return this; }
         public Builder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
         public Builder name(String name) { this.name = name; return this; }
@@ -258,12 +258,12 @@ public class PatternSpecification {
         public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
         public Builder updatedAt(Instant updatedAt) { this.updatedAt = updatedAt; return this; }
         public Builder metadata(Map<String, Object> metadata) { this.metadata = metadata; return this; }
-        
+
         public PatternSpecification build() {
             return new PatternSpecification(this);
         }
     }
-    
+
     @Override
     public String toString() {
         return "PatternSpecification{" +
@@ -335,4 +335,3 @@ public class PatternSpecification {
         }
     }
 }
-

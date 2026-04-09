@@ -11,11 +11,9 @@ import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.phr.kernel.consent.ConsentService;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

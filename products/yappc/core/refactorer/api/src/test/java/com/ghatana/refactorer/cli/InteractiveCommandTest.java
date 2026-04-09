@@ -36,7 +36,7 @@ import org.mockito.quality.Strictness;
  */
 class InteractiveCommandTest {
 
-    private static final java.util.regex.Pattern ANSI_PATTERN = 
+    private static final java.util.regex.Pattern ANSI_PATTERN =
             java.util.regex.Pattern.compile("\\x1B\\[[;\\d]*m");
 
     @Mock private PolyfixCommand parentCommand;

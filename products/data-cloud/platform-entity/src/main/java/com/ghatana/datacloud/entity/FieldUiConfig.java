@@ -38,37 +38,37 @@ public record FieldUiConfig(
         Boolean hidden,
         Boolean readOnly,
         Boolean disabled,
-        
+
         // Layout settings
         Integer order,
         Integer span,      // Grid span (1-12 for Bootstrap-style grids)
         String width,      // CSS width value
-        
+
         // Display settings
         String placeholder,
         String helpText,
         String tooltip,
         String icon,
-        
+
         // Input settings
         String inputType,  // text, textarea, select, checkbox, etc.
         Integer rows,      // For textarea
         Boolean multiline,
-        
+
         // Formatting
         String format,     // Date format, number format, etc.
         String prefix,     // Currency symbol, etc.
         String suffix,     // Units, etc.
-        
+
         // Grouping
         String section,    // Section/tab name
         String group,      // Field group name
-        
+
         // Conditional display
         String showWhen,   // Expression for conditional visibility
         String hideWhen    // Expression for conditional hiding
 ) {
-    
+
     /**
      * Creates an empty UI config (defaults).
      *
@@ -77,7 +77,7 @@ public record FieldUiConfig(
     public static FieldUiConfig empty() {
         return FieldUiConfig.builder().build();
     }
-    
+
     /**
      * Creates a visible UI config with order.
      *
@@ -87,7 +87,7 @@ public record FieldUiConfig(
     public static FieldUiConfig visible(int order) {
         return FieldUiConfig.builder().visible(true).order(order).build();
     }
-    
+
     /**
      * Creates a hidden field UI config.
      *
@@ -96,7 +96,7 @@ public record FieldUiConfig(
     public static FieldUiConfig hiddenField() {
         return FieldUiConfig.builder().hidden(true).visible(false).build();
     }
-    
+
     /**
      * Creates a read-only field UI config.
      *
@@ -106,7 +106,7 @@ public record FieldUiConfig(
     public static FieldUiConfig readOnly(int order) {
         return FieldUiConfig.builder().visible(true).readOnly(true).order(order).build();
     }
-    
+
     /**
      * Creates a full-width field UI config.
      *
@@ -116,7 +116,7 @@ public record FieldUiConfig(
     public static FieldUiConfig fullWidth(int order) {
         return FieldUiConfig.builder().visible(true).order(order).span(12).build();
     }
-    
+
     /**
      * Creates a FieldUiConfig from a legacy Map.
      *
@@ -127,7 +127,7 @@ public record FieldUiConfig(
         if (map == null || map.isEmpty()) {
             return empty();
         }
-        
+
         return FieldUiConfig.builder()
                 .visible(getAsBoolean(map.get("visible")))
                 .hidden(getAsBoolean(map.get("hidden")))
@@ -152,7 +152,7 @@ public record FieldUiConfig(
                 .hideWhen((String) map.get("hideWhen"))
                 .build();
     }
-    
+
     /**
      * Converts this UI config to a Map for JSONB storage.
      *
@@ -183,14 +183,14 @@ public record FieldUiConfig(
         if (hideWhen != null) map.put("hideWhen", hideWhen);
         return map;
     }
-    
+
     private static Boolean getAsBoolean(Object value) {
         if (value == null) return null;
         if (value instanceof Boolean) return (Boolean) value;
         if (value instanceof String) return Boolean.parseBoolean((String) value);
         return null;
     }
-    
+
     private static Integer getAsInteger(Object value) {
         if (value == null) return null;
         if (value instanceof Number) return ((Number) value).intValue();

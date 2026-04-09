@@ -55,7 +55,7 @@ public class AepContextBridge {
         active = true;
         return Promise.complete();
     }
-    
+
     /**
      * Share context from agent to AEP.
      * @param context the context data

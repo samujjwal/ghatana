@@ -3,7 +3,6 @@ package com.ghatana.virtualorg.planning.impl;
 import com.ghatana.virtualorg.llm.LLMClient;
 import com.ghatana.virtualorg.llm.LLMResponse;
 import com.ghatana.virtualorg.memory.AgentMemory;
-import com.ghatana.virtualorg.memory.MemoryEntry;
 import com.ghatana.virtualorg.planning.PlanStep;
 import com.ghatana.virtualorg.planning.TaskPlan;
 import com.ghatana.virtualorg.planning.TaskPlanner;
@@ -77,7 +76,7 @@ import java.util.regex.Pattern;
  *     memory,        // PgVector memory
  *     tracer
  * );
- * 
+ *
  * // Create plan
  * TaskProto task = TaskProto.newBuilder()
  *     .setTaskId("task-123")
@@ -85,11 +84,11 @@ import java.util.regex.Pattern;
  *     .setDescription("Add JWT-based auth with password hashing")
  *     .setType(TaskTypeProto.TASK_TYPE_FEATURE)
  *     .build();
- * 
+ *
  * TaskPlan plan = planner.createPlan(task).getResult();
- * logger.info("Generated {} steps, confidence={}", 
+ * logger.info("Generated {} steps, confidence={}",
  *     plan.steps().size(), plan.confidence());
- * 
+ *
  * // Refine after partial execution
  * List<String> completed = List.of("step-1", "step-2");
  * String feedback = "Step 2 took 3 hours instead of 1 due to schema complexity";
@@ -234,7 +233,7 @@ public class LLMTaskPlanner implements TaskPlanner {
 
         // Use async Promise chaining
         String userPrompt = buildRefinementPrompt(originalPlan, completedSteps, feedback);
-        
+
         return llmClient.reason(originalPlan.originalTask(), userPrompt, List.of())
             .map(response -> {
                 TaskPlan refinedPlan = parsePlanFromResponse(originalPlan.originalTask(), response);
@@ -265,7 +264,7 @@ public class LLMTaskPlanner implements TaskPlanner {
         logger.debug("Estimating effort for task: {}", task.getTitle());
 
         String prompt = buildEstimationPrompt(task);
-        
+
         return llmClient.reason(task, prompt, List.of())
             .map(response -> {
                 double effort = parseEffortFromResponse(response);

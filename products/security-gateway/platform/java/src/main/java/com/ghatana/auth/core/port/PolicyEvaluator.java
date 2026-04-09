@@ -68,7 +68,7 @@ import io.activej.promise.Promise;
  * @doc.pattern Port
  */
 public interface PolicyEvaluator {
-    
+
     /**
      * Evaluates if user has permission to perform action on resource.
      *
@@ -79,7 +79,7 @@ public interface PolicyEvaluator {
      * @return Promise of true if allowed, false otherwise
      */
     Promise<Boolean> evaluate(TenantId tenantId, User user, Permission permission, String resourceId);
-    
+
     /**
      * Evaluates if user has a specific scope granted.
      *
@@ -89,7 +89,7 @@ public interface PolicyEvaluator {
      * @return Promise of true if scope is granted, false otherwise
      */
     Promise<Boolean> evaluateScope(TenantId tenantId, User user, Scope scope);
-    
+
     /**
      * Evaluates if user has a specific role.
      *
@@ -99,7 +99,7 @@ public interface PolicyEvaluator {
      * @return Promise of true if user has role, false otherwise
      */
     Promise<Boolean> evaluateRole(TenantId tenantId, User user, Role role);
-    
+
     /**
      * Evaluates ABAC policy with context attributes.
      *
@@ -110,6 +110,6 @@ public interface PolicyEvaluator {
      * @param context contextual attributes (time, location, device, etc.)
      * @return Promise of true if allowed by policy, false otherwise
      */
-    Promise<Boolean> evaluateAbac(TenantId tenantId, User user, String action, String resource, 
+    Promise<Boolean> evaluateAbac(TenantId tenantId, User user, String action, String resource,
                                    java.util.Map<String, Object> context);
 }

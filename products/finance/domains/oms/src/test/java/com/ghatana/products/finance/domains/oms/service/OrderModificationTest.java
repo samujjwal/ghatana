@@ -77,7 +77,7 @@ class OrderModificationTest {
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
             "idempotency-key-3", testTime, testTimeBs
         );
-        
+
         Fill fill = new Fill("FILL-001", "ORD-003", "EXEC-001",
             BigDecimal.valueOf(50), BigDecimal.valueOf(150.00), BigDecimal.ZERO, testTime);
         Order partiallyFilled = order.withFill(fill, BigDecimal.valueOf(150.00));

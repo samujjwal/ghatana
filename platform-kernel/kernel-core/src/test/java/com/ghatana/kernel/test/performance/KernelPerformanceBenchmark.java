@@ -45,7 +45,7 @@ public class KernelPerformanceBenchmark {
         telemetryManager = new MockKernelTelemetryManager();
         auditTrailService = new MockAuditTrailService();
         agentOrchestrator = new MockAgentOrchestrator();
-        
+
         // Create reusable security context
         securityContext = securityManager.createSecurityContext("tenant-1", "user-1");
     }
@@ -70,7 +70,7 @@ public class KernelPerformanceBenchmark {
             .operation("read")
             .scope("phr")
             .build();
-        
+
         return policyEnforcementPoint.enforce(request, securityContext);
     }
 
@@ -97,7 +97,7 @@ public class KernelPerformanceBenchmark {
             .tenantId("tenant-1")
             .action("read")
             .build();
-        
+
         auditTrailService.recordAuditEvent(event);
     }
 
@@ -107,7 +107,7 @@ public class KernelPerformanceBenchmark {
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             "req-1", "classify", Map.of("input", "test"), Map.of()
         );
-        
+
         return agentOrchestrator.executeAgent(agent, request);
     }
 

@@ -1,7 +1,6 @@
 package com.ghatana.products.finance.domains.marketdata.service;
 
 import com.ghatana.products.finance.domains.marketdata.domain.MarketTick;
-import com.ghatana.products.finance.domains.marketdata.domain.TickSource;
 import com.ghatana.products.finance.domains.marketdata.port.MarketDataStore;
 import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
 import com.ghatana.platform.core.exception.ValidationException;

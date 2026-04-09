@@ -52,7 +52,7 @@ import java.time.ZoneOffset;
  * // 1. Fixed time at specific instant
  * Instant fixedTime = Instant.parse("2025-01-15T10:30:00Z");
  * TestClock clock = TestClock.fixed(fixedTime);
- * 
+ *
  * // 2. System UTC (frozen at current time)
  * TestClock clock = TestClock.systemUTC();
  * Instant start = clock.instant();
@@ -71,16 +71,16 @@ import java.time.ZoneOffset;
  * Instant original = clock.instant();
  * clock.advance(Duration.ofHours(24));
  * Instant advanced = clock.instant();
- * assertEquals(Duration.ofHours(24), 
+ * assertEquals(Duration.ofHours(24),
  *   Duration.between(original, advanced));
  *
  * // 5. Test expiration logic
  * TestClock clock = TestClock.fixed(Instant.parse("2025-01-01T00:00:00Z"));
  * Instant tokenExpiry = clock.instant().plus(Duration.ofHours(1));
- * 
+ *
  * // Token valid (current time before expiry)
  * assertTrue(clock.instant().isBefore(tokenExpiry));
- * 
+ *
  * // Advance past expiry
  * clock.advance(Duration.ofHours(2));
  * assertFalse(clock.instant().isBefore(tokenExpiry)); // Expired
@@ -113,7 +113,7 @@ import java.time.ZoneOffset;
  *     TestClock clock = TestClock.systemUTC();
  *     Token token = new Token("xyz", clock.instant().plus(Duration.ofHours(1)));
  *     assertTrue(token.isValid(clock));
- *     
+ *
  *     clock.advance(Duration.ofHours(2));
  *     assertFalse(token.isValid(clock)); // Token expired
  * }
@@ -123,15 +123,15 @@ import java.time.ZoneOffset;
  * void shouldProcessEventsInOrder() {
  *     TestClock clock = TestClock.systemUTC();
  *     List<Event> events = new ArrayList<>();
- *     
+ *
  *     events.add(new Event("event1", clock.instant()));
  *     clock.advance(Duration.ofSeconds(1));
- *     
+ *
  *     events.add(new Event("event2", clock.instant()));
  *     clock.advance(Duration.ofSeconds(1));
- *     
+ *
  *     events.add(new Event("event3", clock.instant()));
- *     
+ *
  *     // Verify timestamps are in order
  *     for (int i = 0; i < events.size() - 1; i++) {
  *         assertTrue(events.get(i).getTimestamp()
@@ -256,7 +256,7 @@ public class TestClock extends Clock {
      * <pre>{@code
      * TestClock utcClock = TestClock.systemUTC();
      * TestClock nyTime = utcClock.withZone(ZoneId.of("America/New_York"));
-     * 
+     *
      * // Same instant, different zone context
      * assertEquals(utcClock.instant(), nyTime.instant());
      * assertNotEquals(utcClock.getZone(), nyTime.getZone());

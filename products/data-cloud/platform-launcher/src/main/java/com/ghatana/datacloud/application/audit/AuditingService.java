@@ -26,7 +26,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * AuditingService auditing = new AuditingService(auditStore, metricsCollector);
  *

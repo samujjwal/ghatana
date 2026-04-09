@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Represents a compiled detection plan that can be executed by a runtime engine.
- * 
+ *
  * <p>This is the final output of the pattern compilation process. A DetectionPlan
  * is an immutable, executable artifact containing:
  * <ul>
@@ -20,7 +20,7 @@ import java.util.UUID;
  *   <li><b>State Keys</b>: Keying strategy for partitioned state management</li>
  *   <li><b>Metadata</b>: Compilation version, timestamp, optimizer flags</li>
  * </ul>
- * 
+ *
  * @doc.pattern Immutable Value Object Pattern, Builder Pattern (construction)
  * @doc.compiler-phase DetectionPlan (final output after optimization)
  * @doc.threading Thread-safe (immutable after construction)
@@ -30,13 +30,13 @@ import java.util.UUID;
  * @doc.serialization JSON serializable via Jackson; suitable for storage/transmission
  * @doc.apiNote Deploy plans to runtime engine; cache compiled plans for reuse
  * @doc.limitation No incremental updates; recompile pattern for changes
- * 
+ *
  * <h2>DetectionPlan Lifecycle</h2>
  * <pre>
  * PatternSpec ──→ Compiler ──→ DetectionPlan ──→ Runtime Engine
  *    (Input)     (Transform)     (Executable)      (Execution)
  * </pre>
- * 
+ *
  * <p><b>Runtime Configuration</b>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -67,10 +67,10 @@ import java.util.UUID;
  * </table>
  */
 public class DetectionPlan {
-    
+
     @JsonProperty("patternId")
     private UUID patternId;
-    
+
     @JsonProperty("operatorGraph")
     private OperatorDAG operatorGraph;
 
@@ -79,10 +79,10 @@ public class DetectionPlan {
 
     @JsonProperty("runtimeConfig")
     private Map<String, Object> runtimeConfig;
-    
+
     @JsonProperty("requiredStreams")
     private List<String> requiredStreams;
-    
+
     @JsonProperty("window")
     private PatternWindowSpec window;
 
@@ -91,16 +91,16 @@ public class DetectionPlan {
 
     @JsonProperty("compiledAt")
     private Instant compiledAt;
-    
+
     @JsonProperty("version")
     private String version;
-    
+
     @JsonProperty("metadata")
     private Map<String, Object> metadata;
-    
+
     // Default constructor for JSON deserialization
     public DetectionPlan() {}
-    
+
     // Builder pattern constructor
     public DetectionPlan(Builder builder) {
         this.patternId = builder.patternId;
@@ -114,7 +114,7 @@ public class DetectionPlan {
         this.version = builder.version;
         this.metadata = builder.metadata;
     }
-    
+
     // Getters
     public UUID getPatternId() { return patternId; }
     public OperatorDAG getOperatorGraph() { return operatorGraph; }
@@ -126,7 +126,7 @@ public class DetectionPlan {
     public Instant getCompiledAt() { return compiledAt; }
     public String getVersion() { return version; }
     public Map<String, Object> getMetadata() { return metadata; }
-    
+
     // Setters
     public void setPatternId(UUID patternId) { this.patternId = patternId; }
     public void setOperatorGraph(OperatorDAG operatorGraph) { this.operatorGraph = operatorGraph; }
@@ -138,11 +138,11 @@ public class DetectionPlan {
     public void setCompiledAt(Instant compiledAt) { this.compiledAt = compiledAt; }
     public void setVersion(String version) { this.version = version; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private UUID patternId;
         private OperatorDAG operatorGraph;
@@ -154,7 +154,7 @@ public class DetectionPlan {
         private Instant compiledAt = Instant.now();
         private String version = "1.0";
         private Map<String, Object> metadata;
-        
+
         public Builder patternId(UUID patternId) { this.patternId = patternId; return this; }
         public Builder operatorGraph(OperatorDAG operatorGraph) { this.operatorGraph = operatorGraph; return this; }
         public Builder eventTypes(List<String> eventTypes) { this.eventTypes = eventTypes; return this; }
@@ -165,12 +165,12 @@ public class DetectionPlan {
         public Builder compiledAt(Instant compiledAt) { this.compiledAt = compiledAt; return this; }
         public Builder version(String version) { this.version = version; return this; }
         public Builder metadata(Map<String, Object> metadata) { this.metadata = metadata; return this; }
-        
+
         public DetectionPlan build() {
             return new DetectionPlan(this);
         }
     }
-    
+
     @Override
     public String toString() {
         return "DetectionPlan{" +
@@ -182,4 +182,3 @@ public class DetectionPlan {
                 '}';
     }
 }
-

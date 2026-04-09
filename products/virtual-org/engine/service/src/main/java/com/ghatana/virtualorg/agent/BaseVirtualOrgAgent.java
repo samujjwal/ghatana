@@ -564,7 +564,7 @@ public abstract class BaseVirtualOrgAgent implements VirtualOrgAgent {
                 .tag("agent_id", agentId)
                 .tag("role", role.name())
                 .register(meterRegistry);
-        
+
         timerSample.stop(taskDurationTimer);
     }
 

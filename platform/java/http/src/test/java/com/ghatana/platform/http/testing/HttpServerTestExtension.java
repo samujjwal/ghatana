@@ -40,26 +40,26 @@ import java.time.Duration;
  * // 1. Method parameter injection (recommended)
  * @ExtendWith(HttpServerTestExtension.class)
  * class UserServiceHttpTest {
- *     
+ *
  *     private final AsyncServlet servlet = createUserServlet();
- *     
+ *
  *     @Test
  *     void shouldReturnUserById(HttpServerTestRunner runner) {
  *         HttpResponse response = runner.get("/api/users/123");
- *         
+ *
  *         assertEquals(200, response.getCode());
  *         assertEquals("application/json", response.getHeader("Content-Type"));
- *         
+ *
  *         User user = parseJson(response, User.class);
  *         assertEquals("123", user.getId());
  *     }
- *     
+ *
  *     @Test
  *     void shouldCreateUser(HttpServerTestRunner runner) {
  *         String userJson = "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}";
- *         
+ *
  *         HttpResponse response = runner.post("/api/users", userJson);
- *         
+ *
  *         assertEquals(201, response.getCode());
  *         assertNotNull(response.getHeader("Location"));
  *     }
@@ -68,16 +68,16 @@ import java.time.Duration;
  * // 2. Field injection (alternative)
  * @ExtendWith(HttpServerTestExtension.class)
  * class UserServiceHttpTest {
- *     
+ *
  *     private final AsyncServlet servlet = createUserServlet();
  *     private HttpServerTestRunner runner;  // Auto-injected by extension
- *     
+ *
  *     @Test
  *     void shouldReturnUsers() {
  *         HttpResponse response = runner.get("/api/users");
- *         
+ *
  *         assertEquals(200, response.getCode());
- *         
+ *
  *         User[] users = parseJson(response, User[].class);
  *         assertTrue(users.length > 0);
  *     }
@@ -86,13 +86,13 @@ import java.time.Duration;
  * // 3. Custom timeout (30 seconds)
  * @ExtendWith(HttpServerTestExtension.class)
  * class SlowOperationTest {
- *     
+ *
  *     @RegisterExtension
- *     static HttpServerTestExtension extension = 
+ *     static HttpServerTestExtension extension =
  *         new HttpServerTestExtension(Duration.ofSeconds(30));
- *     
+ *
  *     private final AsyncServlet servlet = createSlowServlet();
- *     
+ *
  *     @Test
  *     void shouldHandleSlowOperation(HttpServerTestRunner runner) {
  *         HttpResponse response = runner.get("/api/slow-operation");
@@ -103,21 +103,21 @@ import java.time.Duration;
  * // 4. Multiple test methods with isolation
  * @ExtendWith(HttpServerTestExtension.class)
  * class ProductServiceHttpTest {
- *     
+ *
  *     private final AsyncServlet servlet = createProductServlet();
- *     
+ *
  *     @Test
  *     void shouldListProducts(HttpServerTestRunner runner) {
  *         HttpResponse response = runner.get("/api/products");
  *         assertEquals(200, response.getCode());
  *     }
- *     
+ *
  *     @Test
  *     void shouldGetProductById(HttpServerTestRunner runner) {
  *         HttpResponse response = runner.get("/api/products/123");
  *         assertEquals(200, response.getCode());
  *     }
- *     
+ *
  *     @Test
  *     void shouldReturn404ForMissingProduct(HttpServerTestRunner runner) {
  *         HttpResponse response = runner.get("/api/products/999");
@@ -128,16 +128,16 @@ import java.time.Duration;
  * // 5. Integration with other extensions
  * @ExtendWith({HttpServerTestExtension.class, DatabaseTestExtension.class})
  * class FullStackTest {
- *     
+ *
  *     private final AsyncServlet servlet = createServletWithDatabase();
- *     
+ *
  *     @Test
  *     void shouldPersistUserToDatabaseViaHttp(HttpServerTestRunner runner) {
  *         // Create user via HTTP
- *         HttpResponse response = runner.post("/api/users", 
+ *         HttpResponse response = runner.post("/api/users",
  *             "{\"name\":\"Test User\"}");
  *         assertEquals(201, response.getCode());
- *         
+ *
  *         // Verify in database
  *         User user = userRepository.findByName("Test User");
  *         assertNotNull(user);
@@ -147,18 +147,18 @@ import java.time.Duration;
  * // 6. Shared servlet setup with @BeforeEach
  * @ExtendWith(HttpServerTestExtension.class)
  * class OrderServiceHttpTest {
- *     
+ *
  *     private AsyncServlet servlet;
- *     
+ *
  *     @BeforeEach
  *     void setUp() {
  *         OrderService orderService = new OrderService();
  *         servlet = createServlet(orderService);
  *     }
- *     
+ *
  *     @Test
  *     void shouldCreateOrder(HttpServerTestRunner runner) {
- *         HttpResponse response = runner.post("/api/orders", 
+ *         HttpResponse response = runner.post("/api/orders",
  *             "{\"items\":[{\"id\":1}]}");
  *         assertEquals(201, response.getCode());
  *     }
@@ -228,7 +228,7 @@ import java.time.Duration;
  *
  * // Pattern 2: Stateful servlet (@BeforeEach setup)
  * private AsyncServlet servlet;
- * 
+ *
  * @BeforeEach
  * void setUp() {
  *     servlet = createServlet();
@@ -236,7 +236,7 @@ import java.time.Duration;
  *
  * // Pattern 3: Custom timeout (@RegisterExtension)
  * @RegisterExtension
- * static HttpServerTestExtension extension = 
+ * static HttpServerTestExtension extension =
  *     new HttpServerTestExtension(Duration.ofMinutes(1));
  *
  * // Pattern 4: Multiple servlets (parameterize tests)
@@ -278,73 +278,73 @@ import java.time.Duration;
  * @doc.pattern Extension
  */
 public class HttpServerTestExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
-    
-    private static final ExtensionContext.Namespace NAMESPACE = 
+
+    private static final ExtensionContext.Namespace NAMESPACE =
         ExtensionContext.Namespace.create(HttpServerTestExtension.class);
-    
+
     private static final String RUNNER_KEY = "httpRunner";
-    
+
     private final Duration timeout;
-    
+
     /**
      * Creates an extension with default 10 second timeout.
      */
     public HttpServerTestExtension() {
         this(Duration.ofSeconds(10));
     }
-    
+
     /**
      * Creates an extension with custom timeout.
-     * 
+     *
      * @param timeout The timeout for HTTP operations
      */
     public HttpServerTestExtension(Duration timeout) {
         this.timeout = timeout;
     }
-    
+
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
         Object testInstance = context.getRequiredTestInstance();
-        
+
         // Find servlet field in test class
         AsyncServlet servlet = findServlet(testInstance);
-        
+
         if (servlet != null) {
             // Create and start runner
             HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, timeout);
             runner.start();
-            
+
             // Store for cleanup and parameter resolution
             context.getStore(NAMESPACE).put(RUNNER_KEY, runner);
-            
+
             // Inject into test instance fields
             injectRunner(testInstance, runner);
         }
     }
-    
+
     @Override
     public void afterEach(ExtensionContext context) {
         HttpServerTestRunner runner = context.getStore(NAMESPACE)
             .remove(RUNNER_KEY, HttpServerTestRunner.class);
-        
+
         if (runner != null) {
             runner.close();
         }
     }
-    
+
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         return parameterContext.getParameter().getType().equals(HttpServerTestRunner.class);
     }
-    
+
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         return extensionContext.getStore(NAMESPACE).get(RUNNER_KEY, HttpServerTestRunner.class);
     }
-    
+
     private AsyncServlet findServlet(Object testInstance) throws IllegalAccessException {
         Class<?> testClass = testInstance.getClass();
-        
+
         // Prefer an explicitly-named field 'servlet' when present so tests can declare multiple AsyncServlet fields
         try {
             Field servletField = testClass.getDeclaredField("servlet");
@@ -365,13 +365,13 @@ public class HttpServerTestExtension implements BeforeEachCallback, AfterEachCal
             }
             testClass = testClass.getSuperclass();
         }
-        
+
         return null;
     }
-    
+
     private void injectRunner(Object testInstance, HttpServerTestRunner runner) throws IllegalAccessException {
         Class<?> testClass = testInstance.getClass();
-        
+
         while (testClass != Object.class) {
             for (Field field : testClass.getDeclaredFields()) {
                 if (field.getType() == HttpServerTestRunner.class && !field.isSynthetic()) {
@@ -382,10 +382,10 @@ public class HttpServerTestExtension implements BeforeEachCallback, AfterEachCal
             testClass = testClass.getSuperclass();
         }
     }
-    
+
     /**
      * Gets the runner from the extension context.
-     * 
+     *
      * @param context The extension context
      * @return The HTTP server test runner
      */

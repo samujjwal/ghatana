@@ -29,32 +29,32 @@ public final class PluginResourceEnforcer {
      */
     public void validateQuotas(PluginResourceQuota quotas) throws PluginResourceException {
         log.debug("Validating resource quotas: {}", quotas);
-        
+
         if (quotas == null) {
             throw new PluginResourceException("Resource quotas cannot be null");
         }
-        
+
         // Validate memory quota
         if (quotas.maxMemoryMB() <= 0 || quotas.maxMemoryMB() > getMaxMemoryForTier(quotas.tier())) {
             throw new PluginResourceException(
-                String.format("Invalid memory quota: %d MB (max: %d MB)", 
+                String.format("Invalid memory quota: %d MB (max: %d MB)",
                     quotas.maxMemoryMB(), getMaxMemoryForTier(quotas.tier())));
         }
-        
+
         // Validate CPU quota
         if (quotas.maxCpuPercent() <= 0 || quotas.maxCpuPercent() > getMaxCpuForTier(quotas.tier())) {
             throw new PluginResourceException(
-                String.format("Invalid CPU quota: %d%% (max: %d%%)", 
+                String.format("Invalid CPU quota: %d%% (max: %d%%)",
                     quotas.maxCpuPercent(), getMaxCpuForTier(quotas.tier())));
         }
-        
+
         // Validate file descriptor quota
         if (quotas.maxFileDescriptors() <= 0 || quotas.maxFileDescriptors() > getMaxFileDescriptorsForTier(quotas.tier())) {
             throw new PluginResourceException(
-                String.format("Invalid file descriptor quota: %d (max: %d)", 
+                String.format("Invalid file descriptor quota: %d (max: %d)",
                     quotas.maxFileDescriptors(), getMaxFileDescriptorsForTier(quotas.tier())));
         }
-        
+
         log.debug("Resource quotas validated: {}", quotas);
     }
 
@@ -66,38 +66,38 @@ public final class PluginResourceEnforcer {
      */
     public EnhancedPluginManager.ResourceEnforcementResult enforceQuotas(
             EnhancedPluginManager.EnhancedLoadedPlugin plugin) {
-        
+
         try {
             PluginResourceQuota quotas = plugin.resourceQuota();
-            
+
             // Check current resource usage (placeholder implementation)
             ResourceUsage currentUsage = getCurrentResourceUsage(plugin.basicPlugin().id());
-            
+
             // Enforce memory quota
             if (currentUsage.memoryMB() > quotas.maxMemoryMB()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
-                    String.format("Memory usage exceeded: %d MB > %d MB", 
+                    String.format("Memory usage exceeded: %d MB > %d MB",
                         currentUsage.memoryMB(), quotas.maxMemoryMB()));
             }
-            
+
             // Enforce CPU quota
             if (currentUsage.cpuPercent() > quotas.maxCpuPercent()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
-                    String.format("CPU usage exceeded: %d%% > %d%%", 
+                    String.format("CPU usage exceeded: %d%% > %d%%",
                         currentUsage.cpuPercent(), quotas.maxCpuPercent()));
             }
-            
+
             // Enforce file descriptor quota
             if (currentUsage.fileDescriptors() > quotas.maxFileDescriptors()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
-                    String.format("File descriptor usage exceeded: %d > %d", 
+                    String.format("File descriptor usage exceeded: %d > %d",
                         currentUsage.fileDescriptors(), quotas.maxFileDescriptors()));
             }
-            
+
             return EnhancedPluginManager.ResourceEnforcementResult.success();
-            
+
         } catch (Exception e) {
-            log.error("Failed to enforce resource quotas for plugin: {}", 
+            log.error("Failed to enforce resource quotas for plugin: {}",
                 plugin.basicPlugin().id(), e);
             return EnhancedPluginManager.ResourceEnforcementResult.failure(e.getMessage());
         }

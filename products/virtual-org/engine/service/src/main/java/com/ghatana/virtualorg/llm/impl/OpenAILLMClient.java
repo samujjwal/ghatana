@@ -19,10 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * OpenAI LLM client implementation using LangChain4J.
@@ -47,7 +44,7 @@ import java.util.stream.Collectors;
  *     Duration.ofSeconds(60),
  *     eventloop
  * );
- * 
+ *
  * LLMResponse response = client.chat(task, tools).getResult();
  * }</pre>
  *
@@ -192,7 +189,7 @@ public class OpenAILLMClient extends ManagedLLMClient implements LLMClient {
 
             var response = embeddingModel.embed(text);
             var vectorList = response.content().vectorAsList();
-            
+
             float[] result = new float[vectorList.size()];
             for (int i = 0; i < vectorList.size(); i++) {
                 result[i] = vectorList.get(i).floatValue();

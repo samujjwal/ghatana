@@ -54,7 +54,7 @@ public class InMemoryApiKeyRepository implements ApiKeyRepository {
         if (apiKey == null) {
             throw new IllegalArgumentException("API key cannot be null");
         }
-        
+
         // Remove old key mapping if it exists
         if (apiKey.getId() != null) {
             ApiKey existingApiKey = apiKeysById.get(apiKey.getId());
@@ -62,39 +62,39 @@ public class InMemoryApiKeyRepository implements ApiKeyRepository {
                 apiKeysByKey.remove(existingApiKey.getKey());
             }
         }
-        
+
         // Save the API key
         apiKeysById.put(apiKey.getId(), apiKey);
         apiKeysByKey.put(apiKey.getKey(), apiKey);
-        
+
         log.debug("Saved API key: {}", apiKey.getId());
-        
+
         return apiKey;
     }
 
     @Override
     public boolean deleteById(String id) {
         ApiKey apiKey = apiKeysById.remove(id);
-        
+
         if (apiKey != null && apiKey.getKey() != null) {
             apiKeysByKey.remove(apiKey.getKey());
             log.debug("Deleted API key: {}", id);
             return true;
         }
-        
+
         return false;
     }
 
     @Override
     public boolean deleteByKey(String key) {
         ApiKey apiKey = apiKeysByKey.remove(key);
-        
+
         if (apiKey != null && apiKey.getId() != null) {
             apiKeysById.remove(apiKey.getId());
             log.debug("Deleted API key with value: {}", key);
             return true;
         }
-        
+
         return false;
     }
 

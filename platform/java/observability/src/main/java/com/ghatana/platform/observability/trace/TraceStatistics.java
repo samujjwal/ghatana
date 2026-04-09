@@ -7,7 +7,7 @@ package com.ghatana.platform.observability.trace;
  * This is useful for monitoring dashboards, alerting systems, and understanding system
  * behavior without fetching all trace details.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Count Metrics</b>: Total traces, total spans, error count</li>
@@ -16,7 +16,7 @@ package com.ghatana.platform.observability.trace;
  *   <li><b>Calculated Metrics</b>: Error rate, avg spans per trace</li>
  *   <li><b>Empty State Support</b>: TraceStatistics.empty() for zero results</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Get statistics for last hour
@@ -31,7 +31,7 @@ package com.ghatana.platform.observability.trace;
  *         System.out.println("Total spans: " + stats.totalSpans());
  *         System.out.println("Error count: " + stats.errorCount());
  *         System.out.println("Error rate: " + stats.errorRate() + "%");
- *         
+ *
  *         System.out.println("Duration stats:");
  *         System.out.println("  Min: " + stats.minDurationMs() + "ms");
  *         System.out.println("  Avg: " + stats.avgDurationMs() + "ms");
@@ -39,22 +39,22 @@ package com.ghatana.platform.observability.trace;
  *         System.out.println("  P50: " + stats.p50DurationMs() + "ms");
  *         System.out.println("  P95: " + stats.p95DurationMs() + "ms");
  *         System.out.println("  P99: " + stats.p99DurationMs() + "ms");
- *         
+ *
  *         System.out.println("Most common service: " + stats.mostCommonService());
  *         System.out.println("Most common operation: " + stats.mostCommonOperation());
  *         System.out.println("Avg spans/trace: " + stats.avgSpansPerTrace());
  *     });
  * }</pre>
- * 
+ *
  * <h2>Metrics Explained</h2>
- * 
+ *
  * <h2>Count Metrics</h2>
  * <ul>
  *   <li><b>totalTraces</b>: Number of traces matching query</li>
  *   <li><b>totalSpans</b>: Sum of spans across all matching traces</li>
  *   <li><b>errorCount</b>: Traces with at least one error span</li>
  * </ul>
- * 
+ *
  * <h2>Duration Statistics</h2>
  * <ul>
  *   <li><b>avgDurationMs</b>: Mean trace duration</li>
@@ -64,13 +64,13 @@ package com.ghatana.platform.observability.trace;
  *   <li><b>p95DurationMs</b>: 95th percentile - 95% of traces faster</li>
  *   <li><b>p99DurationMs</b>: 99th percentile - 99% of traces faster</li>
  * </ul>
- * 
+ *
  * <h2>Top Entities</h2>
  * <ul>
  *   <li><b>mostCommonService</b>: Service appearing most frequently in traces</li>
  *   <li><b>mostCommonOperation</b>: Operation appearing most frequently in spans</li>
  * </ul>
- * 
+ *
  * <h2>Calculated Metrics</h2>
  * <ul>
  *   <li><b>errorRate()</b>: (errorCount / totalTraces) * 100 (percentage)</li>
@@ -78,7 +78,7 @@ package com.ghatana.platform.observability.trace;
  *   <li><b>hasTraces()</b>: totalTraces > 0</li>
  *   <li><b>hasErrors()</b>: errorCount > 0</li>
  * </ul>
- * 
+ *
  * <h2>Validation Rules</h2>
  * <ul>
  *   <li>totalTraces >= 0</li>
@@ -103,7 +103,7 @@ package com.ghatana.platform.observability.trace;
  * @param p99DurationMs       99th percentile duration in milliseconds
  * @param mostCommonService   Service name that appears most frequently
  * @param mostCommonOperation Operation name that appears most frequently
- * 
+ *
  * @author Ghatana Team
  * @version 1.0
  * @since 1.0

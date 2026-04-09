@@ -29,9 +29,9 @@ class ConfigurationProviderTest {
     @DisplayName("Should get string configuration with default")
     void testGetStringWithDefault() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
-        
+
         assertEquals("default", config.getString("nonexistent.key", "default"));
-        
+
         config.set("test.key", "value");
         assertEquals("value", config.getString("test.key", "default"));
     }
@@ -40,12 +40,12 @@ class ConfigurationProviderTest {
     @DisplayName("Should get integer configuration")
     void testGetInt() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
-        
+
         assertEquals(42, config.getInt("nonexistent", 42));
-        
+
         config.set("test.int", "100");
         assertEquals(100, config.getInt("test.int", 0));
-        
+
         // Invalid integer returns default
         config.set("test.invalid", "not-a-number");
         assertEquals(42, config.getInt("test.invalid", 42));
@@ -55,13 +55,13 @@ class ConfigurationProviderTest {
     @DisplayName("Should get boolean configuration")
     void testGetBoolean() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
-        
+
         assertTrue(config.getBoolean("nonexistent", true));
         assertFalse(config.getBoolean("nonexistent", false));
-        
+
         config.set("test.bool", "true");
         assertTrue(config.getBoolean("test.bool", false));
-        
+
         config.set("test.bool", "false");
         assertFalse(config.getBoolean("test.bool", true));
     }
@@ -70,9 +70,9 @@ class ConfigurationProviderTest {
     @DisplayName("Should get double configuration")
     void testGetDouble() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
-        
+
         assertEquals(3.14, config.getDouble("nonexistent", 3.14), 0.001);
-        
+
         config.set("test.double", "2.718");
         assertEquals(2.718, config.getDouble("test.double", 0), 0.001);
     }
@@ -82,7 +82,7 @@ class ConfigurationProviderTest {
     void testTimeoutConfig() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
         TimeoutConfig timeoutConfig = config.getTimeoutConfig();
-        
+
         assertNotNull(timeoutConfig);
         assertEquals(Duration.ofSeconds(5), timeoutConfig.connectionTimeout());
         assertEquals(Duration.ofSeconds(30), timeoutConfig.operationTimeout());
@@ -93,7 +93,7 @@ class ConfigurationProviderTest {
     @DisplayName("Should create high latency timeout config")
     void testHighLatencyConfig() {
         TimeoutConfig config = TimeoutConfig.highLatency();
-        
+
         assertTrue(config.connectionTimeout().getSeconds() >= 10);
         assertTrue(config.operationTimeout().getSeconds() >= 60);
     }
@@ -102,7 +102,7 @@ class ConfigurationProviderTest {
     @DisplayName("Should create low latency timeout config")
     void testLowLatencyConfig() {
         TimeoutConfig config = TimeoutConfig.lowLatency();
-        
+
         assertTrue(config.connectionTimeout().getSeconds() <= 5);
         assertTrue(config.operationTimeout().getSeconds() <= 15);
     }
@@ -114,7 +114,7 @@ class ConfigurationProviderTest {
             .connectionTimeout(Duration.ofSeconds(10))
             .operationTimeout(Duration.ofSeconds(45))
             .build();
-        
+
         assertEquals(Duration.ofSeconds(10), config.connectionTimeout());
         assertEquals(Duration.ofSeconds(45), config.operationTimeout());
         // Others use defaults
@@ -126,9 +126,9 @@ class ConfigurationProviderTest {
     void testReload() {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
         config.set("test.reload", "before");
-        
+
         config.reload();
-        
+
         // After reload, custom value should be preserved if it was set via set()
         // (set() updates the cache which is preserved across reloads)
         assertEquals("before", config.getString("test.reload", "default"));
@@ -140,9 +140,9 @@ class ConfigurationProviderTest {
         ConfigurationProvider config = ConfigurationProvider.getInstance();
         config.set("key1", "value1");
         config.set("key2", "value2");
-        
+
         var all = config.getAll();
-        
+
         assertTrue(all.size() >= 2);
         assertEquals("value1", all.get("key1"));
         assertEquals("value2", all.get("key2"));
@@ -152,7 +152,7 @@ class ConfigurationProviderTest {
     @DisplayName("Should return default timeout config")
     void testDefaultTimeoutConfig() {
         TimeoutConfig config = TimeoutConfig.defaults();
-        
+
         assertEquals(5000L, config.connectionTimeoutMs());
         assertEquals(30000L, config.operationTimeoutMs());
         assertEquals(300000L, config.streamingTimeoutMs());
@@ -167,7 +167,7 @@ class ConfigurationProviderTest {
         TimeoutConfig config1 = TimeoutConfig.defaults();
         TimeoutConfig config2 = TimeoutConfig.defaults();
         TimeoutConfig config3 = TimeoutConfig.highLatency();
-        
+
         assertEquals(config1, config2);
         assertEquals(config1.hashCode(), config2.hashCode());
         assertNotEquals(config1, config3);
@@ -178,7 +178,7 @@ class ConfigurationProviderTest {
     void testTimeoutConfigToString() {
         TimeoutConfig config = TimeoutConfig.defaults();
         String str = config.toString();
-        
+
         assertTrue(str.contains("TimeoutConfig"));
         assertTrue(str.contains("connection"));
         assertTrue(str.contains("operation"));

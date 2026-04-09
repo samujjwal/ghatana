@@ -1,6 +1,5 @@
 package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.tutorputor.contentgeneration.*;
 import com.ghatana.core.activej.promise.PromiseCompat;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
@@ -23,21 +22,21 @@ import java.util.stream.Collectors;
  *     mlChecker,
  *     metricsCollector
  * );
- * 
+ *
  * // Validate content
  * PolicyCheckResult result = policyService.validateContent(
  *     "tenant-123",
  *     "Content to validate",
  *     Set.of(PolicyType.PROFANITY, PolicyType.HATE_SPEECH, PolicyType.PII)
  * ).getResult();
- * 
+ *
  * if (!result.passed()) {
  *     // Handle violations
  *     for (PolicyViolation violation : result.violations()) {
  *         System.out.println(violation.description());
  *     }
  * }
- * 
+ *
  * // Configure policy
  * policyService.configurePolicy("tenant-123", PolicyType.PROFANITY,
  *     Map.of("words", List.of("badword1", "badword2")));

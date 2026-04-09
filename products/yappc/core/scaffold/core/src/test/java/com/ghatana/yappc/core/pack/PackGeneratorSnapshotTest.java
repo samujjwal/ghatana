@@ -14,7 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Golden snapshot tests for pack generation validation. Tests ensure deterministic outputs and
  * catch regressions in pack generation.
- 
+
  * @doc.type class
  * @doc.purpose Handles pack generator snapshot test operations
  * @doc.layer core

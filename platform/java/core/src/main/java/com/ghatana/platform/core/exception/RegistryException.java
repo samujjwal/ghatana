@@ -148,9 +148,9 @@ package com.ghatana.platform.core.exception;
  * @doc.pattern domain-exception service-discovery registry-pattern
  */
 public class RegistryException extends BaseException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Constructs a RegistryException with an error message.
      *
@@ -212,7 +212,7 @@ public class RegistryException extends BaseException {
     public RegistryException(Throwable cause) {
         super(ErrorCode.SERVICE_UNAVAILABLE, cause);
     }
-    
+
     /**
      * Constructs a RegistryException with custom error code and message.
      *

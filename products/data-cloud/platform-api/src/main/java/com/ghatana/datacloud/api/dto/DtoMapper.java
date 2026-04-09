@@ -14,7 +14,7 @@ import com.ghatana.datacloud.entity.Entity;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Request -> Domain
  * MetaCollection collection = DtoMapper.toDomain(request, tenantId, userId);

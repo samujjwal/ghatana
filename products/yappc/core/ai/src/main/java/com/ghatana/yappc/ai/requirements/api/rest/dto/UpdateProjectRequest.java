@@ -8,7 +8,7 @@ import com.ghatana.yappc.ai.requirements.domain.project.ProjectStatus;
  * @param name Project name (optional)
  * @param description Project description (optional)
  * @param status Project status (optional)
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for update project request
  * @doc.layer core
@@ -20,4 +20,3 @@ public record UpdateProjectRequest(
     ProjectStatus status
 ) {
 }
-

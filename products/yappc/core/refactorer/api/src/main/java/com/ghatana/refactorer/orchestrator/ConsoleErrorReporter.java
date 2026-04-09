@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Console-based error reporter for testing. 
+ * Console-based error reporter for testing.
  * @doc.type class
  * @doc.purpose Handles console error reporter operations
  * @doc.layer core

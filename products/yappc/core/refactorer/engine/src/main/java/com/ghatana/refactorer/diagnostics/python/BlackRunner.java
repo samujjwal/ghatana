@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
  * BlackRunner runner = new BlackRunner(context);
  * boolean success = runner.run().join();
  * }</pre>
- * 
+ *
  * @doc.type runner
  * @doc.language python
  * @doc.tool black
- 
+
  * @doc.purpose Handles black runner operations
  * @doc.layer core
  * @doc.pattern ValueObject
@@ -73,7 +73,7 @@ public class BlackRunner {
 
     /**
      * Runs black formatting on the project.
-     * 
+     *
      * @return Promise resolving to true if formatting succeeded
      * @doc.type method
      * @doc.promise ActiveJ Promise for async Black formatting

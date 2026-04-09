@@ -252,4 +252,3 @@ public class WorkflowTask {
                 taskId, title, assigneeId, state, priority);
     }
 }
-

@@ -15,16 +15,16 @@ import java.util.Optional;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * RequirementRepository repo = new PostgreSQLRequirementRepository(dataSource);
- * 
+ *
  * // Save requirement with versions
  * Requirement saved = repo.save(requirement).getResult();
- * 
+ *
  * // Find requirement
  * Optional<Requirement> found = repo.findById(requirementId).getResult();
- * 
+ *
  * // List project requirements
  * List<Requirement> reqs = repo.findByProjectId(projectId).getResult();
- * 
+ *
  * // Find requirements by status
  * List<Requirement> pending = repo.findByStatus(RequirementStatus.PENDING_REVIEW)
  *     .getResult();

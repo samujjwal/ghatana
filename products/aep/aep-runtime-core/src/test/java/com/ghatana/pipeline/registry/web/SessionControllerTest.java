@@ -1,7 +1,6 @@
 package com.ghatana.pipeline.registry.web;
 
 import com.ghatana.platform.security.session.SessionManager;
-import com.ghatana.platform.security.session.SessionState;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;

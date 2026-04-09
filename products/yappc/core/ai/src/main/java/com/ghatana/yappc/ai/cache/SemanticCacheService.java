@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 /**
  * Semantic Cache Service for AI Responses (Java/ActiveJ)
@@ -103,7 +102,7 @@ public class SemanticCacheService {
     private final CacheConfig config;
     private final Map<String, CacheEntry> cache;
     private final ReadWriteLock lock;
-    
+
     // Metrics
     private long totalHits = 0;
     private long totalMisses = 0;
@@ -171,7 +170,7 @@ public class SemanticCacheService {
                     // Update access stats
                     updateAccessStats(bestMatch.entry());
                     totalHits++;
-                    
+
                     if (model != null) {
                         hitsByModel.merge(model, 1L, Long::sum);
                     }

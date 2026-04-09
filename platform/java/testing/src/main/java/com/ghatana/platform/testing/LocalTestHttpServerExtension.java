@@ -30,7 +30,7 @@ import java.net.URI;
  *     void shouldAccessDefaultGetEndpoint(LocalTestHttpServer server) throws IOException {
  *         // Test default /get endpoint created by extension
  *         URI defaultGetUri = server.getServerBaseUri().resolve("/get");
- *         
+ *
  *         HttpURLConnection conn = (HttpURLConnection) defaultGetUri.toURL().openConnection();
  *         assertEquals(200, conn.getResponseCode());
  *     }

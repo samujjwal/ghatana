@@ -9,7 +9,6 @@ import com.ghatana.agent.release.AgentReleaseBuilder;
 import com.ghatana.agent.release.AgentReleaseState;
 import com.ghatana.datacloud.client.DataCloudClient;
 import com.ghatana.datacloud.entity.EntityInterface;
-import com.ghatana.datacloud.entity.storage.QuerySpecInterface;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

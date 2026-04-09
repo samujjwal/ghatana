@@ -12,7 +12,7 @@ import io.activej.promise.Promise;
  *   <li>Simple synchronous wrapping is sufficient</li>
  * </ul>
  * </p>
- * 
+ *
  * <h2>⚠️ WARNING - Use Sparingly</h2>
  * <b>PREFER</b>: Promise.ofBlocking(executor, callable) for true async execution
  * <br>
@@ -22,7 +22,7 @@ import io.activej.promise.Promise;
  *   <li>Operation already executed synchronously (just wrapping result)</li>
  *   <li>Testing/mocking scenarios</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Compatibility bridge for Promise APIs in legacy or constrained contexts
  * @doc.layer core
@@ -59,14 +59,14 @@ import io.activej.promise.Promise;
  *     // Test promise chain without actual I/O
  * }
  * }</pre>
- * 
+ *
  * <h2>API</h2>
  * <ul>
  *   <li><b>runBlocking(Callable<T>)</b>: Execute callable synchronously, wrap result in Promise</li>
  *   <li>Returns Promise.of(result) on success</li>
  *   <li>Returns Promise.ofException(e) on failure</li>
  * </ul>
- * 
+ *
  * <h2>Execution Model</h2>
  * <pre>{@code
  * Thread timeline:
@@ -74,7 +74,7 @@ import io.activej.promise.Promise;
  *                                    ↑
  *                                    BLOCKS HERE (synchronous execution)
  * }</pre>
- * 
+ *
  * <b>Contrast with Promise.ofBlocking()</b>:
  * <pre>{@code
  * Thread timeline:
@@ -83,7 +83,7 @@ import io.activej.promise.Promise;
  *                                       ↑
  *                                       BLOCKS WORKER, NOT EVENTLOOP
  * }</pre>
- * 
+ *
  * <h2>When to Use</h2>
  * <b>✅ Acceptable Use Cases</b>:
  * <ul>
@@ -92,7 +92,7 @@ import io.activej.promise.Promise;
  *   <li>Legacy code migration (temporary bridge)</li>
  *   <li>ActiveJ version compatibility (missing ofBlocking())</li>
  * </ul>
- * 
+ *
  * <b>❌ DO NOT USE FOR</b>:
  * <ul>
  *   <li>Database queries → Use Promise.ofBlocking(executor, ...)</li>
@@ -101,10 +101,10 @@ import io.activej.promise.Promise;
  *   <li>File I/O → Use Promise.ofBlocking(executor, ...)</li>
  *   <li>Any blocking operation → Use Promise.ofBlocking(executor, ...)</li>
  * </ul>
- * 
+ *
  * <h2>Migration Path</h2>
  * If using runBlocking() for actual I/O, migrate to proper async:
- * 
+ *
  * <pre>{@code
  * // BEFORE (blocks Eventloop)
  * return PromisesCompat.runBlocking(() -> jedis.get("key"));
@@ -112,17 +112,17 @@ import io.activej.promise.Promise;
  * // AFTER (async execution)
  * return Promise.ofBlocking(blockingExecutor(), () -> jedis.get("key"));
  * }</pre>
- * 
+ *
  * <h2>Performance Impact</h2>
  * <ul>
  *   <li><b>No async benefit</b>: Blocks calling thread</li>
  *   <li><b>Exception handling overhead</b>: try-catch on every call</li>
  *   <li><b>Eventloop starvation risk</b>: If called from Eventloop thread</li>
  * </ul>
- * 
+ *
  * <h2>Alternative: Promise.of()</h2>
  * For already-computed values, consider direct Promise.of():
- * 
+ *
  * <pre>{@code
  * // Using PromisesCompat
  * return PromisesCompat.runBlocking(() -> "value");

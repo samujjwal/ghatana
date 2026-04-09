@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.Objects;
 import io.activej.promise.Promise;
-import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +24,11 @@ import org.slf4j.LoggerFactory;
  * RuffRunner runner = new RuffRunner(context);
  * List<UnifiedDiagnostic> diagnostics = runner.run();
  * }</pre>
- * 
+ *
  * @doc.type runner
  * @doc.language python
  * @doc.tool ruff
- 
+
  * @doc.purpose Handles ruff runner operations
  * @doc.layer core
  * @doc.pattern ValueObject
@@ -70,7 +69,7 @@ public class RuffRunner {
 
     /**
      * Runs ruff analysis on the specified project root.
-     * 
+     *
      * @param projectRoot The project root directory to analyze
      * @return Promise resolving to list of unified diagnostics
      * @doc.type method
@@ -106,7 +105,7 @@ public class RuffRunner {
 
     /**
      * Convenience overload used by existing tests.
-     * 
+     *
      * @return Promise resolving to list of unified diagnostics for context root
      * @doc.type method
      * @doc.promise ActiveJ Promise for async ruff execution on context root

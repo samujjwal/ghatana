@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Knowledge Graph edge model for CLI creation.
  * Stub for compilation — bridges to YAPPC domain model.
- 
+
  * @doc.type class
  * @doc.purpose Handles knowledge graph edge operations
  * @doc.layer core

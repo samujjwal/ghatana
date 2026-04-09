@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.api;
 
 /**
- * Interface for refactoring operations that extract a method from a block of code. 
+ * Interface for refactoring operations that extract a method from a block of code.
  * @doc.type interface
  * @doc.purpose Defines the contract for extract method refactoring
  * @doc.layer core

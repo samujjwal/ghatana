@@ -3,7 +3,6 @@ package com.ghatana.virtualorg.framework.tools;
 import com.ghatana.virtualorg.framework.runtime.AgentContext;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Context for tool execution, providing access to agent context and execution

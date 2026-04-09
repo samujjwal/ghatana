@@ -1,7 +1,6 @@
 package com.ghatana.eventprocessing.observability;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Reference configuration and documentation for observability dashboards,
@@ -258,7 +257,7 @@ public final class ConnectorDeploymentObservability {
         ### Recovery Actions
 
         - **For transient issues**: Wait 2 minutes, monitor recovery
-        - **For persistent issues**: 
+        - **For persistent issues**:
           ```
           curl -X POST http://deployment-handler:8080/api/v1/deployments/{deployment_id}/undeploy
           (wait 30 seconds)

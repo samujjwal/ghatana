@@ -7,7 +7,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for AdvancedPatternQueryBuilder with temporal constraints. 
+/** Unit tests for AdvancedPatternQueryBuilder with temporal constraints.
  * @doc.type class
  * @doc.purpose Handles advanced pattern query builder test operations
  * @doc.layer core

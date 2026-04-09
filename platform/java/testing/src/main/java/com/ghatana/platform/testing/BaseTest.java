@@ -65,7 +65,7 @@ import org.slf4j.Logger;
  *     void shouldCreateUserWithValidName() {
  *         logStep("Creating user", "name=Alice");
  *         User user = userService.createUser("Alice");
- *         
+ *
  *         logStep("Verifying user");
  *         assertThat(user.getName()).isEqualTo("Alice");
  *     }
@@ -180,11 +180,11 @@ import org.slf4j.Logger;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(LifecycleAwareExtension.class)
 public abstract class BaseTest implements TestLifecycleCallback {
-    
+
     protected final Logger log = TestLoggingUtils.getLogger(getClass());
     private long testStartTime;
     private String testName;
-    
+
     /**
      * Performs automatic setup before each test method.
      *
@@ -205,7 +205,7 @@ public abstract class BaseTest implements TestLifecycleCallback {
         TestLoggingUtils.logTestStart(log, testName);
         beforeTest();
     }
-    
+
     /**
      * Performs automatic cleanup after each test method.
      *
@@ -228,7 +228,7 @@ public abstract class BaseTest implements TestLifecycleCallback {
             TestLoggingUtils.logTestEnd(log, testName, true);
         }
     }
-    
+
     /**
      * Hook for subclasses to perform setup before each test.
      *
@@ -255,7 +255,7 @@ public abstract class BaseTest implements TestLifecycleCallback {
     protected void beforeTest() {
         // Default implementation does nothing
     }
-    
+
     /**
      * Hook for subclasses to perform cleanup after each test.
      *
@@ -292,7 +292,7 @@ public abstract class BaseTest implements TestLifecycleCallback {
     protected void afterTest() {
         // Default implementation does nothing
     }
-    
+
     /**
      * Logs a test step for debugging multi-step tests.
      *

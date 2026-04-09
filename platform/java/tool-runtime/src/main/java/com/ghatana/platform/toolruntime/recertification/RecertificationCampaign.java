@@ -5,7 +5,6 @@
 package com.ghatana.platform.toolruntime.recertification;
 
 import java.time.Instant;
-import java.util.List;
 
 /**
  * Immutable snapshot of a recertification campaign.

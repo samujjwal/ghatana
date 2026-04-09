@@ -25,7 +25,7 @@ import java.util.*;
  * );
  *
  * // Evaluate schema change policy
- * PolicyDecision decision = runPromise(() -> 
+ * PolicyDecision decision = runPromise(() ->
  *     policyService.evaluateSchemaChange(
  *         "tenant-123",
  *         "orders",
@@ -131,7 +131,7 @@ public class PolicyEnforcementService {
                         "tenant", tenantId,
                         "collection", collectionName,
                         "allowed", String.valueOf(decision.isAllowed()));
-                    
+
                     if (decision.isAllowed()) {
                         logger.info("Schema change approved: tenant={}, collection={}, user={}, changes={}",
                             tenantId, collectionName, userId, schemaChanges.summary());
@@ -193,7 +193,7 @@ public class PolicyEnforcementService {
                         "tenant", tenantId,
                         "changeType", rbacChange.getType(),
                         "allowed", String.valueOf(decision.isAllowed()));
-                    
+
                     if (decision.isAllowed()) {
                         logger.info("RBAC change approved: tenant={}, type={}, user={}, target={}",
                             tenantId, rbacChange.getType(), userId, rbacChange.getTargetUserId());
@@ -255,7 +255,7 @@ public class PolicyEnforcementService {
                         "tenant", tenantId,
                         "operation", operation.name(),
                         "allowed", String.valueOf(decision.isAllowed()));
-                    
+
                     if (decision.isAllowed()) {
                         logger.info("Collection lifecycle approved: tenant={}, operation={}, collection={}, user={}",
                             tenantId, operation, collectionName, userId);
@@ -325,7 +325,7 @@ public class PolicyEnforcementService {
                         "tenant", tenantId,
                         "operation", operation.name(),
                         "allowed", String.valueOf(decision.isAllowed()));
-                    
+
                     if (decision.isAllowed()) {
                         logger.info("Bulk operation approved: tenant={}, operation={}, collection={}, count={}, user={}",
                             tenantId, operation, collectionName, recordCount, userId);

@@ -8,27 +8,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Data-Cloud plugin for Knowledge Graph storage.
- * 
+ *
  * <p>Replaces in-memory storage with persistent data-cloud backend.
- * 
+ *
  * @doc.type class
  * @doc.purpose Knowledge Graph data-cloud plugin
  * @doc.layer infrastructure
  * @doc.pattern Plugin/Adapter
  */
 public class KnowledgeGraphDataCloudPlugin {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(KnowledgeGraphDataCloudPlugin.class);
     private static final String NODE_COLLECTION = "kg_node";
     private static final String EDGE_COLLECTION = "kg_edge";
-    
+
     private final DataCloudClient client;
     private final YappcEntityMapper mapper;
-    
+
     public KnowledgeGraphDataCloudPlugin(
         @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
@@ -37,7 +36,7 @@ public class KnowledgeGraphDataCloudPlugin {
         this.mapper = mapper;
         LOG.info("Initialized KnowledgeGraphDataCloudPlugin");
     }
-    
+
     /**
      * Saves a knowledge graph node.
      */
@@ -46,7 +45,7 @@ public class KnowledgeGraphDataCloudPlugin {
         LOG.debug("Saving KG node: {}", nodeId);
         return Promise.complete();
     }
-    
+
     /**
      * Saves a knowledge graph edge.
      */
@@ -55,7 +54,7 @@ public class KnowledgeGraphDataCloudPlugin {
         LOG.debug("Saving KG edge: {}", edgeId);
         return Promise.complete();
     }
-    
+
     /**
      * Retrieves all nodes.
      */
@@ -64,7 +63,7 @@ public class KnowledgeGraphDataCloudPlugin {
         LOG.debug("Retrieving all KG nodes");
         return Promise.of(List.of());
     }
-    
+
     /**
      * Retrieves all edges.
      */
@@ -73,7 +72,7 @@ public class KnowledgeGraphDataCloudPlugin {
         LOG.debug("Retrieving all KG edges");
         return Promise.of(List.of());
     }
-    
+
     /**
      * Deletes a node by ID.
      */
@@ -82,7 +81,7 @@ public class KnowledgeGraphDataCloudPlugin {
         LOG.debug("Deleting KG node: {}", nodeId);
         return Promise.of(true);
     }
-    
+
     /**
      * Deletes an edge by ID.
      */

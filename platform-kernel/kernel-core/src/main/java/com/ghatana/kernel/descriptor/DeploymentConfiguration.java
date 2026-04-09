@@ -3,7 +3,6 @@ package com.ghatana.kernel.descriptor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Contains deployment configuration for kernel components.
@@ -19,7 +18,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class DeploymentConfiguration {
-    
+
     private final String environment;
     private final String region;
     private final int replicas;

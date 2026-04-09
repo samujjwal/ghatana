@@ -103,28 +103,28 @@ import java.util.UUID;
  * @doc.pattern Context
  */
 public final class CorrelationContext {
-    
+
     public static final String CORRELATION_ID_KEY = "correlationId";
     public static final String TRACE_ID_KEY = "traceId";
     public static final String SPAN_ID_KEY = "spanId";
     public static final String USER_ID_KEY = "userId";
     public static final String TENANT_ID_KEY = "tenantId";
     public static final String REQUEST_ID_KEY = "requestId";
-    
+
     private static final ThreadLocal<String> CORRELATION_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USER_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> REQUEST_ID = new ThreadLocal<>();
-    
+
     private CorrelationContext() {}
-    
+
     /**
      * Initialize correlation context for a new request.
      */
     public static void initialize() {
         initialize(generateCorrelationId(), null, null, null);
     }
-    
+
     /**
      * Initialize correlation context with specific values.
      */
@@ -134,18 +134,18 @@ public final class CorrelationContext {
         USER_ID.set(userId);
         TENANT_ID.set(tenantId);
         REQUEST_ID.set(requestId != null ? requestId : generateRequestId());
-        
+
         // Update MDC for logging
         updateMDC();
     }
-    
+
     /**
      * Initialize from existing correlation context (for propagation).
      */
     public static void initializeFrom(CorrelationData data) {
         initialize(data.getCorrelationId(), data.getUserId(), data.getTenantId(), data.getRequestId());
     }
-    
+
     /**
      * Update MDC with current context and trace information.
      */
@@ -155,22 +155,22 @@ public final class CorrelationContext {
         if (correlationId != null) {
             MDC.put(CORRELATION_ID_KEY, correlationId);
         }
-        
+
         String userId = USER_ID.get();
         if (userId != null) {
             MDC.put(USER_ID_KEY, userId);
         }
-        
+
         String tenantId = TENANT_ID.get();
         if (tenantId != null) {
             MDC.put(TENANT_ID_KEY, tenantId);
         }
-        
+
         String requestId = REQUEST_ID.get();
         if (requestId != null) {
             MDC.put(REQUEST_ID_KEY, requestId);
         }
-        
+
         // Add OpenTelemetry trace information
         Span currentSpan = Span.current();
         if (currentSpan != null) {
@@ -181,7 +181,7 @@ public final class CorrelationContext {
             }
         }
     }
-    
+
     /**
      * Clear correlation context.
      */
@@ -190,7 +190,7 @@ public final class CorrelationContext {
         USER_ID.remove();
         TENANT_ID.remove();
         REQUEST_ID.remove();
-        
+
         // Clear MDC
         MDC.remove(CORRELATION_ID_KEY);
         MDC.remove(TRACE_ID_KEY);
@@ -199,25 +199,25 @@ public final class CorrelationContext {
         MDC.remove(TENANT_ID_KEY);
         MDC.remove(REQUEST_ID_KEY);
     }
-    
+
     // Getters
-    
+
     public static String getCorrelationId() {
         return CORRELATION_ID.get();
     }
-    
+
     public static String getUserId() {
         return USER_ID.get();
     }
-    
+
     public static String getTenantId() {
         return TENANT_ID.get();
     }
-    
+
     public static String getRequestId() {
         return REQUEST_ID.get();
     }
-    
+
     public static String getTraceId() {
         Span currentSpan = Span.current();
         if (currentSpan != null) {
@@ -228,7 +228,7 @@ public final class CorrelationContext {
         }
         return null;
     }
-    
+
     public static String getSpanId() {
         Span currentSpan = Span.current();
         if (currentSpan != null) {
@@ -239,9 +239,9 @@ public final class CorrelationContext {
         }
         return null;
     }
-    
+
     // Setters
-    
+
     public static void setUserId(String userId) {
         USER_ID.set(userId);
         if (userId != null) {
@@ -250,7 +250,7 @@ public final class CorrelationContext {
             MDC.remove(USER_ID_KEY);
         }
     }
-    
+
     public static void setTenantId(String tenantId) {
         TENANT_ID.set(tenantId);
         if (tenantId != null) {
@@ -259,7 +259,7 @@ public final class CorrelationContext {
             MDC.remove(TENANT_ID_KEY);
         }
     }
-    
+
     /**
      * Get current correlation data for propagation.
      */
@@ -273,7 +273,7 @@ public final class CorrelationContext {
             getSpanId()
         );
     }
-    
+
     /**
      * Execute a task with correlation context.
      */
@@ -290,7 +290,7 @@ public final class CorrelationContext {
             }
         }
     }
-    
+
     /**
      * Execute a runnable with correlation context.
      */
@@ -300,17 +300,17 @@ public final class CorrelationContext {
             return null;
         });
     }
-    
+
     // Utility methods
-    
+
     private static String generateCorrelationId() {
         return "corr-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
-    
+
     private static String generateRequestId() {
         return "req-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
-    
+
     /**
      * Data class for correlation context propagation.
      */
@@ -321,8 +321,8 @@ public final class CorrelationContext {
         private final String requestId;
         private final String traceId;
         private final String spanId;
-        
-        public CorrelationData(String correlationId, String userId, String tenantId, 
+
+        public CorrelationData(String correlationId, String userId, String tenantId,
                              String requestId, String traceId, String spanId) {
             this.correlationId = correlationId;
             this.userId = userId;
@@ -331,14 +331,14 @@ public final class CorrelationContext {
             this.traceId = traceId;
             this.spanId = spanId;
         }
-        
+
         public String getCorrelationId() { return correlationId; }
         public String getUserId() { return userId; }
         public String getTenantId() { return tenantId; }
         public String getRequestId() { return requestId; }
         public String getTraceId() { return traceId; }
         public String getSpanId() { return spanId; }
-        
+
         @Override
         public String toString() {
             return "CorrelationData{" +

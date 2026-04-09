@@ -11,10 +11,10 @@ import java.util.UUID;
 
 /**
  * Repository interface for pattern CRUD operations and queries.
- * 
+ *
  * <p>Provides async persistence operations for {@link PatternSpecification} and {@link PatternMetadata}
  * objects. All operations return ActiveJ {@link Promise} for non-blocking execution.
- * 
+ *
  * @doc.pattern Repository Pattern - Abstracts persistence layer, allowing multiple implementations
  *               (PostgreSQL, in-memory, Redis, etc.) without changing consuming code.
  *               All implementations MUST provide same contract guarantees.
@@ -54,7 +54,7 @@ import java.util.UUID;
  *                     <td>5-20ms</td>
  *                   </tr>
  *                 </table>
- *                 
+ *
  *                 <strong>Query Operations:</strong>
  *                 <ul>
  *                   <li><strong>findByTenant(tenantId, status):</strong> List all patterns for tenant
@@ -87,26 +87,26 @@ import java.util.UUID;
  *                  .description("Detects fraudulent transaction sequences")
  *                  .eventTypes(List.of("login.failed", "transaction.high_value"))
  *                  .build();
- *              
+ *
  *              // Save pattern (async)
  *              repository.save(spec)
  *                  .whenComplete((metadata, error) -> {
  *                      if (error == null) {
  *                          UUID patternId = metadata.getId();
  *                          System.out.println("Pattern saved: " + patternId);
- *                          
+ *
  *                          // Find pattern by ID
  *                          repository.findById(patternId)
  *                              .whenComplete((found, findError) -> {
  *                                  if (findError == null && found.isPresent()) {
- *                                      System.out.println("Pattern name: " + 
+ *                                      System.out.println("Pattern name: " +
  *                                          found.get().getName());
  *                                  }
  *                              });
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Query by Event Type:</strong>
  *              <pre>
  *              // Find all ACTIVE patterns matching "transaction" event type
@@ -114,12 +114,12 @@ import java.util.UUID;
  *                  .whenComplete((patterns, error) -> {
  *                      if (error == null) {
  *                          System.out.println("Found " + patterns.size() + " patterns");
- *                          patterns.forEach(p -> 
+ *                          patterns.forEach(p ->
  *                              System.out.println("  - " + p.getName()));
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Update Pattern Status:</strong>
  *              <pre>
  *              // Activate pattern after compilation
@@ -146,75 +146,75 @@ import java.util.UUID;
  * @doc.pattern Repository
  */
 public interface PatternRepository {
-    
+
     /**
      * Save a pattern specification.
-     * 
+     *
      * @param spec the pattern specification to save
      * @return a promise that resolves to the saved pattern metadata
      */
     Promise<PatternMetadata> save(PatternSpecification spec);
-    
+
     /**
      * Find a pattern by ID.
-     * 
+     *
      * @param id the pattern ID
      * @return a promise that resolves to the pattern metadata, or empty if not found
      */
     Promise<Optional<PatternMetadata>> findById(UUID id);
-    
+
     /**
      * Find patterns by tenant ID and status.
-     * 
+     *
      * @param tenantId the tenant ID
      * @param status the pattern status (null for all statuses)
      * @return a promise that resolves to the list of pattern metadata
      */
     Promise<List<PatternMetadata>> findByTenant(String tenantId, PatternStatus status);
-    
+
     /**
      * Find patterns by tenant ID and name.
-     * 
+     *
      * @param tenantId the tenant ID
      * @param name the pattern name
      * @return a promise that resolves to the list of pattern metadata
      */
     Promise<List<PatternMetadata>> findByTenantAndName(String tenantId, String name);
-    
+
     /**
      * Update a pattern with a new specification.
-     * 
+     *
      * @param id the pattern ID
      * @param newSpec the new pattern specification
      * @return a promise that resolves to the updated pattern metadata
      */
     Promise<PatternMetadata> updatePattern(UUID id, PatternSpecification newSpec);
-    
+
     /**
      * Update the status of a pattern.
-     * 
+     *
      * @param id the pattern ID
      * @param status the new status
      * @return a promise that resolves when the update is complete
      */
     Promise<Void> updateStatus(UUID id, PatternStatus status);
-    
+
     /**
      * Delete a pattern.
-     * 
+     *
      * @param id the pattern ID
      * @return a promise that resolves when the deletion is complete
      */
     Promise<Void> delete(UUID id);
-    
+
     /**
      * Check if a pattern exists.
-     * 
+     *
      * @param id the pattern ID
      * @return a promise that resolves to true if the pattern exists
      */
     Promise<Boolean> exists(UUID id);
-    
+
     /**
      * Get the count of patterns for a tenant.
      *
@@ -234,8 +234,3 @@ public interface PatternRepository {
      */
     Promise<List<PatternMetadata>> findByEventType(String tenantId, String eventType, PatternStatus status);
 }
-
-
-
-
-

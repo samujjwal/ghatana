@@ -151,7 +151,7 @@ public interface CrossProductCommunication {
         private final Object payload;
         private final long timeoutMillis;
 
-        public CrossProductRequest(String requestId, String sourceProduct, String targetProduct, 
+        public CrossProductRequest(String requestId, String sourceProduct, String targetProduct,
                                    String operation, Object payload, long timeoutMillis) {
             this.requestId = requestId;
             this.sourceProduct = sourceProduct;

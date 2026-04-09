@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.model;
 
 /**
- * Represents the type of a Python element. 
+ * Represents the type of a Python element.
  * @doc.type enum
  * @doc.purpose Enumerates python element type values
  * @doc.layer core

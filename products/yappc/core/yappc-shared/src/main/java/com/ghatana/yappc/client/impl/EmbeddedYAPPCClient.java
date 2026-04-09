@@ -17,16 +17,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author YAPPC Team
  * @version 1.0.0
  * @since 1.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles embedded yappc client operations
  * @doc.layer core
  * @doc.pattern Implementation
 */
 public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAPPCClient {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedYAPPCClient.class);
-    
+
     private final YAPPCConfig config;
     private final Map<String, TaskDefinition> registeredTasks;
     private final EmbeddedTaskExecutor taskExecutor;
@@ -34,7 +34,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
     private final EmbeddedCanvasService canvasService;
     private final EmbeddedKnowledgeService knowledgeService;
     private final EmbeddedLifecycleService lifecycleService;
-    
+
     public EmbeddedYAPPCClient(YAPPCConfig config) {
         this.config = config;
         this.registeredTasks = new ConcurrentHashMap<>();
@@ -44,7 +44,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
         this.knowledgeService = new EmbeddedKnowledgeService(config);
         this.lifecycleService = new EmbeddedLifecycleService(config);
     }
-    
+
     @Override
     public Promise<Void> start() {
         return Promise.ofCallback(cb -> {
@@ -52,16 +52,16 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
                 cb.set(null);
                 return;
             }
-            
+
             logger.info("Starting embedded YAPPC client...");
-            
+
             try {
                 taskExecutor.initialize();
                 agentExecutor.initialize();
                 canvasService.initialize();
                 knowledgeService.initialize();
                 lifecycleService.initialize();
-                
+
                 markStarted();
                 logger.info("Embedded YAPPC client started successfully");
                 cb.set(null);
@@ -71,7 +71,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<Void> stop() {
         return Promise.ofCallback(cb -> {
@@ -79,16 +79,16 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
                 cb.set(null);
                 return;
             }
-            
+
             logger.info("Stopping embedded YAPPC client...");
-            
+
             try {
                 lifecycleService.shutdown();
                 knowledgeService.shutdown();
                 canvasService.shutdown();
                 agentExecutor.shutdown();
                 taskExecutor.shutdown();
-                
+
                 markStopped();
                 logger.info("Embedded YAPPC client stopped successfully");
                 cb.set(null);
@@ -98,19 +98,19 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<TaskRegistrationResult> registerTask(TaskDefinition task) {
         return Promise.ofCallback(cb -> {
             try {
                 if (registeredTasks.containsKey(task.getId())) {
                     cb.set(TaskRegistrationResult.failure(
-                        task.getId(), 
+                        task.getId(),
                         "Task already registered: " + task.getId()
                     ));
                     return;
                 }
-                
+
                 registeredTasks.put(task.getId(), task);
                 logger.info("Registered task: {} ({})", task.getName(), task.getId());
                 cb.set(TaskRegistrationResult.success(task.getId()));
@@ -120,7 +120,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <R> Promise<TaskResult<R>> executeTask(String taskId, Object request, TaskContext context) {
@@ -131,7 +131,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
                     cb.setException(new IllegalArgumentException("Task not found: " + taskId));
                     return;
                 }
-                
+
                 logger.info("Executing task: {} for tenant: {}", taskId, context.getTenantId());
                 taskExecutor.execute(task, request, context)
                     .whenComplete((result, error) -> {
@@ -147,12 +147,12 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<List<TaskDefinition>> listTasks() {
         return Promise.of(List.copyOf(registeredTasks.values()));
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <I, O> Promise<StepResult<O>> invokeAgent(String phase, String stepName, I input, StepContext context) {
@@ -173,13 +173,13 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Set<String> listStepsByPhase(String phase) {
         // Return empty set for now - can be enhanced with actual step registry
         return Set.of();
     }
-    
+
     @Override
     public Promise<CanvasResult> createCanvas(CreateCanvasRequest request) {
         return Promise.ofCallback(cb -> {
@@ -199,7 +199,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<ValidationReport> validateCanvas(String canvasId, ValidationContext context) {
         return Promise.ofCallback(cb -> {
@@ -219,7 +219,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<GenerationResult> generateFromCanvas(String canvasId, GenerationOptions options) {
         return Promise.ofCallback(cb -> {
@@ -239,7 +239,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<SearchResults> searchKnowledge(KnowledgeQuery query) {
         return Promise.ofCallback(cb -> {
@@ -259,7 +259,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<Void> ingestKnowledge(KnowledgeDocument document) {
         return Promise.ofCallback(cb -> {
@@ -279,7 +279,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<LifecycleState> getLifecycleState(String projectId) {
         return Promise.ofCallback(cb -> {
@@ -299,7 +299,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<PhaseResult> advancePhase(String projectId, AdvancePhaseRequest request) {
         return Promise.ofCallback(cb -> {
@@ -319,7 +319,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<HealthStatus> checkHealth() {
         return Promise.ofCallback(cb -> {
@@ -332,12 +332,12 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
                     return;
                 }
 
-                boolean allHealthy = taskExecutor.isHealthy() 
+                boolean allHealthy = taskExecutor.isHealthy()
                     && agentExecutor.isHealthy()
                     && canvasService.isHealthy()
                     && knowledgeService.isHealthy()
                     && lifecycleService.isHealthy();
-                
+
                 HealthStatus status = HealthStatus.builder()
                     .healthy(allHealthy)
                     .status(allHealthy ? "UP" : "DEGRADED")
@@ -354,7 +354,7 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
                             lifecycleService.isHealthy(), "UP", "Lifecycle service operational")
                     ))
                     .build();
-                
+
                 cb.set(status);
             } catch (Exception e) {
                 logger.error("Failed to check health", e);
@@ -362,17 +362,17 @@ public final class EmbeddedYAPPCClient extends ManagedAsyncClient implements YAP
             }
         });
     }
-    
+
     @Override
     public Promise<YAPPCConfig> getConfiguration() {
         return Promise.of(config);
     }
-    
+
     @Override
     public Promise<Boolean> healthCheck() {
         return checkHealth().map(HealthStatus::isHealthy);
     }
-    
+
     @Override
     public Promise<Map<String, Object>> getMetrics() {
         return Promise.of(Map.of(

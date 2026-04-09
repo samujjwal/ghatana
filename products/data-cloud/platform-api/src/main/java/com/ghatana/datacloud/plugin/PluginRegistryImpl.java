@@ -62,9 +62,9 @@ public class PluginRegistryImpl implements PluginRegistry {
         plugins.put(plugin.id(), stored);
         configurations.put(plugin.id(), new HashMap<>());
 
-        metrics.incrementCounter("plugin.register.success", 
+        metrics.incrementCounter("plugin.register.success",
             "tenant", plugin.tenantId(), "type", plugin.type().name());
-        log.info("Plugin registered: id={}, name={}, tenant={}", 
+        log.info("Plugin registered: id={}, name={}, tenant={}",
             plugin.id(), plugin.name(), plugin.tenantId());
 
         return Promise.of(stored);
@@ -202,7 +202,7 @@ public class PluginRegistryImpl implements PluginRegistry {
 
         PluginMetadata plugin = plugins.get(pluginId);
         if (plugin == null) {
-            return Promise.of(new HookResult(pluginId, hookName, false, null, 
+            return Promise.of(new HookResult(pluginId, hookName, false, null,
                 "Plugin not found", 0));
         }
 
@@ -217,20 +217,20 @@ public class PluginRegistryImpl implements PluginRegistry {
         }
 
         long startTime = System.currentTimeMillis();
-        
+
         // Simulate hook execution
         try {
             Object result = executeHookLogic(hookName, context);
             long executionTime = System.currentTimeMillis() - startTime;
-            
+
             metrics.incrementCounter("plugin.hook.success", "plugin", pluginId, "hook", hookName);
-            
+
             return Promise.of(new HookResult(pluginId, hookName, true, result, null, executionTime));
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
             metrics.incrementCounter("plugin.hook.error", "plugin", pluginId, "hook", hookName);
-            
-            return Promise.of(new HookResult(pluginId, hookName, false, null, 
+
+            return Promise.of(new HookResult(pluginId, hookName, false, null,
                 e.getMessage(), executionTime));
         }
     }
@@ -241,7 +241,7 @@ public class PluginRegistryImpl implements PluginRegistry {
 
         PluginMetadata plugin = plugins.get(pluginId);
         if (plugin == null) {
-            return Promise.of(new PluginHealth(pluginId, false, "NOT_FOUND", 
+            return Promise.of(new PluginHealth(pluginId, false, "NOT_FOUND",
                 System.currentTimeMillis(), "Plugin not registered", List.of()));
         }
 
@@ -250,7 +250,7 @@ public class PluginRegistryImpl implements PluginRegistry {
         String message = healthy ? "Plugin is active and operational" : "Plugin is not active";
         List<String> issues = healthy ? List.of() : List.of("Plugin status: " + plugin.status());
 
-        return Promise.of(new PluginHealth(pluginId, healthy, status, 
+        return Promise.of(new PluginHealth(pluginId, healthy, status,
             System.currentTimeMillis(), message, issues));
     }
 

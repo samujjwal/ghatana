@@ -1,7 +1,6 @@
 package com.ghatana.core.operator;
 
 import com.ghatana.platform.domain.event.Event;
-import com.ghatana.core.operator.OperatorType;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -439,4 +438,3 @@ public class OperatorComposer {
         }
     }
 }
-

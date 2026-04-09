@@ -20,7 +20,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Phase 3 Expansion tests for Domain module.
@@ -383,8 +382,8 @@ class DomainExpansionTest {
 
             for (int i = 0; i < 20; i++) {
                 final int idx = i;
-                PipelineStageSpec.StageType type = idx % 3 == 0 ? 
-                    PipelineStageSpec.StageType.PATTERN : 
+                PipelineStageSpec.StageType type = idx % 3 == 0 ?
+                    PipelineStageSpec.StageType.PATTERN :
                     PipelineStageSpec.StageType.STREAM;
 
                 PipelineStageSpec stage = PipelineStageSpec.builder()

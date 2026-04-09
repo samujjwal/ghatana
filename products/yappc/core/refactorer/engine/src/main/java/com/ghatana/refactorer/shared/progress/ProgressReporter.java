@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.shared.progress;
 
 /**
- * Interface for reporting progress during polyfix execution. 
+ * Interface for reporting progress during polyfix execution.
  * @doc.type interface
  * @doc.purpose Defines the contract for progress reporter
  * @doc.layer core

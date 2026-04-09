@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -150,7 +149,7 @@ class OpenAILLMClientTest extends EventloopTestBase {
         assertThrows(Exception.class, () -> {
             runPromise(() -> invalidClient.reason(task, "", List.of()));
         });
-        
+
         // Clear the fatal error recorded by the eventloop runner, as we expected this failure
         clearFatalError();
     }

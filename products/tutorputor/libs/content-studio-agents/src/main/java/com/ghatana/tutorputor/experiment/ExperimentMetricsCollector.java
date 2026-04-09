@@ -1,6 +1,5 @@
 package com.ghatana.tutorputor.experiment;
 
-import io.micrometer.core.instrument.MeterRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Collects and aggregates metrics for A/B experiments.
- * 
+ *
  * <p>Tracks various metrics including:
  * <ul>
  *   <li>Learning outcomes (mastery gains, quiz scores)</li>
@@ -60,15 +59,15 @@ public class ExperimentMetricsCollector {
             @NotNull String topicId,
             double previousMastery,
             double newMastery) {
-        
+
         double gain = newMastery - previousMastery;
-        
+
         experimentManager.recordConversion(experimentId, userId, "mastery_gain", gain);
         experimentManager.recordConversion(experimentId, userId, "final_mastery", newMastery);
-        
+
         getUserMetrics(userId).recordMasteryGain(topicId, gain);
-        
-        LOG.debug("Recorded mastery gain: user={}, topic={}, gain={}", 
+
+        LOG.debug("Recorded mastery gain: user={}, topic={}, gain={}",
             userId, topicId, gain);
     }
 
@@ -87,14 +86,14 @@ public class ExperimentMetricsCollector {
             @NotNull String quizId,
             double score,
             @NotNull Duration timeSpent) {
-        
+
         experimentManager.recordConversion(experimentId, userId, "quiz_score", score);
-        experimentManager.recordConversion(experimentId, userId, "quiz_time_seconds", 
+        experimentManager.recordConversion(experimentId, userId, "quiz_time_seconds",
             timeSpent.toSeconds());
-        
+
         getUserMetrics(userId).recordQuizScore(quizId, score, timeSpent);
-        
-        LOG.debug("Recorded quiz score: user={}, quiz={}, score={}", 
+
+        LOG.debug("Recorded quiz score: user={}, quiz={}, score={}",
             userId, quizId, score);
     }
 
@@ -113,15 +112,15 @@ public class ExperimentMetricsCollector {
             @NotNull String contentId,
             @NotNull Duration timeSpent,
             boolean completed) {
-        
-        experimentManager.recordConversion(experimentId, userId, "engagement_seconds", 
+
+        experimentManager.recordConversion(experimentId, userId, "engagement_seconds",
             timeSpent.toSeconds());
-        experimentManager.recordConversion(experimentId, userId, "completion_rate", 
+        experimentManager.recordConversion(experimentId, userId, "completion_rate",
             completed ? 1.0 : 0.0);
-        
+
         getUserMetrics(userId).recordEngagement(contentId, timeSpent, completed);
-        
-        LOG.debug("Recorded engagement: user={}, content={}, completed={}", 
+
+        LOG.debug("Recorded engagement: user={}, content={}, completed={}",
             userId, contentId, completed);
     }
 
@@ -140,12 +139,12 @@ public class ExperimentMetricsCollector {
             @NotNull String contentId,
             int rating,
             String feedback) {
-        
+
         experimentManager.recordConversion(experimentId, userId, "content_rating", rating);
-        
+
         getUserMetrics(userId).recordRating(contentId, rating, feedback);
-        
-        LOG.debug("Recorded rating: user={}, content={}, rating={}", 
+
+        LOG.debug("Recorded rating: user={}, content={}, rating={}",
             userId, contentId, rating);
     }
 
@@ -164,14 +163,14 @@ public class ExperimentMetricsCollector {
             @NotNull String problemId,
             int hintsUsed,
             boolean hintHelpful) {
-        
+
         experimentManager.recordConversion(experimentId, userId, "hints_used", hintsUsed);
-        experimentManager.recordConversion(experimentId, userId, "hint_helpful", 
+        experimentManager.recordConversion(experimentId, userId, "hint_helpful",
             hintHelpful ? 1.0 : 0.0);
-        
+
         getUserMetrics(userId).recordHintUsage(problemId, hintsUsed, hintHelpful);
-        
-        LOG.debug("Recorded hint usage: user={}, problem={}, hints={}", 
+
+        LOG.debug("Recorded hint usage: user={}, problem={}, hints={}",
             userId, problemId, hintsUsed);
     }
 
@@ -192,15 +191,15 @@ public class ExperimentMetricsCollector {
             double readabilityScore,
             double accuracyScore,
             double relevanceScore) {
-        
+
         experimentManager.recordConversion(experimentId, userId, "readability", readabilityScore);
         experimentManager.recordConversion(experimentId, userId, "accuracy", accuracyScore);
         experimentManager.recordConversion(experimentId, userId, "relevance", relevanceScore);
-        
+
         double overallQuality = (readabilityScore + accuracyScore + relevanceScore) / 3.0;
         experimentManager.recordConversion(experimentId, userId, "overall_quality", overallQuality);
-        
-        LOG.debug("Recorded content quality: content={}, overall={}", 
+
+        LOG.debug("Recorded content quality: content={}, overall={}",
             contentId, overallQuality);
     }
 
@@ -219,20 +218,20 @@ public class ExperimentMetricsCollector {
             @NotNull Duration sessionDuration,
             int problemsAttempted,
             int problemsSolved) {
-        
-        experimentManager.recordConversion(experimentId, userId, "session_duration_minutes", 
+
+        experimentManager.recordConversion(experimentId, userId, "session_duration_minutes",
             sessionDuration.toMinutes());
-        experimentManager.recordConversion(experimentId, userId, "problems_attempted", 
+        experimentManager.recordConversion(experimentId, userId, "problems_attempted",
             problemsAttempted);
-        experimentManager.recordConversion(experimentId, userId, "problems_solved", 
+        experimentManager.recordConversion(experimentId, userId, "problems_solved",
             problemsSolved);
-        
+
         if (problemsAttempted > 0) {
             double successRate = (double) problemsSolved / problemsAttempted * 100;
             experimentManager.recordConversion(experimentId, userId, "success_rate", successRate);
         }
-        
-        LOG.debug("Recorded session: user={}, duration={}min, solved={}/{}", 
+
+        LOG.debug("Recorded session: user={}, duration={}min, solved={}/{}",
             userId, sessionDuration.toMinutes(), problemsSolved, problemsAttempted);
     }
 
@@ -253,19 +252,19 @@ public class ExperimentMetricsCollector {
      * @return experiment summary
      */
     public ExperimentSummary getExperimentSummary(@NotNull String experimentId) {
-        ExperimentManager.ExperimentResults results = 
+        ExperimentManager.ExperimentResults results =
             experimentManager.getResults(experimentId);
-        
+
         if (results == null) {
             return null;
         }
-        
+
         Map<String, VariantSummary> variantSummaries = new HashMap<>();
-        
+
         for (var entry : results.variantResults().entrySet()) {
             String variantId = entry.getKey();
             ExperimentManager.VariantResults vr = entry.getValue();
-            
+
             variantSummaries.put(variantId, new VariantSummary(
                 variantId,
                 vr.variant().name(),
@@ -277,7 +276,7 @@ public class ExperimentMetricsCollector {
                 getMetricValue(vr, "overall_quality")
             ));
         }
-        
+
         return new ExperimentSummary(
             experimentId,
             results.experiment().name(),
@@ -423,14 +422,14 @@ public class ExperimentMetricsCollector {
         public double calculateLift(String controlId, String treatmentId, String metric) {
             VariantSummary control = variants.get(controlId);
             VariantSummary treatment = variants.get(treatmentId);
-            
+
             if (control == null || treatment == null) return 0.0;
-            
+
             double controlValue = getMetricValue(control, metric);
             double treatmentValue = getMetricValue(treatment, metric);
-            
+
             if (controlValue == 0) return 0.0;
-            
+
             return ((treatmentValue - controlValue) / controlValue) * 100;
         }
 

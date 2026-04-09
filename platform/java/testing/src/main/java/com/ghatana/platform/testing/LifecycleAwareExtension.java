@@ -243,21 +243,21 @@ import org.junit.jupiter.api.extension.TestInstancePostProcessor;
  * @doc.purpose JUnit 5 extension providing lifecycle callbacks to test instances
  * @doc.pattern junit5-extension lifecycle-management callback-delegation
  */
-public final class LifecycleAwareExtension 
+public final class LifecycleAwareExtension
         implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback,
                    TestInstancePostProcessor {
 
     private static final String TEST_INSTANCE_KEY = "testInstance";
     private static final String BEFORE_ALL_COUNTER = "beforeAllCounter";
     private static final String AFTER_ALL_COUNTER = "afterAllCounter";
-    
+
     private TestLifecycleCallback testInstance;
 
     @Override
     public void beforeAll(ExtensionContext context) {
         // Initialize counters if not present
         getOrCreateCounter(context, BEFORE_ALL_COUNTER);
-        
+
         // Only call beforeAll once per test class
         if (getCounterValue(context, BEFORE_ALL_COUNTER) == 0) {
             getCallback(context).ifPresent(callback -> {
@@ -275,7 +275,7 @@ public final class LifecycleAwareExtension
     public void afterAll(ExtensionContext context) {
         // Initialize counters if not present
         getOrCreateCounter(context, AFTER_ALL_COUNTER);
-        
+
         // Only call afterAll once per test class
         if (getCounterValue(context, AFTER_ALL_COUNTER) == 0) {
             getCallback(context).ifPresent(callback -> {
@@ -326,7 +326,7 @@ public final class LifecycleAwareExtension
         if (testInstance != null) {
             return Optional.of(testInstance);
         }
-        
+
         // Try to get from the context store (for static callbacks)
         return Optional.ofNullable(
             context.getStore(ExtensionContext.Namespace.create(getClass(), context.getRequiredTestClass()))
@@ -338,20 +338,20 @@ public final class LifecycleAwareExtension
                    .map(TestLifecycleCallback.class::cast);
         });
     }
-    
+
     private void incrementCounter(ExtensionContext context, String counterName) {
         ExtensionContext.Store store = getStore(context);
         store.put(counterName, store.get(counterName, AtomicInteger.class).incrementAndGet());
     }
-    
+
     private int getCounterValue(ExtensionContext context, String counterName) {
         return getStore(context).get(counterName, AtomicInteger.class).get();
     }
-    
+
     private AtomicInteger getOrCreateCounter(ExtensionContext context, String counterName) {
         return getStore(context).getOrComputeIfAbsent(counterName, key -> new AtomicInteger(0), AtomicInteger.class);
     }
-    
+
     private ExtensionContext.Store getStore(ExtensionContext context) {
         return context.getStore(ExtensionContext.Namespace.create(getClass(), context.getRequiredTestClass()));
     }

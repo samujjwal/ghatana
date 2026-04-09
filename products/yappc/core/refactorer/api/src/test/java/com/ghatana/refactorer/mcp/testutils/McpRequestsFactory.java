@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Test data factory for MCP requests and responses. Provides builders and sample data for testing
  * MCP tool calls.
- 
+
  * @doc.type class
  * @doc.purpose Handles mcp requests factory operations
  * @doc.layer core

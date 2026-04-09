@@ -18,7 +18,7 @@ import com.ghatana.platform.security.model.User;
 /**
  * Service interface for user authentication in gRPC interceptors.
  * Implementations handle token validation and user lookup.
- 
+
  *
  * @doc.type interface
  * @doc.purpose User authentication service
@@ -26,7 +26,7 @@ import com.ghatana.platform.security.model.User;
  * @doc.pattern Service
 */
 public interface UserAuthenticationService {
-    
+
     /**
      * Authenticates a user based on the provided token.
      *
@@ -35,7 +35,7 @@ public interface UserAuthenticationService {
      * @throws AuthenticationException if authentication fails due to an error
      */
     User authenticate(String token) throws AuthenticationException;
-    
+
     /**
      * Validates if a token is still valid (not expired, not revoked).
      *
@@ -43,7 +43,7 @@ public interface UserAuthenticationService {
      * @return true if the token is valid, false otherwise
      */
     boolean validateToken(String token);
-    
+
     /**
      * Extracts the user ID from a token without full authentication.
      * Used for audit logging when authentication fails.

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Filter that enforces RBAC for HTTP endpoints.
  * Uses PolicyService for modern policy-based access control.
- 
+
  *
  * @doc.type class
  * @doc.purpose Rbacfilter
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 */
 public class RBACFilter {
     private static final Logger log = LoggerFactory.getLogger(RBACFilter.class);
-    
+
     private final PolicyService policyService;
     private final String permission;
     private final String resource;
@@ -45,8 +45,8 @@ public class RBACFilter {
 
             try {
                 if (!policyService.isAuthorized(principal, permission, resource)) {
-                    log.warn("Principal {} is not authorized for {}{}", 
-                             principal.getTenantId(), 
+                    log.warn("Principal {} is not authorized for {}{}",
+                             principal.getTenantId(),
                              permission,
                              resource != null ? ":" + resource : "");
                     return Promise.of(forbidden("Insufficient permissions"));

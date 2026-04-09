@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for {@link TsMorphBridge}. 
+/** Tests for {@link TsMorphBridge}.
  * @doc.type class
  * @doc.purpose Handles ts morph bridge test operations
  * @doc.layer core

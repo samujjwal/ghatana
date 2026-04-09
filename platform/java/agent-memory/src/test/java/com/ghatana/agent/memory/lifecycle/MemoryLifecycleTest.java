@@ -3,8 +3,6 @@ package com.ghatana.agent.memory.lifecycle;
 import com.ghatana.agent.memory.model.MemoryItem;
 import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.model.Provenance;
-import com.ghatana.agent.memory.model.Validity;
-import com.ghatana.agent.memory.model.ValidityStatus;
 import com.ghatana.agent.memory.model.MemoryLink;
 import com.ghatana.agent.memory.model.LinkType;
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;

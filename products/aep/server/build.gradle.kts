@@ -8,9 +8,6 @@
 plugins {
     `java-library`
     `maven-publish`
-    id("com.diffplug.spotless")
-    checkstyle
-    pmd
 }
 
 dependencies {
@@ -97,30 +94,8 @@ tasks.named<Test>("test") {
 // CODE QUALITY — Spotless, Checkstyle, PMD, SpotBugs
 // =============================================================================
 
-spotless {
-    java {
-        target("src/**/*.java")
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-}
 
-checkstyle {
-    toolVersion = libs.versions.checkstyle.get()
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-    configProperties["suppressionFile"] = rootProject.file("config/checkstyle/suppressions.xml").absolutePath
-    isIgnoreFailures = false
-    isShowViolations = true
-}
 
-pmd {
-    toolVersion = libs.versions.pmd.get()
-    ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
-    ruleSets = emptyList()
-    isIgnoreFailures = true
-    isConsoleOutput = true
-}
 
 // =============================================================================
 // OpenAPI Spec Sync — canonical source is platform/contracts/openapi/aep.yaml
@@ -181,3 +156,5 @@ tasks.register("verifyOpenApiSync") {
 tasks.named("processResources") { dependsOn("syncOpenApiSpec") }
 tasks.named("sourcesJar") { dependsOn("syncOpenApiSpec") }
 tasks.named("spotlessJava") { dependsOn("syncOpenApiSpec") }
+tasks.named("spotlessMisc") { dependsOn("syncOpenApiSpec") }
+tasks.named("spotlessXml") { dependsOn("syncOpenApiSpec") }

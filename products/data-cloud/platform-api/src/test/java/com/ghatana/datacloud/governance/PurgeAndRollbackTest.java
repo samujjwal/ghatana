@@ -14,7 +14,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for data purge operations with rollback safety — covering purge

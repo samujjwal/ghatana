@@ -25,11 +25,11 @@ class TestInfrastructureTest {
     void shouldValidateTestingUtilitiesAvailable() {
         // Validate that the testing module is properly configured
         // and provides necessary utilities for kernel module testing
-        
+
         // Check that test classes can be instantiated
         TestInfrastructureTest testInstance = new TestInfrastructureTest();
         assertThat(testInstance).isNotNull();
-        
+
         // Validate JUnit 5 annotations are available
         assertThat(getClass().getAnnotation(DisplayName.class)).isNotNull();
         assertThat(getClass().getAnnotation(DisplayName.class).value())
@@ -40,16 +40,16 @@ class TestInfrastructureTest {
     @DisplayName("Should validate test data management")
     void shouldValidateTestDataManagement() {
         // Validates test data creation, cleanup, and isolation
-        
+
         // Create test data
         String testDataKey = "test-key-" + System.currentTimeMillis();
         String testDataValue = "test-value";
-        
+
         // Validate test data creation
         assertThat(testDataKey).isNotEmpty();
         assertThat(testDataValue).isNotEmpty();
         assertThat(testDataKey).startsWith("test-key-");
-        
+
         // Validate test data isolation (each test gets fresh data)
         String anotherTestKey = "another-key-" + System.currentTimeMillis();
         assertThat(anotherTestKey).isNotEqualTo(testDataKey);
@@ -59,19 +59,19 @@ class TestInfrastructureTest {
     @DisplayName("Should validate fixture management")
     void shouldValidateFixtureManagement() {
         // Validates test fixture lifecycle management
-        
+
         // Simulate fixture setup
         String fixtureId = "fixture-" + System.currentTimeMillis();
         boolean isSetup = true;
-        
+
         // Validate fixture setup
         assertThat(fixtureId).isNotNull();
         assertThat(isSetup).isTrue();
-        
+
         // Simulate fixture cleanup
         boolean isCleaned = true;
         assertThat(isCleaned).isTrue();
-        
+
         // Validate fixture reuse
         String reusedFixtureId = "fixture-" + System.currentTimeMillis();
         assertThat(reusedFixtureId).isNotEqualTo(fixtureId);

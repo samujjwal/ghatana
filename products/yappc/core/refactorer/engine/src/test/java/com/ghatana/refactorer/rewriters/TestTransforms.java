@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.rewriters;
 
-/** Utility factory for JS/TS jscodeshift transform scripts used in tests. 
+/** Utility factory for JS/TS jscodeshift transform scripts used in tests.
  * @doc.type class
  * @doc.purpose Handles test transforms operations
  * @doc.layer core

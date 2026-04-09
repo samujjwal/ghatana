@@ -197,7 +197,7 @@ public class CircuitBreakerSttEngine implements SttEngine {
     public EngineStatus getStatus() {
         EngineStatus delegateStatus = delegate.getStatus();
         CircuitBreaker.State cbState = circuitBreaker.getState();
-        
+
         // Include circuit breaker state in engine status
         String statusMessage = delegateStatus.errorMessage() != null
             ? delegateStatus.errorMessage() + " [Circuit: " + cbState + "]"
@@ -287,7 +287,7 @@ public class CircuitBreakerSttEngine implements SttEngine {
      */
     private static class DegradedStreamingSession implements StreamingSession {
         private final UserProfile profile;
-        private final java.util.concurrent.atomic.AtomicBoolean active = 
+        private final java.util.concurrent.atomic.AtomicBoolean active =
             new java.util.concurrent.atomic.AtomicBoolean(true);
 
         DegradedStreamingSession(UserProfile profile) {

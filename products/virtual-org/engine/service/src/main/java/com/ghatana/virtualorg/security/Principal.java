@@ -19,7 +19,7 @@ import java.util.Set;
  *     Set.of("senior-engineer", "code-reviewer"),
  *     Map.of("team", "backend", "clearance", "high")
  * );
- * 
+ *
  * boolean hasRole = agent.hasRole("code-reviewer");
  * String team = agent.getAttribute("team");
  * }</pre>

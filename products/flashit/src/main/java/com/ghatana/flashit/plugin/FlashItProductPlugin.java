@@ -69,7 +69,7 @@ public class FlashItProductPlugin implements KernelPlugin {
             .dependency(new KernelDependency("openai-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))
             .dependency(new KernelDependency("anthropic-api", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))
             .build();
-    
+
     @Override
     public PluginManifest getManifest() {
         return MANIFEST;

@@ -38,11 +38,11 @@ import java.util.Optional;
  * // 2. Implement with JpaRepository
  * public class JpaUserRepository extends JpaRepository<User, UserId>
  *         implements UserRepository {
- *     
+ *
  *     public JpaUserRepository(EntityManager em) {
  *         super(em, User.class);
  *     }
- *     
+ *
  *     @Override
  *     public Optional<User> findByEmail(String email) {
  *         return findSingleByQuery(
@@ -50,7 +50,7 @@ import java.util.Optional;
  *             query -> query.setParameter("email", email)
  *         );
  *     }
- *     
+ *
  *     @Override
  *     public List<User> findByTenantId(String tenantId) {
  *         return findManyByQuery(
@@ -63,12 +63,12 @@ import java.util.Optional;
  * // 3. Use in service layer
  * public class UserService {
  *     private final UserRepository userRepository;
- *     
+ *
  *     public User createUser(String email, String tenantId) {
  *         User user = new User(email, tenantId);
  *         return userRepository.save(user);
  *     }
- *     
+ *
  *     public Optional<User> getUserByEmail(String email) {
  *         return userRepository.findByEmail(email);
  *     }

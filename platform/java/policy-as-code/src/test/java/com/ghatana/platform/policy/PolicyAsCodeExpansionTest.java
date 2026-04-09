@@ -5,7 +5,6 @@
 package com.ghatana.platform.policy;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,11 +44,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             context.put("principal", "user-1");
             context.put("action", "read");
             context.put("resource", "doc-1");
-            
+
             // Simulate condition matching
             boolean principalMatches = "user-1".equals(context.get("principal"));
             boolean actionMatches = "read".equals(context.get("action"));
-            
+
             assertThat(principalMatches && actionMatches).isTrue();
         }
 
@@ -58,7 +57,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         void complexConditionsAtScale() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Evaluate 100 policy conditions
                 for (int i = 0; i < 100; i++) {
                     final int idx = i;
@@ -68,7 +67,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
                     context.put("resource", "res-" + idx);
                     context.put("tenant", "t" + (idx / 50));
                 }
-                
+
                 return result;
             });
         }
@@ -78,11 +77,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         void nestedConditions() {
             Map<String, Object> outerPolicy = new HashMap<>();
             outerPolicy.put("condition", "principal == 'admin'");
-            
+
             Map<String, Object> innerPolicy = new HashMap<>();
             innerPolicy.put("condition", "action == 'delete'");
             innerPolicy.put("resourceType", "collection");
-            
+
             // Both conditions must be satisfied
             assertThat(outerPolicy.get("condition")).isNotNull();
             assertThat(innerPolicy.get("condition")).isNotNull();
@@ -92,7 +91,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         @DisplayName("Policy evaluation with caching")
         void evaluationCaching() {
             Map<String, Map<String, Object>> evaluationCache = new HashMap<>();
-            
+
             for (int i = 0; i < 50; i++) {
                 String cacheKey = "eval-" + (i % 10); // Only 10 unique keys
                 if (!evaluationCache.containsKey(cacheKey)) {
@@ -102,7 +101,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
                     evaluationCache.put(cacheKey, evaluation);
                 }
             }
-            
+
             assertThat(evaluationCache.size()).isLessThanOrEqualTo(10);
         }
     }
@@ -120,13 +119,13 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         void multiResourceApplication() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Apply single policy to 75 resources
                 List<String> resources = new ArrayList<>();
                 for (int i = 0; i < 75; i++) {
                     resources.add("resource-" + i);
                 }
-                
+
                 return result;
             });
         }
@@ -135,7 +134,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         @DisplayName("Policy boundaries between tenants")
         void tenantBoundaries() {
             Map<String, List<String>> tenantPolicies = new HashMap<>();
-            
+
             for (int i = 0; i < 5; i++) {
                 String tenantId = "t" + i;
                 List<String> policies = new ArrayList<>();
@@ -144,7 +143,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
                 }
                 tenantPolicies.put(tenantId, policies);
             }
-            
+
             // Each tenant has isolated policies
             assertThat(tenantPolicies).hasSize(5);
             assertThat(tenantPolicies.get("t0")).hasSize(20);
@@ -158,7 +157,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             policyEffects.put("allow-read", "ALLOW");
             policyEffects.put("deny-delete", "DENY");
             policyEffects.put("conditional-write", "CONDITIONAL");
-            
+
             // Deny takes precedence over Allow
             assertThat(policyEffects.get("deny-delete")).isEqualTo("DENY");
             assertThat(policyEffects.get("allow-read")).isEqualTo("ALLOW");
@@ -177,7 +176,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         @DisplayName("Policy version management")
         void versionManagement() {
             Map<Integer, Map<String, Object>> versions = new HashMap<>();
-            
+
             for (int v = 1; v <= 10; v++) {
                 Map<String, Object> version = new HashMap<>();
                 version.put("version", v);
@@ -185,7 +184,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
                 version.put("timestamp", System.currentTimeMillis() + v * 1000);
                 versions.put(v, version);
             }
-            
+
             assertThat(versions).hasSize(10);
             assertThat(versions.get(10).get("version")).isEqualTo(10);
         }
@@ -197,12 +196,12 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             activePolicy.put("id", "policy-1");
             activePolicy.put("version", 5);
             activePolicy.put("status", "ACTIVE");
-            
+
             Map<String, Object> previousPolicy = new HashMap<>();
             previousPolicy.put("id", "policy-1");
             previousPolicy.put("version", 4);
             previousPolicy.put("status", "SUPERSEDED");
-            
+
             int activeVersion = (Integer) activePolicy.get("version");
             int previousVersion = (Integer) previousPolicy.get("version");
             assertThat(activeVersion).isGreaterThan(previousVersion);

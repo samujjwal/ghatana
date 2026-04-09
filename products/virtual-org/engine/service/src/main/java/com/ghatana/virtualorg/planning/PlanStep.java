@@ -60,7 +60,7 @@ import java.util.Map;
  *     List.of("jwt", "crypto", "database"),
  *     Map.of("algorithm", "bcrypt", "saltRounds", "10")
  * );
- * 
+ *
  * // Check if ready to execute
  * List<String> completed = List.of("step-1", "step-2");
  * if (step.isReady(completed)) {

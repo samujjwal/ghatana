@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Lightweight edge Data-Cloud deployment implementation.
- * 
+ *
  * <p>Provides a resource-efficient Data-Cloud instance for edge locations
  * with selective synchronization, offline operation, and automatic
  * reconnection to central Data-Cloud.
@@ -56,7 +56,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     // Local storage (in-memory for demo - would use RocksDB in production)
     private final ConcurrentMap<String, LocalEntry> localStorage = new ConcurrentHashMap<>();
-    
+
     // Pending sync queues
     private final BlockingQueue<String> pendingUpload = new LinkedBlockingQueue<>();
     private final BlockingQueue<String> pendingDownload = new LinkedBlockingQueue<>();
@@ -144,8 +144,8 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     public Promise<Void> initialize(EdgeConfig config) {
         if (initialized.compareAndSet(false, true)) {
             this.config = Objects.requireNonNull(config, "config");
-            
-            log.info("Initializing edge deployment: id={}, region={}", 
+
+            log.info("Initializing edge deployment: id={}, region={}",
                 config.edgeId(), config.region());
 
             // Initialize executors with resource limits
@@ -240,7 +240,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
                 connected.set(true);
                 mode.set(EdgeMode.CONNECTED);
                 lastHeartbeat = Instant.now();
-                
+
                 // Notify hooks
                 hooks.values().forEach(h -> {
                     try {
@@ -520,7 +520,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     private SyncResult performDownload() throws Exception {
         List<SyncEntry> updates = centralConnection.fetchUpdates(lastSyncTime, config.syncConfig().batchSize()).getResult();
-        
+
         if (updates == null || updates.isEmpty()) {
             return new SyncResult(0, 0, 0, 0);
         }
@@ -535,7 +535,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             }
 
             LocalEntry local = localStorage.get(remote.key());
-            
+
             if (local != null && local.dirty()) {
                 // Conflict!
                 conflictsDetected++;
@@ -574,7 +574,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
 
     private SyncEntry resolveConflict(LocalEntry local, SyncEntry remote) {
         ConflictResolution resolution = config.syncConfig().conflictResolution();
-        
+
         return switch (resolution) {
             case EDGE_WINS -> new SyncEntry(
                 local.key(), local.data(), local.version(),
@@ -582,7 +582,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             );
             case CENTRAL_WINS -> remote;
             case LAST_WRITE_WINS -> local.modifiedAt().isAfter(remote.modifiedAt())
-                ? new SyncEntry(local.key(), local.data(), local.version(), 
+                ? new SyncEntry(local.key(), local.data(), local.version(),
                     local.modifiedAt(), local.metadata(), false)
                 : remote;
             case MERGE -> mergeEntries(local, remote);
@@ -593,7 +593,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         // Simple merge - take remote data but keep local metadata
         Map<String, String> mergedMetadata = new HashMap<>(remote.metadata());
         mergedMetadata.putAll(local.metadata());
-        
+
         return new SyncEntry(
             remote.key(),
             remote.data(),
@@ -656,7 +656,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         long dirtyCount = localStorage.values().stream()
             .filter(LocalEntry::dirty)
             .count();
-        
+
         return Promise.of(Map.of(
             SyncDirection.UPLOAD, dirtyCount,
             SyncDirection.DOWNLOAD, (long) pendingDownload.size()
@@ -680,7 +680,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     @Override
     public EdgeStatus getStatus() {
         long pendingUp = localStorage.values().stream().filter(LocalEntry::dirty).count();
-        
+
         return new EdgeStatus(
             config != null ? config.edgeId() : "uninitialized",
             mode.get(),
@@ -752,7 +752,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
         }
 
         log.info("Prefetching {} keys", keys.size());
-        
+
         try {
             for (String key : keys) {
                 if (!localStorage.containsKey(key)) {
@@ -792,7 +792,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             .filter(e -> !e.dirty() && e.syncedAt() != null)
             .count();
         long stale = localStorage.values().stream()
-            .filter(e -> e.syncedAt() != null && 
+            .filter(e -> e.syncedAt() != null &&
                 e.syncedAt().isBefore(Instant.now().minus(Duration.ofHours(24))))
             .count();
 
@@ -833,7 +833,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
     public Promise<Void> storeLocal(String key, byte[] data, Map<String, String> metadata) {
         LocalEntry existing = localStorage.get(key);
         long version = existing != null ? existing.version() + 1 : 1;
-        
+
         localStorage.put(key, new LocalEntry(
             key,
             data,
@@ -843,7 +843,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             true, // dirty - needs sync
             metadata != null ? metadata : Map.of()
         ));
-        
+
         return Promise.complete();
     }
 
@@ -933,7 +933,7 @@ public class LightweightEdgeDeployment implements EdgeDeployment {
             if (!Boolean.TRUE.equals(isConnected)) {
                 connected.set(false);
                 mode.set(EdgeMode.DISCONNECTED);
-                
+
                 // Attempt reconnection
                 scheduler.schedule(() -> {
                     try {

@@ -28,7 +28,7 @@ class OrderValidationTest {
     @BeforeEach
     void setUp() {
         validationService = new OrderValidationService();
-        
+
         // Create test instrument with lot size 100 and tick size 0.01
         testInstrument = new Instrument(
             java.util.UUID.randomUUID(),

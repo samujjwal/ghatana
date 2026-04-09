@@ -39,23 +39,23 @@ import java.util.Objects;
  *     "localhost:9092",
  *     "events-topic"
  * );
- * 
+ *
  * KafkaEventSink sink = new KafkaEventSink(kafkaAdapter);
- * 
+ *
  * // Start sink
  * sink.start().whenComplete((v, e) -> {
  *     if (e == null) {
  *         logger.info("Kafka sink started");
  *     }
  * });
- * 
+ *
  * // Send event
  * EventRecord event = EventRecord.create(
  *     EventId.random(),
  *     EventType.of("user.created"),
  *     Map.of("email", "john@example.com")
  * );
- * 
+ *
  * sink.send(event).whenComplete((v, e) -> {
  *     if (e == null) {
  *         logger.info("Event published to Kafka");
@@ -63,26 +63,26 @@ import java.util.Objects;
  *         logger.error("Failed to publish event", e);
  *     }
  * });
- * 
+ *
  * // Stop sink (flushes and closes producer)
  * sink.stop();
  *
  * // 2. Integration with event pipeline
  * public class EventPublishingPipeline {
  *     private final EventSink sink;
- *     
+ *
  *     public EventPublishingPipeline(KafkaProducerAdapter kafkaAdapter) {
  *         this.sink = new KafkaEventSink(kafkaAdapter);
  *     }
- *     
+ *
  *     public Promise<Void> start() {
  *         return sink.start();
  *     }
- *     
+ *
  *     public Promise<Void> publish(EventRecord event) {
  *         return sink.send(event);
  *     }
- *     
+ *
  *     public Promise<Void> shutdown() {
  *         return sink.stop();
  *     }
@@ -91,7 +91,7 @@ import java.util.Objects;
  * // 3. Multi-topic publishing by event type
  * public class TopicRoutingKafkaSink implements EventSink {
  *     private final Map<String, KafkaEventSink> topicSinks;
- *     
+ *
  *     public TopicRoutingKafkaSink(
  *             String bootstrapServers,
  *             Map<String, String> eventTypeToTopic) {
@@ -103,18 +103,18 @@ import java.util.Objects;
  *                 )
  *             ));
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord event) {
  *         String eventType = event.typeRef().name();
  *         KafkaEventSink sink = topicSinks.get(eventType);
- *         
+ *
  *         if (sink == null) {
  *             return Promise.ofException(
  *                 new IllegalArgumentException("No topic for event type: " + eventType)
  *             );
  *         }
- *         
+ *
  *         return sink.send(event);
  *     }
  * }
@@ -124,23 +124,23 @@ import java.util.Objects;
  *     private final KafkaEventSink delegate;
  *     private final Queue<EventRecord> buffer = new ConcurrentLinkedQueue<>();
  *     private final int batchSize;
- *     
+ *
  *     public BufferedKafkaSink(KafkaProducerAdapter adapter, int batchSize) {
  *         this.delegate = new KafkaEventSink(adapter);
  *         this.batchSize = batchSize;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord event) {
  *         buffer.add(event);
- *         
+ *
  *         if (buffer.size() >= batchSize) {
  *             return flush();
  *         }
- *         
+ *
  *         return Promise.complete();
  *     }
- *     
+ *
  *     public Promise<Void> flush() {
  *         List<Promise<Void>> sends = new ArrayList<>();
  *         EventRecord event;
@@ -154,15 +154,15 @@ import java.util.Objects;
  * // 5. Multi-tenant Kafka publishing
  * public class TenantKafkaSinkFactory {
  *     private final String bootstrapServers;
- *     
+ *
  *     public KafkaEventSink createTenantSink(String tenantId) {
  *         String topic = "tenant-" + tenantId + "-events";
- *         
+ *
  *         KafkaProducerAdapter adapter = new KafkaProducerAdapter(
  *             bootstrapServers,
  *             topic
  *         );
- *         
+ *
  *         return new KafkaEventSink(adapter);
  *     }
  * }
@@ -171,20 +171,20 @@ import java.util.Objects;
  * public class ResilientKafkaSink implements EventSink {
  *     private final KafkaEventSink delegate;
  *     private final int maxRetries = 3;
- *     
+ *
  *     public ResilientKafkaSink(KafkaProducerAdapter adapter) {
  *         this.delegate = new KafkaEventSink(adapter);
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord event) {
  *         return sendWithRetry(event, 0);
  *     }
- *     
+ *
  *     private Promise<Void> sendWithRetry(EventRecord event, int attempt) {
  *         return delegate.send(event).whenException(e -> {
  *             if (attempt < maxRetries) {
- *                 logger.warn("Send failed (attempt {}/{}), retrying...", 
+ *                 logger.warn("Send failed (attempt {}/{}), retrying...",
  *                     attempt + 1, maxRetries);
  *                 return Promises.delay(Duration.ofSeconds(1))
  *                     .then(() -> sendWithRetry(event, attempt + 1));

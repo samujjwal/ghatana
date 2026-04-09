@@ -132,7 +132,7 @@ class PositionTransferTest {
         }
 
         String generateConfirmation(Transfer transfer) {
-            return String.format("Transfer: %s %d shares from %s to %s", 
+            return String.format("Transfer: %s %d shares from %s to %s",
                 transfer.symbol(), transfer.quantity(), transfer.fromAccount(), transfer.toAccount());
         }
 

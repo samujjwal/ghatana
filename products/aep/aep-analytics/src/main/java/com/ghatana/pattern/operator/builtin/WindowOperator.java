@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * WINDOW operator that applies windowing semantics to its operand.
- * 
+ *
  * <p>This operator applies windowing semantics (tumbling, sliding, session) to its operand,
  * enabling time-based or count-based event aggregation. For example, WINDOW(A, tumbling, 60000ms)
  * applies a 1-minute tumbling window to event A, grouping events into non-overlapping buckets.
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Aggregation/Windowing Operator - Temporal aggregation (WINDOW) for grouping events
@@ -54,7 +54,7 @@ import java.util.Map;
  *                  .parameter("windowType", "tumbling")
  *                  .parameter("windowSize", 60000L)
  *                  .build()
- *              
+ *
  *              // Sliding window (overlapping 5-minute window, 1-minute slide)
  *              OperatorSpec.builder()
  *                  .type("WINDOW")
@@ -63,7 +63,7 @@ import java.util.Map;
  *                  .parameter("windowSize", 300000L)
  *                  .parameter("slideSize", 60000L)
  *                  .build()
- *              
+ *
  *              // Session window (close after 30 seconds of inactivity)
  *              OperatorSpec.builder()
  *                  .type("WINDOW")
@@ -81,7 +81,7 @@ import java.util.Map;
  *                 Does not provide runtime matching or aggregation logic.
  */
 public class WindowOperator implements Operator {
-    
+
     private static final String TYPE = "WINDOW";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -91,142 +91,137 @@ public class WindowOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for WINDOW operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for WindowOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount != 1) {
             throw new PatternValidationException(
                 String.format("WINDOW operator requires exactly 1 operand, got %d", operandCount));
         }
-        
+
         // Validate operand
         if (spec.getOperands() != null && !spec.getOperands().isEmpty()) {
             OperatorSpec operand = spec.getOperands().get(0);
             if (operand == null) {
                 throw new PatternValidationException("WINDOW operator operand cannot be null");
             }
-            
+
             if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                 throw new PatternValidationException("WINDOW operator operand must have a valid type");
             }
         } else {
             throw new PatternValidationException("WINDOW operator must have exactly one operand");
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             throw new PatternValidationException("WINDOW operator requires parameters");
         }
-        
+
         // Validate windowType parameter (required for WINDOW operator)
         Object windowType = parameters.get("windowType");
         if (windowType == null) {
             throw new PatternValidationException("WINDOW operator requires windowType parameter");
         }
-        
+
         if (!(windowType instanceof String)) {
             throw new PatternValidationException("WINDOW operator windowType parameter must be a string");
         }
-        
+
         String windowTypeStr = (String) windowType;
         if (!isValidWindowType(windowTypeStr)) {
             throw new PatternValidationException(
                 String.format("WINDOW operator windowType must be one of: tumbling, sliding, session, got: %s", windowTypeStr));
         }
-        
+
         // Validate windowSize parameter (required for WINDOW operator)
         Object windowSize = parameters.get("windowSize");
         if (windowSize == null) {
             throw new PatternValidationException("WINDOW operator requires windowSize parameter");
         }
-        
+
         if (!(windowSize instanceof Number)) {
             throw new PatternValidationException("WINDOW operator windowSize parameter must be a number");
         }
-        
+
         long windowSizeMs = ((Number) windowSize).longValue();
         if (windowSizeMs <= 0) {
             throw new PatternValidationException("WINDOW operator windowSize parameter must be positive");
         }
-        
+
         // Validate slideSize parameter for sliding windows
         if ("sliding".equals(windowTypeStr)) {
             Object slideSize = parameters.get("slideSize");
             if (slideSize == null) {
                 throw new PatternValidationException("WINDOW operator requires slideSize parameter for sliding windows");
             }
-            
+
             if (!(slideSize instanceof Number)) {
                 throw new PatternValidationException("WINDOW operator slideSize parameter must be a number");
             }
-            
+
             long slideSizeMs = ((Number) slideSize).longValue();
             if (slideSizeMs <= 0) {
                 throw new PatternValidationException("WINDOW operator slideSize parameter must be positive");
             }
-            
+
             if (slideSizeMs > windowSizeMs) {
                 throw new PatternValidationException("WINDOW operator slideSize cannot be greater than windowSize");
             }
         }
-        
+
         // Validate sessionTimeout parameter for session windows
         if ("session".equals(windowTypeStr)) {
             Object sessionTimeout = parameters.get("sessionTimeout");
             if (sessionTimeout == null) {
                 throw new PatternValidationException("WINDOW operator requires sessionTimeout parameter for session windows");
             }
-            
+
             if (!(sessionTimeout instanceof Number)) {
                 throw new PatternValidationException("WINDOW operator sessionTimeout parameter must be a number");
             }
-            
+
             long sessionTimeoutMs = ((Number) sessionTimeout).longValue();
             if (sessionTimeoutMs <= 0) {
                 throw new PatternValidationException("WINDOW operator sessionTimeout parameter must be positive");
             }
         }
     }
-    
+
     private boolean isValidWindowType(String windowType) {
-        return "tumbling".equals(windowType) || 
-               "sliding".equals(windowType) || 
-               "session".equals(windowType) || 
+        return "tumbling".equals(windowType) ||
+               "sliding".equals(windowType) ||
+               "session".equals(windowType) ||
                "global".equals(windowType);
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

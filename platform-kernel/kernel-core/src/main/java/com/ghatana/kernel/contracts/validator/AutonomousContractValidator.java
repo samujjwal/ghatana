@@ -26,7 +26,7 @@ public class AutonomousContractValidator implements ContractValidator {
 
         // Stub: Schema validation deferred to full implementation
         // Object schema = contract.getSchema();
-        
+
         return ContractValidator.ValidationResult.OK;
     }
 
@@ -35,4 +35,3 @@ public class AutonomousContractValidator implements ContractValidator {
         return java.util.List.of(KernelContract.ContractFamily.AUTONOMY);
     }
 }
-

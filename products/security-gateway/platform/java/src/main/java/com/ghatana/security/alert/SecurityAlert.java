@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Represents a security alert.
- 
+
  *
  * @doc.type class
  * @doc.purpose Security alert
@@ -21,7 +21,7 @@ public class SecurityAlert {
     public static final String TYPE_PERMISSION_DENIED = "PERMISSION_DENIED";
     public static final String TYPE_SUSPICIOUS_ACTIVITY = "SUSPICIOUS_ACTIVITY";
     public static final String TYPE_CONFIG_CHANGE = "CONFIG_CHANGE";
-    
+
     private final String type;
     private final String message;
     private final String source;

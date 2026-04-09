@@ -149,13 +149,13 @@ public class MetadataCacheService {
                     metrics.incrementCounter("cache.hit",
                         "tenant", tenantId,
                         "type", "collection");
-                    
+
                     // Record cache entry size for monitoring
                     metrics.getMeterRegistry()
-                        .gauge("cache.entry.size", 
+                        .gauge("cache.entry.size",
                             Tags.of("tenant", tenantId, "type", "collection", "collection", name),
                             cached.length());
-                    
+
                     log.debug("Cache hit: collection={}", name);
                     return Promise.of(Optional.of(deserializeCollection(cached)));
                 }
@@ -202,13 +202,13 @@ public class MetadataCacheService {
                     metrics.incrementCounter("cache.invalidate",
                         "tenant", tenantId,
                         "type", "collection");
-                    
+
                     // Record eviction metric
                     metrics.incrementCounter("cache.eviction",
                         "tenant", tenantId,
                         "type", "collection",
                         "reason", "manual");
-                    
+
                     log.debug("Invalidated collection cache: {}", name);
                 } else {
                     log.warn("Failed to invalidate collection cache: {}", name, ex);

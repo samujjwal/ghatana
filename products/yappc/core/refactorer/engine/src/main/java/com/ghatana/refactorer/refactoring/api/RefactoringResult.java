@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Represents the result of a refactoring operation. 
+ * Represents the result of a refactoring operation.
  * @doc.type interface
  * @doc.purpose Defines the contract for refactoring result
  * @doc.layer core

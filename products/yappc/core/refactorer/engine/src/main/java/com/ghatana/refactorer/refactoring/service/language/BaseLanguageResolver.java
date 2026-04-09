@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base implementation of {@link LanguageResolver} with common functionality. 
+ * Base implementation of {@link LanguageResolver} with common functionality.
  * @doc.type class
  * @doc.purpose Handles base language resolver operations
  * @doc.layer core

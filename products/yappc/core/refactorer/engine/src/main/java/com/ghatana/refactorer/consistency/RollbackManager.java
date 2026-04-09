@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Handles rollback of changes when regressions are detected.
  * Maintains backups in `.polyfix/backups` and ensures atomic operations.
- 
+
  * @doc.type class
  * @doc.purpose Handles rollback manager operations
  * @doc.layer core
@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 public class RollbackManager {
     private static final Logger logger = LogManager.getLogger(RollbackManager.class);
     private static final String BACKUP_DIR = ".polyfix/backups";
-    private static final DateTimeFormatter TIMESTAMP_FORMAT = 
+    private static final DateTimeFormatter TIMESTAMP_FORMAT =
         DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
     private final PolyfixProjectContext context;
@@ -70,10 +70,10 @@ public class RollbackManager {
 
             // Copy the file atomically
             Files.copy(file, backupFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-            
+
             // Store the backup mapping
             activeBackups.put(file, backupFile);
-            
+
             logger.debug("Created backup of {} at {}", file, backupFile);
             return backupFile;
         } catch (IOException e) {
@@ -98,19 +98,19 @@ public class RollbackManager {
         try {
             // Create a temporary file for atomic replacement
             Path tempFile = Files.createTempFile(file.getParent(), ".rollback-", ".tmp");
-            
+
             try {
                 // Copy backup to temp file
                 Files.copy(backupFile, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                
+
                 // Atomically replace the original file
-                Files.move(tempFile, file, 
-                    StandardCopyOption.REPLACE_EXISTING, 
+                Files.move(tempFile, file,
+                    StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE);
-                
+
                 logger.info("Rolled back file: {}", file);
                 return true;
-                
+
             } finally {
                 // Clean up temp file if it still exists
                 try {
@@ -119,7 +119,7 @@ public class RollbackManager {
                     logger.warn("Failed to clean up temp file: " + tempFile, e);
                 }
             }
-            
+
         } catch (IOException e) {
             logger.error("Failed to rollback file: " + file, e);
             return false;
@@ -133,25 +133,25 @@ public class RollbackManager {
      */
     public Map<Path, Boolean> rollbackAll() {
         Map<Path, Boolean> results = new HashMap<>();
-        
+
         // Create a copy to avoid concurrent modification
         Set<Path> filesToRollback = new HashSet<>(activeBackups.keySet());
-        
+
         for (Path file : filesToRollback) {
             boolean success = rollbackFile(file);
             results.put(file, success);
-            
+
             if (success) {
                 activeBackups.remove(file);
             }
         }
-        
+
         return results;
     }
 
     /**
      * Cleans up old backup files.
-     * 
+     *
      * @param maxAgeHours Maximum age of backup files in hours
      * @return Number of files deleted
      */
@@ -162,7 +162,7 @@ public class RollbackManager {
 
         final Instant cutoff = Instant.now().minusSeconds(maxAgeHours * 3600);
         final List<Path> toDelete = new ArrayList<>();
-        
+
         try {
             Files.walkFileTree(backupRoot, new SimpleFileVisitor<Path>() {
                 @Override
@@ -177,41 +177,41 @@ public class RollbackManager {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            
+
             int deleted = 0;
             for (Path file : toDelete) {
                 try {
                     Files.deleteIfExists(file);
                     deleted++;
-                    
+
                     // Remove empty parent directories
                     Path parent = file.getParent();
-                    while (parent != null && !parent.equals(backupRoot) && 
+                    while (parent != null && !parent.equals(backupRoot) &&
                            Files.isDirectory(parent) && isEmptyDirectory(parent)) {
                         Files.deleteIfExists(parent);
                         parent = parent.getParent();
                     }
-                    
+
                 } catch (IOException e) {
                     logger.warn("Failed to delete old backup: " + file, e);
                 }
             }
-            
+
             logger.info("Cleaned up {} old backup files", deleted);
             return deleted;
-            
+
         } catch (IOException e) {
             logger.error("Failed to clean up old backups", e);
             return 0;
         }
     }
-    
+
     private boolean isEmptyDirectory(Path dir) throws IOException {
         try (var stream = Files.list(dir)) {
             return stream.findAny().isEmpty();
         }
     }
-    
+
     private void createBackupDirectoryIfNeeded() {
         try {
             Files.createDirectories(backupRoot);

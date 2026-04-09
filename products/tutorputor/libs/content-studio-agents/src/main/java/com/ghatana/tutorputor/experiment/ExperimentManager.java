@@ -2,7 +2,6 @@ package com.ghatana.tutorputor.experiment;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -18,7 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * A/B testing experiment manager for content generation strategies.
- * 
+ *
  * <p>Features:
  * <ul>
  *   <li>Deterministic variant assignment based on user ID</li>
@@ -40,7 +39,7 @@ public class ExperimentManager {
     private final ConcurrentMap<String, Experiment> experiments;
     private final ConcurrentMap<String, Map<String, String>> userAssignments;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter assignmentsCounter;
     private final Counter exposuresCounter;
@@ -55,7 +54,7 @@ public class ExperimentManager {
         this.meterRegistry = meterRegistry;
         this.experiments = new ConcurrentHashMap<>();
         this.userAssignments = new ConcurrentHashMap<>();
-        
+
         this.assignmentsCounter = Counter.builder("tutorputor.experiments.assignments")
             .description("Number of experiment assignments")
             .register(meterRegistry);
@@ -65,7 +64,7 @@ public class ExperimentManager {
         this.conversionsCounter = Counter.builder("tutorputor.experiments.conversions")
             .description("Number of experiment conversions")
             .register(meterRegistry);
-        
+
         LOG.info("ExperimentManager initialized");
     }
 
@@ -78,11 +77,11 @@ public class ExperimentManager {
         if (experiments.containsKey(experiment.id())) {
             throw new IllegalArgumentException("Experiment already exists: " + experiment.id());
         }
-        
+
         validateExperiment(experiment);
         experiments.put(experiment.id(), experiment);
-        
-        LOG.info("Created experiment: {} with {} variants", 
+
+        LOG.info("Created experiment: {} with {} variants",
             experiment.id(), experiment.variants().size());
     }
 
@@ -110,15 +109,15 @@ public class ExperimentManager {
         if (experiment == null || !experiment.isActive()) {
             return null;
         }
-        
+
         // Check traffic allocation
         if (!isInTraffic(experimentId, userId, experiment.trafficAllocation())) {
             return null;
         }
-        
+
         // Get or create assignment
         String variantId = getOrCreateAssignment(experimentId, userId, experiment);
-        
+
         return experiment.variants().stream()
             .filter(v -> v.id().equals(variantId))
             .findFirst()
@@ -133,22 +132,22 @@ public class ExperimentManager {
      * @param variantId the variant ID
      */
     public void recordExposure(
-            @NotNull String experimentId, 
-            @NotNull String userId, 
+            @NotNull String experimentId,
+            @NotNull String userId,
             @NotNull String variantId) {
         Experiment experiment = experiments.get(experimentId);
         if (experiment == null) return;
-        
+
         experiment.recordExposure(variantId);
         exposuresCounter.increment();
-        
+
         Counter.builder("tutorputor.experiments.exposures.variant")
             .tag("experiment", experimentId)
             .tag("variant", variantId)
             .register(meterRegistry)
             .increment();
-        
-        LOG.debug("Recorded exposure: experiment={}, user={}, variant={}", 
+
+        LOG.debug("Recorded exposure: experiment={}, user={}, variant={}",
             experimentId, userId, variantId);
     }
 
@@ -167,24 +166,24 @@ public class ExperimentManager {
             double value) {
         Experiment experiment = experiments.get(experimentId);
         if (experiment == null) return;
-        
+
         String variantId = userAssignments
             .getOrDefault(userId, Map.of())
             .get(experimentId);
-        
+
         if (variantId == null) return;
-        
+
         experiment.recordConversion(variantId, metric, value);
         conversionsCounter.increment();
-        
+
         Counter.builder("tutorputor.experiments.conversions.variant")
             .tag("experiment", experimentId)
             .tag("variant", variantId)
             .tag("metric", metric)
             .register(meterRegistry)
             .increment();
-        
-        LOG.debug("Recorded conversion: experiment={}, user={}, variant={}, metric={}, value={}", 
+
+        LOG.debug("Recorded conversion: experiment={}, user={}, variant={}, metric={}, value={}",
             experimentId, userId, variantId, metric, value);
     }
 
@@ -239,16 +238,16 @@ public class ExperimentManager {
         if (experiment.variants().isEmpty()) {
             throw new IllegalArgumentException("Experiment must have at least one variant");
         }
-        
+
         double totalWeight = experiment.variants().stream()
             .mapToDouble(Variant::weight)
             .sum();
-        
+
         if (Math.abs(totalWeight - 100.0) > 0.01) {
             throw new IllegalArgumentException(
                 "Variant weights must sum to 100, got: " + totalWeight);
         }
-        
+
         if (experiment.trafficAllocation() <= 0 || experiment.trafficAllocation() > 100) {
             throw new IllegalArgumentException(
                 "Traffic allocation must be between 0 and 100");
@@ -257,23 +256,23 @@ public class ExperimentManager {
 
     private boolean isInTraffic(String experimentId, String userId, double trafficPercent) {
         if (trafficPercent >= 100) return true;
-        
+
         int hash = Math.abs(hashString(experimentId + ":traffic:" + userId));
         return (hash % 100) < trafficPercent;
     }
 
     private String getOrCreateAssignment(
-            String experimentId, 
-            String userId, 
+            String experimentId,
+            String userId,
             Experiment experiment) {
-        
+
         Map<String, String> userExperiments = userAssignments
             .computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
-        
+
         return userExperiments.computeIfAbsent(experimentId, k -> {
             String variantId = assignVariant(experimentId, userId, experiment.variants());
             assignmentsCounter.increment();
-            LOG.debug("Assigned user {} to variant {} in experiment {}", 
+            LOG.debug("Assigned user {} to variant {} in experiment {}",
                 userId, variantId, experimentId);
             return variantId;
         });
@@ -283,7 +282,7 @@ public class ExperimentManager {
         // Deterministic assignment based on user ID hash
         int hash = Math.abs(hashString(experimentId + ":" + userId));
         int bucket = hash % 100;
-        
+
         double cumulative = 0;
         for (Variant variant : variants) {
             cumulative += variant.weight();
@@ -291,7 +290,7 @@ public class ExperimentManager {
                 return variant.id();
             }
         }
-        
+
         // Fallback to last variant
         return variants.get(variants.size() - 1).id();
     }
@@ -300,9 +299,9 @@ public class ExperimentManager {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(input.getBytes());
-            return ((digest[0] & 0xFF) << 24) | 
-                   ((digest[1] & 0xFF) << 16) | 
-                   ((digest[2] & 0xFF) << 8) | 
+            return ((digest[0] & 0xFF) << 24) |
+                   ((digest[1] & 0xFF) << 16) |
+                   ((digest[2] & 0xFF) << 8) |
                    (digest[3] & 0xFF);
         } catch (NoSuchAlgorithmException e) {
             return input.hashCode();
@@ -358,7 +357,7 @@ public class ExperimentManager {
         private final Instant startTime;
         private final Instant endTime;
         private final Map<String, String> metadata;
-        
+
         private volatile boolean active = true;
         private final ConcurrentMap<String, Long> exposureCounts;
         private final ConcurrentMap<String, Map<String, List<Double>>> conversionData;
@@ -410,12 +409,12 @@ public class ExperimentManager {
 
         ExperimentResults getResults() {
             Map<String, VariantResults> variantResults = new HashMap<>();
-            
+
             for (Variant variant : variants) {
                 long exposures = exposureCounts.getOrDefault(variant.id(), 0L);
-                Map<String, List<Double>> conversions = 
+                Map<String, List<Double>> conversions =
                     conversionData.getOrDefault(variant.id(), Map.of());
-                
+
                 Map<String, MetricStats> metricStats = new HashMap<>();
                 for (Map.Entry<String, List<Double>> entry : conversions.entrySet()) {
                     List<Double> values = entry.getValue();
@@ -423,11 +422,11 @@ public class ExperimentManager {
                         metricStats.put(entry.getKey(), calculateStats(values));
                     }
                 }
-                
-                variantResults.put(variant.id(), 
+
+                variantResults.put(variant.id(),
                     new VariantResults(variant, exposures, metricStats));
             }
-            
+
             return new ExperimentResults(this, variantResults);
         }
 
@@ -435,21 +434,21 @@ public class ExperimentManager {
             double sum = 0;
             double min = Double.MAX_VALUE;
             double max = Double.MIN_VALUE;
-            
+
             for (double v : values) {
                 sum += v;
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
-            
+
             double mean = sum / values.size();
-            
+
             double variance = 0;
             for (double v : values) {
                 variance += (v - mean) * (v - mean);
             }
             variance /= values.size();
-            
+
             return new MetricStats(
                 values.size(),
                 mean,
@@ -482,13 +481,13 @@ public class ExperimentManager {
             public Builder trafficAllocation(double percent) { this.trafficAllocation = percent; return this; }
             public Builder startTime(Instant startTime) { this.startTime = startTime; return this; }
             public Builder endTime(Instant endTime) { this.endTime = endTime; return this; }
-            public Builder duration(Duration duration) { 
+            public Builder duration(Duration duration) {
                 this.endTime = (startTime != null ? startTime : Instant.now()).plus(duration);
-                return this; 
+                return this;
             }
-            public Builder metadata(String key, String value) { 
-                this.metadata.put(key, value); 
-                return this; 
+            public Builder metadata(String key, String value) {
+                this.metadata.put(key, value);
+                return this;
             }
 
             public Experiment build() {
@@ -537,29 +536,29 @@ public class ExperimentManager {
          * @return p-value (lower = more significant)
          */
         public double calculateSignificance(
-                String metric, 
-                String controlVariantId, 
+                String metric,
+                String controlVariantId,
                 String treatmentVariantId) {
             VariantResults control = variantResults.get(controlVariantId);
             VariantResults treatment = variantResults.get(treatmentVariantId);
-            
+
             if (control == null || treatment == null) return 1.0;
-            
+
             MetricStats controlStats = control.metrics().get(metric);
             MetricStats treatmentStats = treatment.metrics().get(metric);
-            
+
             if (controlStats == null || treatmentStats == null) return 1.0;
-            
+
             // Two-sample t-test (approximation)
             double meanDiff = treatmentStats.mean() - controlStats.mean();
-            double pooledVariance = 
+            double pooledVariance =
                 (controlStats.stdDev() * controlStats.stdDev() / controlStats.count()) +
                 (treatmentStats.stdDev() * treatmentStats.stdDev() / treatmentStats.count());
-            
+
             if (pooledVariance <= 0) return 1.0;
-            
+
             double tStatistic = meanDiff / Math.sqrt(pooledVariance);
-            
+
             // Approximate p-value using normal distribution
             return 2.0 * (1.0 - normalCdf(Math.abs(tStatistic)));
         }

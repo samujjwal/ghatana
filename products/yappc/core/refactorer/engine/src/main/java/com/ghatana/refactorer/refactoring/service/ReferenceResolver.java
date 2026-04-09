@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Service for resolving references between code elements, including cross-language references. 
+ * Service for resolving references between code elements, including cross-language references.
  * @doc.type interface
  * @doc.purpose Defines the contract for reference resolver
  * @doc.layer core

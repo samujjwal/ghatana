@@ -219,7 +219,7 @@ class AuditEntryTest {
         // Then
         assertThat(original.getNotes()).isEqualTo("Original notes");
         assertThat(updated.getNotes()).isEqualTo("Updated notes");
-        
+
         // Verify other fields remain the same
         assertThat(updated.getAction()).isEqualTo(original.getAction());
         assertThat(updated.getResourceType()).isEqualTo(original.getResourceType());

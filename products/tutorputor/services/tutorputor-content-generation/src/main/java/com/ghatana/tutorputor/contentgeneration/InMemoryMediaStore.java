@@ -1,8 +1,5 @@
 package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.tutorputor.contentgeneration.MediaAttachment;
-import com.ghatana.tutorputor.contentgeneration.MediaStore;
-import com.ghatana.tutorputor.contentgeneration.MediaUrl;
 import io.activej.promise.Promise;
 
 import java.io.ByteArrayOutputStream;
@@ -24,13 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * MediaStore store = new InMemoryMediaStore();
- * 
+ *
  * // Upload file
  * MediaAttachment attachment = store.upload(
- *     "tenant-123", entityId, "test.jpg", "image/jpeg", 
+ *     "tenant-123", entityId, "test.jpg", "image/jpeg",
  *     1024, new ByteArrayInputStream(bytes))
  *     .getResult();
- * 
+ *
  * // Retrieve URL
  * MediaUrl url = store.generateUrl(
  *     attachment.getStorageKey(), Duration.ofHours(1))

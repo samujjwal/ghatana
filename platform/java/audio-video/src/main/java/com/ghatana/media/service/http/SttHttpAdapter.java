@@ -5,12 +5,10 @@ import com.ghatana.media.common.*;
 import com.ghatana.media.config.SttConfig;
 import com.ghatana.media.stt.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -33,17 +31,17 @@ import java.util.Map;
  * @doc.pattern Adapter
  */
 public class SttHttpAdapter {
-    
+
     private final AudioVideoLibrary library;
     private final ObjectMapper mapper;
-    
+
     public SttHttpAdapter(SttConfig config) {
         this.library = AudioVideoLibrary.builder()
             .withSttConfig(config)
             .build();
         this.mapper = new ObjectMapper();
     }
-    
+
     /**
      * Handle POST /api/v1/stt/transcribe
      */
@@ -51,7 +49,7 @@ public class SttHttpAdapter {
         return request.getBody().map(body -> {
             try {
                 TranscribeRequest req = mapper.readValue(body.getString(), TranscribeRequest.class);
-                
+
                 try (SttEngine stt = library.getSttEngine()) {
                     AudioData audio = AudioData.builder()
                         .data(req.audioData)
@@ -59,15 +57,15 @@ public class SttHttpAdapter {
                         .channels(req.channels)
                         .bitsPerSample(16)
                         .build();
-                    
+
                     TranscriptionOptions options = TranscriptionOptions.builder()
                         .language(new java.util.Locale(req.language))
                         .enableTimestamps(req.enableTimestamps)
                         .enablePunctuation(req.enablePunctuation)
                         .build();
-                    
+
                     TranscriptionResult result = stt.transcribe(audio, options);
-                    
+
                     TranscribeResponse response = new TranscribeResponse(
                         result.getText(),
                         result.confidence(),
@@ -76,7 +74,7 @@ public class SttHttpAdapter {
                             .toList(),
                         result.latency().toMillis()
                     );
-                    
+
                     return HttpResponse.ok200()
                         .withJson(mapper.writeValueAsString(response));
                 }
@@ -93,7 +91,7 @@ public class SttHttpAdapter {
             }
         });
     }
-    
+
     /**
      * Handle GET /api/v1/stt/models
      */
@@ -101,7 +99,7 @@ public class SttHttpAdapter {
         return Promise.ofCallable(() -> {
             try (SttEngine stt = library.getSttEngine()) {
                 List<ModelInfo> models = stt.getAvailableModels();
-                
+
                 List<ModelJson> response = models.stream()
                     .map(m -> new ModelJson(
                         m.modelId(),
@@ -111,13 +109,13 @@ public class SttHttpAdapter {
                         m.supportsGpu()
                     ))
                     .toList();
-                
+
                 return HttpResponse.ok200()
                     .withJson(mapper.writeValueAsString(Map.of("models", response)));
             }
         });
     }
-    
+
     /**
      * Handle GET /api/v1/stt/health
      */
@@ -125,20 +123,20 @@ public class SttHttpAdapter {
         return Promise.ofCallable(() -> {
             try (SttEngine stt = library.getSttEngine()) {
                 EngineStatus status = stt.getStatus();
-                
+
                 HealthResponse response = new HealthResponse(
                     status.state().name(),
                     status.modelId(),
                     status.version()
                 );
-                
+
                 int code = status.state() == EngineStatus.State.READY ? 200 : 503;
                 return HttpResponse.ofCode(code)
                     .withJson(mapper.writeValueAsString(response));
             }
         });
     }
-    
+
     // Request/Response DTOs
     public record TranscribeRequest(
         byte[] audioData,
@@ -148,21 +146,21 @@ public class SttHttpAdapter {
         boolean enableTimestamps,
         boolean enablePunctuation
     ) {}
-    
+
     public record TranscribeResponse(
         String text,
         double confidence,
         List<WordTimingJson> words,
         long latencyMs
     ) {}
-    
+
     public record WordTimingJson(
         String word,
         long startMs,
         long endMs,
         double confidence
     ) {}
-    
+
     public record ModelJson(
         String modelId,
         String name,
@@ -170,7 +168,7 @@ public class SttHttpAdapter {
         long sizeBytes,
         boolean supportsGpu
     ) {}
-    
+
     public record HealthResponse(
         String state,
         String modelId,

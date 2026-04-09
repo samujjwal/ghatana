@@ -17,7 +17,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class ValidationRule {
-    
+
     private final String ruleId;
     private final String name;
     private final String description;
@@ -38,7 +38,7 @@ public final class ValidationRule {
      * @param errorMessage error message when validation fails
      */
     public ValidationRule(String ruleId, String name, String description,
-                           ValidationType type, String constraint, 
+                           ValidationType type, String constraint,
                            boolean required, String errorMessage) {
         if (ruleId == null || ruleId.trim().isEmpty()) {
             throw new IllegalArgumentException("ruleId cannot be null or empty");
@@ -128,7 +128,7 @@ public final class ValidationRule {
 
     @Override
     public String toString() {
-        return String.format("ValidationRule{id='%s', name='%s', type=%s}", 
+        return String.format("ValidationRule{id='%s', name='%s', type=%s}",
             ruleId, name, type);
     }
 

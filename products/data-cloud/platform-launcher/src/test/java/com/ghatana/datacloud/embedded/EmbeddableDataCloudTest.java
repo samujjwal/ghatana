@@ -246,7 +246,7 @@ class EmbeddableDataCloudTest extends EventloopTestBase {
         @DisplayName("Should validate storage type and data directory")
         void shouldValidateStorageTypeAndDataDirectory() {
             // WHEN / THEN - RocksDB requires data directory
-            assertThatThrownBy(() -> 
+            assertThatThrownBy(() ->
                 EmbeddedConfig.builder(EmbeddedConfig.EmbeddedStorageType.ROCKS_DB)
                     .dataDirectory((String) null)
                     .build()

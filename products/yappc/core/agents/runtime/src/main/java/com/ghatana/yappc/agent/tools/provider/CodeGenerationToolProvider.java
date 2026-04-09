@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles code generation tool provider operations
  * @doc.layer core
@@ -209,11 +209,11 @@ public class CodeGenerationToolProvider implements ToolProvider {
       return String.format("""
           public class %s {
               // Generated based on: %s
-              
+
               public %s() {
                   // TODO: Implement constructor
               }
-              
+
               // TODO: Add methods based on specification
           }
           """, className, spec.substring(0, Math.min(50, spec.length())), className);
@@ -237,7 +237,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
     if (framework.equalsIgnoreCase("react")) {
       return String.format("""
           import React from 'react';
-          
+
           // Component based on: %s
           export function GeneratedComponent(props) {
               return (
@@ -255,7 +255,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
     return String.format("""
         // API handler generated for %s
         // Framework: %s
-        
+
         @Path("/api/v1")
         public class GeneratedApiHandler {
             // TODO: Implement endpoints from OpenAPI spec

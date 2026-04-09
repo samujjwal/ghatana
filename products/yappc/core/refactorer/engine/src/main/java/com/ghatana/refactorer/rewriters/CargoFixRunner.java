@@ -13,7 +13,7 @@ import java.util.Objects;
  *
  * <p>This class provides a safe way to run `cargo fix` with appropriate flags to handle various
  * scenarios like dirty workspaces and staged changes.
- 
+
  * @doc.type class
  * @doc.purpose Handles cargo fix runner operations
  * @doc.layer core

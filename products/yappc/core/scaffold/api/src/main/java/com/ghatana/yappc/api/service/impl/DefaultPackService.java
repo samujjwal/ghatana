@@ -225,7 +225,7 @@ public class DefaultPackService implements PackService {
     private void loadPack(Path packDir) {
         String packName = packDir.getFileName().toString();
         Path metadataPath = packDir.resolve("pack.yaml");
-        
+
         if (!Files.exists(metadataPath)) {
             metadataPath = packDir.resolve("pack.yml");
         }
@@ -244,7 +244,7 @@ public class DefaultPackService implements PackService {
         // For now, create a basic PackInfo from directory structure
         List<String> templates = new ArrayList<>();
         Path templatesDir = packDir.resolve("templates");
-        
+
         if (Files.exists(templatesDir)) {
             try (Stream<Path> files = Files.walk(templatesDir)) {
                 files.filter(Files::isRegularFile)
@@ -299,7 +299,7 @@ public class DefaultPackService implements PackService {
         // Extract variables from templates
         Set<String> variables = new HashSet<>();
         Path templatesDir = packDir.resolve("templates");
-        
+
         if (Files.exists(templatesDir)) {
             try (Stream<Path> files = Files.walk(templatesDir)) {
                 files.filter(Files::isRegularFile)
@@ -326,19 +326,19 @@ public class DefaultPackService implements PackService {
     }
 
     private boolean matchesFilter(PackInfo pack, PackListRequest request) {
-        if (request.getLanguage() != null && 
+        if (request.getLanguage() != null &&
             !request.getLanguage().equalsIgnoreCase(pack.getLanguage())) {
             return false;
         }
-        if (request.getCategory() != null && 
+        if (request.getCategory() != null &&
             !request.getCategory().equalsIgnoreCase(pack.getCategory())) {
             return false;
         }
-        if (request.getPlatform() != null && 
+        if (request.getPlatform() != null &&
             !request.getPlatform().equalsIgnoreCase(pack.getPlatform())) {
             return false;
         }
-        if (request.getBuildSystem() != null && 
+        if (request.getBuildSystem() != null &&
             !request.getBuildSystem().equalsIgnoreCase(pack.getBuildSystem())) {
             return false;
         }

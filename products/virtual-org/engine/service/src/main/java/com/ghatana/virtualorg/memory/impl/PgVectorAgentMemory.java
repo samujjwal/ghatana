@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
  *     10,    // top K results
  *     0.7f   // similarity threshold
  * );
- * 
+ *
  * List<MemoryEntry> memories = memory.searchMemory("transaction processing", 5).getResult();
  * }</pre>
  *
@@ -122,7 +122,7 @@ public class PgVectorAgentMemory implements AgentMemory {
             }
 
             return context;
-        }).then(context -> 
+        }).then(context ->
             // Chain async search for similar memories
             searchSimilar(task.getDescription(), 3)
                 .map(similarMemories -> {
@@ -150,7 +150,7 @@ public class PgVectorAgentMemory implements AgentMemory {
     @NotNull
     public Promise<Void> store(@NotNull TaskProto task, @NotNull TaskResponseProto response) {
         String content = buildMemoryContent(task, response);
-        
+
         // Use async embedding, then store in DB
         return embeddingClient.embed(content)
             .then(embedding -> Promise.ofBlocking(eventloop, () -> {

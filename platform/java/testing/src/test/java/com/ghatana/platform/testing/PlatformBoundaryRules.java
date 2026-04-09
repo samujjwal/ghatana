@@ -2,14 +2,13 @@ package com.ghatana.platform.testing;
 
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * Platform Boundary Rules
- * 
+ *
  * Enforces architectural boundaries between platform and product modules.
  * These rules prevent boundary drift and maintain clean separation of concerns.
  */
@@ -20,7 +19,7 @@ public class PlatformBoundaryRules {
      * This prevents circular dependencies and maintains clean architecture.
      */
     @ArchTest
-    static final ArchRule PLATFORM_SHOULD_NOT_DEPEND_ON_PRODUCTS = 
+    static final ArchRule PLATFORM_SHOULD_NOT_DEPEND_ON_PRODUCTS =
         noClasses()
             .that().resideInAPackage("com.ghatana.platform..")
             .should().dependOnClassesThat().resideInAPackage("com.ghatana.products..")

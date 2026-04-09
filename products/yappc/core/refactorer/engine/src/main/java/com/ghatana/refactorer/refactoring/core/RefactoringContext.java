@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * Compatibility RefactoringContext used by tests. Provides a simple builder and
  * property map.
- 
+
  * @doc.type class
  * @doc.purpose Handles refactoring context operations
  * @doc.layer core

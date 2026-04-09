@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for PlanningAgent.
- * 
+ *
  * Focus: Goal decomposition, multi-step execution, step sequencing,
  * error recovery, replanning, and workflow coordination.
  */
@@ -295,7 +295,7 @@ class PlanningAgentBehavioralTest {
 
             assertThat(result.isSuccess()).isTrue();
             Duration latency = Duration.between(start, end);
-            
+
             // Should complete in reasonable time (not strict upper bound)
             assertThat(latency).isLessThan(Duration.ofSeconds(10));
         }
@@ -433,7 +433,7 @@ class PlanningAgentBehavioralTest {
         @Override
         protected List<PlanStep> decompose(AgentContext ctx, Map<String, Object> goal) {
             List<PlanStep> steps = new ArrayList<>();
-            
+
             int stepCount = ((Number) goal.getOrDefault("steps", 3)).intValue();
             for (int i = 0; i < stepCount; i++) {
                 steps.add(new PlanStep(
@@ -442,7 +442,7 @@ class PlanningAgentBehavioralTest {
                         Map.of("index", i)
                 ));
             }
-            
+
             return steps;
         }
 
@@ -479,7 +479,7 @@ class PlanningAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

@@ -19,7 +19,7 @@ public record Recommendation(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String id;
         private String type;
@@ -27,37 +27,37 @@ public record Recommendation(
         private int priority = 0;
         private double estimatedImpact = 0.0;
         private List<String> actionItems = List.of();
-        
+
         public Builder id(String id) {
             this.id = id;
             return this;
         }
-        
+
         public Builder type(String type) {
             this.type = type;
             return this;
         }
-        
+
         public Builder description(String description) {
             this.description = description;
             return this;
         }
-        
+
         public Builder priority(int priority) {
             this.priority = priority;
             return this;
         }
-        
+
         public Builder estimatedImpact(double estimatedImpact) {
             this.estimatedImpact = estimatedImpact;
             return this;
         }
-        
+
         public Builder actionItems(List<String> actionItems) {
             this.actionItems = actionItems;
             return this;
         }
-        
+
         public Recommendation build() {
             return new Recommendation(id, type, description, priority, estimatedImpact, actionItems);
         }

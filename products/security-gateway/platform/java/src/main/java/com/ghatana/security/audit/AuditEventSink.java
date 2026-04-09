@@ -18,7 +18,7 @@ import com.ghatana.platform.audit.AuditEvent;
 /**
  * Interface for audit event sinks that handle the storage/forwarding of audit events.
  * Implementations might write to files, databases, message queues, or external audit systems.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Audit event sink
@@ -26,7 +26,7 @@ import com.ghatana.platform.audit.AuditEvent;
  * @doc.pattern Interface
 */
 public interface AuditEventSink {
-    
+
     /**
      * Emits an audit event to the configured sink.
      *
@@ -34,14 +34,14 @@ public interface AuditEventSink {
      * @throws AuditException if the event cannot be emitted
      */
     void emit(AuditEvent event) throws AuditException;
-    
+
     /**
      * Flushes any buffered audit events to ensure they are persisted.
      *
      * @throws AuditException if the flush operation fails
      */
     void flush() throws AuditException;
-    
+
     /**
      * Closes the audit event sink and releases any resources.
      *

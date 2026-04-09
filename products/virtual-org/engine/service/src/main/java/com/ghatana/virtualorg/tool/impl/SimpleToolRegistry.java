@@ -31,14 +31,14 @@ import java.util.stream.Collectors;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * SimpleToolRegistry registry = new SimpleToolRegistry();
- * 
+ *
  * // Register tools
  * registry.register(new GitTool(eventloop, 60));
  * registry.register(new FileOperationsTool(eventloop, "/workspace", 30));
- * 
+ *
  * // Get tool by ID
  * Optional<Tool> git = registry.getTool("git");
- * 
+ *
  * // Get tools for agent
  * List<ToolProto> tools = registry.getToolsForAgent("agent-123");
  * }</pre>

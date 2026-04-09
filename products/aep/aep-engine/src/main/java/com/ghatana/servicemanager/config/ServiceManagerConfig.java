@@ -12,17 +12,17 @@ import java.util.Map;
 
 /**
  * ActiveJ DI Module for Service Manager.
- * 
+ *
  * Provides dependency injection configuration for the service manager
  * including ServiceConfig and ServiceManager instances.
- * 
+ *
  * @doc.type class
  * @doc.purpose DI configuration module
  * @doc.layer orchestration
  * @doc.pattern Dependency Injection Module
  */
 public class ServiceManagerConfig extends AbstractModule {
-    
+
     @Provides
     ServiceConfig serviceConfig() {
         // Build service configuration from environment and defaults
@@ -32,28 +32,28 @@ public class ServiceManagerConfig extends AbstractModule {
                 .addFeatureFlags(getDefaultFeatureFlags())
                 .build();
     }
-    
+
     @Provides
     ServiceManager serviceManager(ServiceConfig config) {
         return new ServiceManagerImpl(config);
     }
-    
+
     /**
      * Get default service configurations.
      */
     private List<ServiceConfiguration> getDefaultServices() {
         String enabledServices = System.getenv().getOrDefault(
-            "AEP_ENABLED_SERVICES", 
+            "AEP_ENABLED_SERVICES",
             "detection-engine,learning-system,pattern-management"
         );
-        
+
         return List.of(enabledServices.split(",")).stream()
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(this::createServiceConfiguration)
                 .toList();
     }
-    
+
     /**
      * Create service configuration from service name.
      */
@@ -63,7 +63,7 @@ public class ServiceManagerConfig extends AbstractModule {
                 .enabled(true)
                 .build();
     }
-    
+
     /**
      * Get environment variables to pass to services.
      */
@@ -74,7 +74,7 @@ public class ServiceManagerConfig extends AbstractModule {
             "METRICS_ENABLED", System.getenv().getOrDefault("METRICS_ENABLED", "true")
         );
     }
-    
+
     /**
      * Get default feature flags.
      */

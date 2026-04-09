@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Publishes AI-specific operational metrics to the Prometheus/Micrometer stack.

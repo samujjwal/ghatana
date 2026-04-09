@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 /**
  * Curriculum management service for organizing and tracking educational content.
- * 
+ *
  * <p>Features:
  * <ul>
  *   <li>Learning path creation and management</li>
@@ -46,7 +46,7 @@ public class CurriculumService {
         this.learningPaths = new ConcurrentHashMap<>();
         this.topics = new ConcurrentHashMap<>();
         this.learnerProgress = new ConcurrentHashMap<>();
-        
+
         LOG.info("CurriculumService initialized");
     }
 
@@ -63,14 +63,14 @@ public class CurriculumService {
         if (topics.containsKey(topic.id())) {
             throw new IllegalArgumentException("Topic already exists: " + topic.id());
         }
-        
+
         // Validate prerequisites exist
         for (String prereqId : topic.prerequisites()) {
             if (!topics.containsKey(prereqId)) {
                 throw new IllegalArgumentException("Prerequisite not found: " + prereqId);
             }
         }
-        
+
         topics.put(topic.id(), topic);
         LOG.info("Created topic: {} ({})", topic.id(), topic.name());
     }
@@ -115,7 +115,7 @@ public class CurriculumService {
     public List<Topic> getPrerequisites(@NotNull String topicId) {
         Topic topic = topics.get(topicId);
         if (topic == null) return List.of();
-        
+
         return topic.prerequisites().stream()
             .map(topics::get)
             .filter(Objects::nonNull)
@@ -147,17 +147,17 @@ public class CurriculumService {
         if (learningPaths.containsKey(path.id())) {
             throw new IllegalArgumentException("Learning path already exists: " + path.id());
         }
-        
+
         // Validate all topics exist
         for (String topicId : path.topicIds()) {
             if (!topics.containsKey(topicId)) {
                 throw new IllegalArgumentException("Topic not found: " + topicId);
             }
         }
-        
+
         // Validate topological order (prerequisites come before dependents)
         validateTopologyOrder(path.topicIds());
-        
+
         learningPaths.put(path.id(), path);
         LOG.info("Created learning path: {} with {} topics", path.id(), path.topicIds().size());
     }
@@ -191,15 +191,15 @@ public class CurriculumService {
     public LearningPath generateLearningPath(
             @NotNull List<String> targetTopicIds,
             @NotNull String learnerId) {
-        
+
         Set<String> allRequired = new LinkedHashSet<>();
-        
+
         // Collect all prerequisites recursively
         for (String targetId : targetTopicIds) {
             collectPrerequisites(targetId, allRequired);
             allRequired.add(targetId);
         }
-        
+
         // Filter out mastered topics
         Map<String, LearnerProgress> progress = learnerProgress.get(learnerId);
         if (progress != null) {
@@ -208,10 +208,10 @@ public class CurriculumService {
                 return lp != null && lp.mastery() >= 0.8;
             });
         }
-        
+
         // Sort in topological order
         List<String> ordered = topologicalSort(allRequired);
-        
+
         String pathId = "generated-" + UUID.randomUUID();
         return new LearningPath(
             pathId,
@@ -240,7 +240,7 @@ public class CurriculumService {
             @NotNull String topicId,
             double mastery,
             int timeSpentMinutes) {
-        
+
         learnerProgress.computeIfAbsent(learnerId, k -> new ConcurrentHashMap<>())
             .compute(topicId, (k, existing) -> {
                 if (existing == null) {
@@ -261,8 +261,8 @@ public class CurriculumService {
                     );
                 }
             });
-        
-        LOG.debug("Recorded progress: learner={}, topic={}, mastery={}", 
+
+        LOG.debug("Recorded progress: learner={}, topic={}, mastery={}",
             learnerId, topicId, mastery);
     }
 
@@ -303,7 +303,7 @@ public class CurriculumService {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet()) :
             Set.of();
-        
+
         // Find topics whose prerequisites are mastered but aren't mastered themselves
         return topics.values().stream()
             .filter(topic -> !masteredTopics.contains(topic.id()))
@@ -325,9 +325,9 @@ public class CurriculumService {
         if (topic == null) {
             return new TopicReadiness(false, List.of(), "Topic not found");
         }
-        
+
         Map<String, LearnerProgress> progress = learnerProgress.get(learnerId);
-        
+
         List<String> missingPrereqs = new ArrayList<>();
         for (String prereqId : topic.prerequisites()) {
             LearnerProgress prereqProgress = progress != null ? progress.get(prereqId) : null;
@@ -335,7 +335,7 @@ public class CurriculumService {
                 missingPrereqs.add(prereqId);
             }
         }
-        
+
         if (missingPrereqs.isEmpty()) {
             return new TopicReadiness(true, List.of(), "Ready to learn");
         } else {
@@ -343,7 +343,7 @@ public class CurriculumService {
                 .map(topics::get)
                 .filter(Objects::nonNull)
                 .toList();
-            return new TopicReadiness(false, missingTopics, 
+            return new TopicReadiness(false, missingTopics,
                 "Missing prerequisites: " + missingPrereqs);
         }
     }
@@ -371,7 +371,7 @@ public class CurriculumService {
     private void collectPrerequisites(String topicId, Set<String> collected) {
         Topic topic = topics.get(topicId);
         if (topic == null) return;
-        
+
         for (String prereq : topic.prerequisites()) {
             if (!collected.contains(prereq)) {
                 collectPrerequisites(prereq, collected);
@@ -383,12 +383,12 @@ public class CurriculumService {
     private List<String> topologicalSort(Set<String> topicIds) {
         Map<String, Integer> inDegree = new HashMap<>();
         Map<String, List<String>> graph = new HashMap<>();
-        
+
         for (String id : topicIds) {
             inDegree.put(id, 0);
             graph.put(id, new ArrayList<>());
         }
-        
+
         for (String id : topicIds) {
             Topic topic = topics.get(id);
             if (topic != null) {
@@ -400,20 +400,20 @@ public class CurriculumService {
                 }
             }
         }
-        
+
         List<String> result = new ArrayList<>();
         Queue<String> queue = new LinkedList<>();
-        
+
         for (String id : topicIds) {
             if (inDegree.get(id) == 0) {
                 queue.offer(id);
             }
         }
-        
+
         while (!queue.isEmpty()) {
             String current = queue.poll();
             result.add(current);
-            
+
             for (String neighbor : graph.get(current)) {
                 int newDegree = inDegree.get(neighbor) - 1;
                 inDegree.put(neighbor, newDegree);
@@ -422,7 +422,7 @@ public class CurriculumService {
                 }
             }
         }
-        
+
         return result;
     }
 
@@ -480,8 +480,8 @@ public class CurriculumService {
             public Builder metadata(String key, String value) { this.metadata.put(key, value); return this; }
 
             public Topic build() {
-                return new Topic(id, name, description, subject, gradeLevel, 
-                    List.copyOf(prerequisites), List.copyOf(standards), 
+                return new Topic(id, name, description, subject, gradeLevel,
+                    List.copyOf(prerequisites), List.copyOf(standards),
                     estimatedMinutes, Map.copyOf(metadata));
             }
         }

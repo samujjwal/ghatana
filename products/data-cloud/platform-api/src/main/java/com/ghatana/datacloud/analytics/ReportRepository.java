@@ -17,12 +17,12 @@ import java.util.List;
  * @doc.pattern Repository
  */
 public interface ReportRepository {
-    
+
     Promise<Report> save(Report report);
-    
+
     Promise<Report> findById(String tenantId, String reportId);
-    
+
     Promise<List<Report>> findAllByTenant(String tenantId);
-    
+
     Promise<Void> delete(String tenantId, String reportId);
 }

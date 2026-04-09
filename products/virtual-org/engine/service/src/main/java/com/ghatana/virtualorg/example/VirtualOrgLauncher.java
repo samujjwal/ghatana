@@ -87,13 +87,13 @@ import java.util.UUID;
  * export LLM_API_KEY="sk-..."
  * export DATABASE_URL="postgresql://localhost:5432/virtualorg"
  * export OTLP_ENDPOINT="http://localhost:4317"
- * 
+ *
  * # Run with Gradle
  * ./gradlew :products:virtual-org:apps:virtual-org-service:run
- * 
+ *
  * # Or run JAR directly
  * java -jar build/libs/virtual-org-service-1.0.0.jar
- * 
+ *
  * # Expected output:
  * # - "Starting Virtual Organization Agent System..."
  * # - "Initialized observability: tracing=enabled, metrics=enabled"

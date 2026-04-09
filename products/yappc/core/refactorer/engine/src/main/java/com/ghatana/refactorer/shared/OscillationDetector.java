@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *     // Skip this fix to prevent infinite loop
  * }
  * }</pre>
- 
+
  * @doc.type class
  * @doc.purpose Handles oscillation detector operations
  * @doc.layer core

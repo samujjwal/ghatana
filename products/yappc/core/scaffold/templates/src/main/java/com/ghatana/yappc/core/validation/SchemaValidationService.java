@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * JSON Schema validation service for YAPPC configurations.
- * 
+ *
  * Validates:
  * - Composition definitions
  * - Pack metadata
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * - Language definitions
  * - Variable definitions
  * - Plugin configurations
- * 
+ *
  * @doc.type class
  * @doc.purpose JSON Schema validation service for all YAPPC configurations
  * @doc.layer platform
@@ -60,14 +60,14 @@ public class SchemaValidationService {
         this.objectMapper = JsonUtils.getDefaultMapper();
         this.schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
         this.schemas = new HashMap<>();
-        
+
         // Load schemas
         loadSchemas();
     }
 
     /**
      * Validate a JSON file against a schema.
-     * 
+     *
      * @param jsonPath path to JSON file
      * @param schemaType schema type to validate against
      * @return validation result
@@ -83,7 +83,7 @@ public class SchemaValidationService {
 
     /**
      * Validate JSON content against a schema.
-     * 
+     *
      * @param jsonContent JSON content as string
      * @param schemaType schema type to validate against
      * @return validation result
@@ -99,7 +99,7 @@ public class SchemaValidationService {
 
     /**
      * Validate JSON node against a schema.
-     * 
+     *
      * @param jsonNode JSON node to validate
      * @param schemaType schema type to validate against
      * @return validation result
@@ -111,7 +111,7 @@ public class SchemaValidationService {
         }
 
         Set<ValidationMessage> errors = schema.validate(jsonNode);
-        
+
         if (errors.isEmpty()) {
             return ValidationResult.success();
         }
@@ -187,7 +187,7 @@ public class SchemaValidationService {
     private JsonSchema loadSchema(String schemaPath) throws IOException {
         InputStream schemaStream = getClass().getClassLoader()
             .getResourceAsStream("schemas/" + schemaPath);
-        
+
         if (schemaStream == null) {
             throw new IOException("Schema not found: " + schemaPath);
         }
@@ -220,7 +220,7 @@ public class SchemaValidationService {
 
     /**
      * Validation result.
-     * 
+     *
      * @doc.type record
      * @doc.purpose Validation result with errors and warnings
      * @doc.layer platform

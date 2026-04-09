@@ -8,13 +8,11 @@ import com.ghatana.datacloud.entity.webhook.WebhookEvent;
 import com.ghatana.datacloud.entity.webhook.WebhookEventRepository;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 

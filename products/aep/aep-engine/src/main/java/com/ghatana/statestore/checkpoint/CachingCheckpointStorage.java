@@ -220,4 +220,3 @@ public final class CachingCheckpointStorage implements CheckpointStorage {
         }
     }
 }
-

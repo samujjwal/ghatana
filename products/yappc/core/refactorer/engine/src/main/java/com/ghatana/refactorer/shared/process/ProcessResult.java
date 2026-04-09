@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.shared.process;
 
 /**
- * Represents the result of a process execution. 
+ * Represents the result of a process execution.
  * @doc.type record
  * @doc.purpose Immutable data carrier for process result
  * @doc.layer core

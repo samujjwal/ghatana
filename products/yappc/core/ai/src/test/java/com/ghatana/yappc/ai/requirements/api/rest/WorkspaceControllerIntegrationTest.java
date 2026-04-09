@@ -5,11 +5,7 @@ import com.ghatana.platform.security.model.User;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.CreateWorkspaceRequest;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.UpdateWorkspaceRequest;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.AddMemberRequest;
-import com.ghatana.yappc.ai.requirements.application.workspace.WorkspaceService;
-import com.ghatana.yappc.ai.requirements.domain.workspace.Workspace;
-import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceMember;
 import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceRole;
-import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceSettings;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -21,8 +17,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;

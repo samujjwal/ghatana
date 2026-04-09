@@ -2,7 +2,6 @@ package com.ghatana.platform.core.validation;
 
 import com.ghatana.platform.core.exception.ValidationException;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 

@@ -128,7 +128,7 @@ public class FinanceContracts {
             "resource_budget", "cpu<80%,memory<2048MB"
         ))
         .build();
-    
+
     public static List<KernelContract> getAllContracts() {
         return List.of(
             TRANSACTION_API,

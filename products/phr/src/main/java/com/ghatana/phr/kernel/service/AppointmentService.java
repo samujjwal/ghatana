@@ -10,19 +10,14 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Appointment Service with conflict resolution and timezone handling.

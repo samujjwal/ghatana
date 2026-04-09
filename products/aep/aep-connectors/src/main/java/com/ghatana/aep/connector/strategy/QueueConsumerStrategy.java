@@ -11,19 +11,19 @@ import io.activej.promise.Promise;
  * Simplified for platform-connectors module.
  */
 public interface QueueConsumerStrategy {
-    
+
     /**
      * Start consuming messages from the queue.
      * @return Promise of completion
      */
     Promise<Void> start();
-    
+
     /**
      * Stop consuming messages.
      * @return Promise of completion
      */
     Promise<Void> stop();
-    
+
     /**
      * Check if the consumer is running.
      * @return true if running

@@ -165,7 +165,7 @@ public class QueryTelemetryService {
             "success", String.valueOf(execution.success()));
 
         metrics.getMeterRegistry()
-            .gauge("query.result.count", Tags.of("query", execution.queryName()), 
+            .gauge("query.result.count", Tags.of("query", execution.queryName()),
                 execution.resultCount());
 
         if (execution.tableScan()) {

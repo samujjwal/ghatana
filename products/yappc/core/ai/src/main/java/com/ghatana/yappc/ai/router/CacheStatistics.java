@@ -2,10 +2,10 @@ package com.ghatana.yappc.ai.router;
 
 /**
  * Cache statistics for monitoring.
- * 
+ *
  * @doc.type record
  * @doc.purpose Cache performance metrics
- 
+
  * @doc.layer core
  * @doc.pattern ValueObject
 */

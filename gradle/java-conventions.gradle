@@ -36,7 +36,7 @@ project.afterEvaluate {
                     srcDirs = ['src/main/resources']
                 }
             }
-            
+
             test {
                 java {
                     srcDirs = ['src/test/java']
@@ -45,7 +45,7 @@ project.afterEvaluate {
                     srcDirs = ['src/test/resources']
                 }
             }
-            
+
             // Optional: Integration test source set
             if (project.hasProperty('enableIntegrationTests')) {
                 integrationTest {
@@ -61,7 +61,7 @@ project.afterEvaluate {
                     runtimeClasspath += sourceSets.test.runtimeClasspath
                 }
             }
-            
+
             // Optional: Functional test source set
             if (project.hasProperty('enableFunctionalTests')) {
                 functionalTest {
@@ -77,7 +77,7 @@ project.afterEvaluate {
                     runtimeClasspath += sourceSets.test.runtimeClasspath
                 }
             }
-            
+
             // Optional: Performance test source set (JMH)
             if (project.hasProperty('enableJmh')) {
                 jmh {
@@ -92,49 +92,49 @@ project.afterEvaluate {
                 }
             }
         }
-        
+
         // Configure test tasks for additional source sets
         if (project.hasProperty('enableIntegrationTests')) {
             project.task('integrationTest', type: Test) {
                 description = 'Runs integration tests.'
                 group = 'verification'
-                
+
                 testClassesDirs = project.sourceSets.integrationTest.output.classesDirs
                 classpath = project.sourceSets.integrationTest.runtimeClasspath
-                
+
                 shouldRunAfter 'test'
-                
+
                 useJUnitPlatform()
-                
+
                 testLogging {
                     events 'passed', 'skipped', 'failed'
                     showStandardStreams = true
                 }
             }
-            
+
             project.tasks.named('check').configure {
                 dependsOn 'integrationTest'
             }
         }
-        
+
         if (project.hasProperty('enableFunctionalTests')) {
             project.task('functionalTest', type: Test) {
                 description = 'Runs functional tests.'
                 group = 'verification'
-                
+
                 testClassesDirs = project.sourceSets.functionalTest.output.classesDirs
                 classpath = project.sourceSets.functionalTest.runtimeClasspath
-                
+
                 shouldRunAfter 'test', 'integrationTest'
-                
+
                 useJUnitPlatform()
-                
+
                 testLogging {
                     events 'passed', 'skipped', 'failed'
                     showStandardStreams = true
                 }
             }
-            
+
             project.tasks.named('check').configure {
                 dependsOn 'functionalTest'
             }
@@ -163,32 +163,32 @@ project.afterEvaluate {
             if (!project.tasks.findByName('javadocJar')) {
                 withJavadocJar()
             }
-            
+
             if (!project.tasks.findByName('sourcesJar')) {
                 withSourcesJar()
             }
         }
-        
+
         // Configure Java compilation for all projects
         project.tasks.withType(JavaCompile).configureEach {
             options.encoding = 'UTF-8'
             options.incremental = true
             options.compilerArgs += ['-parameters', '-Xlint:all,-processing']
         }
-        
+
         // Configure Javadoc for all projects
         project.tasks.withType(Javadoc).configureEach {
             options.encoding = 'UTF-8'
             options.addBooleanOption('html5', true)
-            
+
             // Suppress warnings for missing Javadoc comments
             options.addStringOption('Xdoclint:none', '-quiet')
         }
-        
+
         // Configure tests for all projects
         project.tasks.named('test', Test) { testTask ->
             useJUnitPlatform()
-            
+
             // Set JVM arguments for tests with Generational ZGC alignment
             // NOTE: -XX:+ZGenerational requires Java 21+. See java-version-check.gradle
             jvmArgs = [
@@ -210,14 +210,14 @@ project.afterEvaluate {
 
             // Always run tests, even when nothing changed
             dependsOn 'cleanTest'
-            
+
             // Show test results
             testLogging {
                 events 'passed', 'skipped', 'failed'
                 showStandardStreams = true
             }
         }
-        
+
         // Configure JAR manifest for all projects
         project.tasks.named('jar') { jarTask ->
             manifest {

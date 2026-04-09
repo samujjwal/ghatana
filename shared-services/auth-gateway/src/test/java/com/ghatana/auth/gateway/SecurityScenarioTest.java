@@ -25,7 +25,7 @@ class SecurityScenarioTest {
     void shouldPreventSqlInjectionAttacks() {
         String maliciousInput = "'; DROP TABLE users; --";
         String hashed = PasswordHasher.hash(maliciousInput);
-        
+
         assertThat(hashed).isNotNull();
         assertThat(hashed).doesNotContain("DROP TABLE");
     }
@@ -35,7 +35,7 @@ class SecurityScenarioTest {
     void shouldPreventXssAttacks() {
         String xssPayload = "<script>alert('xss')</script>";
         String hashed = PasswordHasher.hash(xssPayload);
-        
+
         assertThat(hashed).isNotNull();
         assertThat(hashed).doesNotContain("<script>");
     }
@@ -45,7 +45,7 @@ class SecurityScenarioTest {
     void shouldPreventTokenManipulation() {
         String password = "validPassword123";
         String hashed = PasswordHasher.hash(password);
-        
+
         assertThat(PasswordHasher.verify(password, hashed)).isTrue();
         assertThat(PasswordHasher.verify("manipulatedPassword", hashed)).isFalse();
     }
@@ -55,7 +55,7 @@ class SecurityScenarioTest {
     void shouldPreventAuthenticationBypass() {
         String password = "securePassword";
         String hashed = PasswordHasher.hash(password);
-        
+
         assertThat(PasswordHasher.verify("", hashed)).isFalse();
         assertThat(PasswordHasher.verify(null, hashed)).isFalse();
     }
@@ -65,7 +65,7 @@ class SecurityScenarioTest {
     void shouldPreventBruteForceAttacks() {
         String password = "strongPassword123";
         String hashed = PasswordHasher.hash(password);
-        
+
         // Multiple failed attempts should still fail
         assertThat(PasswordHasher.verify("guess1", hashed)).isFalse();
         assertThat(PasswordHasher.verify("guess2", hashed)).isFalse();
@@ -78,7 +78,7 @@ class SecurityScenarioTest {
     void shouldLogSecurityEvents() {
         String password = "testPassword";
         String hashed = PasswordHasher.hash(password);
-        
+
         assertThat(hashed).isNotNull();
     }
 }

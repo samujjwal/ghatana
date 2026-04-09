@@ -1,6 +1,5 @@
 package com.ghatana.virtualorg.framework.integration;
 
-import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for AgentOperatorRegistry.
@@ -35,20 +33,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @DisplayName("AgentOperatorRegistry Tests")
 class AgentOperatorRegistryTest extends EventloopTestBase {
-    
+
     private OperatorCatalog operatorCatalog;
     private SimpleMeterRegistry meterRegistry;
     private AgentOperatorRegistry registry;
-    
+
     private static final String TENANT_ID = "test-tenant";
-    
+
     @BeforeEach
     void setUp() {
         operatorCatalog = new UnifiedOperatorCatalog();
         meterRegistry = new SimpleMeterRegistry();
         registry = new AgentOperatorRegistry(operatorCatalog, meterRegistry);
     }
-    
+
     /**
      * Test single agent registration.
      *
@@ -61,10 +59,10 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
     void shouldRegisterSingleAgent() {
         // GIVEN: CEO agent
         OrganizationalAgent ceo = createTestCEO();
-        
+
         // WHEN: registering agent
         runPromise(() -> registry.register(ceo, TENANT_ID));
-        
+
         // THEN: registration metric incremented (catalog wiring is currently stubbed)
         assertThat(meterRegistry.counter(
             "virtualorg.agent.registered",
@@ -73,7 +71,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             .as("Registration metric should be incremented")
             .isEqualTo(1.0);
     }
-    
+
     /**
      * Test batch agent registration.
      *
@@ -90,13 +88,13 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             createTestCTO(),
             createTestEngineer()
         );
-        
+
         // WHEN: registering all agents
         runPromise(() -> registry.registerAll(agents, TENANT_ID));
-        
+
         // THEN: registration completes without error for all agents (catalog wiring is stubbed)
     }
-    
+
     /**
      * Test agent unregistration.
      *
@@ -110,7 +108,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
         // GIVEN: registered agent
         OrganizationalAgent ceo = createTestCEO();
         runPromise(() -> registry.register(ceo, TENANT_ID));
-        
+
         // WHEN: unregistering agent
         runPromise(() -> registry.unregister(ceo, TENANT_ID));
 
@@ -123,7 +121,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             .as("Unregistration metric should be incremented")
             .isEqualTo(1.0);
     }
-    
+
     /**
      * Test empty agent list registration.
      *
@@ -136,15 +134,15 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
     void shouldHandleEmptyAgentList() {
         // GIVEN: empty agent list
         List<OrganizationalAgent> emptyList = List.of();
-        
+
         // WHEN/THEN: registration completes without error
         runPromise(() -> registry.registerAll(emptyList, TENANT_ID));
     }
-    
+
     // ========================================================================
     // Test Helpers
     // ========================================================================
-    
+
     private OrganizationalAgent createTestCEO() {
         return new TestAgent(
             Role.of("CEO", Layer.EXECUTIVE),
@@ -152,7 +150,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             EscalationPath.of()
         );
     }
-    
+
     private OrganizationalAgent createTestCTO() {
         return new TestAgent(
             Role.of("CTO", Layer.EXECUTIVE),
@@ -160,7 +158,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             EscalationPath.of(Role.of("CEO", Layer.EXECUTIVE))
         );
     }
-    
+
     private OrganizationalAgent createTestEngineer() {
         return new TestAgent(
             Role.of("Engineer", Layer.INDIVIDUAL_CONTRIBUTOR),
@@ -171,7 +169,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
             )
         );
     }
-    
+
     /**
      * Test agent implementation for testing.
      */
@@ -179,34 +177,34 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
         private final Role role;
         private final Authority authority;
         private final EscalationPath escalationPath;
-        
+
         TestAgent(Role role, Authority authority, EscalationPath escalationPath) {
             this.role = role;
             this.authority = authority;
             this.escalationPath = escalationPath;
         }
-        
+
         @Override
         public Role getRole() {
             return role;
         }
-        
+
         @Override
         public Authority getAuthority() {
             return authority;
         }
-        
+
         @Override
         public EscalationPath getEscalationPath() {
             return escalationPath;
         }
-        
+
         // Minimal Agent interface implementation
         @Override
         public String getId() {
             return role.name();
         }
-        
+
         public String getName() {
             return role.name() + " Agent";
         }

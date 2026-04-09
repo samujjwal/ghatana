@@ -9,10 +9,8 @@ import com.ghatana.kernel.contracts.KernelContract;
 import com.ghatana.kernel.context.DefaultKernelContext;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
-import com.ghatana.kernel.descriptor.KernelDescriptor;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.AbstractKernelModule;
-import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -22,8 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

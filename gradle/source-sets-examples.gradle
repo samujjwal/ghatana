@@ -16,7 +16,7 @@ sourceSets {
         java.srcDir('src/main/java')
         resources.srcDir('src/main/resources')
     }
-    
+
     test {
         java.srcDir('src/test/java')
         resources.srcDir('src/test/resources')
@@ -44,7 +44,7 @@ sourceSets {
             srcDir('src/main/resources')
         }
     }
-    
+
     test {
         java.srcDir('src/test/java')
         resources.srcDir('src/test/resources')
@@ -155,7 +155,7 @@ sourceSets {
         kotlin.srcDir('src/main/kotlin')
         resources.srcDir('src/main/resources')
     }
-    
+
     test {
         java.srcDir('src/test/java')
         kotlin.srcDir('src/test/kotlin')
@@ -185,7 +185,7 @@ sourceSets {
             ]
         }
     }
-    
+
     test {
         java {
             srcDirs = [

@@ -43,7 +43,7 @@ public class ADRTemplateEngine {
 
     /**
      * Selects the most appropriate template based on analysis results.
-     * 
+     *
      * @param analysis AI analysis results for the decision
      * @return Selected ADR template
      */
@@ -62,7 +62,7 @@ public class ADRTemplateEngine {
 
     /**
      * Generates ADR content using the specified template.
-     * 
+     *
      * @param template ADR template to use
      * @param request ADR request with decision details
      * @param analysis AI analysis results

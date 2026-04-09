@@ -70,7 +70,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
         runPromise(() -> fraudPlugin.initialize(mockContext)
                 .then(v -> fraudPlugin.start()));
 
-        FraudDetectionPlugin.FraudDetectionRequest request = 
+        FraudDetectionPlugin.FraudDetectionRequest request =
             new FraudDetectionPlugin.FraudDetectionRequest(
                 "txn123", "TRANSACTION", Map.of("amount", 100, "mcc", 5411),
                 "model_v1");
@@ -97,7 +97,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
         runPromise(() -> result);
 
         // Verify rule was registered by assessing with product
-        FraudDetectionPlugin.FraudDetectionRequest request = 
+        FraudDetectionPlugin.FraudDetectionRequest request =
             new FraudDetectionPlugin.FraudDetectionRequest(
                 "txn999", "product_finance", Map.of("amount", 50000), "model_v1");
 
@@ -115,7 +115,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
                 .then(v -> fraudPlugin.start()));
 
         Instant now = Instant.now();
-        if (fraudPlugin.detectPatterns("product1", 
+        if (fraudPlugin.detectPatterns("product1",
             new FraudDetectionPlugin.TimeWindow(now.minusSeconds(3600), now)) != null) {
             // Pattern detected - may vary based on current state
         }
@@ -136,7 +136,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
                 Map.of("amount", 50000.0, "country", "CN"), true)
         );
 
-        FraudDetectionPlugin.TrainingData trainingData = 
+        FraudDetectionPlugin.TrainingData trainingData =
             new FraudDetectionPlugin.TrainingData(examples, Map.of());
 
         Promise<Void> result = fraudPlugin.trainModel("model_v2", trainingData);

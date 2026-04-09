@@ -73,4 +73,3 @@ public final class StepContext {
   public FeatureFlags flags() { return flags; }
   public TraceContext trace() { return trace; }
 }
-

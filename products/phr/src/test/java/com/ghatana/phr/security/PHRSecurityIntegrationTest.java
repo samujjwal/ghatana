@@ -37,17 +37,17 @@ class PHRSecurityIntegrationTest {
         userRepository = new UserRepository();
         consentRepository = new ConsentRepository();
         TenantConfigRepository tenantConfigRepository = new TenantConfigRepository();
-        
+
         PHRSecurityConfig config = new PHRSecurityConfig(
             userRepository,
             consentRepository,
             tenantConfigRepository,
             new TestConsentService()
         );
-        
+
         securityManager = config.kernelSecurityManager();
         policyEnforcementPoint = config.policyEnforcementPoint();
-        
+
         setupTestData();
     }
 
@@ -81,7 +81,7 @@ class PHRSecurityIntegrationTest {
     @Test
     void testPatientRecordAccess_WithConsent_ShouldAllow() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
-        
+
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder()
             .resource("patient-records")
             .operation("read")
@@ -91,17 +91,17 @@ class PHRSecurityIntegrationTest {
             .requiresConsent(true)
             .metadata(Map.of("patient_id", "patient-1"))
             .build();
-        
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
-        
+
         assertTrue(decision.isAllowed(), "Access should be allowed with valid consent");
     }
 
     @Test
     void testPatientRecordAccess_WithoutConsent_ShouldDeny() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
-        
+
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder()
             .resource("patient-records")
             .operation("read")
@@ -111,12 +111,12 @@ class PHRSecurityIntegrationTest {
             .requiresConsent(true)
             .metadata(Map.of("patient_id", "patient-2"))
             .build();
-        
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
-        
+
         assertFalse(decision.isAllowed(), "Access should be denied without consent");
-        assertTrue(decision.getReason().contains("Consent not granted"), 
+        assertTrue(decision.getReason().contains("Consent not granted"),
             "Reason should mention consent");
     }
 
@@ -124,7 +124,7 @@ class PHRSecurityIntegrationTest {
     void testPatientRecordAccess_Unauthenticated_ShouldDeny() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
         SecurityContext unauthContext = new UnauthenticatedContext();
-        
+
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder()
             .resource("patient-records")
             .operation("read")
@@ -133,10 +133,10 @@ class PHRSecurityIntegrationTest {
             .purpose("treatment")
             .requiresConsent(false)
             .build();
-        
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, unauthContext);
-        
+
         assertFalse(decision.isAllowed(), "Access should be denied for unauthenticated user");
         assertEquals("Not authenticated", decision.getReason());
     }
@@ -144,26 +144,26 @@ class PHRSecurityIntegrationTest {
     @Test
     void testPatientRecordExport_WithPermission_ShouldAllow() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
-        
+
         KernelSecurityManager.Action action = new KernelSecurityManager.Action(
             "patient-records", "export", "phr"
         );
-        
+
         boolean authorized = securityManager.authorizeAction(action, context);
-        
+
         assertTrue(authorized, "Provider should be authorized to export PHI");
     }
 
     @Test
     void testPatientRecordExport_WithoutPermission_ShouldDeny() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "patient-1");
-        
+
         KernelSecurityManager.Action action = new KernelSecurityManager.Action(
             "patient-records", "export", "phr"
         );
-        
+
         boolean authorized = securityManager.authorizeAction(action, context);
-        
+
         assertFalse(authorized, "Patient should not be authorized to export PHI");
     }
 
@@ -205,7 +205,7 @@ class PHRSecurityIntegrationTest {
     @Test
     void testSecurityContextCreation() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
-        
+
         assertNotNull(context);
         assertEquals("tenant-1", context.getTenantId());
         assertEquals("provider-1", context.getUserId());
@@ -217,23 +217,23 @@ class PHRSecurityIntegrationTest {
 
     @Test
     void testCredentialValidation_ValidCredentials() {
-        KernelSecurityManager.Credentials credentials = 
+        KernelSecurityManager.Credentials credentials =
             new KernelSecurityManager.Credentials("dr.smith", "Password123!", null);
-        
-        KernelSecurityManager.ValidationResult result = 
+
+        KernelSecurityManager.ValidationResult result =
             securityManager.validateCredentials(credentials);
-        
+
         assertTrue(result.isValid());
     }
 
     @Test
     void testCredentialValidation_InvalidUser() {
-        KernelSecurityManager.Credentials credentials = 
+        KernelSecurityManager.Credentials credentials =
             new KernelSecurityManager.Credentials("unknown", "Password123!", null);
-        
-        KernelSecurityManager.ValidationResult result = 
+
+        KernelSecurityManager.ValidationResult result =
             securityManager.validateCredentials(credentials);
-        
+
         assertFalse(result.isValid());
         assertEquals("Invalid credentials", result.getReason());
     }

@@ -194,4 +194,3 @@ public final class FacialRecognitionService {
      */
     public record IdentityMatch(String identityId, double similarity) {}
 }
-

@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles documentation tool provider operations
  * @doc.layer core
@@ -311,31 +311,31 @@ public class DocumentationToolProvider implements ToolProvider {
   private String generateReadmeContent(String projectName, String projectPath) {
     return String.format("""
         # %s
-        
+
         ## Overview
-        
+
         This project is part of the YAPPC platform - an AI-native product development platform.
-        
+
         ## Installation
-        
+
         ```bash
         ./gradlew build
         ```
-        
+
         ## Usage
-        
+
         See the [User Guide](docs/user-guide.md) for detailed usage instructions.
-        
+
         ## API Reference
-        
+
         API documentation is available at [docs/api](docs/api/).
-        
+
         ## Contributing
-        
+
         Please read [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
-        
+
         ## License
-        
+
         Copyright (c) 2025 Ghatana Technologies. All rights reserved.
         """, projectName);
   }
@@ -343,38 +343,38 @@ public class DocumentationToolProvider implements ToolProvider {
   private String generateAdrContent(int number, String title, String context, String decision) {
     return String.format("""
         # ADR-%04d: %s
-        
+
         ## Status
-        
+
         Proposed
-        
+
         ## Context
-        
+
         %s
-        
+
         ## Decision
-        
+
         %s
-        
+
         ## Consequences
-        
+
         ### Positive
-        
+
         - Improved maintainability
         - Better developer experience
-        
+
         ### Negative
-        
+
         - Migration effort required
         - Learning curve for new approach
-        
+
         ## Alternatives Considered
-        
+
         1. **Status Quo**: Keep current approach (rejected due to technical debt)
         2. **Alternative A**: [Description] (rejected due to [reason])
-        
+
         ## References
-        
+
         - Related ADRs: None yet
         - External resources: [links]
         """, number, title, context.isEmpty() ? "The problem we are addressing..." : context,
@@ -384,50 +384,50 @@ public class DocumentationToolProvider implements ToolProvider {
   private String generateUserGuideContent(String feature, String audience) {
     return String.format("""
         # %s User Guide
-        
+
         ## Target Audience
-        
+
         This guide is designed for %s users.
-        
+
         ## Getting Started
-        
+
         ### Prerequisites
-        
+
         - Java 21+
         - Docker (optional)
-        
+
         ### Quick Start
-        
+
         1. Install the package
         2. Configure your environment
         3. Run your first command
-        
+
         ## Core Concepts
-        
+
         [Explanation of key concepts for %s]
-        
+
         ## Step-by-Step Tutorial
-        
+
         ### Step 1: [Action]
-        
+
         ```java
         // Code example
         ```
-        
+
         ### Step 2: [Action]
-        
+
         [Instructions]
-        
+
         ## Troubleshooting
-        
+
         | Issue | Solution |
         |-------|----------|
         | [Problem] | [Solution] |
-        
+
         ## FAQ
-        
+
         **Q: [Question]?**
-        
+
         A: [Answer]
         """, feature, audience, feature);
   }

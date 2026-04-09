@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -141,49 +139,49 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
 
     private static final String CFO_SYSTEM_PROMPT = """
         You are the CFO (Chief Financial Officer) of a software development organization. Your role is to:
-        
+
         1. FINANCIAL STRATEGY & PLANNING
            - Define company financial strategy and targets
            - Own annual and quarterly budget planning
            - Forecast revenue, costs, and cash flow
            - Set financial KPIs and metrics
-        
+
         2. BUDGET MANAGEMENT
            - Approve budget requests and allocations
            - Monitor spending against budget
            - Drive cost optimization initiatives
            - Ensure efficient resource allocation
-        
+
         3. REVENUE & PRICING
            - Own pricing strategy and revenue planning
            - Analyze pricing models and profitability
            - Optimize revenue per customer
            - Manage revenue forecasting and reporting
-        
+
         4. FINANCIAL ANALYSIS & ROI
            - Evaluate investment opportunities and ROI
            - Analyze financial impact of initiatives
            - Provide cost-benefit analysis for decisions
            - Track and report financial performance
-        
+
         5. COMPLIANCE & RISK
            - Ensure financial compliance and controls
            - Manage financial risk and cash flow
            - Own financial reporting and audits
            - Maintain financial transparency
-        
+
         6. DECISION FRAMEWORK
            - Evaluate decisions by: ROI, cost-effectiveness, financial risk
            - Use data-driven financial analysis
            - Balance short-term costs with long-term value
            - Consider cash flow impact and runway
-        
+
         7. ESCALATION HANDLING
            - Escalate budget >$200K to CEO
            - Escalate strategic pricing changes to CEO
            - Consult CTO on infrastructure costs
            - Consult CPO on product pricing
-        
+
         When processing tasks:
         - Analyze financial impact and ROI
         - Consider budget constraints and cash flow
@@ -241,8 +239,8 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
     @NotNull
     protected Promise<TaskResponseProto> doProcessTask(@NotNull TaskRequestProto request) {
         TaskProto task = request.getTask();
-        
-        log.info("CFO processing financial task: taskId={}, type={}, title={}", 
+
+        log.info("CFO processing financial task: taskId={}, type={}, title={}",
             task.getTaskId(), task.getType(), task.getTitle());
 
         Instant startTime = Instant.now();
@@ -251,7 +249,7 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
         Promise<TaskResponseProto> resultPromise = memory.retrieveContext(task)
             .then(context -> {
                 String prompt = buildCFOPrompt(task, context);
-                return llmClient.complete(CFO_SYSTEM_PROMPT, prompt, tools, 
+                return llmClient.complete(CFO_SYSTEM_PROMPT, prompt, tools,
                     llmConfig.getTemperature(), llmConfig.getMaxTokens());
             })
             .then(llmResponse -> {
@@ -272,7 +270,7 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
                 if (decision.getType() == DecisionTypeProto.DECISION_TYPE_ESCALATED) {
                     return Promise.of(decision);
                 }
-                
+
                 return memory.storeDecision(decision, task).map(stored -> decision);
             })
             .map(decision -> {
@@ -304,10 +302,10 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
         prompt.append("FINANCIAL DECISION REQUEST\n=========================\n\n");
         prompt.append("Task: ").append(task.getTitle()).append("\n");
         prompt.append("Description: ").append(task.getDescription()).append("\n\n");
-        
+
         prompt.append("FINANCIAL CONTEXT\n------------------\n");
         prompt.append(context).append("\n\n");
-        
+
         prompt.append("DECISION REQUIRED\n------------------\n");
         prompt.append("Analyze and provide:\n");
         prompt.append("1. Recommendation (approve/reject/modify)\n");
@@ -317,7 +315,7 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
         prompt.append("5. Financial risks and mitigation\n");
         prompt.append("6. Alternative options considered\n");
         prompt.append("7. Confidence level (0.0-1.0)\n");
-        
+
         return prompt.toString();
     }
 
@@ -334,13 +332,13 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
         if (task.getType() == TaskTypeProto.TASK_TYPE_BUDGET_APPROVAL) {
             return extractBudgetAmount(task.getDescription()) > getBudgetLimitUsd();
         }
-        
+
         // Escalate major pricing strategy changes
         String desc = task.getDescription().toLowerCase();
         if (desc.contains("pricing strategy") || desc.contains("major investment")) {
             return true;
         }
-        
+
         // Escalate low confidence on critical financial decisions
         return decision.getConfidence() < 0.5f && isCriticalFinancialDecision(task);
     }
@@ -353,7 +351,7 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
     private DecisionProto createEscalationResponse(TaskProto task, DecisionProto decision, String escalateTo) {
         return decision.toBuilder()
             .setType(DecisionTypeProto.DECISION_TYPE_ESCALATED)
-            .setReasoning(decision.getReasoning() + 
+            .setReasoning(decision.getReasoning() +
                 "\n\nESCALATED to " + escalateTo + ": Budget exceeds CFO authority ($200K)")
             .build();
     }
@@ -362,7 +360,7 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
             LLMResponse llmResponse, TaskProto task, DecisionProto decision) {
         return toolExecutor.executeTools(llmResponse.getToolCalls(), task)
             .map(toolResults -> decision.toBuilder()
-                .setReasoning(decision.getReasoning() + "\n\nFinancial Analysis:\n" + 
+                .setReasoning(decision.getReasoning() + "\n\nFinancial Analysis:\n" +
                     DecisionExtractor.formatToolResults(toolResults))
                 .build());
     }
@@ -382,23 +380,23 @@ public class CFOAgent extends AbstractVirtualOrgAgent {
 
     private void recordTaskMetrics(TaskProto task, Instant startTime, boolean success) {
         long durationMs = Instant.now().toEpochMilli() - startTime.toEpochMilli();
-        
+
         meterRegistry.counter("virtualorg.cfo.tasks",
             "type", task.getType().name(),
             "status", success ? "success" : "failure"
         ).increment();
-        
+
         meterRegistry.timer("virtualorg.cfo.task.duration",
             "type", task.getType().name()
         ).record(java.time.Duration.ofMillis(durationMs));
-        
+
         if (success) {
             tasksCompleted.incrementAndGet();
         } else {
             tasksFailed.incrementAndGet();
         }
     }
-    
+
     /**
      * Helper to get budget limit from authority limits map.
      */

@@ -13,7 +13,6 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +79,7 @@ public class ReportServiceImpl implements ReportService {
                         metrics.incrementCounter("report.get.not_found", "tenant", tenantId);
                     }
                 } else {
-                    metrics.incrementCounter("report.get.error", 
+                    metrics.incrementCounter("report.get.error",
                         "tenant", tenantId, "error", ex.getClass().getSimpleName());
                 }
             });
@@ -102,7 +101,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public Promise<Report> updateReport(String tenantId, String reportId, 
+    public Promise<Report> updateReport(String tenantId, String reportId,
                                          Map<String, String> updates) {
         validateTenantId(tenantId);
         Objects.requireNonNull(reportId, "Report ID required");

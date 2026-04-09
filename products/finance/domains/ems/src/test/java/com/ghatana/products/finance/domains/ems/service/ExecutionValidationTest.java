@@ -32,7 +32,7 @@ class ExecutionValidationTest {
     @BeforeEach
     void setUp() {
         validationService = new ExecutionValidationService();
-        
+
         testInstrument = new Instrument(
             UUID.randomUUID(),
             "AAPL",

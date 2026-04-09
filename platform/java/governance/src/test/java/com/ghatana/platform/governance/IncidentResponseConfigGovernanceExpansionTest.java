@@ -41,7 +41,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             severityOrder.put("medium", 3);
             severityOrder.put("low", 4);
             severityOrder.put("info", 5);
-            
+
             assertThat(severityOrder.get("critical")).isLessThan(severityOrder.get("low"));
         }
 
@@ -53,7 +53,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             severityTeam.put("high", "senior-engineer");
             severityTeam.put("medium", "on-call-team");
             severityTeam.put("low", "support-team");
-            
+
             assertThat(severityTeam.get("critical")).isEqualTo("incident-commander");
         }
 
@@ -65,7 +65,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             escalationMinutes.put("severity-2", 15);
             escalationMinutes.put("severity-3", 30);
             escalationMinutes.put("severity-4", 60);
-            
+
             for (int v : escalationMinutes.values()) {
                 assertThat(v).isGreaterThan(0);
             }
@@ -79,7 +79,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             pirPolicy.put("rootCauseAnalysisRequired", true);
             pirPolicy.put("actionItemTracking", true);
             pirPolicy.put("tenantNotificationRequired", true);
-            
+
             assertThat(pirPolicy.get("rootCauseAnalysisRequired")).isEqualTo(true);
         }
 
@@ -88,7 +88,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         void incidentAuditTrail() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // 50 incident records with governance
                 for (int i = 0; i < 50; i++) {
                     final int idx = i;
@@ -98,7 +98,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
                     incident.put("severity", idx % 4 + 1);
                     incident.put("tenantId", "t" + (idx / 10));
                 }
-                
+
                 return result;
             });
         }
@@ -115,7 +115,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             approvalPolicy.put("requiresApprovalForProd", true);
             approvalPolicy.put("approvalTiers", 3);
             approvalPolicy.put("auditTrailRequired", true);
-            
+
             assertThat(approvalPolicy.get("requiresApprovalForProd")).isEqualTo(true);
         }
 
@@ -123,7 +123,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         @DisplayName("Configuration environment separation")
         void environmentSeparation() {
             Map<String, Map<String, String>> envConfigs = new HashMap<>();
-            
+
             for (String env : new String[]{"dev", "staging", "prod"}) {
                 Map<String, String> config = new HashMap<>();
                 config.put("logLevel", env.equals("prod") ? "WARN" : "DEBUG");
@@ -131,7 +131,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
                 config.put("securityMode", env.equals("prod") ? "strict" : "permissive");
                 envConfigs.put(env, config);
             }
-            
+
             assertThat(envConfigs).hasSize(3);
             assertThat(envConfigs.get("prod").get("securityMode")).isEqualTo("strict");
         }
@@ -144,7 +144,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             secretPolicy.put("encryptionRequired", true);
             secretPolicy.put("auditAccessRequired", true);
             secretPolicy.put("noHardcodingAllowed", true);
-            
+
             assertThat(secretPolicy.get("noHardcodingAllowed")).isEqualTo(true);
         }
 
@@ -152,7 +152,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         @DisplayName("Configuration versioning and rollback policy")
         void versioningPolicy() {
             Map<Integer, Map<String, Object>> versions = new HashMap<>();
-            
+
             for (int v = 1; v <= 10; v++) {
                 Map<String, Object> versionInfo = new HashMap<>();
                 versionInfo.put("version", v);
@@ -160,7 +160,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
                 versionInfo.put("appliedTo", "prod-cluster-" + (v % 3));
                 versions.put(v, versionInfo);
             }
-            
+
             assertThat(versions).hasSize(10);
         }
 
@@ -169,7 +169,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         void featureFlagGovernance() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // 30 feature flags with governance per tenant
                 for (int i = 0; i < 30; i++) {
                     final int idx = i;
@@ -179,7 +179,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
                     featureFlag.put("requiresApprovalToDisable", idx % 2 == 0);
                     featureFlag.put("rolloutPercentage", 10 + (idx % 80));
                 }
-                
+
                 return result;
             });
         }
@@ -199,7 +199,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             auditEntry.put("previousValue", "value1");
             auditEntry.put("newValue", "value2");
             auditEntry.put("approvedBy", "approver-1");
-            
+
             assertThat(auditEntry.get("action")).isEqualTo("CONFIG_CHANGED");
         }
 
@@ -211,7 +211,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             complianceChecks.put("hipaaCompliant", true);
             complianceChecks.put("pciCompliant", true);
             complianceChecks.put("soc2Compliant", true);
-            
+
             long requiredChecks = complianceChecks.values().stream()
                 .filter(v -> v).count();
             assertThat(requiredChecks).isEqualTo(4);

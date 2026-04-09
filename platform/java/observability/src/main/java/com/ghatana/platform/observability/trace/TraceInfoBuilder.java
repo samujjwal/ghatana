@@ -12,7 +12,7 @@ import java.util.List;
  * like duration, span count, error count, and overall status. It simplifies trace
  * construction by handling all aggregation logic automatically.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Auto-Aggregation</b>: Calculates metrics from added spans</li>
@@ -21,7 +21,7 @@ import java.util.List;
  *   <li><b>Override Support</b>: Explicit values override auto-calculation</li>
  *   <li><b>Validation</b>: Ensures consistency at build time</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Simple auto-aggregation (most common)
@@ -30,7 +30,7 @@ import java.util.List;
  *     .addSpan(span1)
  *     .addSpan(span2)
  *     .addSpan(span3)
- *     .build();  
+ *     .build();
  * // Auto-calculates: startTime, endTime, duration, spanCount, errorCount, serviceName, status
  *
  * // With explicit overrides
@@ -53,7 +53,7 @@ import java.util.List;
  *     .withStatus("UNSET")
  *     .build();  // No spans, all metrics explicit
  * }</pre>
- * 
+ *
  * <h2>Auto-Calculation Logic</h2>
  * If not explicitly set, the following values are calculated from spans:
  * <ul>
@@ -65,11 +65,11 @@ import java.util.List;
  *   <li><b>serviceName</b>: Root span's service name (or null if no root)</li>
  *   <li><b>status</b>: "ERROR" if errorCount > 0, else "OK"</li>
  * </ul>
- * 
+ *
  * <h2>Root Span Detection</h2>
  * The builder finds the root span (span with no parent) to extract the primary
  * service name. This represents the entry point of the trace.
- * 
+ *
  * <h2>Status Calculation</h2>
  * <ul>
  *   <li>If any span has status "ERROR" → trace status = "ERROR"</li>

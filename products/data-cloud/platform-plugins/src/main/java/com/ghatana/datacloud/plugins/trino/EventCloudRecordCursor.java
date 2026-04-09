@@ -33,9 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static io.trino.spi.type.BigintType.BIGINT;
-import static io.trino.spi.type.IntegerType.INTEGER;
-import static io.trino.spi.type.VarcharType.VARCHAR;
 
 /**
  * Record cursor for reading EventCloud data row by row.

@@ -2,7 +2,6 @@ package com.ghatana.core.database.migration;
 
 import com.ghatana.platform.core.util.Preconditions;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.MigrationInfoService;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.flywaydb.core.api.output.MigrateResult;
@@ -50,7 +49,7 @@ import java.util.List;
  *     .baselineOnMigrate(true)
  *     .validateOnMigrate(true)
  *     .build();
- * 
+ *
  * // Run migrations
  * MigrationResult result = migration.migrate();
  * logger.info("Applied {} migrations", result.getAppliedMigrations());
@@ -73,7 +72,7 @@ import java.util.List;
  * if (!validation.validationSuccessful) {
  *     throw new MigrationException("Migration validation failed: " + validation.errorDetails);
  * }
- * 
+ *
  * MigrationResult result = migration.migrate();
  *
  * // 4. Check migration status
@@ -90,7 +89,7 @@ import java.util.List;
  *             .locations("classpath:db/migration")
  *             .validateOnMigrate(true)
  *             .build();
- *         
+ *
  *         MigrationResult result = migration.migrate();
  *         logger.info("Database migrated to version {}", result.targetSchemaVersion);
  *     } catch (MigrationException e) {
@@ -107,14 +106,14 @@ import java.util.List;
  *         .validateOnMigrate(true)
  *         .outOfOrder(true)  // Support hotfixes
  *         .build();
- *     
+ *
  *     // Validate first
  *     ValidationResult validation = migration.validate();
  *     if (!validation.validationSuccessful) {
  *         logger.error("Migration validation failed");
  *         System.exit(1);
  *     }
- *     
+ *
  *     // Apply migrations
  *     MigrationResult result = migration.migrate();
  *     logger.info("Deployed {} migrations", result.migrationsExecuted);
@@ -152,7 +151,7 @@ import java.util.List;
  *     .baselineDescription("Existing schema")
  *     .baselineOnMigrate(true)  // Auto-baseline if needed
  *     .build();
- * 
+ *
  * migration.baseline();  // Create baseline entry
  * migration.migrate();   // Apply new migrations
  * }</pre>
@@ -163,14 +162,14 @@ import java.util.List;
  *     "schema", "public",
  *     "tablespace", "pg_default"
  * );
- * 
+ *
  * FlywayMigration migration = FlywayMigration.builder()
  *     .dataSource(dataSource)
  *     .locations("classpath:db/migration")
  *     .placeholderReplacement(true)
  *     .placeholders(placeholders)
  *     .build();
- * 
+ *
  * // In migration script:
  * // CREATE TABLE ${schema}.users ...
  * // TABLESPACE ${tablespace};
@@ -205,14 +204,14 @@ import java.util.List;
 public class FlywayMigration {
     private static final Logger LOG = LoggerFactory.getLogger(FlywayMigration.class);
     private final Flyway flyway;
-    
+
     private FlywayMigration(Builder builder) {
         // Create configuration with required settings
         FluentConfiguration config = Flyway.configure()
             .dataSource(builder.dataSource)
             .locations(builder.locations)
             .table(builder.table);
-            
+
         // Apply configurations using the builder pattern
         config.baselineOnMigrate(builder.baselineOnMigrate)
               .validateOnMigrate(builder.validateOnMigrate)
@@ -220,30 +219,30 @@ public class FlywayMigration {
               .outOfOrder(builder.outOfOrder)
               .mixed(builder.mixed)
               .group(builder.group);
-              
+
         // Set ignore patterns based on builder flags
-        if (builder.ignoreMissingMigrations || builder.ignoreIgnoredMigrations || 
+        if (builder.ignoreMissingMigrations || builder.ignoreIgnoredMigrations ||
             builder.ignorePendingMigrations || builder.ignoreFutureMigrations) {
-            
+
             String[] ignorePatterns = {
                 builder.ignoreMissingMigrations ? "missing" : "",
                 builder.ignoreIgnoredMigrations ? "ignored" : "",
                 builder.ignorePendingMigrations ? "pending" : "",
                 builder.ignoreFutureMigrations ? "future" : ""
             };
-            
+
             // Join non-empty patterns with comma
-            String ignorePattern = String.join(",", 
+            String ignorePattern = String.join(",",
                 Arrays.stream(ignorePatterns)
                       .filter(s -> !s.isEmpty())
                       .toArray(String[]::new)
             );
-            
+
             if (!ignorePattern.isEmpty()) {
                 config.ignoreMigrationPatterns(ignorePattern);
             }
         }
-        
+
         // Configure placeholders if needed
         if (builder.placeholderReplacement) {
             config.placeholderReplacement(true);
@@ -251,27 +250,27 @@ public class FlywayMigration {
                 config.placeholders(builder.placeholders);
             }
         }
-        
+
         // Load the Flyway instance
         this.flyway = config.load();
         LOG.info("FlywayMigration initialized with locations: {}", Arrays.toString(builder.locations));
     }
-    
+
     /**
      * Executes all pending migrations.
-     * 
+     *
      * @return Migration result with details about applied migrations
      * @throws MigrationException if migration fails
      */
     public MigrationResult migrate() {
         LOG.info("Starting database migration...");
-        
+
         try {
             MigrateResult result = flyway.migrate();
-            
-            LOG.info("Migration completed successfully. Applied {} migrations", 
+
+            LOG.info("Migration completed successfully. Applied {} migrations",
                     result.migrationsExecuted);
-            
+
             // In Flyway 11.x, we don't have totalMigrationTime in MigrateResult
             // Using a default duration of 0 for now as the field is not critical
             return new MigrationResult(
@@ -280,25 +279,25 @@ public class FlywayMigration {
                 true, // If we get here, migration was successful
                 result.warnings
             );
-            
+
         } catch (Exception e) {
             LOG.error("Migration failed", e);
             throw new MigrationException("Database migration failed", e);
         }
     }
-    
+
     /**
      * Validates all applied migrations against available migration scripts.
-     * 
+     *
      * @return Validation result
      * @throws MigrationException if validation fails
      */
     public ValidationResult validate() {
         LOG.info("Validating database migrations...");
-        
+
         try {
             ValidateResult result = flyway.validateWithResult();
-            
+
             if (result.validationSuccessful) {
                 LOG.info("Migration validation successful");
                 return new ValidationResult(true, List.of());
@@ -306,20 +305,20 @@ public class FlywayMigration {
                 List<String> errors = result.invalidMigrations.stream()
                     .map(error -> error.errorDetails.errorMessage)
                     .toList();
-                
+
                 LOG.warn("Migration validation failed with {} errors", errors.size());
                 return new ValidationResult(false, errors);
             }
-            
+
         } catch (Exception e) {
             LOG.error("Migration validation failed", e);
             throw new MigrationException("Migration validation failed", e);
         }
     }
-    
+
     /**
      * Gets the current migration status.
-     * 
+     *
      * @return Migration status with detailed information
      */
     public MigrationStatus getStatus() {
@@ -327,16 +326,16 @@ public class FlywayMigration {
             MigrationInfoService infoService = flyway.info();
             org.flywaydb.core.api.MigrationInfo[] migrations = infoService.all();
             org.flywaydb.core.api.MigrationInfo current = infoService.current();
-            
+
             List<String> pendingMigrations = Arrays.stream(migrations)
                 .filter(m -> m.getState().isApplied())
-                .map(m -> String.format("%s (%s)", 
-                    m.getScript(), 
+                .map(m -> String.format("%s (%s)",
+                    m.getScript(),
                     m.getVersion() != null ? m.getVersion().toString() : "BASELINE"))
                 .collect(java.util.stream.Collectors.toList());
-            
+
             return new MigrationStatus(
-                current != null && current.getVersion() != null ? 
+                current != null && current.getVersion() != null ?
                     current.getVersion().getVersion() : "No migrations applied",
                 pendingMigrations,
                 migrations.length,
@@ -348,18 +347,18 @@ public class FlywayMigration {
             throw new MigrationException("Failed to get migration status", e);
         }
     }
-    
+
     /**
      * Creates a baseline for existing databases.
-     * 
+     *
      * <p>This method should be used when introducing Flyway to an existing database
      * that already has a schema. It creates a baseline migration entry.
-     * 
+     *
      * @throws MigrationException if baseline creation fails
      */
     public void baseline() {
         LOG.info("Creating migration baseline...");
-        
+
         try {
             flyway.baseline();
             LOG.info("Migration baseline created successfully");
@@ -368,18 +367,18 @@ public class FlywayMigration {
             throw new MigrationException("Failed to create migration baseline", e);
         }
     }
-    
+
     /**
      * Repairs the migration history table.
-     * 
+     *
      * <p>This method can be used to repair issues with the migration history,
      * such as removing failed migration entries or aligning checksums.
-     * 
+     *
      * @throws MigrationException if repair fails
      */
     public void repair() {
         LOG.info("Repairing migration history...");
-        
+
         try {
             flyway.repair();
             LOG.info("Migration history repaired successfully");
@@ -388,20 +387,20 @@ public class FlywayMigration {
             throw new MigrationException("Failed to repair migration history", e);
         }
     }
-    
+
     /**
      * Cleans the database by dropping all objects.
-     * 
+     *
      * <p><strong>WARNING:</strong> This operation is destructive and will remove
      * all data and schema objects. It should only be used in development/test
      * environments.
-     * 
+     *
      * @throws MigrationException if clean fails
      * @throws UnsupportedOperationException if clean is disabled
      */
     public void clean() {
         LOG.warn("Cleaning database - this will remove all data and schema objects!");
-        
+
         try {
             flyway.clean();
             LOG.info("Database cleaned successfully");
@@ -410,25 +409,25 @@ public class FlywayMigration {
             throw new MigrationException("Failed to clean database", e);
         }
     }
-    
+
     /**
      * Gets the underlying Flyway instance for advanced operations.
-     * 
+     *
      * @return The Flyway instance
      */
     public Flyway getFlyway() {
         return flyway;
     }
-    
+
     /**
      * Creates a new builder for FlywayMigration.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for FlywayMigration with fluent API and sensible defaults.
      */
@@ -448,12 +447,12 @@ public class FlywayMigration {
         private boolean group = false;
         private boolean placeholderReplacement = true;
         private java.util.Map<String, String> placeholders = new java.util.HashMap<>();
-        
+
         private Builder() {}
-        
+
         /**
          * Sets the data source.
-         * 
+         *
          * @param dataSource The data source
          * @return This builder
          */
@@ -461,10 +460,10 @@ public class FlywayMigration {
             this.dataSource = dataSource;
             return this;
         }
-        
+
         /**
          * Sets the migration locations.
-         * 
+         *
          * @param locations The migration locations (default: "classpath:db/migration")
          * @return This builder
          */
@@ -472,10 +471,10 @@ public class FlywayMigration {
             this.locations = locations != null ? locations.clone() : new String[0];
             return this;
         }
-        
+
         /**
          * Sets the migration history table name.
-         * 
+         *
          * @param table The table name (default: "flyway_schema_history")
          * @return This builder
          */
@@ -483,10 +482,10 @@ public class FlywayMigration {
             this.table = Preconditions.requireNonBlank(table, "Table name cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets whether to baseline on migrate.
-         * 
+         *
          * @param baselineOnMigrate Whether to baseline on migrate (default: false)
          * @return This builder
          */
@@ -494,10 +493,10 @@ public class FlywayMigration {
             this.baselineOnMigrate = baselineOnMigrate;
             return this;
         }
-        
+
         /**
          * Sets whether to validate on migrate.
-         * 
+         *
          * @param validateOnMigrate Whether to validate on migrate (default: true)
          * @return This builder
          */
@@ -505,10 +504,10 @@ public class FlywayMigration {
             this.validateOnMigrate = validateOnMigrate;
             return this;
         }
-        
+
         /**
          * Sets whether clean is disabled.
-         * 
+         *
          * @param cleanDisabled Whether clean is disabled (default: true for safety)
          * @return This builder
          */
@@ -516,10 +515,10 @@ public class FlywayMigration {
             this.cleanDisabled = cleanDisabled;
             return this;
         }
-        
+
         /**
          * Sets whether to allow out of order migrations.
-         * 
+         *
          * @param outOfOrder Whether to allow out of order migrations (default: false)
          * @return This builder
          */
@@ -527,10 +526,10 @@ public class FlywayMigration {
             this.outOfOrder = outOfOrder;
             return this;
         }
-        
+
         /**
          * Sets whether to ignore missing migrations.
-         * 
+         *
          * @param ignoreMissingMigrations Whether to ignore missing migrations (default: false)
          * @return This builder
          */
@@ -538,10 +537,10 @@ public class FlywayMigration {
             this.ignoreMissingMigrations = ignoreMissingMigrations;
             return this;
         }
-        
+
         /**
          * Adds a placeholder for replacement in migration scripts.
-         * 
+         *
          * @param key The placeholder key
          * @param value The placeholder value
          * @return This builder
@@ -553,10 +552,10 @@ public class FlywayMigration {
             );
             return this;
         }
-        
+
         /**
          * Builds the FlywayMigration instance.
-         * 
+         *
          * @return A new FlywayMigration instance
          */
         public FlywayMigration build() {
@@ -564,7 +563,7 @@ public class FlywayMigration {
             return new FlywayMigration(this);
         }
     }
-    
+
     /**
      * Result of a migration operation.
      */
@@ -573,37 +572,37 @@ public class FlywayMigration {
         private final Duration executionTime;
         private final boolean success;
         private final List<String> warnings;
-        
-        public MigrationResult(int migrationsExecuted, Duration executionTime, 
+
+        public MigrationResult(int migrationsExecuted, Duration executionTime,
                              boolean success, List<String> warnings) {
             this.migrationsExecuted = migrationsExecuted;
             this.executionTime = executionTime;
             this.success = success;
             this.warnings = warnings != null ? List.copyOf(warnings) : List.of();
         }
-        
+
         public int getMigrationsExecuted() { return migrationsExecuted; }
         public Duration getExecutionTime() { return executionTime; }
         public boolean isSuccess() { return success; }
         public List<String> getWarnings() { return warnings; }
     }
-    
+
     /**
      * Result of a validation operation.
      */
     public static final class ValidationResult {
         private final boolean valid;
         private final List<String> errors;
-        
+
         public ValidationResult(boolean valid, List<String> errors) {
             this.valid = valid;
             this.errors = errors != null ? List.copyOf(errors) : List.of();
         }
-        
+
         public boolean isValid() { return valid; }
         public List<String> getErrors() { return errors; }
     }
-    
+
     /**
      * Current migration status information.
      */
@@ -613,8 +612,8 @@ public class FlywayMigration {
         private final int totalMigrations;
         private final int pendingCount;
         private final String status;
-        
-        private MigrationStatus(String currentVersion, List<String> pendingMigrations, 
+
+        private MigrationStatus(String currentVersion, List<String> pendingMigrations,
                               int totalMigrations, int pendingCount, String status) {
             this.currentVersion = currentVersion;
             this.pendingMigrations = List.copyOf(pendingMigrations);
@@ -622,12 +621,12 @@ public class FlywayMigration {
             this.pendingCount = pendingCount;
             this.status = status;
         }
-        
+
         public int getTotalMigrations() { return totalMigrations; }
         public int getPendingMigrations() { return pendingCount; }
         public String getCurrentVersion() { return currentVersion; }
     }
-    
+
     /**
      * Information about a single migration.
      */
@@ -636,14 +635,14 @@ public class FlywayMigration {
         private final String description;
         private final String state;
         private final java.util.Date installedOn;
-        
+
         public MigrationInfo(String version, String description, String state, java.util.Date installedOn) {
             this.version = version;
             this.description = description;
             this.state = state;
             this.installedOn = installedOn;
         }
-        
+
         public String getVersion() { return version; }
         public String getDescription() { return description; }
         public String getState() { return state; }

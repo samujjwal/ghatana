@@ -64,13 +64,13 @@ public class ValidationService {
 
     private static final Logger log = LoggerFactory.getLogger(ValidationService.class);
 
-    private static final Pattern EMAIL_PATTERN = 
+    private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
-    private static final Pattern URL_PATTERN = 
+    private static final Pattern URL_PATTERN =
         Pattern.compile("^https?://.*");
-    private static final Pattern PHONE_PATTERN = 
+    private static final Pattern PHONE_PATTERN =
         Pattern.compile("^[+]?[0-9]{1,3}[-. ]?[0-9]{1,4}[-. ]?[0-9]{1,4}[-. ]?[0-9]{1,4}$");
-    private static final Pattern HEX_COLOR_PATTERN = 
+    private static final Pattern HEX_COLOR_PATTERN =
         Pattern.compile("^#[0-9A-Fa-f]{6}$");
 
     /**
@@ -138,56 +138,56 @@ public class ValidationService {
             switch (type) {
                 case STRING:
                     if (!(value instanceof String)) {
-                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH", 
+                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH",
                             "Expected string, got " + value.getClass().getSimpleName()));
                     }
                     break;
 
                 case NUMBER:
                     if (!(value instanceof Number)) {
-                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH", 
+                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH",
                             "Expected number, got " + value.getClass().getSimpleName()));
                     }
                     break;
 
                 case BOOLEAN:
                     if (!(value instanceof Boolean)) {
-                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH", 
+                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH",
                             "Expected boolean, got " + value.getClass().getSimpleName()));
                     }
                     break;
 
                 case EMAIL:
                     if (!(value instanceof String) || !EMAIL_PATTERN.matcher((String) value).matches()) {
-                        errors.add(new ValidationError(field.getName(), "INVALID_EMAIL", 
+                        errors.add(new ValidationError(field.getName(), "INVALID_EMAIL",
                             "Invalid email format"));
                     }
                     break;
 
                 case URL:
                     if (!(value instanceof String) || !URL_PATTERN.matcher((String) value).matches()) {
-                        errors.add(new ValidationError(field.getName(), "INVALID_URL", 
+                        errors.add(new ValidationError(field.getName(), "INVALID_URL",
                             "Invalid URL format"));
                     }
                     break;
 
                 case PHONE:
                     if (!(value instanceof String) || !PHONE_PATTERN.matcher((String) value).matches()) {
-                        errors.add(new ValidationError(field.getName(), "INVALID_PHONE", 
+                        errors.add(new ValidationError(field.getName(), "INVALID_PHONE",
                             "Invalid phone format"));
                     }
                     break;
 
                 case COLOR:
                     if (!(value instanceof String) || !HEX_COLOR_PATTERN.matcher((String) value).matches()) {
-                        errors.add(new ValidationError(field.getName(), "INVALID_COLOR", 
+                        errors.add(new ValidationError(field.getName(), "INVALID_COLOR",
                             "Invalid color format (expected #RRGGBB)"));
                     }
                     break;
 
                 case ARRAY:
                     if (!(value instanceof List)) {
-                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH", 
+                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH",
                             "Expected array, got " + value.getClass().getSimpleName()));
                     }
                     break;
@@ -195,7 +195,7 @@ public class ValidationService {
                 case EMBEDDED:
                 case JSON:
                     if (!(value instanceof Map)) {
-                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH", 
+                        errors.add(new ValidationError(field.getName(), "TYPE_MISMATCH",
                             "Expected object, got " + value.getClass().getSimpleName()));
                     }
                     break;
@@ -231,11 +231,11 @@ public class ValidationService {
         if (field.getType() == DataType.NUMBER && value instanceof Number) {
             Number num = (Number) value;
             if (validation.min() != null && num.doubleValue() < validation.min()) {
-                errors.add(new ValidationError(field.getName(), "MIN_VALUE", 
+                errors.add(new ValidationError(field.getName(), "MIN_VALUE",
                     "Value must be >= " + validation.min()));
             }
             if (validation.max() != null && num.doubleValue() > validation.max()) {
-                errors.add(new ValidationError(field.getName(), "MAX_VALUE", 
+                errors.add(new ValidationError(field.getName(), "MAX_VALUE",
                     "Value must be <= " + validation.max()));
             }
         }
@@ -244,15 +244,15 @@ public class ValidationService {
         if (field.getType() == DataType.STRING && value instanceof String) {
             String str = (String) value;
             if (validation.minLength() != null && str.length() < validation.minLength()) {
-                errors.add(new ValidationError(field.getName(), "MIN_LENGTH", 
+                errors.add(new ValidationError(field.getName(), "MIN_LENGTH",
                     "Length must be >= " + validation.minLength()));
             }
             if (validation.maxLength() != null && str.length() > validation.maxLength()) {
-                errors.add(new ValidationError(field.getName(), "MAX_LENGTH", 
+                errors.add(new ValidationError(field.getName(), "MAX_LENGTH",
                     "Length must be <= " + validation.maxLength()));
             }
             if (validation.pattern() != null && !str.matches(validation.pattern())) {
-                errors.add(new ValidationError(field.getName(), "PATTERN_MISMATCH", 
+                errors.add(new ValidationError(field.getName(), "PATTERN_MISMATCH",
                     "Value does not match pattern: " + validation.pattern()));
             }
         }

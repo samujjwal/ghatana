@@ -34,7 +34,7 @@ public class PatientController {
     public Response getPatientRecords(String patientId, String authToken) {
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         SecurityContext context = securityManager.getCurrentContext();
-        
+
         if (context == null) {
             return Response.error(401, "Not authenticated");
         }
@@ -49,7 +49,7 @@ public class PatientController {
             .metadata(Map.of("patient_id", sanitizedPatientId))
             .build();
 
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
 
         if (!decision.isAllowed()) {
@@ -64,7 +64,7 @@ public class PatientController {
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         Map<String, Object> sanitizedRecordData = PhrInputSanitizationUtils.sanitizeStructuredData(recordData, "recordData");
         SecurityContext context = securityManager.getCurrentContext();
-        
+
         if (context == null) {
             return Response.error(401, "Not authenticated");
         }
@@ -79,7 +79,7 @@ public class PatientController {
             .metadata(Map.of("patient_id", sanitizedPatientId))
             .build();
 
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
 
         if (!decision.isAllowed()) {

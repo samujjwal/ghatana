@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Provides automated fixes for common Rust issues detected by cargo check and clippy. 
+/** Provides automated fixes for common Rust issues detected by cargo check and clippy.
  * @doc.type class
  * @doc.purpose Handles rust codemods operations
  * @doc.layer core

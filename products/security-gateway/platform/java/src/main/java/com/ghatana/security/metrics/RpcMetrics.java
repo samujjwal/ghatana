@@ -56,7 +56,7 @@ public class RpcMetrics {
         totalLatencyNanos.compute(opName, (k, v) -> (v == null) ? durationNanos : v + durationNanos);
         requestCountsByStatus.compute(getStatusKey(opName, ERROR), (k, v) -> (v == null) ? 1 : v + 1);
     }
-    
+
     /**
      * Gets the total number of requests for an operation.
      *
@@ -66,7 +66,7 @@ public class RpcMetrics {
     public long getRequestCount(RpcOperation operation) {
         return requestCounts.getOrDefault(operation.name(), 0L);
     }
-    
+
     /**
      * Gets the total number of errors for an operation.
      *
@@ -76,7 +76,7 @@ public class RpcMetrics {
     public long getErrorCount(RpcOperation operation) {
         return errorCounts.getOrDefault(operation.name(), 0L);
     }
-    
+
     /**
      * Gets the average latency in nanoseconds for an operation.
      *
@@ -91,7 +91,7 @@ public class RpcMetrics {
         }
         return (double) totalLatencyNanos.getOrDefault(opName, 0L) / count;
     }
-    
+
     /**
      * Gets the success rate for an operation.
      *
@@ -108,7 +108,7 @@ public class RpcMetrics {
 
     /**
      * Enumerates the different types of RPC operations.
-     
+
  *
  * @doc.type enum
  * @doc.purpose Rpc operation

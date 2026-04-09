@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.*;
 
@@ -177,7 +176,7 @@ class TradeSurveillanceTest {
             for (int i = 0; i < trades.size() - 1; i++) {
                 Trade t1 = trades.get(i);
                 Trade t2 = trades.get(i + 1);
-                if (t1.symbol().equals(t2.symbol()) && t1.quantity() == t2.quantity() && 
+                if (t1.symbol().equals(t2.symbol()) && t1.quantity() == t2.quantity() &&
                     t1.price().compareTo(t2.price()) == 0 && t1.side() != t2.side()) {
                     matchingPairs++;
                 }

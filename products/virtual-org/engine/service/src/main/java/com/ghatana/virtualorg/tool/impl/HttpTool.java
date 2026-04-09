@@ -51,13 +51,13 @@ import java.util.Map;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * HttpTool http = new HttpTool(eventloop, 30);
- * 
+ *
  * // GET request
  * ToolResult response = http.execute(Map.of(
  *     "method", "GET",
  *     "url", "https://api.example.com/users"
  * )).getResult();
- * 
+ *
  * // POST request
  * ToolResult created = http.execute(Map.of(
  *     "method", "POST",
@@ -84,13 +84,13 @@ public class HttpTool implements Tool {
 
     public HttpTool(@NotNull Eventloop eventloop, int timeoutSeconds) {
         this.eventloop = eventloop;
-        
+
         // Follow project pattern from WebhookActionConfig
         NioReactor reactor = (NioReactor) eventloop;
         InetAddress localAddress = InetAddress.getLoopbackAddress();
         IDnsClient dnsClient = DnsClient.create(reactor, localAddress);
         this.httpClient = HttpClient.create(reactor, dnsClient);
-        
+
         this.id = "http-tool";
         this.timeoutSeconds = timeoutSeconds;
         this.enabled = true;
@@ -185,7 +185,7 @@ public class HttpTool implements Tool {
                             );
                         }
                     })
-                    .whenException(e -> 
+                    .whenException(e ->
                         log.error("HTTP request exception: method={}, url={}", method, url, e)
                     );
 

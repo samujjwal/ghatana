@@ -25,7 +25,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should prevent cross-tenant data access")
     void shouldPreventCrossTenantDataAccess() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should enforce tenant-specific permissions")
     void shouldEnforceTenantSpecificPermissions() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should handle tenant context validation")
     void shouldHandleTenantContextValidation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should prevent privilege escalation")
     void shouldPreventPrivilegeEscalation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should handle security audit logging")
     void shouldHandleSecurityAuditLogging() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class CrossTenantSecurityTest {
     @DisplayName("Should handle security violation detection")
     void shouldHandleSecurityViolationDetection() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

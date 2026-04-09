@@ -1,13 +1,11 @@
 package com.ghatana.datacloud.observability;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.SimpleMetricsCollector;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +35,7 @@ import java.util.function.Supplier;
  * <p><b>Metric Naming Convention</b><br>
  * <pre>
  * datacloud.{component}.{operation}.{metric_type}
- * 
+ *
  * Examples:
  *   datacloud.storage.entity.count
  *   datacloud.storage.entity.create.latency
@@ -69,7 +67,7 @@ import java.util.function.Supplier;
  */
 public class DataCloudMetrics {
     private static final Logger log = LoggerFactory.getLogger(DataCloudMetrics.class);
-    
+
     // Metric prefixes
     private static final String PREFIX = "datacloud";
     private static final String STORAGE_PREFIX = PREFIX + ".storage";
@@ -80,7 +78,7 @@ public class DataCloudMetrics {
     private static final String TENANT_PREFIX = PREFIX + ".tenant";
     private static final String RATE_LIMIT_PREFIX = PREFIX + ".ratelimit";
     private static final String SECURITY_PREFIX = PREFIX + ".security";
-    
+
     // Tags
     private static final String TAG_TENANT = "tenant";
     private static final String TAG_PLUGIN = "plugin";
@@ -89,7 +87,7 @@ public class DataCloudMetrics {
     private static final String TAG_STREAM = "stream";
     private static final String TAG_STATUS = "status";
     private static final String TAG_ERROR_TYPE = "error_type";
-    
+
     /**
      * Operation types for metrics.
      */
@@ -102,37 +100,37 @@ public class DataCloudMetrics {
         ENTITY_QUERY("entity.query"),
         ENTITY_BULK_CREATE("entity.bulk_create"),
         ENTITY_BULK_DELETE("entity.bulk_delete"),
-        
+
         // Event operations
         EVENT_APPEND("event.append"),
         EVENT_READ("event.read"),
         EVENT_BATCH_APPEND("event.batch_append"),
         EVENT_SUBSCRIBE("event.subscribe"),
-        
+
         // Search operations
         SEARCH_EXECUTE("search.execute"),
         SEARCH_FACETS("search.facets"),
         SEARCH_AGGREGATE("search.aggregate"),
-        
+
         // AI operations
         AI_PROCESS("ai.process"),
         AI_FEATURES("ai.features"),
         AI_QUALITY("ai.quality"),
-        
+
         // Admin operations
         HEALTH_CHECK("health.check"),
         METRICS_RETRIEVE("metrics.retrieve"),
         COLLECTION_ADMIN("collection.admin");
-        
+
         private final String value;
-        
+
         OperationType(String value) {
             this.value = value;
         }
-        
+
         public String getValue() { return value; }
     }
-    
+
     /**
      * Plugin types for metrics.
      */
@@ -143,26 +141,26 @@ public class DataCloudMetrics {
         ROUTING("routing"),
         SEARCH("search"),
         AI("ai");
-        
+
         private final String value;
-        
+
         PluginType(String value) {
             this.value = value;
         }
-        
+
         public String getValue() { return value; }
     }
-    
+
     private final MeterRegistry registry;
-    
+
     // Cached meters
     private final Map<String, Counter> counters;
     private final Map<String, Timer> timers;
     private final Map<String, AtomicLong> gaugeValues;
-    
+
     // Plugin health trackers
     private final Map<String, PluginHealthStatus> pluginHealth;
-    
+
     private DataCloudMetrics(MetricsCollector metricsCollector) {
         Objects.requireNonNull(metricsCollector, "metricsCollector is required");
         this.registry = metricsCollector.getMeterRegistry();
@@ -186,7 +184,7 @@ public class DataCloudMetrics {
     }
 
     // ==================== Operation Metrics ====================
-    
+
     /**
      * Start a timer sample.
      *
@@ -195,7 +193,7 @@ public class DataCloudMetrics {
     public Timer.Sample startTimer() {
         return Timer.start(registry);
     }
-    
+
     /**
      * Record successful operation.
      *
@@ -204,15 +202,15 @@ public class DataCloudMetrics {
      * @param tenantId the tenant ID
      * @param pluginName the plugin name
      */
-    public void recordSuccess(Timer.Sample sample, OperationType operation, 
+    public void recordSuccess(Timer.Sample sample, OperationType operation,
                                String tenantId, String pluginName) {
         String timerName = getTimerName(operation, pluginName);
         Timer timer = getOrCreateTimer(timerName, tenantId, pluginName, "success");
         sample.stop(timer);
-        
+
         incrementCounter(operation, tenantId, pluginName, "success");
     }
-    
+
     /**
      * Record operation error.
      *
@@ -227,14 +225,14 @@ public class DataCloudMetrics {
         String timerName = getTimerName(operation, pluginName);
         Timer timer = getOrCreateTimer(timerName, tenantId, pluginName, "error");
         sample.stop(timer);
-        
+
         incrementCounter(operation, tenantId, pluginName, "error");
-        
+
         // Record error type
         String errorType = error.getClass().getSimpleName();
         incrementErrorCounter(tenantId, pluginName, errorType);
     }
-    
+
     /**
      * Record operation with duration.
      *
@@ -250,10 +248,10 @@ public class DataCloudMetrics {
         String timerName = getTimerName(operation, pluginName);
         Timer timer = getOrCreateTimer(timerName, tenantId, pluginName, status);
         timer.record(durationMs, TimeUnit.MILLISECONDS);
-        
+
         incrementCounter(operation, tenantId, pluginName, status);
     }
-    
+
     /**
      * Record timed operation using supplier.
      *
@@ -275,7 +273,7 @@ public class DataCloudMetrics {
             throw e;
         }
     }
-    
+
     /**
      * Record timed operation using runnable.
      *
@@ -295,9 +293,9 @@ public class DataCloudMetrics {
             throw e;
         }
     }
-    
+
     // ==================== Storage Metrics ====================
-    
+
     /**
      * Record entity count for a collection.
      *
@@ -310,7 +308,7 @@ public class DataCloudMetrics {
         AtomicLong gauge = getOrCreateGauge(gaugeName, tenantId, collectionName);
         gauge.set(count);
     }
-    
+
     /**
      * Record entity size in bytes.
      *
@@ -323,9 +321,9 @@ public class DataCloudMetrics {
         AtomicLong gauge = getOrCreateGauge(gaugeName, tenantId, collectionName);
         gauge.set(sizeBytes);
     }
-    
+
     // ==================== Streaming Metrics ====================
-    
+
     /**
      * Record event offset for a stream.
      *
@@ -335,11 +333,11 @@ public class DataCloudMetrics {
      */
     public void recordEventOffset(String tenantId, String streamName, long offset) {
         String gaugeName = STREAMING_PREFIX + ".event.offset";
-        AtomicLong gauge = getOrCreateGauge(gaugeName + ":" + tenantId + ":" + streamName, 
+        AtomicLong gauge = getOrCreateGauge(gaugeName + ":" + tenantId + ":" + streamName,
             tenantId, streamName);
         gauge.set(offset);
     }
-    
+
     /**
      * Record event throughput.
      *
@@ -348,13 +346,13 @@ public class DataCloudMetrics {
      * @param eventsPerSecond events per second
      */
     public void recordEventThroughput(String tenantId, String streamName, double eventsPerSecond) {
-        registry.gauge(STREAMING_PREFIX + ".event.throughput", 
+        registry.gauge(STREAMING_PREFIX + ".event.throughput",
             Tags.of(TAG_TENANT, tenantId, TAG_STREAM, streamName),
             eventsPerSecond);
     }
-    
+
     // ==================== Search Metrics ====================
-    
+
     /**
      * Record search hit count.
      *
@@ -367,7 +365,7 @@ public class DataCloudMetrics {
             tenantId, collectionName, "search");
         counter.increment(hitCount);
     }
-    
+
     /**
      * Record search latency percentile.
      *
@@ -382,9 +380,9 @@ public class DataCloudMetrics {
             .register(registry);
         timer.record(latencyMs, TimeUnit.MILLISECONDS);
     }
-    
+
     // ==================== Plugin Metrics ====================
-    
+
     /**
      * Record plugin health status.
      *
@@ -394,16 +392,16 @@ public class DataCloudMetrics {
      */
     public void recordPluginHealth(PluginType pluginType, String pluginName, boolean healthy) {
         String key = pluginType.getValue() + ":" + pluginName;
-        PluginHealthStatus status = pluginHealth.computeIfAbsent(key, 
+        PluginHealthStatus status = pluginHealth.computeIfAbsent(key,
             k -> new PluginHealthStatus(pluginType, pluginName));
         status.setHealthy(healthy);
-        
+
         // Update gauge
         registry.gauge(PLUGIN_PREFIX + ".health",
             Tags.of("type", pluginType.getValue(), "name", pluginName),
             status, s -> s.isHealthy() ? 1.0 : 0.0);
     }
-    
+
     /**
      * Record plugin operation count.
      *
@@ -417,7 +415,7 @@ public class DataCloudMetrics {
             k -> new PluginHealthStatus(pluginType, pluginName));
         status.setTotalOperations(operationCount);
     }
-    
+
     /**
      * Record plugin error count.
      *
@@ -431,7 +429,7 @@ public class DataCloudMetrics {
             k -> new PluginHealthStatus(pluginType, pluginName));
         status.setTotalErrors(errorCount);
     }
-    
+
     /**
      * Get all plugin health statuses.
      *
@@ -440,20 +438,20 @@ public class DataCloudMetrics {
     public Map<String, PluginHealthStatus> getPluginHealthStatuses() {
         return Collections.unmodifiableMap(pluginHealth);
     }
-    
+
     // ==================== Tenant Metrics ====================
-    
+
     /**
      * Record tenant request count.
      *
      * @param tenantId the tenant ID
      */
     public void recordTenantRequest(String tenantId) {
-        Counter counter = getOrCreateCounter(TENANT_PREFIX + ".requests.total", 
+        Counter counter = getOrCreateCounter(TENANT_PREFIX + ".requests.total",
             tenantId, "all", "request");
         counter.increment();
     }
-    
+
     /**
      * Record tenant API usage.
      *
@@ -465,7 +463,7 @@ public class DataCloudMetrics {
         AtomicLong gauge = getOrCreateGauge(gaugeName + ":" + tenantId, tenantId, "api");
         gauge.set(apiCalls);
     }
-    
+
     /**
      * Record tenant storage usage.
      *
@@ -477,9 +475,9 @@ public class DataCloudMetrics {
         AtomicLong gauge = getOrCreateGauge(gaugeName + ":" + tenantId, tenantId, "storage");
         gauge.set(storageBytes);
     }
-    
+
     // ==================== Rate Limit Metrics ====================
-    
+
     /**
      * Record rate limit check.
      *
@@ -492,7 +490,7 @@ public class DataCloudMetrics {
             tenantId, "ratelimit", status);
         counter.increment();
     }
-    
+
     /**
      * Record rate limit rejection.
      *
@@ -504,9 +502,9 @@ public class DataCloudMetrics {
             Tags.of(TAG_TENANT, tenantId, "reason", reason));
         counter.increment();
     }
-    
+
     // ==================== Security Metrics ====================
-    
+
     /**
      * Record RBAC check.
      *
@@ -519,7 +517,7 @@ public class DataCloudMetrics {
             tenantId, "rbac", status);
         counter.increment();
     }
-    
+
     /**
      * Record audit event.
      *
@@ -531,9 +529,9 @@ public class DataCloudMetrics {
             Tags.of(TAG_TENANT, tenantId, "event_type", eventType));
         counter.increment();
     }
-    
+
     // ==================== Dashboard Data ====================
-    
+
     /**
      * Get metrics dashboard data.
      *
@@ -541,31 +539,31 @@ public class DataCloudMetrics {
      */
     public Map<String, Object> getDashboardData() {
         Map<String, Object> data = new LinkedHashMap<>();
-        
+
         // Plugin health
         Map<String, Object> plugins = new LinkedHashMap<>();
         for (Map.Entry<String, PluginHealthStatus> entry : pluginHealth.entrySet()) {
             plugins.put(entry.getKey(), entry.getValue().toMap());
         }
         data.put("plugins", plugins);
-        
+
         // Counter totals
         Map<String, Long> counterTotals = new LinkedHashMap<>();
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
             counterTotals.put(entry.getKey(), (long) entry.getValue().count());
         }
         data.put("counters", counterTotals);
-        
+
         // Gauge values
         Map<String, Long> gaugeVals = new LinkedHashMap<>();
         for (Map.Entry<String, AtomicLong> entry : gaugeValues.entrySet()) {
             gaugeVals.put(entry.getKey(), entry.getValue().get());
         }
         data.put("gauges", gaugeVals);
-        
+
         return data;
     }
-    
+
     /**
      * Get metrics for a specific tenant.
      *
@@ -574,7 +572,7 @@ public class DataCloudMetrics {
      */
     public Map<String, Object> getTenantMetrics(String tenantId) {
         Map<String, Object> metrics = new LinkedHashMap<>();
-        
+
         // Filter counters by tenant
         Map<String, Long> tenantCounters = new LinkedHashMap<>();
         for (Map.Entry<String, Counter> entry : counters.entrySet()) {
@@ -583,7 +581,7 @@ public class DataCloudMetrics {
             }
         }
         metrics.put("counters", tenantCounters);
-        
+
         // Filter gauges by tenant
         Map<String, Long> tenantGauges = new LinkedHashMap<>();
         for (Map.Entry<String, AtomicLong> entry : gaugeValues.entrySet()) {
@@ -592,10 +590,10 @@ public class DataCloudMetrics {
             }
         }
         metrics.put("gauges", tenantGauges);
-        
+
         return metrics;
     }
-    
+
     /**
      * Get metrics for a specific plugin.
      *
@@ -605,13 +603,13 @@ public class DataCloudMetrics {
      */
     public Map<String, Object> getPluginMetrics(PluginType pluginType, String pluginName) {
         Map<String, Object> metrics = new LinkedHashMap<>();
-        
+
         String key = pluginType.getValue() + ":" + pluginName;
         PluginHealthStatus health = pluginHealth.get(key);
         if (health != null) {
             metrics.put("health", health.toMap());
         }
-        
+
         // Filter counters by plugin
         String pluginFilter = pluginType.getValue();
         Map<String, Long> pluginCounters = new LinkedHashMap<>();
@@ -621,21 +619,21 @@ public class DataCloudMetrics {
             }
         }
         metrics.put("counters", pluginCounters);
-        
+
         return metrics;
     }
-    
+
     // ==================== Helper Methods ====================
-    
+
     private void registerGlobalGauges() {
         // Register global up gauge
         registry.gauge(PREFIX + ".up", 1);
     }
-    
+
     private String getTimerName(OperationType operation, String pluginName) {
         return PREFIX + "." + pluginName + "." + operation.getValue() + ".latency";
     }
-    
+
     private Timer getOrCreateTimer(String name, String tenantId, String plugin, String status) {
         String key = name + ":" + tenantId + ":" + plugin + ":" + status;
         return timers.computeIfAbsent(key, k ->
@@ -645,7 +643,7 @@ public class DataCloudMetrics {
                 .register(registry)
         );
     }
-    
+
     private Counter getOrCreateCounter(String name, String tenantId, String plugin, String status) {
         String key = name + ":" + tenantId + ":" + plugin + ":" + status;
         return counters.computeIfAbsent(key, k ->
@@ -654,19 +652,19 @@ public class DataCloudMetrics {
                 .register(registry)
         );
     }
-    
+
     private void incrementCounter(OperationType operation, String tenantId, String plugin, String status) {
         String name = PREFIX + "." + plugin + "." + operation.getValue() + ".count";
         Counter counter = getOrCreateCounter(name, tenantId, plugin, status);
         counter.increment();
     }
-    
+
     private void incrementErrorCounter(String tenantId, String plugin, String errorType) {
         Counter counter = registry.counter(PREFIX + ".errors.total",
             Tags.of(TAG_TENANT, tenantId, TAG_PLUGIN, plugin, TAG_ERROR_TYPE, errorType));
         counter.increment();
     }
-    
+
     private AtomicLong getOrCreateGauge(String name, String tenantId, String resource) {
         String key = name + ":" + tenantId + ":" + resource;
         return gaugeValues.computeIfAbsent(key, k -> {
@@ -675,9 +673,9 @@ public class DataCloudMetrics {
             return value;
         });
     }
-    
+
     // ==================== Plugin Health Status ====================
-    
+
     /**
      * Health status for a plugin.
      */
@@ -688,36 +686,36 @@ public class DataCloudMetrics {
         private volatile long totalOperations = 0;
         private volatile long totalErrors = 0;
         private volatile long lastCheckTime = 0;
-        
+
         public PluginHealthStatus(PluginType type, String name) {
             this.type = type;
             this.name = name;
         }
-        
+
         public PluginType getType() { return type; }
         public String getName() { return name; }
         public boolean isHealthy() { return healthy; }
         public long getTotalOperations() { return totalOperations; }
         public long getTotalErrors() { return totalErrors; }
         public long getLastCheckTime() { return lastCheckTime; }
-        
+
         public void setHealthy(boolean healthy) {
             this.healthy = healthy;
             this.lastCheckTime = System.currentTimeMillis();
         }
-        
+
         public void setTotalOperations(long totalOperations) {
             this.totalOperations = totalOperations;
         }
-        
+
         public void setTotalErrors(long totalErrors) {
             this.totalErrors = totalErrors;
         }
-        
+
         public double getErrorRate() {
             return totalOperations > 0 ? (double) totalErrors / totalOperations : 0.0;
         }
-        
+
         public Map<String, Object> toMap() {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("type", type.getValue());

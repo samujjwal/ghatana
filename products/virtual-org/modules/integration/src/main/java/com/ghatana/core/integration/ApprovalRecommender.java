@@ -379,4 +379,3 @@ public class ApprovalRecommender {
         void onRecommendations(WorkflowTask task, List<ApproverRecommendation> recommendations);
     }
 }
-

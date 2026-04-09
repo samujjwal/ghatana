@@ -62,10 +62,10 @@ public class DailyStandupWorkflow extends BaseWorkflow {
         // 3. Collect today's planned work
         // 4. Identify blockers
         // 5. Generate summary and action items
-        
-        log.info("Executing daily standup for team: {}", 
+
+        log.info("Executing daily standup for team: {}",
             context.getInput("teamId").orElse("unknown"));
-        
+
         // For now, return success with minimal data
         return Promise.of(WorkflowResult.success()
             .withOutput("standupSummary", "Standup completed")

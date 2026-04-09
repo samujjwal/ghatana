@@ -16,7 +16,7 @@ import java.net.InetAddress;
 /**
  * Simple bootstrap helper to wire HttpClient into OpenAICompletionService for local development.
  * Not intended as production launcher; production should use platform DI/bootstrap.
- 
+
  * @doc.type class
  * @doc.purpose Handles ai requirements bootstrap operations
  * @doc.layer core
@@ -52,4 +52,3 @@ public final class AiRequirementsBootstrap {
         return service;
     }
 }
-

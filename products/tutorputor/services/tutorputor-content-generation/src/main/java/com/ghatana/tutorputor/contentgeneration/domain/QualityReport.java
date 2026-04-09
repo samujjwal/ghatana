@@ -6,17 +6,17 @@ public class QualityReport {
     private final boolean passed;
     private final double overallScore;
     private final List<String> issues;
-    
+
     public QualityReport(boolean passed, double overallScore, List<String> issues) {
         this.passed = passed; this.overallScore = overallScore; this.issues = issues;
     }
-    
+
     public boolean isPassed() { return passed; }
     public double getOverallScore() { return overallScore; }
     public List<String> getIssues() { return issues; }
-    
+
     public static Builder builder() { return new Builder(); }
-    
+
     public static class Builder {
         private boolean passed;
         private double overallScore;

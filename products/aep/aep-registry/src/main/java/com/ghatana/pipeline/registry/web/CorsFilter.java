@@ -71,7 +71,7 @@ public class CorsFilter {
     private HttpResponse addCorsHeaders(HttpResponse response, HttpRequest request) {
         String origin = request.getHeader(HttpHeaders.ORIGIN);
         String activeOrigin = allowedOrigin;
-        
+
         // If allowedOrigin is "*" but we have a specific Origin in request,
         // use that instead to support credentials: true
         if ("*".equals(allowedOrigin) && origin != null && !origin.isEmpty()) {
@@ -90,7 +90,7 @@ public class CorsFilter {
         if (location != null) {
             builder.withHeader(HttpHeaders.LOCATION, location);
         }
-        
+
         String contentType = response.getHeader(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             builder.withHeader(HttpHeaders.CONTENT_TYPE, contentType);
@@ -193,4 +193,3 @@ public class CorsFilter {
         }
     }
 }
-

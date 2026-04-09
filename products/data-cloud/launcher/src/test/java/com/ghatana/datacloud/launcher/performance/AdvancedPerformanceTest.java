@@ -4,7 +4,6 @@
 package com.ghatana.datacloud.launcher.performance;
 
 import com.ghatana.datacloud.client.DataCloudClient;
-import com.ghatana.datacloud.record.Record;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,8 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -101,7 +98,7 @@ class AdvancedPerformanceTest extends EventloopTestBase {
 
             // Split into 5 minute intervals to track degradation
             long p50First = 0, p50Last = 0;
-            
+
             LoadTestResult result = runPromise(() -> harness.runLoad(profile));
 
             // Compare P50 latency across time buckets
@@ -312,7 +309,7 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         @DisplayName("Should isolate load across tenants")
         void shouldIsolateTenantLoad() {
             String[] tenants = {"tenant-a", "tenant-b", "tenant-c"};
-            
+
             // Tenant A: High load
             LoadProfile profileA = LoadProfile.builder()
                     .tenantId("tenant-a")
@@ -390,13 +387,13 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         final long p50;
         final long p95;
         final long p99;
-        
+
         LatencyStats(long p50, long p95, long p99) {
             this.p50 = p50;
             this.p95 = p95;
             this.p99 = p99;
         }
-        
+
         long p50() { return p50; }
         long p95() { return p95; }
         long p99() { return p99; }

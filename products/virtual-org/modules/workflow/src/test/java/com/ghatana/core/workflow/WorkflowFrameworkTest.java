@@ -344,4 +344,3 @@ class WorkflowFrameworkTest extends EventloopTestBase {
         assertThat(urgent.get(0).getTaskId()).isEqualTo("task-urgent");
     }
 }
-

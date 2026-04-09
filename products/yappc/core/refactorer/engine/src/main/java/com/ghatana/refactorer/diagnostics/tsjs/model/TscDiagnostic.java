@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.diagnostics.tsjs.model;
 
 /**
- * Represents a TypeScript compiler diagnostic. 
+ * Represents a TypeScript compiler diagnostic.
  * @doc.type class
  * @doc.purpose Handles tsc diagnostic operations
  * @doc.layer core

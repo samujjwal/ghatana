@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Rust stack trace parser that handles Rust panic messages and backtraces with optional
  * configuration-driven patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles rust stack trace parser operations
  * @doc.layer core

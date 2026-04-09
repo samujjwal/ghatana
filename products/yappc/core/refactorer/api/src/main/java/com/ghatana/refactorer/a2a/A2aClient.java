@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * A2A client for testing and demonstration purposes. Provides a simple interface for sending A2A
  * messages to Polyfix service.
- 
+
  * @doc.type class
  * @doc.purpose Handles a2a client operations
  * @doc.layer core
@@ -134,7 +134,7 @@ public final class A2aClient {
 
             // NOTE: WebSocket transport is stubbed \u2014 uses mock responses for development/testing.
             // Production deployments should replace with real WebSocket send.
-            Promise.ofBlocking(BLOCKING_EXECUTOR, 
+            Promise.ofBlocking(BLOCKING_EXECUTOR,
                     () -> {
                         try {
                             Thread.sleep(100); // Simulate network delay

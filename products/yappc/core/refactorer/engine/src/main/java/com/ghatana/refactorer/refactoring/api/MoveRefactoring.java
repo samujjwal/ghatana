@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.api;
 
 /**
- * Interface for refactoring operations that move code elements between files or packages. 
+ * Interface for refactoring operations that move code elements between files or packages.
  * @doc.type interface
  * @doc.purpose Defines the contract for move refactoring
  * @doc.layer core

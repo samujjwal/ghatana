@@ -1,6 +1,5 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +9,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 

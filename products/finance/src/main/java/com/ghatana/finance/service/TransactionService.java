@@ -18,7 +18,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Objects;
 import java.util.Set;
 
@@ -113,24 +112,24 @@ public class TransactionService {
                 "submitted_at", Instant.now(clock).toString()
             ))
         );
-        
+
         // Get fraud detection agent
         AgentOrchestrator.KernelAgent agent = orchestrator.getAgent("finance.fraud-detection");
-        
+
         if (agent == null) {
             throw new IllegalStateException("Fraud detection agent not registered");
         }
-        
+
         // Check if human review is required
         boolean requiresReview = autonomyManager.requiresHumanReview(request, agent);
-        
+
         if (requiresReview) {
             return queueForReview(transaction, request);
         }
-        
+
         // Execute agent
         AgentOrchestrator.AgentResponse response = orchestrator.executeAgent(agent, request);
-        
+
         // Record autonomous decision
         AutonomyManager.AutonomousDecision decision = new AutonomyManager.AutonomousDecision(
             agent.getAgentId(),
@@ -139,11 +138,11 @@ public class TransactionService {
             requiresReview
         );
         autonomyManager.recordAutonomousDecision(decision);
-        
+
         // Process based on fraud detection result
         if (response.isSuccess()) {
             FraudDetectionResult fraudResult = (FraudDetectionResult) response.getResult();
-            
+
             if (fraudResult.isFraudulent()) {
                 return TransactionResult.rejected(
                     "Fraud detected: " + fraudResult.getRiskLevel(),
@@ -153,14 +152,14 @@ public class TransactionService {
                     ))
                 );
             }
-            
+
             return TransactionResult.approved(FinanceTraceContext.metadata(correlationId, "finance_transaction_approve", Map.of(
                 "fraud_score", fraudResult.getFraudScore(),
                 "risk_level", fraudResult.getRiskLevel(),
                 "confidence", fraudResult.getConfidence()
             )));
         }
-        
+
         return TransactionResult.error(
             "Fraud detection failed",
             FinanceTraceContext.metadata(correlationId, "finance_transaction_error", Map.of(
@@ -168,7 +167,7 @@ public class TransactionService {
             ))
         );
     }
-    
+
     private TransactionResult queueForReview(Transaction transaction, AgentOrchestrator.AgentRequest request) {
         return TransactionResult.pendingReview(
             "Transaction queued for manual review",

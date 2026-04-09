@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Taplo runner to check and format TOML files. 
+ * Taplo runner to check and format TOML files.
  * @doc.type class
  * @doc.purpose Handles taplo runner operations
  * @doc.layer core

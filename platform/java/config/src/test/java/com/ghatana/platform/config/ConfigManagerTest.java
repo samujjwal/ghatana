@@ -19,7 +19,7 @@ class ConfigManagerTest {
     @Test
     void testConstructorWithName() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         assertEquals("test", manager.getName());
         assertTrue(manager.getSources().isEmpty());
     }
@@ -28,7 +28,7 @@ class ConfigManagerTest {
     void testConstructorWithSources() {
         SystemPropertiesConfigSource source = new SystemPropertiesConfigSource();
         ConfigManager manager = new ConfigManager("test", java.util.List.of(source));
-        
+
         assertEquals("test", manager.getName());
         assertEquals(1, manager.getSources().size());
     }
@@ -36,21 +36,21 @@ class ConfigManagerTest {
     @Test
     void testAddSource() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         manager.addSource(new SystemPropertiesConfigSource());
-        
+
         assertEquals(1, manager.getSources().size());
     }
 
     @Test
     void testAddSources() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         manager.addSources(java.util.List.of(
             new SystemPropertiesConfigSource(),
             new EnvironmentConfigSource()
         ));
-        
+
         assertEquals(2, manager.getSources().size());
     }
 
@@ -59,9 +59,9 @@ class ConfigManagerTest {
         SystemPropertiesConfigSource source = new SystemPropertiesConfigSource();
         ConfigManager manager = new ConfigManager("test");
         manager.addSource(source);
-        
+
         manager.removeSource(source);
-        
+
         assertTrue(manager.getSources().isEmpty());
     }
 
@@ -69,9 +69,9 @@ class ConfigManagerTest {
     void testClearSources() {
         ConfigManager manager = new ConfigManager("test");
         manager.addSource(new SystemPropertiesConfigSource());
-        
+
         manager.clearSources();
-        
+
         assertTrue(manager.getSources().isEmpty());
     }
 
@@ -80,14 +80,14 @@ class ConfigManagerTest {
         ConfigManager manager = new ConfigManager("test")
             .addSource(new SystemPropertiesConfigSource())
             .addSource(new EnvironmentConfigSource());
-        
+
         assertEquals(2, manager.getSources().size());
     }
 
     @Test
     void testGetStringFromFirstSource() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         // Create a mock source that returns a value
         ConfigSource mockSource = new ConfigSource() {
             @Override
@@ -97,7 +97,7 @@ class ConfigManagerTest {
                 }
                 return Optional.empty();
             }
-            
+
             @Override public Optional<Integer> getInt(String key) { return Optional.empty(); }
             @Override public Optional<Long> getLong(String key) { return Optional.empty(); }
             @Override public Optional<Double> getDouble(String key) { return Optional.empty(); }
@@ -110,9 +110,9 @@ class ConfigManagerTest {
             @Override public boolean hasKey(String key) { return false; }
             @Override public String getName() { return "mock"; }
         };
-        
+
         manager.addSource(mockSource);
-        
+
         Optional<String> value = manager.getString("test.key");
         assertTrue(value.isPresent());
         assertEquals("value", value.get());
@@ -121,7 +121,7 @@ class ConfigManagerTest {
     @Test
     void testSourcePriority() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         // First source returns a value
         ConfigSource firstSource = new ConfigSource() {
             @Override
@@ -140,7 +140,7 @@ class ConfigManagerTest {
             @Override public boolean hasKey(String key) { return true; }
             @Override public String getName() { return "first"; }
         };
-        
+
         // Second source also returns a value (should be ignored)
         ConfigSource secondSource = new ConfigSource() {
             @Override
@@ -159,9 +159,9 @@ class ConfigManagerTest {
             @Override public boolean hasKey(String key) { return true; }
             @Override public String getName() { return "second"; }
         };
-        
+
         manager.addSource(firstSource).addSource(secondSource);
-        
+
         // Should get value from first source
         Optional<String> value = manager.getString("any.key");
         assertTrue(value.isPresent());
@@ -171,7 +171,7 @@ class ConfigManagerTest {
     @Test
     void testHasKey() {
         ConfigManager manager = new ConfigManager("test");
-        
+
         ConfigSource mockSource = new ConfigSource() {
             @Override
             public boolean hasKey(String key) {
@@ -189,9 +189,9 @@ class ConfigManagerTest {
             @Override public Map<String, Object> getAll() { return Map.of(); }
             @Override public String getName() { return "mock"; }
         };
-        
+
         manager.addSource(mockSource);
-        
+
         assertTrue(manager.hasKey("existing"));
         assertFalse(manager.hasKey("non-existing"));
     }
@@ -199,7 +199,7 @@ class ConfigManagerTest {
     @Test
     void testCreateDefault() {
         ConfigManager manager = ConfigManager.createDefault("default-test");
-        
+
         assertEquals("default-test", manager.getName());
         assertEquals(2, manager.getSources().size()); // System properties + Environment
     }
@@ -212,12 +212,12 @@ class ConfigManagerTest {
             writer.write("key1 = value1\n");
             writer.write("key2 = value2\n");
         }
-        
+
         ConfigManager manager = new ConfigManager("test");
         manager.addSource(new FileConfigSource(configFile.getAbsolutePath()));
-        
+
         Map<String, Object> all = manager.getAll();
-        
+
         assertFalse(all.isEmpty());
         assertEquals("value1", all.get("key1"));
         assertEquals("value2", all.get("key2"));

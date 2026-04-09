@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Base implementation of {@link RefactoringResult}. 
+ * Base implementation of {@link RefactoringResult}.
  * @doc.type class
  * @doc.purpose Handles base refactoring result operations
  * @doc.layer core

@@ -3,7 +3,6 @@ package com.ghatana.ai.llm;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Request for LLM completion operations. Minimal value object used across AI

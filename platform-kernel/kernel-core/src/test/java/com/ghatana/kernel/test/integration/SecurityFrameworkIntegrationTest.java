@@ -112,7 +112,7 @@ class SecurityFrameworkIntegrationTest {
             .scope("phr")
             .build();
 
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
 
         assertTrue(decision.isAllowed());
@@ -128,7 +128,7 @@ class SecurityFrameworkIntegrationTest {
             .scope("phr")
             .build();
 
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
 
         assertFalse(decision.isAllowed());
@@ -148,7 +148,7 @@ class SecurityFrameworkIntegrationTest {
             .purpose("treatment")
             .build();
 
-        PolicyEnforcementPoint.EnforcementDecision decision = 
+        PolicyEnforcementPoint.EnforcementDecision decision =
             policyEnforcementPoint.enforce(request, context);
 
         assertTrue(decision.isAllowed());

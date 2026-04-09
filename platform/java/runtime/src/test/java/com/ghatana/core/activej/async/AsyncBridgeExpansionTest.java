@@ -5,9 +5,7 @@
 package com.ghatana.core.activej.async;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,12 +13,10 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 
 /**
  * Phase 3 Expansion tests for {@link AsyncBridge}.
@@ -153,7 +149,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         @DisplayName("Future completed asynchronously resolves promise")
         void asyncCompletedFutureToPromise() {
             CompletableFuture<String> future = new CompletableFuture<>();
-            
+
             new Thread(() -> {
                 try {
                     Thread.sleep(20);
@@ -441,7 +437,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         @DisplayName("Future with delay completes correctly after conversion")
         void delayedFutureConversion() throws Exception {
             CompletableFuture<String> future = new CompletableFuture<>();
-            
+
             new Thread(() -> {
                 try {
                     Thread.sleep(30);

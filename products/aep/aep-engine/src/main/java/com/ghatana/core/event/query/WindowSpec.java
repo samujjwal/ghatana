@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * Defines the windowing behavior for queries, allowing events to be grouped into finite
  * sets for processing. This class supports three types of windows:
- * 
+ *
  * <ul>
  *   <li><b>Tumbling Windows</b>: Fixed-size, non-overlapping windows. Example: 5-minute tumbling windows</li>
  *   <li><b>Sliding Windows</b>: Fixed-size, overlapping windows. Example: 5-minute windows sliding every 1 minute</li>
@@ -60,7 +60,7 @@ public class WindowSpec {
 
     /**
      * Creates a tumbling window specification.
-     * 
+     *
      * @param size The fixed size of each window
      * @return A new tumbling window specification
      */
@@ -73,7 +73,7 @@ public class WindowSpec {
 
     /**
      * Creates a sliding window specification.
-     * 
+     *
      * @param size The size of each window
      * @param slide The slide interval (must be positive and &lt;= size)
      * @return A new sliding window specification
@@ -93,7 +93,7 @@ public class WindowSpec {
 
     /**
      * Creates a session window specification.
-     * 
+     *
      * @param gap The maximum gap between events in the same session
      * @return A new session window specification
      */
@@ -103,16 +103,16 @@ public class WindowSpec {
         }
         return new WindowSpec(WindowType.SESSION, null, null, gap);
     }
-    
+
     /**
      * Gets the start time of the window that contains the given timestamp.
-     * 
+     *
      * @param timestamp The timestamp to find the window for
      * @return The start time of the window (inclusive)
      */
     public Instant getWindowStart(Instant timestamp) {
         Objects.requireNonNull(timestamp, "Timestamp cannot be null");
-        
+
         switch (type) {
             case TUMBLING:
             case SLIDING:
@@ -121,39 +121,39 @@ public class WindowSpec {
                 long timestampMillis = timestamp.toEpochMilli();
                 long windowStartMillis = (timestampMillis / windowSizeMillis) * windowSizeMillis;
                 return Instant.ofEpochMilli(windowStartMillis);
-                
+
             case SESSION:
                 // For session windows, the start time is the timestamp itself
                 // The actual window is determined by the session gap
                 return timestamp;
-                
+
             default:
                 throw new UnsupportedOperationException("Unsupported window type: " + type);
         }
     }
-    
+
     /**
      * Gets the end time of the window that starts at the given timestamp.
-     * 
+     *
      * @param windowStart The start time of the window
      * @return The end time of the window (exclusive)
      */
     public Instant getWindowEnd(Instant windowStart) {
         Objects.requireNonNull(windowStart, "Window start cannot be null");
-        
+
         switch (type) {
             case TUMBLING:
                 // For tumbling windows, the window ends at windowStart + size
                 return windowStart.plus(size);
-                
+
             case SLIDING:
                 // For sliding windows, the window ends at windowStart + size
                 return windowStart.plus(size);
-                
+
             case SESSION:
                 // For session windows, the window ends at windowStart + sessionGap
                 return windowStart.plus(sessionGap);
-                
+
             default:
                 throw new UnsupportedOperationException("Unsupported window type: " + type);
         }

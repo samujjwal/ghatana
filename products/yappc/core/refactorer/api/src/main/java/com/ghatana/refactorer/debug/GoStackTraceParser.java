@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Go stack trace parser that handles Go panic messages and goroutine traces with optional
  * configuration-driven patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles go stack trace parser operations
  * @doc.layer core

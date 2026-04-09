@@ -86,7 +86,7 @@ public class AuditAnalyticsService {
 
     private final AuditTrailService auditTrailService;
     private final MetricsCollector metrics;
-    
+
     // In-memory aggregation cache (for performance)
     private final Map<String, AggregationCache> aggregationCache;
 
@@ -150,7 +150,7 @@ public class AuditAnalyticsService {
                 for (AuditEvent event : recentEvents) {
                     Instant eventTime = Instant.ofEpochMilli(event.timestamp);
                     Instant bucket = truncateToBucket(eventTime, granularity);
-                    
+
                     eventTypeBuckets
                         .computeIfAbsent(event.eventType, k -> new HashMap<>())
                         .merge(bucket, 1L, Long::sum);
@@ -609,7 +609,7 @@ public class AuditAnalyticsService {
         public void addEvent(AuditEvent event) {
             totalEvents++;
             eventTypeCounts.merge(event.eventType, 1L, Long::sum);
-            
+
             Instant eventTime = Instant.ofEpochMilli(event.timestamp);
             if (firstActivity == null || eventTime.isBefore(firstActivity)) {
                 firstActivity = eventTime;

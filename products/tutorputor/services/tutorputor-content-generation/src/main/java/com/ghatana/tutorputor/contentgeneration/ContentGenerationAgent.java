@@ -1,8 +1,6 @@
 package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.tutorputor.contentgeneration.LlmProvider;
 import com.ghatana.tutorputor.contentgeneration.prompts.PromptTemplateEngine;
-import com.ghatana.tutorputor.contentgeneration.ContentValidator;
 import com.ghatana.tutorputor.contentgeneration.contracts.v1.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.Executors;
 
 /**
  * Content generation agent using LLM for educational content.
@@ -128,9 +125,9 @@ public class ContentGenerationAgent {
         Timer.Sample sample = Timer.start(meterRegistry);
         return executeWithRetry("analyzeContentNeeds", request, () -> {
             // Extract claim text from first claim if available
-            String claimText = request.getClaimsList().isEmpty() ? 
+            String claimText = request.getClaimsList().isEmpty() ?
                 "" : request.getClaimsList().get(0).getClaimText();
-                
+
             String prompt = promptEngine.buildPrompt(
                 "analyzeContentNeeds",
                 Map.of(
@@ -250,7 +247,7 @@ public class ContentGenerationAgent {
                 for (JsonNode claimNode : claimsNode) {
                     String claimRef = claimNode.path("claim_ref").asText(requestId + "-C" + index);
                     String text = claimNode.path("text").asText("");
-                    
+
                     ContentClaim.Builder claim = ContentClaim.newBuilder()
                         .setClaimId(requestId + "-C" + index)
                         .setClaimRef(claimRef)
@@ -299,7 +296,7 @@ public class ContentGenerationAgent {
         try {
             JsonNode root = MAPPER.readTree(raw);
             ContentNeedsAnalysis.Builder analysis = ContentNeedsAnalysis.newBuilder();
-            
+
             // Parse gaps
             JsonNode gapsNode = root.get("gaps");
             if (gapsNode != null && gapsNode.isArray()) {

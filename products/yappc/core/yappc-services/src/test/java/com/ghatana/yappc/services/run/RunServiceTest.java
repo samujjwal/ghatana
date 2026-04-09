@@ -234,4 +234,3 @@ class RunServiceTest extends EventloopTestBase {
         assertThat(result.taskResults().get(0).status()).isEqualTo(RunStatus.SUCCESS);
     }
 }
-

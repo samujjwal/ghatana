@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Python stack trace parser that handles standard Python stack traces with optional
  * configuration-driven patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles py stack trace parser operations
  * @doc.layer core

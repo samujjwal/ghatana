@@ -15,7 +15,7 @@ import java.util.concurrent.Executor;
 /**
  * AES-GCM implementation of the EncryptionProvider interface.
  * Provides authenticated encryption with associated data (AEAD) using AES in GCM mode.
- 
+
  *
  * @doc.type class
  * @doc.purpose Aes gcm encryption provider

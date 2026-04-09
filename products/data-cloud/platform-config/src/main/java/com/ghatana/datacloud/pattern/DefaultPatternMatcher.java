@@ -3,10 +3,8 @@ package com.ghatana.datacloud.pattern;
 import com.ghatana.datacloud.DataRecord;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -176,4 +174,3 @@ public class DefaultPatternMatcher implements PatternMatcher {
         }
     }
 }
-

@@ -39,7 +39,7 @@ class OrderExecutionReportTest {
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
             "idempotency-key-1", testTime, testTimeBs
         );
-        
+
         Fill fill = new Fill("FILL-001", "ORD-001", "EXEC-001",
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), BigDecimal.ZERO, testTime);
         Order filledOrder = order.withFill(fill, BigDecimal.valueOf(150.00));

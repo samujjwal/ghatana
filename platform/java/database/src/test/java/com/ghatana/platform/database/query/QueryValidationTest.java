@@ -11,13 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -34,7 +29,7 @@ class QueryValidationTest {
     void shouldHandleComplexJoinQueries() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -43,7 +38,7 @@ class QueryValidationTest {
     void shouldHandleQueryPaginationCorrectly() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -52,7 +47,7 @@ class QueryValidationTest {
     void shouldHandleQuerySortingCorrectly() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -61,7 +56,7 @@ class QueryValidationTest {
     void shouldHandleLargeDatasetQueriesEfficiently() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -70,7 +65,7 @@ class QueryValidationTest {
     void shouldHandleAggregateFunctionsCorrectly() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 
@@ -79,7 +74,7 @@ class QueryValidationTest {
     void shouldHandleSubqueriesCorrectly() {
         DataSource mockDataSource = mock(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
-        
+
         assertThat(jdbcTemplate).isNotNull();
     }
 }

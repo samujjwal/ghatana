@@ -7,7 +7,7 @@ import java.util.Objects;
  * Result of a partition rebalancing operation.
  *
  * @since 2.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Rebalance result

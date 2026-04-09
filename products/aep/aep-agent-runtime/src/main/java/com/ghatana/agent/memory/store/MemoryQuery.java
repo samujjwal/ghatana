@@ -4,7 +4,6 @@ import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.model.ValidityStatus;
 import lombok.Builder;
 import lombok.Value;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;

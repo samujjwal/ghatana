@@ -173,4 +173,3 @@ public final class ContractRegistry {
         return List.copyOf(schemaRegistrations.values());
     }
 }
-

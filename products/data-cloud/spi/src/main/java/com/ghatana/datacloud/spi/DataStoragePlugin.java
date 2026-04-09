@@ -1,14 +1,11 @@
 package com.ghatana.datacloud.spi;
 
 import com.ghatana.datacloud.entity.EntityInterface;
-import com.ghatana.datacloud.entity.storage.QuerySpecInterface;
 import com.ghatana.platform.plugin.Plugin;
 import io.activej.promise.Promise;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Data Storage Plugin interface for traditional CRUD operations.

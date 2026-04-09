@@ -6,8 +6,6 @@ import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledPoolConfi
 import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledPerformanceConfig;
 import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledReplicationConfig;
 import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledHealthCheckConfig;
-import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledHealthCheckConfig.HealthCheckType;
-import com.ghatana.datacloud.config.model.CompiledPluginConfig.CompiledReplicationConfig.ReplicationMode;
 import com.ghatana.platform.core.exception.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

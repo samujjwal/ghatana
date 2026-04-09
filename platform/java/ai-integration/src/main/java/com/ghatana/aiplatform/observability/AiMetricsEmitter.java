@@ -1,7 +1,6 @@
 package com.ghatana.aiplatform.observability;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 
 import java.time.Duration;

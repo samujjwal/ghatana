@@ -6,15 +6,14 @@ import com.ghatana.pattern.operator.spi.Operator;
 import com.ghatana.pattern.operator.spi.OperatorMetadata;
 import com.ghatana.pattern.operator.spi.ValidationContext;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * SEQ operator that matches events in sequence.
- * 
+ *
  * <p>This operator matches when events occur in the specified sequential order.
  * For example, SEQ(A, B) matches when event A occurs, followed by event B.
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Pattern Composition Operator - Sequential matching (SEQ) for strict temporal ordering.
@@ -54,7 +53,7 @@ import java.util.Map;
  *                 by the pattern engine's execution layer. Does not provide runtime matching logic.
  */
 public class SeqOperator implements Operator {
-    
+
     private static final String TYPE = "SEQ";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -64,41 +63,41 @@ public class SeqOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for SEQ operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for SeqOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount < METADATA.getMinOperands()) {
             throw new PatternValidationException(
-                String.format("SEQ operator requires at least %d operands, got %d", 
+                String.format("SEQ operator requires at least %d operands, got %d",
                     METADATA.getMinOperands(), operandCount));
         }
-        
+
         if (operandCount > METADATA.getMaxOperands()) {
             throw new PatternValidationException(
-                String.format("SEQ operator supports at most %d operands, got %d", 
+                String.format("SEQ operator supports at most %d operands, got %d",
                     METADATA.getMaxOperands(), operandCount));
         }
-        
+
         // Validate operands
         if (spec.getOperands() != null) {
             for (int i = 0; i < spec.getOperands().size(); i++) {
@@ -107,51 +106,46 @@ public class SeqOperator implements Operator {
                     throw new PatternValidationException(
                         String.format("SEQ operator operand %d cannot be null", i));
                 }
-                
+
                 if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                     throw new PatternValidationException(
                         String.format("SEQ operator operand %d must have a valid type", i));
                 }
             }
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             return;
         }
-        
+
         // Validate maxGap parameter if present
         Object maxGap = parameters.get("maxGap");
         if (maxGap != null) {
             if (!(maxGap instanceof Number)) {
                 throw new PatternValidationException("SEQ operator maxGap parameter must be a number");
             }
-            
+
             long maxGapMs = ((Number) maxGap).longValue();
             if (maxGapMs < 0) {
                 throw new PatternValidationException("SEQ operator maxGap parameter must be non-negative");
             }
         }
-        
+
         // Validate strictOrder parameter if present
         Object strictOrder = parameters.get("strictOrder");
         if (strictOrder != null && !(strictOrder instanceof Boolean)) {
             throw new PatternValidationException("SEQ operator strictOrder parameter must be a boolean");
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for CompositionEngine condition evaluation.
- 
+
  * @doc.type class
  * @doc.purpose Handles composition engine test operations
  * @doc.layer core
@@ -46,9 +46,9 @@ class CompositionEngineTest {
         // Use mock PackEngine and real HandlebarsTemplateEngine
         PackEngine mockPackEngine = mock(PackEngine.class);
         HandlebarsTemplateEngine templateEngine = new HandlebarsTemplateEngine();
-        
+
         engine = new CompositionEngine(mockPackEngine, templateEngine);
-        
+
         // Access private method for testing
         evaluateConditionMethod = CompositionEngine.class.getDeclaredMethod(
             "evaluateCondition", String.class, Map.class);

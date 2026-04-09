@@ -8,9 +8,9 @@
  *
  * <p><b>Key Components</b><br>
  * <ul>
- *   <li>{@link com.ghatana.core.operator.adapter.AgentStreamOperatorAdapter} - 
+ *   <li>{@link com.ghatana.core.operator.adapter.AgentStreamOperatorAdapter} -
  *       Wraps {@link com.ghatana.virtualorg.agent.VirtualOrgAgent} as a stream operator</li>
- *   <li>{@link com.ghatana.core.operator.adapter.AgentStreamOperatorAdapterFactory} - 
+ *   <li>{@link com.ghatana.core.operator.adapter.AgentStreamOperatorAdapterFactory} -
  *       Factory for creating agent adapters with auto-generated IDs</li>
  * </ul>
  *
@@ -22,12 +22,12 @@
  * <p><b>Usage Example</b><br>
  * <pre>{@code
  * VirtualOrgAgent agent = new CEOAgent(...);
- * AgentStreamOperatorAdapter adapter = 
+ * AgentStreamOperatorAdapter adapter =
  *     AgentStreamOperatorAdapterFactory.create(agent, meterRegistry);
- * 
+ *
  * // Register with operator catalog
  * operatorCatalog.register(adapter);
- * 
+ *
  * // Use in pipeline
  * Event taskEvent = createTaskEvent();
  * adapter.process(taskEvent).whenResult(result -> {

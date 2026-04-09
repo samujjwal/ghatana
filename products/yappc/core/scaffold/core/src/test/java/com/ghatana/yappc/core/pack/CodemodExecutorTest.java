@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Tests for codemod executor functionality. Week 2, Day 9 deliverable - Polyfix codemod integration
  * tests.
- 
+
  * @doc.type class
  * @doc.purpose Handles codemod executor test operations
  * @doc.layer core

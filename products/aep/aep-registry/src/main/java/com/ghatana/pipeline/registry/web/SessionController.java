@@ -14,7 +14,6 @@ import com.ghatana.platform.security.session.RequestContext;
 import com.ghatana.platform.security.session.SessionManager;
 import com.ghatana.platform.security.session.SessionState;
 
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.inject.annotation.Inject;

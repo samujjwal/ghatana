@@ -139,22 +139,22 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
         if (data instanceof PatientRecord) {
             return DataClassification.PHI;
         }
-        
+
         if (data instanceof ProviderInfo) {
             return DataClassification.CONFIDENTIAL;
         }
-        
+
         return DataClassification.INTERNAL;
     }
 
     @Override
     public boolean enforceResidency(DataLocation location, String tenantId) {
         TenantConfig config = tenantConfigRepository.findById(tenantId);
-        
+
         if (config == null) {
             return false;
         }
-        
+
         return config.getAllowedRegions().contains(location.getRegion());
     }
 
@@ -166,7 +166,7 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
         consent.setPurpose(purpose);
         consent.setGranted(granted);
         consent.setTimestamp(Instant.now());
-        
+
         consentRepository.save(consent);
     }
 

@@ -40,7 +40,7 @@ class DateTimeUtilsTest {
     void testToUtc() {
         LocalDateTime local = LocalDateTime.of(2025, 1, 5, 14, 30, 0);
         OffsetDateTime utc = DateTimeUtils.toUtc(local);
-        
+
         assertNotNull(utc);
         assertEquals(ZoneOffset.UTC, utc.getOffset());
     }
@@ -54,7 +54,7 @@ class DateTimeUtilsTest {
     void testToStartOfDayUtc() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         OffsetDateTime startOfDay = DateTimeUtils.toStartOfDayUtc(date);
-        
+
         assertNotNull(startOfDay);
         assertEquals(0, startOfDay.getHour());
         assertEquals(0, startOfDay.getMinute());
@@ -67,7 +67,7 @@ class DateTimeUtilsTest {
     void testToEndOfDayUtc() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         OffsetDateTime endOfDay = DateTimeUtils.toEndOfDayUtc(date);
-        
+
         assertNotNull(endOfDay);
         assertEquals(23, endOfDay.getHour());
         assertEquals(59, endOfDay.getMinute());
@@ -80,7 +80,7 @@ class DateTimeUtilsTest {
     void testStartOfDay() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         LocalDateTime startOfDay = DateTimeUtils.startOfDay(date);
-        
+
         assertNotNull(startOfDay);
         assertEquals(0, startOfDay.getHour());
         assertEquals(0, startOfDay.getMinute());
@@ -91,7 +91,7 @@ class DateTimeUtilsTest {
     void testEndOfDay() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         LocalDateTime endOfDay = DateTimeUtils.endOfDay(date);
-        
+
         assertNotNull(endOfDay);
         assertEquals(23, endOfDay.getHour());
         assertEquals(59, endOfDay.getMinute());
@@ -102,7 +102,7 @@ class DateTimeUtilsTest {
     void testStartOfMonth() {
         LocalDate date = LocalDate.of(2025, 1, 15);
         LocalDate startOfMonth = DateTimeUtils.startOfMonth(date);
-        
+
         assertNotNull(startOfMonth);
         assertEquals(1, startOfMonth.getDayOfMonth());
         assertEquals(1, startOfMonth.getMonthValue());
@@ -113,7 +113,7 @@ class DateTimeUtilsTest {
     void testEndOfMonth() {
         LocalDate date = LocalDate.of(2025, 1, 15);
         LocalDate endOfMonth = DateTimeUtils.endOfMonth(date);
-        
+
         assertNotNull(endOfMonth);
         assertEquals(31, endOfMonth.getDayOfMonth());
         assertEquals(1, endOfMonth.getMonthValue());
@@ -124,7 +124,7 @@ class DateTimeUtilsTest {
     void testEndOfMonthFebruary() {
         LocalDate date = LocalDate.of(2025, 2, 15);
         LocalDate endOfMonth = DateTimeUtils.endOfMonth(date);
-        
+
         assertNotNull(endOfMonth);
         assertEquals(28, endOfMonth.getDayOfMonth()); // 2025 is not a leap year
     }
@@ -134,7 +134,7 @@ class DateTimeUtilsTest {
         LocalDateTime original = LocalDateTime.of(2025, 1, 5, 14, 30, 0);
         Date legacyDate = DateTimeUtils.toDate(original);
         LocalDateTime converted = DateTimeUtils.toLocalDateTime(legacyDate);
-        
+
         assertNotNull(legacyDate);
         assertNotNull(converted);
         assertEquals(original.withNano(0), converted.withNano(0)); // Date has millisecond precision
@@ -154,7 +154,7 @@ class DateTimeUtilsTest {
     void testParseDate() {
         String dateString = "2025-01-05";
         LocalDate parsed = DateTimeUtils.parseDate(dateString, DateTimeUtils.DATE_PATTERN);
-        
+
         assertNotNull(parsed);
         assertEquals(2025, parsed.getYear());
         assertEquals(1, parsed.getMonthValue());
@@ -176,7 +176,7 @@ class DateTimeUtilsTest {
     void testParseDateTime() {
         String dateTimeString = "2025-01-05 14:30:00";
         LocalDateTime parsed = DateTimeUtils.parseDateTime(dateTimeString, DateTimeUtils.DATETIME_PATTERN);
-        
+
         assertNotNull(parsed);
         assertEquals(2025, parsed.getYear());
         assertEquals(1, parsed.getMonthValue());
@@ -195,7 +195,7 @@ class DateTimeUtilsTest {
     void testFormatWithFormatter() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         String formatted = DateTimeUtils.format(date, DateTimeUtils.ISO_DATE_FORMATTER);
-        
+
         assertEquals("2025-01-05", formatted);
     }
 
@@ -203,7 +203,7 @@ class DateTimeUtilsTest {
     void testFormatWithPattern() {
         LocalDate date = LocalDate.of(2025, 1, 5);
         String formatted = DateTimeUtils.format(date, "MM/dd/yyyy");
-        
+
         assertEquals("01/05/2025", formatted);
     }
 
@@ -216,7 +216,7 @@ class DateTimeUtilsTest {
     void testDaysBetween() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 1, 31);
-        
+
         long days = DateTimeUtils.daysBetween(start, end);
         assertEquals(30, days);
     }
@@ -225,7 +225,7 @@ class DateTimeUtilsTest {
     void testDaysBetweenReversed() {
         LocalDate start = LocalDate.of(2025, 1, 31);
         LocalDate end = LocalDate.of(2025, 1, 1);
-        
+
         long days = DateTimeUtils.daysBetween(start, end);
         assertEquals(30, days); // Absolute value
     }
@@ -233,12 +233,12 @@ class DateTimeUtilsTest {
     @Test
     void testDaysBetweenWithNull() {
         LocalDate date = LocalDate.of(2025, 1, 1);
-        
-        assertThrows(IllegalArgumentException.class, () -> 
+
+        assertThrows(IllegalArgumentException.class, () ->
             DateTimeUtils.daysBetween(null, date)
         );
-        
-        assertThrows(IllegalArgumentException.class, () -> 
+
+        assertThrows(IllegalArgumentException.class, () ->
             DateTimeUtils.daysBetween(date, null)
         );
     }
@@ -247,7 +247,7 @@ class DateTimeUtilsTest {
     void testHoursBetween() {
         OffsetDateTime start = OffsetDateTime.of(2025, 1, 5, 10, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime end = OffsetDateTime.of(2025, 1, 5, 14, 0, 0, 0, ZoneOffset.UTC);
-        
+
         long hours = DateTimeUtils.hoursBetween(start, end);
         assertEquals(4, hours);
     }
@@ -255,12 +255,12 @@ class DateTimeUtilsTest {
     @Test
     void testHoursBetweenWithNull() {
         OffsetDateTime time = OffsetDateTime.now();
-        
-        assertThrows(IllegalArgumentException.class, () -> 
+
+        assertThrows(IllegalArgumentException.class, () ->
             DateTimeUtils.hoursBetween(null, time)
         );
-        
-        assertThrows(IllegalArgumentException.class, () -> 
+
+        assertThrows(IllegalArgumentException.class, () ->
             DateTimeUtils.hoursBetween(time, null)
         );
     }
@@ -272,7 +272,7 @@ class DateTimeUtilsTest {
         LocalDate middle = LocalDate.of(2025, 1, 15);
         LocalDate before = LocalDate.of(2024, 12, 31);
         LocalDate after = LocalDate.of(2025, 2, 1);
-        
+
         assertTrue(DateTimeUtils.isWithinRange(middle, start, end));
         assertTrue(DateTimeUtils.isWithinRange(start, start, end)); // Inclusive
         assertTrue(DateTimeUtils.isWithinRange(end, start, end)); // Inclusive
@@ -284,7 +284,7 @@ class DateTimeUtilsTest {
     void testIsWithinRangeDateWithNull() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 1, 31);
-        
+
         assertFalse(DateTimeUtils.isWithinRange(null, start, end));
         assertFalse(DateTimeUtils.isWithinRange(start, null, end));
         assertFalse(DateTimeUtils.isWithinRange(start, start, null));
@@ -297,7 +297,7 @@ class DateTimeUtilsTest {
         LocalDateTime middle = LocalDateTime.of(2025, 1, 5, 12, 0);
         LocalDateTime before = LocalDateTime.of(2025, 1, 5, 9, 0);
         LocalDateTime after = LocalDateTime.of(2025, 1, 5, 15, 0);
-        
+
         assertTrue(DateTimeUtils.isWithinRange(middle, start, end));
         assertTrue(DateTimeUtils.isWithinRange(start, start, end));
         assertTrue(DateTimeUtils.isWithinRange(end, start, end));
@@ -310,7 +310,7 @@ class DateTimeUtilsTest {
         long before = System.currentTimeMillis();
         long current = DateTimeUtils.currentTimeMillis();
         long after = System.currentTimeMillis();
-        
+
         assertTrue(current >= before);
         assertTrue(current <= after);
     }

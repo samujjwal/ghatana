@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -25,7 +24,7 @@ class VenueConnectionTest {
 
     @Mock
     private ExchangeAdapterPort nasdaqAdapter;
-    
+
     @Mock
     private ExchangeAdapterPort nyseAdapter;
 
@@ -35,7 +34,7 @@ class VenueConnectionTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         healthMonitor = new VenueHealthMonitor();
-        
+
         when(nasdaqAdapter.exchangeId()).thenReturn("NASDAQ");
         when(nyseAdapter.exchangeId()).thenReturn("NYSE");
     }
@@ -115,7 +114,7 @@ class VenueConnectionTest {
     @DisplayName("Should monitor heartbeat for connection health")
     void shouldMonitorHeartbeatForConnectionHealth() {
         Instant lastHeartbeat = Instant.now().minusSeconds(15);
-        
+
         boolean isHealthy = healthMonitor.isHeartbeatHealthy(lastHeartbeat, Instant.now(), 30);
 
         assertThat(isHealthy).isTrue();
@@ -125,7 +124,7 @@ class VenueConnectionTest {
     @DisplayName("Should detect stale heartbeat")
     void shouldDetectStaleHeartbeat() {
         Instant lastHeartbeat = Instant.now().minusSeconds(45);
-        
+
         boolean isHealthy = healthMonitor.isHeartbeatHealthy(lastHeartbeat, Instant.now(), 30);
 
         assertThat(isHealthy).isFalse();
@@ -174,8 +173,8 @@ class VenueConnectionTest {
         }
 
         boolean validateConfig(Map<String, String> config) {
-            return config.containsKey("host") && 
-                   config.containsKey("port") && 
+            return config.containsKey("host") &&
+                   config.containsKey("port") &&
                    config.containsKey("compId");
         }
     }

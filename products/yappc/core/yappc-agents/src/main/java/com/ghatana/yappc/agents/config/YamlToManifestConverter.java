@@ -12,11 +12,11 @@ import java.util.Map;
 
 /**
  * Converts YAPPC YAML agent configurations to AEP AgentManifestProto format.
- * 
+ *
  * This converter bridges YAPPC's simplified YAML-based agent definitions with
  * AEP's standard AgentManifestProto format, enabling YAPPC agents to be registered
  * and executed through AEP's AgentRegistryService.
- * 
+ *
  * <p><b>Conversion Strategy:</b>
  * <ul>
  *   <li>YAML id → AgentManifest metadata.name</li>
@@ -26,7 +26,7 @@ import java.util.Map;
  *   <li>YAML generator → AgentSpec runtime configuration</li>
  *   <li>YAML validation → AgentSpec validation rules</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.pattern Converter, Adapter
  * @doc.purpose Convert YAML configs to AEP manifest format
@@ -34,22 +34,22 @@ import java.util.Map;
  */
 public class YamlToManifestConverter {
     private static final Logger log = LoggerFactory.getLogger(YamlToManifestConverter.class);
-    
+
     /**
      * Convert YAML agent config to AEP AgentManifestProto.
-     * 
+     *
      * @param yamlConfig The YAML-based agent configuration
      * @return AgentManifestProto ready for AEP registration
      */
     public AgentManifestProto convert(YamlAgentConfig yamlConfig) {
         log.debug("Converting YAML config to AgentManifest: {}", yamlConfig.getId());
-        
+
         return AgentManifestProto.newBuilder()
             .setMetadata(buildMetadata(yamlConfig))
             .setSpec(buildSpec(yamlConfig))
             .build();
     }
-    
+
     /**
      * Build metadata section of the manifest.
      */
@@ -59,13 +59,13 @@ public class YamlToManifestConverter {
             .setName(config.getName())
             .setDescription(config.getDescription())
             .setVersion(config.getVersion());
-        
+
         // Add labels from tags
         Map<String, String> labels = new HashMap<>();
         for (String tag : config.getTags()) {
             labels.put("tag." + tag, "true");
         }
-        
+
         // Add metadata fields
         for (Map.Entry<String, Object> entry : config.getMetadata().entrySet()) {
             labels.put("metadata." + entry.getKey(), String.valueOf(entry.getValue()));
@@ -80,21 +80,21 @@ public class YamlToManifestConverter {
                 labels.put("event.dlq", ep.getDeadLetterQueue());
             }
         }
-        
+
         metadata.putAllLabels(labels);
-        
+
         return metadata.build();
     }
-    
+
     /**
      * Build spec section of the manifest.
      */
     private AgentSpecProto buildSpec(YamlAgentConfig config) {
         AgentSpecProto.Builder spec = AgentSpecProto.newBuilder();
-        
+
         // Set runtime configuration
         spec.setRuntime(buildRuntime(config));
-        
+
         // Add capabilities
         for (String capability : config.getCapabilities()) {
             spec.addCapabilities(capability);
@@ -119,15 +119,15 @@ public class YamlToManifestConverter {
                 addGeneratorEventTypes(spec, config);
             }
         }
-        
+
         // Add validation configuration
         if (config.getValidation() != null) {
             addValidationConfig(spec, config);
         }
-        
+
         return spec.build();
     }
-    
+
     /**
      * Build runtime configuration.
      */
@@ -136,11 +136,11 @@ public class YamlToManifestConverter {
             .setType("java")
             .setVersion(config.getVersion())
             .setEntrypoint(config.getId());
-        
+
         // Add generator configuration
         if (config.getGenerator() != null) {
             YamlAgentConfig.GeneratorConfig gen = config.getGenerator();
-            
+
             // Set runtime type based on generator
             switch (gen.getType()) {
                 case "llm":
@@ -159,46 +159,46 @@ public class YamlToManifestConverter {
                 default:
                     runtime.setType("CUSTOM");
             }
-            
+
             // Add custom properties
             for (Map.Entry<String, Object> entry : gen.getProperties().entrySet()) {
                 runtime.putConfig(entry.getKey(), String.valueOf(entry.getValue()));
             }
         }
-        
+
         // Add cache configuration
         if (config.getCache() != null && config.getCache().isEnabled()) {
             runtime.putConfig("cache.enabled", "true");
             runtime.putConfig("cache.ttl", String.valueOf(config.getCache().getTtlSeconds()));
             runtime.putConfig("cache.key_fields", String.join(",", config.getCache().getKeyFields()));
         }
-        
+
         return runtime.build();
     }
-    
+
     /**
      * Add generator-specific event types.
      */
     private void addGeneratorEventTypes(AgentSpecProto.Builder spec, YamlAgentConfig config) {
         String agentType = config.getId().split("\\.")[0]; // e.g., "expert" from "expert.java"
-        
+
         // Add standard event types based on agent type
         spec.addInputEventTypes(agentType + ".request");
         spec.addOutputEventTypes(agentType + ".response");
-        
+
         // Add capability-based event types
         for (String capability : config.getCapabilities()) {
             spec.addInputEventTypes(capability + ".requested");
             spec.addOutputEventTypes(capability + ".completed");
         }
     }
-    
+
     /**
      * Add validation configuration.
      */
     private void addValidationConfig(AgentSpecProto.Builder spec, YamlAgentConfig config) {
         YamlAgentConfig.ValidationConfig validation = config.getValidation();
-        
+
         // Add validation rules
         if (validation.getInputSchema() != null) {
             spec.addValidation("input_schema=" + validation.getInputSchema());
@@ -210,7 +210,7 @@ public class YamlToManifestConverter {
             spec.addValidation("strict_mode=true");
         }
     }
-    
+
     /**
      * Convert multiple YAML configs to manifests.
      */

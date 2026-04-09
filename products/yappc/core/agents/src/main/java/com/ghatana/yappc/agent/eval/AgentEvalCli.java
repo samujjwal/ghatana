@@ -36,7 +36,7 @@ import java.nio.file.Path;
  *
  * @author Ghatana AI Platform
  * @since 2.2.0
- 
+
  * @doc.pattern ValueObject
 */
 public final class AgentEvalCli {

@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Dependency injection module for key management services.
  * Provides KeyManager implementation and related components.
- 
+
  *
  * @doc.type class
  * @doc.purpose Key manager module
@@ -27,52 +27,52 @@ import java.util.concurrent.ConcurrentHashMap;
 */
 public class KeyManagerModule extends AbstractModule {
     private static final Logger logger = LoggerFactory.getLogger(KeyManagerModule.class);
-    
+
     @Override
     protected void configure() {
         logger.info("Configuring KeyManagerModule");
         bind(KeyManager.class).to(DefaultKeyManager.class);
     }
-    
+
     @Provides
     DefaultKeyManager keyManager(KeyManagementProperties keyProps) {
         try {
             // Create a map to hold keys
             Map<String, SecretKey> keys = new ConcurrentHashMap<>();
             String currentKeyId = null;
-            
+
             // Generate initial keys based on configuration
             if (keyProps.isGenerateInitialKey()) {
                 int keyCount = keyProps.getInitialKeyCount();
                 int keySize = keyProps.getKeySize();
                 String keyAlgorithm = keyProps.getKeyAlgorithm();
-                
-                logger.info("Generating {} initial {} keys with size {} bits", 
+
+                logger.info("Generating {} initial {} keys with size {} bits",
                     keyCount, keyAlgorithm, keySize);
-                
+
                 KeyGenerator keyGen = KeyGenerator.getInstance(keyAlgorithm);
                 keyGen.init(keySize, new SecureRandom());
-                
+
                 // Generate the specified number of keys
                 for (int i = 0; i < keyCount; i++) {
                     String keyId = "key-" + UUID.randomUUID().toString();
                     SecretKey key = keyGen.generateKey();
                     keys.put(keyId, key);
-                    
+
                     // First key is the current one
                     if (i == 0) {
                         currentKeyId = keyId;
                     }
-                    
-                    logger.debug("Generated key: {} (algorithm: {}, format: {})", 
+
+                    logger.debug("Generated key: {} (algorithm: {}, format: {})",
                         keyId, key.getAlgorithm(), key.getFormat());
                 }
-                
+
                 if (currentKeyId == null) {
                     throw new IllegalStateException("Failed to generate initial keys");
                 }
-                
-                logger.info("Initialized KeyManager with {} keys, current key: {}", 
+
+                logger.info("Initialized KeyManager with {} keys, current key: {}",
                     keys.size(), currentKeyId);
             } else {
                 // Use provided keys from configuration
@@ -108,15 +108,15 @@ public class KeyManagerModule extends AbstractModule {
                     throw new IllegalStateException("No keys configured and key generation is disabled");
                 }
             }
-            
+
             return new DefaultKeyManager(
-                keys, 
+                keys,
                 currentKeyId,
                 KeyGenerator.getInstance("AES"),
                 "AES",
                 null // executorService
             );
-            
+
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to initialize KeyManager: " + e.getMessage(), e);
         }

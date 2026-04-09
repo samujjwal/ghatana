@@ -44,17 +44,17 @@ public final class TimeoutConfig {
     private final Duration shutdownTimeout;
 
     private TimeoutConfig(Builder builder) {
-        this.connectionTimeout = Objects.requireNonNullElse(builder.connectionTimeout, 
+        this.connectionTimeout = Objects.requireNonNullElse(builder.connectionTimeout,
             Duration.ofMillis(DEFAULT_CONNECTION_TIMEOUT_MS));
-        this.operationTimeout = Objects.requireNonNullElse(builder.operationTimeout, 
+        this.operationTimeout = Objects.requireNonNullElse(builder.operationTimeout,
             Duration.ofMillis(DEFAULT_OPERATION_TIMEOUT_MS));
-        this.streamingTimeout = Objects.requireNonNullElse(builder.streamingTimeout, 
+        this.streamingTimeout = Objects.requireNonNullElse(builder.streamingTimeout,
             Duration.ofMillis(DEFAULT_STREAMING_TIMEOUT_MS));
-        this.healthCheckTimeout = Objects.requireNonNullElse(builder.healthCheckTimeout, 
+        this.healthCheckTimeout = Objects.requireNonNullElse(builder.healthCheckTimeout,
             Duration.ofMillis(DEFAULT_HEALTH_CHECK_TIMEOUT_MS));
-        this.initializationTimeout = Objects.requireNonNullElse(builder.initializationTimeout, 
+        this.initializationTimeout = Objects.requireNonNullElse(builder.initializationTimeout,
             Duration.ofMillis(DEFAULT_INITIALIZATION_TIMEOUT_MS));
-        this.shutdownTimeout = Objects.requireNonNullElse(builder.shutdownTimeout, 
+        this.shutdownTimeout = Objects.requireNonNullElse(builder.shutdownTimeout,
             Duration.ofMillis(DEFAULT_SHUTDOWN_TIMEOUT_MS));
     }
 

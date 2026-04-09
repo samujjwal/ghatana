@@ -7,7 +7,7 @@ package com.ghatana.yappc.ai.requirements.api.rest.dto;
  * @param name Project name (required)
  * @param description Project description (optional)
  * @param template Project template name (optional)
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for create project request
  * @doc.layer core
@@ -20,4 +20,3 @@ public record CreateProjectRequest(
     String template
 ) {
 }
-

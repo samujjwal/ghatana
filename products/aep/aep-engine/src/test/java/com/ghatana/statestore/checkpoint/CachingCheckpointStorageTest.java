@@ -156,4 +156,3 @@ class CachingCheckpointStorageTest {
         @Override public Instant instant() { return instant; }
     }
 }
-

@@ -85,7 +85,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
     private final EmbeddedStore store;
     private final EmbeddedQuery query;
     private final EmbeddedEventStream events;
-    
+
     private volatile boolean running;
 
     /**
@@ -106,34 +106,34 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
     public DefaultEmbeddableDataCloud(DeploymentConfig config, Map<String, Object> options) {
         this.config = config;
         this.options = Map.copyOf(options);
-        
+
         // Extract embedded config
         EmbeddedConfig embeddedConfig = config.embeddedConfig() != null
                 ? config.embeddedConfig()
                 : EmbeddedConfig.forTesting();
-        
+
         log.info("Creating embedded Data-Cloud. storageType={}, dataDir={}, enableAI={}, cacheSize={}",
                 embeddedConfig.storageType(),
                 embeddedConfig.dataDirectory(),
                 embeddedConfig.enableAI(),
                 embeddedConfig.maxCacheEntries());
-        
+
         // Create coordinator
         this.coordinator = new StandaloneClusterCoordinator(
                 "embedded-" + System.nanoTime(),
                 "localhost",
                 8080
         );
-        
+
         // Create event stream
         this.events = new InMemoryEventStream();
-        
+
         // Create storage backend based on config
         this.store = createStore(embeddedConfig, events);
         this.query = new AdaptiveQuery(store);
         this.running = false;
     }
-    
+
     /**
      * Creates the appropriate storage backend based on configuration.
      *
@@ -144,7 +144,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
     private EmbeddedStore createStore(EmbeddedConfig config, EmbeddedEventStream events) {
         // Cast to InMemoryEventStream for passing to stores that need it
         InMemoryEventStream inMemoryEvents = (InMemoryEventStream) events;
-        
+
         return switch (config.storageType()) {
             case IN_MEMORY -> {
                 log.info("Using IN_MEMORY storage (non-persistent)");
@@ -265,13 +265,13 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
         @Override
         public Promise<Void> put(String key, Record record) {
             Record previous = storage.put(key, record);
-            
+
             if (previous == null) {
                 events.emit(new ChangeEvent(ChangeType.CREATE, key, record, null));
             } else {
                 events.emit(new ChangeEvent(ChangeType.UPDATE, key, record, previous));
             }
-            
+
             return Promise.complete();
         }
 
@@ -313,7 +313,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
 
     /**
      * Adaptive query implementation that works with any store backend.
-     * 
+     *
      * <p><b>Implementation Strategy</b><br>
      * <ul>
      *   <li><b>InMemoryStore</b> - Direct iteration over records (O(n))</li>
@@ -321,7 +321,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
      *   <li><b>SQLiteStore</b> - SQL WHERE clauses with indexes (future)</li>
      *   <li><b>H2Store</b> - SQL WHERE clauses with indexes (future)</li>
      * </ul>
-     * 
+     *
      * <p><b>Future Optimizations</b><br>
      * For persistent stores (RocksDB, SQLite, H2), queries can be optimized with:
      * <ul>
@@ -348,7 +348,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
                         .collect(Collectors.toList());
                 return Promise.of(results);
             }
-            
+
             // For persistent stores: Would iterate via store-specific API
             // Example for RocksDBStore: rocksStore.iterate().filter(predicate)
             // Example for SQLiteStore: sqlStore.query("SELECT * FROM records WHERE ...")
@@ -366,7 +366,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
                         .collect(Collectors.toList());
                 return Promise.of(results);
             }
-            
+
             log.warn("Query on persistent store requires store-specific iteration API");
             return Promise.of(List.of());
         }
@@ -380,7 +380,7 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
                         .count();
                 return Promise.of(count);
             }
-            
+
             log.warn("Query on persistent store requires store-specific iteration API");
             return Promise.of(0L);
         }

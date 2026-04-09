@@ -107,7 +107,7 @@ class StandardCompliancePluginTest extends EventloopTestBase {
                 .then(v -> compliancePlugin.start()));
 
         List<CompliancePlugin.ComplianceRule> customRules = Arrays.asList(
-            new CompliancePlugin.ComplianceRule("CUSTOM-001", "CUSTOM", "Custom rule", 
+            new CompliancePlugin.ComplianceRule("CUSTOM-001", "CUSTOM", "Custom rule",
                 CompliancePlugin.ComplianceRule.Severity.HIGH, "custom_check")
         );
 

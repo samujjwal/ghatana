@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for HybridAgent.
- * 
+ *
  * Focus: Fast-path vs fallback routing, result composition, confidence-based escalation,
  * and intelligent agent coordination.
  */
@@ -555,7 +555,7 @@ class HybridAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

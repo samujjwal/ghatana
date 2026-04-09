@@ -25,7 +25,7 @@ class EventRoutingTest {
     @DisplayName("Should route events to subscribers")
     void shouldRouteEventsToSubscribers() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class EventRoutingTest {
     @DisplayName("Should filter events by type")
     void shouldFilterEventsByType() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class EventRoutingTest {
     @DisplayName("Should handle event transformation")
     void shouldHandleEventTransformation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class EventRoutingTest {
     @DisplayName("Should handle subscription management")
     void shouldHandleSubscriptionManagement() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class EventRoutingTest {
     @DisplayName("Should handle routing failures")
     void shouldHandleRoutingFailures() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class EventRoutingTest {
     @DisplayName("Should handle concurrent routing")
     void shouldHandleConcurrentRouting() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

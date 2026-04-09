@@ -42,7 +42,7 @@ import java.util.List;
  *     60,
  *     eventloop
  * );
- * 
+ *
  * LLMResponse response = client.chat(task, tools).getResult();
  * }</pre>
  *

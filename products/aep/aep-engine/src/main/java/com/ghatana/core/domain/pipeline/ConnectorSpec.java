@@ -6,10 +6,10 @@ import java.util.Objects;
 
 /**
  * Connector specification for pipeline stages.
- * 
+ *
  * <p>Defines a connector that connects pipeline stages to external systems
  * or data sources with configuration and type information.
- * 
+ *
  * @doc.type class
  * @doc.purpose Connector specification for pipeline stages
  * @doc.layer core
@@ -22,10 +22,10 @@ public class ConnectorSpec {
     private final ConnectorType connectorType;
     private final Map<String, Object> configuration;
     private final boolean enabled;
-    
+
     /**
      * Creates a new connector specification.
-     * 
+     *
      * @param id Connector identifier
      * @param type Connector type
      * @param name Connector name
@@ -44,83 +44,83 @@ public class ConnectorSpec {
         this.configuration = configuration != null ? new HashMap<>(configuration) : new HashMap<>();
         this.enabled = enabled;
     }
-    
+
     /**
      * Gets the connector identifier.
-     * 
+     *
      * @return connector ID
      */
     public String getId() {
         return id;
     }
-    
+
     /**
      * Gets the connector type.
-     * 
+     *
      * @return connector type
      */
     public String getType() {
         return type;
     }
-    
+
     /**
      * Gets the connector name.
-     * 
+     *
      * @return connector name
      */
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets the connector description.
-     * 
+     *
      * @return connector description
      */
     public String getDescription() {
         return description;
     }
-    
+
     /**
      * Gets the connector type enum.
-     * 
+     *
      * @return connector type enum
      */
     public ConnectorType getConnectorType() {
         return connectorType;
     }
-    
+
     /**
      * Gets the connector configuration.
-     * 
+     *
      * @return connector configuration
      */
     public Map<String, Object> getConfiguration() {
         return new HashMap<>(configuration);
     }
-    
+
     /**
      * Checks if the connector is enabled.
-     * 
+     *
      * @return true if enabled
      */
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     /**
      * Gets a configuration value.
-     * 
+     *
      * @param key configuration key
      * @return configuration value or null
      */
     public Object getConfigurationValue(String key) {
         return configuration.get(key);
     }
-    
+
     /**
      * Sets a configuration value.
-     * 
+     *
      * @param key configuration key
      * @param value configuration value
      */
@@ -132,17 +132,17 @@ public class ConnectorSpec {
             configuration.remove(key);
         }
     }
-    
+
     /**
      * Checks if a configuration key exists.
-     * 
+     *
      * @param key configuration key
      * @return true if key exists
      */
     public boolean hasConfigurationValue(String key) {
         return configuration.containsKey(key);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -150,12 +150,12 @@ public class ConnectorSpec {
         ConnectorSpec that = (ConnectorSpec) o;
         return id.equals(that.id);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(id);
     }
-    
+
     @Override
     public String toString() {
         return String.format("ConnectorSpec{id='%s', type='%s', name='%s', connectorType=%s, enabled=%s}",

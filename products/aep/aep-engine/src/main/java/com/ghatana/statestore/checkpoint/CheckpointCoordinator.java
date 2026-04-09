@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * Coordinates checkpoints across distributed operators in the event processing pipeline.
  * Manages checkpoint lifecycle: barrier injection, operator acknowledgements, completion tracking.
- * 
+ *
  * <p>Checkpoint Protocol:
  * <ol>
  *   <li>Coordinator triggers checkpoint and injects barriers into streams</li>
@@ -19,7 +19,7 @@ import java.util.Optional;
  * </ol>
  */
 public interface CheckpointCoordinator {
-    
+
     /**
      * Trigger a new automatic checkpoint.
      * Creates a new checkpoint ID, injects barriers, and waits for operator acknowledgements.
@@ -27,7 +27,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving to checkpoint metadata when complete or failed
      */
     Promise<CheckpointMetadata> triggerCheckpoint();
-    
+
     /**
      * Trigger a named savepoint for manual backup.
      * Savepoints are durable and not subject to automatic retention policies.
@@ -36,7 +36,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving to savepoint metadata when complete
      */
     Promise<CheckpointMetadata> triggerSavepoint(String name);
-    
+
     /**
      * Acknowledge a checkpoint from an operator.
      * Called by operators after successfully snapshotting their state.
@@ -47,9 +47,9 @@ public interface CheckpointCoordinator {
      * @param snapshotPath Path or reference to the persisted snapshot
      * @return Promise resolving when acknowledgement is recorded
      */
-    Promise<Void> acknowledgeCheckpoint(CheckpointId checkpointId, String operatorId, 
+    Promise<Void> acknowledgeCheckpoint(CheckpointId checkpointId, String operatorId,
                                        long stateSize, String snapshotPath);
-    
+
     /**
      * Restore system from a checkpoint or savepoint.
      * Loads checkpoint metadata and coordinates operator state restoration.
@@ -58,7 +58,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving when all operators have restored state
      */
     Promise<Void> restoreFromCheckpoint(CheckpointId checkpointId);
-    
+
     /**
      * Get metadata for a specific checkpoint.
      *
@@ -66,7 +66,7 @@ public interface CheckpointCoordinator {
      * @return Optional containing metadata if checkpoint exists
      */
     Optional<CheckpointMetadata> getCheckpointMetadata(CheckpointId checkpointId);
-    
+
     /**
      * List all available checkpoints and savepoints.
      *
@@ -75,7 +75,7 @@ public interface CheckpointCoordinator {
      * @return List of checkpoint metadata sorted by creation time (newest first)
      */
     List<CheckpointMetadata> listCheckpoints(boolean includeCheckpoints, boolean includeSavepoints);
-    
+
     /**
      * Delete old checkpoints according to retention policy.
      * Savepoints are never deleted automatically.
@@ -85,7 +85,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving to count of deleted checkpoints
      */
     Promise<Integer> cleanupCheckpoints(int retentionCount, Duration retentionDuration);
-    
+
     /**
      * Cancel an in-progress checkpoint.
      *
@@ -93,7 +93,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving when checkpoint is cancelled
      */
     Promise<Void> cancelCheckpoint(CheckpointId checkpointId);
-    
+
     /**
      * Start the checkpoint coordinator.
      * Initializes periodic checkpoint triggering if configured.
@@ -101,7 +101,7 @@ public interface CheckpointCoordinator {
      * @return Promise resolving when coordinator is ready
      */
     Promise<Void> start();
-    
+
     /**
      * Stop the checkpoint coordinator.
      * Cancels any in-progress checkpoints and stops periodic triggering.

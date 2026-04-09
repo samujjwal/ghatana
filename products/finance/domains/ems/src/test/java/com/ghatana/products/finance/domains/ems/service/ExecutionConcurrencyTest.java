@@ -1,14 +1,10 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionStatus;
-import com.ghatana.products.finance.domains.ems.domain.RoutedOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -308,7 +304,7 @@ class ExecutionConcurrencyTest {
         }
 
         void processFill(String orderId, String fillId, long quantity) {
-            orders.computeIfPresent(orderId, (id, state) -> 
+            orders.computeIfPresent(orderId, (id, state) ->
                 new OrderState(id, state.status, state.totalFilled + quantity, state.counter)
             );
         }
@@ -319,14 +315,14 @@ class ExecutionConcurrencyTest {
         }
 
         void cancelOrder(String orderId) {
-            orders.computeIfPresent(orderId, (id, state) -> 
+            orders.computeIfPresent(orderId, (id, state) ->
                 new OrderState(id, ExecutionStatus.CANCELLED, state.totalFilled, state.counter)
             );
             cancelledCount.incrementAndGet();
         }
 
         void updateOrderStatus(String orderId, ExecutionStatus status) {
-            orders.computeIfPresent(orderId, (id, state) -> 
+            orders.computeIfPresent(orderId, (id, state) ->
                 new OrderState(id, status, state.totalFilled, state.counter)
             );
         }
@@ -338,17 +334,17 @@ class ExecutionConcurrencyTest {
 
         void transferFill(String fromOrder, String toOrder, long quantity) {
             synchronized (this) {
-                orders.computeIfPresent(fromOrder, (id, state) -> 
+                orders.computeIfPresent(fromOrder, (id, state) ->
                     new OrderState(id, state.status, state.totalFilled - quantity, state.counter)
                 );
-                orders.computeIfPresent(toOrder, (id, state) -> 
+                orders.computeIfPresent(toOrder, (id, state) ->
                     new OrderState(id, state.status, state.totalFilled + quantity, state.counter)
                 );
             }
         }
 
         boolean updateWithOptimisticLock(String orderId) {
-            return orders.computeIfPresent(orderId, (id, state) -> 
+            return orders.computeIfPresent(orderId, (id, state) ->
                 new OrderState(id, state.status, state.totalFilled, state.counter + 1)
             ) != null;
         }
@@ -362,7 +358,7 @@ class ExecutionConcurrencyTest {
         }
 
         void incrementCounter(String orderId) {
-            orders.computeIfPresent(orderId, (id, state) -> 
+            orders.computeIfPresent(orderId, (id, state) ->
                 new OrderState(id, state.status, state.totalFilled, state.counter + 1)
             );
         }

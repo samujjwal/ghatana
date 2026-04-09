@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 /**
  * Dependency injection module for encryption services.
  * Integrates with KeyManager for secure key management and TlsModule for SSL context.
- 
+
  *
  * @doc.type class
  * @doc.purpose Encryption module
@@ -26,12 +26,12 @@ import java.util.concurrent.Executors;
 */
 public class EncryptionModule extends AbstractModule {
     private static final Logger logger = LoggerFactory.getLogger(EncryptionModule.class);
-    
+
     @Override
     protected void configure() {
         logger.info("Configuring EncryptionModule");
     }
-    
+
     @Provides
     Executor encryptionExecutor() {
         return Executors.newCachedThreadPool(r -> {
@@ -40,46 +40,46 @@ public class EncryptionModule extends AbstractModule {
             return thread;
         });
     }
-    
+
     @Provides
     AesGcmEncryptionProvider encryptionProvider(
             EncryptionProperties encryptionProps,
             Executor executor) throws EncryptionException {
-        
+
         // Check if encryption is enabled
         if (!encryptionProps.isEnabled()) {
             logger.warn("Encryption is disabled in configuration. Using a randomly generated key for this session.");
             return AesGcmEncryptionProvider.withNewKey(256, "temporary-session-key", executor);
         }
-        
+
         // Get key from configuration
         String keyAlias = encryptionProps.getKeyAlias();
         String algorithm = encryptionProps.getAlgorithm();
         int keySize = encryptionProps.getKeySize();
-        
+
         // Validate key size for AES
         if (keySize != 128 && keySize != 192 && keySize != 256) {
             throw new EncryptionException("Invalid key size: " + keySize + " bits. Must be 128, 192, or 256 bits for AES.");
         }
-        
+
         // In a real implementation, we would use the KeyManager to get the key
-        logger.info("Initializing AES-GCM encryption with algorithm: {}, key size: {} bits, key alias: {}", 
+        logger.info("Initializing AES-GCM encryption with algorithm: {}, key size: {} bits, key alias: {}",
             algorithm, keySize, keyAlias);
-            
+
         return AesGcmEncryptionProvider.withNewKey(keySize, keyAlias, executor);
     }
-    
+
     @Provides
     EncryptionService encryptionService(
             AesGcmEncryptionProvider encryptionProvider,
             Eventloop eventloop) {
-        
-        logger.info("Initialized EncryptionService with provider: {}", 
+
+        logger.info("Initialized EncryptionService with provider: {}",
             encryptionProvider.getClass().getSimpleName());
-            
+
         return new EncryptionService(encryptionProvider, eventloop);
     }
-    
+
     @Provides
     EncryptionProperties encryptionProperties(Config config) {
         return new EncryptionProperties(config.getChild("security.encryption"));

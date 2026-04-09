@@ -89,7 +89,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         @Test
         @DisplayName("valid constructor with custom pollingConfig")
         void constructorWithCustomPollingConfig() {
-            HumanInTheLoopCoordinatorAgent.PollingConfig config = 
+            HumanInTheLoopCoordinatorAgent.PollingConfig config =
                     new HumanInTheLoopCoordinatorAgent.PollingConfig(1000L, 10);
             HumanInTheLoopCoordinatorAgent.ApprovalGateway gateway = createStubGateway(
                     req -> Promise.of("id"), (tid, rid) -> Promise.of(null));

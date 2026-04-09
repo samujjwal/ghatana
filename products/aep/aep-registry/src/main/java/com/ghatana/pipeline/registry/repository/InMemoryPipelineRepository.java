@@ -106,4 +106,3 @@ public class InMemoryPipelineRepository implements PipelineRepository {
         return Promise.of(found);
     }
 }
-

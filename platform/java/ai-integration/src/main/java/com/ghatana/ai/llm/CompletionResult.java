@@ -56,19 +56,19 @@ public final class CompletionResult {
     public String getText() {
         return text;
     }
-    
+
     /**
      * Convenience method - alias for getText().
-     * 
+     *
      * @return the completion text
      */
     public String text() {
         return text;
     }
-    
+
     /**
      * Convenience method - alias for getModelUsed().
-     * 
+     *
      * @return the model identifier
      */
     public String model() {

@@ -46,7 +46,7 @@ public final class AgentExecutionMetrics implements MeterBinder {
                 .description("Number of failed agent cycle executions")
                 .tags("agent.type", agentType, "tenant.id", tenantId, "pipeline.id", pipelineId)
                 .register(registry);
-                
+
         this.stalledCounter = Counter.builder("agent.execution.stalls")
                 .description("eBPF tracked agent execution stalls")
                 .tags("agent.type", agentType, "tenant.id", tenantId, "pipeline.id", pipelineId)
@@ -63,7 +63,7 @@ public final class AgentExecutionMetrics implements MeterBinder {
             failureCounter.increment();
         }
     }
-    
+
     public void recordStall() {
         if (stalledCounter != null) {
             stalledCounter.increment();

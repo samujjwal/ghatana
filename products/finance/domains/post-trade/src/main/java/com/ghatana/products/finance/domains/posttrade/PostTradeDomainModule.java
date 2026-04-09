@@ -110,7 +110,7 @@ public final class PostTradeDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Post-Trade Domain module");
-        
+
             started = true;
             log.info("Post-Trade Domain module started successfully");
         return Promise.complete();
@@ -119,7 +119,7 @@ public final class PostTradeDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Post-Trade Domain module");
-        
+
             started = false;
             log.info("Post-Trade Domain module stopped successfully");
         return Promise.complete();

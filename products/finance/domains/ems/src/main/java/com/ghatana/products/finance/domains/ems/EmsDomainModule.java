@@ -101,7 +101,7 @@ public final class EmsDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting EMS Domain module");
-        
+
             started = true;
             log.info("EMS Domain module started successfully");
         return Promise.complete();
@@ -110,7 +110,7 @@ public final class EmsDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping EMS Domain module");
-        
+
             started = false;
             log.info("EMS Domain module stopped successfully");
         return Promise.complete();

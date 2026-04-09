@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-/** Test utilities for the debug module. 
+/** Test utilities for the debug module.
  * @doc.type class
  * @doc.purpose Handles debug test utils operations
  * @doc.layer core

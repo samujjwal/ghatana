@@ -165,4 +165,3 @@ public class DefaultFeedbackCollector implements FeedbackCollector {
         return Promise.complete();
     }
 }
-

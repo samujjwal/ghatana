@@ -93,7 +93,7 @@ public class DefaultProjectService implements ProjectService {
             // Prepare variables
             Map<String, Object> variables = new HashMap<>(request.getVariables());
             variables.put("projectName", request.getProjectName());
-            
+
             // Apply defaults from pack
             for (Map.Entry<String, String> entry : pack.getDefaults().entrySet()) {
                 variables.putIfAbsent(entry.getKey(), entry.getValue());
@@ -164,7 +164,7 @@ public class DefaultProjectService implements ProjectService {
     @Override
     public AddResult addFeature(AddFeatureRequest request) {
         long startTime = System.currentTimeMillis();
-        LOG.info("Adding feature {} ({}) to project: {}", 
+        LOG.info("Adding feature {} ({}) to project: {}",
                 request.getFeature(), request.getType(), request.getProjectPath());
 
         if (!isYappcProject(request.getProjectPath())) {
@@ -177,7 +177,7 @@ public class DefaultProjectService implements ProjectService {
         }
 
         ProjectState state = stateOpt.get();
-        
+
         // Check if feature already added
         if (state.hasFeature(request.getFeature()) && !request.isForce()) {
             return AddResult.failure("Feature already added: " + request.getFeature());
@@ -225,11 +225,11 @@ public class DefaultProjectService implements ProjectService {
             }
 
             // Update project state
-            updateProjectStateWithFeature(request.getProjectPath(), request.getFeature(), 
+            updateProjectStateWithFeature(request.getProjectPath(), request.getFeature(),
                     request.getType(), filesCreated);
 
             long duration = System.currentTimeMillis() - startTime;
-            return AddResult.success(request.getProjectPath(), request.getFeature(), 
+            return AddResult.success(request.getProjectPath(), request.getFeature(),
                     request.getType(), filesCreated, dependenciesAdded);
 
         } catch (Exception e) {
@@ -253,7 +253,7 @@ public class DefaultProjectService implements ProjectService {
         // Infer language from base pack
         Optional<PackInfo> basePack = packService.get(basePackName);
         String language = basePack.map(PackInfo::getLanguage).orElse("java");
-        
+
         // Try specific feature pack
         String specificName = language + "-feature-" + feature + (type != null ? "-" + type : "");
         if (packService.exists(specificName)) {
@@ -284,13 +284,13 @@ public class DefaultProjectService implements ProjectService {
 
         ProjectState state = stateOpt.get();
         Optional<PackInfo> currentPackOpt = packService.get(state.getPackName());
-        
+
         if (currentPackOpt.isEmpty()) {
             return UpdateResult.failure("Pack no longer exists: " + state.getPackName());
         }
 
         PackInfo currentPack = currentPackOpt.get();
-        
+
         // Check if update is needed
         if (state.getPackVersion().equals(currentPack.getVersion())) {
             return UpdateResult.noUpdate(request.getProjectPath(), state.getPackVersion());
@@ -439,7 +439,7 @@ public class DefaultProjectService implements ProjectService {
     public List<FeatureInfo> getAvailableFeatures(Path projectPath) {
         // Return standard features available for any project
         return List.of(
-                FeatureInfo.of("database", "Database integration", 
+                FeatureInfo.of("database", "Database integration",
                         List.of("postgresql", "mysql", "mongodb", "h2")),
                 FeatureInfo.of("auth", "Authentication support",
                         List.of("jwt", "oauth2", "basic")),

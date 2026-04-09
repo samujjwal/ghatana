@@ -24,7 +24,7 @@ class AnalyticsPerformanceTest {
     void shouldMeasureQueryThroughput() {
         int queriesPerSecond = 1000;
         int targetThroughput = 500;
-        
+
         assertThat(queriesPerSecond).isGreaterThan(targetThroughput);
     }
 
@@ -33,7 +33,7 @@ class AnalyticsPerformanceTest {
     void shouldMeasureQueryLatency() {
         long latencyMs = 50L;
         long maxLatencyMs = 100L;
-        
+
         assertThat(latencyMs).isLessThan(maxLatencyMs);
     }
 
@@ -42,7 +42,7 @@ class AnalyticsPerformanceTest {
     void shouldHandleConcurrentQueries() {
         int concurrentQueries = 10;
         int maxConcurrency = 20;
-        
+
         assertThat(concurrentQueries).isLessThanOrEqualTo(maxConcurrency);
     }
 
@@ -51,7 +51,7 @@ class AnalyticsPerformanceTest {
     void shouldMeasureResourceUtilization() {
         double cpuUtilization = 0.75;
         double memoryUtilization = 0.60;
-        
+
         assertThat(cpuUtilization).isLessThan(1.0);
         assertThat(memoryUtilization).isLessThan(1.0);
     }
@@ -61,7 +61,7 @@ class AnalyticsPerformanceTest {
     void shouldHandlePerformanceDegradation() {
         long baselineLatency = 50L;
         long degradedLatency = 200L;
-        
+
         assertThat(degradedLatency).isGreaterThan(baselineLatency);
     }
 
@@ -70,7 +70,7 @@ class AnalyticsPerformanceTest {
     void shouldHandlePerformanceOptimization() {
         long optimizedLatency = 30L;
         long baselineLatency = 50L;
-        
+
         assertThat(optimizedLatency).isLessThan(baselineLatency);
     }
 }

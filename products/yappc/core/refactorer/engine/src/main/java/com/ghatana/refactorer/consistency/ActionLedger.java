@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Thread-safe ledger for tracking all actions taken during a session.
  * Supports querying actions by file and detecting regressions.
- 
+
  * @doc.type class
  * @doc.purpose Handles action ledger operations
  * @doc.layer core
@@ -41,12 +41,12 @@ public class ActionLedger {
             context,
             success
         );
-        
+
         actionsByFile.computeIfAbsent(
-            file.toString(), 
+            file.toString(),
             k -> new CopyOnWriteArrayList<>()
         ).add(record);
-        
+
         return record;
     }
 
@@ -74,12 +74,12 @@ public class ActionLedger {
 
     /**
      * Cleans up old records based on TTL.
-     * 
+     *
      * @param ttlHours Records older than this many hours will be removed
      */
     public void cleanupOldRecords(int ttlHours) {
         Instant cutoff = Instant.now().minusSeconds(ttlHours * 3600L);
-        
+
         actionsByFile.forEach(
                 (file, records) -> {
                     List<ActionRecord> filtered =

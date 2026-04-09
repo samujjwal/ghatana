@@ -222,4 +222,3 @@ public class WorkflowPipelineAdapter {
             .replaceAll("[^a-z0-9-]", "");
     }
 }
-

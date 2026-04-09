@@ -132,4 +132,3 @@ class PipelineTemplateLibraryTest {
         assertThat(spec.isEnabled()).isFalse();
     }
 }
-

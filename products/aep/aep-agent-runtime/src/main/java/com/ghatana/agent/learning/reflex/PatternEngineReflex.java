@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Executes high-confidence policies directly without invoking the LLM.
  * Bypasses the REASON phase when confidence exceeds 0.95.
- * 
+ *
  * @doc.type class
  * @doc.purpose High-confidence fast-paths bypassing LLMs
  * @doc.layer platform

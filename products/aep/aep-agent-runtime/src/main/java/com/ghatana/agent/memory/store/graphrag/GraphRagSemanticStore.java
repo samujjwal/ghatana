@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
 public class GraphRagSemanticStore {
 
     private static final Logger log = LoggerFactory.getLogger(GraphRagSemanticStore.class);
-    
+
     // In a real implementation this binds to Jooq/PgVector or Redis Graph client
     private final Executor blockingExecutor;
 
@@ -31,11 +31,11 @@ public class GraphRagSemanticStore {
 
     public Promise<EnhancedFact> storeFact(TenantId tenantId, EnhancedFact fact) {
         log.info("Persisting semantic fact {} via GraphRAG constraints", fact.getId());
-        
+
         return Promise.ofBlocking(blockingExecutor, () -> {
             // Emulate PgVector graph updates here without blocking the Eventloop
             try {
-                Thread.sleep(2); 
+                Thread.sleep(2);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

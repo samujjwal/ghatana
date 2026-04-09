@@ -13,5 +13,3 @@ package com.ghatana.kernel.contracts;
 final class _ContractFamilyDeprecatedPlaceholder {
     // This class is intentionally empty to avoid conflicts
 }
-
-

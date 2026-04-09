@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Tests for edge cases in stack trace parsing. 
+/** Tests for edge cases in stack trace parsing.
  * @doc.type class
  * @doc.purpose Handles stack trace parser edge cases test operations
  * @doc.layer core

@@ -110,7 +110,7 @@ public final class ComplianceDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Compliance Domain module");
-        
+
             started = true;
             log.info("Compliance Domain module started successfully");
         return Promise.complete();
@@ -119,7 +119,7 @@ public final class ComplianceDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Compliance Domain module");
-        
+
             started = false;
             log.info("Compliance Domain module stopped successfully");
         return Promise.complete();

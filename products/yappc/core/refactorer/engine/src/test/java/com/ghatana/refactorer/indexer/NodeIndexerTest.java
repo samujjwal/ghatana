@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for {@link NodeIndexer}. 
+/** Tests for {@link NodeIndexer}.
  * @doc.type class
  * @doc.purpose Handles node indexer test operations
  * @doc.layer core

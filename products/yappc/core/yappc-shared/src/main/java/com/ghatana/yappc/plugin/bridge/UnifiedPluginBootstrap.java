@@ -4,7 +4,6 @@ import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginRegistry;
 import com.ghatana.yappc.plugin.YAPPCPlugin;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

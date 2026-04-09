@@ -121,7 +121,7 @@ public class ServiceException extends BaseException {
      * @return The exception
      */
     public static ServiceException timeout(String serviceName, String operation, long timeoutMs) {
-        String message = String.format("Service '%s' timed out after %d ms during operation '%s'", 
+        String message = String.format("Service '%s' timed out after %d ms during operation '%s'",
                 serviceName, timeoutMs, operation);
         ServiceException exception = new ServiceException(ErrorCode.SERVICE_TIMEOUT, message);
         exception.addMetadata("serviceName", serviceName);

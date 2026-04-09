@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 /**
  * OutputGenerator that calls external services (HTTP, gRPC, etc.).
- * 
+ *
  * <p><b>Use Cases:</b>
  * <ul>
  *   <li>Calling microservices for data/computation</li>
@@ -19,10 +19,10 @@ import java.util.function.Function;
  *   <li>Database queries</li>
  *   <li>Message queue operations</li>
  * </ul>
- * 
+ *
  * <p><b>Example:</b>
  * <pre>{@code
- * ServiceCallGenerator<CodeRequest, ValidationResult> validator = 
+ * ServiceCallGenerator<CodeRequest, ValidationResult> validator =
  *     new ServiceCallGenerator<>(
  *         httpClient,
  *         req -> String.format("/api/validate?lang=%s", req.getLanguage()),
@@ -30,26 +30,26 @@ import java.util.function.Function;
  *         ValidationResult.class
  *     );
  * }</pre>
- * 
+ *
  * @param <TInput> Input type
  * @param <TOutput> Output type
- * 
+ *
  * @doc.type class
  * @doc.purpose External service call output generation
  * @doc.layer framework
  * @doc.pattern Strategy + Adapter
  */
 public final class ServiceCallGenerator<TInput, TOutput> implements OutputGenerator<TInput, TOutput> {
-    
+
     private final ServiceClient serviceClient;
     private final Function<TInput, String> endpointBuilder;
     private final Function<TInput, Object> requestBuilder;
     private final Class<TOutput> responseType;
     private final GeneratorMetadata metadata;
-    
+
     /**
      * Creates a new ServiceCallGenerator.
-     * 
+     *
      * @param serviceClient Service client for making calls
      * @param endpointBuilder Function to build endpoint from input
      * @param requestBuilder Function to build request payload from input
@@ -72,21 +72,21 @@ public final class ServiceCallGenerator<TInput, TOutput> implements OutputGenera
             .property("responseType", responseType.getSimpleName())
             .build();
     }
-    
+
     @Override
     @NotNull
     public Promise<TOutput> generate(@NotNull TInput input, @NotNull AgentContext context) {
         Objects.requireNonNull(input, "input cannot be null");
         Objects.requireNonNull(context, "context cannot be null");
-        
+
         try {
             // 1. Build endpoint and request
             String endpoint = endpointBuilder.apply(input);
             Object request = requestBuilder.apply(input);
-            
+
             context.getLogger().debug("Calling service: {}", endpoint);
             context.addTraceTag("service.endpoint", endpoint);
-            
+
             // 2. Call service
             long startTime = System.currentTimeMillis();
             return serviceClient.call(endpoint, request, responseType, context)
@@ -95,28 +95,28 @@ public final class ServiceCallGenerator<TInput, TOutput> implements OutputGenera
                     long duration = System.currentTimeMillis() - startTime;
                     context.recordMetric("service.call.duration", duration);
                     context.recordMetric("service.call.success", 1);
-                    
+
                     context.getLogger().debug("Service call completed in {}ms", duration);
-                    
+
                     return response;
                 })
                 .whenException(ex -> {
                     context.getLogger().error("Service call failed", ex);
                     context.recordMetric("service.call.failure", 1);
                 });
-            
+
         } catch (Exception ex) {
             context.getLogger().error("Failed to build service request", ex);
             return Promise.ofException(ex);
         }
     }
-    
+
     @Override
     @NotNull
     public GeneratorMetadata getMetadata() {
         return metadata;
     }
-    
+
     @Override
     @NotNull
     public Promise<Double> estimateCost(@NotNull TInput input, @NotNull AgentContext context) {
@@ -124,16 +124,16 @@ public final class ServiceCallGenerator<TInput, TOutput> implements OutputGenera
         // Default to 0, override in specific implementations
         return Promise.of(0.0);
     }
-    
+
     /**
      * Service client interface.
      * Implementations handle protocol-specific details (HTTP, gRPC, etc.).
      */
     public interface ServiceClient {
-        
+
         /**
          * Calls a service endpoint.
-         * 
+         *
          * @param endpoint Service endpoint
          * @param request Request payload
          * @param responseType Expected response type

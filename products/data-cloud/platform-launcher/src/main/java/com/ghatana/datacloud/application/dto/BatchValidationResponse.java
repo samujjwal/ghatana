@@ -47,7 +47,7 @@ public final class BatchValidationResponse {
      * @throws NullPointerException if any non-optional parameter is null
      * @throws IllegalArgumentException if validation fails
      */
-    private BatchValidationResponse(String tenantId, int total, int passed, 
+    private BatchValidationResponse(String tenantId, int total, int passed,
             int failed, List<Map<String, Object>> results, long durationMs) {
         this.tenantId = Objects.requireNonNull(tenantId, "tenantId cannot be null");
         this.results = Objects.requireNonNull(results, "results cannot be null");

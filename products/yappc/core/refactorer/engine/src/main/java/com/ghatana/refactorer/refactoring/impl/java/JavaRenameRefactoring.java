@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Java implementation of {@link RenameRefactoring}. 
+ * Java implementation of {@link RenameRefactoring}.
  * @doc.type class
  * @doc.purpose Handles java rename refactoring operations
  * @doc.layer core

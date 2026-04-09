@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *     }
  * }
  * }</pre>
- 
+
  * @doc.type class
  * @doc.purpose Handles memory planner operations
  * @doc.layer core

@@ -143,4 +143,3 @@ class StructuredLoggerTest {
         StructuredLogger.logInvalid(LOG, "transcribe", "audio data empty");
     }
 }
-

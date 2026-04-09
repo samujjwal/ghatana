@@ -11,7 +11,7 @@ import java.util.Set;
  * </p>
  *
  * @since 2.0
- 
+
  *
  * @doc.type interface
  * @doc.purpose Partition assignment strategy

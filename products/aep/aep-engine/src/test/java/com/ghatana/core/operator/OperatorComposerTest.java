@@ -310,4 +310,3 @@ class OperatorComposerTest extends EventloopTestBase {
         }
     }
 }
-

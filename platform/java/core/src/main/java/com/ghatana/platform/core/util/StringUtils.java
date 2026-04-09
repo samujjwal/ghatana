@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 
 /**
  * Comprehensive string manipulation utilities for common transformations and validations.
- * 
+ *
  * Provides production-grade string operations including null-safe checks, case conversions
  * (camelCase, snake_case, kebab-case, PascalCase), joining/truncation, and generation.
- * 
+ *
  * All methods are static and stateless. Thread-safe for concurrent use.
  *
  * @doc.type class

@@ -131,7 +131,7 @@ public final class ValidationAspect implements AIAspect<Record, Record> {
         }
 
         Validator validator = validators.get(index);
-        
+
         return validator.validate(input, context)
                 .then(result -> {
                     errors.addAll(result.errors());

@@ -173,4 +173,3 @@ class GenerationServiceTest extends EventloopTestBase {
         assertThat(result.metadata()).containsKey("validation_passed");
     }
 }
-

@@ -12,7 +12,7 @@ import java.util.Optional;
  * with optional filtering criteria. All filters are optional and combine with AND
  * logic (all specified filters must match).
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Fluent API</b>: Chain method calls for readable query construction</li>
@@ -21,7 +21,7 @@ import java.util.Optional;
  *   <li><b>Smart Defaults</b>: limit=100, offset=0</li>
  *   <li><b>Validation</b>: Ensures limit >= 1, offset >= 0</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Simple query with one filter
@@ -58,14 +58,14 @@ import java.util.Optional;
  *     .withOffset(40)  // Skip first 2 pages (0-19, 20-39)
  *     .build();
  * }</pre>
- * 
+ *
  * <h2>Default Values</h2>
  * <ul>
  *   <li><b>limit</b>: 100 (maximum results per query)</li>
  *   <li><b>offset</b>: 0 (start from first result)</li>
  *   <li><b>All other filters</b>: null (no filtering)</li>
  * </ul>
- * 
+ *
  * <h2>Filter Semantics</h2>
  * <ul>
  *   <li><b>serviceName</b>: ANY span must have this service (OR across spans)</li>
@@ -73,19 +73,19 @@ import java.util.Optional;
  *   <li><b>tags</b>: ALL tags must match at least one span (AND across tags)</li>
  *   <li><b>duration/time/spanCount</b>: Trace-level filters (exact match)</li>
  * </ul>
- * 
+ *
  * <h2>Pagination</h2>
  * <pre>{@code
  * // Page 1 (first 100 results)
  * TraceQuery page1 = TraceQuery.builder().withLimit(100).withOffset(0).build();
- * 
+ *
  * // Page 2 (next 100 results)
  * TraceQuery page2 = TraceQuery.builder().withLimit(100).withOffset(100).build();
- * 
+ *
  * // Page 3 (next 100 results)
  * TraceQuery page3 = TraceQuery.builder().withLimit(100).withOffset(200).build();
  * }</pre>
- * 
+ *
  * <h2>Validation</h2>
  * Build-time validation ensures:
  * <ul>

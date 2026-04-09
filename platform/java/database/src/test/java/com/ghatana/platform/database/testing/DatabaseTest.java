@@ -125,7 +125,7 @@ import java.lang.annotation.Target;
  *             return null;
  *         });
  *     }
- *     
+ *
  *     @Test
  *     void benchmarkQuery() {
  *         // Data persists from @BeforeAll
@@ -136,12 +136,12 @@ import java.lang.annotation.Target;
  * @ExtendWith(DatabaseTestExtension.class)
  * @DatabaseTest(entityPackages = "com.example.entity")
  * class MethodOverrideTest {
- *     
+ *
  *     @Test
  *     void testWithClassConfig() {
  *         // Uses class-level @DatabaseTest configuration
  *     }
- *     
+ *
  *     // Note: Method-level @DatabaseTest not currently supported
  *     // Container created once per test class
  * }
@@ -158,7 +158,7 @@ import java.lang.annotation.Target;
  *         // Test tenant isolation logic
  *         jdbc.update("SET search_path TO tenant_1");
  *         jdbc.update("INSERT INTO users (email) VALUES (?)", "user1@tenant1.com");
- *         
+ *
  *         jdbc.update("SET search_path TO tenant_2");
  *         Integer count = jdbc.queryForObject(
  *             "SELECT COUNT(*) FROM users",
@@ -190,7 +190,7 @@ import java.lang.annotation.Target;
  *     void test1() {
  *         // Insert data
  *     }
- *     
+ *
  *     @Test
  *     void test2() {
  *         // Data from test1 NOT visible - rolled back
@@ -207,12 +207,12 @@ import java.lang.annotation.Target;
  *     static void loadData() {
  *         // Load once
  *     }
- *     
+ *
  *     @Test
  *     void test1() {
  *         // See data from @BeforeAll
  *     }
- *     
+ *
  *     @Test
  *     void test2() {
  *         // Also see data from @BeforeAll
@@ -266,63 +266,63 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DatabaseTest {
-    
+
     /**
      * The PostgreSQL Docker image to use.
-     * 
+     *
      * @return The Docker image name (default: "postgres:15.4")
      */
     String image() default "";
-    
+
     /**
      * The database name to create.
-     * 
+     *
      * @return The database name (default: "testdb")
      */
     String database() default "";
-    
+
     /**
      * The database username.
-     * 
+     *
      * @return The username (default: "testuser")
      */
     String username() default "";
-    
+
     /**
      * The database password.
-     * 
+     *
      * @return The password (default: "testpass")
      */
     String password() default "";
-    
+
     /**
      * The migration locations to run on startup.
-     * 
+     *
      * <p>If specified, migrations will be automatically executed
      * when the container starts.
-     * 
+     *
      * @return Array of migration locations (default: none)
      */
     String[] migrations() default {};
-    
+
     /**
      * The entity packages to scan for JPA entities.
-     * 
+     *
      * <p>If specified, JPA components (EntityManagerFactory,
      * EntityManagerProvider, TransactionManager) will be created
      * and made available for injection.
-     * 
+     *
      * @return Array of entity package names (default: none)
      */
     String[] entityPackages() default {};
-    
+
     /**
      * Whether to reset the database between test methods.
-     * 
+     *
      * <p>If true, the database will be cleaned and migrations
      * re-run before each test method. This ensures test isolation
      * but may impact performance.
-     * 
+     *
      * @return true to reset between tests (default: false)
      */
     boolean resetBetweenTests() default false;

@@ -20,7 +20,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.activej.promise.Promise;
@@ -43,7 +42,7 @@ public final class SttEngineFactory {
 
         // Try multiple model path resolution strategies
         java.nio.file.Path modelPath = resolveModelPath(config);
-        
+
         if (modelPath != null) {
             try {
                 // Create config with resolved path
@@ -54,7 +53,7 @@ public final class SttEngineFactory {
                     .maxConcurrentRequests(config.maxConcurrentRequests())
                     .maxAudioLengthSeconds(config.maxAudioLengthSeconds())
                     .build();
-                    
+
                 SttEngine engine = new com.ghatana.media.stt.engine.onnx.WhisperOnnxEngine(resolvedConfig, libraryState);
                 LOG.info("Successfully loaded ONNX STT engine from: " + modelPath);
                 return engine;
@@ -68,7 +67,7 @@ public final class SttEngineFactory {
             "Set STT_MODEL_PATH environment variable to a valid Whisper ONNX model.");
         return new StubSttEngine(config, libraryState);
     }
-    
+
     /**
      * Resolve model path using multiple strategies:
      * 1. Explicit config path if it exists
@@ -81,7 +80,7 @@ public final class SttEngineFactory {
         if (config.modelPath() != null && config.modelPath().toFile().exists()) {
             return config.modelPath();
         }
-        
+
         // Strategy 2: Environment variable
         String envPath = System.getenv("STT_MODEL_PATH");
         if (envPath != null && !envPath.isEmpty()) {
@@ -90,7 +89,7 @@ public final class SttEngineFactory {
                 return path;
             }
         }
-        
+
         // Strategy 3: Common model directories
         String[] commonPaths = {
             "/models/whisper-" + config.modelId() + ".onnx",
@@ -98,7 +97,7 @@ public final class SttEngineFactory {
             "/usr/local/share/whisper/models/" + config.modelId() + ".onnx",
             "models/whisper-" + config.modelId() + ".onnx", // Relative to working dir
         };
-        
+
         for (String pathStr : commonPaths) {
             java.nio.file.Path path = java.nio.file.Paths.get(pathStr);
             if (path.toFile().exists()) {
@@ -106,18 +105,18 @@ public final class SttEngineFactory {
                 return path;
             }
         }
-        
+
         // Strategy 4: User home download directory
         String userHome = System.getProperty("user.home");
         if (userHome != null) {
-            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "models", 
+            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "models",
                 "whisper-" + config.modelId() + ".onnx");
             if (userPath.toFile().exists()) {
                 LOG.info("Found model in user cache: " + userPath);
                 return userPath;
             }
         }
-        
+
         return null;
     }
 

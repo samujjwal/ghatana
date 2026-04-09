@@ -45,7 +45,7 @@ import java.util.Objects;
  * // At startup (env config only)
  * UnifiedAepConfigValidator.validateEnvConfig(System.getenv());
  *
- * // Combined    
+ * // Combined
  * UnifiedAepConfigValidator.validateAll(config, System.getenv());
  * }</pre>
  *

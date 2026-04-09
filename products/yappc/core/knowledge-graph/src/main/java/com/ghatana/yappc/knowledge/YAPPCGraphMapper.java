@@ -5,10 +5,8 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.yappc.knowledge.model.*;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Maps between YAPPC and Data-Cloud graph models.
@@ -21,7 +19,7 @@ import java.util.Set;
  * @doc.pattern Mapper
  */
 public class YAPPCGraphMapper {
-    
+
     public GraphNode toDataCloudNode(YAPPCGraphNode yappcNode) {
         Map<String, Object> properties = new HashMap<>(yappcNode.properties());
         properties.put("name", yappcNode.name());
@@ -32,7 +30,7 @@ public class YAPPCGraphMapper {
         if (yappcNode.metadata().workspaceId() != null) {
             properties.put("workspaceId", yappcNode.metadata().workspaceId());
         }
-        
+
         return GraphNode.builder()
                 .id(yappcNode.id())
                 .type(yappcNode.type().name())
@@ -44,14 +42,14 @@ public class YAPPCGraphMapper {
                 .version(Long.parseLong(yappcNode.metadata().version()))
                 .build();
     }
-    
+
     public YAPPCGraphNode fromDataCloudNode(GraphNode dcNode) {
         Map<String, Object> props = new HashMap<>(dcNode.getProperties());
         String name = (String) props.remove("name");
         String description = (String) props.remove("description");
         String projectId = (String) props.remove("projectId");
         String workspaceId = (String) props.remove("workspaceId");
-        
+
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
                 dcNode.getTenantId(),
                 projectId,
@@ -62,7 +60,7 @@ public class YAPPCGraphMapper {
                 String.valueOf(dcNode.getVersion()),
                 Map.of()
         );
-        
+
         return YAPPCGraphNode.builder()
                 .id(dcNode.getId())
                 .type(YAPPCGraphNode.YAPPCNodeType.valueOf(dcNode.getType()))
@@ -73,7 +71,7 @@ public class YAPPCGraphMapper {
                 .metadata(metadata)
                 .build();
     }
-    
+
     public GraphEdge toDataCloudEdge(YAPPCGraphEdge yappcEdge) {
         return GraphEdge.builder()
                 .id(yappcEdge.id())
@@ -87,7 +85,7 @@ public class YAPPCGraphMapper {
                 .version(Long.parseLong(yappcEdge.metadata().version()))
                 .build();
     }
-    
+
     public YAPPCGraphEdge fromDataCloudEdge(GraphEdge dcEdge) {
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
                 dcEdge.getTenantId(),
@@ -99,7 +97,7 @@ public class YAPPCGraphMapper {
                 String.valueOf(dcEdge.getVersion()),
                 Map.of()
         );
-        
+
         return YAPPCGraphEdge.builder()
                 .id(dcEdge.getId())
                 .sourceNodeId(dcEdge.getSourceNodeId())

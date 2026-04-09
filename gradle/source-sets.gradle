@@ -12,7 +12,7 @@ sourceSets {
             srcDirs = ['src/main/resources']
         }
     }
-    
+
     test {
         java {
             srcDirs = ['src/test/java']
@@ -21,7 +21,7 @@ sourceSets {
             srcDirs = ['src/test/resources']
         }
     }
-    
+
     // Optional: Integration test source set
     if (project.hasProperty('enableIntegrationTests')) {
         integrationTest {
@@ -37,7 +37,7 @@ sourceSets {
             runtimeClasspath += sourceSets.test.runtimeClasspath
         }
     }
-    
+
     // Optional: Functional test source set
     if (project.hasProperty('enableFunctionalTests')) {
         functionalTest {
@@ -53,7 +53,7 @@ sourceSets {
             runtimeClasspath += sourceSets.test.runtimeClasspath
         }
     }
-    
+
     // Optional: Performance test source set (JMH)
     if (project.hasProperty('enableJmh')) {
         jmh {
@@ -74,20 +74,20 @@ if (project.hasProperty('enableIntegrationTests')) {
     task integrationTest(type: Test) {
         description = 'Runs integration tests.'
         group = 'verification'
-        
+
         testClassesDirs = sourceSets.integrationTest.output.classesDirs
         classpath = sourceSets.integrationTest.runtimeClasspath
-        
+
         shouldRunAfter test
-        
+
         useJUnitPlatform()
-        
+
         testLogging {
             events 'passed', 'skipped', 'failed'
             showStandardStreams = true
         }
     }
-    
+
     check.dependsOn integrationTest
 }
 
@@ -95,19 +95,19 @@ if (project.hasProperty('enableFunctionalTests')) {
     task functionalTest(type: Test) {
         description = 'Runs functional tests.'
         group = 'verification'
-        
+
         testClassesDirs = sourceSets.functionalTest.output.classesDirs
         classpath = sourceSets.functionalTest.runtimeClasspath
-        
+
         shouldRunAfter test, integrationTest
-        
+
         useJUnitPlatform()
-        
+
         testLogging {
             events 'passed', 'skipped', 'failed'
             showStandardStreams = true
         }
     }
-    
+
     check.dependsOn functionalTest
 }

@@ -110,7 +110,7 @@ public final class ReconciliationDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Reconciliation Domain module");
-        
+
             started = true;
             log.info("Reconciliation Domain module started successfully");
         return Promise.complete();
@@ -119,7 +119,7 @@ public final class ReconciliationDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Reconciliation Domain module");
-        
+
             started = false;
             log.info("Reconciliation Domain module stopped successfully");
         return Promise.complete();

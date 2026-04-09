@@ -15,10 +15,10 @@ class AsyncTestUtilsTest {
     void await_shouldReturnFutureResult() {
         // Given
         CompletableFuture<String> future = CompletableFuture.completedFuture("test");
-        
+
         // When
         String result = AsyncTestUtils.await(future, Duration.ofSeconds(1));
-        
+
         // Then
         assertThat(result).isEqualTo("test");
     }
@@ -27,7 +27,7 @@ class AsyncTestUtilsTest {
     void await_shouldThrowOnTimeout() {
         // Given
         CompletableFuture<String> future = new CompletableFuture<>();
-        
+
         // When/Then
         assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofMillis(100)))
             .isInstanceOf(RuntimeException.class)
@@ -38,7 +38,7 @@ class AsyncTestUtilsTest {
     void await_shouldThrowOnException() {
         // Given
         CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("test error"));
-        
+
         // When/Then
         assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofSeconds(1)))
             .isInstanceOf(RuntimeException.class)
@@ -49,7 +49,7 @@ class AsyncTestUtilsTest {
     void awaitCondition_shouldReturnWhenConditionIsMet() {
         // Given
         AtomicBoolean condition = new AtomicBoolean(false);
-        
+
         // When
         new Thread(() -> {
             try {
@@ -59,9 +59,9 @@ class AsyncTestUtilsTest {
                 Thread.currentThread().interrupt();
             }
         }).start();
-        
+
         // Then
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             AsyncTestUtils.await(condition::get, Duration.ofSeconds(1), Duration.ofMillis(10))
         );
     }
@@ -70,9 +70,9 @@ class AsyncTestUtilsTest {
     void awaitCondition_shouldThrowOnTimeout() {
         // Given
         AtomicBoolean condition = new AtomicBoolean(false);
-        
+
         // When/Then
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             AsyncTestUtils.await(condition::get, Duration.ofMillis(100), Duration.ofMillis(10))
         ).isInstanceOf(RuntimeException.class)
          .hasMessageContaining("Condition not met");
@@ -83,11 +83,11 @@ class AsyncTestUtilsTest {
         // Given
         long startTime = System.currentTimeMillis();
         CompletableFuture<String> future = AsyncTestUtils.delayedFuture("test", Duration.ofMillis(100));
-        
+
         // When
         String result = future.join();
         long duration = System.currentTimeMillis() - startTime;
-        
+
         // Then
         assertThat(result).isEqualTo("test");
         assertThat(duration).isGreaterThanOrEqualTo(100);
@@ -97,10 +97,10 @@ class AsyncTestUtilsTest {
     void delayedFailure_shouldFailAfterDelay() {
         // Given
         CompletableFuture<String> future = AsyncTestUtils.delayedFailure(
-            new RuntimeException("test error"), 
+            new RuntimeException("test error"),
             Duration.ofMillis(100)
         );
-        
+
         // When/Then
         assertThatThrownBy(future::join)
             .isInstanceOf(CompletionException.class)

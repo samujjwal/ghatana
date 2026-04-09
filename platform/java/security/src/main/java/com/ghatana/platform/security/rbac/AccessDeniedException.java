@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Exception thrown when access is denied due to insufficient permissions.
- 
+
  *
  * @doc.type class
  * @doc.purpose Access denied exception

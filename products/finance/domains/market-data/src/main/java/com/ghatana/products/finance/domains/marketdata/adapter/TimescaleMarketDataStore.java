@@ -7,11 +7,9 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.*;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;

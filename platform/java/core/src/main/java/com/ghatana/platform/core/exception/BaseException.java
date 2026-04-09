@@ -99,10 +99,10 @@ import java.util.Map;
  *     ErrorCode code = e.getErrorCode();
  *     int httpStatus = code.getHttpStatus();
  *     String message = code.getDefaultMessage();
- *     
+ *
  *     log.error("Operation failed [code={}, status={}]",
  *         code, httpStatus, e);
- *     
+ *
  *     return ResponseEntity
  *         .status(httpStatus)
  *         .body(new ErrorResponse(code.getCode(), message));

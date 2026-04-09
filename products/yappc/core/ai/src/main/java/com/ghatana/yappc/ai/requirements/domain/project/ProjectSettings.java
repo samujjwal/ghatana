@@ -21,7 +21,7 @@ import java.util.Map;
  *     List.of("FUNCTIONAL", "NON_FUNCTIONAL", "CONSTRAINT"),
  *     Map.of()
  * );
- * 
+ *
  * // Or use defaults
  * ProjectSettings defaults = ProjectSettings.defaults();
  * }</pre>

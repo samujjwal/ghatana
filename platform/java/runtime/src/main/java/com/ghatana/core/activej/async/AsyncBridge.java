@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 /**
  * Bridge utility for converting between ActiveJ Promise and CompletableFuture.
- * 
+ *
  * <p>
  * <b>Purpose</b><br>
  * Provides a single, consistent way to:
@@ -26,25 +26,25 @@ import java.util.function.Supplier;
  * <li>Prevent eventloop blocking</li>
  * <li>Maintain async semantics across boundaries</li>
  * </ul>
- * 
+ *
  * <p>
  * <b>Usage Examples</b><br>
- * 
+ *
  * <pre>{@code
  * // Run blocking operation off eventloop
  * Promise<String> result = AsyncBridge.runBlocking(() -> {
  *     return blockingDatabaseCall();
  * });
- * 
+ *
  * // Convert CompletableFuture to Promise
  * CompletableFuture<Data> future = externalService.fetchData();
  * Promise<Data> promise = AsyncBridge.fromFuture(future);
- * 
+ *
  * // Convert Promise to CompletableFuture
  * Promise<Result> promise = processAsync();
  * CompletableFuture<Result> future = AsyncBridge.toFuture(promise);
  * }</pre>
- * 
+ *
  * @doc.type class
  * @doc.purpose Async concurrency bridge
  * @doc.layer infrastructure
@@ -67,11 +67,11 @@ public final class AsyncBridge {
 
     /**
      * Runs a blocking operation on a dedicated executor and returns a Promise.
-     * 
+     *
      * <p>
      * This method ensures that blocking I/O operations (database calls,
      * file I/O, synchronous HTTP clients, etc.) do not block the ActiveJ eventloop.
-     * 
+     *
      * @param <T>      the result type
      * @param supplier the blocking operation to execute
      * @return Promise that completes with the result
@@ -92,7 +92,7 @@ public final class AsyncBridge {
 
     /**
      * Runs a blocking operation with a custom executor.
-     * 
+     *
      * @param <T>      the result type
      * @param executor the executor to use
      * @param supplier the blocking operation
@@ -114,11 +114,11 @@ public final class AsyncBridge {
 
     /**
      * Converts a CompletableFuture to an ActiveJ Promise.
-     * 
+     *
      * <p>
      * The Promise will complete when the CompletableFuture completes,
      * preserving both success and failure outcomes.
-     * 
+     *
      * @param <T>    the result type
      * @param future the CompletableFuture to convert
      * @return Promise that mirrors the future's completion
@@ -139,11 +139,11 @@ public final class AsyncBridge {
 
     /**
      * Converts an ActiveJ Promise to a CompletableFuture.
-     * 
+     *
      * <p>
      * The CompletableFuture will complete when the Promise completes,
      * preserving both success and failure outcomes.
-     * 
+     *
      * @param <T>     the result type
      * @param promise the Promise to convert
      * @return CompletableFuture that mirrors the promise's completion
@@ -164,7 +164,7 @@ public final class AsyncBridge {
 
     /**
      * Runs a blocking operation and converts the result to CompletableFuture.
-     * 
+     *
      * @param <T>      the result type
      * @param supplier the blocking operation
      * @return CompletableFuture that completes with the result
@@ -175,7 +175,7 @@ public final class AsyncBridge {
 
     /**
      * Gets the default blocking executor used by AsyncBridge.
-     * 
+     *
      * @return the blocking executor
      */
     public static Executor getBlockingExecutor() {

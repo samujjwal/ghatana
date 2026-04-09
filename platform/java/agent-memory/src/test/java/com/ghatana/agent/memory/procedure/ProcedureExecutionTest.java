@@ -1,6 +1,5 @@
 package com.ghatana.agent.memory.procedure;
 
-import com.ghatana.agent.memory.model.Provenance;
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.procedure.ProcedureStep;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** Jacoco coverage tool (stub). 
+/** Jacoco coverage tool (stub).
  * @doc.type class
  * @doc.purpose Handles jacoco tool operations
  * @doc.layer core

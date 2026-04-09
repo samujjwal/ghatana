@@ -6,16 +6,16 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Factory for creating WidgetDataCloudAdapter instances.
- * 
+ *
  * <p>Supports both data-cloud and JPA implementations for gradual migration.
- * 
+ *
  * @doc.type class
  * @doc.purpose Factory for widget adapters
  * @doc.layer infrastructure
  * @doc.pattern Factory
  */
 public class WidgetRepositoryFactory {
-    
+
     /**
      * Creates a data-cloud backed widget adapter.
      */
@@ -26,5 +26,5 @@ public class WidgetRepositoryFactory {
     ) {
         return new WidgetDataCloudAdapter(client, mapper);
     }
-    
+
 }

@@ -15,9 +15,6 @@
  */
 plugins {
     id("java-library")
-    id("com.diffplug.spotless")
-    checkstyle
-    pmd
 }
 
 group = "com.ghatana.aep"
@@ -118,28 +115,9 @@ tasks.test {
 // CODE QUALITY — Spotless, Checkstyle, PMD
 // =============================================================================
 
-spotless {
-    java {
-        palantirJavaFormat()
-        removeUnusedImports()
-        trimTrailingWhitespace()
-    }
-}
 
-checkstyle {
-    toolVersion = libs.versions.checkstyle.get()
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-    isIgnoreFailures = false
-}
 
-pmd {
-    toolVersion = libs.versions.pmd.get()
-    ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
-    isIgnoreFailures = true
-}
 
-tasks.named("checkstyleMain") { dependsOn("spotlessJavaCheck") }
-tasks.named("pmdMain") { dependsOn("checkstyleMain") }
 
 // =============================================================================
 // validateAgentCatalogs — run CatalogCanonicalValuesTest as a named quality gate

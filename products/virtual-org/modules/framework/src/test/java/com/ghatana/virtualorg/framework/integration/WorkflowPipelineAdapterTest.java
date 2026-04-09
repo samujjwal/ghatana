@@ -261,4 +261,3 @@ class WorkflowPipelineAdapterTest extends EventloopTestBase {
             .hasSize(2);
     }
 }
-

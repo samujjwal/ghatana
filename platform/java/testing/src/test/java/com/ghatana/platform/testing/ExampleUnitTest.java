@@ -18,7 +18,7 @@ class ExampleUnitTest {
     void basicAssertions() {
         // Given
         String actual = "test";
-        
+
         // When & Then
         assertThat(actual)
             .isNotBlank()
@@ -38,10 +38,10 @@ class ExampleUnitTest {
     void mockExample() {
         // Given
         var mockService = mock(Runnable.class);
-        
+
         // When
         mockService.run();
-        
+
         // Then
         verify(mockService, times(1)).run();
     }

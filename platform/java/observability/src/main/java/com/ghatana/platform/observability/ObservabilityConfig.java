@@ -69,19 +69,19 @@ import java.util.Objects;
  * @notes Immutable value objects; configuration loaded once at startup
  */
 public class ObservabilityConfig {
-    
+
     private final MetricsConfig metricsConfig;
     private final TracingConfig tracingConfig;
     private final MonitoringConfig monitoringConfig;
     private final ServiceConfig serviceConfig;
-    
-    public ObservabilityConfig(MetricsConfig metricsConfig, 
+
+    public ObservabilityConfig(MetricsConfig metricsConfig,
                              TracingConfig tracingConfig,
                              MonitoringConfig monitoringConfig) {
         this(metricsConfig, tracingConfig, monitoringConfig, ServiceConfig.defaultConfig());
     }
 
-    public ObservabilityConfig(MetricsConfig metricsConfig, 
+    public ObservabilityConfig(MetricsConfig metricsConfig,
                              TracingConfig tracingConfig,
                              MonitoringConfig monitoringConfig,
                              ServiceConfig serviceConfig) {
@@ -90,7 +90,7 @@ public class ObservabilityConfig {
         this.monitoringConfig = Objects.requireNonNull(monitoringConfig);
         this.serviceConfig = Objects.requireNonNull(serviceConfig);
     }
-    
+
     /**
      * Load configuration from the environment.
      */
@@ -100,7 +100,7 @@ public class ObservabilityConfig {
         // 2. application.conf
         // 3. reference.conf (bundled with the library)
         Config config = ConfigFactory.load();
-        
+
         // Extract configuration sections
         MetricsConfig metricsConfig = MetricsConfig.from(config.getConfig("observability.metrics"));
         TracingConfig tracingConfig = TracingConfig.from(config.getConfig("observability.tracing"));
@@ -108,18 +108,18 @@ public class ObservabilityConfig {
         ServiceConfig serviceConfig = config.hasPath("observability.service")
                 ? ServiceConfig.from(config.getConfig("observability.service"))
                 : ServiceConfig.defaultConfig();
-        
+
         return new ObservabilityConfig(metricsConfig, tracingConfig, monitoringConfig, serviceConfig);
     }
-    
+
     public MetricsConfig getMetricsConfig() {
         return metricsConfig;
     }
-    
+
     public TracingConfig getTracingConfig() {
         return tracingConfig;
     }
-    
+
     public MonitoringConfig getMonitoringConfig() {
         return monitoringConfig;
     }
@@ -127,7 +127,7 @@ public class ObservabilityConfig {
     public ServiceConfig getServiceConfig() {
         return serviceConfig;
     }
-    
+
     /**
      * Metrics configuration.
      */
@@ -135,13 +135,13 @@ public class ObservabilityConfig {
         private final String exporterType; // prometheus, statsd, etc.
         private final String endpoint;     // Where to export metrics
         private final int exportIntervalMs; // How often to export metrics
-        
+
         public MetricsConfig(String exporterType, String endpoint, int exportIntervalMs) {
             this.exporterType = exporterType;
             this.endpoint = endpoint;
             this.exportIntervalMs = exportIntervalMs;
         }
-        
+
         public static MetricsConfig from(Config config) {
             return new MetricsConfig(
                 config.getString("exporter"),
@@ -149,13 +149,13 @@ public class ObservabilityConfig {
                 config.getInt("export-interval-ms")
             );
         }
-        
+
         // Getters...
         public String getExporterType() { return exporterType; }
         public String getEndpoint() { return endpoint; }
         public int getExportIntervalMs() { return exportIntervalMs; }
     }
-    
+
     /**
      * Tracing configuration.
      */
@@ -164,14 +164,14 @@ public class ObservabilityConfig {
         private final String exporterType; // jaeger, zipkin, otlp, etc.
         private final String endpoint;     // Where to export traces
         private final Sampler sampler;     // Sampling strategy
-        
+
         public TracingConfig(boolean enabled, String exporterType, String endpoint, Sampler sampler) {
             this.enabled = enabled;
             this.exporterType = exporterType;
             this.endpoint = endpoint;
             this.sampler = sampler;
         }
-        
+
         public static TracingConfig from(Config config) {
             return new TracingConfig(
                 config.getBoolean("enabled"),
@@ -180,14 +180,14 @@ public class ObservabilityConfig {
                 Sampler.alwaysOn() // Default to always sample for now
             );
         }
-        
+
         // Getters...
         public boolean isEnabled() { return enabled; }
         public String getExporterType() { return exporterType; }
         public String getEndpoint() { return endpoint; }
         public Sampler getSampler() { return sampler; }
     }
-    
+
     /**
      * Monitoring configuration.
      */
@@ -196,14 +196,14 @@ public class ObservabilityConfig {
         private final int port;            // Port for the monitoring server
         private final String endpoint;      // Base path for monitoring endpoints
         private final boolean exposeJvmMetrics; // Whether to expose JVM metrics
-        
+
         public MonitoringConfig(boolean enabled, int port, String endpoint, boolean exposeJvmMetrics) {
             this.enabled = enabled;
             this.port = port;
             this.endpoint = endpoint;
             this.exposeJvmMetrics = exposeJvmMetrics;
         }
-        
+
         public static MonitoringConfig from(Config config) {
             return new MonitoringConfig(
                 config.getBoolean("enabled"),
@@ -212,7 +212,7 @@ public class ObservabilityConfig {
                 config.getBoolean("expose-jvm-metrics")
             );
         }
-        
+
         // Getters...
         public boolean isEnabled() { return enabled; }
         public int getPort() { return port; }

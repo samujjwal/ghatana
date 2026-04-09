@@ -66,7 +66,7 @@ public final class StructuredLogger {
      * Logs an operation start.
      */
     public void operationStart(String operation, Object... params) {
-        log(Level.INFO, "OPERATION_START", operation, 
+        log(Level.INFO, "OPERATION_START", operation,
             () -> formatParams(params));
     }
 

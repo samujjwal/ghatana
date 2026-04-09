@@ -155,7 +155,7 @@ class OrderPerformanceTest {
     void shouldMeasureOrderLatency() {
         // GIVEN: Order processing
         Instant startTime = Instant.now();
-        
+
         Order order = Order.newOrder(
             "ORD-005", "client-1", "account-1", "INST-001",
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
@@ -167,7 +167,7 @@ class OrderPerformanceTest {
         Order approved = order.withStatus(OrderStatus.APPROVED);
         Order routed = approved.withStatus(OrderStatus.ROUTED);
         Order filled = routed.withStatus(OrderStatus.FILLED);
-        
+
         Instant endTime = Instant.now();
         Duration latency = Duration.between(startTime, endTime);
 
@@ -180,7 +180,7 @@ class OrderPerformanceTest {
     void shouldHandleConcurrentOrderCreation() {
         // GIVEN: Multiple concurrent orders
         int concurrentOrders = 100;
-        
+
         // WHEN: Create orders concurrently
         long startTime = System.currentTimeMillis();
         List<Order> orders = new ArrayList<>();
@@ -204,11 +204,11 @@ class OrderPerformanceTest {
     void shouldOptimizeMemoryUsage() {
         // GIVEN: Large number of orders
         int orderCount = 10000;
-        
+
         // WHEN: Create many orders
         Runtime runtime = Runtime.getRuntime();
         long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
-        
+
         List<Order> orders = new ArrayList<>();
         for (int i = 0; i < orderCount; i++) {
             orders.add(Order.newOrder(
@@ -218,7 +218,7 @@ class OrderPerformanceTest {
                 "key-mem-" + i, testTime, testTimeBs
             ));
         }
-        
+
         long memoryAfter = runtime.totalMemory() - runtime.freeMemory();
         long memoryUsed = memoryAfter - memoryBefore;
 

@@ -21,7 +21,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -176,7 +175,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
             lenient().when(collectionService.getById(eq(requestingTenant), eq(collectionId)))
                     .thenReturn(Promise.of(Optional.empty()));
 
-            Optional<Collection> result = runPromise(() -> 
+            Optional<Collection> result = runPromise(() ->
                     collectionService.getById(requestingTenant, collectionId));
 
             assertThat(result).isEmpty();
@@ -317,7 +316,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
 
             // Search for "John" in tenant-1's collection
             // Must not return "John" from tenant-2's collection
-            
+
             assertThat(tenantId).isNotBlank();
             assertThat(collectionId).isNotBlank();
         }
@@ -327,7 +326,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         void searchMustSupportPagination() {
             // Request: /api/v1/collections/coll-1/search?q=test&limit=10&offset=0
             // Response: {results: [...], total: 1234, hasMore: true}
-            
+
             int limit = 10;
             int offset = 0;
             assertThat(limit).isGreaterThan(0);
@@ -338,10 +337,10 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         @DisplayName("search results must respect field-level access controls")
         void searchMustRespectFieldAccess() {
             // If user cannot access SSN field, search results must not expose it
-            
+
             String sensitiveField = "ssn";
             String publicField = "name";
-            
+
             assertThat(sensitiveField).isNotEqualTo(publicField);
         }
     }
@@ -360,10 +359,10 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
             // Old API: POST /api/v1/collections
             // New API supports: POST /api/v2/collections (with enhancements)
             // v1 must still work
-            
+
             String v1Endpoint = "/api/v1/collections";
             String v2Endpoint = "/api/v2/collections";
-            
+
             assertThat(v1Endpoint).isNotEqualTo(v2Endpoint);
         }
 
@@ -371,12 +370,12 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         @DisplayName("collection response may include new optional fields")
         void newFieldsMustBeOptional() {
             Collection collection = new Collection("coll-1", "tenant-1", "users");
-            
+
             // Existing fields (required)
             assertThat(collection.id).isNotBlank();
             assertThat(collection.tenantId).isNotBlank();
             assertThat(collection.name).isNotBlank();
-            
+
             // New optional fields (like metadata, tags, etc)
             // Old clients ignore them without breaking
         }
@@ -385,7 +384,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         @DisplayName("required fields must not be removed or renamed")
         void requiredFieldsMustBeStable() {
             String collectionJson = "{\"id\": \"coll-1\", \"tenantId\": \"tenant-1\", \"name\": \"users\"}";
-            
+
             // These fields appeared in v1 and must exist in v2
             assertThat(collectionJson).contains("\"id\"");
             assertThat(collectionJson).contains("\"tenantId\"");
@@ -408,11 +407,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
             // Agent B: GET /api/v1/collections/coll-1 (version=5)
             // Agent A: PATCH /api/v1/collections/coll-1 (if-match: 5) → Success (version=6)
             // Agent B: PATCH /api/v1/collections/coll-1 (if-match: 5) → Conflict (version mismatch)
-            
+
             long versionA = 5;
             long versionB = 5;
             long currentVersion = 6;
-            
+
             assertThat(versionA).isEqualTo(versionB);
             assertThat(currentVersion).isGreaterThan(versionA);
         }

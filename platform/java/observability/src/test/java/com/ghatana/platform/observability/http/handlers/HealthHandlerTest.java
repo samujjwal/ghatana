@@ -5,7 +5,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.observability.trace.MockTraceStorage;
 import com.ghatana.platform.testing.activej.ActiveJServletTestUtil;
 import com.ghatana.platform.testing.activej.EventloopExtension;
-import com.ghatana.platform.testing.activej.EventloopTestUtil;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;

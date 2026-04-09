@@ -63,10 +63,10 @@ import java.util.UUID;
  *     meterRegistry,
  *     tracer
  * );
- * 
+ *
  * // Create senior engineer with appropriate authority
  * VirtualOrgAgent engineer = factory.createAgent(AgentRoleProto.AGENT_ROLE_SENIOR_ENGINEER);
- * 
+ *
  * // Agent is pre-configured with:
  * // - Authority: implement_feature, code_review, refactor (escalates architecture changes)
  * // - LLM: GPT-4 with temperature=0.2 for precision

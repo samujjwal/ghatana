@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for {@link TscRunner}. 
+/** Tests for {@link TscRunner}.
  * @doc.type class
  * @doc.purpose Handles tsc runner test operations
  * @doc.layer core

@@ -3,7 +3,7 @@ package com.ghatana.refactorer.shared.codemods;
 import java.util.Objects;
 
 /**
- * Represents a single code modification action. 
+ * Represents a single code modification action.
  * @doc.type class
  * @doc.purpose Handles code action operations
  * @doc.layer core

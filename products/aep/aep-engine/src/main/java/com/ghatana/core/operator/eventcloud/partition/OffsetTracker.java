@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * </p>
  *
  * @since 2.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Offset tracker

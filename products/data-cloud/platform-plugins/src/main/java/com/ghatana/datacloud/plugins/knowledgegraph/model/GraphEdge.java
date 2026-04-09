@@ -11,12 +11,12 @@ import java.util.Map;
 
 /**
  * Represents an edge (relationship) in the knowledge graph.
- * 
+ *
  * <p>Immutable value object representing a directed edge between two nodes.
  * Edges can have properties and represent various types of relationships.
- * 
+ *
  * <p><b>Thread Safety:</b> Immutable and thread-safe
- * 
+ *
  * <p><b>Usage:</b>
  * <pre>{@code
  * GraphEdge edge = GraphEdge.builder()
@@ -28,7 +28,7 @@ import java.util.Map;
  *     .tenantId("tenant-123")
  *     .build();
  * }</pre>
- * 
+ *
  * @doc.type record
  * @doc.purpose Immutable graph edge representation
  * @doc.layer domain
@@ -37,59 +37,59 @@ import java.util.Map;
 @Value
 @Builder(toBuilder = true)
 public class GraphEdge {
-    
+
     /**
      * Unique identifier for the edge.
      * Must be unique within the tenant scope.
      */
     @With
     String id;
-    
+
     /**
      * ID of the source node.
      * Must reference an existing node in the same tenant.
      */
     String sourceNodeId;
-    
+
     /**
      * ID of the target node.
      * Must reference an existing node in the same tenant.
      */
     String targetNodeId;
-    
+
     /**
      * Type of relationship (e.g., "DEPENDS_ON", "IMPLEMENTS", "EXTENDS").
      * Used for categorization and querying.
      */
     String relationshipType;
-    
+
     /**
      * Arbitrary properties associated with the edge.
      * Can contain any JSON-serializable values.
      */
     Map<String, Object> properties;
-    
+
     /**
      * Tenant identifier for multi-tenancy support.
      * All operations must validate tenant access.
      */
     String tenantId;
-    
+
     /**
      * Timestamp when the edge was created.
      */
     Instant createdAt;
-    
+
     /**
      * Timestamp when the edge was last updated.
      */
     Instant updatedAt;
-    
+
     /**
      * Version for optimistic locking.
      */
     Long version;
-    
+
     @JsonCreator
     public GraphEdge(
             @JsonProperty("id") String id,
@@ -111,7 +111,7 @@ public class GraphEdge {
         this.updatedAt = updatedAt != null ? updatedAt : Instant.now();
         this.version = version != null ? version : 1L;
     }
-    
+
     /**
      * Creates a new edge with the current timestamp as updatedAt.
      */
@@ -121,7 +121,7 @@ public class GraphEdge {
                 .version(version + 1)
                 .build();
     }
-    
+
     /**
      * Validates the edge has all required fields.
      */
@@ -145,28 +145,28 @@ public class GraphEdge {
             throw new IllegalArgumentException("Edge cannot connect a node to itself");
         }
     }
-    
+
     /**
      * Gets a property value by key.
      */
     public Object getProperty(String key) {
         return properties.get(key);
     }
-    
+
     /**
      * Checks if this edge is directed from source to target.
      */
     public boolean isDirectedFrom(String nodeId) {
         return sourceNodeId.equals(nodeId);
     }
-    
+
     /**
      * Checks if this edge is directed to target.
      */
     public boolean isDirectedTo(String nodeId) {
         return targetNodeId.equals(nodeId);
     }
-    
+
     /**
      * Checks if this edge connects the given node (either as source or target).
      */

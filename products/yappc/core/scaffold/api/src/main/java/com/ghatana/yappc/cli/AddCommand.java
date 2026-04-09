@@ -257,7 +257,7 @@ public class AddCommand implements Callable<Integer> {
 
     private ProjectContext detectProjectContext(Path projectPath) {
         // Detect based on build files
-        if (Files.exists(projectPath.resolve("build.gradle.kts")) 
+        if (Files.exists(projectPath.resolve("build.gradle.kts"))
                 || Files.exists(projectPath.resolve("build.gradle"))) {
             return new ProjectContext("java", "gradle", detectJavaPackage(projectPath));
         }
@@ -413,7 +413,7 @@ public class AddCommand implements Callable<Integer> {
 
     private void printNextSteps(Pack pack, ProjectContext context) {
         log.info("\n📝 Next steps:");
-        
+
         String featureName = pack.getName().replace("feature-", "");
         switch (featureName) {
             case "database" -> {

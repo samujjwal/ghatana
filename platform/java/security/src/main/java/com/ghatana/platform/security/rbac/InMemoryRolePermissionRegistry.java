@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory implementation of RolePermissionRegistry.
  * Thread-safe and suitable for single-node deployments.
- 
+
  *
  * @doc.type class
  * @doc.purpose In memory role permission registry

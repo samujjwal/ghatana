@@ -4,7 +4,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * Contract for structured lifecycle callbacks that can be wired via lifecycle-aware extensions.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Test lifecycle callback

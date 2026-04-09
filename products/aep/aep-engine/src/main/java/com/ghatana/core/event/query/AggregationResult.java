@@ -18,7 +18,7 @@ import java.util.Map;
 @Getter
 public class AggregationResult<T> implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private final String groupByField;
     private final AggregationFunction aggregationFunction;
     private final String aggregationField;

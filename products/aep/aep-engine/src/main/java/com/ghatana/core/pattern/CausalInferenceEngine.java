@@ -25,17 +25,17 @@ public class CausalInferenceEngine {
      */
     public List<CausalRelationship> inferCausality(List<Event> events) {
         List<CausalRelationship> relationships = new ArrayList<>();
-        
+
         // Simple temporal causality inference
         List<Event> sortedEvents = events.stream()
                 .sorted(Comparator.comparing(Event::getTimestamp))
                 .toList();
-        
+
         for (int i = 0; i < sortedEvents.size(); i++) {
             for (int j = i + 1; j < sortedEvents.size(); j++) {
                 Event cause = sortedEvents.get(i);
                 Event effect = sortedEvents.get(j);
-                
+
                 if (isCausalCandidate(cause, effect)) {
                     double confidence = calculateCausalConfidence(cause, effect, sortedEvents);
                     if (confidence >= config.getConfidenceThreshold()) {
@@ -44,7 +44,7 @@ public class CausalInferenceEngine {
                 }
             }
         }
-        
+
         return relationships;
     }
 
@@ -53,7 +53,7 @@ public class CausalInferenceEngine {
         if (cause.getTimestampMillis() >= effect.getTimestampMillis()) {
             return false;
         }
-        
+
         // Time window constraint
         long timeDiff = effect.getTimestampMillis() - cause.getTimestampMillis();
         return timeDiff <= 300000; // Within 5 minutes
@@ -63,7 +63,7 @@ public class CausalInferenceEngine {
         // Simplified confidence calculation
         double temporalScore = calculateTemporalScore(cause, effect, allEvents);
         double semanticScore = calculateSemanticScore(cause, effect);
-        
+
         return (temporalScore + semanticScore) / 2.0;
     }
 
@@ -72,12 +72,12 @@ public class CausalInferenceEngine {
         long causeCount = allEvents.stream()
                 .filter(e -> e.getType().equals(cause.getType()))
                 .count();
-        
+
         long effectAfterCause = allEvents.stream()
                 .filter(e -> e.getType().equals(effect.getType()))
                 .filter(e -> e.getTimestampMillis() > cause.getTimestampMillis())
                 .count();
-        
+
         return causeCount > 0 ? (double) effectAfterCause / causeCount : 0.0;
     }
 
@@ -85,12 +85,12 @@ public class CausalInferenceEngine {
         // Simple semantic similarity based on event types
         String causeType = cause.getType();
         String effectType = effect.getType();
-        
+
         // Predefined causal patterns
         if (isKnownCausalPattern(causeType, effectType)) {
             return 0.8;
         }
-        
+
         return 0.3; // Default low confidence
     }
 

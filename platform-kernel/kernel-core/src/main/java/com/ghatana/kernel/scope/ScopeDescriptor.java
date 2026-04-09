@@ -1,6 +1,5 @@
 package com.ghatana.kernel.scope;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 

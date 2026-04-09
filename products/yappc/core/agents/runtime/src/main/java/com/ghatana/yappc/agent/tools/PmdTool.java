@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** PMD static analysis tool (stub). 
+/** PMD static analysis tool (stub).
  * @doc.type class
  * @doc.purpose Handles pmd tool operations
  * @doc.layer core

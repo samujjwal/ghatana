@@ -53,7 +53,7 @@ public class AepAgentAdapter {
         connected = true;
         return Promise.complete();
     }
-    
+
     /**
      * Execute a task through the agent.
      * @param task the task to execute
@@ -106,7 +106,7 @@ public class AepAgentAdapter {
         connected = false;
         return Promise.complete();
     }
-    
+
     public boolean isConnected() {
         return connected;
     }

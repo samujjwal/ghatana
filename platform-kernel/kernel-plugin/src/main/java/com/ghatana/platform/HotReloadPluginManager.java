@@ -1,6 +1,5 @@
 package com.ghatana.platform.plugin;
 
-import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;

@@ -13,7 +13,7 @@ class OperatorIdTest {
     @Test
     void testOf() {
         OperatorId id = OperatorId.of("test-operator-id");
-        
+
         assertEquals("test-operator-id", id.value());
         assertEquals("test-operator-id", id.raw());
     }
@@ -22,7 +22,7 @@ class OperatorIdTest {
     void testRandom() {
         OperatorId id1 = OperatorId.random();
         OperatorId id2 = OperatorId.random();
-        
+
         assertNotNull(id1.value());
         assertNotNull(id2.value());
         assertNotEquals(id1.value(), id2.value());
@@ -47,7 +47,7 @@ class OperatorIdTest {
         OperatorId id1 = OperatorId.of("same-id");
         OperatorId id2 = OperatorId.of("same-id");
         OperatorId id3 = OperatorId.of("different-id");
-        
+
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);
     }

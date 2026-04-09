@@ -20,8 +20,6 @@ import com.ghatana.yappc.core.common.EstimatedEffort;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Data;
 
 /**
  * Day 27: AI-powered Root Cause Analysis (RCA) result. Contains AI-generated
@@ -104,7 +102,7 @@ public class RCAResult {
         this.confidence = confidence;
         this.metadata = metadata;
     }
-    
+
     /**
      * Map category string to RootCause enum.
      */

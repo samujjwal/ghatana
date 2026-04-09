@@ -1,12 +1,9 @@
 package com.ghatana.agent.memory.bridge;
 
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.api.DefaultAgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
-import com.ghatana.agent.memory.model.working.WorkingMemory;
 import com.ghatana.agent.memory.persistence.MemoryStoreAdapter;
 import com.ghatana.agent.memory.store.MemoryPlane;
-import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -15,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Implementation of {@link MemoryAwareContext} that wraps a standard

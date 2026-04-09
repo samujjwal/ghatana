@@ -67,7 +67,7 @@ class LifecycleAwareExtensionTest implements TestLifecycleCallback {
     static void verifyAfterAll() {
         // Verify that beforeAll was called at least once
         assertThat(beforeAllCalled).isTrue();
-        
+
         // Verify that we have at least one test that completed
         assertThat(testCount.get()).isGreaterThan(0);
     }
@@ -77,24 +77,24 @@ class LifecycleAwareExtensionTest implements TestLifecycleCallback {
     void shouldDelegateLifecycleCallbacks() {
         events.add("test");
         allEvents.add("test");
-        
+
         // Verify the order of events for this test
         assertThat(events)
             .containsSubsequence("callback-beforeAll", "callback-beforeEach", "junit-beforeEach", "test");
     }
-    
+
     @Test
     @DisplayName("handles test execution errors")
     void executionError() {
         events.add("test-error");
         allEvents.add("test-error");
-        
+
         // This test verifies that exceptions are properly propagated
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             throw new RuntimeException("Expected test exception");
         });
         assertThat(exception).hasMessage("Expected test exception");
-        
+
         // Verify the order of events for this test
         assertThat(events)
             .containsSubsequence("callback-beforeEach", "junit-beforeEach", "test-error");

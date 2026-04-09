@@ -8,7 +8,6 @@ import com.ghatana.agent.framework.memory.EventLogMemoryStore;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.StepResult;
-import com.ghatana.yappc.agent.YAPPCAgentBase;
 import com.ghatana.yappc.agents.code.AgentDispatcherAgent;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.util.List;

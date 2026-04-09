@@ -28,17 +28,17 @@ import java.util.Map;
  * @doc.pattern Adapter
  */
 public class TtsHttpAdapter {
-    
+
     private final AudioVideoLibrary library;
     private final ObjectMapper mapper;
-    
+
     public TtsHttpAdapter(TtsConfig config) {
         this.library = AudioVideoLibrary.builder()
             .withTtsConfig(config)
             .build();
         this.mapper = new ObjectMapper();
     }
-    
+
     /**
      * Handle POST /api/v1/tts/synthesize
      */
@@ -46,7 +46,7 @@ public class TtsHttpAdapter {
         return request.getBody().map(body -> {
             try {
                 SynthesizeRequest req = mapper.readValue(body.getString(), SynthesizeRequest.class);
-                
+
                 try (TtsEngine tts = library.getTtsEngine()) {
                     SynthesisOptions options = SynthesisOptions.builder()
                         .voiceId(req.voiceId)
@@ -54,16 +54,16 @@ public class TtsHttpAdapter {
                         .pitch(req.pitch)
                         .volume(req.volume)
                         .build();
-                    
+
                     AudioData audio = tts.synthesize(req.text, options);
-                    
+
                     SynthesizeResponse response = new SynthesizeResponse(
                         audio.data(),
                         audio.sampleRate(),
                         audio.channels(),
                         options.voiceId()
                     );
-                    
+
                     return HttpResponse.ok200()
                         .withJson(mapper.writeValueAsString(response));
                 }
@@ -76,7 +76,7 @@ public class TtsHttpAdapter {
             }
         });
     }
-    
+
     /**
      * Handle GET /api/v1/tts/voices
      */
@@ -84,7 +84,7 @@ public class TtsHttpAdapter {
         return Promise.ofCallable(() -> {
             try (TtsEngine tts = library.getTtsEngine()) {
                 List<VoiceInfo> voices = tts.getAvailableVoices();
-                
+
                 List<VoiceJson> response = voices.stream()
                     .map(v -> new VoiceJson(
                         v.voiceId(),
@@ -94,13 +94,13 @@ public class TtsHttpAdapter {
                         v.isCloned()
                     ))
                     .toList();
-                
+
                 return HttpResponse.ok200()
                     .withJson(mapper.writeValueAsString(Map.of("voices", response)));
             }
         });
     }
-    
+
     /**
      * Handle GET /api/v1/tts/health
      */
@@ -108,13 +108,13 @@ public class TtsHttpAdapter {
         return Promise.ofCallable(() -> {
             try (TtsEngine tts = library.getTtsEngine()) {
                 EngineStatus status = tts.getStatus();
-                
+
                 return HttpResponse.ok200()
                     .withJson("{\"state\":\"" + status.state().name() + "\",\"voice\":\"" + status.modelId() + "\"}");
             }
         });
     }
-    
+
     public record SynthesizeRequest(
         String text,
         String voiceId,
@@ -122,14 +122,14 @@ public class TtsHttpAdapter {
         double pitch,
         double volume
     ) {}
-    
+
     public record SynthesizeResponse(
         byte[] audioData,
         int sampleRate,
         int channels,
         String voiceId
     ) {}
-    
+
     public record VoiceJson(
         String voiceId,
         String name,

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Safe wrapper over ProcessExec that enforces an allowlist of commands. 
+ * Safe wrapper over ProcessExec that enforces an allowlist of commands.
  * @doc.type class
  * @doc.purpose Handles safe exec operations
  * @doc.layer core

@@ -23,9 +23,9 @@ import java.util.Map;
 /**
  * Pack metadata schema - pack.json structure. Week 2, Day 7 deliverable - Base
  * pack structure definition.
- * 
+ *
  * Enhanced with universal composition system support for multi-module projects.
- * 
+ *
  * @doc.type record
  * @doc.purpose Pack metadata schema with universal composition support
  * @doc.layer platform
@@ -141,7 +141,7 @@ public record PackMetadata(
             @JsonProperty("executable") Boolean executable,
             @JsonProperty("merge") MergeStrategy merge) {
 
-        
+
 
     public enum MergeStrategy {
         @JsonProperty("replace")
@@ -225,7 +225,7 @@ public record PackRequirements(
 
 /**
  * Module definition for multi-module compositions.
- * 
+ *
  * @doc.type record
  * @doc.purpose Module definition for universal composition system
  * @doc.layer platform
@@ -270,7 +270,7 @@ public record ModuleDefinition(
 
 /**
  * Integration definition for cross-module integrations.
- * 
+ *
  * @doc.type record
  * @doc.purpose Integration definition for module communication
  * @doc.layer platform

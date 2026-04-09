@@ -20,21 +20,21 @@ import java.util.Map;
  * @author YAPPC Team
  * @version 1.0.0
  * @since 1.0.0
- 
+
  * @doc.type class
  * @doc.purpose Handles remote yappc client operations
  * @doc.layer core
  * @doc.pattern Implementation
 */
 public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPCClient {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(RemoteYAPPCClient.class);
-    
+
     private final String serverUrl;
     private final YAPPCConfig config;
     private final ClientOptions options;
     private final HttpClient httpClient;
-    
+
     public RemoteYAPPCClient(String serverUrl, YAPPCConfig config, ClientOptions options) {
         this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
         this.config = config;
@@ -43,7 +43,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             .connectTimeout(Duration.ofMillis(options.getTimeout()))
             .build();
     }
-    
+
     @Override
     public Promise<Void> start() {
         return Promise.ofCallback(cb -> {
@@ -51,16 +51,16 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
                 cb.set(null);
                 return;
             }
-            
+
             logger.info("Starting remote YAPPC client for server: {}", serverUrl);
-            
+
             try {
                 HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + "/health"))
                     .timeout(Duration.ofMillis(options.getTimeout()))
                     .GET()
                     .build();
-                
+
                 httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         if (response.statusCode() == 200) {
@@ -83,7 +83,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             }
         });
     }
-    
+
     @Override
     public Promise<Void> stop() {
         return Promise.ofCallback(cb -> {
@@ -91,13 +91,13 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
                 cb.set(null);
                 return;
             }
-            
+
             logger.info("Stopping remote YAPPC client");
             markStopped();
             cb.set(null);
         });
     }
-    
+
     @Override
     public Promise<TaskRegistrationResult> registerTask(TaskDefinition task) {
         return executeRequest(
@@ -106,7 +106,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             TaskRegistrationResult.class
         );
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <R> Promise<TaskResult<R>> executeTask(String taskId, Object request, TaskContext context) {
@@ -116,7 +116,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             TaskResult.class
         );
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Promise<List<TaskDefinition>> listTasks() {
@@ -126,7 +126,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             List.class
         );
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <I, O> Promise<StepResult<O>> invokeAgent(String phase, String stepName, I input, StepContext context) {
@@ -136,7 +136,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             StepResult.class
         );
     }
-    
+
     @Override
     public Promise<CanvasResult> createCanvas(CreateCanvasRequest request) {
         return executeRequest(
@@ -145,7 +145,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             CanvasResult.class
         );
     }
-    
+
     @Override
     public Promise<ValidationReport> validateCanvas(String canvasId, ValidationContext context) {
         return executeRequest(
@@ -154,7 +154,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             ValidationReport.class
         );
     }
-    
+
     @Override
     public Promise<GenerationResult> generateFromCanvas(String canvasId, GenerationOptions options) {
         return executeRequest(
@@ -163,7 +163,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             GenerationResult.class
         );
     }
-    
+
     @Override
     public Promise<SearchResults> searchKnowledge(KnowledgeQuery query) {
         return executeRequest(
@@ -172,7 +172,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             SearchResults.class
         );
     }
-    
+
     @Override
     public Promise<Void> ingestKnowledge(KnowledgeDocument document) {
         return executeRequest(
@@ -181,7 +181,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             Void.class
         );
     }
-    
+
     @Override
     public Promise<LifecycleState> getLifecycleState(String projectId) {
         return executeRequest(
@@ -190,7 +190,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             LifecycleState.class
         );
     }
-    
+
     @Override
     public Promise<PhaseResult> advancePhase(String projectId, AdvancePhaseRequest request) {
         return executeRequest(
@@ -199,7 +199,7 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             PhaseResult.class
         );
     }
-    
+
     @Override
     public Promise<HealthStatus> checkHealth() {
         if (!isRunning()) {
@@ -220,12 +220,12 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
     public Promise<Boolean> healthCheck() {
         return checkHealth().map(HealthStatus::isHealthy);
     }
-    
+
     @Override
     public Promise<YAPPCConfig> getConfiguration() {
         return Promise.of(config);
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Promise<Map<String, Object>> getMetrics() {
@@ -235,14 +235,14 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             Map.class
         );
     }
-    
+
     private <T> Promise<T> executeRequest(String path, Object body, Class<T> responseType) {
         return Promise.ofCallback(cb -> {
             try {
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .timeout(Duration.ofMillis(options.getTimeout()));
-                
+
                 if (body != null) {
                     requestBuilder.POST(HttpRequest.BodyPublishers.ofString(
                         serializeToJson(body)));
@@ -250,9 +250,9 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
                 } else {
                     requestBuilder.GET();
                 }
-                
+
                 HttpRequest request = requestBuilder.build();
-                
+
                 executeWithRetry(request, 0)
                     .thenAccept(response -> {
                         if (response.statusCode() >= 200 && response.statusCode() < 300) {
@@ -274,16 +274,16 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
             }
         });
     }
-    
+
     private java.util.concurrent.CompletableFuture<HttpResponse<String>> executeWithRetry(
             HttpRequest request, int attemptNumber) {
-        
+
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
             .thenCompose(response -> {
                 if (response.statusCode() >= 500 && attemptNumber < options.getMaxRetries()) {
                     logger.warn("Request failed with status {}, retrying (attempt {}/{})",
                         response.statusCode(), attemptNumber + 1, options.getMaxRetries());
-                    
+
                     return java.util.concurrent.CompletableFuture
                         .supplyAsync(() -> (Void) null,
                             java.util.concurrent.CompletableFuture.delayedExecutor(
@@ -293,11 +293,11 @@ public final class RemoteYAPPCClient extends ManagedAsyncClient implements YAPPC
                 return java.util.concurrent.CompletableFuture.completedFuture(response);
             });
     }
-    
+
     private String serializeToJson(Object obj) {
         return "{}";
     }
-    
+
     @SuppressWarnings("unchecked")
     private <T> T deserializeFromJson(String json, Class<T> type) {
         if (type == Void.class) {

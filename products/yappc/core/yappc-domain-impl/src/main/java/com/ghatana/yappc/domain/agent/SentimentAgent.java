@@ -54,7 +54,7 @@ public class SentimentAgent extends AbstractAIAgent<SentimentAgent.SentimentInpu
 
     @Override
     public void validateInput(@NotNull SentimentInput input) {
-        if ((input.text() == null || input.text().isBlank()) && 
+        if ((input.text() == null || input.text().isBlank()) &&
             (input.texts() == null || input.texts().isEmpty())) {
             throw new IllegalArgumentException("text or texts is required");
         }
@@ -86,7 +86,7 @@ public class SentimentAgent extends AbstractAIAgent<SentimentAgent.SentimentInpu
 
                     for (int i = 0; i < analyses.size(); i++) {
                         NLPAnalysis analysis = analyses.get(i);
-                        
+
                         results.add(new SentimentAnalysis(
                                 textsToAnalyze.get(i),
                                 analysis.sentiment(),

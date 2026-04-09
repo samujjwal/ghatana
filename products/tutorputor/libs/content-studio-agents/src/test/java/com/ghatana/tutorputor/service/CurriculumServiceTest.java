@@ -27,7 +27,7 @@ class CurriculumServiceTest {
     @BeforeEach
     void setUp() {
         curriculumService = new CurriculumService(new SimpleMeterRegistry());
-        
+
         // Create a basic curriculum structure
         createBasicCurriculum();
     }
@@ -41,7 +41,7 @@ class CurriculumServiceTest {
             .gradeLevel(1)
             .estimatedMinutes(30)
             .build());
-        
+
         curriculumService.createTopic(CurriculumService.Topic.builder()
             .id("addition")
             .name("Addition")
@@ -50,7 +50,7 @@ class CurriculumServiceTest {
             .addPrerequisite("numbers")
             .estimatedMinutes(45)
             .build());
-        
+
         curriculumService.createTopic(CurriculumService.Topic.builder()
             .id("subtraction")
             .name("Subtraction")
@@ -59,7 +59,7 @@ class CurriculumServiceTest {
             .addPrerequisite("numbers")
             .estimatedMinutes(45)
             .build());
-        
+
         curriculumService.createTopic(CurriculumService.Topic.builder()
             .id("multiplication")
             .name("Multiplication")
@@ -68,7 +68,7 @@ class CurriculumServiceTest {
             .addPrerequisite("addition")
             .estimatedMinutes(60)
             .build());
-        
+
         curriculumService.createTopic(CurriculumService.Topic.builder()
             .id("division")
             .name("Division")
@@ -195,7 +195,7 @@ class CurriculumServiceTest {
         List<String> targetTopics = List.of("division");
 
         // WHEN
-        CurriculumService.LearningPath path = 
+        CurriculumService.LearningPath path =
             curriculumService.generateLearningPath(targetTopics, "learner-1");
 
         // THEN
@@ -203,13 +203,13 @@ class CurriculumServiceTest {
         assertThat(path.topicIds()).contains("division");
         // Should include all prerequisites
         assertThat(path.topicIds()).contains("numbers", "addition", "subtraction", "multiplication");
-        
+
         // Prerequisites should come before dependents
         int numbersIdx = path.topicIds().indexOf("numbers");
         int additionIdx = path.topicIds().indexOf("addition");
         int multiplicationIdx = path.topicIds().indexOf("multiplication");
         int divisionIdx = path.topicIds().indexOf("division");
-        
+
         assertThat(numbersIdx).isLessThan(additionIdx);
         assertThat(additionIdx).isLessThan(multiplicationIdx);
         assertThat(multiplicationIdx).isLessThan(divisionIdx);
@@ -224,14 +224,14 @@ class CurriculumServiceTest {
         curriculumService.recordProgress("learner-1", "addition", 0.7, 30);
 
         // THEN
-        CurriculumService.LearnerProgress numbersProgress = 
+        CurriculumService.LearnerProgress numbersProgress =
             curriculumService.getProgress("learner-1", "numbers");
         assertThat(numbersProgress).isNotNull();
         assertThat(numbersProgress.mastery()).isEqualTo(0.95); // Takes max
         assertThat(numbersProgress.timeSpentMinutes()).isEqualTo(35); // Cumulative
         assertThat(numbersProgress.attempts()).isEqualTo(2);
-        
-        Map<String, CurriculumService.LearnerProgress> allProgress = 
+
+        Map<String, CurriculumService.LearnerProgress> allProgress =
             curriculumService.getAllProgress("learner-1");
         assertThat(allProgress).hasSize(2);
     }
@@ -243,17 +243,17 @@ class CurriculumServiceTest {
         curriculumService.recordProgress("learner-2", "numbers", 0.85, 30);
 
         // WHEN - check readiness for addition (requires numbers)
-        CurriculumService.TopicReadiness additionReadiness = 
+        CurriculumService.TopicReadiness additionReadiness =
             curriculumService.checkReadiness("learner-2", "addition");
-        
+
         // AND check readiness for multiplication (requires addition)
-        CurriculumService.TopicReadiness multiplicationReadiness = 
+        CurriculumService.TopicReadiness multiplicationReadiness =
             curriculumService.checkReadiness("learner-2", "multiplication");
 
         // THEN
         assertThat(additionReadiness.ready()).isTrue();
         assertThat(additionReadiness.missingPrerequisites()).isEmpty();
-        
+
         assertThat(multiplicationReadiness.ready()).isFalse();
         assertThat(multiplicationReadiness.missingPrerequisites())
             .extracting(CurriculumService.Topic::id)
@@ -267,7 +267,7 @@ class CurriculumServiceTest {
         curriculumService.recordProgress("learner-3", "numbers", 0.9, 30);
 
         // WHEN
-        List<CurriculumService.Topic> recommendations = 
+        List<CurriculumService.Topic> recommendations =
             curriculumService.getRecommendedTopics("learner-3", 3);
 
         // THEN - should recommend addition and subtraction (both have numbers as prereq)
@@ -283,7 +283,7 @@ class CurriculumServiceTest {
     @DisplayName("Should list topics by subject")
     void shouldListTopicsBySubject() {
         // WHEN
-        List<CurriculumService.Topic> mathTopics = 
+        List<CurriculumService.Topic> mathTopics =
             curriculumService.listTopicsBySubject("Mathematics");
 
         // THEN
@@ -299,7 +299,7 @@ class CurriculumServiceTest {
         curriculumService.recordProgress("learner-4", "addition", 0.85, 45);
 
         // WHEN - generate path to learn multiplication
-        CurriculumService.LearningPath path = 
+        CurriculumService.LearningPath path =
             curriculumService.generateLearningPath(List.of("multiplication"), "learner-4");
 
         // THEN - should not include already mastered topics

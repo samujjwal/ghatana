@@ -198,4 +198,3 @@ public class FilterOperator extends BaseOperator {
         }
     }
 }
-

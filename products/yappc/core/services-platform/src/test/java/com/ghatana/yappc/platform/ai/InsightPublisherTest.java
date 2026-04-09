@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import io.activej.promise.Promise;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;

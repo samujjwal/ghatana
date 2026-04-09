@@ -4,8 +4,6 @@
  */
 package com.ghatana.aep.scaling.cluster;
 
-import com.ghatana.aep.scaling.models.DistributedModels;
-import io.activej.promise.Promise;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +12,6 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Models for cluster management operations.
@@ -39,7 +36,7 @@ public final class ClusterManagementModels {
         private double averageLatency;
         private Instant timestamp;
 
-        public ClusterMetrics(String clusterId, int activeNodes, int totalNodes, 
+        public ClusterMetrics(String clusterId, int activeNodes, int totalNodes,
                             double cpuUtilization, double memoryUtilization, long throughput) {
             this.clusterId = clusterId;
             this.activeNodes = activeNodes;

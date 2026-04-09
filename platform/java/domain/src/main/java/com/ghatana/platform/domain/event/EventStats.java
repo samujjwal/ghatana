@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * Immutable statistics and metrics for event processing and monitoring.
- * 
+ *
  * <p>
  * Encapsulates operational metrics collected during event processing. These statistics
  * enable monitoring, optimization, and debugging of the event pipeline. EventStats are
@@ -148,11 +148,11 @@ public final class EventStats {
 
     @Override
     public String toString() {
-        return "EventStats{" 
-               + "sizeInBytes=" + sizeInBytes 
-               + ", processingTimeNanos=" + processingTimeNanos 
-               + ", fieldCount=" + fieldCount 
-               + ", tagCount=" + tagCount 
+        return "EventStats{"
+               + "sizeInBytes=" + sizeInBytes
+               + ", processingTimeNanos=" + processingTimeNanos
+               + ", fieldCount=" + fieldCount
+               + ", tagCount=" + tagCount
                + '}';
     }
 

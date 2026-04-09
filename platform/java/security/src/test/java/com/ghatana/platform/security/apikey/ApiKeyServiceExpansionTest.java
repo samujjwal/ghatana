@@ -18,7 +18,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -57,9 +56,9 @@ class ApiKeyServiceExpansionTest {
         @DisplayName("Rotating a key invalidates the old key and creates new valid key")
         void keyRotationCreatesNewKey() {
             // Setup: Create original key
-            ApiKey original = new ApiKey("ak_original_123", "Original Key", "Old description", "owner-1", 
+            ApiKey original = new ApiKey("ak_original_123", "Original Key", "Old description", "owner-1",
                 Instant.now().plus(30, ChronoUnit.DAYS), false);
-            
+
             when(apiKeyRepository.findByKey("ak_original_123"))
                 .thenReturn(Optional.of(original));
             when(apiKeyRepository.save(any(ApiKey.class)))
@@ -125,7 +124,7 @@ class ApiKeyServiceExpansionTest {
             // All generated keys should be unique
             assertThat(generatedKeys).hasSize(threadCount);
             assertThat(successCount.get()).isEqualTo(threadCount);
-            
+
             // All keys should start with the correct prefix
             generatedKeys.forEach(key -> assertThat(key).startsWith("ak_"));
         }
@@ -143,7 +142,7 @@ class ApiKeyServiceExpansionTest {
         @DisplayName("Expired API keys can be queried but should be marked as inactive")
         void expiredKeyHandling() {
             Instant pastTime = Instant.now().minus(1, ChronoUnit.DAYS);
-            ApiKey expiredKey = new ApiKey("ak_expired_123", "Expired Key", "Old key", 
+            ApiKey expiredKey = new ApiKey("ak_expired_123", "Expired Key", "Old key",
                 "owner-1", pastTime, false);
 
             // When: Query for expired key
@@ -223,7 +222,7 @@ class ApiKeyServiceExpansionTest {
         public ApiKey rotateApiKey(String oldKey) {
             ApiKey existing = repository.findByKey(oldKey)
                 .orElseThrow(() -> new ResourceNotFoundException("Key not found"));
-            
+
             String newKey = generateKey();
             ApiKey rotated = new ApiKey(newKey, existing.getName(), existing.getDescription(),
                 existing.getOwner(), existing.getExpiresAt(), false);

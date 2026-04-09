@@ -4,7 +4,6 @@ import com.ghatana.core.connectors.EventSource;
 import com.ghatana.core.connectors.IngestEvent;
 import io.activej.promise.Promise;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -40,16 +39,16 @@ import java.util.Objects;
  *     "event-consumer-group",
  *     List.of("events-topic")
  * );
- * 
+ *
  * KafkaEventSource source = new KafkaEventSource(kafkaAdapter);
- * 
+ *
  * // Start source
  * source.start().whenComplete((v, e) -> {
  *     if (e == null) {
  *         logger.info("Kafka source started");
  *     }
  * });
- * 
+ *
  * // Poll for events
  * source.next().whenComplete((event, e) -> {
  *     if (e == null) {
@@ -59,7 +58,7 @@ import java.util.Objects;
  *         logger.error("Failed to poll event", e);
  *     }
  * });
- * 
+ *
  * // Stop source (closes Kafka consumer)
  * source.stop();
  *
@@ -67,19 +66,19 @@ import java.util.Objects;
  * public class KafkaEventPoller {
  *     private final KafkaEventSource source;
  *     private volatile boolean running;
- *     
+ *
  *     public Promise<Void> startPolling() {
  *         return source.start().then(() -> {
  *             running = true;
  *             return pollLoop();
  *         });
  *     }
- *     
+ *
  *     private Promise<Void> pollLoop() {
  *         if (!running) {
  *             return Promise.complete();
  *         }
- *         
+ *
  *         return source.next()
  *             .then(event -> processEvent(event))
  *             .then(() -> pollLoop())
@@ -93,7 +92,7 @@ import java.util.Objects;
  *                 running = false;
  *             });
  *     }
- *     
+ *
  *     public Promise<Void> stopPolling() {
  *         running = false;
  *         return source.stop();
@@ -106,10 +105,10 @@ import java.util.Objects;
  *     "multi-topic-consumer",
  *     List.of("events-topic", "notifications-topic", "metrics-topic")
  * );
- * 
+ *
  * KafkaEventSource multiSource = new KafkaEventSource(multiTopicAdapter);
  * multiSource.start();
- * 
+ *
  * // Polls from all subscribed topics
  * multiSource.next().whenComplete((event, e) -> {
  *     // Event from any of the 3 topics
@@ -120,19 +119,19 @@ import java.util.Objects;
  * public class EventIngestionPipeline {
  *     private final KafkaEventSource source;
  *     private final EventSink sink;
- *     
+ *
  *     public EventIngestionPipeline(
  *             KafkaConsumerAdapter kafkaAdapter,
  *             EventSink sink) {
  *         this.source = new KafkaEventSource(kafkaAdapter);
  *         this.sink = sink;
  *     }
- *     
+ *
  *     public Promise<Void> start() {
  *         return Promise.all(source.start(), sink.start())
  *             .then(() -> ingestLoop());
  *     }
- *     
+ *
  *     private Promise<Void> ingestLoop() {
  *         return source.next()
  *             .then(ingestEvent -> convertToEventRecord(ingestEvent))
@@ -145,17 +144,17 @@ import java.util.Objects;
  * // 5. Multi-tenant Kafka consumption
  * public class TenantKafkaSourceFactory {
  *     private final String bootstrapServers;
- *     
+ *
  *     public KafkaEventSource createTenantSource(String tenantId) {
  *         String consumerGroup = "tenant-" + tenantId + "-consumer";
  *         String topic = "tenant-" + tenantId + "-events";
- *         
+ *
  *         KafkaConsumerAdapter adapter = new KafkaConsumerAdapter(
  *             bootstrapServers,
  *             consumerGroup,
  *             List.of(topic)
  *         );
- *         
+ *
  *         return new KafkaEventSource(adapter);
  *     }
  * }
@@ -164,16 +163,16 @@ import java.util.Objects;
  * public class ResilientKafkaPoller {
  *     private final KafkaEventSource source;
  *     private final int maxRetries = 3;
- *     
+ *
  *     public Promise<IngestEvent> pollWithRetry() {
  *         return pollWithRetry(0);
  *     }
- *     
+ *
  *     private Promise<IngestEvent> pollWithRetry(int attempt) {
  *         return source.next()
  *             .whenException(e -> {
  *                 if (attempt < maxRetries) {
- *                     logger.warn("Poll failed (attempt {}/{}), retrying...", 
+ *                     logger.warn("Poll failed (attempt {}/{}), retrying...",
  *                         attempt + 1, maxRetries);
  *                     return Promises.delay(Duration.ofSeconds(1))
  *                         .then(() -> pollWithRetry(attempt + 1));
@@ -288,4 +287,3 @@ public final class KafkaEventSource implements EventSource {
         });
     }
 }
-

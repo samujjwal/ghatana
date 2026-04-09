@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * OpenRewrite-based code transformation engine for large-scale refactoring.
- * 
+ *
  * FUTURE ENHANCEMENT: Full OpenRewrite integration planned for Phase 4+.
  * Currently provides basic pass-through functionality.
  *
@@ -20,7 +20,7 @@ public class CodeTransformer {
 
     /**
      * Transform source code using OpenRewrite recipes.
-     * 
+     *
      * FUTURE: Will integrate with OpenRewrite for actual transformations.
      * Currently returns source unchanged.
      *
@@ -36,7 +36,7 @@ public class CodeTransformer {
 
     /**
      * Validate recipe syntax.
-     * 
+     *
      * FUTURE: Will validate OpenRewrite recipe YAML syntax.
      * Currently accepts all recipes.
      *

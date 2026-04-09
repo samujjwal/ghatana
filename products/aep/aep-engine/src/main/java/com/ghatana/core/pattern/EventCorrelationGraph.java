@@ -43,7 +43,7 @@ public class EventCorrelationGraph {
         Edge edge = new Edge(fromId, toId, weight);
         edges.add(edge);
         adjacencyList.get(fromId).add(edge);
-        
+
         // Add reverse edge for undirected graph
         Edge reverseEdge = new Edge(toId, fromId, weight);
         adjacencyList.get(toId).add(reverseEdge);

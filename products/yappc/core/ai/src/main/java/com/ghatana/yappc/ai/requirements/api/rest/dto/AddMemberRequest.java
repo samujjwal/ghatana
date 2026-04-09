@@ -7,7 +7,7 @@ import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceRole;
  *
  * @param userId User ID to add (required)
  * @param role Role to assign (required)
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for add member request
  * @doc.layer core
@@ -15,4 +15,3 @@ import com.ghatana.yappc.ai.requirements.domain.workspace.WorkspaceRole;
 */
 public record AddMemberRequest(String userId, WorkspaceRole role) {
 }
-

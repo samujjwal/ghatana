@@ -162,30 +162,30 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public abstract class ServiceLauncher extends Launcher {
-    
+
     private Injector injector;
     private ServiceGraph serviceGraph;
     private final List<AutoCloseable> resources = new ArrayList<>();
-    
+
     /**
      * Creates the DI module for this service.
      * Subclasses must implement this to provide their service bindings.
-     * 
+     *
      * @return The DI module
      */
     protected abstract Module createModule();
-    
+
     /**
      * Creates the injector from the module.
      * Override to customize injector creation (e.g., add interceptors).
-     * 
+     *
      * @param module The DI module
      * @return The injector instance
      */
     protected Injector createInjector(Module module) {
         return Injector.of(module);
     }
-    
+
     /**
      * Called after services have started successfully.
      * Override to perform post-startup actions.
@@ -193,7 +193,7 @@ public abstract class ServiceLauncher extends Launcher {
     protected void onServiceStarted() {
         // Default: no-op
     }
-    
+
     /**
      * Called before services are stopped.
      * Override to perform pre-shutdown actions.
@@ -201,38 +201,38 @@ public abstract class ServiceLauncher extends Launcher {
     protected void onServiceStopping() {
         // Default: no-op
     }
-    
+
     @Override
     protected final void onStart() throws Exception {
         log.info("Starting service launcher: {}", getClass().getSimpleName());
-        
+
         // Create injector
         Module module = createModule();
         if (module == null) {
             throw new IllegalStateException("createModule() returned null");
         }
-        
+
         injector = createInjector(module);
         log.debug("Injector created");
-        
+
         // Create service graph
         serviceGraph = injector.getInstance(ServiceGraph.class);
-        log.debug("Service graph created with {} services", 
+        log.debug("Service graph created with {} services",
             0);
-        
+
         // Start services
         CompletableFuture<?> startFuture = serviceGraph.startFuture();
         startFuture.get(60, TimeUnit.SECONDS); // 60 second timeout
-        
-        
+
+
         // Post-start hook
         onServiceStarted();
     }
-    
+
     @Override
     protected final void run() throws Exception {
         log.info("Service launcher running (press Ctrl+C to stop)");
-        
+
         // Keep running until shutdown signal
         awaitShutdown();
     }
@@ -245,14 +245,14 @@ public abstract class ServiceLauncher extends Launcher {
      */
     protected final void onShutdown() throws Exception {
         log.info("Shutting down service launcher");
-        
+
         // Pre-shutdown hook
         try {
             onServiceStopping();
         } catch (Exception e) {
             log.error("Error in onServiceStopping hook", e);
         }
-        
+
         // Stop service graph
         if (serviceGraph != null) {
             try {
@@ -264,7 +264,7 @@ public abstract class ServiceLauncher extends Launcher {
                 log.error("Error stopping service graph", e);
             }
         }
-        
+
         // Close additional resources
         for (AutoCloseable resource : resources) {
             try {
@@ -274,14 +274,14 @@ public abstract class ServiceLauncher extends Launcher {
                 log.error("Error closing resource: {}", resource.getClass().getSimpleName(), e);
             }
         }
-        
+
         log.info("Service launcher shutdown complete");
     }
-    
+
     /**
      * Registers a resource for cleanup on shutdown.
      * Resources are closed in reverse order of registration.
-     * 
+     *
      * @param resource The resource to register
      */
     protected final void registerResource(AutoCloseable resource) {
@@ -290,31 +290,31 @@ public abstract class ServiceLauncher extends Launcher {
             log.debug("Registered resource for cleanup: {}", resource.getClass().getSimpleName());
         }
     }
-    
+
     /**
      * Gets the injector instance.
      * Available after {@link #onStart()} completes.
-     * 
+     *
      * @return The injector
      */
     protected final Injector getInjector() {
         return injector;
     }
-    
+
     /**
      * Gets the service graph.
      * Available after {@link #onStart()} completes.
-     * 
+     *
      * @return The service graph
      */
     protected final ServiceGraph getServiceGraph() {
         return serviceGraph;
     }
-    
+
     /**
      * Gets an instance from the injector.
      * Convenience method for accessing injected services.
-     * 
+     *
      * @param type The service type
      * @param <T> The type parameter
      * @return The service instance

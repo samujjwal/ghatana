@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <pre>{@code
  * public class TypeFilterOperator extends AbstractOperator {
  *     private final String targetType;
- *     
+ *
  *     public TypeFilterOperator(String targetType, MetricsCollector metrics) {
  *         super(
  *             OperatorId.of("ghatana", "stream", "type-filter", "1.0.0"),
@@ -75,7 +75,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *         );
  *         this.targetType = targetType;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         if (event.getType().equals(targetType)) {
@@ -92,14 +92,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * public class WindowOperator extends AbstractOperator {
  *     private StateStore<String, List<Event>> windowState;
  *     private Duration windowSize;
- *     
+ *
  *     public WindowOperator(OperatorId id, MetricsCollector metrics) {
- *         super(id, OperatorType.STREAM, "Window", 
+ *         super(id, OperatorType.STREAM, "Window",
  *               "Time window aggregation",
  *               List.of("event.window", "event.aggregate"),
  *               metrics);
  *     }
- *     
+ *
  *     @Override
  *     protected Promise<Void> doInitialize(OperatorConfig config) {
  *         // Extract window size from config
@@ -107,32 +107,32 @@ import java.util.concurrent.atomic.AtomicLong;
  *             .orElseThrow(() -> new OperatorConfigurationException(
  *                 "Missing required config: windowSize", getId()
  *             ));
- *         
+ *
  *         // Initialize state store
  *         this.windowState = StateStoreFactory.create(config);
- *         
+ *
  *         return Promise.complete();
  *     }
- *     
+ *
  *     @Override
  *     protected Promise<Void> doStop() {
  *         // Cleanup: close state store
  *         return windowState.close();
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         String key = event.getPayload().getString("key");
  *         List<Event> window = windowState.get(key).orElse(new ArrayList<>());
- *         
+ *
  *         window.add(event);
- *         
+ *
  *         // Evict old events outside window
  *         long cutoff = System.currentTimeMillis() - windowSize.toMillis();
  *         window.removeIf(e -> e.getMetadata().getTimestamp() < cutoff);
- *         
+ *
  *         windowState.put(key, window);
- *         
+ *
  *         // Emit aggregated result
  *         Event aggregated = aggregateWindow(window);
  *         return Promise.of(OperatorResult.of(aggregated));
@@ -143,7 +143,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p><b>Example 3: Use metrics helpers</b>
  * <pre>{@code
  * public class EnrichmentOperator extends AbstractOperator {
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         // Automatic timing and error counting
@@ -158,7 +158,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *         }));
  *     }
  * }
- * 
+ *
  * // Metrics automatically tracked:
  * // - operator.process.count{operator=..., type=STREAM} = 1234
  * // - operator.process.duration{operator=..., type=STREAM} = p50=2ms, p99=10ms
@@ -168,17 +168,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p><b>Example 4: Custom metadata</b>
  * <pre>{@code
  * public class AnnotatedOperator extends AbstractOperator {
- *     
+ *
  *     public AnnotatedOperator(...) {
  *         super(...);
- *         
+ *
  *         // Add custom metadata for discovery/filtering
  *         addMetadata("owner", "data-platform-team");
  *         addMetadata("environment", "production");
  *         addMetadata("cost-center", "engineering");
  *     }
  * }
- * 
+ *
  * // Query operators by metadata
  * List<UnifiedOperator> prodOps = catalog.getAll().stream()
  *     .filter(op -> "production".equals(op.getMetadata().get("environment")))
@@ -189,12 +189,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * <pre>{@code
  * public class PatternOperator extends AbstractOperator {
  *     private final StateStore<String, NFAState> nfaState;
- *     
+ *
  *     @Override
  *     public boolean isStateful() {
  *         return true;  // Pattern operators maintain NFA state
  *     }
- *     
+ *
  *     @Override
  *     public Map<String, Object> getInternalState() {
  *         Map<String, Object> state = super.getInternalState();
@@ -216,10 +216,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *                 "Missing required config: pattern", getId()
  *             );
  *         }
- *         
+ *
  *         // Initialize resources
  *         this.stateStore = StateStoreFactory.create(config);
- *         
+ *
  *         return Promise.complete();
  *     } catch (Exception e) {
  *         // State automatically transitions to FAILED
@@ -235,23 +235,23 @@ import java.util.concurrent.atomic.AtomicLong;
  * // Create operator
  * AbstractOperator operator = new FilterOperator(...);
  * assert operator.getState() == OperatorState.CREATED;
- * 
+ *
  * // Initialize
  * operator.initialize(config).getResult();
  * assert operator.getState() == OperatorState.INITIALIZED;
  * assert operator.isHealthy();
- * 
+ *
  * // Start
  * operator.start().getResult();
  * assert operator.getState() == OperatorState.RUNNING;
- * 
+ *
  * // Process events
  * OperatorResult result = operator.process(event).getResult();
- * 
+ *
  * // Check metrics
  * Map<String, Object> metrics = operator.getMetrics();
  * long processedCount = (Long) metrics.get("processed_count");
- * 
+ *
  * // Graceful shutdown
  * operator.stop().getResult();
  * assert operator.getState() == OperatorState.STOPPED;
@@ -322,12 +322,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see OperatorState
  * @see OperatorConfig
  * @see OperatorResult
- * 
+ *
  * @doc.type class
  * @doc.purpose Abstract base class for operators with lifecycle, metrics, and health checks
  * @doc.layer core
  * @doc.pattern Template Method (doInitialize/doStart/doStop extension points)
- * 
+ *
  * @since 2.0
  */
 public abstract class AbstractOperator implements UnifiedOperator {
@@ -338,11 +338,11 @@ public abstract class AbstractOperator implements UnifiedOperator {
     private final String description;
     private final List<String> capabilities;
     private final Map<String, String> metadata;
-    
+
     // Lifecycle state
     private OperatorState state;
     private OperatorConfig config;
-    
+
     // Metrics
     private final MetricsCollector metricsCollector;
     private final AtomicLong processedCount;
@@ -374,10 +374,10 @@ public abstract class AbstractOperator implements UnifiedOperator {
         this.capabilities = List.copyOf(capabilities);
         // Allow null metrics collector in callers (convenience for builders/tests).
         // If none provided, create a no-op collector for tests and default usage.
-        this.metricsCollector = metricsCollector != null ? 
+        this.metricsCollector = metricsCollector != null ?
             metricsCollector : MetricsCollectorFactory.createNoop();
         this.metadata = new HashMap<>();
-        
+
         this.state = OperatorState.CREATED;
         this.processedCount = new AtomicLong(0);
         this.errorCount = new AtomicLong(0);
@@ -487,14 +487,14 @@ public abstract class AbstractOperator implements UnifiedOperator {
         metrics.put("error_count", errorCount.get());
         metrics.put("state", state.name());
         metrics.put("healthy", isHealthy());
-        
+
         // Calculate average processing duration
         long count = processedCount.get();
         if (count > 0) {
             long avgNanos = processingDurationNanos.get() / count;
             metrics.put("avg_processing_duration_ms", avgNanos / 1_000_000.0);
         }
-        
+
         return metrics;
     }
 
@@ -568,7 +568,7 @@ public abstract class AbstractOperator implements UnifiedOperator {
             OperatorResult result = runnable.get();
             long durationNanos = System.nanoTime() - startTime;
             processingDurationNanos.addAndGet(durationNanos);
-            
+
             if (result.isSuccess()) {
                 incrementProcessedCount();
             } else {

@@ -1,6 +1,5 @@
 package com.ghatana.refactorer.refactoring.core;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +11,7 @@ import java.util.Objects;
  * Compatibility RefactoringResult used by tests in the core package. This is a
  * lightweight, test-focused value type (uses String file names rather than
  * Path) and provides static factories and a builder expected by legacy tests.
- 
+
  * @doc.type class
  * @doc.purpose Handles refactoring result operations
  * @doc.layer core

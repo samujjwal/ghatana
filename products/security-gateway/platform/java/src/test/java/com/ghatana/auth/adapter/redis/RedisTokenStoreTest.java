@@ -1,8 +1,6 @@
 package com.ghatana.auth.adapter.redis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.platform.security.port.TokenStore;
-import com.ghatana.platform.domain.auth.User;
 import com.ghatana.platform.domain.auth.ClientId;
 import com.ghatana.platform.domain.auth.Scope;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -92,14 +90,14 @@ class RedisTokenStoreTest extends EventloopTestBase {
         String redisHost = redis.getHost();
         int redisPort = redis.getFirstMappedPort();
         jedisPool = new JedisPool(redisHost, redisPort);
-        
+
         // GIVEN: TokenStore connected to Redis
         tokenStore = new RedisTokenStore(jedisPool, new ObjectMapper());
-        
+
         tenantId = TenantId.of("tenant-redis-test-123");
         userId = UserId.of("user-redis-456");
         clientId = ClientId.of("client-redis-789");
-        
+
         // Cleanup before test
         try (var jedis = jedisPool.getResource()) {
             jedis.flushDB();
@@ -144,7 +142,7 @@ class RedisTokenStoreTest extends EventloopTestBase {
         // GIVEN: Two tenants
         TenantId tenant1 = TenantId.of("redis-tenant-1");
         TenantId tenant2 = TenantId.of("redis-tenant-2");
-        
+
         Token token1 = createToken(tenant1, "token-1");
         Token token2 = createToken(tenant2, "token-2");
 
@@ -403,7 +401,7 @@ class RedisTokenStoreTest extends EventloopTestBase {
         // GIVEN: Two TokenStore instances connected to same Redis
         RedisTokenStore instance1 = new RedisTokenStore(jedisPool);
         RedisTokenStore instance2 = new RedisTokenStore(jedisPool);
-        
+
         Token token = createToken(tenantId, "distributed-token");
 
         // WHEN: Token saved by instance 1

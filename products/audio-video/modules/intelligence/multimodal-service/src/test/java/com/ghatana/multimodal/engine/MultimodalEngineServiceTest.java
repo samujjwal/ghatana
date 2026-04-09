@@ -1,10 +1,8 @@
 package com.ghatana.multimodal.engine;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -77,7 +75,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("audio analysis produces valid transcription")
         void audioAnalysisProducesValidTranscription() {
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.transcription()).isNotBlank();
         }
@@ -86,7 +84,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("audio analysis includes confidence score")
         void audioAnalysisIncludesConfidence() {
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO);
-            
+
             assertThat(result.confidence()).isBetween(0.0, 1.0);
         }
 
@@ -94,7 +92,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("audio analysis detects language")
         void audioAnalysisDetectsLanguage() {
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO);
-            
+
             assertThat(result.detectedLanguage()).isNotBlank();
         }
 
@@ -103,7 +101,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void audioAnalysisIsDeterministic() {
             TestAudioResult r1 = engine.analyseAudio(SAMPLE_AUDIO);
             TestAudioResult r2 = engine.analyseAudio(SAMPLE_AUDIO);
-            
+
             assertThat(r1.transcription()).isEqualTo(r2.transcription());
             assertThat(r1.confidence()).isEqualTo(r2.confidence());
         }
@@ -128,7 +126,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("image analysis produces scene description")
         void imageAnalysisProducesSceneDescription() {
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.sceneDescription()).isNotBlank();
         }
@@ -137,7 +135,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("image analysis includes detections")
         void imageAnalysisIncludesDetections() {
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE);
-            
+
             assertThat(result.detections()).isNotNull();
         }
 
@@ -145,7 +143,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("image analysis confidence is in valid range")
         void imageAnalysisConfidenceIsValid() {
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE);
-            
+
             assertThat(result.confidence()).isBetween(0.0, 1.0);
         }
 
@@ -154,7 +152,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void imageAnalysisIsDeterministic() {
             TestVisualResult r1 = engine.analyseImage(SAMPLE_IMAGE);
             TestVisualResult r2 = engine.analyseImage(SAMPLE_IMAGE);
-            
+
             assertThat(r1.sceneDescription()).isEqualTo(r2.sceneDescription());
         }
     }
@@ -178,7 +176,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("video analysis with custom frame rate succeeds")
         void videoAnalysisWithCustomFrameRateSucceeds() {
             TestVisualResult result = engine.analyseVideo(SAMPLE_VIDEO, 30, 100);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.sceneDescription()).isNotBlank();
         }
@@ -187,7 +185,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("video analysis with frame limit succeeds")
         void videoAnalysisWithFrameLimitSucceeds() {
             TestVisualResult result = engine.analyseVideo(SAMPLE_VIDEO, 24, 50);
-            
+
             assertThat(result).isNotNull();
         }
     }
@@ -204,7 +202,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("audio + image fusion produces combined analysis")
         void audioImageFusionProducesCombinedAnalysis() {
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.combinedAnalysis()).isNotBlank();
         }
@@ -213,7 +211,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("fused audio-image includes both audio and visual content")
         void fusedAudioImageIncludesBothModalities() {
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             assertThat(result.combinedAnalysis()).containsIgnoringCase("audio");
             assertThat(result.combinedAnalysis()).containsIgnoringCase("image");
         }
@@ -224,7 +222,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestMultimodalResult result = engine.fuseAudioImageAndText(
                     SAMPLE_AUDIO, SAMPLE_IMAGE, SAMPLE_TEXT_HINT
             );
-            
+
             assertThat(result.combinedAnalysis()).isNotBlank();
         }
 
@@ -234,7 +232,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestMultimodalResult result = engine.fuseAudioImageAndText(
                     SAMPLE_AUDIO, SAMPLE_IMAGE, null
             );
-            
+
             assertThat(result).isNotNull();
         }
 
@@ -244,7 +242,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestMultimodalResult result = engine.fuseAudioImageAndText(
                     SAMPLE_AUDIO, SAMPLE_IMAGE, ""
             );
-            
+
             assertThat(result).isNotNull();
         }
 
@@ -253,7 +251,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void fusionIsDeterministic() {
             TestMultimodalResult r1 = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
             TestMultimodalResult r2 = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             assertThat(r1.combinedAnalysis()).isEqualTo(r2.combinedAnalysis());
         }
     }
@@ -272,7 +270,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio(
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
             );
-            
+
             assertThat(alignment).isNotNull();
             assertThat(alignment.alignments()).isNotNull();
         }
@@ -283,7 +281,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio(
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
             );
-            
+
             if (!alignment.alignments().isEmpty()) {
                 alignment.alignments().forEach(segment ->
                         assertThat(segment.speechText()).isNotBlank()
@@ -297,7 +295,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio(
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
             );
-            
+
             if (!alignment.alignments().isEmpty()) {
                 alignment.alignments().forEach(segment ->
                         assertThat(segment.syncConfidence()).isBetween(0.0, 1.0)
@@ -310,7 +308,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void differentFrameRatesProduceDifferentAlignments() {
             TestVideoAudioAlignment a24 = engine.alignVideoAndAudio(SAMPLE_VIDEO, SAMPLE_AUDIO, 24);
             TestVideoAudioAlignment a30 = engine.alignVideoAndAudio(SAMPLE_VIDEO, SAMPLE_AUDIO, 30);
-            
+
             // Different frame rates may produce different timing
             assertThat(a24).isNotNull();
             assertThat(a30).isNotNull();
@@ -331,7 +329,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestAudioResult audio = engine.analyseAudio(SAMPLE_AUDIO);
             TestVisualResult visual = engine.analyseImage(SAMPLE_IMAGE);
             TestMultimodalResult fused = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             // Fused result should incorporate both analyses
             assertThat(fused.combinedAnalysis()).isNotBlank();
             assertThat(audio.transcription()).isNotBlank();
@@ -343,7 +341,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void contextFromMultipleImagesIsPreserved() {
             TestVisualResult img1 = engine.analyseImage(SAMPLE_IMAGE);
             TestVisualResult img2 = engine.analyseImage(new byte[] {30, 40, 50});
-            
+
             assertThat(img1.sceneDescription()).isNotBlank();
             assertThat(img2.sceneDescription()).isNotBlank();
         }
@@ -362,7 +360,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void audioComponentIntegrationIsCorrect() {
             byte[] testAudio = {1, 2, 3};
             TestAudioResult result = engine.analyseAudio(testAudio);
-            
+
             // Result should be generated from audio component
             assertThat(result).isNotNull();
             assertThat(result.transcription()).isNotBlank();
@@ -374,7 +372,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         void visionComponentIntegrationIsCorrect() {
             byte[] testImage = {10, 20};
             TestVisualResult result = engine.analyseImage(testImage);
-            
+
             // Result should be generated from vision component
             assertThat(result).isNotNull();
             assertThat(result.sceneDescription()).isNotBlank();
@@ -385,7 +383,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("fused results combine both components correctly")
         void fusedResultsCombineComponentsCorrectly() {
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             // Combined analysis should reference both components
             assertThat(result.combinedAnalysis()).isNotBlank();
             assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0);
@@ -397,7 +395,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio(
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
             );
-            
+
             // Alignment should exist and be valid
             assertThat(alignment).isNotNull();
         }
@@ -419,7 +417,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
                     .isInstanceOf(Exception.class);
             assertThatThrownBy(() -> engine.analyseImage(null))
                     .isInstanceOf(Exception.class);
-            
+
             // Next operation should work fine
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO);
             assertThat(result.transcription()).isNotBlank();
@@ -432,7 +430,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             for (int i = 0; i < largeAudio.length; i++) {
                 largeAudio[i] = (byte) (i % 256);
             }
-            
+
             assertThatCode(() -> engine.analyseAudio(largeAudio))
                     .doesNotThrowAnyException();
         }
@@ -444,7 +442,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
                 TestAudioResult audio = engine.analyseAudio(SAMPLE_AUDIO);
                 TestVisualResult visual = engine.analyseImage(SAMPLE_IMAGE);
                 TestMultimodalResult fused = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-                
+
                 assertThat(audio.transcription()).isNotBlank();
                 assertThat(visual.sceneDescription()).isNotBlank();
                 assertThat(fused.combinedAnalysis()).isNotBlank();
@@ -466,7 +464,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             long start = System.currentTimeMillis();
             engine.analyseAudio(SAMPLE_AUDIO);
             long elapsed = System.currentTimeMillis() - start;
-            
+
             assertThat(elapsed).isLessThan(5000L); // 5 seconds
         }
 
@@ -476,7 +474,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
             long start = System.currentTimeMillis();
             engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
             long elapsed = System.currentTimeMillis() - start;
-            
+
             assertThat(elapsed).isLessThan(10000L); // 10 seconds
         }
 
@@ -484,7 +482,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         @DisplayName("processing time is recorded in results")
         void processingTimeIsRecorded() {
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE);
-            
+
             assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0);
         }
     }
@@ -497,7 +495,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
      * Test implementation of MultimodalEngine for testing.
      */
     private static class TestMultimodalEngine {
-        
+
         public TestAudioResult analyseAudio(byte[] audioData) {
             if (audioData == null || audioData.length == 0) {
                 throw new IllegalArgumentException("Audio data must not be null or empty");
@@ -539,7 +537,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         public TestMultimodalResult fuseAudioImageAndText(byte[] audio, byte[] image, String text) {
-            String enriched = text != null && !text.isBlank() 
+            String enriched = text != null && !text.isBlank()
                     ? " with text: '" + text + "'"
                     : "";
             return new TestMultimodalResult(

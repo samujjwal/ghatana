@@ -17,7 +17,7 @@ import java.util.*;
  *     .userPrompt("Summarize: {{text}}")
  *     .variable("text", "Lorem ipsum...")
  *     .build();
- * 
+ *
  * Promise<GenerationResult> result = generator.generateContent(
  *     "tenant-123", template, Map.of("model", "gpt-4")
  * );

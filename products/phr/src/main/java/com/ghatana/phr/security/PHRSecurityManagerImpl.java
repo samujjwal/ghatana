@@ -35,7 +35,7 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
     @Override
     public SecurityContext createSecurityContext(String tenantId, String userId) {
         PHRUser user = userRepository.findById(userId);
-        
+
         if (user == null) {
             throw new IllegalArgumentException("User not found: " + userId);
         }
@@ -56,11 +56,11 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
     public boolean authorizeAction(Action action, SecurityContext context) {
         String resource = action.getResource();
         String operation = action.getOperation();
-        
+
         if (resource.startsWith("patient-records")) {
             return checkHIPAACompliance(context, operation);
         }
-        
+
         String requiredPermission = operation + ":" + resource;
         return context.hasPermission(requiredPermission);
     }
@@ -70,7 +70,7 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
         if (!context.isAuthenticated()) {
             throw new SecurityPolicyViolationException("User not authenticated");
         }
-        
+
         if (policy.getType() == Policy.PolicyType.DATA_ACCESS) {
             enforceDataAccessPolicy(context, policy);
         }
@@ -128,16 +128,16 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
 
     private boolean checkHIPAACompliance(SecurityContext context, String operation) {
         if (operation.equals("export")) {
-            return context.hasRole("HEALTHCARE_PROVIDER") && 
+            return context.hasRole("HEALTHCARE_PROVIDER") &&
                    context.hasPermission("export:phi");
         }
-        
+
         if (operation.equals("read")) {
-            return context.hasRole("HEALTHCARE_PROVIDER") || 
+            return context.hasRole("HEALTHCARE_PROVIDER") ||
                    context.hasRole("PATIENT") ||
                    context.hasRole("ADMINISTRATOR");
         }
-        
+
         return true;
     }
 

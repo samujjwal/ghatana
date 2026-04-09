@@ -15,19 +15,19 @@ import java.util.Optional;
 
 /**
  * JWT-based authentication provider that validates JWT tokens.
- * 
+ *
  * <p>This provider validates JWT tokens and extracts user information from them.
  * It can be used as a standalone provider or as part of a chain with other providers.</p>
- * 
+ *
  * <p>Example usage:</p>
  * <pre>{@code
  * // Create the JWT authentication provider
  * JwtAuthenticationProvider jwtProvider = new JwtAuthenticationProvider(jwtTokenProvider);
- * 
+ *
  * // Optionally, chain with another provider for token generation
  * JwtAuthenticationProvider provider = new JwtAuthenticationProvider(jwtTokenProvider, delegateProvider);
  * }</pre>
- 
+
  *
  * @doc.type class
  * @doc.purpose Jwt authentication provider
@@ -36,23 +36,23 @@ import java.util.Optional;
 */
 public class JwtAuthenticationProvider implements AuthenticationProvider {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationProvider.class);
-    
+
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationProvider delegateProvider;
-    
+
     /**
      * Creates a new JWT authentication provider that only validates tokens.
-     * 
+     *
      * @param jwtTokenProvider The JWT token provider instance
      * @throws NullPointerException if jwtTokenProvider is null
      */
     public JwtAuthenticationProvider(JwtTokenProvider jwtTokenProvider) {
         this(jwtTokenProvider, null);
     }
-    
+
     /**
      * Creates a new JWT authentication provider that can also generate tokens.
-     * 
+     *
      * @param jwtTokenProvider The JWT token provider instance
      * @param delegateProvider The underlying provider to use for initial authentication
      * @throws NullPointerException if jwtTokenProvider is null
@@ -61,13 +61,13 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         this.jwtTokenProvider = Objects.requireNonNull(jwtTokenProvider, "JwtTokenProvider cannot be null");
         this.delegateProvider = delegateProvider;
     }
-    
+
     @Override
     public Promise<Optional<User>> authenticate(Credentials credentials) {
         if (!supports(credentials.getType())) {
             return Promise.of(Optional.empty());
         }
-        
+
         try {
             // If we have a delegate provider and the credentials are not a token,
             // delegate to it and generate a token if authentication succeeds
@@ -82,7 +82,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
                             .build();
                     }));
             }
-            
+
             // Handle token validation
             if (credentials instanceof TokenCredentials) {
                 String token = ((TokenCredentials) credentials).getToken();
@@ -104,9 +104,9 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
                 User userWithRoles = user.toBuilder().addRoles(tokenRoles).build();
                 return Promise.of(Optional.of(userWithRoles));
             }
-            
+
             return Promise.of(Optional.empty());
-            
+
         } catch (RuntimeException e) {
             log.debug("JWT authentication failed: {}", e.getMessage());
             return Promise.of(Optional.empty());
@@ -115,20 +115,20 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public boolean supports(String type) {
         return "token".equals(type) || (delegateProvider != null && delegateProvider.supports(type));
     }
-    
+
     @Override
     public int getPriority() {
         return 100; // Higher priority than most other providers
     }
-    
+
     /**
      * Generates a JWT token for the specified user.
-     * 
+     *
      * @param user The user to generate a token for
      * @return A JWT token string
      * @throws NullPointerException if user is null
@@ -137,10 +137,10 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         List<String> roles = user.getRoles().stream().toList();
         return jwtTokenProvider.createToken(user.getUsername(), roles, null);
     }
-    
+
     /**
      * Refreshes a JWT token by extending its expiration time.
-     * 
+     *
      * @param token The token to refresh
      * @return A new JWT token with extended expiration
      * @throws RuntimeException if the token is invalid
@@ -150,11 +150,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         List<String> roles = jwtTokenProvider.getRolesFromToken(token);
         return jwtTokenProvider.createToken(userId, roles, null);
     }
-    
+
     /**
      * Gets the remaining validity time of a token in milliseconds.
      * Extracts the expiration claim from the token and subtracts current time.
-     * 
+     *
      * @param token The token to check
      * @return The remaining validity time in milliseconds, or -1 if the token is expired or invalid
      */

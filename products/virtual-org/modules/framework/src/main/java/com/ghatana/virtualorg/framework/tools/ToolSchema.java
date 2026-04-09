@@ -50,7 +50,7 @@ public final class ToolSchema {
             Object defaultValue,
             List<String> enumValues
     ) {
-        
+
 
     public Property(String name, SchemaType type, String description, boolean required) {
         this(name, type, description, required, null, null);

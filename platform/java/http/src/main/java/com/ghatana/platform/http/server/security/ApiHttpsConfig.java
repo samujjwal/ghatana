@@ -317,16 +317,16 @@ public final class ApiHttpsConfig {
     public SSLContext createSslContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            
+
             KeyManager[] keyManagers = createKeyManagers();
             TrustManager[] trustManagers = null;
-            
+
             if (requireClientAuth && trustStorePath != null) {
                 trustManagers = createTrustManagers();
             }
-            
+
             sslContext.init(keyManagers, trustManagers, new SecureRandom());
-            
+
             return sslContext;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException("Failed to create SSL context", e);
@@ -340,19 +340,19 @@ public final class ApiHttpsConfig {
      */
     public SSLParameters createSslParameters() {
         SSLParameters sslParameters = new SSLParameters();
-        
+
         if (enforceStrongCiphers) {
             sslParameters.setProtocols(enabledProtocols);
             sslParameters.setCipherSuites(enabledCipherSuites);
         }
-        
+
         if (requireClientAuth) {
             sslParameters.setNeedClientAuth(true);
         }
-        
+
         // Enable hostname verification for HTTPS
         sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-        
+
         return sslParameters;
     }
 
@@ -367,13 +367,13 @@ public final class ApiHttpsConfig {
             try (FileInputStream fis = new FileInputStream(keyStorePath.toFile())) {
                 keyStore.load(fis, keyStorePassword.toCharArray());
             }
-            
+
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(
                 KeyManagerFactory.getDefaultAlgorithm()
             );
             kmf.init(keyStore, keyStorePassword.toCharArray());
             return kmf.getKeyManagers();
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException 
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException
                 | CertificateException | UnrecoverableKeyException e) {
             throw new RuntimeException("Failed to create key managers", e);
         }
@@ -390,13 +390,13 @@ public final class ApiHttpsConfig {
             try (FileInputStream fis = new FileInputStream(trustStorePath.toFile())) {
                 trustStore.load(fis, trustStorePassword.toCharArray());
             }
-            
+
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm()
             );
             tmf.init(trustStore);
             return tmf.getTrustManagers();
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException 
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException
                 | CertificateException e) {
             throw new RuntimeException("Failed to create trust managers", e);
         }

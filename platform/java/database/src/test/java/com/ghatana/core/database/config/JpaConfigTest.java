@@ -1,7 +1,6 @@
 package com.ghatana.core.database.config;
 
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;

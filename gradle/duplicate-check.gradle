@@ -1,17 +1,17 @@
 /**
  * Gradle task to detect duplicate public class/interface/enum names across modules.
  * Reports collisions that may indicate code duplication or inconsistent implementations.
- * 
+ *
  * This task will FAIL the build if duplicates are found, ensuring quality standards.
  */
 
 tasks.register('duplicateCheck') {
     group = 'verification'
     description = 'Check for duplicate public class/interface/enum names across modules (fails build on duplicates)'
-    
+
     doLast {
         println 'Scanning for duplicate public types...'
-        
+
         // Allowlist for intentional fully-qualified duplicates
         // Format: "fully.qualified.ClassName"
         def allowedDuplicates = [
@@ -19,7 +19,7 @@ tasks.register('duplicateCheck') {
             'com.ghatana.virtualorg.workflows.CodeReviewWorkflow',  // FALSE POSITIVE: JavaDoc example in BaseWorkflow, actual class in CodeReviewWorkflow.java
             'com.ghatana.virtualorg.framework.agent.EngineerAgent',  // FALSE POSITIVE: JavaDoc example in framework agent interfaces
         ] as Set
-        
+
     def typeDeclarations = [:].withDefault { [] }
     // Map of fqName -> list of files (to detect true duplicates)
     def fqDeclarations = [:].withDefault { [] }
@@ -27,7 +27,7 @@ tasks.register('duplicateCheck') {
         def reportsDir = new File(project.buildDir, 'reports')
         reportsDir.mkdirs()
         def reportFile = new File(reportsDir, 'duplicates.txt')
-        
+
         // Collect Java files from canonical source roots only (src/main/java, src/test/java)
         def javaFiles = [] as List
         projectDir.eachFileRecurse(groovy.io.FileType.DIRECTORIES) { dir ->
@@ -78,7 +78,7 @@ tasks.register('duplicateCheck') {
                 }
             }
         }
-        
+
         // Find and report duplicates
         // True duplicate detection: identical fully-qualified name
         def fqDuplicates = fqDeclarations.findAll { k, v -> v.size() > 1 }
@@ -139,14 +139,14 @@ tasks.register('duplicateCheck') {
             def nonAllowlistedDuplicates = fqDuplicates.keySet().findAll { fqName ->
                 !allowedDuplicates.contains(fqName)
             }
-            
+
             if (!nonAllowlistedDuplicates.isEmpty()) {
                 println "\n❌ BUILD FAILED: Fully-qualified duplicate type names found."
                 println "Please consolidate or rename duplicate classes to maintain code quality."
                 println "See: ${reportFile.absolutePath}\n"
                 throw new GradleException("Duplicate fully-qualified type names found. See report: ${reportFile.absolutePath}")
             }
-            
+
             if (!fqDuplicates.isEmpty() && nonAllowlistedDuplicates.isEmpty()) {
                 println "\n✅ All fully-qualified duplicates are allowlisted (intentional architectural compromises)"
             }

@@ -17,7 +17,7 @@ import java.util.*;
  * @since 1.0.0
  */
 public final class KernelCapability {
-    
+
     private final String capabilityId;
     private final String name;
     private final String description;
@@ -37,22 +37,22 @@ public final class KernelCapability {
      * @param type the capability type
      * @param metadata additional configuration metadata
      */
-    public KernelCapability(String capabilityId, String name, String description, 
+    public KernelCapability(String capabilityId, String name, String description,
                            CapabilityType type, Map<String, Object> metadata) {
         this.capabilityId = Objects.requireNonNull(capabilityId, "capabilityId cannot be null");
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.description = description != null ? description : "";
         this.type = Objects.requireNonNull(type, "type cannot be null");
         this.metadata = metadata != null ? new HashMap<>(metadata) : new HashMap<>();
-        
+
         // Extract service dependencies from metadata
         this.requiredServices = extractRequiredServices(this.metadata);
         this.optionalDependencies = extractOptionalDependencies(this.metadata);
-        
+
         // Determine if shared and supported products
         this.isShared = this.metadata.getOrDefault("is_shared", "true").equals("true");
         this.supportedProducts = extractSupportedProducts(this.metadata);
-        
+
         validate();
     }
 
@@ -118,11 +118,11 @@ public final class KernelCapability {
      * Core kernel capabilities available to all products.
      */
     public static final class Core {
-        
+
         public static final KernelCapability DATA_STORAGE = new KernelCapability(
-            "data.storage", "Data Storage", 
+            "data.storage", "Data Storage",
             "Unified data storage abstraction with multi-tier support",
-            CapabilityType.DATA_MANAGEMENT, 
+            CapabilityType.DATA_MANAGEMENT,
             Map.of(
                 "backends", "postgresql,redis,minio",
                 "replication", "true",
@@ -373,7 +373,7 @@ public final class KernelCapability {
         if (this.type == other.type) {
             return true;
         }
-        
+
         // Check for overlapping required services
         Set<String> intersection = new HashSet<>(this.requiredServices);
         intersection.retainAll(other.requiredServices);

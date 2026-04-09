@@ -110,4 +110,3 @@ public class PipelineStage {
         config.put(key, value);
     }
 }
-

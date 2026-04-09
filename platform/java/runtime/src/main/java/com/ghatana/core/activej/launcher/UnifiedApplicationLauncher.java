@@ -251,10 +251,10 @@ public abstract class UnifiedApplicationLauncher extends ServiceLauncher {
     @Override
     protected Module createModule() {
         ModuleBuilder builder = ModuleBuilder.create();
-        
+
         // Setup service-specific bindings
         setupService(builder);
-        
+
         return builder.build();
     }
 

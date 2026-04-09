@@ -4,8 +4,6 @@ import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Shared memory accessible by all agents in an organization.
@@ -166,7 +164,7 @@ public interface SharedOrganizationMemory {
             Instant timestamp,
             Map<String, String> metadata
     ) {
-        
+
 
     public static Builder builder() {
         return new Builder();

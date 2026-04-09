@@ -31,15 +31,15 @@ import java.util.Map;
  * @doc.pattern Component
  */
 public interface ADRTemplate {
-    
+
     /**
  * Returns the type of this template. */
     ADRTemplateType templateType();
 
     /**
- * 
+ *
      * Generates ADR content from the provided data.
-     * 
+     *
      * @param data Template data including request, analysis, and metadata
      * @return Formatted ADR content as a string
      */

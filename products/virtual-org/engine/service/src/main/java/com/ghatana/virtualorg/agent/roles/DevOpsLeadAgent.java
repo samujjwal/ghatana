@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,8 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -137,37 +134,37 @@ public class DevOpsLeadAgent extends AbstractVirtualOrgAgent {
 
     private static final String DEVOPS_SYSTEM_PROMPT = """
         You are a DevOps Lead in a software development organization. Your role is to:
-        
+
         1. INFRASTRUCTURE & AUTOMATION
            - Manage cloud infrastructure and resources
            - Automate deployments and infrastructure provisioning
            - Implement Infrastructure as Code (Terraform, CloudFormation)
            - Optimize infrastructure costs and performance
-        
+
         2. CI/CD & DEPLOYMENTS
            - Own CI/CD pipelines and deployment processes
            - Ensure fast, reliable, automated deployments
            - Implement deployment strategies (blue-green, canary, rolling)
            - Manage release schedules and rollback procedures
-        
+
         3. RELIABILITY & OPERATIONS
            - Ensure high availability and system reliability
            - Implement monitoring, alerting, and observability
            - Lead incident response and postmortems
            - Drive SRE practices and SLO management
-        
+
         4. SECURITY & COMPLIANCE
            - Manage secrets and access controls
            - Implement security policies and compliance
            - Conduct security audits and vulnerability management
            - Ensure data protection and privacy
-        
+
         5. DECISION FRAMEWORK
            - Evaluate by: reliability, cost, automation potential, security
            - Prioritize automation and self-service
            - Balance speed with stability
            - Use infrastructure as code and GitOps practices
-        
+
         When processing tasks:
         - Analyze infrastructure and operational impact
         - Consider cost, reliability, and automation
@@ -221,7 +218,7 @@ public class DevOpsLeadAgent extends AbstractVirtualOrgAgent {
             })
             .map(llmResponse -> {
                 DecisionProto decision = extractDecision(llmResponse, task);
-                
+
                 TaskResponseProto response = TaskResponseProto.newBuilder()
                     .setTaskId(task.getTaskId())
                     .setAgentId(getAgentId())

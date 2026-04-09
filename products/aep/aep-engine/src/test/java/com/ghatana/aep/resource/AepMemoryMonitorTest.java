@@ -96,4 +96,3 @@ class AepMemoryMonitorTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
-

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
 
 /**
  * Provides common test data generators for standard data types.
@@ -20,17 +19,17 @@ import java.util.function.Supplier;
  * @doc.pattern Utility
  */
 public final class CommonTestData {
-    
+
     private static final RandomDataBuilder RANDOM = new RandomDataBuilder();
-    
+
     private CommonTestData() {
         // Utility class
     }
-    
+
     // String generators
-    public static final DataGenerator<String> UUID_STRING = 
+    public static final DataGenerator<String> UUID_STRING =
         () -> UUID.randomUUID().toString();
-    
+
     public static DataGenerator<String> email() {
         return () -> {
             int pick = ThreadLocalRandom.current().nextInt(3);
@@ -47,7 +46,7 @@ public final class CommonTestData {
             }
         };
     }
-    
+
     public static DataGenerator<String> firstName() {
         List<String> firstNames = List.of(
             "James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles",
@@ -55,7 +54,7 @@ public final class CommonTestData {
         );
         return RANDOM.oneOf(firstNames);
     }
-    
+
     public static DataGenerator<String> lastName() {
         List<String> lastNames = List.of(
             "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
@@ -63,14 +62,14 @@ public final class CommonTestData {
         );
         return RANDOM.oneOf(lastNames);
     }
-    
+
     public static DataGenerator<String> fullName() {
-        return () -> String.format("%s %s", 
-            firstName().generate(), 
+        return () -> String.format("%s %s",
+            firstName().generate(),
             lastName().generate()
         );
     }
-    
+
     public static DataGenerator<String> phoneNumber() {
         return () -> {
             if (RANDOM.bool().generate()) {
@@ -87,22 +86,22 @@ public final class CommonTestData {
             }
         };
     }
-    
+
     // Numeric generators
     public static DataGenerator<Integer> age() {
         return RANDOM.integer(1, 120);
     }
-    
+
     public static DataGenerator<Double> price(double min, double max) {
         return RANDOM.doubleValue(min, max)
                 .map(value -> Math.round(value * 100.0) / 100.0);
     }
-    
+
     public static DataGenerator<Double> percentage() {
         return RANDOM.doubleValue(0.0, 100.0)
                 .map(value -> Math.round(value * 100.0) / 100.0);
     }
-    
+
     // Date/Time generators
     public static DataGenerator<LocalDate> dateOfBirth() {
         LocalDate now = LocalDate.now();
@@ -110,13 +109,13 @@ public final class CommonTestData {
         LocalDate maxDate = now.minusYears(1);
         return RANDOM.date(minDate, maxDate);
     }
-    
+
     public static DataGenerator<LocalDateTime> timestamp() {
         return () -> LocalDateTime.now().minusSeconds(
             ThreadLocalRandom.current().nextInt(0, 60 * 60 * 24 * 365) // Up to 1 year in the past
         );
     }
-    
+
     // Internet-related generators
     public static DataGenerator<String> ipAddress() {
         return () -> String.format("%d.%d.%d.%d",
@@ -126,17 +125,17 @@ public final class CommonTestData {
             RANDOM.integer(1, 254).generate()
         );
     }
-    
+
     public static DataGenerator<String> url() {
         List<String> domains = List.of("example.com", "test.org", "demo.net", "sample.io");
         List<String> protocols = List.of("http", "https");
         List<String> paths = List.of("", "/", "/path", "/test", "/api/v1/resource");
-        
+
         return () -> {
             String protocol = RANDOM.oneOf(protocols).generate();
             String domain = RANDOM.oneOf(domains).generate();
             String path = RANDOM.oneOf(paths).generate();
-            
+
             if (RANDOM.bool().generate()) {
                 return String.format("%s://%s%s", protocol, domain, path);
             } else {
@@ -145,19 +144,19 @@ public final class CommonTestData {
             }
         };
     }
-    
+
     // Business-related generators
     public static DataGenerator<String> creditCardNumber() {
         // Luhn algorithm compliant credit card number generator
         return () -> {
             // Start with a random 15-digit number (Visa/Mastercard start with 4/5)
             long number = 400000000000000L + (long)(Math.random() * 1000000000000L);
-            
+
             // Convert to string and calculate check digit using Luhn algorithm
             String numStr = String.valueOf(number);
             int sum = 0;
             boolean alternate = true;
-            
+
             for (int i = numStr.length() - 1; i >= 0; i--) {
                 int n = Integer.parseInt(numStr.substring(i, i + 1));
                 if (alternate) {
@@ -169,19 +168,19 @@ public final class CommonTestData {
                 sum += n;
                 alternate = !alternate;
             }
-            
+
             int checkDigit = (10 - (sum % 10)) % 10;
             return numStr + checkDigit;
         };
     }
-    
+
     public static DataGenerator<String> currencyCode() {
         List<String> currencyCodes = List.of(
             "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "SEK", "NZD"
         );
         return RANDOM.oneOf(currencyCodes);
     }
-    
+
     // Address generators
     public static DataGenerator<String> streetAddress() {
         List<String> streetNames = List.of(
@@ -190,24 +189,24 @@ public final class CommonTestData {
         List<String> streetSuffixes = List.of(
             "St", "Ave", "Blvd", "Rd", "Ln", "Dr", "Ct", "Pl", "Way"
         );
-        
+
         return () -> {
             String number = String.valueOf(RANDOM.integer(1, 9999).generate());
             String street = RANDOM.oneOf(streetNames).generate();
             String suffix = RANDOM.oneOf(streetSuffixes).generate();
-            
+
             // Sometimes add apartment/unit number
             if (RANDOM.bool().generate()) {
                 String unitType = RANDOM.oneOf(List.of("Apt", "Unit", "Ste")).generate();
                 String unitNumber = String.valueOf(RANDOM.integer(1, 999).generate());
-                return String.format("%s %s %s, %s %s", 
+                return String.format("%s %s %s, %s %s",
                     number, street, suffix, unitType, unitNumber);
             } else {
                 return String.format("%s %s %s", number, street, suffix);
             }
         };
     }
-    
+
     public static DataGenerator<String> city() {
         List<String> cities = List.of(
             "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio",
@@ -215,7 +214,7 @@ public final class CommonTestData {
         );
         return RANDOM.oneOf(cities);
     }
-    
+
     public static DataGenerator<String> usState() {
         List<String> states = List.of(
             "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA",
@@ -225,11 +224,11 @@ public final class CommonTestData {
         );
         return RANDOM.oneOf(states);
     }
-    
+
     public static DataGenerator<String> zipCode() {
         return () -> String.format("%05d", RANDOM.integer(501, 99950).generate());
     }
-    
+
     // Helper method to generate a list of unique values
     public static <T> DataGenerator<List<T>> uniqueList(DataGenerator<T> generator, int size) {
         return () -> {
@@ -240,21 +239,21 @@ public final class CommonTestData {
             return new ArrayList<>(result);
         };
     }
-    
+
     // Helper method to generate a value that is different from a set of excluded values
     public static <T> DataGenerator<T> differentFrom(DataGenerator<T> generator, Set<T> excluded) {
         return () -> {
             T value;
             int attempts = 0;
             int maxAttempts = 100;
-            
+
             do {
                 if (attempts++ >= maxAttempts) {
                     throw new IllegalStateException("Failed to generate a unique value after " + maxAttempts + " attempts");
                 }
                 value = generator.generate();
             } while (excluded.contains(value));
-            
+
             return value;
         };
     }

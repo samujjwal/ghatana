@@ -19,14 +19,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SecurityAlertManager {
     private static final Logger logger = LoggerFactory.getLogger(SecurityAlertManager.class);
-    
+
     private final Eventloop eventloop;
     private final SecurityMetrics metrics;
     private final List<SecurityAlertHandler> handlers = new ArrayList<>();
     private final Map<String, AtomicLong> alertCounts = new ConcurrentHashMap<>();
     private final Duration alertAggregationWindow = Duration.ofMinutes(5);
     private final int maxAlertsPerWindow = 100;
-    
+
     /**
      * Creates a new AlertManager.
      *
@@ -38,7 +38,7 @@ public class SecurityAlertManager {
         this.metrics = metrics;
         scheduleAlertAggregationReset();
     }
-    
+
     /**
      * Adds an alert handler to process alerts.
      *
@@ -49,7 +49,7 @@ public class SecurityAlertManager {
         handlers.add(handler);
         return this;
     }
-    
+
     /**
      * Handles a security alert by dispatching it to all registered handlers.
      *
@@ -62,14 +62,14 @@ public class SecurityAlertManager {
             recordDroppedAlert(alert);
             return Promise.complete();
         }
-        
+
         recordAlert(alert);
-        
+
         // If no handlers, return completed promise
         if (handlers.isEmpty()) {
             return Promise.complete();
         }
-        
+
         // Dispatch to all handlers in parallel using a list of promises
         List<Promise<Void>> handlerPromises = new ArrayList<>(handlers.size());
         for (SecurityAlertHandler handler : handlers) {
@@ -90,16 +90,16 @@ public class SecurityAlertManager {
                 handlerPromises.add(Promise.ofException(e));
             }
         }
-        
+
         // Wait for all handlers to complete
         if (handlerPromises.isEmpty()) {
             return Promise.complete();
         }
-        
+
         // Use Promise.all with List<Promise<Void>>
         return Promises.all(handlerPromises).toVoid();
     }
-    
+
     /**
      * Checks if alerts of the given type are being rate limited.
      *
@@ -110,11 +110,11 @@ public class SecurityAlertManager {
         // Simple rate limiting by counting alerts per type in the current window
         long count = alertCounts.computeIfAbsent(alertType, k -> new AtomicLong())
                 .incrementAndGet();
-        
+
         // Don't record the alert here, it will be recorded in handleAlert
         return count > maxAlertsPerWindow;
     }
-    
+
     /**
      * Records a dropped alert due to rate limiting.
      *
@@ -124,7 +124,7 @@ public class SecurityAlertManager {
         metrics.recordDroppedAlert(alert);
         logger.warn("Alert rate limit exceeded for type: {}", alert.getType());
     }
-    
+
     /**
      * Records an alert in metrics.
      *
@@ -133,7 +133,7 @@ public class SecurityAlertManager {
     private void recordAlert(SecurityAlert alert) {
         metrics.recordAlert(alert);
     }
-    
+
     /**
      * Schedules periodic reset of alert counts.
      */
@@ -143,10 +143,10 @@ public class SecurityAlertManager {
             scheduleAlertAggregationReset();
         });
     }
-    
+
     /**
      * Interface for alert handlers.
-     
+
  *
  * @doc.type interface
  * @doc.purpose Security alert handler

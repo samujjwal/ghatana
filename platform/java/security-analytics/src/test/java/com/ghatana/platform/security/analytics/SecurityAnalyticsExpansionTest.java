@@ -10,8 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -85,7 +83,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
             // Premium tenant can send more
             runBlocking(() -> monitor.record("premium-tenant", "a1", "op", 50_000));
 
-            long premiumTotal = runPromise(() -> 
+            long premiumTotal = runPromise(() ->
                 monitor.currentWindowBytes("premium-tenant", "a1"));
             assertThat(premiumTotal).isEqualTo(50_000);
 

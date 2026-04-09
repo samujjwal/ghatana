@@ -1,6 +1,5 @@
 package com.ghatana.platform.plugin.lifecycle;
 
-import com.ghatana.platform.plugin.PluginRegistry;
 import com.ghatana.platform.plugin.PluginState;
 import com.ghatana.platform.plugin.test.InMemoryStoragePlugin;
 import com.ghatana.platform.plugin.test.PluginTestBase;

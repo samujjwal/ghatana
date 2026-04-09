@@ -71,4 +71,3 @@ public class MigrationReport {
         private String error;
     }
 }
-

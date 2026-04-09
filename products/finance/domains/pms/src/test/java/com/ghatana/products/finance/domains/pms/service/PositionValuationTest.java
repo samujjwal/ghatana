@@ -71,7 +71,7 @@ class PositionValuationTest {
     @DisplayName("Should use last known price for missing quotes")
     void shouldUseLastKnownPriceForMissingQuotes() {
         Position position = new Position("AAPL", 1000L, BigDecimal.valueOf(150.00));
-        
+
         BigDecimal value = valuationService.valueWithFallback(position, null, BigDecimal.valueOf(152.00));
 
         assertThat(value).isEqualByComparingTo(BigDecimal.valueOf(152000.00));
@@ -184,7 +184,7 @@ class PositionValuationTest {
     record MarketPrice(String symbol, BigDecimal price, Instant timestamp) {}
     record DerivativePosition(String symbol, long quantity, BigDecimal premium, String type, BigDecimal strikePrice) {}
     record PriceHistory(String symbol, BigDecimal price, Instant timestamp) {}
-    
+
     record MarkToMarket(BigDecimal totalMarketValue, BigDecimal totalCostBasis, BigDecimal unrealizedPnL) {}
     record ValuationReport(BigDecimal totalMarketValue, int positionCount, Instant valuationTime) {}
 

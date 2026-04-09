@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Java language resolver implementation (placeholder). 
+ * Java language resolver implementation (placeholder).
  * @doc.type class
  * @doc.purpose Handles java language resolver operations
  * @doc.layer core

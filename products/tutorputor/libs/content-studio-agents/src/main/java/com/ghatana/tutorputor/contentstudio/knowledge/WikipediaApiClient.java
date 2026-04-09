@@ -25,7 +25,7 @@ import java.util.Optional;
 
 /**
  * Production-ready Wikipedia API client for fact-checking and content enrichment.
- * 
+ *
  * <p>This client provides:
  * <ul>
  *   <li>Article search and retrieval</li>
@@ -44,10 +44,10 @@ public class WikipediaApiClient {
     private static final Logger LOG = LoggerFactory.getLogger(WikipediaApiClient.class);
     private static final String WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php";
     private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-    
+
     private final HttpClient httpClient;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter searchRequestsCounter;
     private final Counter extractRequestsCounter;
@@ -63,7 +63,7 @@ public class WikipediaApiClient {
     public WikipediaApiClient(HttpClient httpClient, MeterRegistry meterRegistry) {
         this.httpClient = httpClient;
         this.meterRegistry = meterRegistry;
-        
+
         this.searchRequestsCounter = Counter.builder("tutorputor.wikipedia.search.requests")
             .description("Number of Wikipedia search requests")
             .register(meterRegistry);
@@ -88,14 +88,14 @@ public class WikipediaApiClient {
     public Promise<List<WikipediaArticleSummary>> search(String query, int limit) {
         Instant start = Instant.now();
         searchRequestsCounter.increment();
-        
+
         String url = String.format(
             "%s?action=query&list=search&srsearch=%s&srlimit=%d&format=json&utf8=1",
             WIKIPEDIA_API_URL,
             URLEncoder.encode(query, StandardCharsets.UTF_8),
             Math.min(limit, 20)
         );
-        
+
         LOG.debug("Searching Wikipedia for: {}", query);
 
         Promise<List<WikipediaArticleSummary>> promise = httpClient.request(
@@ -122,13 +122,13 @@ public class WikipediaApiClient {
     public Promise<Optional<WikipediaExtract>> getExtract(String title) {
         Instant start = Instant.now();
         extractRequestsCounter.increment();
-        
+
         String url = String.format(
             "%s?action=query&prop=extracts|info&exintro=1&explaintext=1&titles=%s&format=json&utf8=1&inprop=url",
             WIKIPEDIA_API_URL,
             URLEncoder.encode(title, StandardCharsets.UTF_8)
         );
-        
+
         LOG.debug("Fetching Wikipedia extract for: {}", title);
 
         Promise<Optional<WikipediaExtract>> promise = httpClient.request(
@@ -154,16 +154,16 @@ public class WikipediaApiClient {
      * @return a promise containing the verification result
      */
     public Promise<FactVerificationResult> verifyFact(String fact, String topic) {
-        LOG.info("Verifying fact against Wikipedia: topic='{}', fact='{}'", 
+        LOG.info("Verifying fact against Wikipedia: topic='{}', fact='{}'",
             topic, fact.substring(0, Math.min(50, fact.length())) + "...");
-        
+
         return search(topic, 3)
             .then(results -> {
                 if (results.isEmpty()) {
                     return Promise.of(new FactVerificationResult(
                         false, 0.0, "No Wikipedia articles found for topic", null));
                 }
-                
+
                 // Get extract from the most relevant article
                 return getExtract(results.get(0).title())
                     .map(extractOpt -> {
@@ -171,14 +171,14 @@ public class WikipediaApiClient {
                             return new FactVerificationResult(
                                 false, 0.0, "Could not retrieve article content", null);
                         }
-                        
+
                         WikipediaExtract extract = extractOpt.get();
                         double similarity = calculateFactSimilarity(fact, extract.extract());
-                        
+
                         return new FactVerificationResult(
                             similarity > 0.3,
                             similarity,
-                            similarity > 0.3 
+                            similarity > 0.3
                                 ? "Fact appears consistent with Wikipedia content"
                                 : "Fact could not be verified against Wikipedia",
                             extract.url()
@@ -193,11 +193,11 @@ public class WikipediaApiClient {
 
     private List<WikipediaArticleSummary> parseSearchResults(String json, Instant start) {
         List<WikipediaArticleSummary> results = new ArrayList<>();
-        
+
         try {
             JsonNode root = MAPPER.readTree(json);
             JsonNode searchResults = root.path("query").path("search");
-            
+
             if (searchResults.isArray()) {
                 for (JsonNode result : searchResults) {
                     results.add(new WikipediaArticleSummary(
@@ -207,15 +207,15 @@ public class WikipediaApiClient {
                     ));
                 }
             }
-            
+
             apiLatencyTimer.record(Duration.between(start, Instant.now()));
             LOG.debug("Wikipedia search returned {} results", results.size());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse Wikipedia search results", e);
             apiErrorsCounter.increment();
         }
-        
+
         return results;
     }
 
@@ -223,21 +223,21 @@ public class WikipediaApiClient {
         try {
             JsonNode root = MAPPER.readTree(json);
             JsonNode pages = root.path("query").path("pages");
-            
+
             // Wikipedia returns pages as an object with page ID as key
             if (pages.isObject()) {
                 var fields = pages.fields();
                 if (fields.hasNext()) {
                     JsonNode page = fields.next().getValue();
-                    
+
                     // Check if page exists (not a missing page)
                     if (!page.has("missing")) {
                         String extract = page.path("extract").asText("");
                         String url = page.path("fullurl").asText(
                             "https://en.wikipedia.org/wiki/" + URLEncoder.encode(title, StandardCharsets.UTF_8));
-                        
+
                         apiLatencyTimer.record(Duration.between(start, Instant.now()));
-                        
+
                         return Optional.of(new WikipediaExtract(
                             page.path("title").asText(title),
                             extract,
@@ -251,7 +251,7 @@ public class WikipediaApiClient {
             LOG.error("Failed to parse Wikipedia extract result", e);
             apiErrorsCounter.increment();
         }
-        
+
         return Optional.empty();
     }
 
@@ -263,19 +263,19 @@ public class WikipediaApiClient {
         if (content == null || content.isEmpty()) {
             return 0.0;
         }
-        
+
         // Simple keyword overlap approach
         // In production, use embeddings from libs/ai-integration
         String[] factWords = fact.toLowerCase().split("\\W+");
         String contentLower = content.toLowerCase();
-        
+
         int matches = 0;
         for (String word : factWords) {
             if (word.length() > 3 && contentLower.contains(word)) {
                 matches++;
             }
         }
-        
+
         return factWords.length > 0 ? (double) matches / factWords.length : 0.0;
     }
 

@@ -9,11 +9,11 @@ import java.util.Map;
 
 /**
  * Represents a specification for an operator in the pattern detection tree.
- * 
+ *
  * <p>OperatorSpec defines a single operator node within a pattern specification.
  * Operators are organized hierarchically with child operands, forming a tree structure
  * that the compiler converts to an executable DAG.
- * 
+ *
  * @doc.pattern Composite Pattern (tree structure), Builder Pattern (construction)
  * @doc.compiler-phase OperatorSpec (input to AST building phase)
  * @doc.threading Thread-safe after construction (immutable specification)
@@ -22,7 +22,7 @@ import java.util.Map;
  * @doc.immutability Immutable after build(); use builder for modifications
  * @doc.serialization JSON serializable via Jackson; supports recursive operator trees
  * @doc.apiNote Use builder pattern; nest operands for tree structure
- * 
+ *
  * <h2>Operator Types</h2>
  * <table border="1" cellpadding="5">
  *   <tr>
@@ -51,7 +51,7 @@ import java.util.Map;
  *     <td>2 (binary)</td>
  *   </tr>
  * </table>
- * 
+ *
  * <p><b>Example Operator Tree</b>:
  * <pre>
  * OperatorSpec.builder()
@@ -76,25 +76,25 @@ import java.util.Map;
  * </pre>
  */
 public class OperatorSpec {
-    
+
     @JsonProperty("type")
     private String type;
-    
+
     @JsonProperty("id")
     private String id;
-    
+
     @JsonProperty("operands")
     private List<OperatorSpec> operands;
-    
+
     @JsonProperty("parameters")
     private Map<String, Object> parameters;
-    
+
     @JsonProperty("metadata")
     private Map<String, Object> metadata;
-    
+
     // Default constructor for JSON deserialization
     public OperatorSpec() {}
-    
+
     // Builder pattern constructor
     public OperatorSpec(Builder builder) {
         this.type = builder.type;
@@ -103,32 +103,32 @@ public class OperatorSpec {
         this.parameters = builder.parameters;
         this.metadata = builder.metadata;
     }
-    
+
     // Getters
     public String getType() { return type; }
     public String getId() { return id; }
     public List<OperatorSpec> getOperands() { return operands; }
     public Map<String, Object> getParameters() { return parameters; }
     public Map<String, Object> getMetadata() { return metadata; }
-    
+
     // Setters
     public void setType(String type) { this.type = type; }
     public void setId(String id) { this.id = id; }
     public void setOperands(List<OperatorSpec> operands) { this.operands = operands; }
     public void setParameters(Map<String, Object> parameters) { this.parameters = parameters; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
-    
+
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String type;
         private String id;
         private List<OperatorSpec> operands;
         private Map<String, Object> parameters;
         private Map<String, Object> metadata;
-        
+
         public Builder type(String type) { this.type = type; return this; }
         public Builder id(String id) { this.id = id; return this; }
         public Builder operands(List<OperatorSpec> operands) { this.operands = operands; return this; }
@@ -183,38 +183,38 @@ public class OperatorSpec {
             return new OperatorSpec(this);
         }
     }
-    
+
     /**
      * Check if this operator has operands (is a composite operator).
-     * 
+     *
      * @return true if the operator has operands
      */
     public boolean hasOperands() {
         return operands != null && !operands.isEmpty();
     }
-    
+
     /**
      * Get the number of operands.
-     * 
+     *
      * @return the number of operands
      */
     public int getOperandCount() {
         return operands != null ? operands.size() : 0;
     }
-    
+
     /**
      * Get a parameter value by key.
-     * 
+     *
      * @param key the parameter key
      * @return the parameter value, or null if not found
      */
     public Object getParameter(String key) {
         return parameters != null ? parameters.get(key) : null;
     }
-    
+
     /**
      * Get a parameter value by key with a default value.
-     * 
+     *
      * @param key the parameter key
      * @param defaultValue the default value to return if not found
      * @return the parameter value or the default value
@@ -223,7 +223,7 @@ public class OperatorSpec {
         Object value = getParameter(key);
         return value != null ? value : defaultValue;
     }
-    
+
     @Override
     public String toString() {
         return "OperatorSpec{" +
@@ -233,4 +233,3 @@ public class OperatorSpec {
                 '}';
     }
 }
-

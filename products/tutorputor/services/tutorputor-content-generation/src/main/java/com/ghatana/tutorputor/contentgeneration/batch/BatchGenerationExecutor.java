@@ -1,12 +1,7 @@
 package com.ghatana.tutorputor.contentgeneration.batch;
 
-import com.ghatana.tutorputor.contentgeneration.domain.AnimationConfig;
-import com.ghatana.tutorputor.contentgeneration.domain.AssessmentItem;
-import com.ghatana.tutorputor.contentgeneration.domain.ContentExample;
 import com.ghatana.tutorputor.contentgeneration.domain.ContentGenerationRequest;
 import com.ghatana.tutorputor.contentgeneration.domain.Domain;
-import com.ghatana.tutorputor.contentgeneration.domain.LearningClaim;
-import com.ghatana.tutorputor.contentgeneration.domain.SimulationManifest;
 import com.ghatana.tutorputor.contentgeneration.generators.AnimationGenerator;
 import com.ghatana.tutorputor.contentgeneration.generators.AssessmentGenerator;
 import com.ghatana.tutorputor.contentgeneration.generators.ClaimGenerator;

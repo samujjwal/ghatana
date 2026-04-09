@@ -55,7 +55,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       agentId_ = s;
@@ -71,7 +71,7 @@ private static final long serialVersionUID = 0L;
       getAgentIdBytes() {
     java.lang.Object ref = agentId_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       agentId_ = b;
@@ -94,7 +94,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       name_ = s;
@@ -110,7 +110,7 @@ private static final long serialVersionUID = 0L;
       getNameBytes() {
     java.lang.Object ref = name_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       name_ = b;
@@ -630,7 +630,7 @@ private static final long serialVersionUID = 0L;
         getAgentIdBytes() {
       java.lang.Object ref = agentId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         agentId_ = b;
@@ -702,7 +702,7 @@ private static final long serialVersionUID = 0L;
         getNameBytes() {
       java.lang.Object ref = name_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         name_ = b;
@@ -857,7 +857,7 @@ private static final long serialVersionUID = 0L;
      * <code>.com.ghatana.virtualorg.v1.AgentStateProto state = 3;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.ghatana.virtualorg.v1.AgentStateProto, com.ghatana.virtualorg.v1.AgentStateProto.Builder, com.ghatana.virtualorg.v1.AgentStateProtoOrBuilder> 
+        com.ghatana.virtualorg.v1.AgentStateProto, com.ghatana.virtualorg.v1.AgentStateProto.Builder, com.ghatana.virtualorg.v1.AgentStateProtoOrBuilder>
         getStateFieldBuilder() {
       if (stateBuilder_ == null) {
         stateBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
@@ -978,7 +978,7 @@ private static final long serialVersionUID = 0L;
      * <code>.com.ghatana.virtualorg.v1.AgentPerformanceProto performance = 4;</code>
      */
     private com.google.protobuf.SingleFieldBuilderV3<
-        com.ghatana.virtualorg.v1.AgentPerformanceProto, com.ghatana.virtualorg.v1.AgentPerformanceProto.Builder, com.ghatana.virtualorg.v1.AgentPerformanceProtoOrBuilder> 
+        com.ghatana.virtualorg.v1.AgentPerformanceProto, com.ghatana.virtualorg.v1.AgentPerformanceProto.Builder, com.ghatana.virtualorg.v1.AgentPerformanceProtoOrBuilder>
         getPerformanceFieldBuilder() {
       if (performanceBuilder_ == null) {
         performanceBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
@@ -1053,4 +1053,3 @@ private static final long serialVersionUID = 0L;
   }
 
 }
-

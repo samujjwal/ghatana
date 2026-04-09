@@ -5,7 +5,6 @@ import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.subsys.TriggerListener;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 

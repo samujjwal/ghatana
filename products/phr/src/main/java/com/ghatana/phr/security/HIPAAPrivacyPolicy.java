@@ -78,8 +78,8 @@ public class HIPAAPrivacyPolicy implements Policy {
 
         @Override
         public boolean evaluate(SecurityContext context) {
-            return context.isAuthenticated() && 
-                   (context.hasRole("HEALTHCARE_PROVIDER") || 
+            return context.isAuthenticated() &&
+                   (context.hasRole("HEALTHCARE_PROVIDER") ||
                     context.hasRole("PATIENT") ||
                     context.hasRole("ADMINISTRATOR"));
         }
@@ -98,7 +98,7 @@ public class HIPAAPrivacyPolicy implements Policy {
 
         @Override
         public boolean evaluate(SecurityContext context) {
-            return context.isAuthenticated() && 
+            return context.isAuthenticated() &&
                    context.hasPermission("read:patient-records");
         }
     }

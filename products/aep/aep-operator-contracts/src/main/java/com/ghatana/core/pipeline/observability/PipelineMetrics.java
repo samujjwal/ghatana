@@ -4,7 +4,6 @@ import com.ghatana.platform.observability.MetricsCollector;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Observability facade for pipeline execution metrics.

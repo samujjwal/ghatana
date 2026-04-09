@@ -12,16 +12,15 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Validation engine for pattern specifications with comprehensive rule checking.
- * 
+ *
  * <p>The ValidationEngine performs multi-phase validation of pattern specifications before
  * compilation, ensuring patterns are well-formed, semantically correct, and authorized for
  * the requesting tenant. Validation failures throw {@link PatternValidationException} with
  * detailed error messages for debugging.
- * 
+ *
  * @doc.pattern Strategy Pattern - Pluggable validation strategies (basic fields, operators, windows, permissions).
  *               Chain of Responsibility - Sequential validation chain where each validator can fail the request.
  * @doc.compiler-phase Validation (Phase 1 of 5) - First phase before AST building, DAG generation, optimization, plan creation.
@@ -87,7 +86,7 @@ import java.util.Set;
  * @doc.apiNote <strong>Usage Example - Standalone Validation:</strong>
  *              <pre>
  *              ValidationEngine validator = new ValidationEngine(operatorRegistry, meterRegistry);
- *              
+ *
  *              try {
  *                  validator.validate(patternSpec);
  *                  System.out.println("Pattern is valid");
@@ -99,7 +98,7 @@ import java.util.Set;
  *                  // - "Sliding window slide cannot be greater than size"
  *              }
  *              </pre>
- *              
+ *
  *              <strong>Integration with Compiler:</strong>
  *              <pre>
  *              // ValidationEngine is called automatically in first phase
@@ -127,14 +126,14 @@ import java.util.Set;
  *                     </ul>
  */
 public class ValidationEngine {
-    
+
     private final OperatorRegistry operatorRegistry;
     private final MetricsCollector metrics;
     private final TenantPermissionChecker permissionChecker;
     private final ValidationContext.EventTypeRegistry eventTypeRegistry;
-    
+
     private final Timer validationTimer;
-    
+
     /**
      * Creates a ValidationEngine with default (no-op) permission checking.
      *
@@ -160,13 +159,13 @@ public class ValidationEngine {
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
         this.permissionChecker = permissionChecker;
         this.eventTypeRegistry = eventTypeRegistry;
-        
+
         this.validationTimer = Timer.builder("pattern.compiler.validation.time").register(meterRegistry);
     }
-    
+
     /**
      * Validate a pattern specification.
-     * 
+     *
      * @param spec the pattern specification to validate
      * @throws PatternValidationException if validation fails
      */
@@ -174,7 +173,7 @@ public class ValidationEngine {
         if (spec == null) {
             throw new PatternValidationException("PatternSpecification cannot be null");
         }
-        
+
         try {
             validationTimer.recordCallable(() -> {
                 try {
@@ -209,41 +208,41 @@ public class ValidationEngine {
             throw new PatternValidationException("Validation failed", e);
         }
     }
-    
+
     private void validateBasicFields(PatternSpecification spec) throws PatternValidationException {
         if (spec.getId() == null) {
             throw new PatternValidationException("Pattern ID cannot be null");
         }
-        
+
         if (spec.getTenantId() == null || spec.getTenantId().trim().isEmpty()) {
             throw new PatternValidationException("Tenant ID cannot be null or empty");
         }
-        
+
         if (spec.getName() == null || spec.getName().trim().isEmpty()) {
             throw new PatternValidationException("Pattern name cannot be null or empty");
         }
-        
+
         if (spec.getVersion() < 1) {
             throw new PatternValidationException("Pattern version must be at least 1");
         }
-        
+
         if (spec.getPriority() < 0) {
             throw new PatternValidationException("Pattern priority must be non-negative");
         }
-        
+
         if (spec.getStatus() == null) {
             throw new PatternValidationException("Pattern status cannot be null");
         }
-        
+
         if (spec.getSelection() == null) {
             throw new PatternValidationException("Pattern selection mode cannot be null");
         }
-        
+
         if (spec.getOperator() == null) {
             throw new PatternValidationException("Pattern operator cannot be null");
         }
     }
-    
+
     private void validateOperatorTree(PatternSpecification spec) throws PatternValidationException {
         ValidationContext context = ValidationContext.builder()
                 .patternId(spec.getId().toString())
@@ -254,22 +253,22 @@ public class ValidationEngine {
                 .globalParameters(Map.of())
                 .meterRegistry(metrics.getMeterRegistry())
                 .build();
-        
+
         validateOperator(spec.getOperator(), context);
     }
-    
+
     private void validateOperator(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("Operator specification cannot be null");
         }
-        
+
         if (spec.getType() == null || spec.getType().trim().isEmpty()) {
             throw new PatternValidationException("Operator type cannot be null or empty");
         }
-        
+
         // Validate operator using registry
         operatorRegistry.validate(spec, context);
-        
+
         // Recursively validate operands
         if (spec.getOperands() != null) {
             for (int i = 0; i < spec.getOperands().size(); i++) {
@@ -278,21 +277,21 @@ public class ValidationEngine {
                     throw new PatternValidationException(
                         String.format("Operator operand %d cannot be null", i));
                 }
-                
+
                 validateOperator(operand, context);
             }
         }
     }
-    
+
     private void validateWindowSpec(PatternWindowSpec window) throws PatternValidationException {
         if (window == null) {
             return; // Window is optional
         }
-        
+
         if (window.getType() == null) {
             throw new PatternValidationException("Window type cannot be null");
         }
-        
+
         switch (window.getType()) {
             case TUMBLING:
                 validateTumblingWindow(window);
@@ -310,53 +309,53 @@ public class ValidationEngine {
                 throw new PatternValidationException("Unsupported window type: " + window.getType());
         }
     }
-    
+
     private void validateTumblingWindow(PatternWindowSpec window) throws PatternValidationException {
         if (window.getSize() == null) {
             throw new PatternValidationException("Tumbling window requires size parameter");
         }
-        
+
         if (window.getSize().toMillis() <= 0) {
             throw new PatternValidationException("Tumbling window size must be positive");
         }
     }
-    
+
     private void validateSlidingWindow(PatternWindowSpec window) throws PatternValidationException {
         if (window.getSize() == null) {
             throw new PatternValidationException("Sliding window requires size parameter");
         }
-        
+
         if (window.getSlide() == null) {
             throw new PatternValidationException("Sliding window requires slide parameter");
         }
-        
+
         if (window.getSize().toMillis() <= 0) {
             throw new PatternValidationException("Sliding window size must be positive");
         }
-        
+
         if (window.getSlide().toMillis() <= 0) {
             throw new PatternValidationException("Sliding window slide must be positive");
         }
-        
+
         if (window.getSlide().toMillis() > window.getSize().toMillis()) {
             throw new PatternValidationException("Sliding window slide cannot be greater than size");
         }
     }
-    
+
     private void validateSessionWindow(PatternWindowSpec window) throws PatternValidationException {
         if (window.getSessionTimeout() == null) {
             throw new PatternValidationException("Session window requires sessionTimeout parameter");
         }
-        
+
         if (window.getSessionTimeout().toMillis() <= 0) {
             throw new PatternValidationException("Session window timeout must be positive");
         }
     }
-    
+
     private void validateGlobalWindow(PatternWindowSpec window) throws PatternValidationException {
         // Global window has no specific parameters to validate
     }
-    
+
     /**
      * Validates that the tenant has required permissions to create/manage patterns
      * and access the specified event types.
@@ -457,7 +456,7 @@ public class ValidationEngine {
          */
         boolean isWithinQuota(String tenantId, String quotaKey);
     }
-    
+
     /**
      * Validate event types in the pattern specification.
      *
@@ -550,8 +549,3 @@ public class ValidationEngine {
         return true;
     }
 }
-
-
-
-
-

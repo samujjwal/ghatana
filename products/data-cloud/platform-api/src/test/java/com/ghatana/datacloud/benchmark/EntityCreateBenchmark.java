@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.benchmark;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -16,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Entity Create Performance Benchmark (TEST-086)
- * 
+ *
  * @doc.type class
  * @doc.purpose Performance benchmark for entity creation - target < 100ms p99
  * @doc.layer product
@@ -40,7 +39,7 @@ class EntityCreateBenchmark extends EventloopTestBase {
 
         // Benchmark
         long[] latencies = new long[BENCHMARK_ITERATIONS];
-        
+
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
             long start = System.nanoTime();
             simulateEntityCreate();
@@ -50,9 +49,9 @@ class EntityCreateBenchmark extends EventloopTestBase {
 
         // Calculate p99
         long p99 = calculateP99(latencies);
-        
+
         System.out.println("Entity Create p99 latency: " + p99 + "ms");
-        
+
         assertThat(p99)
             .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, P99_THRESHOLD_MS)
             .isLessThanOrEqualTo(P99_THRESHOLD_MS);
@@ -63,19 +62,19 @@ class EntityCreateBenchmark extends EventloopTestBase {
     void entityCreateThroughputSustained() {
         int operations = 500;
         long durationMs = 1000; // 1 second
-        
+
         long startTime = System.currentTimeMillis();
         int completed = 0;
-        
+
         while (System.currentTimeMillis() - startTime < durationMs && completed < operations) {
             simulateEntityCreate();
             completed++;
         }
-        
+
         double throughput = completed / ((System.currentTimeMillis() - startTime) / 1000.0);
-        
+
         System.out.println("Entity Create throughput: " + throughput + " ops/sec");
-        
+
         // Should sustain at least 100 ops/sec
         assertThat(throughput).isGreaterThanOrEqualTo(100.0);
     }

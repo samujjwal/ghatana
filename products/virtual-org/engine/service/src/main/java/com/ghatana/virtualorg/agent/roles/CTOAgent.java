@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
@@ -142,43 +140,43 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
      */
     private static final String CTO_SYSTEM_PROMPT = """
         You are the CTO (Chief Technology Officer) of a software development organization. Your role is to:
-        
+
         1. TECHNICAL STRATEGY & ARCHITECTURE
            - Define and evolve technical architecture and technology stack
            - Approve major architectural changes and refactoring initiatives
            - Ensure platform scalability, reliability, and performance
            - Drive technology innovation and adoption
-        
+
         2. ENGINEERING EXCELLENCE
            - Set engineering standards and best practices
            - Promote code quality, testing, and automation
            - Manage technical debt strategically
            - Foster culture of continuous improvement
-        
+
         3. SECURITY & COMPLIANCE
            - Own security architecture and policies
            - Ensure compliance (SOC2, GDPR, HIPAA)
            - Manage security incidents and vulnerabilities
            - Drive zero-trust security model
-        
+
         4. INFRASTRUCTURE & OPERATIONS
            - Oversee platform infrastructure and cloud strategy
            - Optimize infrastructure costs and performance
            - Ensure high availability and disaster recovery
            - Drive DevOps practices and automation
-        
+
         5. DECISION FRAMEWORK
            - Evaluate technical decisions by: scalability, maintainability, cost, time-to-market
            - Balance technical excellence with business needs
            - Consider long-term technical health vs short-term velocity
            - Make data-driven decisions using metrics and benchmarks
            - Collaborate with CPO on product/tech tradeoffs
-        
+
         6. ESCALATION HANDLING
            - Escalate budget >$100K to CEO
            - Escalate product/tech conflicts to CEO
            - Resolve technical conflicts from Architect and DevOps leads
-        
+
         When processing tasks:
         - Analyze technical feasibility and scalability impact
         - Consider security, performance, and cost implications
@@ -243,12 +241,12 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
     @Override
     protected void onStart() throws Exception {
         log.info("CTO Agent starting: {}", getAgentId());
-        
+
         // Initialize CTO-specific resources
         // - Load technical architecture and technology roadmap from memory
         // - Subscribe to architecture and infrastructure events
         // - Initialize technical metrics and SLO tracking
-        
+
         log.debug("CTO Agent ready for technical leadership");
     }
 
@@ -261,12 +259,12 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
     @Override
     protected void onStop() throws Exception {
         log.info("CTO Agent stopping: {}", getAgentId());
-        
+
         // Persist technical context and decisions
         // - Save current architecture decisions to long-term memory
         // - Archive pending technical initiatives
         // - Emit agent stopped event
-        
+
         log.debug("CTO Agent stopped gracefully");
     }
 
@@ -299,8 +297,8 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
     @NotNull
     protected Promise<TaskResponseProto> doProcessTask(@NotNull TaskRequestProto request) {
         TaskProto task = request.getTask();
-        
-        log.info("CTO processing technical task: taskId={}, type={}, title={}", 
+
+        log.info("CTO processing technical task: taskId={}, type={}, title={}",
             task.getTaskId(), task.getType(), task.getTitle());
 
         Instant startTime = Instant.now();
@@ -309,7 +307,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
         // Chain all async operations
         Promise<TaskResponseProto> resultPromise = memory.retrieveContext(task)
             .then(context -> {
-                log.debug("Retrieved technical context for task {}: {} chars", 
+                log.debug("Retrieved technical context for task {}: {} chars",
                     task.getTaskId(), context.length());
 
                 // Build LLM prompt with technical context
@@ -325,7 +323,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
                 );
             })
             .then(llmResponse -> {
-                log.debug("LLM technical reasoning complete for task {}: {} tokens used", 
+                log.debug("LLM technical reasoning complete for task {}: {} tokens used",
                     task.getTaskId(), llmResponse.tokensUsed());
 
                 // Extract decision from LLM response
@@ -333,9 +331,9 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
 
                 // Check if decision requires escalation to CEO
                 if (shouldEscalateToCEO(decision, task)) {
-                    log.info("CTO decision requires CEO escalation: taskId={}, reason={}", 
+                    log.info("CTO decision requires CEO escalation: taskId={}, reason={}",
                         task.getTaskId(), getEscalationReason(decision, task));
-                    
+
                     return Promise.of(createEscalationResponse(task, decision, "CEO"));
                 }
 
@@ -350,7 +348,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
                 if (decision.getType() == DecisionTypeProto.DECISION_TYPE_ESCALATED) {
                     return Promise.of(decision);
                 }
-                
+
                 // Store decision in organizational memory
                 return memory.storeDecision(decision, task)
                     .map(stored -> decision);
@@ -368,7 +366,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
                 boolean success = decision.getType() != DecisionTypeProto.DECISION_TYPE_ESCALATED;
                 recordTaskMetrics(task, startTime, success);
 
-                log.info("CTO completed technical decision: taskId={}, decision={}, confidence={}", 
+                log.info("CTO completed technical decision: taskId={}, decision={}, confidence={}",
                     task.getTaskId(), decision.getType(), decision.getConfidence());
 
                 return response;
@@ -376,7 +374,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
 
         // Handle errors with whenException (side effects only)
         resultPromise.whenException(error -> {
-            log.error("CTO failed to process task: taskId={}, error={}", 
+            log.error("CTO failed to process task: taskId={}, error={}",
                 task.getTaskId(), error.getMessage(), error);
             recordTaskMetrics(task, startTime, false);
         });
@@ -389,18 +387,18 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
      */
     private String buildCTOPrompt(TaskProto task, String context) {
         StringBuilder prompt = new StringBuilder();
-        
+
         prompt.append("TECHNICAL DECISION REQUEST\n");
         prompt.append("==========================\n\n");
-        
+
         prompt.append("Task: ").append(task.getTitle()).append("\n");
         prompt.append("Description: ").append(task.getDescription()).append("\n");
         prompt.append("Type: ").append(task.getType()).append("\n\n");
-        
+
         prompt.append("TECHNICAL CONTEXT\n");
         prompt.append("------------------\n");
         prompt.append(context).append("\n\n");
-        
+
         prompt.append("DECISION REQUIRED\n");
         prompt.append("-----------------\n");
         prompt.append("Please analyze this technical decision and provide:\n");
@@ -411,7 +409,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
         prompt.append("5. Alternative approaches considered\n");
         prompt.append("6. Implementation complexity and timeline\n");
         prompt.append("7. Confidence level (0.0-1.0)\n");
-        
+
         return prompt.toString();
     }
 
@@ -442,13 +440,13 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
             // Extract budget amount from task description (simplified)
             return extractBudgetAmount(task.getDescription()) > getBudgetLimitUsd();
         }
-        
+
         // Escalate strategic product/tech conflicts
         if (task.getType() == TaskTypeProto.TASK_TYPE_CODE_REVIEW) {
             return task.getDescription().toLowerCase().contains("product") ||
                    task.getDescription().toLowerCase().contains("strategic");
         }
-        
+
         // Escalate low confidence on critical decisions
         return decision.getConfidence() < 0.4f && isCriticalDecision(task);
     }
@@ -472,7 +470,7 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
     private DecisionProto createEscalationResponse(TaskProto task, DecisionProto decision, String escalateTo) {
         return decision.toBuilder()
             .setType(DecisionTypeProto.DECISION_TYPE_ESCALATED)
-            .setReasoning(decision.getReasoning() + 
+            .setReasoning(decision.getReasoning() +
                 "\n\nESCALATION: This decision requires " + escalateTo + " approval. " +
                 "Reason: " + getEscalationReason(decision, task))
             .build();
@@ -482,15 +480,15 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
      * Execute tools suggested by LLM and refine decision.
      */
     private Promise<DecisionProto> executeToolsAndRefine(
-            LLMResponse llmResponse, 
+            LLMResponse llmResponse,
             TaskProto task,
             DecisionProto preliminaryDecision) {
-        
+
         return toolExecutor.executeTools(llmResponse.getToolCalls(), task)
             .then(toolResults -> {
-                String refinedRationale = preliminaryDecision.getReasoning() + 
+                String refinedRationale = preliminaryDecision.getReasoning() +
                     "\n\nTool Analysis:\n" + DecisionExtractor.formatToolResults(toolResults);
-                
+
                 return Promise.of(preliminaryDecision.toBuilder()
                     .setReasoning(refinedRationale)
                     .build());
@@ -520,23 +518,23 @@ public class CTOAgent extends AbstractVirtualOrgAgent {
 
     private void recordTaskMetrics(TaskProto task, Instant startTime, boolean success) {
         long durationMs = Instant.now().toEpochMilli() - startTime.toEpochMilli();
-        
+
         meterRegistry.counter("virtualorg.cto.tasks",
             "type", task.getType().name(),
             "status", success ? "success" : "failure"
         ).increment();
-        
+
         meterRegistry.timer("virtualorg.cto.task.duration",
             "type", task.getType().name()
         ).record(java.time.Duration.ofMillis(durationMs));
-        
+
         if (success) {
             tasksCompleted.incrementAndGet();
         } else {
             tasksFailed.incrementAndGet();
         }
     }
-    
+
     /**
      * Helper to get budget limit from authority limits map.
      */

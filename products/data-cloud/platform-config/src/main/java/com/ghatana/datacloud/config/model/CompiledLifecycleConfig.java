@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.config.model;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Compiled lifecycle configuration including retention and archival.
@@ -33,7 +32,7 @@ public record CompiledLifecycleConfig(
             Duration duration,
             RetentionAction action
     ) {
-        
+
 
     public CompiledRetentionConfig   {
         action = action != null ? action : RetentionAction.DELETE;

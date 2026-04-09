@@ -183,4 +183,3 @@ class PatternProtoMapperWindowOperatorTest {
         assertThat(PatternProtoMapper.mapOperatorSpecToMetadataString(or)).isEqualTo("OR:3");
     }
 }
-

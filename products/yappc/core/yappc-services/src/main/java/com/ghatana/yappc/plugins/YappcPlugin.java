@@ -1,6 +1,6 @@
 package com.ghatana.yappc.plugins;
 
-/** Base lifecycle plugin contract. 
+/** Base lifecycle plugin contract.
  * @doc.type interface
  * @doc.purpose Defines the contract for yappc plugin
  * @doc.layer core

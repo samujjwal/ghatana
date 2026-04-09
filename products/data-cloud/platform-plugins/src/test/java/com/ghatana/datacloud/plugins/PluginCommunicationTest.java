@@ -27,7 +27,7 @@ class PluginCommunicationTest {
         String fromPlugin = "plugin-a";
         String toPlugin = "plugin-b";
         String message = "Hello";
-        
+
         assertThat(fromPlugin).isNotNull();
         assertThat(toPlugin).isNotNull();
         assertThat(message).isNotNull();
@@ -38,7 +38,7 @@ class PluginCommunicationTest {
     void shouldHandlePluginEvents() {
         String eventType = "PLUGIN_STARTED";
         String pluginId = "plugin-123";
-        
+
         assertThat(eventType).isNotNull();
         assertThat(pluginId).isNotNull();
     }
@@ -48,7 +48,7 @@ class PluginCommunicationTest {
     void shouldHandlePluginRpc() {
         String method = "processData";
         Map<String, Object> params = Map.of("input", "test");
-        
+
         assertThat(method).isNotNull();
         assertThat(params).isNotNull();
     }
@@ -58,7 +58,7 @@ class PluginCommunicationTest {
     void shouldHandleMessageQueuing() {
         int queueSize = 10;
         int maxSize = 1000;
-        
+
         assertThat(queueSize).isLessThan(maxSize);
     }
 
@@ -67,7 +67,7 @@ class PluginCommunicationTest {
     void shouldHandleCommunicationFailures() {
         boolean failed = false;
         String error = null;
-        
+
         assertThat(failed).isFalse();
         assertThat(error).isNull();
     }
@@ -76,7 +76,7 @@ class PluginCommunicationTest {
     @DisplayName("Should handle plugin discovery")
     void shouldHandlePluginDiscovery() {
         String[] plugins = {"plugin-a", "plugin-b", "plugin-c"};
-        
+
         assertThat(plugins).isNotEmpty();
         assertThat(plugins.length).isGreaterThan(0);
     }

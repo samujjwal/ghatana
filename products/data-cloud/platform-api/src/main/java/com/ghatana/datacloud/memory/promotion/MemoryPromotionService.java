@@ -4,17 +4,11 @@
  */
 package com.ghatana.datacloud.memory.promotion;
 
-import com.ghatana.agent.framework.memory.MemoryNamespace;
-import com.ghatana.agent.framework.memory.MemoryNamespaceRepository;
-import com.ghatana.agent.framework.memory.MemoryScope;
-import com.ghatana.datacloud.memory.MemoryService;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Orchestrates the 7-step episodic→procedural memory promotion pipeline.

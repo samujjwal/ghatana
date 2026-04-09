@@ -65,10 +65,10 @@ public record GoBuildSpec(
             @JsonProperty("path") String path,
             @JsonProperty("version") String version,
             @JsonProperty("indirect") boolean indirect) {
-        
+
         @JsonCreator
         public GoDependency {}
-        
+
         public GoDependency(String path, String version) {
             this(path, version, false);
         }
@@ -81,7 +81,7 @@ public record GoBuildSpec(
             @JsonProperty("os") String os,
             @JsonProperty("arch") String arch,
             @JsonProperty("outputName") String outputName) {
-        
+
         @JsonCreator
         public GoBuildTarget {}
     }
@@ -95,10 +95,10 @@ public record GoBuildSpec(
             @JsonProperty("raceDetector") boolean raceDetector,
             @JsonProperty("vendoring") boolean vendoring,
             @JsonProperty("workspaces") boolean workspaces) {
-        
+
         @JsonCreator
         public GoFeatures {}
-        
+
         public static GoFeatures defaults() {
             return new GoFeatures(false, false, false, false, false);
         }

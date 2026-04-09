@@ -3,9 +3,7 @@ package com.ghatana.platform.governance.boundary;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 import static org.assertj.core.api.Assertions.*;
 
-import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,13 +12,13 @@ import org.junit.jupiter.api.Test;
  * @doc.purpose Phase 4: Governance boundary tests for platform module isolation
  * @doc.layer integration
  * @doc.pattern Test
- * 
+ *
  * Validates that governance, policy-as-code, and data-governance modules:
  * 1. Do not depend on domain logic (pure governance rules)
  * 2. Do not expose sensitive enforcement details
  * 3. Are properly tested with boundary scenarios
  * 4. Follow permission model consistently
- * 
+ *
  * 16 tests per module × 3 modules = 48 governance tests
  */
 @DisplayName("Phase 4: Platform Governance Boundary Tests")

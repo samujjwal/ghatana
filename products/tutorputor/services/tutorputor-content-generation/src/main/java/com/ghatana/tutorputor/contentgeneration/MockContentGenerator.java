@@ -1,6 +1,5 @@
 package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.tutorputor.contentgeneration.*;
 import io.activej.promise.Promise;
 import java.util.*;
 
@@ -18,8 +17,8 @@ import java.util.*;
  *     .model("mock-gpt-4")
  *     .tokenCost(10, 20)
  *     .build();
- * 
- * Promise<ContentGenerator.GenerationResult> result = 
+ *
+ * Promise<ContentGenerator.GenerationResult> result =
  *     generator.generateContent("tenant-123", template, guardrails, Map.of());
  * }</pre>
  *
@@ -91,7 +90,7 @@ public final class MockContentGenerator implements ContentGenerator {
             PromptTemplate template,
             GenerationGuardrails guardrails,
             Map<String, Object> context) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(template, "template cannot be null");
         Objects.requireNonNull(guardrails, "guardrails cannot be null");
@@ -122,7 +121,7 @@ public final class MockContentGenerator implements ContentGenerator {
             List<PromptTemplate> templates,
             GenerationGuardrails guardrails,
             Map<String, Object> context) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(templates, "templates cannot be null");
         Objects.requireNonNull(guardrails, "guardrails cannot be null");
@@ -141,7 +140,7 @@ public final class MockContentGenerator implements ContentGenerator {
 
         String content = responsesByTenant.getOrDefault(tenantId, defaultResponse);
         List<ContentGenerator.GenerationResult> results = new ArrayList<>();
-        
+
         for (int i = 0; i < templates.size(); i++) {
             results.add(new ContentGenerator.GenerationResult(
                     content + " [Item " + (i + 1) + "]",
@@ -161,7 +160,7 @@ public final class MockContentGenerator implements ContentGenerator {
     public Promise<Void> updateConfiguration(
             String tenantId,
             Map<String, Object> configuration) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(configuration, "configuration cannot be null");
 
@@ -171,13 +170,13 @@ public final class MockContentGenerator implements ContentGenerator {
     @Override
     public Promise<Map<String, Object>> getConfiguration(String tenantId) {
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
-        
+
         Map<String, Object> config = new HashMap<>();
         config.put("model", model);
         config.put("inputTokens", inputTokens);
         config.put("outputTokens", outputTokens);
         config.put("generationTime", generationTimeMillis);
-        
+
         return Promise.of(config);
     }
 
@@ -190,7 +189,7 @@ public final class MockContentGenerator implements ContentGenerator {
     public Promise<ContentGenerator.TemplateValidationResult> validateTemplate(
             String tenantId,
             PromptTemplate template) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(template, "template cannot be null");
 

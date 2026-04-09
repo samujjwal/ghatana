@@ -28,34 +28,34 @@ import java.util.UUID;
  * @doc.pattern Value Object
  */
 public record TenantId(String value) {
-    
+
     public TenantId {
         Objects.requireNonNull(value, "TenantId cannot be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("TenantId cannot be blank");
         }
     }
-    
+
     /** Create a TenantId from a string value. */
     public static TenantId of(String value) {
         return new TenantId(value);
     }
-    
+
     /** Generate a random tenant ID (prefixed with "tenant-"). */
     public static TenantId random() {
         return new TenantId("tenant-" + UUID.randomUUID());
     }
-    
+
     /** Alias for {@link #random()} for backward compatibility. */
     public static TenantId generate() {
         return random();
     }
-    
+
     /** The system tenant, used for platform-level operations. */
     public static TenantId system() {
         return new TenantId("system");
     }
-    
+
     /** Get the string value. Alias for the record accessor {@link #value()}. */
     public String getValue() {
         return value;

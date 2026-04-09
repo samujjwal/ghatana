@@ -15,15 +15,15 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Utility
  */
 public final class JsonMapper {
-    
+
     private static final Logger log = LoggerFactory.getLogger(JsonMapper.class);
-    
+
     private static final ObjectMapper MAPPER = createMapper();
-    
+
     private JsonMapper() {
         // Utility class
     }
-    
+
     private static ObjectMapper createMapper() {
         ObjectMapper mapper = JsonUtils.getDefaultMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -31,10 +31,10 @@ public final class JsonMapper {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         return mapper;
     }
-    
+
     /**
      * Serializes an object to JSON string.
-     * 
+     *
      * @param object Object to serialize
      * @return JSON string
      * @throws JsonProcessingException if serialization fails
@@ -42,10 +42,10 @@ public final class JsonMapper {
     public static String toJson(Object object) throws JsonProcessingException {
         return MAPPER.writeValueAsString(object);
     }
-    
+
     /**
      * Deserializes JSON string to object.
-     * 
+     *
      * @param json JSON string
      * @param clazz Target class
      * @param <T> Type parameter
@@ -55,10 +55,10 @@ public final class JsonMapper {
     public static <T> T fromJson(String json, Class<T> clazz) throws JsonProcessingException {
         return MAPPER.readValue(json, clazz);
     }
-    
+
     /**
      * Gets the underlying ObjectMapper for advanced usage.
-     * 
+     *
      * @return ObjectMapper instance
      */
     public static ObjectMapper getMapper() {

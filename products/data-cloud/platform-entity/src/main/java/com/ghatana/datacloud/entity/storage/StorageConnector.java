@@ -46,7 +46,7 @@ import java.util.UUID;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Inject connector from routing service
  * StorageConnector connector = routingService.routeForWrite(collection);

@@ -2,7 +2,6 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.orchestrator.subsys.TriggerListener;
-import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -227,7 +226,7 @@ public class TriggerListenerBootstrap {
             String pipelineId = YappcAepPipelineBootstrapper.PIPELINE_ID;
             String correlationId = extractStringField(eventData, "correlationId", eventId);
 
-            logger.debug("Processing {} event for tenant: {}, correlation: {}", 
+            logger.debug("Processing {} event for tenant: {}, correlation: {}",
                 eventType, tenantId, correlationId);
 
             // Route the event through the AEP pipeline

@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Runs `cargo clippy` to perform additional Rust linting and parse the JSON
  * output.
- * 
+ *
  * @doc.type runner
  * @doc.language rust
  * @doc.tool clippy
- 
+
  * @doc.purpose Handles clippy runner operations
  * @doc.layer core
  * @doc.pattern ValueObject

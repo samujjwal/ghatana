@@ -89,7 +89,7 @@ public class EventSourcedEpisodicStore {
 
     private EnhancedEpisode redactSensitiveData(EnhancedEpisode episode) {
         // Pseudo-implementation applying PII bounds before writing to the Event Log
-        return episode; 
+        return episode;
     }
 
     private EnhancedEpisode mapEntryToEpisode(EventLogStore.EventEntry entry) {
@@ -103,6 +103,6 @@ public class EventSourcedEpisodicStore {
     }
 
     private boolean matchesQuery(EnhancedEpisode episode, MemoryQuery query) {
-        return true; 
+        return true;
     }
 }

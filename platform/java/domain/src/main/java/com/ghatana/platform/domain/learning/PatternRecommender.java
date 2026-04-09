@@ -87,8 +87,8 @@ public class PatternRecommender {
      */
     public void recordFeedback(String patternId, boolean success) {
         double currentScore = patternScores.getOrDefault(patternId, 1.0);
-        double newScore = success 
-            ? currentScore * 1.1 + 0.1 
+        double newScore = success
+            ? currentScore * 1.1 + 0.1
             : currentScore * 0.9;
         patternScores.put(patternId, Math.min(10.0, Math.max(0.1, newScore)));
     }

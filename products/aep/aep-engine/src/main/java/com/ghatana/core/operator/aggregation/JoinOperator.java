@@ -30,7 +30,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Inner join: events from stream1 matched with stream2
  * JoinOperator innerJoin = new JoinOperator(

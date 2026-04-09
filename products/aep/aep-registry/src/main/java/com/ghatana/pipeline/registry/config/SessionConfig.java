@@ -32,9 +32,9 @@ import static io.activej.config.converter.ConfigConverters.ofString;
  * @since 2.0.0
  */
 public class SessionConfig extends AbstractModule {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(SessionConfig.class);
-    
+
     @Provides
     JedisPool jedisPool(Config config) {
         String host = config.get(ofString(), "redis.host", "localhost");
@@ -44,7 +44,7 @@ public class SessionConfig extends AbstractModule {
         int maxIdle = config.get(ofInteger(), "redis.pool.max.idle", 10);
         int minIdle = config.get(ofInteger(), "redis.pool.min.idle", 5);
         long maxWaitMillis = config.get(ofInteger(), "redis.pool.max.wait.millis", 5000);
-        
+
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
@@ -53,26 +53,26 @@ public class SessionConfig extends AbstractModule {
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
-        
+
         LOG.info("Configuring Redis connection pool for {}:{}", host, port);
-        
+
         if (password != null && !password.isEmpty()) {
             return new JedisPool(poolConfig, host, port, 2000, password);
         } else {
             return new JedisPool(poolConfig, host, port, 2000);
         }
     }
-    
+
     @Provides
     SessionManager sessionManager(JedisPool jedisPool, ObjectMapper objectMapper, MetricsRegistry metricsRegistry) {
         String keyPrefix = "pipeline-registry:session:";
         Duration defaultTtl = Duration.ofMinutes(30);
-        
+
         LOG.info("Configuring Redis session manager with TTL: {}", defaultTtl);
-        
+
         return new RedisSessionManager(jedisPool, objectMapper, keyPrefix, defaultTtl, metricsRegistry);
     }
-    
+
     @Provides
     SessionFilter sessionFilter(SessionManager sessionManager) {
         return SessionFilter.builder()

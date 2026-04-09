@@ -8,7 +8,7 @@ import java.util.Objects;
  * Represents partition assignment for one or more consumer instances.
  *
  * @since 2.0
- 
+
  *
  * @doc.type class
  * @doc.purpose Partition assignment

@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

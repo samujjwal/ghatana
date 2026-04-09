@@ -7,7 +7,7 @@ import io.activej.promise.Promise;
  * Implementations handle durable storage of checkpoint/savepoint metadata for recovery.
  */
 public interface CheckpointStorage {
-    
+
     /**
      * Save checkpoint metadata.
      *
@@ -15,7 +15,7 @@ public interface CheckpointStorage {
      * @return Promise resolving when metadata is saved
      */
     Promise<CheckpointMetadata> saveCheckpoint(CheckpointMetadata metadata);
-    
+
     /**
      * Save savepoint metadata.
      * Savepoints are stored separately and never auto-deleted.
@@ -24,7 +24,7 @@ public interface CheckpointStorage {
      * @return Promise resolving when metadata is saved
      */
     Promise<CheckpointMetadata> saveSavepoint(CheckpointMetadata metadata);
-    
+
     /**
      * Load checkpoint or savepoint metadata.
      *
@@ -32,7 +32,7 @@ public interface CheckpointStorage {
      * @return Promise resolving to metadata or null if not found
      */
     Promise<CheckpointMetadata> loadCheckpoint(CheckpointId checkpointId);
-    
+
     /**
      * Delete checkpoint metadata and associated snapshots.
      *

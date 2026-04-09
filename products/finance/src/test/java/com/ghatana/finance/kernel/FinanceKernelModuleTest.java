@@ -19,7 +19,6 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.finance.kernel.FinanceCapabilities;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

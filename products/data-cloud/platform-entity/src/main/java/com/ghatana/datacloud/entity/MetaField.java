@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.entity;
 
-import com.ghatana.datacloud.entity.DataCloudColumnNames;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

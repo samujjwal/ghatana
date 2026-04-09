@@ -14,7 +14,6 @@ import org.testcontainers.utility.DockerImageName;
 import javax.sql.DataSource;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Production-grade database test container using Testcontainers with automatic lifecycle and migrations.
@@ -47,10 +46,10 @@ import java.util.Map;
  * // 1. Basic usage with default PostgreSQL 15
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres()) {
  *     db.start();
- *     
+ *
  *     DataSource dataSource = db.getDataSource();
  *     String jdbcUrl = db.getJdbcUrl();
- *     
+ *
  *     // Use for testing
  *     Connection conn = dataSource.getConnection();
  *     // ... test logic
@@ -60,7 +59,7 @@ import java.util.Map;
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres()
  *         .withMigrations("classpath:db/migration")) {
  *     db.start();
- *     
+ *
  *     // Database ready with schema from migrations
  *     List<User> users = db.query(
  *         "SELECT * FROM users WHERE active = ?",
@@ -81,7 +80,7 @@ import java.util.Map;
  *         .withMigrations("classpath:db/migration")
  *         .build()) {
  *     db.start();
- *     
+ *
  *     logger.info("Container started at: {}", db.getJdbcUrl());
  * }
  *
@@ -89,27 +88,27 @@ import java.util.Map;
  * class UserRepositoryTest {
  *     private DatabaseTestContainer db;
  *     private UserRepository repository;
- *     
+ *
  *     @BeforeEach
  *     void setup() throws Exception {
  *         db = DatabaseTestContainer.postgres()
  *             .withMigrations("classpath:db/migration");
  *         db.start();
- *         
+ *
  *         EntityManagerFactory emf = createEMF(db.getDataSource());
  *         repository = new JpaUserRepository(emf);
  *     }
- *     
+ *
  *     @Test
  *     void shouldSaveUser() {
  *         User user = new User("john@example.com");
  *         repository.save(user);
- *         
+ *
  *         Optional<User> found = repository.findById(user.getId());
  *         assertThat(found).isPresent();
  *         assertThat(found.get().getEmail()).isEqualTo("john@example.com");
  *     }
- *     
+ *
  *     @AfterEach
  *     void teardown() throws Exception {
  *         db.close();  // Stop container
@@ -120,13 +119,13 @@ import java.util.Map;
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres()
  *         .withMigrations("classpath:db/migration")) {
  *     db.start();
- *     
+ *
  *     // Insert test data
  *     db.update("INSERT INTO users (email, active) VALUES (?, ?)",
  *         "john@example.com", true);
  *     db.update("INSERT INTO users (email, active) VALUES (?, ?)",
  *         "jane@example.com", false);
- *     
+ *
  *     // Query active users
  *     List<String> activeEmails = db.query(
  *         "SELECT email FROM users WHERE active = ? ORDER BY email",
@@ -134,9 +133,9 @@ import java.util.Map;
  *         rs -> rs.getString("email"),
  *         true
  *     );
- *     
+ *
  *     assertThat(activeEmails).containsExactly("john@example.com");
- *     
+ *
  *     // Count all users
  *     Integer count = db.queryForObject(
  *         "SELECT COUNT(*) FROM users",
@@ -150,7 +149,7 @@ import java.util.Map;
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres()
  *         .withMigrations("classpath:db/migration")) {
  *     db.start();
- *     
+ *
  *     // Load 1000 test users efficiently
  *     List<Object[]> users = IntStream.range(0, 1000)
  *         .mapToObj(i -> new Object[]{
@@ -158,12 +157,12 @@ import java.util.Map;
  *             true
  *         })
  *         .collect(Collectors.toList());
- *     
+ *
  *     db.batchUpdate(
  *         "INSERT INTO users (email, active) VALUES (?, ?)",
  *         users
  *     );
- *     
+ *
  *     // Verify count
  *     Integer count = db.queryForObject(
  *         "SELECT COUNT(*) FROM users",
@@ -177,20 +176,20 @@ import java.util.Map;
  * @TestInstance(TestInstance.Lifecycle.PER_CLASS)
  * class PerformanceTest {
  *     private static DatabaseTestContainer db;
- *     
+ *
  *     @BeforeAll
  *     static void setupContainer() throws Exception {
  *         db = DatabaseTestContainer.postgres()
  *             .withMigrations("classpath:db/migration");
  *         db.start();
- *         
+ *
  *         // Load test data once
  *         for (int i = 0; i < 10000; i++) {
  *             db.update("INSERT INTO users (email) VALUES (?)",
  *                 "user" + i + "@example.com");
  *         }
  *     }
- *     
+ *
  *     @Test
  *     void benchmarkQuery() {
  *         // All tests reuse same container and data
@@ -201,10 +200,10 @@ import java.util.Map;
  *             rs -> new User(rs.getLong("id"), rs.getString("email"))
  *         );
  *         long durationMs = (System.nanoTime() - start) / 1_000_000;
- *         
+ *
  *         assertThat(durationMs).isLessThan(50);
  *     }
- *     
+ *
  *     @AfterAll
  *     static void teardownContainer() throws Exception {
  *         db.close();
@@ -235,7 +234,7 @@ import java.util.Map;
  *     .withMigrations("classpath:db/migration")
  *     .withBaselineVersion("1.0.0")
  *     .withValidateOnMigrate(true);
- * 
+ *
  * db.start();  // Migrations applied automatically
  * }</pre>
  *
@@ -297,43 +296,43 @@ import java.util.Map;
  */
 public final class DatabaseTestContainer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseTestContainer.class);
-    
+
     private static final String DEFAULT_IMAGE = "postgres:15.4";
     private static final String DEFAULT_DATABASE = "testdb";
     private static final String DEFAULT_USERNAME = "testuser";
     private static final String DEFAULT_PASSWORD = "testpass";
-    
+
     private final PostgreSQLContainer<?> container;
     private final String[] migrationLocations;
     private final boolean autoMigrate;
     private final Duration startTimeout;
-    
+
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
     private FlywayMigration migration;
     private volatile boolean started = false;
-    
+
     private DatabaseTestContainer(Builder builder) {
         this.container = new PostgreSQLContainer<>(DockerImageName.parse(builder.image))
             .withDatabaseName(builder.database)
             .withUsername(builder.username)
             .withPassword(builder.password)
             .withStartupTimeout(builder.startTimeout);
-        
+
         this.migrationLocations = builder.migrationLocations;
         this.autoMigrate = builder.autoMigrate;
         this.startTimeout = builder.startTimeout;
-        
-        LOG.info("DatabaseTestContainer created with image: {}, database: {}", 
+
+        LOG.info("DatabaseTestContainer created with image: {}, database: {}",
                 builder.image, builder.database);
     }
-    
+
     /**
      * Starts the database container.
-     * 
+     *
      * <p>This method starts the PostgreSQL container, creates the DataSource,
      * and optionally runs migrations if configured.
-     * 
+     *
      * @throws RuntimeException if the container fails to start
      */
     public void start() {
@@ -341,33 +340,33 @@ public final class DatabaseTestContainer implements AutoCloseable {
             LOG.debug("Container already started");
             return;
         }
-        
+
         LOG.info("Starting database test container...");
-        
+
         try {
             container.start();
-            
+
             // Create DataSource
             this.dataSource = createDataSource();
             this.jdbcTemplate = new JdbcTemplate(dataSource);
-            
+
             // Mark as started before running migrations (they need started=true)
             started = true;
-            
+
             // Run migrations if configured
             if (autoMigrate && migrationLocations.length > 0) {
                 runMigrations();
             }
-            
+
             LOG.info("Database test container started successfully. JDBC URL: {}", getJdbcUrl());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to start database test container", e);
             started = false; // Reset on failure
             throw new RuntimeException("Failed to start database test container", e);
         }
     }
-    
+
     /**
      * Stops the database container.
      */
@@ -375,9 +374,9 @@ public final class DatabaseTestContainer implements AutoCloseable {
         if (!started) {
             return;
         }
-        
+
         LOG.info("Stopping database test container...");
-        
+
         try {
             if (container.isRunning()) {
                 container.stop();
@@ -388,10 +387,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             LOG.error("Error stopping database test container", e);
         }
     }
-    
+
     /**
      * Gets the DataSource for the test database.
-     * 
+     *
      * @return The DataSource
      * @throws IllegalStateException if the container is not started
      */
@@ -399,10 +398,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return dataSource;
     }
-    
+
     /**
      * Gets the JDBC URL for the test database.
-     * 
+     *
      * @return The JDBC URL
      * @throws IllegalStateException if the container is not started
      */
@@ -410,10 +409,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return container.getJdbcUrl();
     }
-    
+
     /**
      * Gets the database username.
-     * 
+     *
      * @return The username
      * @throws IllegalStateException if the container is not started
      */
@@ -421,10 +420,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return container.getUsername();
     }
-    
+
     /**
      * Gets the database password.
-     * 
+     *
      * @return The password
      * @throws IllegalStateException if the container is not started
      */
@@ -432,10 +431,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return container.getPassword();
     }
-    
+
     /**
      * Gets the database name.
-     * 
+     *
      * @return The database name
      * @throws IllegalStateException if the container is not started
      */
@@ -443,10 +442,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return container.getDatabaseName();
     }
-    
+
     /**
      * Executes a SQL statement.
-     * 
+     *
      * @param sql The SQL statement
      * @param parameters The statement parameters
      * @return The number of affected rows
@@ -456,10 +455,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return jdbcTemplate.update(sql, parameters);
     }
-    
+
     /**
      * Executes a query and returns the results.
-     * 
+     *
      * @param <T> The result type
      * @param sql The SQL query
      * @param rowMapper Function to map ResultSet to result objects
@@ -471,10 +470,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return jdbcTemplate.queryForList(sql, rowMapper, parameters);
     }
-    
+
     /**
      * Executes a query for a single scalar value.
-     * 
+     *
      * @param <T> The result type
      * @param sql The SQL query
      * @param resultClass The expected result class
@@ -486,22 +485,22 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted();
         return jdbcTemplate.queryForScalar(sql, resultClass, parameters).orElse(null);
     }
-    
+
     /**
      * Runs migrations using Flyway.
-     * 
+     *
      * @throws RuntimeException if migrations fail
      */
     public void runMigrations() {
         checkStarted();
-        
+
         if (migrationLocations.length == 0) {
             LOG.debug("No migration locations configured");
             return;
         }
-        
+
         LOG.info("Running database migrations from locations: {}", String.join(", ", migrationLocations));
-        
+
         try {
             if (migration == null) {
                 migration = FlywayMigration.builder()
@@ -512,29 +511,29 @@ public final class DatabaseTestContainer implements AutoCloseable {
                     .cleanDisabled(false) // Allow clean in tests
                     .build();
             }
-            
+
             FlywayMigration.MigrationResult result = migration.migrate();
-            LOG.info("Migrations completed: {} migrations executed in {}", 
+            LOG.info("Migrations completed: {} migrations executed in {}",
                     result.getMigrationsExecuted(), result.getExecutionTime());
-            
+
         } catch (Exception e) {
             LOG.error("Migration failed", e);
             throw new RuntimeException("Database migration failed", e);
         }
     }
-    
+
     /**
      * Cleans the database by dropping all objects.
-     * 
+     *
      * <p><strong>WARNING:</strong> This operation removes all data and schema objects.
-     * 
+     *
      * @throws IllegalStateException if the container is not started
      */
     public void clean() {
         checkStarted();
-        
+
         LOG.info("Cleaning database...");
-        
+
         if (migration != null) {
             migration.clean();
         } else {
@@ -542,38 +541,38 @@ public final class DatabaseTestContainer implements AutoCloseable {
             execute("DROP SCHEMA public CASCADE");
             execute("CREATE SCHEMA public");
         }
-        
+
         LOG.info("Database cleaned");
     }
-    
+
     /**
      * Resets the database to a clean state and re-runs migrations.
-     * 
+     *
      * @throws IllegalStateException if the container is not started
      */
     public void reset() {
         checkStarted();
-        
+
         LOG.info("Resetting database...");
-        
+
         clean();
         if (autoMigrate && migrationLocations.length > 0) {
             runMigrations();
         }
-        
+
         LOG.info("Database reset completed");
     }
-    
+
     /**
      * Creates a JpaConfig for the test database.
-     * 
+     *
      * @param entityPackages The entity packages to scan
      * @return Configured JpaConfig
      * @throws IllegalStateException if the container is not started
      */
     public JpaConfig createJpaConfig(String... entityPackages) {
         checkStarted();
-        
+
         return JpaConfig.builder()
             .jdbcUrl(getJdbcUrl())
             .username(getUsername())
@@ -586,51 +585,51 @@ public final class DatabaseTestContainer implements AutoCloseable {
             .enableCache(false) // Disable second-level cache in tests
             .build();
     }
-    
+
     /**
      * Checks if the container is running.
-     * 
+     *
      * @return true if running
      */
     public boolean isRunning() {
         return started && container.isRunning();
     }
-    
+
     /**
      * Gets the underlying Testcontainers PostgreSQL container.
-     * 
+     *
      * @return The PostgreSQL container
      */
     public PostgreSQLContainer<?> getContainer() {
         return container;
     }
-    
+
     @Override
     public void close() {
         stop();
     }
-    
+
     /**
      * Creates a new PostgreSQL test container with default settings.
-     * 
+     *
      * @return A new DatabaseTestContainer
      */
     public static DatabaseTestContainer postgres() {
         return builder().build();
     }
-    
+
     /**
      * Creates a new builder for DatabaseTestContainer.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Creates a DataSource for the test container.
-     * 
+     *
      * @return Configured DataSource
      */
     private DataSource createDataSource() {
@@ -642,13 +641,13 @@ public final class DatabaseTestContainer implements AutoCloseable {
         config.setPassword(container.getPassword());
         config.setMaximumPoolSize(5); // Smaller pool for tests
         config.setAutoCommit(false);
-        
+
         return new HikariDataSource(config);
     }
-    
+
     /**
      * Checks if the container is started and throws an exception if not.
-     * 
+     *
      * @throws IllegalStateException if the container is not started
      */
     private void checkStarted() {
@@ -656,7 +655,7 @@ public final class DatabaseTestContainer implements AutoCloseable {
             throw new IllegalStateException("Database test container is not started");
         }
     }
-    
+
     /**
      * Builder for DatabaseTestContainer with fluent API and sensible defaults.
      */
@@ -668,12 +667,12 @@ public final class DatabaseTestContainer implements AutoCloseable {
         private String[] migrationLocations = new String[0];
         private boolean autoMigrate = false;
         private Duration startTimeout = Duration.ofMinutes(2);
-        
+
         private Builder() {}
-        
+
         /**
          * Sets the PostgreSQL Docker image.
-         * 
+         *
          * @param image The Docker image (default: "postgres:15.4")
          * @return This builder
          */
@@ -681,10 +680,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.image = Preconditions.requireNonBlank(image, "Image cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets the database name.
-         * 
+         *
          * @param database The database name (default: "testdb")
          * @return This builder
          */
@@ -692,10 +691,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.database = Preconditions.requireNonBlank(database, "Database cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets the database username.
-         * 
+         *
          * @param username The username (default: "testuser")
          * @return This builder
          */
@@ -703,10 +702,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.username = Preconditions.requireNonBlank(username, "Username cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets the database password.
-         * 
+         *
          * @param password The password (default: "testpass")
          * @return This builder
          */
@@ -714,10 +713,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.password = Preconditions.requireNonNull(password, "Password cannot be null");
             return this;
         }
-        
+
         /**
          * Sets the migration locations and enables auto-migration.
-         * 
+         *
          * @param locations The migration locations
          * @return This builder
          */
@@ -726,10 +725,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.autoMigrate = this.migrationLocations.length > 0;
             return this;
         }
-        
+
         /**
          * Sets the container start timeout.
-         * 
+         *
          * @param timeout The start timeout (default: 2 minutes)
          * @return This builder
          */
@@ -737,10 +736,10 @@ public final class DatabaseTestContainer implements AutoCloseable {
             this.startTimeout = Preconditions.requireNonNull(timeout, "Timeout cannot be null");
             return this;
         }
-        
+
         /**
          * Builds the DatabaseTestContainer instance.
-         * 
+         *
          * @return A new DatabaseTestContainer instance
          */
         public DatabaseTestContainer build() {

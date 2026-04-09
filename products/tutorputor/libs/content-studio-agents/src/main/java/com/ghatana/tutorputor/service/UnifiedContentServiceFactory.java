@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Factory for creating and wiring the unified content service.
- * 
+ *
  * <p>Handles dependency injection and initialization of all components
  * required by the UnifiedContentService.
  *
@@ -47,10 +47,10 @@ public class UnifiedContentServiceFactory {
      */
     public static UnifiedContentService create(@NotNull FactoryConfig config) {
         LOG.info("Creating UnifiedContentService...");
-        
+
         // Create executor for async operations
         Executor asyncExecutor = Executors.newVirtualThreadPerTaskExecutor();
-        
+
         // Create HTTP client for external APIs (ActiveJ)
         Eventloop eventloop = Eventloop.builder()
             .withThreadName("tutorputor-knowledge")
@@ -65,7 +65,7 @@ public class UnifiedContentServiceFactory {
 
         // Create knowledge base service
         KnowledgeBaseService knowledgeService = new KnowledgeBaseService(httpClient, config.meterRegistry());
-        
+
         // Create content generation output generator
         ContentGenerationOutputGenerator contentOutputGenerator = new ContentGenerationOutputGenerator(
             config.llmGateway(),
@@ -73,40 +73,40 @@ public class UnifiedContentServiceFactory {
             asyncExecutor,
             config.meterRegistry()
         );
-        
+
         // Create content quality validator
         ContentQualityValidator contentValidator = new ContentQualityValidator(config.meterRegistry());
-        
+
         // Create content generation agent
         ContentGenerationAgent contentAgent = new ContentGenerationAgent(
             contentOutputGenerator,
             knowledgeService,
             contentValidator
         );
-        
+
         // Create tutoring response generator
         TutoringResponseGenerator tutoringOutputGenerator = new TutoringResponseGenerator(
             config.llmGateway(),
             asyncExecutor,
             config.meterRegistry()
         );
-        
+
         // Create learner interaction agent
         LearnerInteractionAgent tutoringAgent = new LearnerInteractionAgent(tutoringOutputGenerator);
-        
+
         // Create experiment manager
         ExperimentManager experimentManager = new ExperimentManager(config.meterRegistry());
-        
+
         // Create strategy selector
         ContentStrategySelector strategySelector = new ContentStrategySelector(
             experimentManager,
             "llm-standard"  // default strategy
         );
-        
+
         // Create metrics collector
-        ExperimentMetricsCollector metricsCollector = 
+        ExperimentMetricsCollector metricsCollector =
             new ExperimentMetricsCollector(experimentManager);
-        
+
         // Create job queue
         ContentJobQueue.QueueConfig queueConfig = new ContentJobQueue.QueueConfig(
             config.maxConcurrentJobs(),
@@ -114,10 +114,10 @@ public class UnifiedContentServiceFactory {
             config.retryDelay()
         );
         ContentJobQueue jobQueue = new ContentJobQueue(queueConfig, config.meterRegistry());
-        
+
         // Create progress tracker
         JobProgressTracker progressTracker = new JobProgressTracker(config.meterRegistry());
-        
+
         // Assemble service config
         UnifiedContentService.ServiceConfig serviceConfig = new UnifiedContentService.ServiceConfig(
             config.tenantId(),
@@ -132,9 +132,9 @@ public class UnifiedContentServiceFactory {
             progressTracker,
             config.meterRegistry()
         );
-        
+
         LOG.info("UnifiedContentService created successfully");
-        
+
         return new UnifiedContentService(serviceConfig);
     }
 
@@ -150,7 +150,7 @@ public class UnifiedContentServiceFactory {
             @NotNull LLMGateway llmGateway,
             @NotNull MemoryStore memoryStore,
             @NotNull MeterRegistry meterRegistry) {
-        
+
         return create(FactoryConfig.builder()
             .tenantId("test-tenant")
             .llmGateway(llmGateway)
@@ -194,64 +194,64 @@ public class UnifiedContentServiceFactory {
             private int maxRetries = 3;
             private Duration retryDelay = Duration.ofSeconds(5);
 
-            public Builder tenantId(String tenantId) { 
-                this.tenantId = tenantId; 
-                return this; 
+            public Builder tenantId(String tenantId) {
+                this.tenantId = tenantId;
+                return this;
             }
-            
-            public Builder llmGateway(LLMGateway llmGateway) { 
-                this.llmGateway = llmGateway; 
-                return this; 
+
+            public Builder llmGateway(LLMGateway llmGateway) {
+                this.llmGateway = llmGateway;
+                return this;
             }
-            
-            public Builder memoryStore(MemoryStore memoryStore) { 
-                this.memoryStore = memoryStore; 
-                return this; 
+
+            public Builder memoryStore(MemoryStore memoryStore) {
+                this.memoryStore = memoryStore;
+                return this;
             }
-            
-            public Builder meterRegistry(MeterRegistry meterRegistry) { 
-                this.meterRegistry = meterRegistry; 
-                return this; 
+
+            public Builder meterRegistry(MeterRegistry meterRegistry) {
+                this.meterRegistry = meterRegistry;
+                return this;
             }
-            
-            public Builder wikipediaApiUrl(String url) { 
-                this.wikipediaApiUrl = url; 
-                return this; 
+
+            public Builder wikipediaApiUrl(String url) {
+                this.wikipediaApiUrl = url;
+                return this;
             }
-            
-            public Builder openStaxApiUrl(String url) { 
-                this.openStaxApiUrl = url; 
-                return this; 
+
+            public Builder openStaxApiUrl(String url) {
+                this.openStaxApiUrl = url;
+                return this;
             }
-            
-            public Builder openStaxApiKey(String key) { 
-                this.openStaxApiKey = key; 
-                return this; 
+
+            public Builder openStaxApiKey(String key) {
+                this.openStaxApiKey = key;
+                return this;
             }
-            
-            public Builder khanAcademyApiUrl(String url) { 
-                this.khanAcademyApiUrl = url; 
-                return this; 
+
+            public Builder khanAcademyApiUrl(String url) {
+                this.khanAcademyApiUrl = url;
+                return this;
             }
-            
-            public Builder khanAcademyApiKey(String key) { 
-                this.khanAcademyApiKey = key; 
-                return this; 
+
+            public Builder khanAcademyApiKey(String key) {
+                this.khanAcademyApiKey = key;
+                return this;
             }
-            
-            public Builder maxConcurrentJobs(int max) { 
-                this.maxConcurrentJobs = max; 
-                return this; 
+
+            public Builder maxConcurrentJobs(int max) {
+                this.maxConcurrentJobs = max;
+                return this;
             }
-            
-            public Builder maxRetries(int retries) { 
-                this.maxRetries = retries; 
-                return this; 
+
+            public Builder maxRetries(int retries) {
+                this.maxRetries = retries;
+                return this;
             }
-            
-            public Builder retryDelay(Duration delay) { 
-                this.retryDelay = delay; 
-                return this; 
+
+            public Builder retryDelay(Duration delay) {
+                this.retryDelay = delay;
+                return this;
             }
 
             public FactoryConfig build() {
@@ -259,7 +259,7 @@ public class UnifiedContentServiceFactory {
                 if (llmGateway == null) throw new IllegalStateException("llmGateway required");
                 if (memoryStore == null) throw new IllegalStateException("memoryStore required");
                 if (meterRegistry == null) throw new IllegalStateException("meterRegistry required");
-                
+
                 return new FactoryConfig(
                     tenantId,
                     llmGateway,

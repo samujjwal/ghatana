@@ -4,7 +4,6 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;
 import com.ghatana.ai.llm.CompletionRequest;
-import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.tutorputor.contentstudio.knowledge.KnowledgeBaseService;
@@ -24,7 +23,7 @@ import java.util.concurrent.Executor;
 
 /**
  * OutputGenerator that uses LLM for educational content generation.
- * 
+ *
  * <p>This generator:
  * <ul>
  *   <li>Builds context-aware prompts using PromptTemplates</li>
@@ -39,21 +38,21 @@ import java.util.concurrent.Executor;
  * @doc.layer product
  * @doc.pattern Strategy
  */
-public class ContentGenerationOutputGenerator 
+public class ContentGenerationOutputGenerator
         implements OutputGenerator<ContentGenerationRequest, ContentGenerationResponse> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ContentGenerationOutputGenerator.class);
-    
+
     private final LLMGateway llmGateway;
     private final KnowledgeBaseService knowledgeBaseService;
     private final Executor executor;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter generationsCounter;
     private final Counter errorCounter;
     private final Timer generationTimer;
-    
+
     private static final GeneratorMetadata METADATA = GeneratorMetadata.builder()
         .name("ContentGenerationOutputGenerator")
         .type("llm")
@@ -78,7 +77,7 @@ public class ContentGenerationOutputGenerator
         this.knowledgeBaseService = knowledgeBaseService;
         this.executor = executor;
         this.meterRegistry = meterRegistry;
-        
+
         this.generationsCounter = Counter.builder("tutorputor.generator.generations")
             .description("Number of content generations")
             .register(meterRegistry);
@@ -95,23 +94,23 @@ public class ContentGenerationOutputGenerator
     public Promise<ContentGenerationResponse> generate(
             @NotNull ContentGenerationRequest request,
             @NotNull AgentContext context) {
-        
+
         Instant start = Instant.now();
         generationsCounter.increment();
-        
+
         context.getLogger().info("Generating {} content for topic: {}",
             request.contentType(), request.topic());
-        
+
         // Build the appropriate prompt based on content type
         String prompt = buildPrompt(request, context);
-        
+
         // Check budget before making LLM call
         Double budget = context.getRemainingBudget();
         if (budget != null && budget < 0.01) {
             errorCounter.increment();
             return Promise.ofException(new BudgetExceededException("Insufficient budget for generation"));
         }
-        
+
         // Create completion request
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
@@ -131,15 +130,15 @@ public class ContentGenerationOutputGenerator
                     // Log but don't fail - cost tracking is best-effort
                     context.getLogger().warn("Failed to deduct cost: {}", e.getMessage());
                 }
-                
+
                 // Parse and build response
                 String content = llmResponse.getText();
                 long generationTimeMs = Duration.between(start, Instant.now()).toMillis();
-                
+
                 // Record metrics
                 generationTimer.record(Duration.between(start, Instant.now()));
                 context.recordMetric("tutorputor.generation.tokens", llmResponse.getTokensUsed());
-                
+
                 // Build initial response
                 ContentGenerationResponse response = ContentGenerationResponse.builder()
                     .content(content)
@@ -154,7 +153,7 @@ public class ContentGenerationOutputGenerator
                         "promptVersion", "1.0"
                     ))
                     .build();
-                
+
                 // Enrich with knowledge base verification
                 return enrichWithKnowledgeBase(response, request, context);
             })
@@ -173,20 +172,20 @@ public class ContentGenerationOutputGenerator
 
     private String buildPrompt(ContentGenerationRequest request, AgentContext context) {
         StringBuilder promptBuilder = new StringBuilder();
-        
+
         // Add learner context if available
         if (request.learnerPreferences() != null && !request.learnerPreferences().isEmpty()) {
             promptBuilder.append("Learner preferences: ")
                 .append(String.join(", ", request.learnerPreferences()))
                 .append("\n\n");
         }
-        
+
         if (request.knowledgeGaps() != null && !request.knowledgeGaps().isEmpty()) {
             promptBuilder.append("Address these knowledge gaps: ")
                 .append(String.join(", ", request.knowledgeGaps()))
                 .append("\n\n");
         }
-        
+
         // Build content-type specific prompt
         String contentPrompt = switch (request.contentType()) {
             case CLAIM -> PromptTemplates.buildClaimsPrompt(
@@ -214,33 +213,33 @@ public class ContentGenerationOutputGenerator
             );
             case EXERCISE, ASSESSMENT, LESSON -> buildExercisePrompt(request);
         };
-        
+
         promptBuilder.append(contentPrompt);
-        
+
         // Add difficulty modifier
         if (request.difficulty() != null) {
             promptBuilder.append("\n\nDifficulty level: ").append(request.difficulty());
         }
-        
+
         return promptBuilder.toString();
     }
 
     private String buildExercisePrompt(ContentGenerationRequest request) {
         return String.format("""
             Generate practice exercises for the following educational content:
-            
+
             Topic: %s
             Domain: %s
             Grade Level: %s
             Type: %s
-            
+
             Create exercises that:
             1. Test understanding of key concepts
             2. Progress from basic recall to application
             3. Include clear instructions
             4. Provide scaffolding hints
             5. Are engaging and age-appropriate
-            
+
             Format the response as JSON with the following structure:
             {
               "exercises": [
@@ -297,7 +296,7 @@ public class ContentGenerationOutputGenerator
             ContentGenerationResponse response,
             ContentGenerationRequest request,
             AgentContext context) {
-        
+
         // Verify content against knowledge base
         return knowledgeBaseService.verifyLearningClaim(
                 response.content(),
@@ -306,23 +305,23 @@ public class ContentGenerationOutputGenerator
             .map(verification -> {
                 // Adjust quality score based on verification
                 double adjustedScore = response.qualityScore();
-                
+
                 if (verification.status() == KnowledgeBaseService.VerificationStatus.VERIFIED) {
                     adjustedScore = Math.min(1.0, adjustedScore + 0.2);
                 } else if (verification.status() == KnowledgeBaseService.VerificationStatus.DISPUTED) {
                     adjustedScore = Math.max(0.0, adjustedScore - 0.3);
                 }
-                
-                context.recordMetric("tutorputor.verification.confidence", 
+
+                context.recordMetric("tutorputor.verification.confidence",
                     verification.overallConfidence());
-                
+
                 return ContentGenerationResponse.builder()
                     .content(response.content())
                     .domain(response.domain())
                     .gradeLevel(response.gradeLevel())
                     .contentType(response.contentType())
                     .qualityScore(adjustedScore)
-                    .curriculumAligned(verification.status() == 
+                    .curriculumAligned(verification.status() ==
                         KnowledgeBaseService.VerificationStatus.VERIFIED)
                     .alignedTopics(verification.relatedTopics())
                     .generationTimeMs(response.generationTimeMs())

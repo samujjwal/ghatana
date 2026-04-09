@@ -5,7 +5,7 @@ import java.time.Instant;
 /**
  * Knowledge Graph model for CLI operations.
  * Stub for compilation — bridges to YAPPC domain model.
- 
+
  * @doc.type class
  * @doc.purpose Handles knowledge graph operations
  * @doc.layer core

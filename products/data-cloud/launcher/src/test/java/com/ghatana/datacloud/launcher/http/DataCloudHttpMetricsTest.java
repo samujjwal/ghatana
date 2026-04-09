@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.launcher.http;
 
-import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;

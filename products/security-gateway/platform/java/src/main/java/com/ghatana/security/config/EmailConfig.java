@@ -5,7 +5,7 @@ import io.activej.config.converter.ConfigConverters;
 
 /**
  * Configuration for email alerting settings.
- 
+
  *
  * @doc.type class
  * @doc.purpose Email config
@@ -19,8 +19,8 @@ public class EmailConfig {
     private final String password;
     private final String fromAddress;
     private final String toAddress;
-    
-    public EmailConfig(String smtpHost, int smtpPort, String username, 
+
+    public EmailConfig(String smtpHost, int smtpPort, String username,
                       String password, String fromAddress, String toAddress) {
         this.smtpHost = smtpHost;
         this.smtpPort = smtpPort;
@@ -29,7 +29,7 @@ public class EmailConfig {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
     }
-    
+
     public static EmailConfig fromConfig(Config config) {
         return new EmailConfig(
             config.get("smtp-host", ""),
@@ -40,7 +40,7 @@ public class EmailConfig {
             config.get("to-address", "")
         );
     }
-    
+
     // Getters for all fields
     public String getSmtpHost() {
         return smtpHost;
@@ -60,7 +60,7 @@ public class EmailConfig {
     public String getToAddress() {
         return toAddress;
     }
-    
+
     public Config getChild(String path) {
         return Config.create()
             .with("smtp-host", smtpHost)

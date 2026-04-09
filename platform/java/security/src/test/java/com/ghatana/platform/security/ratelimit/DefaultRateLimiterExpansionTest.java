@@ -48,15 +48,15 @@ class DefaultRateLimiterExpansionTest {
         @DisplayName("After quota exhaustion, subsequent requests are rejected")
         void quotaExhaustionBlocks() {
             String tenant = "tenant-exhausted";
-            
+
             // Exhaust the quota (5 requests allowed)
             for (int i = 0; i < 5; i++) {
                 assertThat(limiter.tryAcquire(tenant).allowed()).isTrue();
             }
-            
+
             // 6th request should be rejected
             assertThat(limiter.tryAcquire(tenant).allowed()).isFalse();
-            
+
             // Additional attempts should remain rejected
             assertThat(limiter.tryAcquire(tenant).allowed()).isFalse();
             assertThat(limiter.tryAcquire(tenant).allowed()).isFalse();
@@ -66,13 +66,13 @@ class DefaultRateLimiterExpansionTest {
         @DisplayName("Reset quota allows same tenant to acquire again")
         void quotaResetAllowsRecovery() {
             String tenant = "tenant-reset";
-            
+
             // Exhaust quota
             for (int i = 0; i < 5; i++) {
                 limiter.tryAcquire(tenant);
             }
             assertThat(limiter.tryAcquire(tenant).allowed()).isFalse();
-            
+
             // Reset should allow quota reload
             limiter.reset(tenant);
             assertThat(limiter.tryAcquire(tenant).allowed()).isTrue();
@@ -134,13 +134,13 @@ class DefaultRateLimiterExpansionTest {
         void tenantQuotasAreIndependent() {
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
-            
+
             // Exhaust tenant-1's quota
             for (int i = 0; i < 5; i++) {
                 assertThat(limiter.tryAcquire(tenant1).allowed()).isTrue();
             }
             assertThat(limiter.tryAcquire(tenant1).allowed()).isFalse();
-            
+
             // tenant-2 should still have full quota
             for (int i = 0; i < 5; i++) {
                 assertThat(limiter.tryAcquire(tenant2).allowed()).isTrue();
@@ -164,14 +164,14 @@ class DefaultRateLimiterExpansionTest {
             limiter.tryAcquire("tenant-1");
             limiter.tryAcquire("tenant-2");
             limiter.tryAcquire("tenant-3");
-            
+
             long trackedBefore = limiter.getTrackedKeyCount();
             assertThat(trackedBefore).isGreaterThan(0);
-            
+
             // Reset all should clear all tracking
             limiter.resetAll();
             assertThat(limiter.getTrackedKeyCount()).isZero();
-            
+
             // All tenants should be able to start fresh
             assertThat(limiter.tryAcquire("tenant-1").allowed()).isTrue();
             assertThat(limiter.tryAcquire("tenant-1").allowed()).isTrue();

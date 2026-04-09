@@ -1,16 +1,13 @@
 package com.ghatana.refactorer.consistency;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -58,14 +55,14 @@ class ConsistencyEnforcerTest extends EventloopTestBase {
 
     @Test
     void testFixFiles() {
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             runPromise(() -> enforcer.fixFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }
 
     @Test
     void testFormatFiles() {
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             runPromise(() -> enforcer.formatFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }

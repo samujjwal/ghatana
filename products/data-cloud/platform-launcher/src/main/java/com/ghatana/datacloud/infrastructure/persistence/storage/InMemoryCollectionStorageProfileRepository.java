@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Create instance
  * CollectionStorageProfileRepository repo = new InMemoryCollectionStorageProfileRepository();

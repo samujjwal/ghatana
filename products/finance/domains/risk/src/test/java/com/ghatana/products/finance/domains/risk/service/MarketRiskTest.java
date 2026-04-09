@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -137,8 +136,8 @@ class MarketRiskTest {
 
     static class MarketRiskService {
         BigDecimal calculateDelta(OptionParams params) {
-            double d1 = (Math.log(params.spot().doubleValue() / params.strike().doubleValue()) + 
-                        (params.rate() + Math.pow(params.volatility(), 2) / 2) * params.timeToExpiry()) / 
+            double d1 = (Math.log(params.spot().doubleValue() / params.strike().doubleValue()) +
+                        (params.rate() + Math.pow(params.volatility(), 2) / 2) * params.timeToExpiry()) /
                         (params.volatility() * Math.sqrt(params.timeToExpiry()));
             return BigDecimal.valueOf(0.5 + 0.2 * d1);
         }

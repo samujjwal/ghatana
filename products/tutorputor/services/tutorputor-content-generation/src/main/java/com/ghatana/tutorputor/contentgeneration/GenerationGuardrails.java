@@ -17,7 +17,7 @@ import java.util.*;
  *     .forbiddenPatterns("hate", "violence")
  *     .requiresPolicyCheck(true)
  *     .build();
- * 
+ *
  * if (guardrails.exceeds("Very long text...", guardrails.getMaxLength())) {
  *     // Handle length violation
  * }
@@ -76,7 +76,7 @@ public final class GenerationGuardrails {
             boolean allowsHTML,
             boolean allowsMarkdown,
             Set<String> allowedLanguages) {
-        
+
         if (maxLength < 1 || maxLength > MAX_LENGTH_LIMIT) {
             throw new IllegalArgumentException(
                     "maxLength must be between 1 and " + MAX_LENGTH_LIMIT + ", got " + maxLength

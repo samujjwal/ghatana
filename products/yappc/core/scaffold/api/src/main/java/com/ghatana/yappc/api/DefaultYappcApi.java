@@ -58,13 +58,13 @@ public final class DefaultYappcApi implements YappcApi {
      */
     public DefaultYappcApi(YappcConfig config) {
         this.config = config;
-        
+
         // Initialize services
         this.templateService = new DefaultTemplateService(config);
         this.packService = new DefaultPackService(config);
         this.projectService = new DefaultProjectService(config, packService, templateService);
         this.dependencyService = new DefaultDependencyService(config, packService);
-        
+
         initialize();
     }
 
@@ -72,7 +72,7 @@ public final class DefaultYappcApi implements YappcApi {
         if (initialized.compareAndSet(false, true)) {
             LOG.info("Initializing YAPPC API v{}", VERSION);
             LOG.debug("Configuration: {}", config);
-            
+
             // Pre-load packs if caching is enabled
             if (config.isCacheEnabled()) {
                 try {

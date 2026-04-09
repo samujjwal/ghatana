@@ -8,7 +8,6 @@ import com.ghatana.datacloud.analytics.Report;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
 
 /**
  * Response DTO for report operations.

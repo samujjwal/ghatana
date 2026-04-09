@@ -226,17 +226,17 @@ import java.time.Duration;
  * @doc.pattern Extension + Injection
  */
 public final class EventloopTestExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
-    
-    private static final ExtensionContext.Namespace NAMESPACE = 
+
+    private static final ExtensionContext.Namespace NAMESPACE =
         ExtensionContext.Namespace.create(EventloopTestExtension.class);
-    
+
     private static final String RUNNER_KEY = "runner";
     private static final String INJECTOR_KEY = "injector";
-    
+
     private final Duration timeout;
     private final Duration watchdog;
     private final EventloopTestRunner.Listener listener;
-    
+
     /**
      * Creates an extension with default settings:
      * - 10 second timeout
@@ -246,20 +246,20 @@ public final class EventloopTestExtension implements BeforeEachCallback, AfterEa
     public EventloopTestExtension() {
         this(Duration.ofSeconds(10), Duration.ofSeconds(2), new EventloopTestRunner.Slf4jListener());
     }
-    
+
     /**
      * Creates an extension with custom timeout and watchdog interval.
-     * 
+     *
      * @param timeout The timeout for operations
      * @param watchdog The watchdog check interval
      */
     public EventloopTestExtension(Duration timeout, Duration watchdog) {
         this(timeout, watchdog, new EventloopTestRunner.Slf4jListener());
     }
-    
+
     /**
      * Creates an extension with full customization.
-     * 
+     *
      * @param timeout The timeout for operations
      * @param watchdog The watchdog check interval
      * @param listener The lifecycle listener
@@ -269,21 +269,21 @@ public final class EventloopTestExtension implements BeforeEachCallback, AfterEa
         this.watchdog = watchdog;
         this.listener = listener;
     }
-    
+
     @Override
     public void beforeEach(ExtensionContext context) {
         String displayName = context.getDisplayName().replaceAll("\\s+", "_");
         String threadName = "eventloop-" + displayName;
-        
+
         EventloopTestRunner runner = EventloopTestRunner.builder()
             .timeout(timeout)
             .watchdogEvery(watchdog)
             .threadName(threadName)
             .listener(listener)
             .build();
-        
+
         runner.start();
-        
+
         // Store for cleanup and parameter resolution
         context.getStore(NAMESPACE).put(RUNNER_KEY, runner);
 
@@ -323,23 +323,23 @@ public final class EventloopTestExtension implements BeforeEachCallback, AfterEa
             throw new RuntimeException("Failed to initialize test injector", e);
         }
     }
-    
+
     @Override
     public void afterEach(ExtensionContext context) {
         EventloopTestRunner runner = context.getStore(NAMESPACE)
             .remove(RUNNER_KEY, EventloopTestRunner.class);
-        
+
         if (runner != null) {
             runner.close();
         }
     }
-    
+
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         Class<?> type = parameterContext.getParameter().getType();
         return type.equals(EventloopTestRunner.class) || type.equals(Eventloop.class) || type.equals(Injector.class);
     }
-    
+
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         EventloopTestRunner runner = extensionContext.getStore(NAMESPACE)
@@ -357,28 +357,28 @@ public final class EventloopTestExtension implements BeforeEachCallback, AfterEa
 
         return null;
     }
-    
+
     /**
      * Injects runner and eventloop into test instance fields.
      */
     private void injectFields(ExtensionContext context, EventloopTestRunner runner, Injector injector) {
         Object testInstance = context.getRequiredTestInstance();
         Class<?> testClass = testInstance.getClass();
-        
+
         while (testClass != Object.class) {
             for (java.lang.reflect.Field field : testClass.getDeclaredFields()) {
                 if (!field.isSynthetic()) {
                     Class<?> fieldType = field.getType();
-                    
+
                     if (fieldType == EventloopTestRunner.class || fieldType == Eventloop.class) {
                         field.setAccessible(true);
                         try {
-                            Object value = fieldType == EventloopTestRunner.class ? 
+                            Object value = fieldType == EventloopTestRunner.class ?
                                 runner : runner.eventloop();
                             field.set(testInstance, value);
                         } catch (IllegalAccessException e) {
                             throw new RuntimeException(
-                                "Failed to inject " + fieldType.getSimpleName() + 
+                                "Failed to inject " + fieldType.getSimpleName() +
                                 " into test field: " + field.getName(), e
                             );
                         }
@@ -398,11 +398,11 @@ public final class EventloopTestExtension implements BeforeEachCallback, AfterEa
             testClass = testClass.getSuperclass();
         }
     }
-    
+
     /**
      * Gets the runner from the extension context.
      * Useful for programmatic access in custom extensions.
-     * 
+     *
      * @param context The extension context
      * @return The test runner, or null if not found
      */

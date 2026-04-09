@@ -1,9 +1,7 @@
 package com.ghatana.agent.framework.llm;
 
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
-import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.LLMGateway;
-import com.ghatana.ai.llm.ToolAwareCompletionService;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.eventloop.Eventloop;
 import org.jetbrains.annotations.NotNull;
@@ -14,19 +12,19 @@ import java.util.*;
 
 /**
  * Factory for creating configured LLM gateways for agent-framework.
- * 
+ *
  * @doc.type class
  * @doc.purpose Factory for wiring agent-framework LLMGenerator with libs:ai-integration LLMGateway
  * @doc.layer core
  * @doc.pattern Factory
- * 
+ *
  * <p>Supports multiple providers:</p>
  * <ul>
  *   <li><b>OpenAI</b>: GPT-4, GPT-3.5-Turbo via OPENAI_API_KEY</li>
  *   <li><b>Anthropic</b>: Claude via ANTHROPIC_API_KEY</li>
  *   <li><b>Fallback</b>: Auto-fallback to secondary providers on failure</li>
  * </ul>
- * 
+ *
  * <h3>Configuration</h3>
  * <p>Set environment variables:</p>
  * <pre>{@code
@@ -36,44 +34,44 @@ import java.util.*;
  * export LLM_FALLBACK_PROVIDERS=anthropic # comma-separated
  * export LLM_DEFAULT_MODEL=gpt-4          # model name
  * }</pre>
- * 
+ *
  * <h3>Usage</h3>
  * <pre>{@code
  * Eventloop eventloop = Eventloop.getCurrentEventloop();
  * LLMGenerator.LLMGateway gateway = LLMGatewayFactory.createDefault(eventloop);
  * }</pre>
- * 
+ *
  * <p><b>NOTE</b>: This factory creates mock implementations for testing purposes.
  * Real provider implementations require instantiating provider-specific services.</p>
  */
 public final class LLMGatewayFactory {
-    
+
     private static final Logger log = LoggerFactory.getLogger(LLMGatewayFactory.class);
-    
+
     // Environment variable names
     private static final String ENV_OPENAI_API_KEY = "OPENAI_API_KEY";
     private static final String ENV_ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY";
     private static final String ENV_PRIMARY_PROVIDER = "LLM_PRIMARY_PROVIDER";
     private static final String ENV_FALLBACK_PROVIDERS = "LLM_FALLBACK_PROVIDERS";
     private static final String ENV_DEFAULT_MODEL = "LLM_DEFAULT_MODEL";
-    
+
     // Default values
     private static final String DEFAULT_PRIMARY_PROVIDER = "openai";
     private static final String DEFAULT_MODEL = "gpt-4";
-    
+
     private LLMGatewayFactory() {
         // Static factory only
     }
-    
+
     /**
      * Create default LLM gateway from environment configuration.
-     * 
+     *
      * <p>Automatically configures providers based on available API keys.</p>
-     * 
+     *
      * <p><b>IMPORTANT</b>: For production use, create provider-specific services
      * (OpenAICompletionService, AnthropicCompletionService) and use the
      * {@link #create(LLMGateway)} method to wrap them.</p>
-     * 
+     *
      * @param eventloop ActiveJ eventloop for async operations
      * @param metrics Metrics collector for observability
      * @return Configured LLMGateway adapted for agent-framework
@@ -83,12 +81,12 @@ public final class LLMGatewayFactory {
     public static LLMGenerator.LLMGateway createDefault(
             @NotNull Eventloop eventloop,
             @NotNull MetricsCollector metrics) {
-        
+
         Objects.requireNonNull(eventloop, "eventloop cannot be null");
         Objects.requireNonNull(metrics, "metrics cannot be null");
-        
+
         log.info("Creating default LLM gateway from environment configuration");
-        
+
         // Detect available providers
         Map<String, String> availableProviders = detectAvailableProviders();
         if (availableProviders.isEmpty()) {
@@ -96,7 +94,7 @@ public final class LLMGatewayFactory {
                 "No LLM providers configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY"
             );
         }
-        
+
         log.info("Available LLM providers: {}", availableProviders.keySet());
 
         // Create an ActiveJ HTTP client bound to the eventloop with DNS resolution
@@ -136,18 +134,18 @@ public final class LLMGatewayFactory {
 
         return builder.primaryProvider(primaryProvider).build();
     }
-    
+
     /**
      * Create LLM gateway wrapper around an existing libs:ai-integration gateway.
-     * 
+     *
      * <p><b>Recommended for production</b>: Build a DefaultLLMGateway with
      * provider-specific services, then adapt it:</p>
-     * 
+     *
      * <pre>{@code
      * // 1. Create provider-specific services
      * OpenAICompletionService openai = new OpenAICompletionService(...);
      * AnthropicCompletionService anthropic = new AnthropicCompletionService(...);
-     * 
+     *
      * // 2. Build gateway with providers
      * LLMGateway gateway = DefaultLLMGateway.builder()
      *     .addProvider("openai", openai)
@@ -156,11 +154,11 @@ public final class LLMGatewayFactory {
      *     .fallbackOrder(List.of("openai", "anthropic"))
      *     .metrics(metricsCollector)
      *     .build();
-     * 
+     *
      * // 3. Adapt for agent-framework
      * LLMGenerator.LLMGateway agentGateway = LLMGatewayFactory.create(gateway);
      * }</pre>
-     * 
+     *
      * @param underlyingGateway Configured LLMGateway from libs:ai-integration
      * @return Adapted gateway for agent-framework
      */
@@ -170,27 +168,26 @@ public final class LLMGatewayFactory {
         log.info("Creating agent-framework LLM gateway wrapper");
         return LLMGatewayAdapter.adapt(underlyingGateway);
     }
-    
+
     /**
      * Detect available LLM providers from environment variables.
-     * 
+     *
      * @return Map of provider name → API key for available providers
      */
     @NotNull
     private static Map<String, String> detectAvailableProviders() {
         Map<String, String> providers = new HashMap<>();
-        
+
         String openaiKey = System.getenv(ENV_OPENAI_API_KEY);
         if (openaiKey != null && !openaiKey.isEmpty()) {
             providers.put("openai", openaiKey);
         }
-        
+
         String anthropicKey = System.getenv(ENV_ANTHROPIC_API_KEY);
         if (anthropicKey != null && !anthropicKey.isEmpty()) {
             providers.put("anthropic", anthropicKey);
         }
-        
+
         return providers;
     }
 }
-

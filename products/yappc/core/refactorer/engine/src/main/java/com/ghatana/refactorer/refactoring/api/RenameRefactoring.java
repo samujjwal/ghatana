@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.api;
 
 /**
- * Interface for refactoring operations that rename program elements. 
+ * Interface for refactoring operations that rename program elements.
  * @doc.type interface
  * @doc.purpose Defines the contract for rename refactoring
  * @doc.layer core

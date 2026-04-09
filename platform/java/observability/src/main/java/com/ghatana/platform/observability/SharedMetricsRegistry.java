@@ -3,7 +3,6 @@ package com.ghatana.platform.observability;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 
 /**
  * Shared metrics collection facade for cross-product metric standardization (CP-001.4).
@@ -211,4 +209,3 @@ public final class SharedMetricsRegistry {
         }
     }
 }
-

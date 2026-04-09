@@ -39,7 +39,7 @@ public record GoValidationResult(
     }
 
     public static GoValidationResult failure(List<String> errors) {
-        return new GoValidationResult(false, errors, List.of(), List.of(), 
+        return new GoValidationResult(false, errors, List.of(), List.of(),
                 "Validation failed with " + errors.size() + " error(s)");
     }
 }

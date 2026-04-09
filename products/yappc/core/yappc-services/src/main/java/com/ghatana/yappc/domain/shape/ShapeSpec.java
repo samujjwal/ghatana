@@ -40,7 +40,7 @@ public record ShapeSpec(
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
-    
+
     public static class Builder {
         private String id;
         private String intentRef;
@@ -51,54 +51,54 @@ public record ShapeSpec(
         private Map<String, String> metadata = Map.of();
         private Instant createdAt = Instant.now();
         private String tenantId;
-        
+
         public Builder id(String id) {
             this.id = id;
             return this;
         }
-        
+
         public Builder intentRef(String intentRef) {
             this.intentRef = intentRef;
             return this;
         }
-        
+
         public Builder domainModel(DomainModel domainModel) {
             this.domainModel = domainModel;
             return this;
         }
-        
+
         public Builder workflows(List<WorkflowSpec> workflows) {
             this.workflows = workflows;
             return this;
         }
-        
+
         public Builder integrations(List<IntegrationSpec> integrations) {
             this.integrations = integrations;
             return this;
         }
-        
+
         public Builder architecture(ArchitecturePattern architecture) {
             this.architecture = architecture;
             return this;
         }
-        
+
         public Builder metadata(Map<String, String> metadata) {
             this.metadata = metadata;
             return this;
         }
-        
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
         }
-        
+
         public Builder tenantId(String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-        
+
         public ShapeSpec build() {
-            return new ShapeSpec(id, intentRef, domainModel, workflows, integrations, 
+            return new ShapeSpec(id, intentRef, domainModel, workflows, integrations,
                 architecture, metadata, createdAt, tenantId);
         }
     }

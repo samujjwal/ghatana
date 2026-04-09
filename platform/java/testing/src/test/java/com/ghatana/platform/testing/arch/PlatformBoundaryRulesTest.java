@@ -234,4 +234,3 @@ class PlatformBoundaryRulesTest {
                             + "EVOL-3 (2026-01): allowEmptyShould=true — informational.")
                     .allowEmptyShould(true);
 }
-

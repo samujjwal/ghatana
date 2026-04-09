@@ -1,7 +1,5 @@
 package com.ghatana.yappc.agents.architecture;
 
-import com.ghatana.yappc.agents.architecture.IncidentResponseSpecialistAgent;
-import com.ghatana.yappc.agents.architecture.MonitorSpecialistAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.api.GeneratorMetadata;
 import com.ghatana.agent.framework.api.OutputGenerator;

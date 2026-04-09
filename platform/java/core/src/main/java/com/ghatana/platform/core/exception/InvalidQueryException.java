@@ -108,9 +108,9 @@ package com.ghatana.platform.core.exception;
  * @doc.pattern domain-exception query-validation error-handling
  */
 public class InvalidQueryException extends BaseException {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Constructs an InvalidQueryException with an error message.
      *
@@ -175,7 +175,7 @@ public class InvalidQueryException extends BaseException {
     public InvalidQueryException(Throwable cause) {
         super(ErrorCode.QUERY_ERROR, cause);
     }
-    
+
     /**
      * Constructs an InvalidQueryException with a custom error code and message.
      *

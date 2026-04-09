@@ -8,7 +8,6 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.lifecycle.GateEvaluator;
 import com.ghatana.yappc.services.lifecycle.StageConfigLoader;
-import com.ghatana.yappc.services.lifecycle.StageSpec;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.storage.ArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

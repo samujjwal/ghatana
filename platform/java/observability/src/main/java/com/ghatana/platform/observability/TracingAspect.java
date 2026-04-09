@@ -2,7 +2,6 @@ package com.ghatana.platform.observability;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -118,48 +117,48 @@ public class TracingAspect {
     public Object traceMethod(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
-        
+
         Traced traced = method.getAnnotation(Traced.class);
         if (traced == null) {
             traced = method.getDeclaringClass().getAnnotation(Traced.class);
         }
-        
+
         String spanName = traced.value().isEmpty() ? method.getName() : traced.value();
         SpanKind spanKind = convertSpanKind(traced.kind());
-        
+
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("method.name", method.getName());
         attributes.put("method.class", method.getDeclaringClass().getName());
-        
+
         if (traced.includeParameters()) {
             Object[] args = joinPoint.getArgs();
             String[] parameterNames = signature.getParameterNames();
-            
+
             for (int i = 0; i < args.length; i++) {
                 String paramName = parameterNames[i];
                 Object paramValue = args[i];
-                
+
                 if (paramValue != null && isSimpleType(paramValue.getClass())) {
                     attributes.put("method.param." + paramName, paramValue);
                 }
             }
         }
-        
+
         Span span = tracingProvider.spanBuilder(spanName)
                 .setSpanKind(spanKind)
                 .startSpan();
-        
+
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             setSpanAttribute(span, entry.getKey(), entry.getValue());
         }
-        
+
         try (Scope scope = span.makeCurrent()) {
             Object result = joinPoint.proceed();
-            
+
             if (traced.includeReturnValue() && result != null && isSimpleType(result.getClass())) {
                 setSpanAttribute(span, "method.return", result);
             }
-            
+
             return result;
         } catch (Throwable t) {
             span.recordException(t);

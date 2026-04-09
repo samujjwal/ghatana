@@ -6,22 +6,21 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * OutputGenerator implementation that routes requests through the AI Model Router.
- * 
+ *
  * <p>Bridges YAPPC SDLC agents with the multi-model AI routing system.
  * Intelligently selects the best model based on the agent's task type.
- * 
+ *
  * <p>Example usage:
  * <pre>{@code
  * AIModelRouter router = new AIModelRouter(AIRouterConfig.defaults());
  * router.initialize().whenComplete((v, error) -> {
- *     OutputGenerator<StepRequest, StepResult> generator = 
+ *     OutputGenerator<StepRequest, StepResult> generator =
  *         new AIRouterOutputGenerator(router);
- *     
+ *
  *     YAPPCAgentBase agent = new CodeGenerationAgent(
  *         "code-gen-1",
  *         "GENERATE_CODE",
@@ -30,27 +29,27 @@ import java.util.Map;
  *     );
  * });
  * }</pre>
- * 
+ *
  * @param <Req> the request type
  * @param <Res> the result type
- * 
+ *
  * @doc.type class
  * @doc.purpose AI-powered output generation for SDLC agents
  * @doc.layer integration
  * @doc.pattern Adapter + Strategy
  */
 public final class AIRouterOutputGenerator<Req, Res> {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(AIRouterOutputGenerator.class);
-    
+
     private final AIModelRouter router;
     private final PromptTemplateEngine templateEngine;
     private final ResultMapper<Res> resultMapper;
-    
+
     public AIRouterOutputGenerator(AIModelRouter router) {
         this(router, PromptTemplateEngine.defaultEngine(), new DefaultResultMapper<>());
     }
-    
+
     public AIRouterOutputGenerator(
             AIModelRouter router,
             PromptTemplateEngine templateEngine,
@@ -59,10 +58,10 @@ public final class AIRouterOutputGenerator<Req, Res> {
         this.templateEngine = templateEngine;
         this.resultMapper = resultMapper;
     }
-    
+
     /**
      * Generates output by routing the request through the AI Model Router.
-     * 
+     *
      * @param request the agent request
      * @param context the execution context
      * @return Promise containing the generated result
@@ -72,10 +71,10 @@ public final class AIRouterOutputGenerator<Req, Res> {
             try {
                 // Determine task type from request
                 TaskType taskType = determineTaskType(request, context);
-                
+
                 // Build prompt from template
                 String prompt = templateEngine.buildPrompt(request, context);
-                
+
                 // Create AI request
                 AIRequest aiRequest = AIRequest.builder()
                     .taskType(taskType)
@@ -83,10 +82,10 @@ public final class AIRouterOutputGenerator<Req, Res> {
                     .context(context)
                     .parameters(buildParameters(request, context))
                     .build();
-                
-                logger.debug("Routing AI request: taskType={}, prompt length={}", 
+
+                logger.debug("Routing AI request: taskType={}, prompt length={}",
                     taskType, prompt.length());
-                
+
                 // Route through AI Model Router
                 router.route(aiRequest)
                     .whenComplete((aiResponse, error) -> {
@@ -97,12 +96,12 @@ public final class AIRouterOutputGenerator<Req, Res> {
                             try {
                                 // Map AI response to agent result
                                 Res result = resultMapper.mapResponse(aiResponse, request);
-                                
-                                logger.debug("AI response received: model={}, latency={}ms, cacheHit={}", 
-                                    aiResponse.getModelId(), 
+
+                                logger.debug("AI response received: model={}, latency={}ms, cacheHit={}",
+                                    aiResponse.getModelId(),
                                     aiResponse.getMetrics().getLatencyMs(),
                                     aiResponse.isCacheHit());
-                                
+
                                 cb.set(result);
                             } catch (Exception e) {
                                 logger.error("Failed to map AI response to result", e);
@@ -116,7 +115,7 @@ public final class AIRouterOutputGenerator<Req, Res> {
             }
         });
     }
-    
+
     /**
      * Determines the appropriate task type based on request and context.
      */
@@ -124,7 +123,7 @@ public final class AIRouterOutputGenerator<Req, Res> {
         // Extract step name or task type from context
         String stepName = (String) context.getOrDefault("stepName", "");
         String taskCategory = (String) context.getOrDefault("taskCategory", "");
-        
+
         // Map to TaskType
         return switch (stepName.toLowerCase()) {
             case String s when s.contains("implement") || s.contains("code") -> TaskType.CODE_GENERATION;
@@ -136,7 +135,7 @@ public final class AIRouterOutputGenerator<Req, Res> {
             default -> TaskType.GENERAL;
         };
     }
-    
+
     /**
      * Builds AI request parameters from agent request and context.
      */
@@ -145,21 +144,21 @@ public final class AIRouterOutputGenerator<Req, Res> {
         double temperature = (double) context.getOrDefault("temperature", 0.7);
         int maxTokens = (int) context.getOrDefault("maxTokens", 2048);
         double topP = (double) context.getOrDefault("topP", 0.9);
-        
+
         return AIRequest.RequestParameters.builder()
             .temperature(temperature)
             .maxTokens(maxTokens)
             .topP(topP)
             .build();
     }
-    
+
     /**
      * Gets the underlying AI Model Router for metrics and configuration.
      */
     public AIModelRouter getRouter() {
         return router;
     }
-    
+
     /**
      * Gets current cache statistics.
      */

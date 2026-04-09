@@ -3,8 +3,6 @@ package com.ghatana.validation.ai;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.observability.Metrics;
 import com.ghatana.validation.ai.AIPatternDetectionService.ValidationAnomalyDetectionConfig;
-import com.ghatana.validation.ai.AIPatternDetectionService.ValidationAnomalyDetectionResult;
-import com.ghatana.validation.ai.AIPatternDetectionService.DetectedAnomaly;
 import com.ghatana.validation.ai.AIPatternDetectionService.DetectedPattern;
 import com.ghatana.validation.ai.AIPatternDetectionService.EventPattern;
 import com.ghatana.validation.ai.AIPatternDetectionService.ExplanationFactor;
@@ -35,7 +33,7 @@ import java.util.stream.Collectors;
 
 /**
  * Default implementation of AI pattern detection service composed from detector modules.
- 
+
  *
  * @doc.type class
  * @doc.purpose Aipattern detection service implementation

@@ -31,12 +31,12 @@ class TieredStoragePluginTest extends EventloopTestBase {
         MockStoragePlugin hot = new MockStoragePlugin("hot");
         MockStoragePlugin warm = new MockStoragePlugin("warm");
         MockPluginContext context = new MockPluginContext(Map.of("hot", hot, "warm", warm));
-        
+
         Duration retention = Duration.ofHours(1);
-        
+
         TieredStoragePlugin<String> tiered = new TieredStoragePlugin<>("hot", "warm", retention);
         runPromise(() -> tiered.initialize(context));
-        
+
         Instant now = Instant.now();
         Instant startTime = now.minus(Duration.ofMinutes(30)); // Within 1 hour
         Instant endTime = now;
@@ -56,12 +56,12 @@ class TieredStoragePluginTest extends EventloopTestBase {
         MockStoragePlugin hot = new MockStoragePlugin("hot");
         MockStoragePlugin warm = new MockStoragePlugin("warm");
         MockPluginContext context = new MockPluginContext(Map.of("hot", hot, "warm", warm));
-        
+
         Duration retention = Duration.ofHours(1);
-        
+
         TieredStoragePlugin<String> tiered = new TieredStoragePlugin<>("hot", "warm", retention);
         runPromise(() -> tiered.initialize(context));
-        
+
         Instant now = Instant.now();
         Instant startTime = now.minus(Duration.ofHours(2)); // Older than 1 hour
         Instant endTime = now.minus(Duration.ofHours(1).plusMinutes(1));
@@ -81,9 +81,9 @@ class TieredStoragePluginTest extends EventloopTestBase {
         MockStoragePlugin hot = new MockStoragePlugin("hot");
         MockStoragePlugin warm = new MockStoragePlugin("warm");
         MockPluginContext context = new MockPluginContext(Map.of("hot", hot, "warm", warm));
-        
+
         Duration retention = Duration.ofHours(1);
-        
+
         TieredStoragePlugin<String> tiered = new TieredStoragePlugin<>("hot", "warm", retention);
         runPromise(() -> tiered.initialize(context));
 

@@ -270,24 +270,24 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 public final class EventloopTestRunner implements AutoCloseable {
-    
+
     private final Duration timeout;
     private final Duration watchdogInterval;
     private final String threadName;
     private final Listener listener;
-    
+
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicReference<Throwable> fatal = new AtomicReference<>();
-    
+
     private Eventloop eventloop;
     private Thread loopThread;
     private ScheduledExecutorService watchdogExec;
     private volatile long lastProgressNanos;
-    
+
     private final Inspector inspector;
-    
-    private EventloopTestRunner(Duration timeout, Duration watchdogInterval, 
+
+    private EventloopTestRunner(Duration timeout, Duration watchdogInterval,
                                 String threadName, Listener listener) {
         this.timeout = timeout;
         this.watchdogInterval = watchdogInterval;
@@ -295,16 +295,16 @@ public final class EventloopTestRunner implements AutoCloseable {
         this.listener = listener;
         this.inspector = new Inspector(threadName);
     }
-    
+
     /**
      * Creates a new builder for configuring the test runner.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Starts the eventloop in a dedicated thread.
      * This method is idempotent - multiple calls have no effect.
@@ -313,7 +313,7 @@ public final class EventloopTestRunner implements AutoCloseable {
         if (started.get()) {
             return;
         }
-        
+
         this.eventloop = Eventloop.builder()
             .withCurrentThread()
             .withFatalErrorHandler((e, context) -> {
@@ -322,10 +322,10 @@ public final class EventloopTestRunner implements AutoCloseable {
                 eventloop.post(eventloop::breakEventloop);
             })
             .build();
-        
+
         this.lastProgressNanos = System.nanoTime();
         this.eventloop.post(this::tickProgress);
-        
+
         this.loopThread = new Thread(this.eventloop, threadName);
         this.loopThread.setDaemon(true);
         this.loopThread.setUncaughtExceptionHandler((t, e) -> {
@@ -334,7 +334,7 @@ public final class EventloopTestRunner implements AutoCloseable {
         });
         this.loopThread.start();
         listener.onStart(threadName);
-        
+
         // Start watchdog
         this.watchdogExec = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread th = new Thread(r, threadName + "-watchdog");
@@ -343,96 +343,96 @@ public final class EventloopTestRunner implements AutoCloseable {
         });
         this.watchdogExec.scheduleAtFixedRate(this::checkStuck,
             watchdogInterval.toMillis(), watchdogInterval.toMillis(), TimeUnit.MILLISECONDS);
-        
+
         started.set(true);
     }
-    
+
     private void tickProgress() {
         lastProgressNanos = System.nanoTime();
         listener.onProgress();
         // Reschedule heartbeat
         eventloop.schedule(
-            eventloop.currentTimeMillis() + Math.max(1, watchdogInterval.toMillis() / 2), 
+            eventloop.currentTimeMillis() + Math.max(1, watchdogInterval.toMillis() / 2),
             this::tickProgress
         );
     }
-    
+
     private void checkStuck() {
         long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - lastProgressNanos);
         long threshold = Math.max(2 * watchdogInterval.toMillis(), 1500);
-        
+
         if (elapsedMs > threshold) {
             listener.onStuck(elapsedMs);
             String dump = dumpThread();
             String stats = inspector.pretty();
-            
+
             IllegalStateException ise = new IllegalStateException(
                 String.format("Eventloop stuck/no progress for %d ms%n%s%n%s", elapsedMs, dump, stats)
             );
             fatal.compareAndSet(null, ise);
-            
+
             if (eventloop != null) {
                 eventloop.post(eventloop::breakEventloop);
             }
         }
     }
-    
+
     private String dumpThread() {
         Thread t = loopThread;
         if (t == null) {
             return "Thread dump: <no thread>";
         }
-        
+
         StringBuilder sb = new StringBuilder("Thread dump [")
             .append(t.getName())
             .append(" state=").append(t.getState())
             .append("]\n");
-        
+
         for (StackTraceElement el : t.getStackTrace()) {
             sb.append("  at ").append(el).append('\n');
         }
         return sb.toString();
     }
-    
+
     private void ensureStarted() {
         if (!started.get()) {
             start();
         }
     }
-    
+
     /**
      * Gets the managed eventloop instance.
      * Starts the eventloop if not already started.
-     * 
+     *
      * @return The eventloop instance
      */
     public Eventloop eventloop() {
         ensureStarted();
         return eventloop;
     }
-    
+
     /**
      * Gets the execution inspector for statistics.
-     * 
+     *
      * @return The inspector instance
      */
     public Inspector inspector() {
         return inspector;
     }
-    
+
     /**
      * Runs a task on the eventloop and waits for completion.
-     * 
+     *
      * @param runnable The task to run
      * @throws RuntimeException if task fails or timeout occurs
      */
     public void runBlocking(Runnable runnable) {
         runBlocking(Executors.callable(runnable));
     }
-    
+
     /**
      * Runs a callable on the eventloop and returns its result.
-     * 
+     *
      * @param callable The callable to run
      * @param <T> The result type
      * @return The result of the callable
@@ -441,11 +441,11 @@ public final class EventloopTestRunner implements AutoCloseable {
     public <T> T runBlocking(Callable<T> callable) {
         ensureStarted();
         inspector.markPost();
-        
+
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<T> resultRef = new AtomicReference<>();
         AtomicReference<Throwable> errRef = new AtomicReference<>();
-        
+
         // Use execute so we can schedule from any thread (post may require reactor-thread context)
         eventloop.execute(() -> {
              try {
@@ -466,7 +466,7 @@ public final class EventloopTestRunner implements AutoCloseable {
 
     /**
      * Runs a promise-producing callable on the eventloop and awaits the resolved value.
-     * 
+     *
      * @param promiseCallable The callable that produces a promise
      * @param <T> The result type
      * @return The resolved promise value
@@ -475,11 +475,11 @@ public final class EventloopTestRunner implements AutoCloseable {
     public <T> T runPromise(Callable<Promise<T>> promiseCallable) {
         ensureStarted();
         inspector.markPromise();
-        
+
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<T> resultRef = new AtomicReference<>();
         AtomicReference<Throwable> errRef = new AtomicReference<>();
-        
+
         eventloop.execute(() -> {
             try {
                 Promise<T> p = inspector.timedRun(promiseCallable);
@@ -501,13 +501,13 @@ public final class EventloopTestRunner implements AutoCloseable {
                 done.countDown();
             }
         });
-        
+
         await(done);
         propagateIfAny(errRef.get());
         propagateIfAny(fatal.get());
         return resultRef.get();
     }
-    
+
     private void await(CountDownLatch done) {
         try {
             if (!done.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
@@ -522,7 +522,7 @@ public final class EventloopTestRunner implements AutoCloseable {
             throw new RuntimeException("Interrupted while awaiting eventloop task", ie);
         }
     }
-    
+
     private void propagateIfAny(Throwable t) {
         if (t != null) {
             if (t instanceof RuntimeException) {
@@ -534,13 +534,13 @@ public final class EventloopTestRunner implements AutoCloseable {
             throw new RuntimeException(t);
         }
     }
-    
+
     @Override
     public synchronized void close() {
         if (closed.getAndSet(true)) {
             return;
         }
-        
+
         try {
             if (eventloop != null) {
                 eventloop.execute(eventloop::breakEventloop);
@@ -560,12 +560,12 @@ public final class EventloopTestRunner implements AutoCloseable {
             }
             listener.onStop(threadName, inspector);
         }
-        
+
         if (fatal.get() != null) {
             propagateIfAny(fatal.get());
         }
     }
-    
+
     /**
      * Listener interface for eventloop lifecycle events.
      */
@@ -579,26 +579,26 @@ public final class EventloopTestRunner implements AutoCloseable {
          * @param threadName The name of the thread running the eventloop
          */
         default void onStart(String threadName) {}
-        
+
         /**
          * Called when the eventloop makes progress (completes a task).
          */
         default void onProgress() {}
-        
+
         /**
          * Called when the eventloop appears to be stuck.
          *
          * @param elapsedMs The number of milliseconds since the last progress
          */
         default void onStuck(long elapsedMs) {}
-        
+
         /**
          * Called when a fatal error occurs on the eventloop.
          *
          * @param error The error that occurred
          */
         default void onFatal(Throwable error) {}
-        
+
         /**
          * Called when the eventloop is about to stop.
          *
@@ -607,7 +607,7 @@ public final class EventloopTestRunner implements AutoCloseable {
          */
         default void onStop(String threadName, Inspector snapshot) {}
     }
-    
+
     /**
      * Default SLF4J-based listener implementation.
      */
@@ -625,23 +625,23 @@ public final class EventloopTestRunner implements AutoCloseable {
         public void onStart(String threadName) {
             log.info("Eventloop started on {}", threadName);
         }
-        
+
         @Override
         public void onStuck(long elapsedMs) {
             log.warn("Eventloop appears stuck (no progress {} ms)", elapsedMs);
         }
-        
+
         @Override
         public void onFatal(Throwable error) {
             log.error("Fatal error on eventloop", error);
         }
-        
+
         @Override
         public void onStop(String threadName, Inspector snapshot) {
             log.info("Eventloop stopping on {}. {}", threadName, snapshot);
         }
     }
-    
+
     /**
      * Execution statistics inspector for debugging.
      */
@@ -652,23 +652,23 @@ public final class EventloopTestRunner implements AutoCloseable {
         private final AtomicLong runsErr = new AtomicLong();
         private final AtomicLong totalRunNanos = new AtomicLong();
         private final AtomicReference<Throwable> lastError = new AtomicReference<>();
-        
+
         private long startNanos;
         private final String name;
-        
+
         Inspector(String name) {
             this.name = name;
             this.startNanos = System.nanoTime();
         }
-        
+
         void markPost() {
             posts.incrementAndGet();
         }
-        
+
         void markPromise() {
             promises.incrementAndGet();
         }
-        
+
         <T> T timedRun(Callable<T> c) throws Exception {
             long t0 = System.nanoTime();
             try {
@@ -689,11 +689,11 @@ public final class EventloopTestRunner implements AutoCloseable {
                 totalRunNanos.addAndGet(System.nanoTime() - t0);
             }
         }
-        
+
         void resetTimer() {
             startNanos = System.nanoTime();
         }
-        
+
         /**
          * Returns a formatted string representation of the builder configuration.
          *
@@ -702,7 +702,7 @@ public final class EventloopTestRunner implements AutoCloseable {
         public String pretty() {
             return toString();
         }
-        
+
         @Override
         public String toString() {
             long secs = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startNanos);
@@ -712,19 +712,19 @@ public final class EventloopTestRunner implements AutoCloseable {
             sb.append(", runsOk=").append(runsOk.get());
             sb.append(", runsErr=").append(runsErr.get());
             sb.append(", totalRunMillis=").append(TimeUnit.NANOSECONDS.toMillis(totalRunNanos.get()));
-            
+
             Throwable err = lastError.get();
             if (err != null) {
                 sb.append(", lastError=").append(err.getClass().getSimpleName())
                   .append(": ").append(err.getMessage());
             }
-            
+
             sb.append(", observedForSec=").append(secs);
             sb.append('}');
             return sb.toString();
         }
     }
-    
+
     /**
      * Builder for creating {@link EventloopTestRunner} instances.
      */
@@ -747,10 +747,10 @@ public final class EventloopTestRunner implements AutoCloseable {
         private Duration watchdogEvery = Duration.ofSeconds(2);
         private String threadName = "test-eventloop";
         private Listener listener = new Slf4jListener();
-        
+
         /**
          * Sets the timeout for operations.
-         * 
+         *
          * @param timeout The timeout duration
          * @return This builder
          */
@@ -758,10 +758,10 @@ public final class EventloopTestRunner implements AutoCloseable {
             this.timeout = Objects.requireNonNull(timeout, "timeout");
             return this;
         }
-        
+
         /**
          * Sets the watchdog check interval.
-         * 
+         *
          * @param watchdogEvery The watchdog interval
          * @return This builder
          */
@@ -769,10 +769,10 @@ public final class EventloopTestRunner implements AutoCloseable {
             this.watchdogEvery = Objects.requireNonNull(watchdogEvery, "watchdogEvery");
             return this;
         }
-        
+
         /**
          * Sets the thread name for the eventloop.
-         * 
+         *
          * @param threadName The thread name
          * @return This builder
          */
@@ -780,10 +780,10 @@ public final class EventloopTestRunner implements AutoCloseable {
             this.threadName = Objects.requireNonNull(threadName, "threadName");
             return this;
         }
-        
+
         /**
          * Sets the lifecycle listener.
-         * 
+         *
          * @param listener The listener
          * @return This builder
          */
@@ -791,10 +791,10 @@ public final class EventloopTestRunner implements AutoCloseable {
             this.listener = Objects.requireNonNull(listener, "listener");
             return this;
         }
-        
+
         /**
          * Builds the test runner.
-         * 
+         *
          * @return A new test runner instance
          */
         public EventloopTestRunner build() {

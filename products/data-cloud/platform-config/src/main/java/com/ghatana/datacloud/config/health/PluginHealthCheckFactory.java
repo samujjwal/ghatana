@@ -6,7 +6,6 @@ package com.ghatana.datacloud.config.health;
 
 import com.ghatana.datacloud.config.ConfigRegistry;
 import com.ghatana.datacloud.config.model.CompiledPluginConfig;
-import com.ghatana.platform.observability.health.HealthCheck;
 import com.ghatana.platform.observability.health.HealthCheck.HealthCheckResult;
 import com.ghatana.platform.observability.health.HealthCheckRegistry;
 import io.activej.promise.Promise;
@@ -25,7 +24,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.function.Supplier;
 

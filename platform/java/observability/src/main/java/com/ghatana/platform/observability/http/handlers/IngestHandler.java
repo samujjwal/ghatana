@@ -49,7 +49,7 @@ import java.util.Objects;
  * @doc.examples See handleSingleSpan() and handleBatchSpans() method docs for request/response formats
  * @doc.testing Test with IngestHandlerTest (unit tests with mock TraceStorage)
  * @doc.notes Stateless handler (thread-safe), uses Promise-based async I/O, supports partial batch success (207 Multi-Status)
- * 
+ *
  * @author Ghatana Platform Team
  * @since 1.0.0
  */
@@ -64,7 +64,7 @@ public class IngestHandler {
      * Trace storage backend for persisting span data.
      */
     private final TraceStorage storage;
-    
+
     /**
      * Jackson ObjectMapper for JSON serialization/deserialization.
      */
@@ -144,18 +144,18 @@ public class IngestHandler {
                         // Store span
                         return storage.storeSpan(spanData)
                                 .then(unused -> {
-                                    logger.info("Ingested span: spanId={}, traceId={}", 
+                                    logger.info("Ingested span: spanId={}, traceId={}",
                                             spanData.spanId(), spanData.traceId());
-                                    
+
                                     IngestResponse response = IngestResponse.success(
                                             spanData.spanId(), spanData.traceId());
-                                    
+
                                     return Promise.of(createJsonResponse(201, response));
                                 }, ex -> {
-                                    logger.error("Failed to store span: spanId={}, traceId={}", 
+                                    logger.error("Failed to store span: spanId={}, traceId={}",
                                             spanData.spanId(), spanData.traceId(), ex);
                                     ObsHttpError error = ObsHttpError.internalError(
-                                            "Failed to store span: " + ex.getMessage(), 
+                                            "Failed to store span: " + ex.getMessage(),
                                             request.getPath());
                                     return Promise.of(createJsonResponse(500, error));
                                 });
@@ -163,14 +163,14 @@ public class IngestHandler {
                     } catch (Exception ex) {
                         logger.error("Failed to parse span request", ex);
                         ObsHttpError error = ObsHttpError.badRequest(
-                                "Invalid span data: " + ex.getMessage(), 
+                                "Invalid span data: " + ex.getMessage(),
                                 request.getPath());
                         return Promise.of(createJsonResponse(400, error));
                     }
                 }, ex -> {
                     logger.error("Internal error during span ingestion", ex);
                     ObsHttpError error = ObsHttpError.internalError(
-                            "Internal server error: " + ex.getMessage(), 
+                            "Internal server error: " + ex.getMessage(),
                             request.getPath());
                     return Promise.of(createJsonResponse(500, error));
                 });
@@ -257,8 +257,8 @@ public class IngestHandler {
                             } catch (Exception ex) {
                                 logger.warn("Invalid span in batch: {}", ex.getMessage());
                                 results.add(IngestResponse.failure(
-                                        spanRequest.getSpanId(), 
-                                        spanRequest.getTraceId(), 
+                                        spanRequest.getSpanId(),
+                                        spanRequest.getTraceId(),
                                         ex.getMessage()));
                             }
                         }
@@ -266,18 +266,18 @@ public class IngestHandler {
                         // Store all valid spans
                         return storage.storeSpans(spanDataList)
                                 .then(unused -> {
-                                    logger.info("Batch ingestion complete: {} spans", 
+                                    logger.info("Batch ingestion complete: {} spans",
                                             spanDataList.size());
-                                    
-                                    BatchIngestResponse response = 
+
+                                    BatchIngestResponse response =
                                             BatchIngestResponse.fromResults(results);
-                                    
+
                                     int statusCode = response.isFullSuccess() ? 201 : 207;
                                     return Promise.of(createJsonResponse(statusCode, response));
                                 }, ex -> {
                                     logger.error("Failed to store batch of spans", ex);
                                     ObsHttpError error = ObsHttpError.internalError(
-                                            "Failed to store batch: " + ex.getMessage(), 
+                                            "Failed to store batch: " + ex.getMessage(),
                                             request.getPath());
                                     return Promise.of(createJsonResponse(500, error));
                                 });
@@ -285,14 +285,14 @@ public class IngestHandler {
                     } catch (Exception ex) {
                         logger.error("Failed to parse batch span request", ex);
                         ObsHttpError error = ObsHttpError.badRequest(
-                                "Invalid batch data: " + ex.getMessage(), 
+                                "Invalid batch data: " + ex.getMessage(),
                                 request.getPath());
                         return Promise.of(createJsonResponse(400, error));
                     }
                 }, ex -> {
                     logger.error("Internal error during batch span ingestion", ex);
                     ObsHttpError error = ObsHttpError.internalError(
-                            "Internal server error: " + ex.getMessage(), 
+                            "Internal server error: " + ex.getMessage(),
                             request.getPath());
                     return Promise.of(createJsonResponse(500, error));
                 });

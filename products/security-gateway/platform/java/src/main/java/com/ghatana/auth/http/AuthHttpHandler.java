@@ -2,7 +2,6 @@ package com.ghatana.auth.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.auth.core.port.JwtTokenProvider;
-import com.ghatana.auth.core.port.JwtClaims;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.UserPrincipal;
 import com.ghatana.platform.observability.MetricsCollector;

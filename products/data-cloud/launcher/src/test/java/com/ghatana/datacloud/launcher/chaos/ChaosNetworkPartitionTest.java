@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.launcher.chaos;
 
 import com.ghatana.datacloud.client.DataCloudClient;
-import com.ghatana.datacloud.record.Record;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;

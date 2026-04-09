@@ -234,9 +234,9 @@ public final class RequirementEmbeddingService {
     return vectorStore.getById(requirementId)
         .then(existing -> embeddingService.createEmbedding(newText)
             .then(embedding -> vectorStore.store(
-                requirementId, 
-                newText, 
-                embedding.getVector(), 
+                requirementId,
+                newText,
+                embedding.getVector(),
                 existing.getMetadata()
             )));
   }

@@ -3,7 +3,6 @@ package com.ghatana.platform.observability.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.observability.trace.TraceQuery;
 import com.ghatana.platform.observability.trace.TraceQueryBuilder;
-import com.ghatana.platform.observability.trace.TraceStatistics;
 import com.ghatana.platform.observability.trace.TraceStorage;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -86,22 +85,22 @@ public class StatisticsHandler {
             // Parse query parameters (reuse QueryHandler logic)
             TraceQuery query = parseQueryParameters(request);
 
-            logger.debug("Computing statistics with filters: serviceName={}, status={}", 
-                    query.getServiceName().orElse("*"), 
+            logger.debug("Computing statistics with filters: serviceName={}, status={}",
+                    query.getServiceName().orElse("*"),
                     query.getStatus().orElse("*"));
 
             return storage.getStatistics(query)
                     .then(statistics -> {
-                        logger.info("Computed statistics: totalTraces={}, errorCount={}, errorRate={}%", 
-                                statistics.totalTraces(), 
-                                statistics.errorCount(), 
+                        logger.info("Computed statistics: totalTraces={}, errorCount={}, errorRate={}%",
+                                statistics.totalTraces(),
+                                statistics.errorCount(),
                                 statistics.errorRate());
-                        
+
                         return Promise.of(createJsonResponse(200, statistics));
                     }, ex -> {
                         logger.error("Failed to compute statistics", ex);
                         ObsHttpError error = ObsHttpError.internalError(
-                                "Failed to compute statistics: " + ex.getMessage(), 
+                                "Failed to compute statistics: " + ex.getMessage(),
                                 request.getPath());
                         return Promise.of(createJsonResponse(500, error));
                     });
@@ -109,7 +108,7 @@ public class StatisticsHandler {
         } catch (IllegalArgumentException ex) {
             logger.warn("Invalid query parameters: {}", ex.getMessage());
             ObsHttpError error = ObsHttpError.badRequest(
-                    "Invalid query parameters: " + ex.getMessage(), 
+                    "Invalid query parameters: " + ex.getMessage(),
                     request.getPath());
             return Promise.of(createJsonResponse(400, error));
         }

@@ -12,24 +12,24 @@ import java.util.stream.Collectors;
  * based on time or other criteria.
  */
 public interface WindowedQueryPlan {
-    
+
     /**
      * Executes the windowed query and returns a Promise that completes with a list of windowed results.
-     * 
+     *
      * @return A Promise that completes with a list of windowed results, one for each window
      */
     Promise<List<WindowedResult>> execute();
-    
+
     /**
      * Gets the window specification for this query plan.
-     * 
+     *
      * @return The window specification
      */
     WindowSpec getWindowSpec();
-    
+
     /**
      * Creates a new windowed query plan that applies an additional aggregation.
-     * 
+     *
      * @param aggregation The aggregation to apply
      * @return A new windowed query plan with the additional aggregation
      */
@@ -54,17 +54,17 @@ public interface WindowedQueryPlan {
                         })
                         .collect(Collectors.toList()));
             }
-            
+
             @Override
             public WindowSpec getWindowSpec() {
                 return WindowedQueryPlan.this.getWindowSpec();
             }
         };
     }
-    
+
     /**
      * Creates a new windowed query plan that groups the results by the specified key function.
-     * 
+     *
      * @param keyFunction A function that extracts a key from an event
      * @return A new windowed query plan with grouping
      */
@@ -79,7 +79,7 @@ public interface WindowedQueryPlan {
                             // Group events in this window by the key
                             Map<K, List<Event>> groups = window.getEvents().stream()
                                 .collect(Collectors.groupingBy(keyFunction));
-                            
+
                             // Create a new window for each group
                             return groups.entrySet().stream()
                                 .map(entry -> new WindowedResult(
@@ -92,17 +92,17 @@ public interface WindowedQueryPlan {
                         })
                         .collect(Collectors.toList()));
             }
-            
+
             @Override
             public WindowSpec getWindowSpec() {
                 return WindowedQueryPlan.this.getWindowSpec();
             }
         };
     }
-    
+
     /**
      * Executes the windowed query and returns the results as a stream of windowed results.
-     * 
+     *
      * @return A Promise that completes with a stream of windowed results, one for each window
      */
     default Promise<java.util.stream.Stream<WindowedResult>> stream() {

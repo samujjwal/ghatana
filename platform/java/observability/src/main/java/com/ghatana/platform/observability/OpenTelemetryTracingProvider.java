@@ -2,7 +2,6 @@ package com.ghatana.platform.observability;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
@@ -88,12 +87,12 @@ public class OpenTelemetryTracingProvider implements TracingProvider {
      * The OpenTelemetry instance for context propagation and configuration.
      */
     private final OpenTelemetry openTelemetry;
-    
+
     /**
      * The tracer used for creating spans.
      */
     private final Tracer tracer;
-    
+
     /**
      * The instrumentation name (logical scope, e.g., "ingress", "validation").
      */

@@ -85,7 +85,7 @@ public class ContractValidationGate {
 
         for (KernelContract contract : contracts) {
             ContractValidator validator = validators.get(contract.getFamily());
-            
+
             if (validator == null) {
                 violations.add(new ComplianceViolation(
                     contract.getContractId(),
@@ -160,7 +160,7 @@ public class ContractValidationGate {
         private final List<ComplianceViolation> violations;
         private final Map<String, ContractValidator.ValidationResult> results;
 
-        public GateResult(boolean valid, List<ComplianceViolation> violations, 
+        public GateResult(boolean valid, List<ComplianceViolation> violations,
                          Map<String, ContractValidator.ValidationResult> results) {
             this.valid = valid;
             this.violations = violations;

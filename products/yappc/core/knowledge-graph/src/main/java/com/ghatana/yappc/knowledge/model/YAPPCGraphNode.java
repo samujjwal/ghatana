@@ -2,13 +2,12 @@ package com.ghatana.yappc.knowledge.model;
 
 import lombok.Builder;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * YAPPC-specific graph node model.
- * 
+ *
  * @doc.type record
  * @doc.purpose YAPPC graph node representation
  * @doc.layer domain

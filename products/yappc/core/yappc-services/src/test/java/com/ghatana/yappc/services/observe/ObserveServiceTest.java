@@ -23,16 +23,16 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 class ObserveServiceTest extends EventloopTestBase {
-    
+
     @Test
     void shouldCollectObservations() {
         // GIVEN
         AuditLogger auditLogger = mock(AuditLogger.class);
         MetricsCollector metrics = mock(MetricsCollector.class);
-        
+
         when(auditLogger.log(any(Map.class)))
                 .thenReturn(Promise.complete());
-        
+
         ObserveService service = new ObserveServiceImpl(metrics, auditLogger);
         RunResult run = RunResult.builder()
                 .id("result-123")
@@ -40,10 +40,10 @@ class ObserveServiceTest extends EventloopTestBase {
                 .status(com.ghatana.yappc.domain.run.RunStatus.SUCCESS)
                 .metadata(java.util.Map.of("environment", "production"))
                 .build();
-        
+
         // WHEN
         Observation result = runPromise(() -> service.collect(run));
-        
+
         // THEN
         assertNotNull(result);
         assertNotNull(result.id());
@@ -51,19 +51,19 @@ class ObserveServiceTest extends EventloopTestBase {
         assertNotNull(result.metrics());
         assertNotNull(result.logs());
         assertNotNull(result.traces());
-        
+
         verify(auditLogger, times(1)).log(any(Map.class));
     }
-    
+
     @Test
     void shouldStreamObservations() {
         // GIVEN
         AuditLogger auditLogger = mock(AuditLogger.class);
         MetricsCollector metrics = mock(MetricsCollector.class);
-        
+
         when(auditLogger.log(any(Map.class)))
                 .thenReturn(Promise.complete());
-        
+
         ObserveService service = new ObserveServiceImpl(metrics, auditLogger);
         RunResult run = RunResult.builder()
                 .id("result-123")
@@ -71,12 +71,12 @@ class ObserveServiceTest extends EventloopTestBase {
                 .status(com.ghatana.yappc.domain.run.RunStatus.RUNNING)
                 .metadata(java.util.Map.of("environment", "production"))
                 .build();
-        
+
         List<Observation> collected = new ArrayList<>();
-        
+
         // WHEN
         runPromise(() -> service.streamObservations(run, collected::add));
-        
+
         // THEN
         assertFalse(collected.isEmpty());
         collected.forEach(obs -> {
@@ -84,22 +84,22 @@ class ObserveServiceTest extends EventloopTestBase {
             assertEquals("run-123", obs.runRef());
         });
     }
-    
+
     @Test
     void shouldHandleCollectionFailure() {
         // GIVEN
         AuditLogger auditLogger = mock(AuditLogger.class);
         MetricsCollector metrics = mock(MetricsCollector.class);
-        
+
         when(auditLogger.log(any(Map.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("Audit failed")));
-        
+
         ObserveService service = new ObserveServiceImpl(metrics, auditLogger);
         RunResult run = RunResult.builder()
                 .id("result-123")
                 .runSpecRef("run-123")
                 .build();
-        
+
         // WHEN/THEN
         try {
             runPromise(() -> service.collect(run));

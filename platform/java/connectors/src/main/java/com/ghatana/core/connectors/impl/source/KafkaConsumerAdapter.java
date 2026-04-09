@@ -36,7 +36,7 @@ import java.util.List;
  * public class ProductionKafkaAdapter implements KafkaConsumerAdapter {
  *     private final KafkaConsumer<String, byte[]> consumer;
  *     private final EventDeserializer deserializer;
- *     
+ *
  *     public ProductionKafkaAdapter(
  *             String bootstrapServers,
  *             String groupId,
@@ -48,18 +48,18 @@ import java.util.List;
  *         props.put("value.deserializer", ByteArrayDeserializer.class.getName());
  *         props.put("enable.auto.commit", "true");
  *         props.put("auto.offset.reset", "earliest");
- *         
+ *
  *         this.consumer = new KafkaConsumer<>(props);
  *         this.consumer.subscribe(topics);
  *         this.deserializer = new EventDeserializer();
  *     }
- *     
+ *
  *     @Override
  *     public Promise<List<IngestEvent>> poll() {
  *         return Promise.ofBlocking(() -> {
- *             ConsumerRecords<String, byte[]> records = 
+ *             ConsumerRecords<String, byte[]> records =
  *                 consumer.poll(Duration.ofMillis(100));
- *             
+ *
  *             List<IngestEvent> events = new ArrayList<>();
  *             for (ConsumerRecord<String, byte[]> record : records) {
  *                 IngestEvent event = deserializer.deserialize(
@@ -73,11 +73,11 @@ import java.util.List;
  *                 );
  *                 events.add(event);
  *             }
- *             
+ *
  *             return events;
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         consumer.close();
@@ -88,26 +88,26 @@ import java.util.List;
  * public class MockKafkaAdapter implements KafkaConsumerAdapter {
  *     private final Queue<IngestEvent> events = new ConcurrentLinkedQueue<>();
  *     private volatile boolean closed = false;
- *     
+ *
  *     public void addEvent(IngestEvent event) {
  *         events.add(event);
  *     }
- *     
+ *
  *     @Override
  *     public Promise<List<IngestEvent>> poll() {
  *         if (closed) {
  *             return Promise.ofException(new IllegalStateException("Consumer closed"));
  *         }
- *         
+ *
  *         List<IngestEvent> batch = new ArrayList<>();
  *         IngestEvent event;
  *         while ((event = events.poll()) != null && batch.size() < 10) {
  *             batch.add(event);
  *         }
- *         
+ *
  *         return Promise.of(batch);
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         closed = true;
@@ -120,15 +120,15 @@ import java.util.List;
  *     @Test
  *     void shouldPollEvents() {
  *         MockKafkaAdapter adapter = new MockKafkaAdapter();
- *         
+ *
  *         // Add test events
  *         adapter.addEvent(createTestEvent("event1"));
  *         adapter.addEvent(createTestEvent("event2"));
- *         
+ *
  *         // Poll events
  *         Promise<List<IngestEvent>> result = adapter.poll();
  *         List<IngestEvent> events = result.getResult();
- *         
+ *
  *         assertThat(events).hasSize(2);
  *         assertThat(events.get(0).eventId()).isEqualTo("event1");
  *     }
@@ -139,26 +139,26 @@ import java.util.List;
  *     private final KafkaConsumerAdapter delegate;
  *     private final int batchSize;
  *     private final Queue<IngestEvent> buffer = new ArrayDeque<>();
- *     
+ *
  *     public BatchingKafkaAdapter(KafkaConsumerAdapter delegate, int batchSize) {
  *         this.delegate = delegate;
  *         this.batchSize = batchSize;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<List<IngestEvent>> poll() {
  *         return delegate.poll().then(events -> {
  *             buffer.addAll(events);
- *             
+ *
  *             List<IngestEvent> batch = new ArrayList<>();
  *             while (!buffer.isEmpty() && batch.size() < batchSize) {
  *                 batch.add(buffer.poll());
  *             }
- *             
+ *
  *             return Promise.of(batch);
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         delegate.close();
@@ -170,25 +170,25 @@ import java.util.List;
  * public class MetricsKafkaAdapter implements KafkaConsumerAdapter {
  *     private final KafkaConsumerAdapter delegate;
  *     private final MetricsCollector metrics;
- *     
+ *
  *     @Override
  *     public Promise<List<IngestEvent>> poll() {
  *         long start = System.nanoTime();
- *         
+ *
  *         return delegate.poll().whenComplete((events, e) -> {
  *             long durationMs = (System.nanoTime() - start) / 1_000_000;
- *             
+ *
  *             if (e == null) {
  *                 metrics.recordTimer("kafka.poll.duration", durationMs);
- *                 metrics.incrementCounter("kafka.events.polled", 
+ *                 metrics.incrementCounter("kafka.events.polled",
  *                     "count", String.valueOf(events.size()));
  *             } else {
- *                 metrics.incrementCounter("kafka.poll.errors", 
+ *                 metrics.incrementCounter("kafka.poll.errors",
  *                     "error", e.getClass().getSimpleName());
  *             }
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         delegate.close();
@@ -198,18 +198,18 @@ import java.util.List;
  * // 6. Multi-topic adapter with routing
  * public class MultiTopicKafkaAdapter implements KafkaConsumerAdapter {
  *     private final Map<String, KafkaConsumerAdapter> topicAdapters;
- *     
+ *
  *     public MultiTopicKafkaAdapter(Map<String, KafkaConsumerAdapter> topicAdapters) {
  *         this.topicAdapters = topicAdapters;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<List<IngestEvent>> poll() {
  *         // Poll from all topics, merge results
  *         List<Promise<List<IngestEvent>>> polls = topicAdapters.values().stream()
  *             .map(KafkaConsumerAdapter::poll)
  *             .collect(Collectors.toList());
- *         
+ *
  *         return Promise.all(polls).then(results -> {
  *             List<IngestEvent> merged = results.stream()
  *                 .flatMap(List::stream)
@@ -217,7 +217,7 @@ import java.util.List;
  *             return Promise.of(merged);
  *         });
  *     }
- *     
+ *
  *     @Override
  *     public void close() {
  *         topicAdapters.values().forEach(KafkaConsumerAdapter::close);
@@ -298,4 +298,3 @@ public interface KafkaConsumerAdapter {
      */
     void close();
 }
-

@@ -5,7 +5,6 @@
 package com.ghatana.platform.workflow;
 
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
-import com.ghatana.platform.workflow.WorkflowStateStore;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -71,7 +70,7 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<Void> start() {
         return Promise.ofBlocking(executor, () -> {
             if (started) return null;
-            
+
             log.info("Starting enhanced workflow orchestration service");
             started = true;
             log.info("Enhanced workflow orchestration service started");
@@ -87,13 +86,13 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<Void> stop() {
         return Promise.ofBlocking(executor, () -> {
             if (!started) return null;
-            
+
             log.info("Stopping enhanced workflow orchestration service");
-            
+
             // Stop all active runtimes
             activeRuntimes.values().forEach(this::stopRuntime);
             activeRuntimes.clear();
-            
+
             started = false;
             log.info("Enhanced workflow orchestration service stopped");
             return null;
@@ -110,16 +109,16 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<WorkflowExecutionResult> executeWorkflow(
             @NotNull Workflow workflow,
             @NotNull WorkflowContext context) {
-        
+
         if (!started) {
             return Promise.ofException(new IllegalStateException("Orchestration service not started"));
         }
 
         log.debug("Executing workflow: {} with run ID: {}", workflow.getId(), context.getRunId());
-        
+
         WorkflowRuntime runtime = new WorkflowRuntime(workflow, context);
         activeRuntimes.put(context.getRunId(), runtime);
-        
+
         return executeWithEnhancements(runtime)
             .whenResult(result -> {
                 activeRuntimes.remove(context.getRunId());
@@ -142,13 +141,13 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<ParallelExecutionResult> executeParallel(
             @NotNull List<WorkflowStep> steps,
             @NotNull WorkflowContext context) {
-        
+
         if (!started) {
             return Promise.ofException(new IllegalStateException("Orchestration service not started"));
         }
 
         log.debug("Executing {} steps in parallel", steps.size());
-        
+
         ParallelStepExecutor parallelExecutor = new ParallelStepExecutor(executor);
         return parallelExecutor.execute(steps, context);
     }
@@ -163,13 +162,13 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<CompositionResult> composeWorkflows(
             @NotNull List<Workflow> workflows,
             @NotNull WorkflowContext context) {
-        
+
         if (!started) {
             return Promise.ofException(new IllegalStateException("Orchestration service not started"));
         }
 
         log.debug("Composing {} workflows", workflows.size());
-        
+
         WorkflowComposer composer = new WorkflowComposer(workflowEngine);
         return composer.compose(workflows, context);
     }
@@ -184,13 +183,13 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<ExpressionResult> evaluateExpression(
             @NotNull String expression,
             @NotNull WorkflowContext context) {
-        
+
         if (!started) {
             return Promise.ofException(new IllegalStateException("Orchestration service not started"));
         }
 
         log.debug("Evaluating expression: {}", expression);
-        
+
         CelExpressionEvaluator evaluator = new CelExpressionEvaluator();
         return evaluator.evaluate(expression, context);
     }
@@ -205,13 +204,13 @@ public final class EnhancedWorkflowOrchestrationService {
     public Promise<ErrorHandlingResult> handleError(
             @NotNull WorkflowError error,
             @NotNull WorkflowContext context) {
-        
+
         if (!started) {
             return Promise.ofException(new IllegalStateException("Orchestration service not started"));
         }
 
         log.debug("Handling workflow error: {}", error.getType());
-        
+
         WorkflowErrorHandler errorHandler = new WorkflowErrorHandler();
         return errorHandler.handle(error, context);
     }
@@ -228,7 +227,7 @@ public final class EnhancedWorkflowOrchestrationService {
         }
 
         log.debug("Getting metrics for workflow: {}", workflowId);
-        
+
         WorkflowMetricsCollector collector = new WorkflowMetricsCollector(stateStore);
         return collector.collectMetrics(workflowId);
     }
@@ -245,15 +244,15 @@ public final class EnhancedWorkflowOrchestrationService {
     }
 
     private Promise<WorkflowExecutionResult> applyPostExecutionEnhancements(
-            WorkflowRuntime runtime, 
+            WorkflowRuntime runtime,
             WorkflowExecutionResult result) {
-        
+
         // Apply metrics collection
         collectMetrics(runtime, result);
-        
+
         // Apply SLA monitoring
         monitorSla(runtime, result);
-        
+
         return Promise.of(result);
     }
 
@@ -268,7 +267,7 @@ public final class EnhancedWorkflowOrchestrationService {
             .duration(java.time.Duration.between(runtime.getStartTime(), Instant.now()))
             .stepsExecuted(result.getExecutedSteps().size())
             .build();
-        
+
         // Store metrics
         stateStore.storeMetrics(metrics);
     }
@@ -330,7 +329,7 @@ public final class EnhancedWorkflowOrchestrationService {
         private final List<WorkflowStep> executedSteps;
         private final Map<String, Object> output;
 
-        private WorkflowExecutionResult(String workflowId, WorkflowRunStatus status, 
+        private WorkflowExecutionResult(String workflowId, WorkflowRunStatus status,
                                       List<WorkflowStep> executedSteps, Map<String, Object> output) {
             this.workflowId = workflowId;
             this.status = status;
@@ -338,7 +337,7 @@ public final class EnhancedWorkflowOrchestrationService {
             this.output = Map.copyOf(output);
         }
 
-        public static WorkflowExecutionResult success(String workflowId, WorkflowRunStatus status, 
+        public static WorkflowExecutionResult success(String workflowId, WorkflowRunStatus status,
                                                     List<WorkflowStep> executedSteps, Map<String, Object> output) {
             return new WorkflowExecutionResult(workflowId, status, executedSteps, output);
         }
@@ -430,9 +429,9 @@ public final class EnhancedWorkflowOrchestrationService {
     // Placeholder classes for implementation
     private static final class ParallelStepExecutor {
         private final Executor executor;
-        
+
         ParallelStepExecutor(Executor executor) { this.executor = executor; }
-        
+
         Promise<ParallelExecutionResult> execute(List<WorkflowStep> steps, WorkflowContext context) {
             return Promise.of(new ParallelExecutionResult(Map.of(), List.of()));
         }
@@ -440,11 +439,11 @@ public final class EnhancedWorkflowOrchestrationService {
 
     private static final class WorkflowComposer {
         private final DurableWorkflowEngine engine;
-        
+
         WorkflowComposer(DurableWorkflowEngine engine) { this.engine = engine; }
-        
+
         Promise<CompositionResult> compose(List<Workflow> workflows, WorkflowContext context) {
-            return Promise.of(new CompositionResult("composed-" + UUID.randomUUID(), 
+            return Promise.of(new CompositionResult("composed-" + UUID.randomUUID(),
                 workflows.stream().map(Workflow::getId).toList()));
         }
     }
@@ -463,9 +462,9 @@ public final class EnhancedWorkflowOrchestrationService {
 
     private static final class WorkflowMetricsCollector {
         private final WorkflowStateStore stateStore;
-        
+
         WorkflowMetricsCollector(WorkflowStateStore stateStore) { this.stateStore = stateStore; }
-        
+
         Promise<WorkflowMetrics> collectMetrics(String workflowId) {
             return Promise.of(WorkflowMetrics.builder().workflowId(workflowId).build());
         }
@@ -473,9 +472,9 @@ public final class EnhancedWorkflowOrchestrationService {
 
     private static final class WorkflowError {
         private final String type;
-        
+
         WorkflowError(String type) { this.type = type; }
-        
+
         String getType() { return type; }
     }
 
@@ -487,7 +486,7 @@ public final class EnhancedWorkflowOrchestrationService {
         private final Instant endTime;
         private final java.time.Duration duration;
         private final int stepsExecuted;
-        
+
         private WorkflowMetrics(Builder builder) {
             this.workflowId = builder.workflowId;
             this.runId = builder.runId;
@@ -497,7 +496,7 @@ public final class EnhancedWorkflowOrchestrationService {
             this.duration = builder.duration;
             this.stepsExecuted = builder.stepsExecuted;
         }
-        
+
         String getWorkflowId() { return workflowId; }
         String getRunId() { return runId; }
         WorkflowRunStatus getStatus() { return status; }
@@ -505,9 +504,9 @@ public final class EnhancedWorkflowOrchestrationService {
         Instant getEndTime() { return endTime; }
         java.time.Duration getDuration() { return duration; }
         int getStepsExecuted() { return stepsExecuted; }
-        
+
         static Builder builder() { return new Builder(); }
-        
+
         static final class Builder {
             private String workflowId;
             private String runId;
@@ -516,7 +515,7 @@ public final class EnhancedWorkflowOrchestrationService {
             private Instant endTime;
             private java.time.Duration duration;
             private int stepsExecuted;
-            
+
             Builder workflowId(String workflowId) { this.workflowId = workflowId; return this; }
             Builder runId(String runId) { this.runId = runId; return this; }
             Builder status(WorkflowRunStatus status) { this.status = status; return this; }
@@ -524,7 +523,7 @@ public final class EnhancedWorkflowOrchestrationService {
             Builder endTime(Instant endTime) { this.endTime = endTime; return this; }
             Builder duration(java.time.Duration duration) { this.duration = duration; return this; }
             Builder stepsExecuted(int stepsExecuted) { this.stepsExecuted = stepsExecuted; return this; }
-            
+
             WorkflowMetrics build() { return new WorkflowMetrics(this); }
         }
     }

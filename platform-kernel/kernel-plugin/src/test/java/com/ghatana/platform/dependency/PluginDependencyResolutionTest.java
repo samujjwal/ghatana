@@ -49,7 +49,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void pluginWithNoDependencies_ResolvesSuccessfully() {
             PluginManifest standalone = createManifest("standalone", Set.of());
             pluginRegistry.put("standalone", standalone);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(standalone))
                     .doesNotThrowAnyException();
         }
@@ -59,10 +59,10 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void pluginWithSatisfiedDependency_ResolvesSuccessfully() {
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(depB))
                     .doesNotThrowAnyException();
         }
@@ -73,11 +73,11 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of());
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-a", "plugin-b"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(depC))
                     .doesNotThrowAnyException();
         }
@@ -96,7 +96,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void selfReferencialDependency_IsDetected() {
             PluginManifest selfRef = createManifest("plugin-a", Set.of("plugin-a"));
             pluginRegistry.put("plugin-a", selfRef);
-            
+
             assertThatThrownBy(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .isInstanceOf(PluginDependencyException.class)
                     .hasMessageContaining("Circular dependency");
@@ -107,10 +107,10 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void twoWayCircularDependency_IsDetected() {
             PluginManifest depA = createManifest("plugin-a", Set.of("plugin-b"));
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThatThrownBy(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .isInstanceOf(PluginDependencyException.class)
                     .hasMessageContaining("Circular dependency");
@@ -122,11 +122,11 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depA = createManifest("plugin-a", Set.of("plugin-b"));
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-c"));
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-a"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
-            
+
             assertThatThrownBy(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .isInstanceOf(PluginDependencyException.class)
                     .hasMessageContaining("Circular dependency");
@@ -140,12 +140,12 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depB = createManifest("plugin-b", Set.of());
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-d"));
             PluginManifest depD = createManifest("plugin-d", Set.of("plugin-b"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
             pluginRegistry.put("plugin-d", depD);
-            
+
             // This specific setup doesn't create a cycle, so should pass
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
@@ -157,11 +157,11 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-a", "plugin-b"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -180,10 +180,10 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void missingDependency_IsDetected() {
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of("nonexistent-plugin"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             // Resolution may or may not throw depending on implementation
             // At minimum, should be able to detect
             assertThat(pluginRegistry).containsKey("plugin-b");
@@ -195,10 +195,10 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         void chainOfMissingDependencies_IsHandled() {
             PluginManifest depA = createManifest("plugin-a", Set.of("missing-b"));
             PluginManifest depB = createManifest("plugin-b", Set.of("missing-c"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThat(pluginRegistry).hasSize(2);
             assertThat(pluginRegistry).doesNotContainKeys("missing-b", "missing-c");
         }
@@ -219,10 +219,10 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depB = createManifestWithOptional(
                     "plugin-b", Set.of("plugin-a"), Set.of("optional-plugin")
             );
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(depB))
                     .doesNotThrowAnyException();
         }
@@ -235,11 +235,11 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depB = createManifestWithOptional(
                     "plugin-b", Set.of("plugin-a"), Set.of("optional-plugin")
             );
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("optional-plugin", optional);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(depB))
                     .doesNotThrowAnyException();
         }
@@ -259,11 +259,11 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-a", "plugin-b"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
-            
+
             // Should resolve without error, indicating topological ordering is possible
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
@@ -273,13 +273,13 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         @DisplayName("plugin should be initialized after its dependencies")
         void pluginInitializedAfterDependencies() {
             List<String> initOrder = new ArrayList<>();
-            
+
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             // Plugin B depends on A, so A should be considered before B
             assertThat(depA.getDependencies()).isEmpty();
             assertThat(depB.getDependencies()).contains("plugin-a");
@@ -307,7 +307,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
                 PluginManifest manifest = createManifest(id, deps);
                 pluginRegistry.put(id, manifest);
             }
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -324,12 +324,12 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             PluginManifest depB = createManifest("plugin-b", Set.of("plugin-a"));
             PluginManifest depC = createManifest("plugin-c", Set.of("plugin-a"));
             PluginManifest depD = createManifest("plugin-d", Set.of("plugin-b", "plugin-c"));
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
             pluginRegistry.put("plugin-c", depC);
             pluginRegistry.put("plugin-d", depD);
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -340,17 +340,17 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             // One plugin depends on many others
             PluginManifest root = createManifest("root", Set.of());
             Set<String> manyDeps = new HashSet<>();
-            
+
             for (int i = 0; i < 10; i++) {
                 String id = "dep-" + i;
                 manyDeps.add(id);
                 pluginRegistry.put(id, createManifest(id, Set.of()));
             }
-            
+
             PluginManifest fan = createManifest("fan", manyDeps);
             pluginRegistry.put("root", root);
             pluginRegistry.put("fan", fan);
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -368,7 +368,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
         @DisplayName("empty dependency graph is valid")
         void emptyDependencyGraphIsValid() {
             pluginRegistry.clear();
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -379,13 +379,13 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             Set<String> dupDeps = new HashSet<>();
             dupDeps.add("plugin-a");
             dupDeps.add("plugin-a"); // Duplicate (due to Set, only one remains)
-            
+
             PluginManifest depA = createManifest("plugin-a", Set.of());
             PluginManifest depB = createManifest("plugin-b", dupDeps);
-            
+
             pluginRegistry.put("plugin-a", depA);
             pluginRegistry.put("plugin-b", depB);
-            
+
             assertThatCode(() -> resolver.checkCircularDependencies(pluginRegistry))
                     .doesNotThrowAnyException();
         }
@@ -396,7 +396,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
             // Create manifests with empty dependencies
             PluginManifest depA = createManifest("plugin-a", Set.of());
             pluginRegistry.put("plugin-a", depA);
-            
+
             assertThatCode(() -> resolver.resolveDependencies(depA))
                     .doesNotThrowAnyException();
         }

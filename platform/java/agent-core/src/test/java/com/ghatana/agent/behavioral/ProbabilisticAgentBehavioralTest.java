@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Behavioral tests for ProbabilisticAgent.
- * 
+ *
  * Focus: Actual ML processing correctness, confidence calibration, fallback chains,
  * and probabilistic reasoning patterns.
  */
@@ -564,7 +564,7 @@ class ProbabilisticAgentBehavioralTest {
         eventloop.post(() -> supplier.get()
                 .whenResult(v -> result.value = v)
                 .whenException(e -> error.ex = (Exception) e));
-        
+
         eventloop.run();
 
         if (error.ex != null) {

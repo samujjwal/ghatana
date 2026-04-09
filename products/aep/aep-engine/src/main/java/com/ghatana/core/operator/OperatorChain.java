@@ -1,7 +1,5 @@
 package com.ghatana.core.operator;
 
-import com.ghatana.platform.domain.event.Event;
-import io.activej.promise.Promise;
 
 import java.util.List;
 
@@ -140,4 +138,3 @@ public interface OperatorChain extends UnifiedOperator {
         return chain;
     }
 }
-

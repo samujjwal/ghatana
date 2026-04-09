@@ -106,4 +106,3 @@ class AepCpuOptimizerTest {
                 .isInstanceOf(NullPointerException.class);
     }
 }
-

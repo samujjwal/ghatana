@@ -1,19 +1,17 @@
 package com.ghatana.agent.registry.audit;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Audit query parameters.
- * 
+ *
  * @doc.type class
  * @doc.purpose Audit search query
  * @doc.layer product
  * @doc.pattern Query Object
  */
 public class AuditQuery {
-    
+
     private final String tenantId;
     private final String eventType;
     private final String action;
@@ -24,7 +22,7 @@ public class AuditQuery {
     private final Instant endTime;
     private final int limit;
     private final int offset;
-    
+
     private AuditQuery(Builder builder) {
         this.tenantId = builder.tenantId;
         this.eventType = builder.eventType;
@@ -37,7 +35,7 @@ public class AuditQuery {
         this.limit = builder.limit;
         this.offset = builder.offset;
     }
-    
+
     public String getTenantId() { return tenantId; }
     public String getEventType() { return eventType; }
     public String getAction() { return action; }
@@ -48,7 +46,7 @@ public class AuditQuery {
     public Instant getEndTime() { return endTime; }
     public int getLimit() { return limit; }
     public int getOffset() { return offset; }
-    
+
     public static class Builder {
         private String tenantId;
         private String eventType;
@@ -60,7 +58,7 @@ public class AuditQuery {
         private Instant endTime = Instant.now();
         private int limit = 100;
         private int offset = 0;
-        
+
         public Builder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
         public Builder eventType(String eventType) { this.eventType = eventType; return this; }
         public Builder action(String action) { this.action = action; return this; }
@@ -71,12 +69,12 @@ public class AuditQuery {
         public Builder endTime(Instant endTime) { this.endTime = endTime; return this; }
         public Builder limit(int limit) { this.limit = limit; return this; }
         public Builder offset(int offset) { this.offset = offset; return this; }
-        
+
         public AuditQuery build() {
             return new AuditQuery(this);
         }
     }
-    
+
     public static Builder builder() {
         return new Builder();
     }

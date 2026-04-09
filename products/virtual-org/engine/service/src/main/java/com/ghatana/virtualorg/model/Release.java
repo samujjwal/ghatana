@@ -62,21 +62,21 @@ public record Release(
         Objects.requireNonNull(scheduledTime, "scheduledTime must not be null");
         metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
     }
-    
+
     // Helper methods for workflow compatibility
     public String getVersion() { return version; }
     public String getReleaseManager() { return metadata.getOrDefault("release_manager", "unknown"); }
     public String getType() { return metadata.getOrDefault("release_type", "standard"); }
-    public java.util.List<String> getFeatures() { 
+    public java.util.List<String> getFeatures() {
         return java.util.List.of(metadata.getOrDefault("features", "").split(","));
     }
-    public java.util.List<String> getBugFixes() { 
+    public java.util.List<String> getBugFixes() {
         return java.util.List.of(metadata.getOrDefault("bug_fixes", "").split(","));
     }
     public Instant getPlannedDeploymentDate() { return scheduledTime; }
     public String getChangeWindow() { return metadata.getOrDefault("change_window", "standard"); }
     public String getRiskLevel() { return metadata.getOrDefault("risk_level", "medium"); }
-    
+
     /**
      * Creates a builder for Release.
      *
@@ -85,7 +85,7 @@ public record Release(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for Release instances.
      */
@@ -95,7 +95,7 @@ public record Release(
         private String environment;
         private Instant scheduledTime;
         private Map<String, String> metadata = Map.of();
-        
+
         /**
          * Sets the release ID.
          *
@@ -106,7 +106,7 @@ public record Release(
             this.releaseId = releaseId;
             return this;
         }
-        
+
         /**
          * Sets the version.
          *
@@ -117,7 +117,7 @@ public record Release(
             this.version = version;
             return this;
         }
-        
+
         /**
          * Sets the target environment.
          *
@@ -128,7 +128,7 @@ public record Release(
             this.environment = environment;
             return this;
         }
-        
+
         /**
          * Sets the scheduled deployment time.
          *
@@ -139,7 +139,7 @@ public record Release(
             this.scheduledTime = scheduledTime;
             return this;
         }
-        
+
         /**
          * Sets metadata.
          *
@@ -150,7 +150,7 @@ public record Release(
             this.metadata = metadata;
             return this;
         }
-        
+
         /**
          * Adds a single metadata entry.
          *
@@ -167,7 +167,7 @@ public record Release(
             ((java.util.HashMap<String, String>) this.metadata).put(key, value);
             return this;
         }
-        
+
         /**
          * Builds the Release instance.
          *

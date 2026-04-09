@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Fluent builder for constructing pipelines with both legacy and structured formats.
@@ -543,7 +542,3 @@ public class PipelineRegistryBuilder {
         }
     }
 }
-
-
-
-

@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Unified content service that consolidates all content generation capabilities.
- * 
+ *
  * <p>This service facade provides a single entry point for:
  * <ul>
  *   <li>Synchronous content generation (claims, examples, simulations)</li>
@@ -380,9 +380,9 @@ public class UnifiedContentService {
             null,
             Map.of("tenantId", tenantId)
         );
-        
+
         return generateContent(request)
-            .map(response -> response != null ? 
+            .map(response -> response != null ?
                 List.of(response.content()) : List.of());
     }
 
@@ -412,9 +412,9 @@ public class UnifiedContentService {
             null,
             Map.of("tenantId", tenantId)
         );
-        
+
         return generateContent(request)
-            .map(response -> response != null ? 
+            .map(response -> response != null ?
                 List.of(response.content()) : List.of());
     }
 
@@ -440,18 +440,18 @@ public class UnifiedContentService {
             ))
             .priority(request.priority())
             .build();
-        
+
         String jobId = jobQueue.submit(job);
-        
+
         progressTracker.initializeJob(
             jobId,
             request.topics().size() * request.contentTypes().size(),
             "Batch generation for " + request.topics().size() + " topics"
         );
-        
-        LOG.info("Submitted batch generation job: {} ({} topics)", 
+
+        LOG.info("Submitted batch generation job: {} ({} topics)",
             jobId, request.topics().size());
-        
+
         return jobId;
     }
 
@@ -546,7 +546,7 @@ public class UnifiedContentService {
             null,
             Map.of("tenantId", tenantId)
         );
-        
+
         return processLearnerAction(action)
             .map(response -> response != null ? response.message() : "");
     }
@@ -578,7 +578,7 @@ public class UnifiedContentService {
             null,
             Map.of("tenantId", tenantId)
         );
-        
+
         return processLearnerAction(action)
             .map(response -> {
                 if (response == null) {
@@ -587,7 +587,7 @@ public class UnifiedContentService {
 
                 boolean correct = response.responseType() == TutoringResponse.ResponseType.CORRECT_FEEDBACK
                     || response.responseType() == TutoringResponse.ResponseType.MASTERY_ACHIEVED;
-                
+
                 return new AnswerEvaluation(
                     correct,
                     response.message(),
@@ -645,7 +645,7 @@ public class UnifiedContentService {
             @NotNull String controlStrategy,
             @NotNull String treatmentStrategy,
             double trafficPercent) {
-        
+
         ExperimentManager.Experiment experiment = ExperimentManager.Experiment.builder()
             .id(experimentId)
             .name(name)
@@ -663,10 +663,10 @@ public class UnifiedContentService {
                 .config(Map.of("strategyId", treatmentStrategy))
                 .build())
             .build();
-        
+
         experimentManager.createExperiment(experiment);
-        
-        LOG.info("Created experiment: {} (control={}, treatment={})", 
+
+        LOG.info("Created experiment: {} (control={}, treatment={})",
             experimentId, controlStrategy, treatmentStrategy);
     }
 

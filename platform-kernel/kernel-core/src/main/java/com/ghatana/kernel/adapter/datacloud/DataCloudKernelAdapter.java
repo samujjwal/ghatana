@@ -3,8 +3,6 @@ package com.ghatana.kernel.adapter.datacloud;
 import io.activej.promise.Promise;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Adapter interface for Data-Cloud platform integration.

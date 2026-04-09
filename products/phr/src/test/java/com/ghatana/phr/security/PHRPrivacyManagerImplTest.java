@@ -2,7 +2,6 @@ package com.ghatana.phr.security;
 
 import com.ghatana.kernel.security.PrivacyManager;
 import com.ghatana.phr.kernel.consent.ConsentService;
-import com.ghatana.phr.kernel.policy.PhrDataClassification;
 import com.ghatana.phr.model.PatientConsent;
 import com.ghatana.phr.repository.ConsentRepository;
 import com.ghatana.phr.repository.TenantConfigRepository;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

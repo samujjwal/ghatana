@@ -5,7 +5,6 @@ import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.*;

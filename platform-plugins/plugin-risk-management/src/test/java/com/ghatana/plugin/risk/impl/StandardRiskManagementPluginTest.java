@@ -149,7 +149,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
                 .then(v -> riskPlugin.start())
                 .then(v -> {
                     Map<String, Object> factors = Map.of("volatility", 0.2);
-                    return riskPlugin.calculateRisk("entity456", 
+                    return riskPlugin.calculateRisk("entity456",
                         RiskManagementPlugin.RiskType.OPERATIONAL, factors);
                 }));
 

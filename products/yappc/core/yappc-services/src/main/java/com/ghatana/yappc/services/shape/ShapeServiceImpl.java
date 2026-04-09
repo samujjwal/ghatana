@@ -24,13 +24,13 @@ import java.util.UUID;
  * @doc.pattern Service
  */
 public class ShapeServiceImpl implements ShapeService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ShapeServiceImpl.class);
-    
+
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public ShapeServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
@@ -39,18 +39,18 @@ public class ShapeServiceImpl implements ShapeService {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<ShapeSpec> derive(IntentSpec intent) {
         long startTime = System.currentTimeMillis();
-        
+
         return deriveShapeWithAI(intent)
                 .then(spec -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(intent.tenantId());
                     metrics.recordTimer("yappc.shape.derive", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.shape.derive", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("shape.derive", intent, spec))
                             .map(v -> spec);
                 })
@@ -63,18 +63,18 @@ public class ShapeServiceImpl implements ShapeService {
                         ServiceObservability.tenantTag(intent.tenantId()));
                 });
     }
-    
+
     @Override
     public Promise<SystemModel> generateModel(ShapeSpec spec) {
         long startTime = System.currentTimeMillis();
-        
+
         return generateSystemModelWithAI(spec)
                 .then(model -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
                     metrics.recordTimer("yappc.shape.generateModel", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.shape.generateModel", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("shape.generateModel", spec, model))
                             .map(v -> model);
                 })
@@ -87,10 +87,10 @@ public class ShapeServiceImpl implements ShapeService {
                         ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
-    
+
     private Promise<ShapeSpec> deriveShapeWithAI(IntentSpec intent) {
         String prompt = buildShapeDerivationPrompt(intent);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.3)
@@ -98,10 +98,10 @@ public class ShapeServiceImpl implements ShapeService {
                 .build())
                 .map(result -> parseShapeFromAIResponse(result, intent));
     }
-    
+
     private Promise<SystemModel> generateSystemModelWithAI(ShapeSpec spec) {
         String prompt = buildSystemModelPrompt(spec);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.2)
@@ -109,15 +109,15 @@ public class ShapeServiceImpl implements ShapeService {
                 .build())
                 .map(result -> parseSystemModelFromAIResponse(result, spec));
     }
-    
+
     private String buildShapeDerivationPrompt(IntentSpec intent) {
         return """
             You are a software architect. Design a system architecture based on the following intent.
-            
+
             Product: %s
             Description: %s
             Goals: %s
-            
+
             Respond with a JSON object:
             {
               "architecture": {"name": "microservices|monolith|serverless", "description": "string"},
@@ -125,12 +125,12 @@ public class ShapeServiceImpl implements ShapeService {
               "workflows": [],
               "integrations": []
             }
-            
+
             Provide ONLY the JSON object.
             """.formatted(intent.productName(), intent.description(),
                 intent.goals().stream().map(g -> g.description()).toList());
     }
-    
+
     private String buildSystemModelPrompt(ShapeSpec spec) {
         String architectureName = spec.architecture() != null ? spec.architecture().name() : "unspecified";
         String entities = spec.domainModel() != null && spec.domainModel().entities() != null
@@ -138,10 +138,10 @@ public class ShapeServiceImpl implements ShapeService {
             : "[]";
         return """
             Generate detailed system model documentation for the following architecture.
-            
+
             Architecture: %s
             Entities: %s
-            
+
             Provide:
             1. Design Rationale (why this architecture was chosen)
             2. Component Diagrams (C4 model - context, container, component)
@@ -149,21 +149,21 @@ public class ShapeServiceImpl implements ShapeService {
             4. Deployment Architecture
             """.formatted(architectureName, entities);
     }
-    
+
     private ShapeSpec parseShapeFromAIResponse(CompletionResult result, IntentSpec intent) {
         return StructuredOutputParser.parseShapeSpec(result.text(), intent.id(), intent.tenantId());
     }
-    
+
     private SystemModel parseSystemModelFromAIResponse(CompletionResult result, ShapeSpec spec) {
         String text = result.text();
-        
+
         return SystemModel.builder()
                 .shape(spec)
                 .designRationale(extractDesignRationale(text))
                 .diagrams(extractDiagrams(text))
                 .build();
     }
-    
+
     private DomainModel extractDomainModel(String text) {
         return DomainModel.builder()
                 .entities(List.of(
@@ -205,7 +205,7 @@ public class ShapeServiceImpl implements ShapeService {
                 ))
                 .build();
     }
-    
+
     private List<WorkflowSpec> extractWorkflows(String text) {
         return List.of(
             WorkflowSpec.builder()
@@ -236,7 +236,7 @@ public class ShapeServiceImpl implements ShapeService {
                 .build()
         );
     }
-    
+
     private List<IntegrationSpec> extractIntegrations(String text) {
         return List.of(
             IntegrationSpec.builder()
@@ -248,7 +248,7 @@ public class ShapeServiceImpl implements ShapeService {
                 .build()
         );
     }
-    
+
     private ArchitecturePattern extractArchitecture(String text) {
         return ArchitecturePattern.builder()
                 .name("microservices")
@@ -261,7 +261,7 @@ public class ShapeServiceImpl implements ShapeService {
                 ))
                 .build();
     }
-    
+
     private Map<String, Object> extractDesignRationale(String text) {
         return Map.of(
             "architecture_choice", "Microservices chosen for scalability and team autonomy",
@@ -269,7 +269,7 @@ public class ShapeServiceImpl implements ShapeService {
             "deployment_strategy", "Kubernetes with auto-scaling"
         );
     }
-    
+
     private Map<String, String> extractDiagrams(String text) {
         return Map.of(
             "context", "C4 Context Diagram placeholder",
@@ -277,5 +277,5 @@ public class ShapeServiceImpl implements ShapeService {
             "component", "C4 Component Diagram placeholder"
         );
     }
-    
+
 }

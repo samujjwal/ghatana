@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Redis-backed query plan cache adapter.
@@ -97,7 +96,7 @@ public class QueryPlanCacheAdapter {
             // Check if schema has been updated
             String schemaVersion = commands.get(SCHEMA_VERSION_PREFIX + collectionId);
             String cachedVersion = commands.get(cacheKeyStr + ":version");
-            
+
             if (schemaVersion != null && schemaVersion.equals(cachedVersion)) {
                 // Cache is valid
                 String cached = commands.get(cacheKeyStr);
@@ -109,7 +108,7 @@ public class QueryPlanCacheAdapter {
                     return Promise.of(objectMapper.readValue(cached, QueryPlan.class));
                 }
             }
-            
+
             metricsCollector.incrementCounter("cache.query_plan.misses");
             log.debug("Query plan cache miss");
             return Promise.of(null);
@@ -133,7 +132,7 @@ public class QueryPlanCacheAdapter {
             // Update schema version to invalidate all cached plans for this collection
             String newVersion = String.valueOf(System.currentTimeMillis());
             commands.set(SCHEMA_VERSION_PREFIX + collectionId, newVersion);
-            
+
             log.info("Invalidated query plan cache for collection: {}", collectionId);
             metricsCollector.incrementCounter("cache.query_plan.invalidations");
             return Promise.of(null);
@@ -180,7 +179,7 @@ public class QueryPlanCacheAdapter {
                     totalMemory += strlen;
                 }
             }
-            
+
             return Promise.of(new CacheStats(
                     keys.size(),
                     totalMemory,

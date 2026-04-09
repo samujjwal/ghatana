@@ -27,7 +27,7 @@ import java.util.Objects;
  *     .withBatchSize(10000)  // Large batch for high throughput
  *     .withFlushInterval(Duration.ofSeconds(10))
  *     .build();
- * 
+ *
  * // ClickHouseConfig created internally by builder
  * // Validates: host non-null, port >0, database non-null, batchSize >0, flushInterval >0
  * }</pre>
@@ -52,7 +52,7 @@ import java.util.Objects;
  *     .withBatchSize(50000)  // Very large batch
  *     .withFlushInterval(Duration.ofSeconds(30))  // Infrequent flush
  *     .build();
- * 
+ *
  * // Optimized for: 100k+ spans/sec ingestion
  * // Trade-off: Higher memory usage (~100MB buffer), longer flush latency (30s)
  * }</pre>
@@ -66,7 +66,7 @@ import java.util.Objects;
  *     .withBatchSize(500)  // Small batch
  *     .withFlushInterval(Duration.ofSeconds(1))  // Frequent flush
  *     .build();
- * 
+ *
  * // Optimized for: Low ingestion latency (<1s to ClickHouse)
  * // Trade-off: More ClickHouse writes, lower throughput
  * }</pre>
@@ -76,7 +76,7 @@ import java.util.Objects;
  * String host = System.getenv("CLICKHOUSE_HOST");  // clickhouse-service.namespace.svc
  * int port = Integer.parseInt(System.getenv("CLICKHOUSE_PORT"));  // 8123
  * String db = System.getenv("CLICKHOUSE_DATABASE");  // traces
- * 
+ *
  * ClickHouseTraceStorage storage = ClickHouseTraceStorage.builder()
  *     .withHost(host)
  *     .withPort(port)
@@ -140,34 +140,34 @@ import java.util.Objects;
  * @doc.pattern Value Object
  */
 public class ClickHouseConfig {
-    
+
     /**
      * ClickHouse server hostname or IP address.
      */
     private final String host;
-    
+
     /**
      * ClickHouse HTTP port for JDBC connections (default: 8123).
      */
     private final int port;
-    
+
     /**
      * Database name within ClickHouse instance.
      */
     private final String database;
-    
+
     /**
      * Maximum number of spans to batch before automatic flush.
      * Higher values improve throughput but increase memory usage.
      */
     private final int batchSize;
-    
+
     /**
      * Maximum time interval before forced buffer flush.
      * Ensures spans are persisted even if batch size not reached.
      */
     private final Duration flushInterval;
-    
+
     /**
      * Constructs a ClickHouseConfig with validated parameters.
      * <p>
@@ -190,7 +190,7 @@ public class ClickHouseConfig {
         this.batchSize = batchSize;
         this.flushInterval = Objects.requireNonNull(flushInterval, "Flush interval cannot be null");
     }
-    
+
     /**
      * Returns the ClickHouse server hostname or IP address.
      *
@@ -199,7 +199,7 @@ public class ClickHouseConfig {
     public String getHost() {
         return host;
     }
-    
+
     /**
      * Returns the ClickHouse HTTP port for JDBC connections.
      *
@@ -208,7 +208,7 @@ public class ClickHouseConfig {
     public int getPort() {
         return port;
     }
-    
+
     /**
      * Returns the database name within ClickHouse instance.
      *
@@ -217,7 +217,7 @@ public class ClickHouseConfig {
     public String getDatabase() {
         return database;
     }
-    
+
     /**
      * Returns the maximum number of spans per batch insert.
      *
@@ -226,7 +226,7 @@ public class ClickHouseConfig {
     public int getBatchSize() {
         return batchSize;
     }
-    
+
     /**
      * Returns the maximum time interval before forced buffer flush.
      *
@@ -235,7 +235,7 @@ public class ClickHouseConfig {
     public Duration getFlushInterval() {
         return flushInterval;
     }
-    
+
     /**
      * Returns a string representation of this configuration.
      * <p>

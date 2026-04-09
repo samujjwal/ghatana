@@ -112,7 +112,7 @@ class PostgresIntegrationTest {
 
             // Insert test data
             stmt.executeUpdate("""
-                INSERT INTO test_table (name) VALUES 
+                INSERT INTO test_table (name) VALUES
                 ('Test 1'),
                 ('Test 2'),
                 ('Test 3')

@@ -31,7 +31,7 @@ import java.util.*;
  *     "operation", "schema_change"
  * );
  *
- * PolicyDecision decision = runPromise(() -> 
+ * PolicyDecision decision = runPromise(() ->
  *     engine.evaluate("schema_change", input)
  * );
  * }</pre>
@@ -144,7 +144,7 @@ public class OpaPolicyEngine implements PolicyEngine {
     @Override
     public Promise<Void> reloadPolicies() {
         logger.info("Reloading OPA policies from endpoint: {}", opaEndpoint);
-        
+
         return opaClient.reloadPolicies(opaEndpoint)
             .whenComplete((result, ex) -> {
                 if (ex == null) {
@@ -168,11 +168,11 @@ public class OpaPolicyEngine implements PolicyEngine {
         return opaClient.validatePolicy(opaEndpoint, policyName, policyDefinition)
             .map(validationResponse -> {
                 boolean valid = (boolean) validationResponse.getOrDefault("valid", false);
-                
+
                 @SuppressWarnings("unchecked")
                 List<String> errors = (List<String>) validationResponse.getOrDefault("errors", List.of());
 
-                return valid 
+                return valid
                     ? PolicyValidationResult.success()
                     : PolicyValidationResult.invalid(errors);
             })
@@ -181,7 +181,7 @@ public class OpaPolicyEngine implements PolicyEngine {
                     metrics.incrementCounter("policy.validation.completed",
                         "policy", policyName,
                         "valid", String.valueOf(result.isValid()));
-                    
+
                     if (!result.isValid()) {
                         logger.warn("Policy validation failed: policy={}, errors={}",
                             policyName, result.getErrors());

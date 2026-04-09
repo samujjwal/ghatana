@@ -200,4 +200,3 @@ public final class AsyncProcessingEnhancer {
         public AsyncProcessingEnhancer build() { return new AsyncProcessingEnhancer(this); }
     }
 }
-

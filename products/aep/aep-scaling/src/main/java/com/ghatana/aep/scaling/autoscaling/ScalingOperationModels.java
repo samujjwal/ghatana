@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Value;
 
 import java.time.Instant;
 import java.util.List;
@@ -157,7 +156,7 @@ public final class ScalingOperationModels {
         private boolean optimizationApplied;
         private Map<String, Object> costMetrics;
 
-        public CostOptimizationResult(ScalingAction action, Double cost, List<String> notes, 
+        public CostOptimizationResult(ScalingAction action, Double cost, List<String> notes,
                                      Long nodeCount, Boolean applied, Map<String, Object> metrics) {
             this.optimizedAction = action;
             this.estimatedCost = cost != null ? cost : 0.0;
@@ -220,8 +219,8 @@ public final class ScalingOperationModels {
     }
 
     public interface CostOptimizer {
-        CostOptimizationResult optimizeScalingDecision(ScalingDecision decision, 
-                                                        ClusterMetrics metrics, 
+        CostOptimizationResult optimizeScalingDecision(ScalingDecision decision,
+                                                        ClusterMetrics metrics,
                                                         List<ScalingPolicy> policies);
         double estimateScalingCost(ScalingAction action, String region);
         Map<String, Object> getCostMetrics(String clusterId);

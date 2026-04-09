@@ -60,7 +60,7 @@ public record EntityRelationResponse(
 
     /**
      * Gets ID of related entity.
-     * 
+     *
      * @return UUID of related entity
      */
     public java.util.UUID relatedEntityId() {
@@ -69,7 +69,7 @@ public record EntityRelationResponse(
 
     /**
      * Gets collection name of related entity.
-     * 
+     *
      * @return Collection name
      */
     public String collectionName() {
@@ -78,7 +78,7 @@ public record EntityRelationResponse(
 
     /**
      * Gets relation type (SIMILAR, REFERENCED, RELATED, HIERARCHICAL).
-     * 
+     *
      * @return Relation type enum
      */
     public RelationType relationType() {
@@ -87,7 +87,7 @@ public record EntityRelationResponse(
 
     /**
      * Gets similarity score (0.0-1.0) for SIMILAR relations.
-     * 
+     *
      * @return Similarity between 0 and 1
      */
     public double similarity() {

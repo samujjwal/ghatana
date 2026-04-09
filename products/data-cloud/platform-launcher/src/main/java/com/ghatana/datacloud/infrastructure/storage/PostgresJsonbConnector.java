@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * PostgresJsonbConnector connector = new PostgresJsonbConnector(
  *         entityRepository,

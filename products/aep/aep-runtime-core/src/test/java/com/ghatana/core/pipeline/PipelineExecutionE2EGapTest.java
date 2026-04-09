@@ -9,9 +9,7 @@ import org.junit.jupiter.api.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import static org.assertj.core.api.Assertions.*;

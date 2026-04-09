@@ -38,7 +38,7 @@ class UnifiedContentServiceTest {
         meterRegistry = new SimpleMeterRegistry();
         mockLlmGateway = mock(LLMGateway.class);
         mockMemoryStore = mock(MemoryStore.class);
-        
+
         // Setup mock LLM responses
         when(mockLlmGateway.complete(any(CompletionRequest.class)))
             .thenReturn(Promise.of(CompletionResult.builder()
@@ -50,7 +50,7 @@ class UnifiedContentServiceTest {
                 .finishReason("stop")
                 .metadata(Map.of("model", "test-model"))
                 .build()));
-        
+
         // Create service via factory
         service = UnifiedContentServiceFactory.createForTesting(
             mockLlmGateway,
@@ -63,7 +63,7 @@ class UnifiedContentServiceTest {
     @DisplayName("Should submit batch generation job")
     void shouldSubmitBatchGenerationJob() {
         // GIVEN
-        UnifiedContentService.BatchGenerationRequest request = 
+        UnifiedContentService.BatchGenerationRequest request =
             UnifiedContentService.BatchGenerationRequest.builder()
                 .tenantId("tenant-1")
                 .requesterId("user-1")
@@ -77,7 +77,7 @@ class UnifiedContentServiceTest {
 
         // THEN
         assertThat(jobId).isNotNull();
-        
+
         var progress = service.getJobProgress(jobId);
         assertThat(progress).isNotNull();
         assertThat(progress.totalSteps()).isEqualTo(6); // 3 topics * 2 content types

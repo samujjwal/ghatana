@@ -1,7 +1,7 @@
 package com.ghatana.refactorer.refactoring.model;
 
 /**
- * Represents the type of a TypeScript/JavaScript element. 
+ * Represents the type of a TypeScript/JavaScript element.
  * @doc.type enum
  * @doc.purpose Enumerates type script element type values
  * @doc.layer core

@@ -103,4 +103,3 @@ class SttStreamingLatencyEnhancerTest {
                 .isInstanceOf(NullPointerException.class);
     }
 }
-

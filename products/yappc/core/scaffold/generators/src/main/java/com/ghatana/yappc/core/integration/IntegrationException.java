@@ -18,7 +18,7 @@ package com.ghatana.yappc.core.integration;
 
 /**
  * Exception thrown when integration generation fails.
- * 
+ *
  * @doc.type class
  * @doc.purpose Exception for integration generation errors
  * @doc.layer platform

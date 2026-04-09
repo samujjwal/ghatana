@@ -3,7 +3,6 @@ package com.ghatana.products.finance.domains.risk.service;
 
 import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.products.finance.domains.risk.domain.*;
-import com.ghatana.products.finance.domains.risk.domain.RiskCheckResult.RiskStatus;
 import com.ghatana.products.finance.domains.risk.port.MarginStore;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

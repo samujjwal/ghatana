@@ -25,11 +25,11 @@ import java.util.concurrent.Executors;
  * AuditEventRepository repository = event -> {
  *     // Save event to storage
  * };
- * 
+ *
  * // Create and start the logger
  * AuditLogger logger = new AuditLogger(reactor, repository);
  * logger.start().get();
- * 
+ *
  * // Log an event
  * AuditEvent event = AuditEvent.builder()
  *     .eventType("USER_LOGIN")
@@ -38,14 +38,14 @@ import java.util.concurrent.Executors;
  *     .action("AUTHENTICATE")
  *     .status("SUCCESS")
  *     .build();
- *     
+ *
  * logger.log(event);
  * }</pre>
  * </p>
  */
 public class AuditLogger implements ReactiveService {
     private static final Logger logger = LoggerFactory.getLogger(AuditLogger.class);
-    
+
     private final Reactor reactor;
     private final Executor executor;
     private final AuditEventRepository repository;
@@ -100,7 +100,7 @@ public class AuditLogger implements ReactiveService {
             logger.warn("AuditLogger is not running, dropping event: {}", event);
             return;
         }
-        
+
         save(event);
     }
 

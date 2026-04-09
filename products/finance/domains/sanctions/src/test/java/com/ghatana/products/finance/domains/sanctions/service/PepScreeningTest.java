@@ -3,13 +3,9 @@ package com.ghatana.products.finance.domains.sanctions.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -105,7 +101,7 @@ class PepScreeningTest {
 
     static class PepScreeningService {
         PepResult checkPepStatus(PepCheckRequest request) {
-            boolean isPep = request.position().toLowerCase().contains("senator") || 
+            boolean isPep = request.position().toLowerCase().contains("senator") ||
                            request.position().toLowerCase().contains("ministre") ||
                            request.position().toLowerCase().contains("spouse") ||
                            request.position().toLowerCase().contains("associate");

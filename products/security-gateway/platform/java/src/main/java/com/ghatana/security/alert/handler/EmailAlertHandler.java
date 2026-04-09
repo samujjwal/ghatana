@@ -21,7 +21,7 @@ import java.util.Properties;
 
 /**
  * Sends security alerts via email.
- 
+
  *
  * @doc.type class
  * @doc.purpose Email alert handler
@@ -30,11 +30,11 @@ import java.util.Properties;
 */
 public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHandler {
     private static final Logger logger = LoggerFactory.getLogger(EmailAlertHandler.class);
-    
+
     private final EmailProperties emailProperties;
     private final Session session;
     private final Eventloop eventloop;
-    
+
     /**
      * Creates a new EmailAlertHandler with the specified email properties.
      *
@@ -45,14 +45,14 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
         this.emailProperties = emailProperties;
         this.session = createSession();
     }
-    
+
     @Override
     public Promise<Void> handle(SecurityAlert alert) {
         if (!emailProperties.isEnabled()) {
             logger.debug("Email alerts are disabled");
             return Promise.complete();
         }
-        
+
         return Promise.ofBlocking(eventloop, () -> {
             try {
                 Message message = createEmail(alert);
@@ -64,44 +64,44 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
             }
         });
     }
-    
+
     private Session createSession() {
         Properties props = new Properties();
         props.put("mail.smtp.host", emailProperties.getHost());
         props.put("mail.smtp.port", emailProperties.getPort());
         props.put("mail.smtp.auth", "true");
-        
+
         if (emailProperties.isSslEnabled()) {
             props.put("mail.smtp.ssl.enable", "true");
             props.put("mail.smtp.starttls.enable", "true");
             props.put("mail.smtp.ssl.trust", emailProperties.getHost());
         }
-        
+
         return Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 return new PasswordAuthentication(
-                    emailProperties.getUsername(), 
+                    emailProperties.getUsername(),
                     emailProperties.getPassword()
                 );
             }
         });
     }
-    
+
     private Message createEmail(SecurityAlert alert) throws MessagingException {
         Message message = new MimeMessage(session);
-        
+
         // Set From: header
         message.setFrom(new InternetAddress(emailProperties.getFrom()));
-        
+
         // Set To: header
         for (String recipient : emailProperties.getTo()) {
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
         }
-        
+
         // Set Subject: header
         message.setSubject(emailProperties.getSubjectPrefix() + alert.getType());
-        
+
         // Set the message body
         String text = String.format(
             "Security Alert: %s\n" +
@@ -117,12 +117,12 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
             alert.getMessage(),
             alert.getDetails().toString()
         );
-        
+
         message.setText(text);
-        
+
         return message;
     }
-    
+
     /**
      * Creates a new builder for EmailAlertHandler.
      *
@@ -131,14 +131,14 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for EmailAlertHandler.
      */
     public static class Builder {
         private Eventloop eventloop;
         private EmailProperties emailProperties;
-        
+
         /**
          * Sets the event loop for async operations.
          *
@@ -149,7 +149,7 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
             this.eventloop = eventloop;
             return this;
         }
-        
+
         /**
          * Sets the email properties.
          *
@@ -160,7 +160,7 @@ public class EmailAlertHandler implements SecurityAlertManager.SecurityAlertHand
             this.emailProperties = emailProperties;
             return this;
         }
-        
+
         /**
          * Builds the EmailAlertHandler.
          *

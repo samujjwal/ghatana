@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *     .version("1.0.0")
  *     .addStep(WorkflowStep.of("load-backlog", "Load backlog", "ProductManager"))
  *     .build();
- * 
+ *
  * WorkflowExecution execution = engine.execute(sprint, agentRegistry);
  * }</pre>
  *
@@ -50,12 +50,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.pattern Orchestrator
  */
 public class WorkflowEngine {
-    
+
     private final Map<String, WorkflowExecution> executions = new ConcurrentHashMap<>();
     private final AtomicLong executionCount = new AtomicLong(0);
     private final AtomicLong completedCount = new AtomicLong(0);
     private final AtomicLong failedCount = new AtomicLong(0);
-    
+
     /**
      * Executes a workflow.
      *
@@ -68,7 +68,7 @@ public class WorkflowEngine {
             Map<String, OrganizationalAgent> agents) {
         Objects.requireNonNull(definition, "definition cannot be null");
         Objects.requireNonNull(agents, "agents cannot be null");
-        
+
         String executionId = UUID.randomUUID().toString();
         WorkflowExecution execution = new WorkflowExecution(
             executionId,
@@ -76,27 +76,27 @@ public class WorkflowEngine {
             agents,
             Instant.now()
         );
-        
+
         executions.put(executionId, execution);
         executionCount.incrementAndGet();
-        
+
         return execution;
     }
-    
+
     /**
      * Gets a workflow execution by ID.
      */
     public WorkflowExecution getExecution(String executionId) {
         return executions.get(executionId);
     }
-    
+
     /**
      * Gets all active executions.
      */
     public List<WorkflowExecution> getActiveExecutions() {
         return new ArrayList<>(executions.values());
     }
-    
+
     /**
      * Gets execution metrics.
      */
@@ -108,7 +108,7 @@ public class WorkflowEngine {
             executions.size()
         );
     }
-    
+
     /**
      * Marks execution as completed.
      */
@@ -119,7 +119,7 @@ public class WorkflowEngine {
             completedCount.incrementAndGet();
         }
     }
-    
+
     /**
      * Marks execution as failed.
      */
@@ -130,7 +130,7 @@ public class WorkflowEngine {
             failedCount.incrementAndGet();
         }
     }
-    
+
     /**
      * Workflow execution state and tracking.
      */
@@ -144,7 +144,7 @@ public class WorkflowEngine {
         private String failureReason;
         private int currentStepIndex = 0;
         private final List<Event> events = Collections.synchronizedList(new ArrayList<>());
-        
+
         WorkflowExecution(
                 String id,
                 WorkflowDefinition definition,
@@ -155,65 +155,65 @@ public class WorkflowEngine {
             this.agents = new HashMap<>(agents);
             this.startedAt = startedAt;
         }
-        
+
         public String getId() {
             return id;
         }
-        
+
         public WorkflowDefinition getDefinition() {
             return definition;
         }
-        
+
         public Instant getStartedAt() {
             return startedAt;
         }
-        
+
         public Instant getCompletedAt() {
             return completedAt;
         }
-        
+
         public String getStatus() {
             return status;
         }
-        
+
         public String getFailureReason() {
             return failureReason;
         }
-        
+
         public int getCurrentStepIndex() {
             return currentStepIndex;
         }
-        
+
         public List<Event> getEvents() {
             return new ArrayList<>(events);
         }
-        
+
         public void addEvent(Event event) {
             events.add(event);
         }
-        
+
         public void advanceStep() {
             if (currentStepIndex < definition.getSteps().size() - 1) {
                 currentStepIndex++;
             }
         }
-        
+
         public void markCompleted() {
             this.status = "COMPLETED";
             this.completedAt = Instant.now();
         }
-        
+
         public void markFailed(String reason) {
             this.status = "FAILED";
             this.failureReason = reason;
             this.completedAt = Instant.now();
         }
-        
+
         public long getDurationMs() {
             Instant end = completedAt != null ? completedAt : Instant.now();
             return end.toEpochMilli() - startedAt.toEpochMilli();
         }
-        
+
         @Override
         public String toString() {
             return "WorkflowExecution{" +
@@ -224,7 +224,7 @@ public class WorkflowEngine {
                     '}';
         }
     }
-    
+
     /**
      * Execution metrics.
      */
@@ -233,35 +233,35 @@ public class WorkflowEngine {
         private final long completedExecutions;
         private final long failedExecutions;
         private final long activeExecutions;
-        
+
         public ExecutionMetrics(long total, long completed, long failed, long active) {
             this.totalExecutions = total;
             this.completedExecutions = completed;
             this.failedExecutions = failed;
             this.activeExecutions = active;
         }
-        
+
         public long getTotalExecutions() {
             return totalExecutions;
         }
-        
+
         public long getCompletedExecutions() {
             return completedExecutions;
         }
-        
+
         public long getFailedExecutions() {
             return failedExecutions;
         }
-        
+
         public long getActiveExecutions() {
             return activeExecutions;
         }
-        
+
         public double getSuccessRate() {
             if (totalExecutions == 0) return 0.0;
             return (double) completedExecutions / totalExecutions;
         }
-        
+
         @Override
         public String toString() {
             return "ExecutionMetrics{" +

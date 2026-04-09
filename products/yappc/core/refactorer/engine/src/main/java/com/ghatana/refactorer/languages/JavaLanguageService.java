@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  * asynchronous Java source code analysis and fixes.
  *
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.type class
  * @doc.purpose Handles java language service operations
  * @doc.layer core

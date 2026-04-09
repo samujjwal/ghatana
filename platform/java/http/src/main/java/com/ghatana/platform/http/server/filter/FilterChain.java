@@ -68,9 +68,9 @@ import io.activej.promise.Promise;
  *             .json(ErrorResponse.of(400, "MISSING_TENANT", "X-Tenant-Id header required"))
  *             .build());
  *     }
- *     
+ *
  *     TenantContext.setCurrentTenant(tenantId);
- *     
+ *
  *     return next.serve(request)
  *         .whenComplete(() -> TenantContext.clear());
  * };
@@ -78,11 +78,11 @@ import io.activej.promise.Promise;
  * // 3. Metrics collection filter
  * Filter metricsFilter = (request, next) -> {
  *     Instant start = Instant.now();
- *     
+ *
  *     return next.serve(request)
  *         .whenComplete((response, error) -> {
  *             Duration duration = Duration.between(start, Instant.now());
- *             
+ *
  *             metrics.recordTimer("http.request.duration",
  *                 duration.toMillis(),
  *                 "method", request.getMethod().name(),
@@ -110,26 +110,26 @@ import io.activej.promise.Promise;
  *         String contentType = request.getHeader("Content-Type");
  *         if (contentType == null || !contentType.contains("application/json")) {
  *             return Promise.of(ResponseBuilder.badRequest()
- *                 .json(ErrorResponse.of(400, "INVALID_CONTENT_TYPE", 
+ *                 .json(ErrorResponse.of(400, "INVALID_CONTENT_TYPE",
  *                     "Content-Type must be application/json"))
  *                 .build());
  *         }
  *     }
- *     
+ *
  *     return next.serve(request);
  * };
  *
  * // 6. Rate limiting filter
  * Filter rateLimitFilter = (request, next) -> {
  *     String clientId = extractClientId(request);
- *     
+ *
  *     if (!rateLimiter.tryAcquire(clientId)) {
  *         return Promise.of(ResponseBuilder.status(429)  // Too Many Requests
  *             .header("Retry-After", "60")
  *             .json(ErrorResponse.of(429, "RATE_LIMIT_EXCEEDED", "Rate limit exceeded"))
  *             .build());
  *     }
- *     
+ *
  *     return next.serve(request);
  * };
  *
@@ -148,11 +148,11 @@ import io.activej.promise.Promise;
  * // 8. Conditional filter
  * FilterChain.Builder chainBuilder = FilterChain.create()
  *     .addFilter(loggingFilter);
- * 
+ *
  * if (requiresAuth) {
  *     chainBuilder.addFilter(authFilter);
  * }
- * 
+ *
  * AsyncServlet servlet = chainBuilder.build(baseServlet);
  * }</pre>
  *
@@ -180,7 +180,7 @@ import io.activej.promise.Promise;
  *             .json(ErrorResponse.of(401, "UNAUTHORIZED", "Authentication required"))
  *             .build());
  *     }
- *     
+ *
  *     // Authenticated: continue chain
  *     return next.serve(request);
  * };
@@ -255,7 +255,7 @@ import io.activej.promise.Promise;
  * @doc.pattern Chain of Responsibility
  */
 public class FilterChain {
-    
+
     /**
      * Filter interface for request/response interception.
      */
@@ -263,7 +263,7 @@ public class FilterChain {
     public interface Filter {
         /**
          * Applies the filter to the request.
-         * 
+         *
          * @param request The HTTP request
          * @param next The next servlet in the chain
          * @return A promise of the HTTP response
@@ -271,26 +271,26 @@ public class FilterChain {
          */
         Promise<HttpResponse> apply(HttpRequest request, AsyncServlet next) throws Exception;
     }
-    
+
     private final java.util.List<Filter> filters = new java.util.ArrayList<>();
-    
+
     private FilterChain() {
         // Use create() factory method
     }
-    
+
     /**
      * Creates a new filter chain builder.
-     * 
+     *
      * @return A new filter chain instance
      */
     public static FilterChain create() {
         return new FilterChain();
     }
-    
+
     /**
      * Adds a filter to the chain.
      * Filters are executed in the order they are added.
-     * 
+     *
      * @param filter The filter to add
      * @return This filter chain
      */
@@ -298,16 +298,16 @@ public class FilterChain {
         filters.add(filter);
         return this;
     }
-    
+
     /**
      * Builds the final servlet with all filters applied.
-     * 
+     *
      * @param baseServlet The base servlet to wrap
      * @return The wrapped servlet with filters
      */
     public AsyncServlet build(AsyncServlet baseServlet) {
         AsyncServlet current = baseServlet;
-        
+
         // Apply filters in reverse order (last filter wraps first)
         for (int i = filters.size() - 1; i >= 0; i--) {
             Filter filter = filters.get(i);
@@ -320,7 +320,7 @@ public class FilterChain {
 
     /**
      * Gets the number of filters in the chain.
-     * 
+     *
      * @return The filter count
      */
     public int getFilterCount() {

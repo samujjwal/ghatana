@@ -59,7 +59,7 @@ public final class ProjectController {
 
     /**
      * Create servlet with all project routes.
-     * 
+     *
      * @return RoutingServlet with all project routes
      */
     public RoutingServlet createServlet() {

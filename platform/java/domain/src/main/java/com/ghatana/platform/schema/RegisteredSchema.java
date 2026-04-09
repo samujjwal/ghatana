@@ -1,7 +1,6 @@
 package com.ghatana.platform.schema;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Objects;

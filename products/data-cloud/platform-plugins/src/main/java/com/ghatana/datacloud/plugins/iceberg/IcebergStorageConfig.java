@@ -38,7 +38,7 @@ import java.util.Objects;
  *     .fileFormat(FileFormat.PARQUET)
  *     .compressionCodec("snappy")
  *     .build();
- * 
+ *
  * // S3 + AWS Glue (production)
  * IcebergStorageConfig prodConfig = IcebergStorageConfig.builder()
  *     .catalogType(CatalogType.GLUE)

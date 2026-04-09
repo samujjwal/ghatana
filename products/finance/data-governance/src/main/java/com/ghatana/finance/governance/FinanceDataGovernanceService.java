@@ -53,7 +53,7 @@ public final class FinanceDataGovernanceService {
     public interface FinanceRetentionPolicyPort {
         /** Gets retention policy for financial data based on regulatory requirements. */
         FinanceRetentionPolicy getRetentionPolicy(String classification, String regulatoryBody, String dataType);
-        
+
         /** Enforces retention policy and schedules data deletion/archival. */
         Promise<Void> enforceRetentionPolicy(String assetId, FinanceRetentionPolicy policy);
     }
@@ -68,7 +68,7 @@ public final class FinanceDataGovernanceService {
     public interface FinanceDataLineagePort {
         /** Tracks data lineage for financial regulatory compliance. */
         Promise<Void> trackLineage(FinanceLineageEvent event);
-        
+
         /** Queries lineage for regulatory audit purposes. */
         Promise<List<FinanceLineageEvent>> queryLineage(String assetId, Instant startTime, Instant endTime);
     }
@@ -148,7 +148,7 @@ public final class FinanceDataGovernanceService {
     private final FinanceDataMaskingPort maskingPort;
     private final FinanceDataLineagePort lineagePort;
     private final Executor executor;
-    
+
     private final Counter financeClassifiedCounter;
     private final Counter financeRetentionEnforcedCounter;
     private final Counter financeMaskingAppliedCounter;
@@ -169,7 +169,7 @@ public final class FinanceDataGovernanceService {
         this.maskingPort = maskingPort;
         this.lineagePort = lineagePort;
         this.executor = executor;
-        
+
         this.financeClassifiedCounter = Counter.builder("finance.governance.classification.auto_total").register(registry);
         this.financeRetentionEnforcedCounter = Counter.builder("finance.governance.retention.enforced_total").register(registry);
         this.financeMaskingAppliedCounter = Counter.builder("finance.governance.masking.applied_total").register(registry);
@@ -183,25 +183,25 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<FinanceDataAsset> classifyFinancialData(
             String assetId, String assetName, String schemaContent, FinanceRegulatoryBody regulatoryBody) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             FinanceClassification classification = classificationRulePort.classify(assetName, schemaContent, regulatoryBody.name());
-            
+
             FinanceDataAsset asset = new FinanceDataAsset(
                 assetId, assetName, classification, FinanceDataType.TRADE_DATA, regulatoryBody,
                 "system", LocalDateTime.now(), LocalDateTime.now()
             );
-            
+
             // Track classification lineage
             FinanceLineageEvent lineageEvent = new FinanceLineageEvent(
                 UUID.randomUUID().toString(), assetId, "DATA_CLASSIFIED", "system",
                 "data-governance", Map.of("classification", classification.classification()),
                 Instant.now(), "FINRA-RULE-001"
             );
-            
+
             lineagePort.trackLineage(lineageEvent);
             financeClassifiedCounter.increment();
-            
+
             return asset;
         });
     }
@@ -215,20 +215,20 @@ public final class FinanceDataGovernanceService {
             FinanceRetentionPolicy policy = retentionPolicyPort.getRetentionPolicy(
                 "CONFIDENTIAL", regulatoryBody.name(), dataType.name()
             );
-            
+
             // Enforce retention policy
             retentionPolicyPort.enforceRetentionPolicy(assetId, policy).getResult();
-            
+
             // Track retention enforcement
             FinanceLineageEvent lineageEvent = new FinanceLineageEvent(
                 UUID.randomUUID().toString(), assetId, "RETENTION_ENFORCED", "system",
                 "data-governance", Map.of("policyId", policy.policyId(), "retentionYears", policy.retentionYears()),
                 Instant.now(), regulatoryBody.name() + "-RETENTION-RULE"
             );
-            
+
             lineagePort.trackLineage(lineageEvent);
             financeRetentionEnforcedCounter.increment();
-            
+
             return null;
         });
     }
@@ -238,7 +238,7 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<MaskedDataResult> applyFinancialDataMasking(
             String dataId, String userId, FinanceClassification classification) {
-        
+
         return maskingPort.applyMasking(dataId, userId, classification)
             .then(result -> {
                 // Track masking application
@@ -247,10 +247,10 @@ public final class FinanceDataGovernanceService {
                     "data-governance", Map.of("maskingLevel", result.maskingLevel()),
                     Instant.now(), "FINRA-MASKING-RULE"
                 );
-                
+
                 lineagePort.trackLineage(lineageEvent);
                 financeMaskingAppliedCounter.increment();
-                
+
                 return Promise.of(result);
             });
     }
@@ -260,25 +260,25 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<FinanceErasureRequest> processRightToErasure(
             String assetId, String requestorId, String reason, FinanceRegulatoryBody regulatoryBody) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             String requestId = UUID.randomUUID().toString();
-            
+
             FinanceErasureRequest request = new FinanceErasureRequest(
                 requestId, assetId, requestorId, reason, regulatoryBody,
                 LocalDateTime.now(), "PENDING_REVIEW"
             );
-            
+
             // Track erasure request
             FinanceLineageEvent lineageEvent = new FinanceLineageEvent(
                 UUID.randomUUID().toString(), assetId, "ERASURE_REQUESTED", requestorId,
                 "data-governance", Map.of("requestId", requestId, "reason", reason),
                 Instant.now(), regulatoryBody.name() + "-ERASURE-RULE"
             );
-            
+
             lineagePort.trackLineage(lineageEvent);
             financeErasureRequestedCounter.increment();
-            
+
             return request;
         });
     }
@@ -288,7 +288,7 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<List<FinanceLineageEvent>> queryFinancialDataLineage(
             String assetId, Instant startTime, Instant endTime) {
-        
+
         return lineagePort.queryLineage(assetId, startTime, endTime);
     }
 
@@ -297,10 +297,10 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<List<FinanceDataAsset>> bulkClassifyFinancialData(
             List<FinancialDataAssetRequest> requests) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             List<FinanceDataAsset> results = new ArrayList<>();
-            
+
             for (FinancialDataAssetRequest request : requests) {
                 try {
                     FinanceDataAsset asset = classifyFinancialData(
@@ -313,7 +313,7 @@ public final class FinanceDataGovernanceService {
                     System.err.println("Failed to classify financial asset: " + request.assetId());
                 }
             }
-            
+
             return results;
         });
     }
@@ -323,7 +323,7 @@ public final class FinanceDataGovernanceService {
      */
     public Promise<FinanceGovernanceReport> generateComplianceReport(
             FinanceRegulatoryBody regulatoryBody, Instant startDate, Instant endDate) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             // Generate comprehensive compliance report
             return new FinanceGovernanceReport(

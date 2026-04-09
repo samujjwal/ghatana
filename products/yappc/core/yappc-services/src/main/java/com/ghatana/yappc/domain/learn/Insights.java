@@ -20,7 +20,7 @@ public record Insights(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String id;
         private String observationRef;
@@ -28,37 +28,37 @@ public record Insights(
         private List<Anomaly> anomalies = List.of();
         private List<Recommendation> recommendations = List.of();
         private Instant generatedAt = Instant.now();
-        
+
         public Builder id(String id) {
             this.id = id;
             return this;
         }
-        
+
         public Builder observationRef(String observationRef) {
             this.observationRef = observationRef;
             return this;
         }
-        
+
         public Builder patterns(List<Pattern> patterns) {
             this.patterns = patterns;
             return this;
         }
-        
+
         public Builder anomalies(List<Anomaly> anomalies) {
             this.anomalies = anomalies;
             return this;
         }
-        
+
         public Builder recommendations(List<Recommendation> recommendations) {
             this.recommendations = recommendations;
             return this;
         }
-        
+
         public Builder generatedAt(Instant generatedAt) {
             this.generatedAt = generatedAt;
             return this;
         }
-        
+
         public Insights build() {
             return new Insights(id, observationRef, patterns, anomalies, recommendations, generatedAt);
         }

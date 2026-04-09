@@ -10,7 +10,7 @@ import java.time.Duration;
  * </p>
  *
  * @since 2.0
- 
+
  *
  * @doc.type interface
  * @doc.purpose Reconnection policy

@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Thread-safe append-only ledger for tracking actions taken by the polyfix tool. Each action is
  * recorded as a JSON object in a new line.
- 
+
  * @doc.type class
  * @doc.purpose Handles action ledger operations
  * @doc.layer core

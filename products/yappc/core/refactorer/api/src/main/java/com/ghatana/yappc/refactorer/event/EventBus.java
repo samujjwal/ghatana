@@ -5,7 +5,7 @@ import io.activej.promise.Promise;
 
 /**
  * Core event bus port for publish-subscribe event distribution.
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for event bus
  * @doc.layer core

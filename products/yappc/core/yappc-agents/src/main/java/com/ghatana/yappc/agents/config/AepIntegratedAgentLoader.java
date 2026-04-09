@@ -71,65 +71,65 @@ public class AepIntegratedAgentLoader {
      */
     public Promise<List<AgentManifestProto>> loadAndRegisterAgents(TenantId tenantId) {
         log.info("Loading YAML agents for tenant: {}", tenantId);
-        
+
         // Load YAML configurations from classpath
         List<YamlAgentConfig> yamlConfigs = yamlLoader.loadFromClasspath("agents/");
         log.info("Loaded {} YAML agent configurations", yamlConfigs.size());
-        
+
         // Convert to AEP manifest format
         List<AgentManifestProto> manifests = converter.convertAll(yamlConfigs);
-        
+
         // Register all agents with AEP registry
         List<Promise<AgentManifestProto>> registrations = manifests.stream()
             .map(manifest -> registerAgent(tenantId, manifest))
             .collect(Collectors.toList());
-        
+
         return Promises.toList(registrations);
     }
-    
+
     /**
      * Load agents from a specific directory and register with AEP.
-     * 
+     *
      * @param tenantId Tenant that will own these agents
      * @param resourcePath Resource path to load from (e.g., "agents/custom/")
      * @return Promise of registered agent manifests
      */
     public Promise<List<AgentManifestProto>> loadAndRegisterAgents(
-        TenantId tenantId, 
+        TenantId tenantId,
         String resourcePath
     ) {
         log.info("Loading YAML agents from {} for tenant: {}", resourcePath, tenantId);
-        
+
         List<YamlAgentConfig> yamlConfigs = yamlLoader.loadFromClasspath(resourcePath);
         log.info("Loaded {} YAML agent configurations from {}", yamlConfigs.size(), resourcePath);
-        
+
         List<AgentManifestProto> manifests = converter.convertAll(yamlConfigs);
-        
+
         List<Promise<AgentManifestProto>> registrations = manifests.stream()
             .map(manifest -> registerAgent(tenantId, manifest))
             .collect(Collectors.toList());
-        
+
         return Promises.toList(registrations);
     }
-    
+
     /**
      * Register a single agent with AEP registry.
      */
     private Promise<AgentManifestProto> registerAgent(TenantId tenantId, AgentManifestProto manifest) {
         String agentId = manifest.getMetadata().getName();
-        
+
         return agentRegistry.register(tenantId, manifest)
-            .whenResult(registered -> 
-                log.info("Successfully registered agent {} with AEP for tenant {}", 
+            .whenResult(registered ->
+                log.info("Successfully registered agent {} with AEP for tenant {}",
                     agentId, tenantId))
-            .whenException(error -> 
-                log.error("Failed to register agent {} with AEP for tenant {}: {}", 
+            .whenException(error ->
+                log.error("Failed to register agent {} with AEP for tenant {}: {}",
                     agentId, tenantId, error.getMessage(), error));
     }
-    
+
     /**
      * Get an agent by ID from AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param agentId Agent identifier
      * @return Promise of agent manifest
@@ -137,20 +137,20 @@ public class AepIntegratedAgentLoader {
     public Promise<AgentManifestProto> getAgent(TenantId tenantId, String agentId) {
         return agentRegistry.getById(tenantId, agentId);
     }
-    
+
     /**
      * List all agents for a tenant from AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @return Promise of all agent manifests
      */
     public Promise<List<AgentManifestProto>> listAgents(TenantId tenantId) {
         return agentRegistry.listAll(tenantId);
     }
-    
+
     /**
      * Find agents by capability using AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param capability Capability to search for
      * @return Promise of matching agent IDs
@@ -161,10 +161,10 @@ public class AepIntegratedAgentLoader {
                 .map(m -> m.getMetadata().getId())
                 .collect(Collectors.toList()));
     }
-    
+
     /**
      * Find agents by event type using AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param eventType Event type to search for
      * @return Promise of matching agent IDs
@@ -175,32 +175,32 @@ public class AepIntegratedAgentLoader {
                 .map(m -> m.getMetadata().getId())
                 .collect(Collectors.toList()));
     }
-    
+
     /**
      * Update an existing agent in AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param agentId Agent identifier
      * @param yamlConfig Updated YAML configuration
      * @return Promise of updated manifest
      */
     public Promise<AgentManifestProto> updateAgent(
-        TenantId tenantId, 
-        String agentId, 
+        TenantId tenantId,
+        String agentId,
         YamlAgentConfig yamlConfig
     ) {
         AgentManifestProto manifest = converter.convert(yamlConfig);
         return agentRegistry.update(tenantId, agentId, manifest)
-            .whenResult(updated -> 
+            .whenResult(updated ->
                 log.info("Successfully updated agent {} in AEP for tenant {}", agentId, tenantId))
-            .whenException(error -> 
-                log.error("Failed to update agent {} in AEP for tenant {}: {}", 
+            .whenException(error ->
+                log.error("Failed to update agent {} in AEP for tenant {}: {}",
                     agentId, tenantId, error.getMessage(), error));
     }
-    
+
     /**
      * Delete an agent from AEP registry.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param agentId Agent identifier
      * @return Promise of deletion confirmation
@@ -208,10 +208,10 @@ public class AepIntegratedAgentLoader {
     public Promise<Void> deleteAgent(TenantId tenantId, String agentId) {
         return deleteAgent(tenantId, agentId, false);
     }
-    
+
     /**
      * Delete an agent from AEP registry with hard delete option.
-     * 
+     *
      * @param tenantId Tenant scope
      * @param agentId Agent identifier
      * @param hardDelete If true, permanently delete; otherwise soft-delete
@@ -220,11 +220,11 @@ public class AepIntegratedAgentLoader {
     public Promise<Void> deleteAgent(TenantId tenantId, String agentId, boolean hardDelete) {
         return agentRegistry.delete(tenantId, agentId, hardDelete)
             .map(deleted -> (Void) null)
-            .whenResult(v -> 
-                log.info("Successfully deleted agent {} from AEP for tenant {} (hard={})", 
+            .whenResult(v ->
+                log.info("Successfully deleted agent {} from AEP for tenant {} (hard={})",
                     agentId, tenantId, hardDelete))
-            .whenException(error -> 
-                log.error("Failed to delete agent {} from AEP for tenant {}: {}", 
+            .whenException(error ->
+                log.error("Failed to delete agent {} from AEP for tenant {}: {}",
                     agentId, tenantId, error.getMessage(), error));
     }
 }

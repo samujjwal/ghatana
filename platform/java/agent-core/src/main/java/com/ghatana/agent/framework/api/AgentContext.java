@@ -20,73 +20,73 @@ import java.util.UUID;
  *   <li>Metrics and tracing</li>
  *   <li>Tenant/user/session information</li>
  * </ul>
- * 
+ *
  * <p>Context instances are immutable and thread-safe.
  * Use {@link Builder} to create modified contexts for nested operations.
- * 
+ *
  * @doc.type interface
  * @doc.purpose Agent execution context with memory and observability
  * @doc.layer framework
  * @doc.pattern Context Object
  */
 public interface AgentContext {
-    
+
     /**
      * Gets the unique ID for this agent execution turn.
      * @return Turn ID (never null)
      */
     @NotNull
     String getTurnId();
-    
+
     /**
      * Gets the unique ID of the agent executing in this context.
      * @return Agent ID (never null)
      */
     @NotNull
     String getAgentId();
-    
+
     /**
      * Gets the tenant ID for multi-tenant isolation.
      * @return Tenant ID (never null)
      */
     @NotNull
     String getTenantId();
-    
+
     /**
      * Gets the user ID if this execution is user-initiated.
      * @return User ID, or null if system-initiated
      */
     @Nullable
     String getUserId();
-    
+
     /**
      * Gets the session ID for conversation continuity.
      * @return Session ID, or null if no session
      */
     @Nullable
     String getSessionId();
-    
+
     /**
      * Gets the timestamp when this turn started.
      * @return Turn start time (never null)
      */
     @NotNull
     Instant getStartTime();
-    
+
     /**
      * Gets the memory store for this agent.
      * @return Memory store (never null)
      */
     @NotNull
     MemoryStore getMemoryStore();
-    
+
     /**
      * Gets the logger for this agent.
      * @return Logger (never null)
      */
     @NotNull
     Logger getLogger();
-    
+
     /**
      * Gets a configuration value.
      * @param key Configuration key
@@ -94,7 +94,7 @@ public interface AgentContext {
      */
     @Nullable
     Object getConfig(@NotNull String key);
-    
+
     /**
      * Gets a configuration value with default.
      * @param key Configuration key
@@ -104,21 +104,21 @@ public interface AgentContext {
      */
     @NotNull
     <T> T getConfigOrDefault(@NotNull String key, @NotNull T defaultValue);
-    
+
     /**
      * Gets all configuration as immutable map.
      * @return Configuration map (never null)
      */
     @NotNull
     Map<String, Object> getAllConfig();
-    
+
     /**
      * Records a metric for observability.
      * @param name Metric name
      * @param value Metric value
      */
     void recordMetric(@NotNull String name, double value);
-    
+
     /**
      * Records a metric with tags.
      * @param name Metric name
@@ -126,14 +126,14 @@ public interface AgentContext {
      * @param tags Additional tags
      */
     void recordMetric(@NotNull String name, double value, @NotNull Map<String, String> tags);
-    
+
     /**
      * Adds a tag to the current trace span.
      * @param key Tag key
      * @param value Tag value
      */
     void addTraceTag(@NotNull String key, @NotNull String value);
-    
+
     /**
      * Gets remaining budget in USD for this execution.
      * Used for cost control.
@@ -141,7 +141,7 @@ public interface AgentContext {
      */
     @Nullable
     Double getRemainingBudget();
-    
+
     /**
      * Deducts cost from the budget.
      * @param cost Cost to deduct in USD
@@ -217,14 +217,14 @@ public interface AgentContext {
                 .startTime(Instant.now())
                 .build();
     }
-    
+
     /**
      * Creates a child context for nested operations.
      * @return New context builder
      */
     @NotNull
     Builder toBuilder();
-    
+
     /**
      * Creates a new AgentContext builder.
      * @return New builder
@@ -248,42 +248,42 @@ public interface AgentContext {
                 .memoryStore(MemoryStore.noOp())
                 .build();
     }
-    
+
     /**
      * Builder for AgentContext.
      */
     interface Builder {
-        
+
         @NotNull
         Builder turnId(@NotNull String turnId);
-        
+
         @NotNull
         Builder agentId(@NotNull String agentId);
-        
+
         @NotNull
         Builder tenantId(@NotNull String tenantId);
-        
+
         @NotNull
         Builder userId(@Nullable String userId);
-        
+
         @NotNull
         Builder sessionId(@Nullable String sessionId);
-        
+
         @NotNull
         Builder startTime(@NotNull Instant startTime);
-        
+
         @NotNull
         Builder memoryStore(@NotNull MemoryStore memoryStore);
-        
+
         @NotNull
         Builder logger(@NotNull Logger logger);
-        
+
         @NotNull
         Builder config(@NotNull Map<String, Object> config);
-        
+
         @NotNull
         Builder addConfig(@NotNull String key, @NotNull Object value);
-        
+
         @NotNull
         Builder remainingBudget(@Nullable Double budget);
 
@@ -292,31 +292,31 @@ public interface AgentContext {
 
         @NotNull
         Builder metadata(@Nullable Map<String, Object> metadata);
-        
+
         @NotNull
         AgentContext build();
     }
-    
+
     /**
      * Exception thrown when budget is exceeded.
      */
     class BudgetExceededException extends Exception {
         private static final long serialVersionUID = 1L;
-        
+
         private final double requestedCost;
         private final double remainingBudget;
-        
+
         public BudgetExceededException(double requestedCost, double remainingBudget) {
-            super(String.format("Cost %.2f exceeds remaining budget %.2f", 
+            super(String.format("Cost %.2f exceeds remaining budget %.2f",
                 requestedCost, remainingBudget));
             this.requestedCost = requestedCost;
             this.remainingBudget = remainingBudget;
         }
-        
+
         public double getRequestedCost() {
             return requestedCost;
         }
-        
+
         public double getRemainingBudget() {
             return remainingBudget;
         }

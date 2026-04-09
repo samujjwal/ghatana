@@ -1,7 +1,6 @@
 package com.ghatana.finance.ai;
 
 import com.ghatana.kernel.ai.AgentOrchestrator;
-import com.ghatana.kernel.ai.ModelGovernanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

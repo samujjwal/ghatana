@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * Composition definition for multi-module projects.
- * 
+ *
  * @doc.type record
  * @doc.purpose Composition definition for universal multi-module projects
  * @doc.layer platform

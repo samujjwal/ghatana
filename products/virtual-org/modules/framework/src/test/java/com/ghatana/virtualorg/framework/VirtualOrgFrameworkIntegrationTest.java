@@ -3,7 +3,6 @@ package com.ghatana.virtualorg.framework;
 import com.ghatana.platform.types.identity.Identifier;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.virtualorg.framework.Department;
 import com.ghatana.virtualorg.framework.agent.Agent;
 import com.ghatana.virtualorg.framework.event.EventPublisher;
 import com.ghatana.virtualorg.framework.task.Task;

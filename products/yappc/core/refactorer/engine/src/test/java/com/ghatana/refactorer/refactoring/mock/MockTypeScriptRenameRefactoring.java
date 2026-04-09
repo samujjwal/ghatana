@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Mock implementation of TypeScript rename refactoring for testing. This implementation doesn't
  * depend on external TypeScript libraries.
- 
+
  * @doc.type class
  * @doc.purpose Handles mock type script rename refactoring operations
  * @doc.layer core

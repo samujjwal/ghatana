@@ -18,7 +18,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import io.activej.promise.Promise;
@@ -41,7 +40,7 @@ public final class TtsEngineFactory {
 
         // Try multiple model path resolution strategies
         java.nio.file.Path modelPath = resolveVoiceModelPath(config);
-        
+
         if (modelPath != null) {
             try {
                 // Create config with resolved path
@@ -52,7 +51,7 @@ public final class TtsEngineFactory {
                     .maxConcurrentRequests(config.maxConcurrentRequests())
                     .sampleRate(config.sampleRate())
                     .build();
-                    
+
                 TtsEngine engine = new com.ghatana.media.tts.engine.onnx.PiperOnnxEngine(resolvedConfig, libraryState);
                 LOG.info("Successfully loaded ONNX TTS engine from: " + modelPath);
                 return engine;
@@ -66,7 +65,7 @@ public final class TtsEngineFactory {
             "Set TTS_MODEL_PATH environment variable to a valid Piper ONNX model.");
         return new StubTtsEngine(config, libraryState);
     }
-    
+
     /**
      * Resolve voice model path using multiple strategies.
      */
@@ -75,7 +74,7 @@ public final class TtsEngineFactory {
         if (config.voiceModelPath() != null && config.voiceModelPath().toFile().exists()) {
             return config.voiceModelPath();
         }
-        
+
         // Strategy 2: Environment variable
         String envPath = System.getenv("TTS_MODEL_PATH");
         if (envPath != null && !envPath.isEmpty()) {
@@ -84,7 +83,7 @@ public final class TtsEngineFactory {
                 return path;
             }
         }
-        
+
         // Strategy 3: Common model directories
         String voiceId = config.defaultVoiceId();
         String[] commonPaths = {
@@ -93,7 +92,7 @@ public final class TtsEngineFactory {
             "/usr/local/share/piper/voices/" + voiceId + ".onnx",
             "models/piper-" + voiceId + ".onnx",
         };
-        
+
         for (String pathStr : commonPaths) {
             java.nio.file.Path path = java.nio.file.Paths.get(pathStr);
             if (path.toFile().exists()) {
@@ -101,18 +100,18 @@ public final class TtsEngineFactory {
                 return path;
             }
         }
-        
+
         // Strategy 4: User home download directory
         String userHome = System.getProperty("user.home");
         if (userHome != null) {
-            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "voices", 
+            java.nio.file.Path userPath = java.nio.file.Paths.get(userHome, ".cache", "ghatana", "voices",
                 voiceId + ".onnx");
             if (userPath.toFile().exists()) {
                 LOG.info("Found TTS model in user cache: " + userPath);
                 return userPath;
             }
         }
-        
+
         return null;
     }
 

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/** Helper class to set up ESLint for testing. 
+/** Helper class to set up ESLint for testing.
  * @doc.type class
  * @doc.purpose Handles test es lint setup operations
  * @doc.layer core

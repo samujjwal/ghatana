@@ -21,7 +21,7 @@ class JsonAssertionsTest {
     void assertJsonEquals_shouldFailForDifferentJson() {
         String expected = "{\"name\":\"test1\"}";
         String actual = "{\"name\":\"test2\"}";
-        assertThrows(AssertionError.class, 
+        assertThrows(AssertionError.class,
             () -> JsonAssertions.assertJsonEquals(expected, actual));
     }
 
@@ -65,25 +65,25 @@ class JsonAssertionsTest {
 
     @Test
     void assertJsonPath_shouldFailForIncorrectValue() {
-        assertThrows(AssertionError.class, 
+        assertThrows(AssertionError.class,
             () -> JsonAssertions.assertJsonPath(SIMPLE_JSON, "$.name", "wrong"));
     }
 
     @Test
     void assertJsonArraySize_shouldFailForWrongSize() {
-        assertThrows(AssertionError.class, 
+        assertThrows(AssertionError.class,
             () -> JsonAssertions.assertJsonArraySize(NESTED_JSON, "$.roles", 3));
     }
 
     @Test
     void assertHasJsonPath_shouldFailForMissingPath() {
-        assertThrows(AssertionError.class, 
+        assertThrows(AssertionError.class,
             () -> JsonAssertions.assertHasJsonPath(SIMPLE_JSON, "$.nonexistent"));
     }
 
     @Test
     void assertDoesNotHaveJsonPath_shouldFailForExistingPath() {
-        assertThrows(AssertionError.class, 
+        assertThrows(AssertionError.class,
             () -> JsonAssertions.assertDoesNotHaveJsonPath(SIMPLE_JSON, "$.name"));
     }
 

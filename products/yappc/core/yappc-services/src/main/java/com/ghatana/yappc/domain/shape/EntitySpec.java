@@ -17,33 +17,33 @@ public record EntitySpec(
     public static Builder builder() {
         return new Builder();
     }
-    
+
     public static class Builder {
         private String name;
         private String description;
         private List<FieldSpec> fields = List.of();
         private List<String> behaviors = List.of();
-        
+
         public Builder name(String name) {
             this.name = name;
             return this;
         }
-        
+
         public Builder description(String description) {
             this.description = description;
             return this;
         }
-        
+
         public Builder fields(List<FieldSpec> fields) {
             this.fields = fields;
             return this;
         }
-        
+
         public Builder behaviors(List<String> behaviors) {
             this.behaviors = behaviors;
             return this;
         }
-        
+
         public EntitySpec build() {
             return new EntitySpec(name, description, fields, behaviors);
         }

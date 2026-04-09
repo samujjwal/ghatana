@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * SPI for parsing stack traces and failures from tool outputs (stdout/stderr, files). 
+ * SPI for parsing stack traces and failures from tool outputs (stdout/stderr, files).
  * @doc.type interface
  * @doc.purpose Defines the contract for stack trace parser
  * @doc.layer core

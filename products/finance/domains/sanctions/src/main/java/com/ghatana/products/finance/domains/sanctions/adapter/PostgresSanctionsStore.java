@@ -6,11 +6,9 @@ import com.ghatana.products.finance.domains.sanctions.service.SanctionsListInges
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * @doc.type    Adapter (Secondary)

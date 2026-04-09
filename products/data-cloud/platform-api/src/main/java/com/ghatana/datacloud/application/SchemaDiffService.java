@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.application;
 
-import com.ghatana.datacloud.entity.DataType;
 import com.ghatana.datacloud.entity.MetaCollection;
 import com.ghatana.datacloud.entity.MetaField;
 import com.ghatana.platform.observability.MetricsCollector;

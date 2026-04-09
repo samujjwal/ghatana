@@ -36,7 +36,7 @@ import java.util.Objects;
  * // Platform operator (ghatana namespace)
  * OperatorId streamFilter = OperatorId.of("ghatana", "stream", "filter", "1.0.0");
  * System.out.println(streamFilter); // ghatana:stream:filter:1.0.0
- * 
+ *
  * // Tenant-specific operator
  * OperatorId tenantPattern = OperatorId.of("tenant-acme", "pattern", "fraud-seq", "2.1.0");
  * }</pre>
@@ -46,7 +46,7 @@ import java.util.Objects;
  * // Parse from EventCloud event metadata
  * String operatorIdString = event.getMetadata().get("operatorId");
  * OperatorId id = OperatorId.parse(operatorIdString);
- * 
+ *
  * // Access components
  * String namespace = id.getNamespace(); // "ghatana"
  * String type = id.getType();           // "stream"
@@ -59,7 +59,7 @@ import java.util.Objects;
  * // Query catalog by operator ID
  * OperatorId targetId = OperatorId.parse("ghatana:stream:filter:1.0.0");
  * Optional<UnifiedOperator> operator = catalog.get(targetId);
- * 
+ *
  * // Query by ID components
  * List<UnifiedOperator> streamOps = catalog.findByType("stream");
  * List<UnifiedOperator> ghatanaOps = catalog.findByNamespace("ghatana");
@@ -69,7 +69,7 @@ import java.util.Objects;
  * <pre>{@code
  * OperatorId v1 = OperatorId.parse("ghatana:stream:filter:1.0.0");
  * OperatorId v2 = OperatorId.parse("ghatana:stream:filter:2.0.0");
- * 
+ *
  * // Extract version for semantic comparison
  * String version1 = v1.getVersion(); // "1.0.0"
  * String version2 = v2.getVersion(); // "2.0.0"
@@ -85,7 +85,7 @@ import java.util.Objects;
  *     .addMetadata("namespace", operatorId.getNamespace())
  *     .addMetadata("operatorType", operatorId.getType())
  *     .build();
- * 
+ *
  * // Deserialize from event
  * String idString = operatorEvent.getMetadata().get("operatorId");
  * OperatorId id = OperatorId.parse(idString);
@@ -96,7 +96,7 @@ import java.util.Objects;
  * // Tenant-specific operators
  * OperatorId tenant1Op = OperatorId.of("tenant-123", "pattern", "fraud-seq", "1.0.0");
  * OperatorId tenant2Op = OperatorId.of("tenant-456", "pattern", "fraud-seq", "1.0.0");
- * 
+ *
  * // Same operator name but isolated by namespace
  * assert !tenant1Op.equals(tenant2Op);
  * assert tenant1Op.getName().equals(tenant2Op.getName());
@@ -147,18 +147,18 @@ import java.util.Objects;
  * @see UnifiedOperator
  * @see OperatorCatalog
  * @see OperatorType
- * 
+ *
  * @doc.type class
  * @doc.purpose Unique identifier for operators in Unified Operator Model
  * @doc.layer core
  * @doc.pattern Value Object
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
  */
 public final class OperatorId {
-    
+
     private final String namespace;
     private final String type;
     private final String name;
@@ -175,7 +175,7 @@ public final class OperatorId {
 
     /**
      * Create operator ID from components.
-     * 
+     *
      * @param namespace operator namespace (e.g., "ghatana")
      * @param type operator type (e.g., "stream", "pattern", "learning")
      * @param name operator name (e.g., "filter", "seq", "apriori")
@@ -188,7 +188,7 @@ public final class OperatorId {
 
     /**
      * Parse operator ID from string.
-     * 
+     *
      * @param id operator ID string (format: namespace:type:name:version)
      * @return operator ID
      * @throws IllegalArgumentException if format is invalid

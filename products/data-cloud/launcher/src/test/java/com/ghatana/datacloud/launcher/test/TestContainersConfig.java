@@ -71,7 +71,7 @@ public final class TestContainersConfig {
                 .withUsername("test")
                 .withPassword("test")
                 .withInitScript("db/init_pgvector.sql");
-            
+
             container.addExposedPort(5432);
             return container;
         });
@@ -88,7 +88,7 @@ public final class TestContainersConfig {
                 DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
             )
                 .withEmbeddedZookeeper();
-            
+
             return container;
         });
     }
@@ -105,7 +105,7 @@ public final class TestContainersConfig {
             )
                 .withExposedPorts(6379)
                 .withCommand("redis-server", "--appendonly", "yes");
-            
+
             return container;
         });
     }
@@ -124,7 +124,7 @@ public final class TestContainersConfig {
                 .withEnv("AWS_ACCESS_KEY_ID", "test")
                 .withEnv("AWS_SECRET_ACCESS_KEY", "test")
                 .withEnv("AWS_DEFAULT_REGION", "us-east-1");
-            
+
             return container;
         });
     }
@@ -223,7 +223,7 @@ public final class TestContainersConfig {
         if (container == null || !container.isRunning()) {
             throw new IllegalStateException("S3 container not started. Call s3().start() first.");
         }
-        
+
         try {
             container.execInContainer(
                 "awslocal", "s3", "mb", "s3://" + bucketName

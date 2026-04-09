@@ -78,25 +78,25 @@ import java.util.UUID;
  * <pre>{@code
  * // Task lifecycle events
  * String correlationId = UUID.randomUUID().toString();
- * 
+ *
  * Event taskStarted = VirtualOrgEventFactory.createTaskStartedEvent(
  *     "agent-senior-eng-001", task, correlationId);
  * eventEmitter.emit(taskStarted);
- * 
+ *
  * Event taskCompleted = VirtualOrgEventFactory.createTaskCompletedEvent(
  *     "agent-senior-eng-001", task, response, correlationId);
  * eventEmitter.emit(taskCompleted);
- * 
+ *
  * // Decision event
  * Event decisionMade = VirtualOrgEventFactory.createDecisionMadeEvent(
  *     "agent-cto-001", decision, correlationId);
  * eventEmitter.emit(decisionMade);
- * 
+ *
  * // Tool execution event
  * Event toolExecuted = VirtualOrgEventFactory.createToolExecutedEvent(
  *     "agent-devops-001", toolCall, correlationId);
  * eventEmitter.emit(toolExecuted);
- * 
+ *
  * // Authorization event
  * Event authChecked = VirtualOrgEventFactory.createAuthorizationCheckedEvent(
  *     "agent-pm-001", resourceType, action, allowed, correlationId);
@@ -116,11 +116,11 @@ import java.util.UUID;
 public class VirtualOrgEventFactory {
     private static final Logger log = LoggerFactory.getLogger(VirtualOrgEventFactory.class);
     private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
-    
+
     private static final String NAMESPACE = "com.ghatana.virtualorg";
     private static final String VERSION = "1.0.0";
     private static final String TENANT_ID = "default";
-    
+
     /**
      * Creates a "task.started" event when a task begins processing.
      */
@@ -137,16 +137,16 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates a "task.completed" event when a task finishes successfully.
      */
     public static Event createTaskCompletedEvent(
-        String agentId, 
-        TaskResponseProto response, 
+        String agentId,
+        TaskResponseProto response,
         long durationMs,
         String correlationId) {
-        
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("agentId", agentId);
         payload.put("taskId", response.getTaskId());
@@ -157,14 +157,14 @@ public class VirtualOrgEventFactory {
         if (response.hasMetrics()) {
             payload.put("confidenceScore", response.getMetrics().getConfidenceScore());
         }
-        
+
         return buildEvent(
             "com.ghatana.virtualorg.task.completed",
             correlationId != null ? correlationId : UUID.randomUUID().toString(),
             payload
         );
     }
-    
+
     /**
      * Creates a "task.failed" event when a task fails.
      */
@@ -174,7 +174,7 @@ public class VirtualOrgEventFactory {
         String errorMessage,
         long durationMs,
         String correlationId) {
-        
+
         return buildEvent(
             "com.ghatana.virtualorg.task.failed",
             correlationId != null ? correlationId : UUID.randomUUID().toString(),
@@ -187,7 +187,7 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates a "decision.made" event when an agent makes a decision.
      */
@@ -195,20 +195,20 @@ public class VirtualOrgEventFactory {
         String agentId,
         DecisionProto decision,
         String correlationId) {
-        
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("agentId", agentId);
         payload.put("decisionId", decision.getDecisionId());
         payload.put("confidence", String.valueOf(decision.getConfidence()));
         payload.put("reasoning", decision.getReasoning());
-        
+
         return buildEvent(
             "com.ghatana.virtualorg.decision.made",
             correlationId != null ? correlationId : UUID.randomUUID().toString(),
             payload
         );
     }
-    
+
     /**
      * Creates a "tool.executed" event when an agent executes a tool.
      */
@@ -217,7 +217,7 @@ public class VirtualOrgEventFactory {
         ToolCallProto toolCall,
         long durationMs,
         String correlationId) {
-        
+
         return buildEvent(
             "com.ghatana.virtualorg.tool.executed",
             correlationId != null ? correlationId : UUID.randomUUID().toString(),
@@ -230,7 +230,7 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates an "authorization.checked" event for audit trail.
      */
@@ -241,7 +241,7 @@ public class VirtualOrgEventFactory {
         String action,
         boolean allowed,
         String correlationId) {
-        
+
         return buildEvent(
             "com.ghatana.virtualorg.authorization.checked",
             correlationId != null ? correlationId : UUID.randomUUID().toString(),
@@ -254,7 +254,7 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates an "agent.started" lifecycle event.
      */
@@ -268,7 +268,7 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates an "agent.stopped" lifecycle event.
      */
@@ -279,7 +279,7 @@ public class VirtualOrgEventFactory {
             mapOf("agentId", agentId)
         );
     }
-    
+
     /**
      * Creates an "agent.error" lifecycle event.
      */
@@ -293,7 +293,7 @@ public class VirtualOrgEventFactory {
             )
         );
     }
-    
+
     /**
      * Creates a generic event with the given type, agent ID, and data.
      * Used for custom or ad-hoc events not covered by specific factory methods.
@@ -307,23 +307,23 @@ public class VirtualOrgEventFactory {
             @org.jetbrains.annotations.NotNull String eventType,
             String agentId,
             @org.jetbrains.annotations.NotNull Map<String, String> data) {
-        
+
         Map<String, Object> payload = new HashMap<>(data);
         if (agentId != null) {
             payload.put("agentId", agentId);
         }
-        
+
         return buildEvent(
             eventType,
             UUID.randomUUID().toString(),
             payload
         );
     }
-    
+
     // =============================
     // Helper Methods
     // =============================
-    
+
     private static Event buildEvent(String eventType, String correlationId, Map<String, ?> payload) {
         try {
             // Create EventId
@@ -333,7 +333,7 @@ public class VirtualOrgEventFactory {
                 VERSION,
                 TENANT_ID
             );
-            
+
             // Create EventTime using current instant
             Instant now = Instant.now();
             long nowMillis = now.toEpochMilli();
@@ -349,23 +349,23 @@ public class VirtualOrgEventFactory {
                     com.ghatana.platform.types.time.GTimestamp.ofEpochMilli(nowMillis)
                 ))
                 .build();
-            
+
             // Create EventStats
             EventStats stats = EventStats.builder()
                 .withSizeInBytes(objectMapper.writeValueAsString(payload).length())
                 .build();
-            
+
             // Create EventRelations
             EventRelations relations = EventRelations.builder().build();
-            
+
             // Create headers with correlation ID
             Map<String, String> headers = new HashMap<>();
             headers.put("correlationId", correlationId);
             headers.put("timestamp", String.valueOf(System.currentTimeMillis()));
-            
+
             // Cast payload keys to String for consistency
             Map<String, Object> typedPayload = new HashMap<>(payload);
-            
+
             return GEvent.builder()
                 .id(eventId)
                 .time(eventTime)
@@ -377,13 +377,13 @@ public class VirtualOrgEventFactory {
                 .intervalBased(false)
                 .provenance(java.util.List.of())
                 .build();
-            
+
         } catch (Exception e) {
             log.error("Failed to build event: {}", eventType, e);
             throw new RuntimeException("Event construction failed", e);
         }
     }
-    
+
     /**
      * Simple EventId implementation.
      */
@@ -392,35 +392,35 @@ public class VirtualOrgEventFactory {
         private final String eventType;
         private final String version;
         private final String tenantId;
-        
+
         SimpleEventId(String id, String eventType, String version, String tenantId) {
             this.id = id;
             this.eventType = eventType;
             this.version = version;
             this.tenantId = tenantId;
         }
-        
+
         @Override
         public String getId() {
             return id;
         }
-        
+
         @Override
         public String getEventType() {
             return eventType;
         }
-        
+
         @Override
         public String getVersion() {
             return version;
         }
-        
+
         @Override
         public String getTenantId() {
             return tenantId;
         }
     }
-    
+
     /**
      * Convenience method for creating a map of string key-value pairs.
      */
@@ -428,7 +428,7 @@ public class VirtualOrgEventFactory {
     private static <K, V> Map<K, V> mapOf(K k1, V v1, Object... rest) {
         Map<K, V> map = new HashMap<>();
         map.put(k1, v1);
-        
+
         for (int i = 0; i < rest.length; i += 2) {
             if (i + 1 < rest.length) {
                 map.put((K) rest[i], (V) rest[i + 1]);

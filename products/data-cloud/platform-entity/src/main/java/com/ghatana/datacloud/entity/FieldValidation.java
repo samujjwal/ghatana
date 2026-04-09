@@ -36,30 +36,30 @@ public record FieldValidation(
         // Numeric constraints
         Double min,
         Double max,
-        
+
         // String constraints
         Integer minLength,
         Integer maxLength,
         String pattern,
-        
+
         // Enum constraint
         List<String> enumValues,
-        
+
         // Common constraints
         Boolean required,
-        
+
         // Date constraints (ISO-8601 format strings)
         String minDate,
         String maxDate,
-        
+
         // Custom validation message
         String message,
-        
+
         // Reference validation
         String referenceCollection,
         String referenceField
 ) {
-    
+
     /**
      * Creates an empty validation (no constraints).
      *
@@ -68,7 +68,7 @@ public record FieldValidation(
     public static FieldValidation empty() {
         return FieldValidation.builder().build();
     }
-    
+
     /**
      * Creates validation for a required field.
      *
@@ -77,7 +77,7 @@ public record FieldValidation(
     public static FieldValidation requiredField() {
         return FieldValidation.builder().required(true).build();
     }
-    
+
     /**
      * Creates validation with numeric range.
      *
@@ -88,7 +88,7 @@ public record FieldValidation(
     public static FieldValidation range(double min, double max) {
         return FieldValidation.builder().min(min).max(max).build();
     }
-    
+
     /**
      * Creates validation with string length constraints.
      *
@@ -99,7 +99,7 @@ public record FieldValidation(
     public static FieldValidation length(int minLength, int maxLength) {
         return FieldValidation.builder().minLength(minLength).maxLength(maxLength).build();
     }
-    
+
     /**
      * Creates validation with regex pattern.
      *
@@ -109,7 +109,7 @@ public record FieldValidation(
     public static FieldValidation pattern(String pattern) {
         return FieldValidation.builder().pattern(pattern).build();
     }
-    
+
     /**
      * Creates validation with enum values.
      *
@@ -119,7 +119,7 @@ public record FieldValidation(
     public static FieldValidation enumOf(List<String> values) {
         return FieldValidation.builder().enumValues(values).build();
     }
-    
+
     /**
      * Creates a FieldValidation from a legacy Map.
      *
@@ -131,7 +131,7 @@ public record FieldValidation(
         if (map == null || map.isEmpty()) {
             return empty();
         }
-        
+
         return FieldValidation.builder()
                 .min(getAsDouble(map.get("min")))
                 .max(getAsDouble(map.get("max")))
@@ -147,7 +147,7 @@ public record FieldValidation(
                 .referenceField((String) map.get("referenceField"))
                 .build();
     }
-    
+
     /**
      * Converts this validation to a Map for JSONB storage.
      *
@@ -169,7 +169,7 @@ public record FieldValidation(
         if (referenceField != null) map.put("referenceField", referenceField);
         return map;
     }
-    
+
     private static Double getAsDouble(Object value) {
         if (value == null) return null;
         if (value instanceof Number) return ((Number) value).doubleValue();
@@ -182,7 +182,7 @@ public record FieldValidation(
         }
         return null;
     }
-    
+
     private static Integer getAsInteger(Object value) {
         if (value == null) return null;
         if (value instanceof Number) return ((Number) value).intValue();
@@ -195,7 +195,7 @@ public record FieldValidation(
         }
         return null;
     }
-    
+
     private static Boolean getAsBoolean(Object value) {
         if (value == null) return null;
         if (value instanceof Boolean) return (Boolean) value;

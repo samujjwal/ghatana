@@ -9,7 +9,6 @@ import io.activej.promise.Promise;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -39,8 +38,8 @@ class PluginContextAdapter implements PluginContext {
 
     @Override
     public String getTenantId() {
-        return kernelContext.getTenantContext() != null 
-            ? kernelContext.getTenantContext().getTenantId() 
+        return kernelContext.getTenantContext() != null
+            ? kernelContext.getTenantContext().getTenantId()
             : null;
     }
 

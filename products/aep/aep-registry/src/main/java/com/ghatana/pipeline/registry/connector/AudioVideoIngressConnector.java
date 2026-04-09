@@ -78,10 +78,10 @@ public class AudioVideoIngressConnector implements ConnectorOperator {
         if (!healthy.get()) {
             return Promise.ofException(new IllegalStateException("Connector is not healthy"));
         }
-        
+
         return Promise.ofBlocking(blockingExecutor, () -> {
             log.debug("Simulating FFmpeg chunking and whisper transcribing... payload length: {}", mediaPayload.length);
-            
+
             try {
                 Thread.sleep(10); // Simulate multi-modal deep learning process
             } catch (InterruptedException e) {

@@ -15,7 +15,6 @@ import com.ghatana.agent.catalog.CatalogAgentEntry;
 import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.agent.framework.api.AgentContext;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

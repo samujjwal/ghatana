@@ -24,13 +24,13 @@ import java.util.UUID;
  * @doc.pattern Service
  */
 public class LearningServiceImpl implements LearningService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(LearningServiceImpl.class);
-    
+
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public LearningServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
@@ -39,23 +39,23 @@ public class LearningServiceImpl implements LearningService {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<Insights> analyze(Observation observation) {
         return analyzeWithContext(observation, null);
     }
-    
+
     @Override
     public Promise<Insights> analyzeWithContext(Observation observation, HistoricalContext context) {
         long startTime = System.currentTimeMillis();
-        
+
         return analyzeWithAI(observation, context)
                 .then(insights -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = Map.of("has_context", String.valueOf(context != null));
                     metrics.recordTimer("yappc.learn.analyze", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.learn.analyze", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("learn.analyze", observation, insights))
                             .map(v -> insights);
                 })
@@ -68,10 +68,10 @@ public class LearningServiceImpl implements LearningService {
                         Map.of("has_context", String.valueOf(context != null)));
                 });
     }
-    
+
     private Promise<Insights> analyzeWithAI(Observation observation, HistoricalContext context) {
         String prompt = buildAnalysisPrompt(observation, context);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.3)
@@ -79,40 +79,40 @@ public class LearningServiceImpl implements LearningService {
                 .build())
                 .map(result -> parseInsightsFromAIResponse(result, observation));
     }
-    
+
     private String buildAnalysisPrompt(Observation observation, HistoricalContext context) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Analyze the following system observations and provide insights:\n\n");
-        
+
         prompt.append("Metrics:\n");
-        observation.metrics().forEach(m -> 
+        observation.metrics().forEach(m ->
             prompt.append(String.format("- %s: %.2f %s\n", m.name(), m.value(), m.unit())));
-        
+
         prompt.append("\nLogs:\n");
-        observation.logs().forEach(l -> 
+        observation.logs().forEach(l ->
             prompt.append(String.format("- [%s] %s\n", l.level(), l.message())));
-        
+
         if (context != null) {
             prompt.append("\nHistorical Context:\n");
             prompt.append("Known patterns: ").append(context.knownPatterns().size()).append("\n");
         }
-        
+
         prompt.append("""
-            
+
             Provide:
             1. Patterns detected (recurring behaviors or trends)
             2. Anomalies (unusual or unexpected behaviors)
             3. Recommendations (actionable improvements)
-            
+
             Focus on performance, reliability, and user experience.
             """);
-        
+
         return prompt.toString();
     }
-    
+
     private Insights parseInsightsFromAIResponse(CompletionResult result, Observation observation) {
         String text = result.text();
-        
+
         return Insights.builder()
                 .id(UUID.randomUUID().toString())
                 .observationRef(observation.id())
@@ -122,7 +122,7 @@ public class LearningServiceImpl implements LearningService {
                 .generatedAt(Instant.now())
                 .build();
     }
-    
+
     private List<Pattern> extractPatterns(String text) {
         return List.of(
             Pattern.builder()
@@ -141,7 +141,7 @@ public class LearningServiceImpl implements LearningService {
                     .build()
         );
     }
-    
+
     private List<Anomaly> extractAnomalies(String text) {
         return List.of(
             Anomaly.builder()
@@ -153,7 +153,7 @@ public class LearningServiceImpl implements LearningService {
                     .build()
         );
     }
-    
+
     private List<Recommendation> extractRecommendations(String text) {
         return List.of(
             Recommendation.builder()
@@ -182,5 +182,5 @@ public class LearningServiceImpl implements LearningService {
                     .build()
         );
     }
-    
+
 }

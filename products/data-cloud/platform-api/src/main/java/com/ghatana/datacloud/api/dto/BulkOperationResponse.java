@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * DTO for bulk operation responses returned by BulkController.
- 
+
  *
  * @doc.type class
  * @doc.purpose Bulk operation response

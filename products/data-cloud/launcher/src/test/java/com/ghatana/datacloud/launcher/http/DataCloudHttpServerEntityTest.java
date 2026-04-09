@@ -78,7 +78,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
         @DisplayName("returns 200 with saved entity id when client save succeeds")
         void saveEntity_validPayload_returns200() throws Exception {
             DataCloudClient.Entity saved = DataCloudClient.Entity.of(
-                    "ent-1", TestConstants.COLLECTION_PRODUCTS, 
+                    "ent-1", TestConstants.COLLECTION_PRODUCTS,
                     Map.of("name", "Widget", "price", 9.99));
             when(mockClient.save(anyString(), eq(TestConstants.COLLECTION_PRODUCTS), any()))
                     .thenReturn(Promise.of(saved));

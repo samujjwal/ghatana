@@ -1,6 +1,5 @@
 package com.ghatana.products.yappc.domain.agent;
 
-import com.ghatana.agent.framework.api.AgentContext;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 

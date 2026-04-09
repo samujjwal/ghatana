@@ -18,12 +18,12 @@ package com.ghatana.yappc.core.framework;
 
 /**
  * Template variable definition.
- * 
+ *
  * @doc.type record
  * @doc.purpose Define template variable metadata
  * @doc.layer platform
  * @doc.pattern Value Object
- * 
+ *
  * @param name Variable name
  * @param type Variable type (string, boolean, number, array, object)
  * @param description Variable description

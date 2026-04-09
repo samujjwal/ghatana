@@ -198,4 +198,3 @@ class AepQueryResultCacheTest {
         @Override public Instant instant() { return instant; }
     }
 }
-

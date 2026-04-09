@@ -4,7 +4,6 @@
 package com.ghatana.services.auth.audit;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -253,7 +252,7 @@ class AuditLogQueryTest extends EventloopTestBase {
 
         // Count security events (WARNING and CRITICAL severity)
         long securityEvents = java.util.Arrays.stream(events)
-            .filter(e -> e.severity() == AuditLogger.AuditSeverity.WARNING || 
+            .filter(e -> e.severity() == AuditLogger.AuditSeverity.WARNING ||
                         e.severity() == AuditLogger.AuditSeverity.CRITICAL)
             .count();
 

@@ -100,7 +100,7 @@ public class CoreModule extends AbstractModule {
     @Provides
     public com.ghatana.yappc.core.integration.IntegrationTemplateEngine integrationTemplateEngine(
             TemplateEngine templateEngine) {
-        java.nio.file.Path integrationTemplatesPath = 
+        java.nio.file.Path integrationTemplatesPath =
             java.nio.file.Paths.get("templates", "integrations");
         return new com.ghatana.yappc.core.integration.IntegrationTemplateEngine(
             templateEngine, integrationTemplatesPath);

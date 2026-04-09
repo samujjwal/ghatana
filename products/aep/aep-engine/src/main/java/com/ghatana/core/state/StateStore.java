@@ -189,4 +189,3 @@ public interface StateStore<K, V> {
      */
     boolean isHealthy();
 }
-

@@ -106,7 +106,7 @@ public class AuditTrailService {
             auditLog.computeIfAbsent(key, k -> new ArrayList<>())
                 .add(event);
 
-            log.info("Audit event logged: {} by {} on {}", 
+            log.info("Audit event logged: {} by {} on {}",
                 event.eventType, event.userId, event.resourceId);
 
             metrics.incrementCounter("audit.event.logged",
@@ -301,7 +301,7 @@ public class AuditTrailService {
     private String exportAsJson(List<AuditEvent> events) {
         try {
             ObjectMapper mapper = JsonUtils.getPrettyMapper();
-            
+
             // Convert to export-friendly format
             List<Map<String, Object>> exportEvents = new ArrayList<>();
             for (AuditEvent event : events) {
@@ -314,7 +314,7 @@ public class AuditTrailService {
                 eventMap.put("details", event.details);
                 exportEvents.add(eventMap);
             }
-            
+
             return mapper.writeValueAsString(exportEvents);
         } catch (JsonProcessingException e) {
             log.error("Failed to export audit events as JSON", e);
@@ -326,7 +326,7 @@ public class AuditTrailService {
     /**
      * Exports audit trail as CSV.
      *
-     * <p>Produces a CSV with columns: tenantId, userId, eventType, resourceId, 
+     * <p>Produces a CSV with columns: tenantId, userId, eventType, resourceId,
      * timestamp, details (as JSON). Uses RFC 4180 compliant formatting with
      * proper escaping of special characters.
      *
@@ -336,17 +336,17 @@ public class AuditTrailService {
     private String exportAsCsv(List<AuditEvent> events) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
         ObjectMapper mapper = JsonUtils.getDefaultMapper();
-        
+
         StringBuilder csv = new StringBuilder();
         csv.append("tenantId,userId,eventType,resourceId,timestamp,details\n");
-        
+
         for (AuditEvent event : events) {
             csv.append(escapeCsvField(event.tenantId)).append(",");
             csv.append(escapeCsvField(event.userId)).append(",");
             csv.append(escapeCsvField(event.eventType)).append(",");
             csv.append(escapeCsvField(event.resourceId)).append(",");
             csv.append(escapeCsvField(Instant.ofEpochMilli(event.timestamp).toString())).append(",");
-            
+
             // Serialize details as JSON
             String detailsJson = "{}";
             try {
@@ -356,10 +356,10 @@ public class AuditTrailService {
             }
             csv.append(escapeCsvField(detailsJson)).append("\n");
         }
-        
+
         return csv.toString();
     }
-    
+
     /**
      * Escapes a field value for CSV output per RFC 4180.
      *
@@ -390,9 +390,9 @@ public class AuditTrailService {
     private String exportAsPdf(List<AuditEvent> events) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.systemDefault());
-        
+
         StringBuilder report = new StringBuilder();
-        
+
         // PDF Header
         report.append("╔══════════════════════════════════════════════════════════════════════════════╗\n");
         report.append("║                            AUDIT TRAIL REPORT                               ║\n");
@@ -402,7 +402,7 @@ public class AuditTrailService {
         report.append("║ Total Events: ").append(events.size());
         report.append(" ".repeat(Math.max(0, 63 - String.valueOf(events.size()).length()))).append("║\n");
         report.append("╚══════════════════════════════════════════════════════════════════════════════╝\n\n");
-        
+
         // Events
         int eventNum = 1;
         for (AuditEvent event : events) {
@@ -422,12 +422,12 @@ public class AuditTrailService {
             }
             report.append("└──────────────────────────────────────────────────────────────────────────────┘\n\n");
         }
-        
+
         // Footer
         report.append("═══════════════════════════════════════════════════════════════════════════════\n");
         report.append("                             End of Report\n");
         report.append("═══════════════════════════════════════════════════════════════════════════════\n");
-        
+
         return report.toString();
     }
 

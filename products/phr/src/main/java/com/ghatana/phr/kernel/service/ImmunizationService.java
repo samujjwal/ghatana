@@ -3,13 +3,11 @@ package com.ghatana.phr.kernel.service;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**

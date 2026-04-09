@@ -65,73 +65,73 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class ObservabilityHealthCheck implements HealthCheck {
-    
+
     private final MetricsRegistry metricsRegistry;
     private final SdkTracerProvider tracerProvider;
     private final SpanExporter spanExporter;
-    
-    public ObservabilityHealthCheck(MetricsRegistry metricsRegistry, 
+
+    public ObservabilityHealthCheck(MetricsRegistry metricsRegistry,
                                   SdkTracerProvider tracerProvider,
                                   SpanExporter spanExporter) {
         this.metricsRegistry = metricsRegistry;
         this.tracerProvider = tracerProvider;
         this.spanExporter = spanExporter;
     }
-    
+
     @Override
     public String getName() {
         return "observability";
     }
-    
+
     @Override
     public boolean isCritical() {
         return true;
     }
-    
+
     @Override
     public Duration getTimeout() {
         return Duration.ofSeconds(2);
     }
-    
+
     @Override
     public Promise<HealthCheckResult> check() {
         try {
             Map<String, Object> details = new HashMap<>();
-            
+
             // Check metrics registry
             details.put("metrics.enabled", metricsRegistry != null);
-            
+
             // Check tracing
             boolean tracingEnabled = tracerProvider != null && spanExporter != null;
             details.put("tracing.enabled", tracingEnabled);
-            
+
             // Check JVM resources
             MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
             details.put("jvm.memory.heap.used", memoryBean.getHeapMemoryUsage().getUsed());
             details.put("jvm.memory.heap.max", memoryBean.getHeapMemoryUsage().getMax());
-            
+
             ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
             details.put("jvm.threads.active", threadBean.getThreadCount());
             details.put("jvm.threads.peak", threadBean.getPeakThreadCount());
-            
+
             // Check for critical errors in the last minute
             double errorCount = metricsRegistry.counter("observability.errors").count();
             details.put("errors.last_minute", errorCount);
-            
+
             // Determine overall status
             Status status = Status.UP;
             String message = "Observability module is healthy";
-            
+
             if (errorCount > 10) {
                 status = Status.DEGRADED;
                 message = "High error rate detected in observability module";
             }
-            
+
             if (metricsRegistry == null || !tracingEnabled) {
                 status = Status.DOWN;
                 message = "Critical observability components are not initialized";
             }
-            
+
             // Use HealthCheckResult static factories
             if (status == Status.UP) {
                 return Promise.of(HealthCheckResult.healthy(message, details, getTimeout()));

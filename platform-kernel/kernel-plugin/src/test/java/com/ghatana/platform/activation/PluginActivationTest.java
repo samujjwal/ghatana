@@ -56,12 +56,12 @@ class PluginActivationTest extends PluginTestBase {
         @DisplayName("activate transitions plugin from UNLOADED to RUNNING")
         void activateTransitionsPluginToRunning() {
             InMemoryStoragePlugin plugin = new InMemoryStoragePlugin();
-            
+
             assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED);
-            
+
             registry.register(plugin);
             runPromise(() -> registry.initializeAll(context).then(() -> registry.startAll()));
-            
+
             assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING);
         }
 
@@ -82,7 +82,7 @@ class PluginActivationTest extends PluginTestBase {
         void multiplePluginsCanBeActivatedTogether() {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
@@ -146,7 +146,7 @@ class PluginActivationTest extends PluginTestBase {
         void multiplePluginsCanBeDeactivatedTogether() {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
@@ -174,7 +174,7 @@ class PluginActivationTest extends PluginTestBase {
                     true,  // fail during initialization
                     false  // don't fail during start
             );
-            
+
             registry.register(healthyPlugin);
             registry.register(failingPlugin);
 
@@ -196,14 +196,14 @@ class PluginActivationTest extends PluginTestBase {
                     true,  // fail during initialization
                     false  // don't fail during start
             );
-            
+
             registry.register(failingPlugin);
 
             // Should throw during initialization
             assertThatThrownBy(() ->
                     runPromise(() -> registry.initializeAll(context))
             ).isInstanceOf(Exception.class);
-            
+
             // Plugin should be in a defined state (not corrupted)
             assertThat(failingPlugin.getState()).isNotNull();
         }
@@ -215,7 +215,7 @@ class PluginActivationTest extends PluginTestBase {
                     false, // don't fail during init
                     false  // don't fail during start
             );
-            
+
             registry.register(failingPlugin);
 
             runPromise(() -> registry.initializeAll(context).then(() -> registry.startAll()));
@@ -227,7 +227,7 @@ class PluginActivationTest extends PluginTestBase {
             } catch (Exception e) {
                 // May throw, but resources should still be cleaned
             }
-            
+
             // Should end up in a terminal state
             PluginState finalState = failingPlugin.getState();
             assertThat(finalState).isIn(PluginState.STOPPED, PluginState.UNLOADED);
@@ -263,10 +263,10 @@ class PluginActivationTest extends PluginTestBase {
 
             runPromise(() -> registry.initializeAll(context).then(() -> registry.startAll()));
             int allocated = resourcePlugin.resourcesAllocated();
-            
+
             runPromise(() -> registry.stopAll());
             int cleaned = resourcePlugin.resourcesCleaned();
-            
+
             assertThat(cleaned).isGreaterThanOrEqualTo(allocated);
         }
 
@@ -275,7 +275,7 @@ class PluginActivationTest extends PluginTestBase {
         void cleanupOccursWithMultiplePlugins() {
             TestResourceTrackingPlugin plugin1 = new TestResourceTrackingPlugin();
             TestResourceTrackingPlugin plugin2 = new TestResourceTrackingPlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
@@ -305,7 +305,7 @@ class PluginActivationTest extends PluginTestBase {
 
             PluginState state = plugin.getState();
             PluginState stateAgain = plugin.getState();
-            
+
             assertThat(state).isEqualTo(stateAgain).isEqualTo(PluginState.RUNNING);
         }
 
@@ -321,7 +321,7 @@ class PluginActivationTest extends PluginTestBase {
 
             PluginState state = plugin.getState();
             PluginState stateAgain = plugin.getState();
-            
+
             assertThat(state).isEqualTo(stateAgain).isEqualTo(PluginState.STOPPED);
         }
 
@@ -361,13 +361,13 @@ class PluginActivationTest extends PluginTestBase {
         void concurrentActivationOfPluginsSucceeds() throws InterruptedException {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
             CountDownLatch latch = new CountDownLatch(1);
             AtomicBoolean success = new AtomicBoolean(false);
-            
+
             Thread activationThread = new Thread(() -> {
                 try {
                     runPromise(() -> registry.initializeAll(context)
@@ -377,7 +377,7 @@ class PluginActivationTest extends PluginTestBase {
                     latch.countDown();
                 }
             });
-            
+
             activationThread.start();
             latch.await();
 

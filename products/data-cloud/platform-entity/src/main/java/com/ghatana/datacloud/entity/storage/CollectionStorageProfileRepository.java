@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.entity.storage;
 
-import com.ghatana.platform.types.identity.Identifier;
 import io.activej.promise.Promise;
 
 import java.util.List;

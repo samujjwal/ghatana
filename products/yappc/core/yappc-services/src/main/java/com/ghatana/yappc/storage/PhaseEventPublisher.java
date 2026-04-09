@@ -21,11 +21,11 @@ import static java.util.Map.entry;
  * @doc.pattern Publisher
  */
 public class PhaseEventPublisher {
-    
+
     private static final Logger log = LoggerFactory.getLogger(PhaseEventPublisher.class);
-    
+
     private final AepEventPublisher eventPublisher;
-    
+
     /**
      * Constructor with event publisher.
      *
@@ -34,17 +34,17 @@ public class PhaseEventPublisher {
     public PhaseEventPublisher(AepEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
-    
+
     /**
      * Default constructor with in-memory publisher.
      */
     public PhaseEventPublisher() {
         this(new InMemoryEventPublisher());
     }
-    
+
     /**
      * Publishes a phase started event.
-     * 
+     *
      * @param phaseId Phase execution identifier
      * @param phaseType Phase type
      * @param inputSpecRef Reference to input specification
@@ -62,7 +62,7 @@ public class PhaseEventPublisher {
             String correlationId,
             String tenantId,
             String productId) {
-        
+
         Map<String, Object> event = Map.of(
             "event_type", "PhaseStartedEvent",
             "phase_id", phaseId,
@@ -74,15 +74,15 @@ public class PhaseEventPublisher {
             "tenant_id", tenantId,
             "product_id", productId
         );
-        
+
         log.info("Publishing PhaseStartedEvent: {}", phaseType);
-        
+
         return eventPublisher.publish("PhaseStartedEvent", tenantId, event);
     }
-    
+
     /**
      * Publishes a phase completed event.
-     * 
+     *
      * @param phaseId Phase execution identifier
      * @param phaseType Phase type
      * @param inputSpecRef Reference to input specification
@@ -104,7 +104,7 @@ public class PhaseEventPublisher {
             String tenantId,
             String productId,
             Map<String, String> metadata) {
-        
+
         Map<String, Object> event = Map.ofEntries(
             entry("event_type", "PhaseCompletedEvent"),
             entry("phase_id", phaseId),
@@ -118,15 +118,15 @@ public class PhaseEventPublisher {
             entry("product_id", productId),
             entry("metadata", metadata)
         );
-        
+
         log.info("Publishing PhaseCompletedEvent: {}", phaseType);
-        
+
         return eventPublisher.publish("PhaseCompletedEvent", tenantId, event);
     }
-    
+
     /**
      * Publishes a phase failed event.
-     * 
+     *
      * @param phaseId Phase execution identifier
      * @param phaseType Phase type
      * @param errorMessage Error message
@@ -146,7 +146,7 @@ public class PhaseEventPublisher {
             String tenantId,
             String productId,
             Map<String, String> errorDetails) {
-        
+
         Map<String, Object> event = Map.ofEntries(
             entry("event_type", "PhaseFailedEvent"),
             entry("phase_id", phaseId),
@@ -159,15 +159,15 @@ public class PhaseEventPublisher {
             entry("product_id", productId),
             entry("error_details", errorDetails)
         );
-        
+
         log.error("Publishing PhaseFailedEvent: {} - {}", phaseType, errorMessage);
-        
+
         return eventPublisher.publish("PhaseFailedEvent", tenantId, event);
     }
-    
+
     /**
      * Publishes a lifecycle execution event.
-     * 
+     *
      * @param lifecycleId Lifecycle execution identifier
      * @param productId Product identifier
      * @param status Lifecycle status
@@ -181,7 +181,7 @@ public class PhaseEventPublisher {
             String status,
             String tenantId,
             Map<String, String> metadata) {
-        
+
         Map<String, Object> event = Map.of(
             "event_type", "LifecycleExecutionEvent",
             "lifecycle_id", lifecycleId,
@@ -191,9 +191,9 @@ public class PhaseEventPublisher {
             "tenant_id", tenantId,
             "metadata", metadata
         );
-        
+
         log.info("Publishing LifecycleExecutionEvent: {} - {}", lifecycleId, status);
-        
+
         return eventPublisher.publish("LifecycleExecutionEvent", tenantId, event);
     }
 }

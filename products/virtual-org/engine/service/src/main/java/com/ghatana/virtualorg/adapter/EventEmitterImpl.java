@@ -60,33 +60,33 @@ import java.util.function.Consumer;
  * // Setup
  * Eventloop eventloop = Eventloop.getCurrentEventloop();
  * EventEmitterImpl emitter = new EventEmitterImpl(eventloop);
- * 
+ *
  * // Add listener for EventCloud client
  * emitter.addListener(event -> {
  *     eventCloudClient.append(event);
  * });
- * 
+ *
  * // Add listener for metrics
  * emitter.addListener(event -> {
  *     metrics.incrementCounter("events.emitted",
  *         "type", event.getType());
  * });
- * 
+ *
  * // Fire-and-forget emission
  * emitter.emit(taskStartedEvent);
- * 
+ *
  * // Guaranteed delivery
  * emitter.emitAsync(criticalDecisionEvent)
  *     .whenComplete(() -> log.info("Event delivered"))
  *     .whenException(ex -> log.error("Delivery failed", ex));
- * 
+ *
  * // Health check before critical emission
  * if (emitter.isHealthy()) {
  *     emitter.emit(event);
  * } else {
  *     log.warn("Emitter unhealthy, queueing for retry");
  * }
- * 
+ *
  * // Cleanup
  * emitter.removeListener(listener);
  * }</pre>
@@ -104,15 +104,15 @@ import java.util.function.Consumer;
  */
 public class EventEmitterImpl implements EventEmitter {
     private static final Logger log = LoggerFactory.getLogger(EventEmitterImpl.class);
-    
+
     private final Eventloop eventloop;
     private final CopyOnWriteArrayList<Consumer<Event>> listeners = new CopyOnWriteArrayList<>();
     private final AtomicBoolean isHealthy = new AtomicBoolean(true);
-    
+
     public EventEmitterImpl(Eventloop eventloop) {
         this.eventloop = eventloop;
     }
-    
+
     @Override
     public void emit(Event event) {
         // Fire-and-forget: emit asynchronously without blocking
@@ -120,7 +120,7 @@ public class EventEmitterImpl implements EventEmitter {
             log.warn("EventEmitter is not healthy, dropping event: {}", event.getType());
             return;
         }
-        
+
         try {
             eventloop.execute(() -> {
                 try {
@@ -135,14 +135,14 @@ public class EventEmitterImpl implements EventEmitter {
             log.error("Failed to schedule event emission: {}", event.getType(), e);
         }
     }
-    
+
     @Override
     public Promise<Void> emitAsync(Event event) {
         if (!isHealthy.get()) {
             log.warn("EventEmitter is not healthy, rejecting event: {}", event.getType());
             return Promise.ofException(new IllegalStateException("EventEmitter is not healthy"));
         }
-        
+
         return Promise.complete().then(() -> {
             try {
                 notifyListeners(event);
@@ -155,12 +155,12 @@ public class EventEmitterImpl implements EventEmitter {
             }
         });
     }
-    
+
     @Override
     public boolean isHealthy() {
         return isHealthy.get();
     }
-    
+
     /**
      * Registers a listener to receive events.
      * Used for testing and monitoring purposes.
@@ -168,21 +168,21 @@ public class EventEmitterImpl implements EventEmitter {
     public void addListener(Consumer<Event> listener) {
         listeners.add(listener);
     }
-    
+
     /**
      * Removes a previously registered listener.
      */
     public void removeListener(Consumer<Event> listener) {
         listeners.remove(listener);
     }
-    
+
     /**
      * Gets the current listener count.
      */
     public int getListenerCount() {
         return listeners.size();
     }
-    
+
     /**
      * Marks the emitter as unhealthy (e.g., after connection failure).
      */
@@ -190,7 +190,7 @@ public class EventEmitterImpl implements EventEmitter {
         isHealthy.set(false);
         log.warn("EventEmitter marked as unhealthy");
     }
-    
+
     /**
      * Marks the emitter as healthy again.
      */
@@ -198,7 +198,7 @@ public class EventEmitterImpl implements EventEmitter {
         isHealthy.set(true);
         log.info("EventEmitter marked as healthy");
     }
-    
+
     private void notifyListeners(Event event) {
         for (Consumer<Event> listener : listeners) {
             try {

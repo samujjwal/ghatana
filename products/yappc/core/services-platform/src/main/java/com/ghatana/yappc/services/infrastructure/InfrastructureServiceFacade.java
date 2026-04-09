@@ -126,4 +126,3 @@ public class InfrastructureServiceFacade {
         return securityAdapter.scanProject(projectPath);
     }
 }
-

@@ -2,9 +2,7 @@ package com.ghatana.platform.http.server.servlet;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpMethod;
-import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

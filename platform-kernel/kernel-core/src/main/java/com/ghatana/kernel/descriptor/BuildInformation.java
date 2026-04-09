@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Contains build information for kernel components.
@@ -20,7 +19,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class BuildInformation {
-    
+
     private final String buildId;
     private final String commitHash;
     private final String branch;

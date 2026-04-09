@@ -36,7 +36,7 @@ package com.ghatana.virtualorg.framework.hierarchy;
  * @doc.pattern Value Object
  */
 public record Role(String name, Layer layer) {
-    
+
     /**
      * Compact constructor with validation.
      *
@@ -50,7 +50,7 @@ public record Role(String name, Layer layer) {
             throw new IllegalArgumentException("Layer cannot be null");
         }
     }
-    
+
     /**
      * Creates a new Role with validation.
      *
@@ -62,7 +62,7 @@ public record Role(String name, Layer layer) {
     public static Role of(String name, Layer layer) {
         return new Role(name, layer);
     }
-    
+
     /**
      * Gets the display name for this role.
      *
@@ -71,7 +71,7 @@ public record Role(String name, Layer layer) {
     public String getDisplayName() {
         return name + " (" + layer.getDisplayName() + ")";
     }
-    
+
     /**
      * Checks if this role is in a leadership layer.
      *
@@ -80,7 +80,7 @@ public record Role(String name, Layer layer) {
     public boolean isLeadership() {
         return layer.isLeadership();
     }
-    
+
     /**
      * Checks if this role has higher authority than another role.
      *

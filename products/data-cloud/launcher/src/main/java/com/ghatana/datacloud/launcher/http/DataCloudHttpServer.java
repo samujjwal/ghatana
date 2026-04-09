@@ -12,7 +12,6 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,7 +26,6 @@ import com.ghatana.datacloud.analytics.export.EntityExportService;
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
 import com.ghatana.datacloud.analytics.report.ReportService;
 import com.ghatana.datacloud.ai.AIModelManager;
-import com.ghatana.aiplatform.featurestore.Feature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
@@ -43,7 +41,6 @@ import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityExportHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
-import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
 import com.ghatana.datacloud.launcher.http.handlers.PipelineCheckpointHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
@@ -593,11 +590,11 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET, "/health/detail", healthHandler::handleHealthDetail)
             .with(HttpMethod.GET, "/ready", healthHandler::handleReady)
             .with(HttpMethod.GET, "/live", healthHandler::handleLive)
-            
+
             // Info endpoints — delegated to HealthHandler (P7-2b)
             .with(HttpMethod.GET, "/info", healthHandler::handleInfo)
             .with(HttpMethod.GET, "/metrics", healthHandler::handleMetrics)
-            
+
             // Entity endpoints — delegated to EntityCrudHandler
             .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
@@ -614,7 +611,7 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities)
-            
+
             // Event endpoints — delegated to EventHandler
             .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)
             .with(HttpMethod.GET, "/api/v1/events", eventHandler::handleQueryEvents)

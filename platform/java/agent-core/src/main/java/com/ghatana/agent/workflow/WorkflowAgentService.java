@@ -4,7 +4,6 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service for executing workflow agents.

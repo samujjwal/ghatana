@@ -6,7 +6,7 @@ import java.util.Objects;
 
 /**
  * Immutable generic pair for returning two related values.
- * 
+ *
  * Lightweight value object for pairing two related values when creating a full domain class
  * would be overkill. Commonly used for method return values and stream operations.
  *
@@ -22,19 +22,19 @@ public record Pair<F, S>(
         @NotNull F first,
         @NotNull S second
 ) {
-    
+
     public Pair {
         Objects.requireNonNull(first, "first must not be null");
         Objects.requireNonNull(second, "second must not be null");
     }
-    
+
     /**
      * Create a pair of two values.
      */
     public static <F, S> Pair<F, S> of(@NotNull F first, @NotNull S second) {
         return new Pair<>(first, second);
     }
-    
+
     /**
      * Get the first element.
      */
@@ -42,7 +42,7 @@ public record Pair<F, S>(
     public F getFirst() {
         return first;
     }
-    
+
     /**
      * Get the second element.
      */

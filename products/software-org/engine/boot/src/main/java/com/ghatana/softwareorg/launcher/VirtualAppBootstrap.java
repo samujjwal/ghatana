@@ -87,10 +87,10 @@ public class VirtualAppBootstrap {
             // Step 4: Load organization configuration from YAML
             Path orgConfigPath = launcherConfig.getConfigPath()
                 .resolve("organization.yaml");
-            
+
             logger.info("Loading organization config from: {}", orgConfigPath);
             var rawConfig = configLoader.loadSync(orgConfigPath);
-            
+
             // Step 5: Resolve all references (departments, agents, workflows)
             logger.info("Resolving configuration references...");
             resolvedConfig = configLoader.resolveReferencesSync(
@@ -114,7 +114,7 @@ public class VirtualAppBootstrap {
 
             initialized = true;
             logger.info("Virtual-app framework initialized successfully");
-            
+
         } catch (Exception e) {
             logger.error("Failed to initialize virtual-app framework", e);
             throw new RuntimeException("Virtual-app initialization failed", e);
@@ -142,17 +142,17 @@ public class VirtualAppBootstrap {
             // Start the organization (activates all departments and agents)
             logger.info("Starting organization: {}", organization.getName());
             organization.start();
-            
+
             logger.info("Organization started with {} departments",
                 organization.getDepartments().size());
-            logger.info("Total agents: {}", 
+            logger.info("Total agents: {}",
                 organization.getDepartments().stream()
                     .mapToInt(dept -> dept.getAgents().size())
                     .sum());
 
             started = true;
             logger.info("Application started successfully");
-            
+
         } catch (Exception e) {
             logger.error("Failed to start application", e);
             throw new RuntimeException("Application startup failed", e);
@@ -191,7 +191,7 @@ public class VirtualAppBootstrap {
             logger.error("Error stopping application", e);
         }
     }
-    
+
     /**
      * Gets the organization configuration.
      *
@@ -209,7 +209,7 @@ public class VirtualAppBootstrap {
     public VirtualOrgContext getVirtualOrgContext() {
         return virtualOrgContext;
     }
-    
+
     /**
      * Gets the configurable organization instance.
      *
@@ -218,7 +218,7 @@ public class VirtualAppBootstrap {
     public ConfigurableOrganization getOrganization() {
         return organization;
     }
-    
+
     /**
      * Gets the resolved configuration.
      *
@@ -227,7 +227,7 @@ public class VirtualAppBootstrap {
     public ResolvedOrganizationConfig getResolvedConfig() {
         return resolvedConfig;
     }
-    
+
     /**
      * Checks if the framework is initialized.
      *

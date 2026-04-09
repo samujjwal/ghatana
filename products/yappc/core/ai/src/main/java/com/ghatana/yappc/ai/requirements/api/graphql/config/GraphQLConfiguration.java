@@ -2,7 +2,6 @@ package com.ghatana.yappc.ai.requirements.api.graphql.config;
 
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.StaticDataFetcher;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
@@ -13,7 +12,6 @@ import com.ghatana.yappc.ai.requirements.api.graphql.mutation.SuggestionMutation
 import com.ghatana.yappc.ai.requirements.api.graphql.resolver.QueryResolver;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

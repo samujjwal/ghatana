@@ -11,7 +11,6 @@ import com.ghatana.media.common.*;
 import com.ghatana.media.config.VisionConfig;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

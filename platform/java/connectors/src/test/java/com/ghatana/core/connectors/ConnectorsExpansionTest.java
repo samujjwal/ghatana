@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -102,7 +101,7 @@ class ConnectorsExpansionTest extends EventloopTestBase {
         @DisplayName("Multiple types in single registry")
         void multipleTypes() {
             String[] types = {"kafka", "file", "http", "s3", "database"};
-            
+
             for (int t = 0; t < types.length; t++) {
                 for (int i = 0; i < 10; i++) {
                     final int typeIdx = t;
@@ -297,7 +296,7 @@ class ConnectorsExpansionTest extends EventloopTestBase {
                                 if (found.isPresent()) {
                                     readCount.incrementAndGet();
                                 }
-                                
+
                                 if (i % 20 == 0) {
                                     Connector newConn = mockConnector(
                                         "new-" + threadIdx + "-" + i,
@@ -378,7 +377,7 @@ class ConnectorsExpansionTest extends EventloopTestBase {
         @DisplayName("Empty type lookup")
         void emptyTypeLookup() {
             registry.register(mockConnector("conn-1", "kafka"));
-            
+
             Set<Connector> emptyResults = registry.getConnectorsByType("nonexistent-type");
             assertThat(emptyResults).isEmpty();
         }

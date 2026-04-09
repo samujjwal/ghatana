@@ -35,19 +35,19 @@ package com.ghatana.core.database.jdbc;
  *     // Handle database error
  *     if (e.getCause() instanceof SQLException) {
  *         SQLException sqlEx = (SQLException) e.getCause();
- *         logger.error("SQL error code: {}, state: {}", 
+ *         logger.error("SQL error code: {}, state: {}",
  *             sqlEx.getErrorCode(), sqlEx.getSQLState(), e);
  *     }
  *     throw new ServiceException("Failed to retrieve users", e);
  * }
- * 
+ *
  * // Throwing from custom JDBC code
  * try {
  *     connection.prepareStatement(sql).executeQuery();
  * } catch (SQLException e) {
  *     throw new JdbcException("Failed to execute query: " + sql, e);
  * }
- * 
+ *
  * // Error code checking
  * catch (JdbcException e) {
  *     if (e.getCause() instanceof SQLException) {
@@ -88,29 +88,29 @@ package com.ghatana.core.database.jdbc;
  * @doc.pattern Exception
  */
 public class JdbcException extends RuntimeException {
-    
+
     /**
      * Creates a new JdbcException with the specified message.
-     * 
+     *
      * @param message The exception message
      */
     public JdbcException(String message) {
         super(message);
     }
-    
+
     /**
      * Creates a new JdbcException with the specified message and cause.
-     * 
+     *
      * @param message The exception message
      * @param cause The underlying cause
      */
     public JdbcException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     /**
      * Creates a new JdbcException with the specified cause.
-     * 
+     *
      * @param cause The underlying cause
      */
     public JdbcException(Throwable cause) {

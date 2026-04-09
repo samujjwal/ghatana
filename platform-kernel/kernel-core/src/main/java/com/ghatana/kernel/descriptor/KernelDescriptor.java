@@ -18,7 +18,7 @@ import java.util.*;
  * @since 1.0.0
  */
 public final class KernelDescriptor {
-    
+
     // Core identity fields
     private final String descriptorId;
     private final String name;
@@ -26,21 +26,21 @@ public final class KernelDescriptor {
     private final String description;
     private final String owner;
     private final DescriptorType type;
-    
+
     // Classification fields
     private final Set<String> tags;
     private final Map<String, String> metadata;
-    
+
     // Capability and dependency fields
     private final Set<KernelCapability> capabilities;
     private final Set<KernelDependency> dependencies;
     private final Set<KernelCompatibility> compatibility;
-    
+
     // Operational fields
     private final LifecyclePolicy lifecyclePolicy;
     private final ResourceRequirements resourceRequirements;
     private final SecurityPolicy securityPolicy;
-    
+
     // Deployment fields
     private final Set<String> supportedTenants;
     private final Set<String> requiredFeatures;
@@ -48,11 +48,11 @@ public final class KernelDescriptor {
     private final List<ValidationRule> validationRules;
     private final Set<String> complianceRequirements;
     private final AuditPolicy auditPolicy;
-    
+
     // Build information
     private final BuildInformation buildInfo;
     private final DeploymentConfiguration deploymentConfig;
-    
+
     // Timestamps
     private final Instant createdAt;
     private final Instant updatedAt;
@@ -63,7 +63,7 @@ public final class KernelDescriptor {
     private KernelDescriptor(Builder builder) {
         // Validate required fields
         validateRequiredFields(builder);
-        
+
         // Core identity
         this.descriptorId = Objects.requireNonNull(builder.descriptorId, "descriptorId cannot be null");
         this.name = Objects.requireNonNull(builder.name, "name cannot be null");
@@ -71,41 +71,41 @@ public final class KernelDescriptor {
         this.description = builder.description != null ? builder.description : "";
         this.owner = builder.owner != null ? builder.owner : "system";
         this.type = Objects.requireNonNull(builder.type, "type cannot be null");
-        
+
         // Classification (immutable copies)
         this.tags = Collections.unmodifiableSet(new HashSet<>(builder.tags));
         this.metadata = Collections.unmodifiableMap(new HashMap<>(builder.metadata));
-        
+
         // Capabilities and dependencies (immutable copies)
         this.capabilities = Collections.unmodifiableSet(new HashSet<>(builder.capabilities));
         this.dependencies = Collections.unmodifiableSet(new HashSet<>(builder.dependencies));
         this.compatibility = Collections.unmodifiableSet(new HashSet<>(builder.compatibility));
-        
+
         // Operational (use defaults if not specified)
-        this.lifecyclePolicy = builder.lifecyclePolicy != null 
-            ? builder.lifecyclePolicy 
+        this.lifecyclePolicy = builder.lifecyclePolicy != null
+            ? builder.lifecyclePolicy
             : LifecyclePolicy.defaultPolicy();
-        this.resourceRequirements = builder.resourceRequirements != null 
-            ? builder.resourceRequirements 
+        this.resourceRequirements = builder.resourceRequirements != null
+            ? builder.resourceRequirements
             : ResourceRequirements.defaultRequirements();
-        this.securityPolicy = builder.securityPolicy != null 
-            ? builder.securityPolicy 
+        this.securityPolicy = builder.securityPolicy != null
+            ? builder.securityPolicy
             : SecurityPolicy.defaultPolicy();
-        
+
         // Deployment (immutable copies with defaults)
         this.supportedTenants = Collections.unmodifiableSet(new HashSet<>(builder.supportedTenants));
         this.requiredFeatures = Collections.unmodifiableSet(new HashSet<>(builder.requiredFeatures));
         this.optionalFeatures = Collections.unmodifiableSet(new HashSet<>(builder.optionalFeatures));
         this.validationRules = Collections.unmodifiableList(new ArrayList<>(builder.validationRules));
         this.complianceRequirements = Collections.unmodifiableSet(new HashSet<>(builder.complianceRequirements));
-        this.auditPolicy = builder.auditPolicy != null 
-            ? builder.auditPolicy 
+        this.auditPolicy = builder.auditPolicy != null
+            ? builder.auditPolicy
             : AuditPolicy.defaultPolicy();
-        
+
         // Build info and deployment config
         this.buildInfo = builder.buildInfo;
         this.deploymentConfig = builder.deploymentConfig;
-        
+
         // Timestamps
         this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
         this.updatedAt = builder.updatedAt != null ? builder.updatedAt : Instant.now();
@@ -119,27 +119,27 @@ public final class KernelDescriptor {
      */
     private void validateRequiredFields(Builder builder) {
         List<String> errors = new ArrayList<>();
-        
+
         if (builder.descriptorId == null || builder.descriptorId.trim().isEmpty()) {
             errors.add("descriptorId is required and cannot be empty");
         } else if (!builder.descriptorId.matches("^[a-z0-9-]+$")) {
             errors.add("descriptorId must contain only lowercase letters, numbers, and hyphens");
         }
-        
+
         if (builder.name == null || builder.name.trim().isEmpty()) {
             errors.add("name is required and cannot be empty");
         }
-        
+
         if (builder.version == null || builder.version.trim().isEmpty()) {
             errors.add("version is required and cannot be empty");
         } else if (!isValidVersion(builder.version)) {
             errors.add("version must follow semantic versioning (e.g., 1.0.0)");
         }
-        
+
         if (builder.type == null) {
             errors.add("type is required");
         }
-        
+
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException("KernelDescriptor validation failed: " + String.join(", ", errors));
         }
@@ -296,7 +296,7 @@ public final class KernelDescriptor {
         private String name;
         private String version;
         private DescriptorType type;
-        
+
         // Optional fields with defaults
         private String description = "";
         private String owner = "system";

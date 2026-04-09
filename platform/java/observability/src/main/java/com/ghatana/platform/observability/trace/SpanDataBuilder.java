@@ -12,7 +12,7 @@ import java.util.Map;
  * with validation. It automatically calculates duration from start and end times
  * if not explicitly set, and provides default values for optional fields.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Fluent API</b>: Chain method calls for readable span construction</li>
@@ -21,7 +21,7 @@ import java.util.Map;
  *   <li><b>Incremental Tags/Logs</b>: Add tags and logs one at a time or in bulk</li>
  *   <li><b>Validation</b>: Validates required fields and constraints at build time</li>
  * </ul>
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // Basic span (duration auto-calculated)
@@ -64,7 +64,7 @@ import java.util.Map;
  *     .withTag("error.type", "TimeoutException")
  *     .build();
  * }</pre>
- * 
+ *
  * <h2>Required Fields</h2>
  * The following fields MUST be set before calling {@link #build()}:
  * <ul>
@@ -74,7 +74,7 @@ import java.util.Map;
  *   <li>startTime</li>
  *   <li>endTime</li>
  * </ul>
- * 
+ *
  * <h2>Optional Fields (with defaults)</h2>
  * <ul>
  *   <li><b>parentSpanId</b>: null (root span)</li>
@@ -86,14 +86,14 @@ import java.util.Map;
  *   <li><b>tags</b>: Empty map</li>
  *   <li><b>logs</b>: Empty map</li>
  * </ul>
- * 
+ *
  * <h2>Duration Calculation</h2>
  * If {@link #withDurationMs(long)} is called, that value is used. Otherwise,
  * duration is calculated automatically:
  * <pre>{@code
  * durationMs = Duration.between(startTime, endTime).toMillis()
  * }</pre>
- * 
+ *
  * <h2>Validation</h2>
  * Build-time validation ensures:
  * <ul>

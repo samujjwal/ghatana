@@ -27,7 +27,7 @@ class AuthenticationFlowTest {
     void shouldValidateJwtTokensWithRealSigning() {
         String password = "testPassword123";
         String hashed = PasswordHasher.hash(password);
-        
+
         assertThat(hashed).isNotNull();
         assertThat(hashed).startsWith("$sha256$");
     }
@@ -37,9 +37,9 @@ class AuthenticationFlowTest {
     void shouldHandleTokenRefreshFlow() {
         MfaService mfaService = new MfaService();
         String userId = "user-123";
-        
+
         Promise<MfaService.EnrollmentData> enrollment = mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(enrollment.getResult()).isNotNull();
         assertThat(enrollment.getResult().secret()).isNotNull();
     }
@@ -49,10 +49,10 @@ class AuthenticationFlowTest {
     void shouldHandleMultiFactorAuthentication() {
         MfaService mfaService = new MfaService();
         String userId = "user-456";
-        
+
         Promise<MfaService.EnrollmentData> enrollment = mfaService.enrollUser(userId, "Ghatana");
         MfaService.EnrollmentData data = enrollment.getResult();
-        
+
         assertThat(data.backupCodes()).hasSize(10);
         assertThat(data.qrCodeUri()).contains("otpauth://totp");
     }
@@ -62,9 +62,9 @@ class AuthenticationFlowTest {
     void shouldHandleAuthenticationSessionManagement() {
         MfaService mfaService = new MfaService();
         String userId = "user-789";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }
 
@@ -73,10 +73,10 @@ class AuthenticationFlowTest {
     void shouldHandlePasswordResetFlow() {
         String oldPassword = "oldPassword123";
         String newPassword = "newPassword456";
-        
+
         String oldHashed = PasswordHasher.hash(oldPassword);
         String newHashed = PasswordHasher.hash(newPassword);
-        
+
         assertThat(oldHashed).isNotEqualTo(newHashed);
         assertThat(PasswordHasher.verify(oldPassword, oldHashed)).isTrue();
         assertThat(PasswordHasher.verify(newPassword, newHashed)).isTrue();
@@ -87,7 +87,7 @@ class AuthenticationFlowTest {
     void shouldHandleAuthenticationFailuresGracefully() {
         String password = "testPassword123";
         String hashed = PasswordHasher.hash(password);
-        
+
         assertThat(PasswordHasher.verify("wrongPassword", hashed)).isFalse();
     }
 }

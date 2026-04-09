@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -228,7 +227,7 @@ public class WorkspaceService {
      * @return Promise of updated workspace
      */
     public Promise<Workspace> addMember(String workspaceId, String userId, WorkspaceRole role, User requester) {
-        logger.debug("Adding member to workspace: workspace={}, user={}, role={}, requester={}", 
+        logger.debug("Adding member to workspace: workspace={}, user={}, role={}, requester={}",
             workspaceId, userId, role, requester.getUserId());
 
         return getWorkspace(workspaceId, requester)
@@ -269,7 +268,7 @@ public class WorkspaceService {
 
                 return repository.update(updated)
                     .map(ws -> {
-                        logger.info("Member added to workspace: workspace={}, user={}, role={}", 
+                        logger.info("Member added to workspace: workspace={}, user={}, role={}",
                             workspaceId, userId, role);
                         return ws;
                     });
@@ -285,7 +284,7 @@ public class WorkspaceService {
      * @return Promise of updated workspace
      */
     public Promise<Workspace> removeMember(String workspaceId, String userId, User requester) {
-        logger.debug("Removing member from workspace: workspace={}, user={}, requester={}", 
+        logger.debug("Removing member from workspace: workspace={}, user={}, requester={}",
             workspaceId, userId, requester.getUserId());
 
         return getWorkspace(workspaceId, requester)

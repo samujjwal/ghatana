@@ -1,6 +1,5 @@
 package com.ghatana.auth.adapter.jpa;
 
-import com.ghatana.platform.security.port.TokenStore;
 import com.ghatana.platform.domain.auth.ClientId;
 import com.ghatana.platform.domain.auth.Scope;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -20,7 +19,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.DockerClientFactory;
 
 import jakarta.persistence.*;
-import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

@@ -179,4 +179,3 @@ public final class StructuredLogger {
         return false;
     }
 }
-

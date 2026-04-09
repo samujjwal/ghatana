@@ -42,7 +42,7 @@ import io.activej.promise.Promise;
  * HttpServer httpServer = HttpServer.builder(eventloop, HttpsRedirectHandler.create())
  *     .withListenPort(80)
  *     .build();
- * 
+ *
  * httpServer.listen();
  *
  * // 2. Redirect to custom HTTPS port (8443)
@@ -57,12 +57,12 @@ import io.activej.promise.Promise;
  *     .withHttpsConfig(httpsConfig)
  *     .addRoute(HttpMethod.GET, "/api/data", handler)
  *     .build();
- * 
+ *
  * // HTTP redirector on port 80
  * HttpServer httpServer = HttpServer.builder(eventloop, HttpsRedirectHandler.create())
  *     .withListenPort(80)
  *     .build();
- * 
+ *
  * httpsServer.listen();
  * httpServer.listen();
  *
@@ -79,19 +79,19 @@ import io.activej.promise.Promise;
  * // 6. Testing with ephemeral ports
  * @Test
  * void testHttpsRedirect() {
- *     HttpServer redirector = HttpServer.builder(testEventloop, 
+ *     HttpServer redirector = HttpServer.builder(testEventloop,
  *         HttpsRedirectHandler.create(9443))
  *         .withListenPort(9080)
  *         .build();
- *     
+ *
  *     redirector.listen();
- *     
+ *
  *     // Test redirect behavior
  *     HttpRequest request = HttpRequest.get("http://localhost:9080/api/users?page=1");
  *     HttpResponse response = redirector.serve(request).getResult();
- *     
+ *
  *     assertEquals(301, response.getCode());
- *     assertEquals("https://localhost:9443/api/users?page=1", 
+ *     assertEquals("https://localhost:9443/api/users?page=1",
  *         response.getHeader("Location"));
  * }
  * }</pre>
@@ -118,7 +118,7 @@ import io.activej.promise.Promise;
  * - Browsers cache redirect (performance improvement)
  * - Search engines update index (SEO benefit)
  * - Signals long-term policy change
- * 
+ *
  * Considerations:
  * - Hard to undo (browsers cache redirect)
  * - Use 302 Temporary only if HTTPS is temporary
@@ -127,7 +127,7 @@ import io.activej.promise.Promise;
  * <p><b>Location Header Construction</b><br>
  * <pre>
  * https://{host}:{port}{path}{?query}
- * 
+ *
  * Components:
  * - https://          → Force HTTPS protocol
  * - {host}            → Original request Host header
@@ -140,7 +140,7 @@ import io.activej.promise.Promise;
  * <pre>
  * Standard HTTPS (443):
  * http://api.ghatana.com/path → https://api.ghatana.com/path
- * 
+ *
  * Custom HTTPS port (8443):
  * http://api.ghatana.com:8080/path → https://api.ghatana.com:8443/path
  * </pre>
@@ -156,14 +156,14 @@ import io.activej.promise.Promise;
  * // Pattern 1: Single server with dual ports
  * HttpServer httpsServer = createHttpsServer(443);
  * HttpServer httpRedirector = createHttpRedirector(80, 443);
- * 
+ *
  * // Pattern 2: Load balancer handles redirect
  * // (NGINX/HAProxy configured for HTTP→HTTPS redirect)
- * 
+ *
  * // Pattern 3: Container deployment (non-root ports)
  * HttpServer httpsServer = createHttpsServer(8443);
  * HttpServer httpRedirector = createHttpRedirector(8080, 8443);
- * 
+ *
  * // Pattern 4: Cloud provider termination
  * // (ALB/CloudFront handles redirect, app server HTTPS only)
  * }</pre>

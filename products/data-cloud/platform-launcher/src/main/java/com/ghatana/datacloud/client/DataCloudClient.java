@@ -12,13 +12,13 @@ import java.util.UUID;
 
 /**
  * Data-Cloud Client API for embedded library usage.
- * 
+ *
  * <p>
  * Provides a unified interface for accessing Data-Cloud functionality
  * in embedded mode (in-process, no HTTP). Supports all core operations:
  * entities, events, search, and analytics.
  * </p>
- * 
+ *
  * <p>
  * <b>Deployment Modes:</b>
  * </p>
@@ -27,43 +27,43 @@ import java.util.UUID;
  * <li>STANDALONE - Single node with HTTP API</li>
  * <li>DISTRIBUTED - Multi-node cluster</li>
  * </ul>
- * 
+ *
  * <p>
  * <b>Usage Example:</b>
  * </p>
- * 
+ *
  * <pre>{@code
  * // Create embedded client
  * DataCloudClient client = DataCloudClientFactory.embedded(config);
- * 
+ *
  * // Entity operations
  * Entity entity = Entity.builder()
  *         .tenantId("tenant-123")
  *         .collectionName("products")
  *         .data(Map.of("name", "Widget", "price", 99.99))
  *         .build();
- * 
+ *
  * Entity created = client.createEntity("tenant-123", "products",
  *         entity.getData()).get();
- * 
+ *
  * // Query operations
  * QuerySpec query = QuerySpec.builder()
  *         .filter("price > 50")
  *         .limit(10)
  *         .build();
- * 
+ *
  * List<Entity> results = client.queryEntities("tenant-123", "products", query)
  *         .get();
- * 
+ *
  * // Event operations
  * Event event = Event.builder()
  *         .tenantId("tenant-123")
  *         .eventTypeName("purchase")
  *         .payload(Map.of("productId", "prod-123", "amount", 99.99))
  *         .build();
- * 
+ *
  * client.appendEvent("tenant-123", "purchases", event).get();
- * 
+ *
  * // Search operations
  * SearchResults results = client.search("tenant-123",
  *         SearchQuery.builder()
@@ -72,7 +72,7 @@ import java.util.UUID;
  *                 .build())
  *         .get();
  * }</pre>
- * 
+ *
  * @doc.type interface
  * @doc.purpose Unified client API for embedded Data-Cloud usage
  * @doc.layer core
@@ -84,7 +84,7 @@ public interface DataCloudClient {
 
     /**
      * Creates a new entity.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param data           entity data
@@ -94,7 +94,7 @@ public interface DataCloudClient {
 
     /**
      * Gets an entity by ID.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param entityId       entity ID
@@ -104,7 +104,7 @@ public interface DataCloudClient {
 
     /**
      * Updates an entity.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param entityId       entity ID
@@ -116,7 +116,7 @@ public interface DataCloudClient {
 
     /**
      * Deletes an entity.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param entityId       entity ID
@@ -126,7 +126,7 @@ public interface DataCloudClient {
 
     /**
      * Queries entities.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param query          query specification
@@ -136,7 +136,7 @@ public interface DataCloudClient {
 
     /**
      * Counts entities matching query.
-     * 
+     *
      * @param tenantId         tenant identifier
      * @param collectionName   collection name
      * @param filterExpression optional filter expression
@@ -146,7 +146,7 @@ public interface DataCloudClient {
 
     /**
      * Bulk creates entities.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param entities       list of entities
@@ -157,7 +157,7 @@ public interface DataCloudClient {
 
     /**
      * Bulk deletes entities.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param entityIds      list of entity IDs
@@ -169,7 +169,7 @@ public interface DataCloudClient {
 
     /**
      * Appends an event to a stream.
-     * 
+     *
      * @param tenantId   tenant identifier
      * @param streamName stream name
      * @param event      event to append
@@ -179,7 +179,7 @@ public interface DataCloudClient {
 
     /**
      * Reads events from a stream.
-     * 
+     *
      * @param tenantId   tenant identifier
      * @param streamName stream name
      * @param fromOffset starting offset
@@ -191,7 +191,7 @@ public interface DataCloudClient {
 
     /**
      * Reads events by time range.
-     * 
+     *
      * @param tenantId   tenant identifier
      * @param streamName stream name
      * @param startTime  start time (ISO-8601)
@@ -203,7 +203,7 @@ public interface DataCloudClient {
 
     /**
      * Gets the latest offset in a stream.
-     * 
+     *
      * @param tenantId   tenant identifier
      * @param streamName stream name
      * @return promise of latest offset
@@ -212,7 +212,7 @@ public interface DataCloudClient {
 
     /**
      * Counts events in a stream.
-     * 
+     *
      * @param tenantId   tenant identifier
      * @param streamName stream name
      * @return promise of event count
@@ -223,7 +223,7 @@ public interface DataCloudClient {
 
     /**
      * Searches entities.
-     * 
+     *
      * @param tenantId tenant identifier
      * @param query    search query
      * @return promise of search results
@@ -232,7 +232,7 @@ public interface DataCloudClient {
 
     /**
      * Performs full-text search.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param queryText      search text
@@ -244,7 +244,7 @@ public interface DataCloudClient {
 
     /**
      * Gets search facets.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @param fieldName      field to facet on
@@ -256,7 +256,7 @@ public interface DataCloudClient {
 
     /**
      * Gets quality metrics for a collection.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @return promise of quality metrics
@@ -265,7 +265,7 @@ public interface DataCloudClient {
 
     /**
      * Gets cost analysis.
-     * 
+     *
      * @param tenantId tenant identifier
      * @param daysBack number of days to analyze
      * @return promise of cost analysis
@@ -274,7 +274,7 @@ public interface DataCloudClient {
 
     /**
      * Gets data lineage.
-     * 
+     *
      * @param tenantId       tenant identifier
      * @param collectionName collection name
      * @return promise of lineage graph
@@ -285,7 +285,7 @@ public interface DataCloudClient {
 
     /**
      * Processes a record through AI aspects.
-     * 
+     *
      * @param tenantId tenant identifier
      * @param record   data record
      * @return promise of processing result
@@ -294,7 +294,7 @@ public interface DataCloudClient {
 
     /**
      * Gets AI model info.
-     * 
+     *
      * @param tenantId  tenant identifier
      * @param modelName model name
      * @return promise of model info
@@ -303,7 +303,7 @@ public interface DataCloudClient {
 
     /**
      * Gets feature values for entity.
-     * 
+     *
      * @param tenantId     tenant identifier
      * @param entityId     entity ID
      * @param featureNames list of feature names
@@ -316,7 +316,7 @@ public interface DataCloudClient {
 
     /**
      * Health check.
-     * 
+     *
      * @return promise of health status
      */
     Promise<HealthStatus> healthCheck();
@@ -332,7 +332,7 @@ public interface DataCloudClient {
 
     /**
      * Gets system metrics.
-     * 
+     *
      * @return promise of metrics
      */
     Promise<SystemMetrics> getMetrics();

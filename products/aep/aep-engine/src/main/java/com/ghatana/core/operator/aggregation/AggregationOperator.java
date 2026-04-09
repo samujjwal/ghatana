@@ -18,7 +18,6 @@ import com.ghatana.core.state.StateStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.BiFunction;
 
 /**
  * Operator that aggregates events within windows using configurable strategies.
@@ -30,7 +29,7 @@ import java.util.function.BiFunction;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Count aggregation
  * AggregationOperator countOp = new AggregationOperator(

@@ -5,7 +5,6 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.UnifiedOperator;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
-import com.ghatana.core.pipeline.PipelineBuilder;
 import com.ghatana.core.pipeline.PipelineExecutionContext;
 import com.ghatana.core.pipeline.PipelineExecutionEngine;
 import com.ghatana.core.pipeline.PipelineExecutionResult;
@@ -47,7 +46,7 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
     void setUp() {
         engine = new PipelineExecutionEngine();
         catalog = new UnifiedOperatorCatalog();
-        
+
         OperatorId id = OperatorId.of("test", "simulation", "load-op", "1.0");
         catalog.register(new DummyOperator(id, executor));
     }
@@ -56,7 +55,7 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
     void shouldSimulateHighVolumeExecutionUnderLoad() {
         // GIVEN
         int simulatedLoad = 5_000;
-        
+
         Pipeline pipeline = Pipeline.builder("load-test-pipeline", "1.0.0")
                 .name("Test Pipeline")
                 .stage("stage1", OperatorId.of("test", "simulation", "load-op", "1.0"))
@@ -91,16 +90,16 @@ class PipelineExecutionSimulationTest extends EventloopTestBase {
         // THEN
         assertThat(results).hasSize(simulatedLoad);
         assertThat(results).allMatch(PipelineExecutionResult::isSuccess);
-        
+
         // Assert all events passed through 2 stages and resulted in final event output
         assertThat(results.get(0).outputEvents()).hasSize(1);
     }
-    
+
     // Using a minimal operator to test the engine routing without Mockito overhead
     private static class DummyOperator implements UnifiedOperator {
         private final OperatorId id;
         private final ExecutorService sharedExecutor;
-        
+
         DummyOperator(OperatorId id, ExecutorService executor) {
             this.id = id;
             this.sharedExecutor = executor;

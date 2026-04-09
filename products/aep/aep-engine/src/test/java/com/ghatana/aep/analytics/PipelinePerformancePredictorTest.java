@@ -115,6 +115,3 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
         assertThat(result.forecastValues()[2]).isGreaterThan(result.forecastValues()[0]);
     }
 }
-
-
-

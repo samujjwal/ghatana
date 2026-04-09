@@ -17,47 +17,47 @@ public final class AgentProto {
   }
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_VirtualOrgAgentProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_VirtualOrgAgentProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_AgentStateProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_AgentStateProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_AgentPerformanceProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_AgentPerformanceProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_ParametersEntry_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_ParametersEntry_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_TaskResponseProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_TaskResponseProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_AgentMetricsProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_AgentMetricsProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_ToolProto_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_ToolProto_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
     internal_static_com_ghatana_virtualorg_v1_ToolProto_ParametersEntry_descriptor;
-  static final 
+  static final
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_com_ghatana_virtualorg_v1_ToolProto_ParametersEntry_fieldAccessorTable;
 

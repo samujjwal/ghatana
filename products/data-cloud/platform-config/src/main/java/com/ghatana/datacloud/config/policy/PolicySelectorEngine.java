@@ -14,7 +14,6 @@ import com.ghatana.datacloud.config.model.CompiledPolicyConfig.OperationTrigger;
 import com.ghatana.datacloud.config.model.CompiledPolicyConfig.PolicyType;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

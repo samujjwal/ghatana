@@ -12,7 +12,7 @@ package com.ghatana.auth.exception;
  * if (token.isExpired()) {
  *     throw new ExpiredTokenException("Access token expired");
  * }
- * 
+ *
  * // In HTTP adapter
  * promise.whenException(ExpiredTokenException.class, ex -> {
  *     return ResponseBuilder.unauthorized()
@@ -35,7 +35,7 @@ package com.ghatana.auth.exception;
  * @doc.pattern Exception
  */
 public class ExpiredTokenException extends AuthenticationException {
-    
+
     /**
      * Create exception with message.
      *

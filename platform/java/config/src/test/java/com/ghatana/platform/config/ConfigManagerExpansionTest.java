@@ -8,8 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +48,7 @@ class ConfigManagerExpansionTest {
 
             Optional<String> value = manager.getString("key1");
             assertThat(value).hasValue("value-from-1"); // First source wins
-            
+
             Optional<String> value2 = manager.getString("key2");
             assertThat(value2).hasValue("value-2"); // Falls through to second source
         }
@@ -458,7 +456,7 @@ class ConfigManagerExpansionTest {
                     .addSource(createMockSource(Map.of("key", "value")));
 
             ConfigSource nonExistent = createMockSource(Map.of());
-            
+
             assertThatNoException().isThrownBy(() -> manager.removeSource(nonExistent));
             assertThat(manager.getSources()).hasSize(1);
         }

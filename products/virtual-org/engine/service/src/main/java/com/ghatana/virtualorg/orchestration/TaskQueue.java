@@ -51,16 +51,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * TaskQueue queue = new TaskQueue(100); // max 100 tasks per role
- * 
+ *
  * // Enqueue task when no agents available
  * TaskProto task = TaskProto.newBuilder()
  *     .setTaskId("task-456")
  *     .setType("CODE_REVIEW")
  *     .build();
- * 
+ *
  * queue.enqueue(task, AgentRoleProto.AGENT_ROLE_SENIOR_ENGINEER)
  *     .whenComplete(() -> log.info("Task queued"));
- * 
+ *
  * // Dequeue when agent becomes available
  * Optional<TaskProto> nextTask = queue.dequeue(AgentRoleProto.AGENT_ROLE_SENIOR_ENGINEER);
  * nextTask.ifPresent(t -> dispatcher.dispatch(t));

@@ -36,13 +36,13 @@ import java.util.function.Function;
  * RedisOperations ops = new RedisOperations(
  *     jedisPool, mapper, "tenant:acme", Duration.ofMinutes(10)
  * );
- * 
+ *
  * // Execute Redis operation with automatic connection cleanup
  * String value = ops.execute(
  *     jedis -> jedis.get(ops.namespaceKey("user:123")),
  *     "get"
  * );
- * 
+ *
  * // Serialize/deserialize JSON
  * String json = ops.toJson(user);
  * User deserialized = ops.fromJson(json, User.class);

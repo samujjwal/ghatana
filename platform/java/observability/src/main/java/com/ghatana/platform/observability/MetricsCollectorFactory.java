@@ -47,7 +47,7 @@ import io.micrometer.core.instrument.MeterRegistry;
  * @doc.pattern Factory
  */
 public final class MetricsCollectorFactory {
-    
+
     /**
      * Private constructor to prevent instantiation.
      *
@@ -56,7 +56,7 @@ public final class MetricsCollectorFactory {
     private MetricsCollectorFactory() {
         // Utility class
     }
-    
+
     /**
      * Creates a MetricsCollector with the provided MeterRegistry.
      *
@@ -72,7 +72,7 @@ public final class MetricsCollectorFactory {
         }
         return new SimpleMetricsCollector(registry);
     }
-    
+
     /**
      * Creates a no-op MetricsCollector for testing or disabled metrics.
      *

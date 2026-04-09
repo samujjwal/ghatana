@@ -1,9 +1,9 @@
 /**
  * Reusable Proto to POJO generation configuration
- * 
+ *
  * Apply this script to any proto contract module to enable POJO generation:
  *   apply from: rootProject.file('gradle/proto-pojo-generation.gradle')
- * 
+ *
  * This script:
  * 1. Configures dependencies for JSON Schema and POJO generation
  * 2. Sets up Proto → JSON Schema → POJO generation pipeline
@@ -23,7 +23,7 @@ dependencies {
     // JSON Schema to POJO and related dependencies
     implementation "org.jsonschema2pojo:jsonschema2pojo-core:1.2.2"
     implementation "com.google.code.findbugs:jsr305:3.0.2"
-    
+
     // Schema generation dependencies
     schemaGen "org.jsonschema2pojo:jsonschema2pojo-core:1.2.2"
     schemaGen "com.sun.codemodel:codemodel:2.6"
@@ -82,7 +82,7 @@ tasks.register('createDescriptorsDir') {
 // Task: Compile JSON Schema generator
 task compileJsonSchemaGen(type: JavaCompile) {
     description = 'Compile the Proto→JSON Schema generator separately to avoid cycles'
-    source = fileTree(dir: "${rootProject.projectDir}/contracts/proto/src/main/java", 
+    source = fileTree(dir: "${rootProject.projectDir}/contracts/proto/src/main/java",
                      include: 'com/ghatana/contracts/schema/ProtoToJsonSchemaGenerator.java')
     classpath = configurations.jsonSchemaGen
     destinationDirectory = file("$buildDir/jsonSchemaGen-classes")
@@ -110,7 +110,7 @@ tasks.register('generateDescriptorSetFile') {
         // Find all generated descriptor files
         def descriptorDir = file("${buildDir}/descriptors")
         def descriptorFiles = descriptorDir.listFiles()?.findAll { it.name.endsWith('.desc') && it.name != 'descriptor_set.desc' }
-        
+
         if (descriptorFiles == null || descriptorFiles.isEmpty()) {
             logger.warn("No descriptor files were generated. Skipping descriptor set creation.")
             return
@@ -118,7 +118,7 @@ tasks.register('generateDescriptorSetFile') {
 
         // Use the first descriptor file found
         def descriptorFile = descriptorFiles[0]
-        
+
         if (commonDescriptorFile.exists()) {
             commonDescriptorFile.delete()
         }
@@ -213,7 +213,7 @@ task generateJsonSchema2Pojo(type: JavaExec) {
 // Ensure POJO generation happens before Java compilation
 tasks.named('compileJava').configure {
     dependsOn 'generateJsonSchema2Pojo'
-    
+
     // Exclude pojo sources from compilation if they depend on proto-generated classes
     // (to avoid circular dependency). Consumers of the schemas can include them separately.
     exclude 'com/ghatana/contracts/**/*Pojo.java'

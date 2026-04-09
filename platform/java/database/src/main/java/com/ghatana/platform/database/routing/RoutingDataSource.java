@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * transaction context. Read-only transactions are load-balanced across available replicas
  * using round-robin; write transactions always use the primary. Includes circuit breaker
  * pattern to handle replica failures.
- * 
+ *
  * @doc.type class
  * @doc.purpose DataSource router for read/write splitting with replica load-balancing
  * @doc.layer core
@@ -45,11 +45,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     "replica-1", createReplicaDataSource("replica-1"),
  *     "replica-2", createReplicaDataSource("replica-2")
  * );
- * 
+ *
  * RoutingDataSource routingDS = new RoutingDataSource(
  *     primary, replicas, 60_000 // 1 minute circuit breaker timeout
  * );
- * 
+ *
  * // Set read-only context (typically done by TransactionManager)
  * RoutingDataSource.setReadOnly(true);
  * try (Connection conn = routingDS.getConnection()) {
@@ -58,13 +58,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * } finally {
  *     RoutingDataSource.clearReadOnly();
  * }
- * 
+ *
  * // Write transaction (no need to set context)
  * try (Connection conn = routingDS.getConnection()) {
  *     // This connection comes from primary
  *     executeWriteQuery(conn);
  * }
- * 
+ *
  * // Circuit breaker
  * routingDS.markReplicaUnavailable("replica-1"); // Manual circuit open
  * // After timeout, replica-1 will be retried automatically
@@ -102,107 +102,107 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 1.0.0
  */
 public class RoutingDataSource implements DataSource {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(RoutingDataSource.class);
-    
+
     // Transaction context for determining read/write intent
     private static final ThreadLocal<Boolean> READ_ONLY_CONTEXT = ThreadLocal.withInitial(() -> Boolean.FALSE);
-    
+
     // Data sources
     private final DataSource primaryDataSource;
     private final Map<String, DataSource> replicaDataSources = new ConcurrentHashMap<>();
     private final AtomicInteger nextReplicaIndex = new AtomicInteger(0);
-    
+
     // Circuit breaker state
     private final Map<String, AtomicBoolean> replicaAvailability = new ConcurrentHashMap<>();
     private final Map<String, Long> replicaFailureTimestamps = new ConcurrentHashMap<>();
     private final long circuitBreakerResetTimeoutMs;
-    
+
     /**
      * Create a new RoutingDataSource with a primary and replicas.
      */
-    public RoutingDataSource(DataSource primaryDataSource, Map<String, DataSource> replicaDataSources, 
+    public RoutingDataSource(DataSource primaryDataSource, Map<String, DataSource> replicaDataSources,
                           long circuitBreakerResetTimeoutMs) {
         this.primaryDataSource = primaryDataSource;
-        
+
         if (replicaDataSources != null) {
             this.replicaDataSources.putAll(replicaDataSources);
-            
+
             // Initialize circuit breaker state
             replicaDataSources.keySet().forEach(name -> {
                 replicaAvailability.put(name, new AtomicBoolean(true));
                 replicaFailureTimestamps.put(name, 0L);
             });
         }
-        
+
         this.circuitBreakerResetTimeoutMs = circuitBreakerResetTimeoutMs;
-        
+
         logger.info("RoutingDataSource initialized with primary and {} replicas", this.replicaDataSources.size());
     }
-    
+
     /**
      * Create a new RoutingDataSource with a primary and replicas.
      */
     public RoutingDataSource(DataSource primaryDataSource, Map<String, DataSource> replicaDataSources) {
         this(primaryDataSource, replicaDataSources, 60000); // Default 1 minute timeout
     }
-    
+
     /**
      * Set the current thread's transaction context to read-only.
      */
     public static void setReadOnly(boolean readOnly) {
         READ_ONLY_CONTEXT.set(readOnly);
     }
-    
+
     /**
      * Clear the current thread's transaction context.
      */
     public static void clearReadOnly() {
         READ_ONLY_CONTEXT.remove();
     }
-    
+
     /**
      * Check if the current thread's transaction context is read-only.
      */
     public static boolean isReadOnly() {
         return READ_ONLY_CONTEXT.get();
     }
-    
+
     @Override
     public Connection getConnection() throws SQLException {
         return determineTargetDataSource().getConnection();
     }
-    
+
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
         return determineTargetDataSource().getConnection(username, password);
     }
-    
+
     @Override
     public PrintWriter getLogWriter() throws SQLException {
         return primaryDataSource.getLogWriter();
     }
-    
+
     @Override
     public void setLogWriter(PrintWriter out) throws SQLException {
         primaryDataSource.setLogWriter(out);
     }
-    
+
     @Override
     public void setLoginTimeout(int seconds) throws SQLException {
         primaryDataSource.setLoginTimeout(seconds);
     }
-    
+
     @Override
     public int getLoginTimeout() throws SQLException {
         return primaryDataSource.getLoginTimeout();
     }
-    
+
     @Override
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return primaryDataSource.getParentLogger();
     }
-    
+
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
         if (iface.isInstance(this)) {
@@ -210,12 +210,12 @@ public class RoutingDataSource implements DataSource {
         }
         return primaryDataSource.unwrap(iface);
     }
-    
+
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return iface.isInstance(this) || primaryDataSource.isWrapperFor(iface);
     }
-    
+
     /**
      * Determine the target data source based on read/write context.
      */
@@ -225,7 +225,7 @@ public class RoutingDataSource implements DataSource {
         }
         return primaryDataSource;
     }
-    
+
     /**
      * Determine the replica data source to use.
      */
@@ -238,22 +238,22 @@ public class RoutingDataSource implements DataSource {
                 availableReplicas.put(name, dataSource);
             }
         });
-        
+
         // If no replicas are available, use primary
         if (availableReplicas.isEmpty()) {
             logger.warn("No replica data sources available, using primary");
             return primaryDataSource;
         }
-        
+
         // Round-robin selection among available replicas
         String[] replicaNames = availableReplicas.keySet().toArray(new String[0]);
         int index = nextReplicaIndex.getAndIncrement() % replicaNames.length;
         String selectedReplica = replicaNames[index];
-        
+
         logger.debug("Selected replica: {}", selectedReplica);
         return availableReplicas.get(selectedReplica);
     }
-    
+
     /**
      * Check if a replica is available.
      */
@@ -262,7 +262,7 @@ public class RoutingDataSource implements DataSource {
         if (available.get()) {
             return true;
         }
-        
+
         // Check if circuit breaker timeout has elapsed
         long failureTimestamp = replicaFailureTimestamps.get(name);
         long now = System.currentTimeMillis();
@@ -272,10 +272,10 @@ public class RoutingDataSource implements DataSource {
             logger.info("Circuit breaker reset for replica: {}", name);
             return true;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Mark a replica as unavailable.
      */
@@ -286,7 +286,7 @@ public class RoutingDataSource implements DataSource {
             logger.warn("Marked replica as unavailable: {}", name);
         }
     }
-    
+
     /**
      * Mark a replica as available.
      */
@@ -296,21 +296,21 @@ public class RoutingDataSource implements DataSource {
             logger.info("Marked replica as available: {}", name);
         }
     }
-    
+
     /**
      * Get the primary data source.
      */
     public DataSource getPrimaryDataSource() {
         return primaryDataSource;
     }
-    
+
     /**
      * Get the replica data sources.
      */
     public Map<String, DataSource> getReplicaDataSources() {
         return new HashMap<>(replicaDataSources);
     }
-    
+
     /**
      * Get the availability status of all replicas.
      */

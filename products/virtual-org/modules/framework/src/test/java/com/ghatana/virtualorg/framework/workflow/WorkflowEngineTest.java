@@ -14,10 +14,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("Workflow Engine Tests")
 class WorkflowEngineTest {
-    
+
     private WorkflowEngine engine;
     private WorkflowDefinition definition;
-    
+
     @BeforeEach
     void setup() {
         engine = new WorkflowEngine();
@@ -30,7 +30,7 @@ class WorkflowEngineTest {
             .addStep(WorkflowDefinition.WorkflowStep.of("step2", "Second step", "Senior Engineer"))
             .build();
     }
-    
+
     @Test
     @DisplayName("Create workflow engine")
     void testCreateEngine() {
@@ -38,7 +38,7 @@ class WorkflowEngineTest {
         WorkflowEngine.ExecutionMetrics metrics = engine.getMetrics();
         assertEquals(0, metrics.getTotalExecutions());
     }
-    
+
     @Test
     @DisplayName("Execute workflow")
     void testExecuteWorkflow() {
@@ -47,7 +47,7 @@ class WorkflowEngineTest {
         assertEquals("RUNNING", execution.getStatus());
         assertEquals(0, execution.getCurrentStepIndex());
     }
-    
+
     @Test
     @DisplayName("Get execution by ID")
     void testGetExecution() {
@@ -56,7 +56,7 @@ class WorkflowEngineTest {
         assertNotNull(retrieved);
         assertEquals(execution.getId(), retrieved.getId());
     }
-    
+
     @Test
     @DisplayName("Mark execution as completed")
     void testMarkCompleted() {
@@ -65,7 +65,7 @@ class WorkflowEngineTest {
         assertEquals("COMPLETED", execution.getStatus());
         assertNotNull(execution.getCompletedAt());
     }
-    
+
     @Test
     @DisplayName("Mark execution as failed")
     void testMarkFailed() {
@@ -74,38 +74,38 @@ class WorkflowEngineTest {
         assertEquals("FAILED", execution.getStatus());
         assertEquals("Test failure", execution.getFailureReason());
     }
-    
+
     @Test
     @DisplayName("Get execution metrics")
     void testGetMetrics() {
         engine.execute(definition, java.util.Map.of());
         engine.execute(definition, java.util.Map.of());
-        
+
         WorkflowEngine.ExecutionMetrics metrics = engine.getMetrics();
         assertEquals(2, metrics.getTotalExecutions());
         assertEquals(2, metrics.getActiveExecutions());
     }
-    
+
     @Test
     @DisplayName("Advance workflow step")
     void testAdvanceStep() {
         WorkflowEngine.WorkflowExecution execution = engine.execute(definition, java.util.Map.of());
         assertEquals(0, execution.getCurrentStepIndex());
-        
+
         execution.advanceStep();
         assertEquals(1, execution.getCurrentStepIndex());
-        
+
         execution.advanceStep();
         assertEquals(1, execution.getCurrentStepIndex()); // Should not exceed max
     }
-    
+
     @Test
     @DisplayName("Calculate execution duration")
     void testExecutionDuration() throws InterruptedException {
         WorkflowEngine.WorkflowExecution execution = engine.execute(definition, java.util.Map.of());
         Thread.sleep(100);
         engine.markCompleted(execution.getId());
-        
+
         long duration = execution.getDurationMs();
         assertTrue(duration >= 100);
     }

@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 
 /**
  * Main service facade for YAPPC Knowledge Graph functionality.
- * 
+ *
  * <p>Wraps the Data-Cloud Knowledge Graph plugin with YAPPC-specific
  * business logic, validation, and integration patterns.
- * 
+ *
  * <p><b>Responsibilities:</b>
  * <ul>
  *   <li>YAPPC-specific node and edge creation with validation</li>
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  *   <li>Impact analysis for changes</li>
  *   <li>Workspace and project graph management</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose YAPPC knowledge graph service facade
  * @doc.layer service
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class YAPPCGraphService {
-    
+
     private final KnowledgeGraphPlugin graphPlugin;
     private final YAPPCGraphMapper mapper;
     private final YAPPCGraphValidator validator;
@@ -54,7 +54,7 @@ public class YAPPCGraphService {
         private final @Nullable KGEmbeddingService embeddingService;
         private final @Nullable KGSemanticSearchService semanticSearchService;
         private final @Nullable KGQueryService queryService;
-    
+
     public YAPPCGraphService(
             KnowledgeGraphPlugin graphPlugin,
             YAPPCGraphMapper mapper,
@@ -101,7 +101,7 @@ public class YAPPCGraphService {
                 this.queryService = queryService;
         log.info("YAPPCGraphService initialized");
     }
-    
+
     /**
      * Creates a YAPPC-specific node with validation.
      */
@@ -129,7 +129,7 @@ public class YAPPCGraphService {
 
                 return published.then(savedNode -> embeddingService.indexNode(savedNode).map(ignored -> savedNode));
     }
-    
+
     /**
      * Finds code dependencies for a component.
      */
@@ -142,19 +142,19 @@ public class YAPPCGraphService {
                                         tenantId,
                                         Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"));
                 }
-        
+
         GraphQuery query = GraphQuery.builder()
                 .sourceNodeId(componentId)
                 .relationshipTypes(Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"))
                 .tenantId(tenantId)
                 .build();
-        
+
         return graphPlugin.queryEdges(query)
                 .map(edges -> edges.stream()
                         .map(mapper::fromDataCloudEdge)
                         .collect(Collectors.toList()));
     }
-    
+
     /**
      * Analyzes the impact of changing a component.
      */
@@ -170,13 +170,13 @@ public class YAPPCGraphService {
                             generateImpactRecommendations(affectedNodes)
                     ));
         }
-        
+
         return graphPlugin.getNeighbors(componentId, 5, tenantId)
                 .map(neighbors -> {
                     List<YAPPCGraphNode> affectedNodes = neighbors.stream()
                             .map(mapper::fromDataCloudNode)
                             .collect(Collectors.toList());
-                    
+
                     return new YAPPCImpactAnalysis(
                             componentId,
                             affectedNodes,
@@ -185,7 +185,7 @@ public class YAPPCGraphService {
                     );
                 });
     }
-    
+
     /**
      * Finds all components of a specific type.
      */
@@ -195,13 +195,13 @@ public class YAPPCGraphService {
                 if (nodeRepository != null) {
                         return nodeRepository.findNodesByType(type, tenantId, 1000);
                 }
-        
+
         GraphQuery query = GraphQuery.builder()
                 .nodeTypes(Set.of(type))
                 .tenantId(tenantId)
                 .limit(1000)
                 .build();
-        
+
         return graphPlugin.queryNodes(query)
                 .map(nodes -> nodes.stream()
                         .map(mapper::fromDataCloudNode)
@@ -218,7 +218,7 @@ public class YAPPCGraphService {
                 }
                 return semanticSearchService.findSimilarNodes(query, tenantId, limit, minSimilarity);
         }
-    
+
     /**
      * Creates a code relationship between components.
      */
@@ -227,9 +227,9 @@ public class YAPPCGraphService {
             String targetId,
             String relationshipType,
             String tenantId) {
-        
+
         log.debug("Creating code relationship: {} -> {} ({})", sourceId, targetId, relationshipType);
-        
+
         GraphEdge edge = GraphEdge.builder()
                 .id(generateEdgeId(sourceId, targetId, relationshipType))
                 .sourceNodeId(sourceId)
@@ -267,7 +267,7 @@ public class YAPPCGraphService {
         return persisted.then(savedEdge -> graphPlugin.createEdge(edge)
                 .map(mapper::fromDataCloudEdge));
     }
-    
+
     /**
      * Finds the shortest dependency path between two components.
      */
@@ -275,27 +275,27 @@ public class YAPPCGraphService {
             String sourceId,
             String targetId,
             String tenantId) {
-        
+
         log.debug("Finding dependency path: {} -> {}", sourceId, targetId);
 
         if (queryService != null) {
             return queryService.findPaths(sourceId, targetId, tenantId)
                     .map(paths -> paths.isEmpty() ? List.of() : paths.getFirst());
         }
-        
+
         return graphPlugin.findShortestPath(sourceId, targetId, tenantId)
                 .map(path -> path.stream()
                         .map(mapper::fromDataCloudNode)
                         .collect(Collectors.toList()));
     }
-    
+
     /**
      * Gets all dependencies for a workspace.
      */
     public Promise<Map<String, List<YAPPCGraphEdge>>> getWorkspaceDependencies(
             String workspaceId,
             String tenantId) {
-        
+
         log.debug("Getting workspace dependencies: {}", workspaceId);
 
         if (edgeRepository != null) {
@@ -306,14 +306,14 @@ public class YAPPCGraphService {
                     .map(edges -> edges.stream()
                             .collect(Collectors.groupingBy(edge -> edge.relationshipType().name())));
         }
-        
+
         GraphQuery query = GraphQuery.builder()
                 .propertyFilters(Map.of("workspaceId", workspaceId))
                 .relationshipTypes(Set.of("DEPENDS_ON", "USES", "CALLS"))
                 .tenantId(tenantId)
                 .limit(10000)
                 .build();
-        
+
         return graphPlugin.queryEdges(query)
                 .map(edges -> {
                     Map<String, List<YAPPCGraphEdge>> grouped = edges.stream()
@@ -322,49 +322,49 @@ public class YAPPCGraphService {
                     return grouped;
                 });
     }
-    
+
     // Private helper methods
-    
+
     private double calculateImpactScore(List<YAPPCGraphNode> affectedNodes) {
         if (affectedNodes.isEmpty()) {
             return 0.0;
         }
-        
+
         // Simple impact score based on number of affected nodes and their types
         long criticalNodes = affectedNodes.stream()
                 .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.SERVICE
                         || node.type() == YAPPCGraphNode.YAPPCNodeType.API)
                 .count();
-        
+
         return Math.min(1.0, (affectedNodes.size() * 0.1) + (criticalNodes * 0.2));
     }
-    
+
     private List<String> generateImpactRecommendations(List<YAPPCGraphNode> affectedNodes) {
         List<String> recommendations = new java.util.ArrayList<>();
-        
+
         if (affectedNodes.size() > 10) {
             recommendations.add("High impact change - consider breaking into smaller changes");
         }
-        
+
         long serviceNodes = affectedNodes.stream()
                 .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.SERVICE)
                 .count();
-        
+
         if (serviceNodes > 0) {
             recommendations.add("Update service contracts and API documentation");
         }
-        
+
         long testNodes = affectedNodes.stream()
                 .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.TEST)
                 .count();
-        
+
         if (testNodes > 0) {
             recommendations.add("Review and update affected tests");
         }
-        
+
         return recommendations;
     }
-    
+
     private String generateEdgeId(String sourceId, String targetId, String type) {
         return String.format("%s_%s_%s", sourceId, targetId, type);
     }

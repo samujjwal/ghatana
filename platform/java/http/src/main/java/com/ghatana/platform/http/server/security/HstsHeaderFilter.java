@@ -75,7 +75,7 @@ import io.activej.http.HttpResponse;
  * <p><b>HSTS Header Format</b><br>
  * <pre>
  * Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
- * 
+ *
  * Components:
  * - max-age=31536000         → Cache for 1 year (31536000 seconds)
  * - includeSubDomains        → Apply to all subdomains (e.g., api.example.com, www.example.com)
@@ -116,7 +116,7 @@ import io.activej.http.HttpResponse;
  * <pre>{@code
  * // Serve HSTS header with max-age=0
  * HstsHeaderFilter removalFilter = new HstsHeaderFilter(0);
- * 
+ *
  * // Browsers will:
  * // 1. Delete cached HSTS policy
  * // 2. Allow HTTP connections again
@@ -224,13 +224,13 @@ public final class HstsHeaderFilter {
     private HttpResponse addHstsHeader(HttpResponse originalResponse) {
         HttpResponse.Builder builder = HttpResponse.ofCode(originalResponse.getCode())
                 .withHeader(HSTS_HEADER, hstsValue);
-        
+
         // Copy Location header if present (for redirects)
         String location = originalResponse.getHeader(HttpHeaders.LOCATION);
         if (location != null) {
             builder.withHeader(HttpHeaders.LOCATION, location);
         }
-        
+
         // Only add body if it exists - redirect responses don't have bodies
         // We need to catch the exception since getBody() throws if body is missing
         try {
@@ -241,7 +241,7 @@ public final class HstsHeaderFilter {
             // Body is missing or already consumed - this is OK for redirects
             // Just return the response without a body
         }
-        
+
         return builder.build();
     }
 

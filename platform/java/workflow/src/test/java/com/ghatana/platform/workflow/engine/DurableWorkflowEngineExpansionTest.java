@@ -85,7 +85,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                     return Promise.of(ctx);
                 });
 
-                runPromise(() -> engine.submit("workflow-" + workflowNum, context("workflow-" + workflowNum), 
+                runPromise(() -> engine.submit("workflow-" + workflowNum, context("workflow-" + workflowNum),
                         List.of(step)).result());
             }
 
@@ -115,7 +115,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
 
                 List<StepDefinition> steps = (i % 2 == 0) ? List.of(step1) : List.of(step1, step2);
 
-                runPromise(() -> engine.submit("workflow-" + workflowNum, context("workflow-" + workflowNum), 
+                runPromise(() -> engine.submit("workflow-" + workflowNum, context("workflow-" + workflowNum),
                         steps).result());
             }
 
@@ -189,8 +189,8 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                 return Promise.of(ctx);
             });
 
-            WorkflowContext result = runPromise(() -> 
-                engine.submit("context-propagation", context("context-propagation"), 
+            WorkflowContext result = runPromise(() ->
+                engine.submit("context-propagation", context("context-propagation"),
                     List.of(step1, step2, step3)).result());
 
             assertThat(result).isNotNull();
@@ -218,7 +218,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                     return Promise.of(ctx);
                 });
 
-                runPromise(() -> engine.submit("persistent-wf", context("persistent-wf"), 
+                runPromise(() -> engine.submit("persistent-wf", context("persistent-wf"),
                         List.of(step)).result());
             }
 
@@ -239,7 +239,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                     return Promise.of(ctx);
                 });
 
-                runPromise(() -> engine.submit("bulk-" + workflowNum, context("bulk-" + workflowNum), 
+                runPromise(() -> engine.submit("bulk-" + workflowNum, context("bulk-" + workflowNum),
                         List.of(step)).result());
             }
 
@@ -262,7 +262,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                 return Promise.of(ctx);
             });
 
-            runPromise(() -> engine.submit("event-tracking", context("event-tracking"), 
+            runPromise(() -> engine.submit("event-tracking", context("event-tracking"),
                     List.of(step)).result());
 
             // Listener should have received events

@@ -2,7 +2,6 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.QueryResult;
-import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
@@ -14,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

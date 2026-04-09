@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,7 +30,7 @@ import java.util.regex.Pattern;
  * String workspaceId = Validation.requireValidUuid(
  *     request.getPathParameter("workspaceId"), "workspaceId"
  * );
- * 
+ *
  * // Validate request body
  * Validation.requireNonNull(body, "request body");
  * Validation.requireValidLength(name, "name", 1, 100);
@@ -45,32 +44,32 @@ import java.util.regex.Pattern;
  */
 public final class Validation {
     private static final Logger logger = LoggerFactory.getLogger(Validation.class);
-    
+
     // Common patterns
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
         "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
     );
-    
+
     private static final Pattern USERNAME_PATTERN = Pattern.compile(
         "^[a-zA-Z0-9._-]{3,30}$"
     );
-    
+
     private static final Pattern WORKSPACE_NAME_PATTERN = Pattern.compile(
         "^[\\w\\s\\-_.()]{1,100}$"
     );
-    
+
     private static final Pattern PROJECT_NAME_PATTERN = Pattern.compile(
         "^[\\w\\s\\-_.()]{1,100}$"
     );
-    
+
     private static final Pattern REQUIREMENT_TITLE_PATTERN = Pattern.compile(
         "^[\\w\\s\\-_.()!?]{1,200}$"
     );
-    
+
     private Validation() {
         // Utility class - prevent instantiation
     }
-    
+
     /**
      * Require that a value is not null.
      *
@@ -86,7 +85,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Require that a string is not null or empty.
      *
@@ -103,7 +102,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate and parse a UUID string.
      *
@@ -114,7 +113,7 @@ public final class Validation {
      */
     public static UUID requireValidUuid(String uuidString, String fieldName) throws ErrorResponse.ValidationException {
         requireNonEmpty(uuidString, fieldName);
-        
+
         try {
             return UUID.fromString(uuidString);
         } catch (IllegalArgumentException e) {
@@ -124,7 +123,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate string length.
      *
@@ -134,20 +133,20 @@ public final class Validation {
      * @param maxLength maximum allowed length (inclusive)
      * @throws ErrorResponse.ValidationException if length is invalid
      */
-    public static void requireValidLength(String value, String fieldName, int minLength, int maxLength) 
+    public static void requireValidLength(String value, String fieldName, int minLength, int maxLength)
             throws ErrorResponse.ValidationException {
         requireNonNull(value, fieldName);
-        
+
         int length = value.length();
         if (length < minLength || length > maxLength) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " must be between " + minLength + " and " + maxLength + " characters",
-                Map.of("field", fieldName, "minLength", minLength, "maxLength", maxLength, 
+                Map.of("field", fieldName, "minLength", minLength, "maxLength", maxLength,
                        "actualLength", length, "error", "INVALID_LENGTH")
             );
         }
     }
-    
+
     /**
      * Validate email format.
      *
@@ -157,7 +156,7 @@ public final class Validation {
      */
     public static void requireValidEmail(String email, String fieldName) throws ErrorResponse.ValidationException {
         requireNonEmpty(email, fieldName);
-        
+
         if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " must be a valid email address",
@@ -165,7 +164,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate username format.
      *
@@ -175,7 +174,7 @@ public final class Validation {
      */
     public static void requireValidUsername(String username, String fieldName) throws ErrorResponse.ValidationException {
         requireNonEmpty(username, fieldName);
-        
+
         if (!USERNAME_PATTERN.matcher(username).matches()) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " must be 3-30 characters and contain only letters, numbers, dots, underscores, and hyphens",
@@ -183,7 +182,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate workspace name format.
      *
@@ -193,7 +192,7 @@ public final class Validation {
      */
     public static void requireValidWorkspaceName(String name, String fieldName) throws ErrorResponse.ValidationException {
         requireValidLength(name, fieldName, 1, 100);
-        
+
         if (!WORKSPACE_NAME_PATTERN.matcher(name).matches()) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed",
@@ -201,7 +200,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate project name format.
      *
@@ -211,7 +210,7 @@ public final class Validation {
      */
     public static void requireValidProjectName(String name, String fieldName) throws ErrorResponse.ValidationException {
         requireValidLength(name, fieldName, 1, 100);
-        
+
         if (!PROJECT_NAME_PATTERN.matcher(name).matches()) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed",
@@ -219,7 +218,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate requirement title format.
      *
@@ -229,7 +228,7 @@ public final class Validation {
      */
     public static void requireValidRequirementTitle(String title, String fieldName) throws ErrorResponse.ValidationException {
         requireValidLength(title, fieldName, 1, 200);
-        
+
         if (!REQUIREMENT_TITLE_PATTERN.matcher(title).matches()) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed",
@@ -237,7 +236,7 @@ public final class Validation {
             );
         }
     }
-    
+
     /**
      * Validate requirement description.
      *
@@ -245,11 +244,11 @@ public final class Validation {
      * @param fieldName the field name for error messages
      * @throws ErrorResponse.ValidationException if description is invalid
      */
-    public static void requireValidRequirementDescription(String description, String fieldName) 
+    public static void requireValidRequirementDescription(String description, String fieldName)
             throws ErrorResponse.ValidationException {
         requireValidLength(description, fieldName, 1, 2000);
     }
-    
+
     /**
      * Validate that a value is within a numeric range.
      *
@@ -259,17 +258,17 @@ public final class Validation {
      * @param max maximum allowed value (inclusive)
      * @throws ErrorResponse.ValidationException if value is out of range
      */
-    public static void requireValidRange(int value, String fieldName, int min, int max) 
+    public static void requireValidRange(int value, String fieldName, int min, int max)
             throws ErrorResponse.ValidationException {
         if (value < min || value > max) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " must be between " + min + " and " + max,
-                Map.of("field", fieldName, "min", min, "max", max, 
+                Map.of("field", fieldName, "min", min, "max", max,
                        "actualValue", value, "error", "OUT_OF_RANGE")
             );
         }
     }
-    
+
     /**
      * Validate that a list is not null and within size limits.
      *
@@ -278,19 +277,19 @@ public final class Validation {
      * @param maxSize maximum allowed size
      * @throws ErrorResponse.ValidationException if list is invalid
      */
-    public static void requireValidListSize(List<?> list, String fieldName, int maxSize) 
+    public static void requireValidListSize(List<?> list, String fieldName, int maxSize)
             throws ErrorResponse.ValidationException {
         requireNonNull(list, fieldName);
-        
+
         if (list.size() > maxSize) {
             throw new ErrorResponse.ValidationException(
                 fieldName + " cannot contain more than " + maxSize + " items",
-                Map.of("field", fieldName, "maxSize", maxSize, 
+                Map.of("field", fieldName, "maxSize", maxSize,
                        "actualSize", list.size(), "error", "LIST_TOO_LARGE")
             );
         }
     }
-    
+
     /**
      * Validate that an enum value is valid.
      *
@@ -299,23 +298,23 @@ public final class Validation {
      * @param validValues array of valid enum values
      * @throws ErrorResponse.ValidationException if value is invalid
      */
-    public static void requireValidEnum(String value, String fieldName, String[] validValues) 
+    public static void requireValidEnum(String value, String fieldName, String[] validValues)
             throws ErrorResponse.ValidationException {
         requireNonEmpty(value, fieldName);
-        
+
         for (String validValue : validValues) {
             if (validValue.equals(value)) {
                 return; // Valid value found
             }
         }
-        
+
         throw new ErrorResponse.ValidationException(
             fieldName + " must be one of: " + String.join(", ", validValues),
-            Map.of("field", fieldName, "value", value, "validValues", validValues, 
+            Map.of("field", fieldName, "value", value, "validValues", validValues,
                    "error", "INVALID_ENUM_VALUE")
         );
     }
-    
+
     /**
      * Validate HTTP request path parameter.
      *
@@ -324,7 +323,7 @@ public final class Validation {
      * @return the parameter value
      * @throws ErrorResponse.ValidationException if parameter is missing or invalid
      */
-    public static String requirePathParameter(HttpRequest request, String parameterName) 
+    public static String requirePathParameter(HttpRequest request, String parameterName)
             throws ErrorResponse.ValidationException {
         String value;
         try {
@@ -333,7 +332,7 @@ public final class Validation {
             // Path parameter not found by routing framework (e.g., direct controller call in tests)
             value = null;
         }
-        
+
         // Fallback for testing: extract from URL path if routing hasn't parsed parameters
         if (value == null) {
             String path = request.getPath();
@@ -364,11 +363,11 @@ public final class Validation {
                 }
             }
         }
-        
+
         requireNonEmpty(value, parameterName);
         return value;
     }
-    
+
     /**
      * Validate HTTP request header.
      *
@@ -377,13 +376,13 @@ public final class Validation {
      * @return the header value
      * @throws ErrorResponse.ValidationException if header is missing or invalid
      */
-    public static String requireHeader(HttpRequest request, String headerName) 
+    public static String requireHeader(HttpRequest request, String headerName)
             throws ErrorResponse.ValidationException {
         String value = request.getHeader(io.activej.http.HttpHeaders.of(headerName));
         requireNonEmpty(value, headerName);
         return value;
     }
-    
+
     /**
      * Validate multiple fields and collect all validation errors.
      *
@@ -392,7 +391,7 @@ public final class Validation {
      */
     public static void validateAll(List<Runnable> validations) throws ErrorResponse.ValidationException {
         List<Map<String, Object>> errors = new ArrayList<>();
-        
+
         for (Runnable validation : validations) {
             try {
                 validation.run();
@@ -409,7 +408,7 @@ public final class Validation {
                 }
             }
         }
-        
+
         if (!errors.isEmpty()) {
             throw new ErrorResponse.ValidationException(
                 "Multiple validation errors occurred",

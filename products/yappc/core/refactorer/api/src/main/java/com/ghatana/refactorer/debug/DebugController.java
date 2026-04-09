@@ -1,8 +1,6 @@
 package com.ghatana.refactorer.debug;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +8,7 @@ import org.slf4j.LoggerFactory;
  * Orchestrates parsing stack traces from text content and classifies errors. Uses a set of parsers
  * to extract stack frames and an ErrorPatternManager to identify common error patterns and provide
  * suggestions.
- 
+
  * @doc.type class
  * @doc.purpose Handles debug controller operations
  * @doc.layer core

@@ -43,16 +43,16 @@ public class PatientService {
             "phr.patient.records.fetch",
             "patient_id", sanitizedPatientId
         );
-        
+
         try {
             PatientRecords records = recordsRepository.findByPatientId(sanitizedPatientId);
-            
+
             telemetry.recordMetric(
                 "phr.patient.records.count",
                 records.size(),
                 "patient_id", sanitizedPatientId
             );
-            
+
             AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType("patient.records.accessed")
@@ -62,11 +62,11 @@ public class PatientService {
                 .action("read")
                 .data(Map.of("record_count", records.size()))
                 .build();
-            
+
             auditTrail.recordAuditEvent(event);
-            
+
             return records;
-            
+
         } finally {
             timer.stop();
         }
@@ -79,7 +79,7 @@ public class PatientService {
             "phr.patient.records.create",
             "patient_id", sanitizedPatientId
         );
-        
+
         try {
             PatientRecord record = new PatientRecord();
             record.setRecordId(UUID.randomUUID().toString());
@@ -88,15 +88,15 @@ public class PatientService {
             record.setData(sanitizedRecordData);
             record.setCreatedBy(getCurrentUserId());
             record.setCreatedAt(Instant.now());
-            
+
             recordsRepository.save(record);
-            
+
             telemetry.incrementCounter(
                 "phr.patient.records.created",
                 1,
                 "patient_id", sanitizedPatientId
             );
-            
+
             AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType("patient.records.created")
@@ -112,7 +112,7 @@ public class PatientService {
             } catch (RuntimeException exception) {
                 rollbackCreatedRecord(record, exception);
             }
-            
+
         } finally {
             timer.stop();
         }
@@ -143,14 +143,14 @@ public class PatientService {
     }
 
     private String getCurrentUserId() {
-        return SecurityContextHolder.getContext() != null 
-            ? SecurityContextHolder.getContext().getUserId() 
+        return SecurityContextHolder.getContext() != null
+            ? SecurityContextHolder.getContext().getUserId()
             : "system";
     }
 
     private String getCurrentTenantId() {
-        return SecurityContextHolder.getContext() != null 
-            ? SecurityContextHolder.getContext().getTenantId() 
+        return SecurityContextHolder.getContext() != null
+            ? SecurityContextHolder.getContext().getTenantId()
             : "default";
     }
 }

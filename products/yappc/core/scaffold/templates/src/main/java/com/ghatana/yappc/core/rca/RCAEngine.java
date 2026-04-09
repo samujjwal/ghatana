@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /**
  * Root Cause Analysis (RCA) engine for identifying build and deployment issues.
- * 
+ *
  * Analyzes error messages and stack traces to identify common root causes.
  * FUTURE: Will integrate with OpenRewrite for advanced code analysis in Phase 4+.
  *
@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
 public class RCAEngine {
 
     private static final Logger log = LoggerFactory.getLogger(RCAEngine.class);
-    
+
     private static final List<RCAPattern> PATTERNS = List.of(
-        new RCAPattern("Compilation Error", Pattern.compile("cannot find symbol|package .* does not exist"), 
+        new RCAPattern("Compilation Error", Pattern.compile("cannot find symbol|package .* does not exist"),
             "Missing dependency or incorrect import", "Check dependencies and import statements"),
         new RCAPattern("Null Pointer", Pattern.compile("NullPointerException"),
             "Null reference accessed", "Add null checks or ensure proper initialization"),
@@ -48,14 +48,14 @@ public class RCAEngine {
             log.warn("Empty failure message provided for RCA");
             return new RCAResult("Unknown", "No failure information provided", List.of());
         }
-        
+
         log.debug("Analyzing failure: {}", failure.substring(0, Math.min(100, failure.length())));
-        
+
         List<String> causes = new ArrayList<>();
         List<String> recommendations = new ArrayList<>();
         String category = "Unknown";
         String rootCause = "Unable to determine root cause";
-        
+
         // Pattern matching for common issues
         for (RCAPattern pattern : PATTERNS) {
             if (pattern.pattern().matcher(failure).find()) {
@@ -67,10 +67,10 @@ public class RCAEngine {
                 break; // Use first matching pattern
             }
         }
-        
+
         return new RCAResult(category, rootCause, recommendations);
     }
-    
+
     /**
      * Pattern for RCA matching.
      */

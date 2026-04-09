@@ -7,7 +7,7 @@ import java.nio.file.Path;
 /**
  * Local test utility stub mirroring refactorer-core's TestUtils.
  * Provides helpers needed by engine test classes.
- 
+
  * @doc.type class
  * @doc.purpose Handles test utils operations
  * @doc.layer core

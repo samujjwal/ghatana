@@ -24,7 +24,7 @@ class PluginLifecycleTest {
     void shouldInitializePlugins() {
         String pluginId = "plugin-123";
         String state = "INITIALIZED";
-        
+
         assertThat(pluginId).isNotNull();
         assertThat(state).isEqualTo("INITIALIZED");
     }
@@ -34,7 +34,7 @@ class PluginLifecycleTest {
     void shouldStartPlugins() {
         String pluginId = "plugin-123";
         String state = "RUNNING";
-        
+
         assertThat(state).isEqualTo("RUNNING");
     }
 
@@ -43,7 +43,7 @@ class PluginLifecycleTest {
     void shouldStopPlugins() {
         String pluginId = "plugin-123";
         String state = "STOPPED";
-        
+
         assertThat(state).isEqualTo("STOPPED");
     }
 
@@ -52,7 +52,7 @@ class PluginLifecycleTest {
     void shouldHandlePluginConfiguration() {
         String configKey = "timeout";
         String configValue = "5000";
-        
+
         assertThat(configKey).isNotNull();
         assertThat(configValue).isNotNull();
     }
@@ -61,7 +61,7 @@ class PluginLifecycleTest {
     @DisplayName("Should handle plugin dependencies")
     void shouldHandlePluginDependencies() {
         String[] dependencies = {"plugin-a", "plugin-b"};
-        
+
         assertThat(dependencies).isNotEmpty();
         assertThat(dependencies.length).isGreaterThan(0);
     }
@@ -71,7 +71,7 @@ class PluginLifecycleTest {
     void shouldHandlePluginFailures() {
         String state = "FAILED";
         String error = "Initialization failed";
-        
+
         assertThat(state).isEqualTo("FAILED");
         assertThat(error).isNotNull();
     }

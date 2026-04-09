@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @doc.pattern Validator
  */
 public class YAPPCGraphValidator {
-    
+
     public void validateNode(YAPPCGraphNode node) {
         if (node.id() == null || node.id().isBlank()) {
             throw new IllegalArgumentException("Node id cannot be null or blank");

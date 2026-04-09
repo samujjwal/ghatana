@@ -12,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ForkJoinPool;
 
 import static io.activej.http.HttpMethod.*;

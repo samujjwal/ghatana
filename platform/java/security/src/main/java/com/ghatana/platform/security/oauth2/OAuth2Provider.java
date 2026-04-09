@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles OAuth2 and OIDC authentication flows.
- 
+
  *
  * @doc.type class
  * @doc.purpose Oauth2provider
@@ -52,30 +52,30 @@ import java.util.concurrent.ConcurrentHashMap;
 */
 public class OAuth2Provider {
     private static final Logger logger = LoggerFactory.getLogger(OAuth2Provider.class);
-    
+
     private final OAuth2Config config;
     private final Map<String, State> stateStore = new ConcurrentHashMap<>();
     private OIDCProviderMetadata providerMetadata;
-    
+
     public static class AuthResponse {
         private final String authorizationUrl;
         private final String state;
         private final String nonce;
-        
+
         public AuthResponse(String authorizationUrl, String state, String nonce) {
             this.authorizationUrl = authorizationUrl;
             this.state = state;
             this.nonce = nonce;
         }
-        
+
         public String getAuthorizationUrl() {
             return authorizationUrl;
         }
-        
+
         public String getState() {
             return state;
         }
-        
+
         public String getNonce() {
             return nonce;
         }
@@ -227,21 +227,21 @@ public class OAuth2Provider {
                 new AuthorizationCodeGrant(new AuthorizationCode(code), new URI(redirectUri)),
                 new Scope(config.getScope())
             );
-            
+
             // Send the token request
             HTTPResponse httpResponse = request.toHTTPRequest().send();
             TokenResponse response = TokenResponse.parse(httpResponse);
-            
+
             if (!response.indicatesSuccess()) {
                 TokenErrorResponse errorResponse = response.toErrorResponse();
-                String errorMsg = String.format("Token request failed: %s - %s", 
+                String errorMsg = String.format("Token request failed: %s - %s",
                     errorResponse.getErrorObject().getCode(),
                     errorResponse.getErrorObject().getDescription());
                 throw new OAuth2Exception(errorMsg);
             }
-            
+
             AccessTokenResponse successResponse = response.toSuccessResponse();
-            
+
             // Get user info if the access token is available
             UserInfo userInfo = null;
             if (successResponse.getTokens() != null && successResponse.getTokens().getAccessToken() != null) {
@@ -252,10 +252,10 @@ public class OAuth2Provider {
                     // Continue with just the ID token if user info is not available
                 }
             }
-            
+
             // Create or update user with the obtained tokens and user info
             User user = createOrUpdateUser(userInfo, successResponse);
-            
+
             return user;
         } catch (Exception e) {
             // If an OAuth2Exception was intentionally thrown above, rethrow it unchanged so callers/tests can inspect it
@@ -266,39 +266,39 @@ public class OAuth2Provider {
             throw new OAuth2Exception("Authentication failed: " + e.getMessage(), e);
         }
     }
-    
+
     private UserInfo getUserInfo(String accessToken) throws IOException, ParseException, java.text.ParseException {
         if (providerMetadata.getUserInfoEndpointURI() == null) {
             throw new IllegalStateException("UserInfo endpoint not configured");
         }
-        
+
         try {
             // Create a UserInfo request with the access token
             UserInfoRequest request = new UserInfoRequest(
                 providerMetadata.getUserInfoEndpointURI(),
                 new BearerAccessToken(accessToken)
             );
-            
+
             // Send the request
             HTTPResponse httpResponse = request.toHTTPRequest().send();
-            
+
             // Check if the request was successful
             if (!httpResponse.indicatesSuccess()) {
-                String errorMsg = String.format("UserInfo request failed: %d %s", 
-                    httpResponse.getStatusCode(), 
+                String errorMsg = String.format("UserInfo request failed: %d %s",
+                    httpResponse.getStatusCode(),
                     httpResponse.getStatusMessage());
                 throw new IOException(errorMsg);
             }
-            
+
             // Parse the UserInfo response
             UserInfo userInfo = UserInfo.parse(httpResponse.getBody());
-            
+
             if (userInfo == null) {
                 throw new IOException("Failed to parse UserInfo response");
             }
-            
+
             return userInfo;
-            
+
         } catch (Exception e) {
             logger.error("Failed to fetch user info", e);
             throw new IOException("Failed to fetch user info: " + e.getMessage(), e);
@@ -425,12 +425,12 @@ public class OAuth2Provider {
     public AccessTokenResponse refreshToken(String refreshToken) throws OAuth2Exception {
         try {
             RefreshTokenGrant refreshGrant = new RefreshTokenGrant(new RefreshToken(refreshToken));
-            
+
             ClientAuthentication clientAuth = new ClientSecretBasic(
                 config.getClientID(),
                 new Secret(config.getClientSecret())
             );
-            
+
             // Build the token request
             TokenRequest request = new TokenRequest(
                 providerMetadata.getTokenEndpointURI(),
@@ -438,31 +438,31 @@ public class OAuth2Provider {
                 refreshGrant,
                 config.getScope()
             );
-            
+
             // Send the token request
             HTTPResponse httpResponse = request.toHTTPRequest().send();
             TokenResponse response = TokenResponse.parse(httpResponse);
-            
+
             if (!response.indicatesSuccess()) {
                 TokenErrorResponse errorResponse = response.toErrorResponse();
-                String errorMsg = String.format("Token refresh failed: %s - %s", 
+                String errorMsg = String.format("Token refresh failed: %s - %s",
                     errorResponse.getErrorObject().getCode(),
                     errorResponse.getErrorObject().getDescription());
                 throw new OAuth2Exception(errorMsg);
             }
-            
+
             return response.toSuccessResponse();
-            
+
         } catch (Exception e) {
             throw new OAuth2Exception("Failed to refresh token: " + e.getMessage(), e);
         }
     }
-    
+
     public static class OAuth2Exception extends Exception {
         public OAuth2Exception(String message) {
             super(message);
         }
-        
+
         public OAuth2Exception(String message, Throwable cause) {
             super(message, cause);
         }

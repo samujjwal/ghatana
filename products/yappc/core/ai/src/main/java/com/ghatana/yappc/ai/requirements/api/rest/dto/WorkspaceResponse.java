@@ -11,7 +11,7 @@ package com.ghatana.yappc.ai.requirements.api.rest.dto;
  * @param createdAt Created timestamp
  * @param updatedAt Updated timestamp
  * @param memberCount Number of members
- 
+
  * @doc.type record
  * @doc.purpose Immutable data carrier for workspace response
  * @doc.layer core
@@ -28,4 +28,3 @@ public record WorkspaceResponse(
     int memberCount
 ) {
 }
-

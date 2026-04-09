@@ -15,7 +15,6 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.AbstractKernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
-import com.ghatana.finance.kernel.FinanceCapabilities;
 
 import java.util.List;
 import java.util.Map;

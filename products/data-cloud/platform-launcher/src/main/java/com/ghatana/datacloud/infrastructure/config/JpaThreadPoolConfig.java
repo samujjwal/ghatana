@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Allows tuning of pool size and behavior for different deployment environments.
  *
  * <p><b>Architecture Role</b><br>
- * - Thread pool configuration for infrastructure layer  
+ * - Thread pool configuration for infrastructure layer
  * - Used by JpaEntityRepositoryImpl and JpaCollectionRepositoryImpl
  * - Supports virtual threads with configurable pool sizing strategy
  * - Enables performance tuning for different load profiles

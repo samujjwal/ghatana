@@ -34,16 +34,16 @@ class TransactionManagementTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.ensureSchema();
             registry.registerModule("test-module", "1.0.0", "REGISTERED");
-            
+
             Optional<JdbcModuleRegistry.ModuleRegistration> module = registry.getModule("test-module");
             assertThat(module).isPresent();
             assertThat(module.get().moduleId()).isEqualTo("test-module");
@@ -59,17 +59,17 @@ class TransactionManagementTest {
     void shouldHandleTransactionRollback() {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> registry.ensureSchema()
             );
-            
+
             verify(mockConnection, never()).commit();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -82,16 +82,16 @@ class TransactionManagementTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.registerModule("module-1", "1.0.0", "REGISTERED");
             registry.registerModule("module-2", "2.0.0", "STARTED");
-            
+
             assertThat(registry.listModules()).hasSize(2);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -104,16 +104,16 @@ class TransactionManagementTest {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
             when(mockStatement.executeUpdate()).thenReturn(1);
             when(mockConnection.getTransactionIsolation()).thenReturn(Connection.TRANSACTION_READ_COMMITTED);
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.ensureSchema();
-            
+
             verify(mockDataSource).getConnection();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -125,12 +125,12 @@ class TransactionManagementTest {
     void shouldHandleTransactionTimeout() {
         DataSource mockDataSource = mock(DataSource.class);
         Connection mockConnection = mock(Connection.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenThrow(new SQLException("Timeout exceeded"));
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
-            
+
             org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> registry.registerModule("timeout-module", "1.0.0", "FAILED")
@@ -147,7 +147,7 @@ class TransactionManagementTest {
         Connection mockConnection = mock(Connection.class);
         PreparedStatement mockStatement = mock(PreparedStatement.class);
         ResultSet mockResultSet = mock(ResultSet.class);
-        
+
         try {
             when(mockDataSource.getConnection()).thenReturn(mockConnection);
             when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement);
@@ -156,10 +156,10 @@ class TransactionManagementTest {
             when(mockResultSet.next()).thenReturn(true).thenReturn(false);
             when(mockResultSet.getString(anyString())).thenReturn("test-module");
             when(mockResultSet.getLong(anyString())).thenReturn(System.currentTimeMillis());
-            
+
             JdbcModuleRegistry registry = new JdbcModuleRegistry(mockDataSource);
             registry.registerModule("test-module", "1.0.0", "REGISTERED");
-            
+
             Optional<JdbcModuleRegistry.ModuleRegistration> module = registry.getModule("test-module");
             assertThat(module).isPresent();
         } catch (SQLException e) {

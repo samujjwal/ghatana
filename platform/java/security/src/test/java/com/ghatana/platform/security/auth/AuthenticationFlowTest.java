@@ -37,14 +37,14 @@ class AuthenticationFlowTest {
     void shouldValidateJwtTokensCorrectly() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.validateToken(anyString())).thenReturn(true);
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
-        
+
         TokenCredentials credentials = new TokenCredentials("valid-token");
         Promise<Optional<User>> result = provider.authenticate(credentials);
-        
+
         assertThat(result.getResult()).isPresent();
         assertThat(result.getResult().get().getUserId()).isEqualTo("user123");
     }
@@ -54,13 +54,13 @@ class AuthenticationFlowTest {
     void shouldHandleTokenRefreshCorrectly() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
         when(mockTokenProvider.createToken(anyString(), anyList(), any())).thenReturn("new-token");
-        
+
         String newToken = provider.refreshToken("old-token");
-        
+
         assertThat(newToken).isEqualTo("new-token");
     }
 
@@ -69,14 +69,14 @@ class AuthenticationFlowTest {
     void shouldPropagateSecurityContextCorrectly() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.validateToken(anyString())).thenReturn(true);
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("ADMIN"));
-        
+
         TokenCredentials credentials = new TokenCredentials("valid-token");
         Promise<Optional<User>> result = provider.authenticate(credentials);
-        
+
         assertThat(result.getResult()).isPresent();
         assertThat(result.getResult().get().getRoles()).contains("ADMIN");
     }
@@ -86,12 +86,12 @@ class AuthenticationFlowTest {
     void shouldRejectExpiredTokens() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
-        
+
         TokenCredentials credentials = new TokenCredentials("expired-token");
         Promise<Optional<User>> result = provider.authenticate(credentials);
-        
+
         assertThat(result.getResult()).isEmpty();
     }
 
@@ -100,12 +100,12 @@ class AuthenticationFlowTest {
     void shouldRejectInvalidSignatures() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
-        
+
         TokenCredentials credentials = new TokenCredentials("invalid-signature");
         Promise<Optional<User>> result = provider.authenticate(credentials);
-        
+
         assertThat(result.getResult()).isEmpty();
     }
 
@@ -114,12 +114,12 @@ class AuthenticationFlowTest {
     void shouldHandleTokenRevocation() {
         JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
         JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
-        
+
         when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
-        
+
         TokenCredentials credentials = new TokenCredentials("revoked-token");
         Promise<Optional<User>> result = provider.authenticate(credentials);
-        
+
         assertThat(result.getResult()).isEmpty();
     }
 }

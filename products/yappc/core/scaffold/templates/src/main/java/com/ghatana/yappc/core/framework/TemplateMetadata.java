@@ -23,12 +23,12 @@ import java.util.Map;
 
 /**
  * Template metadata from YAML configuration.
- * 
+ *
  * @doc.type record
  * @doc.purpose Store template metadata
  * @doc.layer platform
  * @doc.pattern Value Object
- * 
+ *
  * @param description Template description
  * @param author Template author
  * @param version Template version

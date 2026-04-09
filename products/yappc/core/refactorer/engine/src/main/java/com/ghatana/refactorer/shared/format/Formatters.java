@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Formatting utilities (e.g., Prettier integration for TS/JS/JSON/YAML). 
+ * Formatting utilities (e.g., Prettier integration for TS/JS/JSON/YAML).
  * @doc.type class
  * @doc.purpose Handles formatters operations
  * @doc.layer core

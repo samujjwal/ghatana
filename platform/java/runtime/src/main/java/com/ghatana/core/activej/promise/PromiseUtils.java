@@ -164,11 +164,11 @@ import io.activej.async.exception.AsyncTimeoutException;
  */
 @Slf4j
 public final class PromiseUtils {
-    
+
     private PromiseUtils() {
         // Utility class - prevent instantiation
     }
-    
+
     /**
      * Internal implementation of retry logic with exponential backoff.
      *
@@ -179,13 +179,13 @@ public final class PromiseUtils {
      * @param attemptNumber Current attempt number
      * @return A promise that completes when the operation succeeds or all retries are exhausted
      */
-    private static <T> Promise<T> retryInternal(Supplier<Promise<T>> operation, 
-                                             int remainingAttempts, 
-                                             Duration delay, 
+    private static <T> Promise<T> retryInternal(Supplier<Promise<T>> operation,
+                                             int remainingAttempts,
+                                             Duration delay,
                                              int attemptNumber) {
-        log.debug("Attempt {} of {} (delay: {}ms)", attemptNumber, 
+        log.debug("Attempt {} of {} (delay: {}ms)", attemptNumber,
                  attemptNumber + remainingAttempts - 1, delay.toMillis());
-        
+
         return operation.get()
             .whenComplete((result, error) -> {
                 if (error != null) {
@@ -206,16 +206,16 @@ public final class PromiseUtils {
                     if (remainingAttempts <= 1) {
                         return Promise.ofException(error);
                     }
-                    
+
                     // Exponential backoff: delay * 2^(attemptNumber-1)
                     Duration nextDelay = delay.multipliedBy(2);
-                    
+
                     return Promise.complete()
                         .then(() -> retryInternal(operation, remainingAttempts - 1, nextDelay, attemptNumber + 1));
                 }
             );
     }
-    
+
     /**
      * Adds a timeout to a promise.
      *
@@ -238,7 +238,7 @@ public final class PromiseUtils {
             }
         );
     }
-    
+
     /**
      * Converts a CompletableFuture to an ActiveJ Promise.
      * Useful for interoperability with non-ActiveJ code.
@@ -258,7 +258,7 @@ public final class PromiseUtils {
         });
         return promise;
     }
-    
+
     /**
      * Converts an ActiveJ Promise to a CompletableFuture.
      * Useful for interoperability with non-ActiveJ code.
@@ -278,11 +278,11 @@ public final class PromiseUtils {
         });
         return future;
     }
-    
+
     /**
      * Promise creation methods
      */
-    
+
     /**
      * Creates a promise that completes with the provided value.
      *
@@ -293,7 +293,7 @@ public final class PromiseUtils {
     public static <T> Promise<T> of(T value) {
         return Promise.of(value);
     }
-    
+
     /**
      * Creates a failed promise with the given exception.
      *
@@ -304,7 +304,7 @@ public final class PromiseUtils {
     public static <T> Promise<T> ofException(Throwable error) {
         return Promise.ofException(error instanceof Exception ? (Exception) error : new RuntimeException(error));
     }
-    
+
     /**
      * Creates a promise that completes after a delay.
      *
@@ -316,15 +316,15 @@ public final class PromiseUtils {
     public static <T> Promise<T> delay(Duration delay, T value) {
         return Promises.delay(delay).map($ -> value);
     }
-    
+
     public static <T> Promise<T> delay(Duration delay, Supplier<Promise<T>> supplier) {
         return Promises.delay(delay).then(supplier::get);
     }
-    
+
     /**
      * Promise combination methods
      */
-    
+
     /**
      * Combines multiple promises into a single promise that completes when all input promises complete.
      *
@@ -336,7 +336,7 @@ public final class PromiseUtils {
     public static <T> Promise<List<T>> all(Promise<T>... promises) {
         return Promises.toList(List.of(promises));
     }
-    
+
     public static <T> Promise<List<T>> all(List<Promise<T>> promises) {
         if (promises == null || promises.isEmpty()) {
             return Promise.of(new ArrayList<>());
@@ -366,7 +366,7 @@ public final class PromiseUtils {
 
         return result;
     }
-    
+
     /**
      * Combines multiple promises into a single promise that completes when any input promise completes.
      *
@@ -379,15 +379,15 @@ public final class PromiseUtils {
         // Promises.first has overloads that accept an Iterator of Promise; convert the array to a list iterator
         return Promises.first(Arrays.asList(promises).iterator());
     }
-    
+
     public static <T> Promise<T> any(List<Promise<T>> promises) {
         return Promises.first(promises.iterator());
     }
-    
+
     /**
      * Promise transformation methods
      */
-    
+
     /**
      * Transforms the result of a promise using the provided function.
      *
@@ -400,7 +400,7 @@ public final class PromiseUtils {
     public static <T, R> Promise<R> map(Promise<T> promise, Function<T, R> mapper) {
         return promise.map((FunctionEx<T, R>) mapper::apply);
     }
-    
+
     /**
      * Chains promises using the provided function.
      *
@@ -413,11 +413,11 @@ public final class PromiseUtils {
     public static <T, R> Promise<R> flatMap(Promise<T> promise, Function<T, Promise<R>> mapper) {
         return promise.then(mapper::apply);
     }
-    
+
     /**
      * Promise fallback methods
      */
-    
+
     /**
      * Adds a fallback value for when a promise fails.
      *
@@ -430,7 +430,7 @@ public final class PromiseUtils {
         // Avoid using mapException here to prevent type-inference issues; map failures to a fallback promise instead
         return promise.then(value -> Promise.of(value), e -> Promise.of(fallback));
     }
-    
+
     /**
      * Adds a fallback promise for when a promise fails.
      *
@@ -445,7 +445,7 @@ public final class PromiseUtils {
             e -> fallback.get()
         );
     }
-    
+
     /**
      * Retry helpers
      */
@@ -469,7 +469,7 @@ public final class PromiseUtils {
     /**
      * Promise sequencing methods
      */
-    
+
     /**
      * Executes a sequence of operations where each operation depends on the result of the previous one.
      *
@@ -481,28 +481,28 @@ public final class PromiseUtils {
     public static <T> Promise<List<T>> sequence(Supplier<Promise<T>>... operations) {
         return sequence(List.of(operations));
     }
-    
+
     public static <T> Promise<List<T>> sequence(List<Supplier<Promise<T>>> operations) {
         if (operations.isEmpty()) {
             return Promise.of(new ArrayList<>());
         }
-        
+
         List<T> results = new ArrayList<>();
         Promise<List<T>> result = Promise.of(results);
-        
+
         for (Supplier<Promise<T>> operation : operations) {
-            result = result.then(list -> 
+            result = result.then(list ->
                 operation.get().whenResult(list::add).map($ -> list)
             );
         }
-        
+
         return result;
     }
-    
+
     /**
      * Promise finally methods
      */
-    
+
     /**
      * Adds a finally-like handler that runs after the promise completes, regardless of success or failure.
      *

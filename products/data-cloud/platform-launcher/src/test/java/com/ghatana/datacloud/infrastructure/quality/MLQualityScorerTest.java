@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link MLQualityScorer}.
- * 
+ *
  * @doc.type test
  * @doc.purpose Verify ML-based quality scoring functionality
  * @doc.layer infrastructure
@@ -34,15 +34,15 @@ import static org.mockito.Mockito.*;
 @DisplayName("ML Quality Scorer Tests")
 @ExtendWith(MockitoExtension.class)
 class MLQualityScorerTest extends EventloopTestBase {
-    
+
     @Mock
     private ModelRegistryService modelRegistry;
-    
+
     @Mock
     private AiMetricsEmitter aiMetrics;
-    
+
     private MLQualityScorer scorer;
-    
+
     @BeforeEach
     void setup() {
         scorer = new MLQualityScorer(
@@ -53,7 +53,7 @@ class MLQualityScorerTest extends EventloopTestBase {
             0.7
         );
     }
-    
+
     @Test
     @DisplayName("Should score entity with high-quality data")
     void shouldScoreHighQualityEntity() {
@@ -63,21 +63,21 @@ class MLQualityScorerTest extends EventloopTestBase {
             "email", "john@example.com",
             "age", 30
         ));
-        
+
         // AND: Model is available
         ModelMetadata model = createModel("quality-scorer-v1", "1.0.0", DeploymentStatus.PRODUCTION);
         when(modelRegistry.findByStatus("tenant-1", DeploymentStatus.PRODUCTION))
             .thenReturn(List.of(model));
-        
+
         // WHEN: Scoring entity
-        QualityMetrics metrics = runPromise(() -> 
+        QualityMetrics metrics = runPromise(() ->
             scorer.scoreEntity("tenant-1", entity, null)
         );
-        
+
         // THEN: Returns high quality scores
         assertThat(metrics.getOverallScore()).isGreaterThan(70);
         assertThat(metrics.getCompleteness()).isGreaterThan(90);
-        
+
         // AND: Records metrics
         verify(aiMetrics).recordInference(
             eq("quality-scorer-v1"),
@@ -86,7 +86,7 @@ class MLQualityScorerTest extends EventloopTestBase {
             eq(true)
         );
     }
-    
+
     @Test
     @DisplayName("Should handle entity with missing fields")
     void shouldHandleIncompleteEntity() {
@@ -96,20 +96,20 @@ class MLQualityScorerTest extends EventloopTestBase {
         data.put("email", null);
         data.put("age", "");
         Entity entity = createEntity(data);
-        
+
         ModelMetadata model = createModel("quality-scorer-v1", "1.0.0", DeploymentStatus.PRODUCTION);
         when(modelRegistry.findByStatus(anyString(), any()))
             .thenReturn(List.of(model));
-        
+
         // WHEN: Scoring entity
-        QualityMetrics metrics = runPromise(() -> 
+        QualityMetrics metrics = runPromise(() ->
             scorer.scoreEntity("tenant-1", entity, Map.of())
         );
-        
+
         // THEN: Completeness score reflects missing fields
         assertThat(metrics.getCompleteness()).isLessThan(100);
     }
-    
+
     @Test
     @DisplayName("Should score batch of entities")
     void shouldScoreBatch() {
@@ -119,21 +119,21 @@ class MLQualityScorerTest extends EventloopTestBase {
             createEntity(Map.of("name", "Entity2", "value", 200)),
             createEntity(Map.of("name", "Entity3", "value", 300))
         );
-        
+
         ModelMetadata model = createModel("quality-scorer-v1", "1.0.0", DeploymentStatus.PRODUCTION);
         when(modelRegistry.findByStatus(anyString(), any()))
             .thenReturn(List.of(model));
-        
+
         // WHEN: Scoring batch
-        List<QualityMetrics> results = runPromise(() -> 
+        List<QualityMetrics> results = runPromise(() ->
             scorer.scoreEntitiesBatch("tenant-1", entities, null)
         );
-        
+
         // THEN: Returns metrics for all entities
         assertThat(results).hasSize(3);
         assertThat(results).allMatch(m -> m.getOverallScore() > 0);
     }
-    
+
     @Test
     @DisplayName("Should explain quality score")
     void shouldExplainScore() {
@@ -145,119 +145,119 @@ class MLQualityScorerTest extends EventloopTestBase {
             .accuracy(92)
             .relevance(78)
             .build();
-        
+
         // WHEN: Explaining score
-        QualityScoreExplanation explanation = runPromise(() -> 
+        QualityScoreExplanation explanation = runPromise(() ->
             scorer.explainScore("tenant-1", entity, metrics)
         );
-        
+
         // THEN: Provides detailed explanation
         // Overall score is calculated as weighted average: (85*0.25 + 90*0.25 + 92*0.30 + 78*0.20) = 86.95 ≈ 87
         assertThat(explanation.getScore()).isEqualTo(87);
         assertThat(explanation.getFindings()).isNotEmpty();
         assertThat(explanation.getRecommendations()).isNotEmpty();
     }
-    
+
     @Test
     @DisplayName("Should reject null parameters")
     void shouldRejectNullParameters() {
         Entity entity = createEntity(Map.of("test", "value"));
-        
-        assertThatThrownBy(() -> 
+
+        assertThatThrownBy(() ->
             scorer.scoreEntity(null, entity, null)
         ).isInstanceOf(NullPointerException.class)
          .hasMessageContaining("tenantId");
-        
-        assertThatThrownBy(() -> 
+
+        assertThatThrownBy(() ->
             scorer.scoreEntity("tenant-1", null, null)
         ).isInstanceOf(NullPointerException.class)
          .hasMessageContaining("entity");
     }
-    
+
     @Test
     @DisplayName("Should handle model not found error")
     void shouldHandleModelNotFound() {
         // GIVEN: No model registered
         when(modelRegistry.findByStatus(anyString(), any()))
             .thenReturn(List.of());
-        
+
         Entity entity = createEntity(Map.of("test", "value"));
-        
+
         // WHEN/THEN: Throws ModelNotFoundException
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             runPromise(() -> scorer.scoreEntity("tenant-1", entity, Map.of()))
         ).isInstanceOf(MLQualityScorer.ModelNotFoundException.class);
-        
+
         // Clear fatal error since we expected this exception
         clearFatalError();
-        
+
         // AND: Records failure metric
         verify(aiMetrics).recordInference(
             anyString(), anyString(), any(Duration.class), eq(false)
         );
     }
-    
+
     @Test
     @DisplayName("Should validate entity")
     void shouldValidateEntity() {
         // GIVEN: Valid entity
         Entity entity = createEntity(Map.of("name", "Test"));
-        
+
         // WHEN: Validating
-        var result = runPromise(() -> 
+        var result = runPromise(() ->
             scorer.validateEntity("tenant-1", entity)
         );
-        
+
         // THEN: Validation passes
         assertThat(result.isValid()).isTrue();
     }
-    
+
     @Test
     @DisplayName("Should reject empty entity")
     void shouldRejectEmptyEntity() {
         // GIVEN: Empty entity
         Entity entity = createEntity(Map.of());
-        
+
         // WHEN: Validating
-        var result = runPromise(() -> 
+        var result = runPromise(() ->
             scorer.validateEntity("tenant-1", entity)
         );
-        
+
         // THEN: Validation fails
         assertThat(result.isValid()).isFalse();
         assertThat(result.errors()).contains("Entity data is empty");
     }
-    
+
     @Test
     @DisplayName("Should get supported dimensions")
     void shouldGetSupportedDimensions() {
         // WHEN: Getting dimensions
         List<String> dimensions = runPromise(scorer::getSupportedDimensions);
-        
+
         // THEN: Returns all quality dimensions
         assertThat(dimensions).containsExactlyInAnyOrder(
             "completeness", "consistency", "accuracy", "relevance"
         );
     }
-    
+
     @Test
     @DisplayName("Should enforce confidence threshold")
     void shouldEnforceConfidenceThreshold() {
-        assertThatThrownBy(() -> 
-            new MLQualityScorer(modelRegistry, aiMetrics, 
+        assertThatThrownBy(() ->
+            new MLQualityScorer(modelRegistry, aiMetrics,
                 Executors.newCachedThreadPool(), "test", -0.1)
         ).isInstanceOf(IllegalArgumentException.class)
          .hasMessageContaining("minConfidenceThreshold");
-        
-        assertThatThrownBy(() -> 
-            new MLQualityScorer(modelRegistry, aiMetrics, 
+
+        assertThatThrownBy(() ->
+            new MLQualityScorer(modelRegistry, aiMetrics,
                 Executors.newCachedThreadPool(), "test", 1.5)
         ).isInstanceOf(IllegalArgumentException.class)
          .hasMessageContaining("minConfidenceThreshold");
     }
-    
+
     // Helper methods
-    
+
     private Entity createEntity(Map<String, Object> data) {
         return Entity.builder()
             .id(UUID.randomUUID())
@@ -268,7 +268,7 @@ class MLQualityScorerTest extends EventloopTestBase {
             .updatedAt(Instant.now())
             .build();
     }
-    
+
     private ModelMetadata createModel(String name, String version, DeploymentStatus status) {
         return ModelMetadata.builder()
             .id(UUID.randomUUID())

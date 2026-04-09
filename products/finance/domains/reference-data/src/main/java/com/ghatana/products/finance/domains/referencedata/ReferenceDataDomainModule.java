@@ -108,7 +108,7 @@ public final class ReferenceDataDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Reference Data Domain module");
-        
+
             started = true;
             log.info("Reference Data Domain module started successfully");
         return Promise.complete();
@@ -117,7 +117,7 @@ public final class ReferenceDataDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Reference Data Domain module");
-        
+
             started = false;
             log.info("Reference Data Domain module stopped successfully");
         return Promise.complete();

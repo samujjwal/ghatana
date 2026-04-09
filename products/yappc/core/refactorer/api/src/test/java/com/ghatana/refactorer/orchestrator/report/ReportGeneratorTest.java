@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Unit tests for {@link ReportGenerator}. 
+/** Unit tests for {@link ReportGenerator}.
  * @doc.type class
  * @doc.purpose Handles report generator test operations
  * @doc.layer core

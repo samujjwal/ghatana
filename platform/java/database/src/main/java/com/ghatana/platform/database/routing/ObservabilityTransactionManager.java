@@ -34,7 +34,7 @@ import java.util.function.Function;
  * <h2>Usage Example:</h2>
  * <pre>{@code
  * ObservabilityTransactionManager txManager = new ObservabilityTransactionManager(dataSource);
- * 
+ *
  * // Read-only transaction (routes to replica)
  * txManager.executeReadOnly(conn -> {
  *     try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users")) {
@@ -42,7 +42,7 @@ import java.util.function.Function;
  *         return Promise.of(mapResultSet(rs));
  *     }
  * }).whenResult(users -> logger.info("Found {} users", users.size()));
- * 
+ *
  * // Read-write transaction (routes to primary)
  * txManager.executeReadWrite(conn -> {
  *     try (PreparedStatement stmt = conn.prepareStatement(
@@ -53,7 +53,7 @@ import java.util.function.Function;
  *         return Promise.of(1);
  *     }
  * }).whenResult(count -> logger.info("Inserted {} rows", count));
- * 
+ *
  * // Batch operation
  * txManager.executeBatch(conn -> {
  *     try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO events ...")) {
@@ -80,7 +80,7 @@ import java.util.function.Function;
  *   4. Execute operation
  *   5. Close connection
  *   6. Clear ThreadLocal
- * 
+ *
  * Read-Write:
  *   1. Set ThreadLocal (READ_ONLY = false)
  *   2. Acquire connection (routed to primary)
@@ -100,18 +100,18 @@ import java.util.function.Function;
  * @since 1.0.0
  */
 public class ObservabilityTransactionManager {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ObservabilityTransactionManager.class);
-    
+
     private final DataSource dataSource;
-    
+
     /**
      * Create a new TransactionManager with the specified data source.
      */
     public ObservabilityTransactionManager(DataSource dataSource) {
         this.dataSource = dataSource;
     }
-    
+
     /**
      * Execute a read-only transaction.
      */
@@ -143,7 +143,7 @@ public class ObservabilityTransactionManager {
             }
         });
     }
-    
+
     /**
      * Execute a read-write transaction.
      */
@@ -191,7 +191,7 @@ public class ObservabilityTransactionManager {
             }
         });
     }
-    
+
     /**
      * Execute a batch operation in a transaction.
      */
@@ -199,7 +199,7 @@ public class ObservabilityTransactionManager {
         // Batch operations are always read-write
         return executeReadWrite(operation);
     }
-    
+
     /**
      * Get the underlying data source.
      */

@@ -58,19 +58,19 @@ import java.util.Optional;
  *     )
  * })
  * public class UserRepository extends JpaRepository<User, UserId> {
- *     
+ *
  *     public UserRepository(EntityManager em) {
  *         super(em, User.class);
  *     }
- *     
+ *
  *     public Optional<User> findByEmail(String email) {
  *         return findSingleByNamedQuery("User.findByEmail", "email", email);
  *     }
- *     
+ *
  *     public List<User> findActiveUsers() {
  *         return findByNamedQuery("User.findActive");
  *     }
- *     
+ *
  *     public List<User> findByTenantId(String tenantId) {
  *         return findByNamedQuery("User.findByTenant", "tenantId", tenantId);
  *     }
@@ -149,32 +149,32 @@ import java.util.Optional;
  */
 public abstract class JpaRepository<T, ID> {
     private static final Logger LOG = LoggerFactory.getLogger(JpaRepository.class);
-    
+
     protected final EntityManager entityManager;
     protected final Class<T> entityClass;
-    
+
     /**
      * Creates a new JpaRepository.
-     * 
+     *
      * @param entityManager The EntityManager to use
      * @param entityClass The entity class
      */
     protected JpaRepository(EntityManager entityManager, Class<T> entityClass) {
         this.entityManager = Preconditions.requireNonNull(entityManager, "EntityManager cannot be null");
         this.entityClass = Preconditions.requireNonNull(entityClass, "Entity class cannot be null");
-        
+
         LOG.debug("Created repository for entity: {}", entityClass.getSimpleName());
     }
-    
+
     /**
      * Saves an entity (insert or update).
-     * 
+     *
      * @param entity The entity to save
      * @return The saved entity
      */
     public T save(T entity) {
         Preconditions.requireNonNull(entity, "Entity cannot be null");
-        
+
         LOG.debug("Saving entity: {}", entity);
         jakarta.persistence.EntityTransaction tx = entityManager.getTransaction();
         boolean began = false;
@@ -205,7 +205,7 @@ public abstract class JpaRepository<T, ID> {
             throw e;
         }
     }
-    
+
     /**
      * Saves all entities in the given iterable within a single transaction.
      *
@@ -247,51 +247,51 @@ public abstract class JpaRepository<T, ID> {
             throw e;
         }
     }
-    
+
     /**
      * Finds an entity by its ID.
-     * 
+     *
      * @param id The entity ID
      * @return Optional containing the entity if found
      */
     public Optional<T> findById(ID id) {
         Preconditions.requireNonNull(id, "ID cannot be null");
-        
+
         LOG.debug("Finding entity by ID: {}", id);
-        
+
         T entity = entityManager.find(entityClass, id);
         return Optional.ofNullable(entity);
     }
-    
+
     /**
      * Checks if an entity exists by its ID.
-     * 
+     *
      * @param id The entity ID
      * @return true if the entity exists
      */
     public boolean existsById(ID id) {
         return findById(id).isPresent();
     }
-    
+
     /**
      * Finds all entities.
-     * 
+     *
      * @return List of all entities
      */
     public List<T> findAll() {
         LOG.debug("Finding all entities of type: {}", entityClass.getSimpleName());
-        
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> query = cb.createQuery(entityClass);
         Root<T> root = query.from(entityClass);
         query.select(root);
-        
+
         return entityManager.createQuery(query).getResultList();
     }
-    
+
     /**
      * Finds all entities with pagination.
-     * 
+     *
      * @param offset The offset (0-based)
      * @param limit The maximum number of results
      * @return List of entities within the specified range
@@ -299,45 +299,45 @@ public abstract class JpaRepository<T, ID> {
     public List<T> findAll(int offset, int limit) {
         Preconditions.requireNonNegative(offset, "Offset cannot be negative");
         Preconditions.requirePositive(limit, "Limit must be positive");
-        
+
         LOG.debug("Finding entities with pagination: offset={}, limit={}", offset, limit);
-        
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<T> query = cb.createQuery(entityClass);
         Root<T> root = query.from(entityClass);
         query.select(root);
-        
+
         return entityManager.createQuery(query)
             .setFirstResult(offset)
             .setMaxResults(limit)
             .getResultList();
     }
-    
+
     /**
      * Counts all entities.
-     * 
+     *
      * @return The total count of entities
      */
     public long count() {
         LOG.debug("Counting entities of type: {}", entityClass.getSimpleName());
-        
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<T> root = query.from(entityClass);
         query.select(cb.count(root));
-        
+
         return entityManager.createQuery(query).getSingleResult();
     }
-    
+
     /**
      * Deletes an entity by its ID.
-     * 
+     *
      * @param id The entity ID
      * @return true if the entity was deleted, false if not found
      */
     public boolean deleteById(ID id) {
         Preconditions.requireNonNull(id, "ID cannot be null");
-        
+
         LOG.debug("Deleting entity by ID: {}", id);
         Optional<T> entity = findById(id);
         if (entity.isPresent()) {
@@ -361,15 +361,15 @@ public abstract class JpaRepository<T, ID> {
             return false;
         }
     }
-    
+
     /**
      * Deletes an entity.
-     * 
+     *
      * @param entity The entity to delete
      */
     public void delete(T entity) {
         Preconditions.requireNonNull(entity, "Entity cannot be null");
-        
+
         LOG.debug("Deleting entity: {}", entity);
         jakarta.persistence.EntityTransaction tx = entityManager.getTransaction();
         boolean began = false;
@@ -394,18 +394,18 @@ public abstract class JpaRepository<T, ID> {
             throw e;
         }
     }
-    
+
     /**
      * Deletes all entities in the given iterable.
-     * 
+     *
      * @param entities The entities to delete
      */
     public void deleteAll(Iterable<T> entities) {
         Preconditions.requireNonNull(entities, "Entities cannot be null");
-        
+
         entities.forEach(this::delete);
     }
-    
+
     /**
      * Flushes pending changes to the database.
      */
@@ -413,34 +413,34 @@ public abstract class JpaRepository<T, ID> {
         LOG.debug("Flushing EntityManager");
         entityManager.flush();
     }
-    
+
     /**
      * Refreshes an entity from the database.
-     * 
+     *
      * @param entity The entity to refresh
      */
     public void refresh(T entity) {
         Preconditions.requireNonNull(entity, "Entity cannot be null");
-        
+
         LOG.debug("Refreshing entity: {}", entity);
         entityManager.refresh(entity);
     }
-    
+
     /**
      * Detaches an entity from the persistence context.
-     * 
+     *
      * @param entity The entity to detach
      */
     public void detach(T entity) {
         Preconditions.requireNonNull(entity, "Entity cannot be null");
-        
+
         LOG.debug("Detaching entity: {}", entity);
         entityManager.detach(entity);
     }
-    
+
     /**
      * Executes a named query and returns the results.
-     * 
+     *
      * @param queryName The name of the named query
      * @param parameters The query parameters (name-value pairs)
      * @return List of results
@@ -448,18 +448,18 @@ public abstract class JpaRepository<T, ID> {
     protected List<T> findByNamedQuery(String queryName, Object... parameters) {
         Preconditions.requireNonBlank(queryName, "Query name cannot be blank");
         Preconditions.requireEvenLength(parameters, "Parameters must be name-value pairs");
-        
+
         LOG.debug("Executing named query: {} with {} parameters", queryName, parameters.length / 2);
-        
+
         TypedQuery<T> query = entityManager.createNamedQuery(queryName, entityClass);
         setParameters(query, parameters);
-        
+
         return query.getResultList();
     }
-    
+
     /**
      * Executes a named query and returns a single result.
-     * 
+     *
      * @param queryName The name of the named query
      * @param parameters The query parameters (name-value pairs)
      * @return Optional containing the result if found
@@ -467,13 +467,13 @@ public abstract class JpaRepository<T, ID> {
     protected Optional<T> findSingleByNamedQuery(String queryName, Object... parameters) {
         Preconditions.requireNonBlank(queryName, "Query name cannot be blank");
         Preconditions.requireEvenLength(parameters, "Parameters must be name-value pairs");
-        
-        LOG.debug("Executing named query for single result: {} with {} parameters", 
+
+        LOG.debug("Executing named query for single result: {} with {} parameters",
                 queryName, parameters.length / 2);
-        
+
         TypedQuery<T> query = entityManager.createNamedQuery(queryName, entityClass);
         setParameters(query, parameters);
-        
+
         try {
             return Optional.of(query.getSingleResult());
         } catch (NoResultException e) {
@@ -481,10 +481,10 @@ public abstract class JpaRepository<T, ID> {
             return Optional.empty();
         }
     }
-    
+
     /**
      * Executes a JPQL query and returns the results.
-     * 
+     *
      * @param jpql The JPQL query string
      * @param parameters The query parameters (name-value pairs)
      * @return List of results
@@ -492,18 +492,18 @@ public abstract class JpaRepository<T, ID> {
     protected List<T> findByJpql(String jpql, Object... parameters) {
         Preconditions.requireNonBlank(jpql, "JPQL cannot be blank");
         Preconditions.requireEvenLength(parameters, "Parameters must be name-value pairs");
-        
+
         LOG.debug("Executing JPQL query: {} with {} parameters", jpql, parameters.length / 2);
-        
+
         TypedQuery<T> query = entityManager.createQuery(jpql, entityClass);
         setParameters(query, parameters);
-        
+
         return query.getResultList();
     }
-    
+
     /**
      * Executes a JPQL query and returns a single result.
-     * 
+     *
      * @param jpql The JPQL query string
      * @param parameters The query parameters (name-value pairs)
      * @return Optional containing the result if found
@@ -511,13 +511,13 @@ public abstract class JpaRepository<T, ID> {
     protected Optional<T> findSingleByJpql(String jpql, Object... parameters) {
         Preconditions.requireNonBlank(jpql, "JPQL cannot be blank");
         Preconditions.requireEvenLength(parameters, "Parameters must be name-value pairs");
-        
-        LOG.debug("Executing JPQL query for single result: {} with {} parameters", 
+
+        LOG.debug("Executing JPQL query for single result: {} with {} parameters",
                 jpql, parameters.length / 2);
-        
+
         TypedQuery<T> query = entityManager.createQuery(jpql, entityClass);
         setParameters(query, parameters);
-        
+
         try {
             return Optional.of(query.getSingleResult());
         } catch (NoResultException e) {
@@ -525,10 +525,10 @@ public abstract class JpaRepository<T, ID> {
             return Optional.empty();
         }
     }
-    
+
     /**
      * Executes an update or delete query.
-     * 
+     *
      * @param jpql The JPQL update/delete query
      * @param parameters The query parameters (name-value pairs)
      * @return The number of affected rows
@@ -536,42 +536,42 @@ public abstract class JpaRepository<T, ID> {
     protected int executeUpdate(String jpql, Object... parameters) {
         Preconditions.requireNonBlank(jpql, "JPQL cannot be blank");
         Preconditions.requireEvenLength(parameters, "Parameters must be name-value pairs");
-        
+
         LOG.debug("Executing update query: {} with {} parameters", jpql, parameters.length / 2);
-        
+
         Query query = entityManager.createQuery(jpql);
         setParameters(query, parameters);
-        
+
         int affectedRows = query.executeUpdate();
         LOG.debug("Update query affected {} rows", affectedRows);
-        
+
         return affectedRows;
     }
-    
+
     /**
      * Gets the EntityManager used by this repository.
-     * 
+     *
      * @return The EntityManager
      */
     protected EntityManager getEntityManager() {
         return entityManager;
     }
-    
+
     /**
      * Gets the entity class managed by this repository.
-     * 
+     *
      * @return The entity class
      */
     protected Class<T> getEntityClass() {
         return entityClass;
     }
-    
+
     /**
      * Determines if an entity is new (not yet persisted).
-     * 
+     *
      * <p>Subclasses can override this method to provide custom logic
      * for determining if an entity is new.
-     * 
+     *
      * @param entity The entity to check
      * @return true if the entity is new
      */
@@ -598,10 +598,10 @@ public abstract class JpaRepository<T, ID> {
             return !entityManager.contains(entity);
         }
     }
-    
+
     /**
      * Sets parameters on a query from name-value pairs.
-     * 
+     *
      * @param query The query to set parameters on
      * @param parameters The parameters as name-value pairs
      */

@@ -31,7 +31,7 @@ package com.ghatana.core.database.migration;
  *     // Prevent application startup
  *     throw new IllegalStateException("Cannot start with failed migrations", e);
  * }
- * 
+ *
  * // Throw from custom migration script
  * public class V001__InitSchema implements JavaMigration {
  *     @Override
@@ -44,7 +44,7 @@ package com.ghatana.core.database.migration;
  *         }
  *     }
  * }
- * 
+ *
  * // Handle validation failure
  * try {
  *     ValidationResult validation = flywayMigration.validate();
@@ -75,29 +75,29 @@ package com.ghatana.core.database.migration;
  * @doc.pattern Exception
  */
 public class MigrationException extends RuntimeException {
-    
+
     /**
      * Creates a new MigrationException with the specified message.
-     * 
+     *
      * @param message The exception message
      */
     public MigrationException(String message) {
         super(message);
     }
-    
+
     /**
      * Creates a new MigrationException with the specified message and cause.
-     * 
+     *
      * @param message The exception message
      * @param cause The underlying cause
      */
     public MigrationException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     /**
      * Creates a new MigrationException with the specified cause.
-     * 
+     *
      * @param cause The underlying cause
      */
     public MigrationException(Throwable cause) {

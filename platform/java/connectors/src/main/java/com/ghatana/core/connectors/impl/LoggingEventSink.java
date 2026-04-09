@@ -40,46 +40,46 @@ import java.util.Objects;
  * // 1. Basic usage
  * MetricsCollector metrics = MetricsCollectorFactory.create(registry);
  * LoggingEventSink sink = new LoggingEventSink(metrics);
- * 
+ *
  * // Start sink
  * sink.start().whenComplete((v, e) -> {
  *     if (e == null) {
  *         logger.info("Logging sink started");
  *     }
  * });
- * 
+ *
  * // Send event
  * EventRecord event = EventRecord.create(
  *     EventId.random(),
  *     EventType.of("user.created"),
  *     Map.of("email", "john@example.com")
  * );
- * 
+ *
  * sink.send(event).whenComplete((v, e) -> {
  *     if (e == null) {
  *         logger.info("Event logged");
  *     }
  * });
- * 
+ *
  * // Stop sink
  * sink.stop();
  *
  * // 2. Integration with event pipeline
  * public class EventPipeline {
  *     private final EventSink sink;
- *     
+ *
  *     public EventPipeline(MetricsCollector metrics) {
  *         this.sink = new LoggingEventSink(metrics);
  *     }
- *     
+ *
  *     public Promise<Void> start() {
  *         return sink.start();
  *     }
- *     
+ *
  *     public Promise<Void> publish(EventRecord event) {
  *         return sink.send(event);
  *     }
- *     
+ *
  *     public Promise<Void> shutdown() {
  *         return sink.stop();
  *     }
@@ -100,21 +100,21 @@ import java.util.Objects;
  * // 4. Testing without external dependencies
  * class EventProcessorTest {
  *     private LoggingEventSink sink;
- *     
+ *
  *     @BeforeEach
  *     void setup() {
  *         MetricsCollector metrics = NoopMetricsCollector.getInstance();
  *         sink = new LoggingEventSink(metrics);
  *         sink.start();
  *     }
- *     
+ *
  *     @Test
  *     void shouldPublishEvent() {
  *         EventRecord event = createTestEvent();
- *         
+ *
  *         // No external dependencies - just logs
  *         Promise<Void> result = sink.send(event);
- *         
+ *
  *         assertThat(result).succeedsWithin(Duration.ofSeconds(1));
  *     }
  * }
@@ -122,13 +122,13 @@ import java.util.Objects;
  * // 5. Multi-sink configuration
  * public class ProductionEventPublisher {
  *     private final List<EventSink> sinks;
- *     
+ *
  *     public ProductionEventPublisher(
  *             KafkaEventSink kafkaSink,
  *             LoggingEventSink loggingSink) {
  *         this.sinks = List.of(kafkaSink, loggingSink);
  *     }
- *     
+ *
  *     public Promise<Void> publish(EventRecord event) {
  *         // Send to Kafka + log for debugging
  *         return Promise.all(sinks.stream()
@@ -141,14 +141,14 @@ import java.util.Objects;
  * public class FilteringLoggingSink implements EventSink {
  *     private final LoggingEventSink delegate;
  *     private final Set<String> loggedTypes;
- *     
+ *
  *     public FilteringLoggingSink(
  *             MetricsCollector metrics,
  *             Set<String> loggedTypes) {
  *         this.delegate = new LoggingEventSink(metrics);
  *         this.loggedTypes = loggedTypes;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> send(EventRecord event) {
  *         // Only log specific event types

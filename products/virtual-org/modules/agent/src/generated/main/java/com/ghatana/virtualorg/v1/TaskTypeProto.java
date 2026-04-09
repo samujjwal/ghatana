@@ -129,4 +129,3 @@ public enum TaskTypeProto
 
   // @@protoc_insertion_point(enum_scope:com.ghatana.virtualorg.v1.TaskTypeProto)
 }
-

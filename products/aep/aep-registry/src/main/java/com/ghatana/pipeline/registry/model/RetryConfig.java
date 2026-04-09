@@ -75,4 +75,3 @@ public class RetryConfig {
         return attemptNumber < maxAttempts;
     }
 }
-

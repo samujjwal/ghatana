@@ -245,7 +245,7 @@ public final class FinanceIncidentManagementService {
     private final FinanceImpactAssessmentPort impact;
     private final FinancePostIncidentAnalysisPort analysis;
     private final Executor executor;
-    
+
     private final Counter financeIncidentDetectedCounter;
     private final Counter financeIncidentResolvedCounter;
     private final Counter regulatoryNotificationSentCounter;
@@ -266,7 +266,7 @@ public final class FinanceIncidentManagementService {
         this.impact = impact;
         this.analysis = analysis;
         this.executor = executor;
-        
+
         this.financeIncidentDetectedCounter = Counter.builder("finance.incident.detected_total").register(registry);
         this.financeIncidentResolvedCounter = Counter.builder("finance.incident.resolved_total").register(registry);
         this.regulatoryNotificationSentCounter = Counter.builder("finance.incident.regulatory.notification_total").register(registry);
@@ -284,25 +284,25 @@ public final class FinanceIncidentManagementService {
                 .then(incident -> {
                     if (incident != null) {
                         financeIncidentDetectedCounter.increment();
-                        
+
                         // Assess financial impact
                         return impact.assessFinancialImpact(incident)
                             .then(impactAssessment -> {
                                 // Notify primary regulator if high severity
-                                if (incident.severity() == FinanceIncidentSeverity.CRITICAL || 
+                                if (incident.severity() == FinanceIncidentSeverity.CRITICAL ||
                                     incident.severity() == FinanceIncidentSeverity.HIGH) {
-                                    
+
                                     return regulatory.notifyRegulator(incident, incident.primaryRegulator())
                                         .then(notified -> {
                                             regulatoryNotificationSentCounter.increment();
                                             return Promise.of(Optional.of(incident));
                                         });
                                 }
-                                
+
                                 return Promise.of(Optional.of(incident));
                             });
                     }
-                    
+
                     return Promise.of(Optional.<FinanceIncident>empty());
                 });
         }).getResult();
@@ -313,7 +313,7 @@ public final class FinanceIncidentManagementService {
      */
     public Promise<FinanceIncident> resolveFinanceIncident(
             String incidentId, String resolutionSummary, String resolvedBy) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             return detection.getIncident(incidentId)
                 .then(incident -> {
@@ -333,9 +333,9 @@ public final class FinanceIncidentManagementService {
                         resolvedBy,
                         incident.metadata()
                     );
-                    
+
                     financeIncidentResolvedCounter.increment();
-                    
+
                     // Submit final incident report to regulator
                     return submitFinalIncidentReport(resolved, resolvedBy)
                         .then(reportSubmitted -> Promise.of(resolved));
@@ -393,7 +393,7 @@ public final class FinanceIncidentManagementService {
      */
     public Promise<FinanceIncidentReport> submitRegulatoryReport(
             String incidentId, FinanceRegulatoryBody regulator, String reportSummary) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             return detection.getIncident(incidentId)
                 .then(incident -> {
@@ -413,7 +413,7 @@ public final class FinanceIncidentManagementService {
                                 "To be determined by investigation",
                                 impactAssessment.businessImpact() == FinanceBusinessImpact.CRITICAL
                             );
-                            
+
                             return regulatory.submitIncidentReport(report)
                                 .then(submitted -> Promise.of(report));
                         });
@@ -457,7 +457,7 @@ public final class FinanceIncidentManagementService {
                 "None - incident resolved within SLA",
                 false
             );
-            
+
             return regulatory.submitIncidentReport(report);
         }).getResult();
     }

@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Represents a pipeline configuration in the system.
- * 
+ *
  * <p>Supports both legacy string config and new structured config for backward compatibility.
  * During migration period, both formats are supported with structured config taking priority.
  *
@@ -50,7 +50,7 @@ public class PipelineRegistration {
      * Legacy configuration as JSON string.
      */
     private String config;
-    
+
     /**
      * Structured pipeline configuration (NEW - preferred).
      */
@@ -74,7 +74,7 @@ public class PipelineRegistration {
     @Builder.Default
     @Size(max = 100, message = "Tag cannot exceed 100 characters")
     private List<@NotBlank(message = "Tag cannot be blank") String> tags = new ArrayList<>();
-    
+
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
@@ -244,4 +244,3 @@ public class PipelineRegistration {
         this.updatedBy = update.getUpdatedBy();
     }
 }
-

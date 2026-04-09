@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @doc.type test
  * @doc.purpose Router functionality validation
- 
+
  * @doc.layer core
  * @doc.pattern Test
 */

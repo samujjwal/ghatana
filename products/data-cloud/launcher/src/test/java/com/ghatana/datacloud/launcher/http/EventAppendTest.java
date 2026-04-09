@@ -20,7 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -261,13 +260,13 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @DisplayName("events are returned in strict append order")
         void readEvents_order_isStrictlyMonotonic() throws Exception {
             // Create events with increasing-offset attributes
-            var event1 = DataCloudClient.Event.of("ENTITY_CREATED", 
+            var event1 = DataCloudClient.Event.of("ENTITY_CREATED",
                     Map.of("entityId", "ent-1", "offset", 0));
-            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED", 
+            var event2 = DataCloudClient.Event.of("ENTITY_UPDATED",
                     Map.of("entityId", "ent-1", "offset", 1));
-            var event3 = DataCloudClient.Event.of("ENTITY_DELETED", 
+            var event3 = DataCloudClient.Event.of("ENTITY_DELETED",
                     Map.of("entityId", "ent-1", "offset", 2));
-            
+
             when(mockClient.queryEvents(anyString(), any()))
                     .thenReturn(Promise.of(List.of(event1, event2, event3)));
 
@@ -279,7 +278,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
             Map<String, Object> body = parseJsonResponse(resp);
             @SuppressWarnings("unchecked")
             java.util.List<Map<String, Object>> events = (java.util.List<Map<String, Object>>) body.get("events");
-            
+
             // Verify offsets are strictly monotonically increasing
             for (int i = 1; i < events.size(); i++) {
                 long prevOffset = ((Number) events.get(i - 1).get("offset")).longValue();
@@ -305,7 +304,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("returns 200 with event at specified offset")
         void getEventAtOffset_exists_returns200() throws Exception {
-            var event = DataCloudClient.Event.of("ENTITY_CREATED", 
+            var event = DataCloudClient.Event.of("ENTITY_CREATED",
                     Map.of("entityId", "ent-1", "offset", 0));
             when(mockClient.queryEvents(anyString(), any()))
                     .thenReturn(Promise.of(List.of(event)));

@@ -121,28 +121,28 @@ public interface EventId {
     record SimpleEventId(String id, String eventType, String version, String tenantId) implements EventId {
         @Override
         public String getId
-            
+
         () {
             return id;
         }
 
         @Override
         public String getEventType
-            
+
         () {
             return eventType;
         }
 
         @Override
         public String getVersion
-            
+
         () {
             return version;
         }
 
         @Override
         public String getTenantId
-            
+
         () {
             return tenantId;
         }

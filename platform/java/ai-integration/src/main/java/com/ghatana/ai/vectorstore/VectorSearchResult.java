@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * Immutable value object representing the result of a vector similarity search.
- * 
+ *
  * @doc.type class
  * @doc.purpose Represents a single result from a vector similarity search with the matched content and similarity score.
  * @doc.layer domain
@@ -35,7 +35,7 @@ public final class VectorSearchResult {
         this.similarity = similarity;
         this.rank = rank;
         this.metadata = metadata != null ? java.util.Collections.unmodifiableMap(new java.util.HashMap<>(metadata)) : java.util.Collections.emptyMap();
-        
+
         if (similarity < 0.0 || similarity > 1.0) {
             throw new IllegalArgumentException("similarity must be between 0 and 1");
         }
@@ -56,7 +56,7 @@ public final class VectorSearchResult {
     public String getContent() {
         return content;
     }
-    
+
     public java.util.Map<String, String> getMetadata() {
         return metadata;
     }

@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Utility class for argument validation and precondition checking.
- * 
+ *
  * Provides fluent, readable validation methods that throw appropriate exceptions
  * with clear error messages.
  *
@@ -18,11 +18,11 @@ import java.util.Map;
  * @doc.pattern Utility
  */
 public final class Preconditions {
-    
+
     private Preconditions() {
         throw new UnsupportedOperationException("Utility class");
     }
-    
+
     /**
      * Ensures that an object reference is not null.
      *
@@ -38,7 +38,7 @@ public final class Preconditions {
         }
         return reference;
     }
-    
+
     /**
      * Ensures that a string is not null or empty.
      *
@@ -54,7 +54,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that a string is not null, empty, or blank.
      *
@@ -70,7 +70,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that a collection is not null or empty.
      *
@@ -86,7 +86,7 @@ public final class Preconditions {
         }
         return collection;
     }
-    
+
     /**
      * Ensures that a map is not null or empty.
      *
@@ -102,7 +102,7 @@ public final class Preconditions {
         }
         return map;
     }
-    
+
     /**
      * Ensures that a condition is true.
      *
@@ -115,7 +115,7 @@ public final class Preconditions {
             throw new IllegalArgumentException(message);
         }
     }
-    
+
     /**
      * Ensures that a value is positive (greater than zero).
      *
@@ -130,7 +130,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that a value is positive (greater than zero).
      *
@@ -145,7 +145,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that a value is non-negative (greater than or equal to zero).
      *
@@ -160,7 +160,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that a value is non-negative (greater than or equal to zero).
      *
@@ -175,7 +175,7 @@ public final class Preconditions {
         }
         return value;
     }
-    
+
     /**
      * Ensures that an array has an even number of elements (for key-value pairs).
      *

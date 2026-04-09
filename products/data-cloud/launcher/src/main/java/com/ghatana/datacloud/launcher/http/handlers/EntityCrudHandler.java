@@ -6,7 +6,6 @@ import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;

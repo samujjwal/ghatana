@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
  * Utility to execute external processes with timeout and capture of stdout/stderr as UTF-8.
  *
  * <p>This class is intentionally minimal and dependency-light to comply with workspace rules.
- 
+
  * @doc.type class
  * @doc.purpose Handles process exec operations
  * @doc.layer core

@@ -113,7 +113,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
         this.patternCatalog = patternCatalog;
         this.reflexEngine = reflexEngine != null ? reflexEngine : new DefaultReflexEngine();
         this.vectorMemory = vectorMemory;
-        
+
         LOG.info("Created DataCloudBrain: {}", config.getBrainId());
     }
 
@@ -164,11 +164,11 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
     }
 
     private Promise<ProcessingResult> processWithScore(
-            DataRecord record, 
-            SalienceScore salienceScore, 
+            DataRecord record,
+            SalienceScore salienceScore,
             BrainContext context,
             long processingStart) {
-        
+
         String tenantId = context.getTenantId();
         String recordId = getRecordId(record);
 
@@ -305,7 +305,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
 
     @Override
     public Promise<SimilaritySearchCapability.SearchResults> search(
-            SimilaritySearchCapability.SearchRequest request, 
+            SimilaritySearchCapability.SearchRequest request,
             BrainContext context) {
         if (!config.isSemanticSearchEnabled() || vectorMemory == null) {
             return Promise.of(SimilaritySearchCapability.SearchResults.empty());
@@ -316,8 +316,8 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
 
     @Override
     public Promise<SimilaritySearchCapability.SearchResults> findSimilar(
-            String recordId, 
-            int k, 
+            String recordId,
+            int k,
             BrainContext context) {
         if (!config.isSemanticSearchEnabled() || vectorMemory == null) {
             return Promise.of(SimilaritySearchCapability.SearchResults.empty());
@@ -432,7 +432,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
 
     @Override
     public Promise<Void> feedback(FeedbackEvent feedback, BrainContext context) {
-        LOG.debug("Received feedback: type={}, reference={}", 
+        LOG.debug("Received feedback: type={}, reference={}",
                 feedback.getFeedbackType(), feedback.getReferenceType());
         return Promise.complete();
     }
@@ -534,7 +534,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                 "memory", HealthStatus.Status.HEALTHY,
                 "patterns", HealthStatus.Status.HEALTHY,
                 "reflexes", config.isReflexesEnabled() ? HealthStatus.Status.HEALTHY : HealthStatus.Status.DEGRADED,
-                "vector", config.isSemanticSearchEnabled() && vectorMemory != null 
+                "vector", config.isSemanticSearchEnabled() && vectorMemory != null
                         ? HealthStatus.Status.HEALTHY : HealthStatus.Status.DEGRADED
         );
 

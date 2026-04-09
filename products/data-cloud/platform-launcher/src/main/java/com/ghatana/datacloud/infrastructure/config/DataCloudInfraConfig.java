@@ -3,10 +3,8 @@ package com.ghatana.datacloud.infrastructure.config;
 import com.ghatana.datacloud.infrastructure.storage.BlobStorageConnectorConfig;
 import com.ghatana.datacloud.infrastructure.storage.KeyValueConnectorConfig;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Centralized infrastructure configuration for Data Cloud.

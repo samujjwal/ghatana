@@ -7,10 +7,10 @@ import java.util.regex.Pattern;
 
 /**
  * Common validation predicates for use with ValidationFramework.
- * 
+ *
  * <p>Provides pre-built validators for common validation scenarios including
  * email, phone, URL, UUID, and other standard formats.</p>
- * 
+ *
  * <h3>Usage Example:</h3>
  * <pre>{@code
  * ValidationResult result = ValidationFramework.validate()
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * @doc.purpose Common validation predicates for standard formats
  * @doc.layer core
  * @doc.pattern Utility
- * 
+ *
  * @since 1.0.0
  */
 public final class CommonValidators {
@@ -72,89 +72,89 @@ public final class CommonValidators {
      * Email validator (RFC 5322 simplified).
      */
     @NotNull
-    public static final Predicate<String> EMAIL = str -> 
+    public static final Predicate<String> EMAIL = str ->
             str != null && EMAIL_PATTERN.matcher(str).matches();
 
     /**
      * US phone number validator.
      */
     @NotNull
-    public static final Predicate<String> PHONE_US = str -> 
+    public static final Predicate<String> PHONE_US = str ->
             str != null && PHONE_US_PATTERN.matcher(str).matches();
 
     /**
      * UUID validator.
      */
     @NotNull
-    public static final Predicate<String> UUID = str -> 
+    public static final Predicate<String> UUID = str ->
             str != null && UUID_PATTERN.matcher(str).matches();
 
     /**
      * URL validator (HTTP/HTTPS/FTP).
      */
     @NotNull
-    public static final Predicate<String> URL = str -> 
+    public static final Predicate<String> URL = str ->
             str != null && URL_PATTERN.matcher(str).matches();
 
     /**
      * IPv4 address validator.
      */
     @NotNull
-    public static final Predicate<String> IP_V4 = str -> 
+    public static final Predicate<String> IP_V4 = str ->
             str != null && IP_V4_PATTERN.matcher(str).matches();
 
     /**
      * Alphanumeric validator (letters and numbers only).
      */
     @NotNull
-    public static final Predicate<String> ALPHANUMERIC = str -> 
+    public static final Predicate<String> ALPHANUMERIC = str ->
             str != null && ALPHANUMERIC_PATTERN.matcher(str).matches();
 
     /**
      * Alphabetic validator (letters only).
      */
     @NotNull
-    public static final Predicate<String> ALPHABETIC = str -> 
+    public static final Predicate<String> ALPHABETIC = str ->
             str != null && ALPHABETIC_PATTERN.matcher(str).matches();
 
     /**
      * Numeric validator (numbers only).
      */
     @NotNull
-    public static final Predicate<String> NUMERIC = str -> 
+    public static final Predicate<String> NUMERIC = str ->
             str != null && NUMERIC_PATTERN.matcher(str).matches();
 
     /**
      * Not empty validator.
      */
     @NotNull
-    public static final Predicate<String> NOT_EMPTY = str -> 
+    public static final Predicate<String> NOT_EMPTY = str ->
             str != null && !str.isEmpty();
 
     /**
      * Not blank validator (not null, not empty, not whitespace).
      */
     @NotNull
-    public static final Predicate<String> NOT_BLANK = str -> 
+    public static final Predicate<String> NOT_BLANK = str ->
             str != null && !str.trim().isEmpty();
 
     /**
      * Positive number validator.
      */
     @NotNull
-    public static final Predicate<Number> POSITIVE = num -> 
+    public static final Predicate<Number> POSITIVE = num ->
             num != null && num.doubleValue() > 0;
 
     /**
      * Non-negative number validator.
      */
     @NotNull
-    public static final Predicate<Number> NON_NEGATIVE = num -> 
+    public static final Predicate<Number> NON_NEGATIVE = num ->
             num != null && num.doubleValue() >= 0;
 
     /**
      * Create a length range validator.
-     * 
+     *
      * @param min minimum length (inclusive)
      * @param max maximum length (inclusive)
      * @return length range validator
@@ -166,7 +166,7 @@ public final class CommonValidators {
 
     /**
      * Create a numeric range validator.
-     * 
+     *
      * @param min minimum value (inclusive)
      * @param max maximum value (inclusive)
      * @return numeric range validator
@@ -178,7 +178,7 @@ public final class CommonValidators {
 
     /**
      * Create a custom regex validator.
-     * 
+     *
      * @param pattern regex pattern
      * @return regex validator
      */
@@ -190,7 +190,7 @@ public final class CommonValidators {
 
     /**
      * Create a custom regex validator with flags.
-     * 
+     *
      * @param pattern regex pattern
      * @param flags regex flags
      * @return regex validator

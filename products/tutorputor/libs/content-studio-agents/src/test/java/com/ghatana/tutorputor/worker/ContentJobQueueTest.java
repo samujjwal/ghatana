@@ -68,7 +68,7 @@ class ContentJobQueueTest {
     void shouldProcessJobAndUpdateStatus() throws InterruptedException {
         // GIVEN
         jobQueue.start();
-        
+
         ContentJob job = ContentJob.builder()
             .type(ContentJob.JobType.VALIDATE_CONTENT)
             .tenantId("tenant-1")
@@ -78,7 +78,7 @@ class ContentJobQueueTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<ContentJob> completedJobRef = new AtomicReference<>();
-        
+
         jobQueue.onJobCompleted(completed -> {
             completedJobRef.set(completed);
             latch.countDown();
@@ -90,12 +90,12 @@ class ContentJobQueueTest {
         // THEN
         boolean completed = latch.await(5, TimeUnit.SECONDS);
         assertThat(completed).isTrue();
-        
+
         ContentJob completedJob = completedJobRef.get();
         assertThat(completedJob).isNotNull();
         assertThat(completedJob.id()).isEqualTo(jobId);
         assertThat(completedJob.result()).isNotNull();
-        
+
         // Cleanup
         jobQueue.stop(Duration.ofSeconds(1));
     }
@@ -132,7 +132,7 @@ class ContentJobQueueTest {
             .requesterId("user-1")
             .lowPriority()
             .build();
-        
+
         ContentJob highPriorityJob = ContentJob.builder()
             .type(ContentJob.JobType.GENERATE_CLAIMS)
             .tenantId("tenant-1")

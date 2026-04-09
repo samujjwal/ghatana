@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import javax.sql.DataSource;
 
 /**

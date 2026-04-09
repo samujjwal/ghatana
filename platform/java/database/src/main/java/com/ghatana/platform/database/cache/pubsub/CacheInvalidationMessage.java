@@ -46,7 +46,7 @@ import java.util.Set;
  * @doc.pattern Value Object
  */
 public final class CacheInvalidationMessage {
-    
+
     /**
      * Operation types for cache invalidation
      */
@@ -58,14 +58,14 @@ public final class CacheInvalidationMessage {
         /** Clear entire namespace */
         CLEAR_NAMESPACE
     }
-    
+
     private final Operation operation;
     private final Set<String> keys;
     private final String pattern;
     private final String namespace;
     private final String sourceInstance;
     private final Instant timestamp;
-    
+
     /**
      * Creates cache invalidation message (for Jackson deserialization)
      *
@@ -91,7 +91,7 @@ public final class CacheInvalidationMessage {
         this.sourceInstance = Objects.requireNonNull(sourceInstance, "Source instance cannot be null");
         this.timestamp = timestamp != null ? timestamp : Instant.now();
     }
-    
+
     /**
      * Create message to invalidate specific keys
      *
@@ -117,7 +117,7 @@ public final class CacheInvalidationMessage {
                 Instant.now()
         );
     }
-    
+
     /**
      * Create message to invalidate keys by pattern
      *
@@ -143,7 +143,7 @@ public final class CacheInvalidationMessage {
                 Instant.now()
         );
     }
-    
+
     /**
      * Create message to clear entire namespace
      *
@@ -163,33 +163,33 @@ public final class CacheInvalidationMessage {
                 Instant.now()
         );
     }
-    
+
     // Getters
-    
+
     public Operation getOperation() {
         return operation;
     }
-    
+
     public Set<String> getKeys() {
         return keys;
     }
-    
+
     public String getPattern() {
         return pattern;
     }
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public String getSourceInstance() {
         return sourceInstance;
     }
-    
+
     public Instant getTimestamp() {
         return timestamp;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -202,12 +202,12 @@ public final class CacheInvalidationMessage {
                 Objects.equals(sourceInstance, that.sourceInstance) &&
                 Objects.equals(timestamp, that.timestamp);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(operation, keys, pattern, namespace, sourceInstance, timestamp);
     }
-    
+
     @Override
     public String toString() {
         return "CacheInvalidationMessage{" +

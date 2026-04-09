@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.ghatana.platform.observability.util.BlockingExecutors.blockingExecutor;
 
 /**
  * Application service for managing storage profiles and connectors at the admin
@@ -27,7 +26,7 @@ import static com.ghatana.platform.observability.util.BlockingExecutors.blocking
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * AdminStorageManagementService service = new AdminStorageManagementService(
  *                 connectorRegistry,

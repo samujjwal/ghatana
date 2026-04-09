@@ -28,7 +28,7 @@ import java.util.Objects;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Windowing + aggregation pipeline
  * OperatorChain pipeline = AggregationPipelineBuilder.create()

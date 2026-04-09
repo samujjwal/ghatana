@@ -19,7 +19,7 @@ public final class ConnectionHealthMonitor {
 
     /**
      * Connection state enumeration.
-     
+
  *
  * @doc.type enum
  * @doc.purpose Connection state

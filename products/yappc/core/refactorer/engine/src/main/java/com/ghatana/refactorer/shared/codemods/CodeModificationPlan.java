@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Represents a plan for modifying source code to fix issues. 
+ * Represents a plan for modifying source code to fix issues.
  * @doc.type interface
  * @doc.purpose Defines the contract for code modification plan
  * @doc.layer core

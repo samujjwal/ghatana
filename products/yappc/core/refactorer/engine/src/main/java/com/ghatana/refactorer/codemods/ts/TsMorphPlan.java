@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Represents a plan for modifying TypeScript/JavaScript code using ts-morph. This implementation
  * focuses on adding missing imports.
- 
+
  * @doc.type class
  * @doc.purpose Handles ts morph plan operations
  * @doc.layer core

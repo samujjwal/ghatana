@@ -15,18 +15,18 @@ import java.util.Objects;
  * @doc.pattern ValueObject
  */
 public record Scope(String value) {
-    
+
     public Scope {
         Objects.requireNonNull(value, "Scope cannot be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("Scope cannot be blank");
         }
     }
-    
+
     public static Scope of(String value) {
         return new Scope(value);
     }
-    
+
     @Override
     public String toString() {
         return value;

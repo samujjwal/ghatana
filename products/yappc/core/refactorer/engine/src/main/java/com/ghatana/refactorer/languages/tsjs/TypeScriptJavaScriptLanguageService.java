@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
  * advanced code analysis with asynchronous processing.
  *
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.type class
  * @doc.purpose Handles type script java script language service operations
  * @doc.layer core

@@ -1,6 +1,5 @@
 package com.ghatana.tutorputor.contentgeneration;
 
-import com.ghatana.tutorputor.contentgeneration.*;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import java.util.*;
@@ -18,16 +17,16 @@ import java.util.*;
  * ContentGenerationService service = new ContentGenerationService(
  *     generator, metrics
  * );
- * 
+ *
  * PromptTemplate template = PromptTemplate.builder()
  *     .userPrompt("Summarize: {{text}}")
  *     .variable("text", "...")
  *     .build();
- * 
+ *
  * GenerationGuardrails guardrails = GenerationGuardrails.builder()
  *     .maxLength(1000)
  *     .build();
- * 
+ *
  * Promise<ContentGenerationService.GenerationResponse> response =
  *     service.generateContent("tenant-123", template, guardrails);
  * }</pre>
@@ -87,7 +86,7 @@ public final class ContentGenerationService {
             String tenantId,
             PromptTemplate template,
             GenerationGuardrails guardrails) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(template, "template cannot be null");
         Objects.requireNonNull(guardrails, "guardrails cannot be null");
@@ -101,7 +100,7 @@ public final class ContentGenerationService {
                         );
                         return Promise.ofException(
                                 new IllegalArgumentException(
-                                        "Template validation failed: " + 
+                                        "Template validation failed: " +
                                         String.join(", ", validationResult.getErrors())
                                 )
                         );
@@ -110,7 +109,7 @@ public final class ContentGenerationService {
                     // Template valid, proceed to generation
                     Map<String, Object> context = new HashMap<>();
                     context.put("guardrails", guardrails);
-                    
+
                     return contentGenerator.generateContent(
                             tenantId, template, guardrails, context
                     );
@@ -119,7 +118,7 @@ public final class ContentGenerationService {
                     // Validate guardrails
                     GenerationGuardrails.GuardrailValidationResult guardrailResult =
                             guardrails.validate(generationResult.getGeneratedContent());
-                    
+
                     if (!guardrailResult.isValid()) {
                         metricsCollector.incrementCounter(
                                 "generation.guardrails.violations",
@@ -180,11 +179,11 @@ public final class ContentGenerationService {
             String tenantId,
             List<PromptTemplate> templates,
             GenerationGuardrails guardrails) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(templates, "templates cannot be null");
         Objects.requireNonNull(guardrails, "guardrails cannot be null");
-        
+
         if (templates.isEmpty()) {
             throw new IllegalArgumentException("templates cannot be empty");
         }
@@ -217,7 +216,7 @@ public final class ContentGenerationService {
     public Promise<Void> configureGeneration(
             String tenantId,
             Map<String, Object> configuration) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(configuration, "configuration cannot be null");
 
@@ -262,7 +261,7 @@ public final class ContentGenerationService {
     public Promise<ContentGenerator.TemplateValidationResult> validateTemplate(
             String tenantId,
             PromptTemplate template) {
-        
+
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(template, "template cannot be null");
 
@@ -315,7 +314,7 @@ public final class ContentGenerationService {
             int index,
             List<GenerationResponse> results,
             List<String> errors) {
-        
+
         if (index >= templates.size()) {
             return Promise.of((Void) null);
         }

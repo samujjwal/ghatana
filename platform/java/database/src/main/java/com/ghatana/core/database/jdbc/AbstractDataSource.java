@@ -42,18 +42,18 @@ import java.util.logging.Logger;
  *     private final String jdbcUrl;
  *     private final String username;
  *     private final String password;
- *     
+ *
  *     public SimpleDataSource(String jdbcUrl, String username, String password) {
  *         this.jdbcUrl = jdbcUrl;
  *         this.username = username;
  *         this.password = password;
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         return DriverManager.getConnection(jdbcUrl, username, password);
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         return DriverManager.getConnection(jdbcUrl, username, password);
@@ -63,7 +63,7 @@ import java.util.logging.Logger;
  * // 2. Routing DataSource (multi-tenant)
  * public class RoutingDataSource extends AbstractDataSource {
  *     private final Map<String, DataSource> tenantDataSources;
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         String tenantId = TenantContext.getCurrentTenantId();
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
  *         }
  *         return tenantDS.getConnection();
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         // Delegate to default implementation
@@ -85,15 +85,15 @@ import java.util.logging.Logger;
  * public class ReadWriteDataSource extends AbstractDataSource {
  *     private final DataSource writeDataSource;
  *     private final DataSource readDataSource;
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         boolean isReadOnly = TransactionContext.isReadOnly();
- *         return isReadOnly 
- *             ? readDataSource.getConnection() 
+ *         return isReadOnly
+ *             ? readDataSource.getConnection()
  *             : writeDataSource.getConnection();
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         // Not supported for read-write splitting
@@ -106,7 +106,7 @@ import java.util.logging.Logger;
  * public class CountingDataSource extends AbstractDataSource {
  *     private final DataSource delegate;
  *     private final AtomicInteger activeConnections = new AtomicInteger(0);
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         activeConnections.incrementAndGet();
@@ -119,12 +119,12 @@ import java.util.logging.Logger;
  *             }
  *         };
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         return getConnection(); // Ignore credentials
  *     }
- *     
+ *
  *     public int getActiveConnectionCount() {
  *         return activeConnections.get();
  *     }
@@ -134,7 +134,7 @@ import java.util.logging.Logger;
  * public class LazyDataSource extends AbstractDataSource {
  *     private final Supplier<DataSource> dataSourceSupplier;
  *     private volatile DataSource delegate;
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         if (delegate == null) {
@@ -146,7 +146,7 @@ import java.util.logging.Logger;
  *         }
  *         return delegate.getConnection();
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         return getConnection();
@@ -156,11 +156,11 @@ import java.util.logging.Logger;
  * // 6. Testing with mock connections
  * public class MockDataSource extends AbstractDataSource {
  *     private final Queue<Connection> connections = new ConcurrentLinkedQueue<>();
- *     
+ *
  *     public void addMockConnection(Connection conn) {
  *         connections.add(conn);
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection() throws SQLException {
  *         Connection conn = connections.poll();
@@ -169,7 +169,7 @@ import java.util.logging.Logger;
  *         }
  *         return conn;
  *     }
- *     
+ *
  *     @Override
  *     public Connection getConnection(String username, String password) throws SQLException {
  *         return getConnection();
@@ -181,7 +181,7 @@ import java.util.logging.Logger;
  * Supports JDBC 4.0+ wrapper interface:
  * <pre>{@code
  * DataSource ds = new MyDataSource();
- * 
+ *
  * // Check if wraps specific type
  * if (ds.isWrapperFor(HikariDataSource.class)) {
  *     HikariDataSource hikari = ds.unwrap(HikariDataSource.class);

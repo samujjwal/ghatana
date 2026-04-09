@@ -54,7 +54,7 @@ public class DefaultDependencyService implements DependencyService {
     @Override
     public DependencyAnalysis analyzePack(String packName) {
         LOG.debug("Analyzing dependencies for pack: {}", packName);
-        
+
         Optional<PackInfo> packOpt = packService.get(packName);
         if (packOpt.isEmpty()) {
             return DependencyAnalysis.ofPack(packName, List.of());
@@ -77,9 +77,9 @@ public class DefaultDependencyService implements DependencyService {
     @Override
     public DependencyAnalysis analyzeProject(Path projectPath) {
         LOG.debug("Analyzing dependencies for project: {}", projectPath);
-        
+
         List<DependencyInfo> dependencies = extractDependenciesFromProject(projectPath);
-        
+
         return new DependencyAnalysis(
                 projectPath.getFileName().toString(),
                 DependencyAnalysis.AnalysisType.PROJECT,
@@ -121,7 +121,7 @@ public class DefaultDependencyService implements DependencyService {
                 Set<String> uniqueVersions = versions.stream()
                         .map(DependencyVersion::version)
                         .collect(Collectors.toSet());
-                
+
                 if (uniqueVersions.size() > 1) {
                     DependencyVersion v1 = versions.get(0);
                     DependencyVersion v2 = versions.get(1);

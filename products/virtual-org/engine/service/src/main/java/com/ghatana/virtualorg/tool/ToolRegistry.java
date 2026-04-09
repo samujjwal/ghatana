@@ -23,14 +23,14 @@ import java.util.Optional;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * ToolRegistry registry = new SimpleToolRegistry();
- * 
+ *
  * // Register tools
  * registry.register(new GitTool());
  * registry.register(new FileOperationsTool());
- * 
+ *
  * // Get tool by ID
  * Optional<Tool> tool = registry.getTool("git");
- * 
+ *
  * // Get all tools for role
  * List<Tool> tools = registry.getToolsForRole(AgentRoleProto.SENIOR_ENGINEER);
  * }</pre>

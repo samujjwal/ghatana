@@ -92,13 +92,13 @@ public final class FinanceRulesService {
             String reason = valid ? "Trade valid" : "Trade violates business rules";
 
             TradeValidationResult result = new TradeValidationResult(valid, reason);
-            
+
             if (valid) {
                 log.info("Trade validation successful for tenant: {}", tenantId);
             } else {
                 log.warn("Trade validation failed for tenant: {} - {}", tenantId, reason);
             }
-            
+
             return result;
         });
     }
@@ -123,13 +123,13 @@ public final class FinanceRulesService {
             String reason = compliant ? "Compliant" : "Non-compliant";
 
             ComplianceResult result = new ComplianceResult(compliant, reason);
-            
+
             if (compliant) {
                 log.info("Compliance check successful for tenant: {}", tenantId);
             } else {
                 log.warn("Compliance check failed for tenant: {} - {}", tenantId, reason);
             }
-            
+
             return result;
         });
     }
@@ -154,10 +154,10 @@ public final class FinanceRulesService {
             double riskScore = calculateRiskScore(riskData);
 
             RiskAssessmentResult result = new RiskAssessmentResult(riskLevel, riskScore);
-            
-            log.info("Risk assessment completed for tenant: {} - level: {}, score: {}", 
+
+            log.info("Risk assessment completed for tenant: {} - level: {}, score: {}",
                     tenantId, riskLevel, riskScore);
-            
+
             return result;
         });
     }
@@ -167,40 +167,40 @@ public final class FinanceRulesService {
     private boolean validateTradeRules(Map<String, Object> tradeData) {
         // Finance-specific trade validation rules
         // This would integrate with a rules engine like Drools
-        
+
         // Example validations:
         // - Check trade amount limits
         // - Validate trading hours
         // - Check instrument eligibility
         // - Validate counterparty limits
-        
+
         return true; // Placeholder for demo
     }
 
     private boolean checkComplianceRules(Map<String, Object> complianceData) {
         // Finance-specific compliance checking rules
         // This would integrate with a rules engine like Drools
-        
+
         // Example checks:
         // - AML/KYC requirements
         // - Regulatory reporting thresholds
         // - Market abuse prevention
         // - Trade surveillance rules
-        
+
         return true; // Placeholder for demo
     }
 
     private String calculateRiskLevel(Map<String, Object> riskData) {
         // Finance-specific risk level calculation
         // This would use risk models and scoring algorithms
-        
+
         return "LOW"; // Placeholder for demo
     }
 
     private double calculateRiskScore(Map<String, Object> riskData) {
         // Finance-specific risk score calculation
         // This would use risk models and scoring algorithms
-        
+
         return 0.25; // Placeholder for demo (0.0 = no risk, 1.0 = maximum risk)
     }
 

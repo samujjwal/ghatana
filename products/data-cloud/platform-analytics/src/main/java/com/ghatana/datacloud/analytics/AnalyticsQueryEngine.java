@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,10 +27,10 @@ import java.util.stream.Collectors;
 
 /**
  * Analytics Query Engine for Data-Cloud.
- * 
+ *
  * <p>Unified query engine supporting SQL, aggregations, and analytical
  * operations across multiple data sources and formats.</p>
- * 
+ *
  * <p><b>Features:</b></p>
  * <ul>
  *   <li>SQL query execution</li>
@@ -40,7 +39,7 @@ import java.util.stream.Collectors;
  *   <li>Query optimization</li>
  *   <li>Result caching</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Unified analytics query engine
  * @doc.layer product
@@ -52,7 +51,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
     private static final int MAX_QUERY_LIMIT = 10_000;
     /** DC3-M2: Guard against OOM from massive in-memory hash joins. */
     private static final int MAX_JOIN_SIDE_SIZE = 50_000;
-    
+
     private static final int MAX_CACHE_ENTRIES = 5_000;
     /** Maximum number of concurrent analytics worker threads (bounded to prevent OOM). */
     private static final int MAX_ANALYTICS_THREADS = Math.max(4, Runtime.getRuntime().availableProcessors() * 2);
@@ -63,7 +62,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
     private final Cache<String, QueryResult> resultCache;
     private final StorageConnector storageConnector;
     private final ExecutorService blockingExecutor;
-    
+
     /**
      * Create engine without storage connector (legacy/testing mode).
      */
@@ -95,10 +94,10 @@ public class AnalyticsQueryEngine implements AutoCloseable {
             return t;
         });
     }
-    
+
     /**
      * Submits an analytics query.
-     * 
+     *
      * @param tenantId tenant identifier
      * @param queryText query text (SQL or DSL)
      * @param parameters query parameters
@@ -108,9 +107,9 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                                             Map<String, Object> parameters) {
         Objects.requireNonNull(tenantId, "tenantId cannot be null");
         Objects.requireNonNull(queryText, "queryText cannot be null");
-        
+
         String queryId = UUID.randomUUID().toString();
-        
+
         AnalyticsQuery query = AnalyticsQuery.builder()
             .id(queryId)
             .tenantId(tenantId)
@@ -119,15 +118,15 @@ public class AnalyticsQueryEngine implements AutoCloseable {
             .submittedAt(Instant.now())
             .status("SUBMITTED")
             .build();
-        
+
         queries.put(queryId, query);
-        
+
         logger.debug("Query submitted: {} (tenant: {})", queryId, tenantId);
-        
+
         // Generate query plan
         QueryPlan plan = generateQueryPlan(query);
         queryPlans.put(queryId, plan);
-        
+
         // Execute query
         return executeQuery(query, plan)
             .then(result -> {
@@ -146,10 +145,10 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                 }
             });
     }
-    
+
     /**
      * Generates query plan.
-     * 
+     *
      * @param query analytics query
      * @return query plan
      */
@@ -159,16 +158,16 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String queryTextOriginal = query.getQueryText();
         // Uppercase copy is only used for keyword-scan heuristics inside determineQueryType
         String queryTextUpper = queryTextOriginal.toUpperCase();
-        
+
         // Determine query type
         QueryType queryType = determineQueryType(queryTextUpper);
-        
+
         // Estimate cost
         double estimatedCost = estimateQueryCost(queryTextOriginal);
-        
+
         // Determine data sources — use original case to preserve collection names
         List<String> dataSources = extractDataSources(queryTextOriginal);
-        
+
         QueryPlan plan = QueryPlan.builder()
             .queryId(query.getId())
             .queryType(queryType)
@@ -176,34 +175,34 @@ public class AnalyticsQueryEngine implements AutoCloseable {
             .estimatedCost(estimatedCost)
             .optimized(true)
             .build();
-        
+
         logger.debug("Query plan generated: type={}, sources={}, cost={}",
             queryType, dataSources.size(), estimatedCost);
-        
+
         return plan;
     }
-    
+
     /**
      * Executes query with plan against actual data sources.
-     * 
+     *
      * <p>This method routes queries to appropriate storage connectors based on
      * the query plan and executes them against real data. Supports SELECT,
      * AGGREGATE, TIMESERIES, and JOIN query types.</p>
-     * 
+     *
      * @param query analytics query
      * @param plan query plan with data source routing
      * @return promise of query result
      */
     private Promise<QueryResult> executeQuery(AnalyticsQuery query, QueryPlan plan) {
         long startTime = System.currentTimeMillis();
-        
+
         query.setStatus("RUNNING");
-        
+
         // Execute query against real data sources
         return executeQueryAgainstDataSources(query, plan)
             .then(rows -> {
                 long duration = System.currentTimeMillis() - startTime;
-                
+
                 QueryResult result = QueryResult.builder()
                     .queryId(query.getId())
                     .rows(rows)
@@ -213,14 +212,14 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                     .queryType(plan.getQueryType().name())
                     .optimized(true)
                     .build();
-                
+
                 return Promise.of(result);
             });
     }
-    
+
     /**
      * Executes query against actual data sources based on query type.
-     * 
+     *
      * <p>Routes to appropriate execution strategy:
      * <ul>
      *   <li>SELECT: Direct entity retrieval from storage</li>
@@ -229,14 +228,14 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *   <li>JOIN: Federated joins across data sources</li>
      * </ul>
      * </p>
-     * 
+     *
      * @param query analytics query
      * @param plan query plan
      * @return promise of result rows
      */
     private Promise<List<Map<String, Object>>> executeQueryAgainstDataSources(
             AnalyticsQuery query, QueryPlan plan) {
-        
+
         if (storageConnector == null) {
             logger.warn("No StorageConnector configured; returning empty results for query: {}", query.getId());
             return Promise.of(List.of());
@@ -634,7 +633,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         }
         return "id";
     }
-    
+
     /**
      * Determines query type from SQL using JSqlParser where possible.
      *
@@ -663,10 +662,10 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         }
         return QueryType.SELECT;
     }
-    
+
     /**
      * Estimates query cost.
-     * 
+     *
      * @param queryText SQL query
      * @return estimated cost
      */
@@ -674,7 +673,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         // Simple heuristic: longer queries cost more
         return Math.min(100.0, queryText.length() / 10.0);
     }
-    
+
     /**
      * Extracts actual table/collection names as data sources using JSqlParser.
      *
@@ -703,7 +702,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         if (queryText.contains("JOIN")) sources.add("joined_source");
         return sources.isEmpty() ? List.of("default_source") : sources;
     }
-    
+
     /**
      * Shuts down the engine and releases resources.
      *
@@ -718,7 +717,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
     /**
      * Gets query result.
-     * 
+     *
      * @param queryId query identifier
      * @return promise of query result
      */
@@ -729,10 +728,10 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         }
         return Promise.of(result);
     }
-    
+
     /**
      * Gets query plan.
-     * 
+     *
      * @param queryId query identifier
      * @return promise of query plan
      */
@@ -743,5 +742,5 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         }
         return Promise.of(plan);
     }
-    
+
 }

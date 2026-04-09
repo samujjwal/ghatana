@@ -152,4 +152,3 @@ public final class SceneUnderstandingService {
         }
     }
 }
-

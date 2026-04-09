@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * Interface for plugin auto-scaling in Data-Cloud.
- * 
+ *
  * <p>Enables dynamic scaling of plugin instances based on load metrics,
  * with support for both horizontal (more instances) and vertical (more resources) scaling.
  *
@@ -266,8 +266,8 @@ public interface AutoScaler {
      * @return promise of scaling event
      */
     Promise<ScalingEvent> adjustResources(
-        String pluginId, 
-        ResourceAllocation targetResources, 
+        String pluginId,
+        ResourceAllocation targetResources,
         String reason
     );
 

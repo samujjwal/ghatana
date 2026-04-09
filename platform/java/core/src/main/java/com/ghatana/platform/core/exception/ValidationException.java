@@ -2,11 +2,10 @@ package com.ghatana.platform.core.exception;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
 
 /**
  * Exception thrown when validation fails.
- * 
+ *
  * <p>Carries a map of validation errors for each failed field or constraint.
  * Extends {@link BaseException} with error code and status mapping.
  *

@@ -1,15 +1,12 @@
 package com.ghatana.products.finance.domains.oms.service;
 
 import com.ghatana.products.finance.domains.oms.domain.OrderSide;
-import com.ghatana.products.finance.domains.oms.domain.OrderType;
-import com.ghatana.products.finance.domains.oms.domain.TimeInForce;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -113,7 +110,7 @@ class OrderComplianceCheckTest {
     void shouldRejectOrderOutsideTradingHours() {
         // GIVEN: Order placed outside trading hours
         LocalTime orderTime = LocalTime.of(20, 0); // 8 PM (after market close)
-        
+
         // WHEN/THEN: Should throw compliance exception
         assertThatThrownBy(() -> complianceService.checkTradingHours(orderTime, "NASDAQ"))
             .isInstanceOf(ComplianceViolationException.class)
@@ -125,7 +122,7 @@ class OrderComplianceCheckTest {
     void shouldAllowOrderDuringTradingHours() {
         // GIVEN: Order placed during trading hours
         LocalTime orderTime = LocalTime.of(10, 30); // 10:30 AM (market open)
-        
+
         // WHEN/THEN: Should not throw
         assertThatCode(() -> complianceService.checkTradingHours(orderTime, "NASDAQ"))
             .doesNotThrowAnyException();
@@ -313,7 +310,7 @@ class OrderComplianceCheckTest {
             audit.append("Position limit check: PASS\n");
             audit.append("Trading hours check: PASS\n");
             audit.append("Client authorization check: PASS\n");
-            
+
             return new ComplianceResult(
                 true,
                 audit.toString(),

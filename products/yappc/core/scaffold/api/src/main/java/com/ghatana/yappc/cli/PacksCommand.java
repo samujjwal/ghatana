@@ -236,7 +236,7 @@ public class PacksCommand implements Callable<Integer> {
     private boolean matchesSearch(PackMetadata pack) {
         if (searchQuery == null) return true;
         String query = searchQuery.toLowerCase();
-        
+
         if (pack.name() != null && pack.name().toLowerCase().contains(query)) return true;
         if (pack.description() != null && pack.description().toLowerCase().contains(query)) return true;
         if (pack.framework() != null && pack.framework().toLowerCase().contains(query)) return true;
@@ -304,7 +304,7 @@ public class PacksCommand implements Callable<Integer> {
                 // Show templates
                 if (metadata.templates() != null) {
                     log.info("\nTemplates ({}):", metadata.templates().size());
-                    metadata.templates().forEach((name, template) -> 
+                    metadata.templates().forEach((name, template) ->
                             log.info("  - {} → {}", name, template.target()));
                 }
                 // Show variables
@@ -395,9 +395,9 @@ public class PacksCommand implements Callable<Integer> {
             }
 
             log.info("\n🔍 Validating pack: {}", packPath.getFileName());
-            
+
             var result = packEngine.validatePack(packPath);
-            
+
             if (result.valid()) {
                 log.info("✅ Pack validation passed!");
             } else {

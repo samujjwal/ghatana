@@ -4,10 +4,8 @@
  */
 package com.ghatana.platform.workflow.runtime;
 
-import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

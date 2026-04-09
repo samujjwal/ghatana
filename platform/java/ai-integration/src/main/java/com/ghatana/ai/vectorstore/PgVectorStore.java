@@ -8,11 +8,10 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * PostgreSQL pgvector adapter for VectorStore interface.
- * 
+ *
  * Requires the pgvector extension to be installed in PostgreSQL.
  * Table schema:
  * <pre>
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
  * );
  * CREATE INDEX ON vectors USING ivfflat (vector vector_cosine_ops);
  * </pre>
- * 
+ *
  * @doc.type class
  * @doc.purpose Provides PostgreSQL pgvector-based implementation of the VectorStore interface.
  * @doc.layer infrastructure
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class PgVectorStore implements VectorStore {
     private static final Logger log = LoggerFactory.getLogger(PgVectorStore.class);
-    
+
     /** Only allows alphanumeric characters, underscores, and dots in identifiers. */
     private static final java.util.regex.Pattern SAFE_IDENTIFIER =
             java.util.regex.Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]{0,127}$");
@@ -44,7 +43,7 @@ public class PgVectorStore implements VectorStore {
     private final String tableName;
     private final int vectorDimension;
     private static final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-    
+
     /**
      * Creates a new PgVectorStore instance.
      *
@@ -62,12 +61,12 @@ public class PgVectorStore implements VectorStore {
         this.metricsCollector = Objects.requireNonNull(metricsCollector, "metricsCollector cannot be null");
         this.tableName = validateTableName(Objects.requireNonNull(tableName, "tableName cannot be null"));
         this.vectorDimension = vectorDimension;
-        
+
         if (vectorDimension <= 0) {
             throw new IllegalArgumentException("vectorDimension must be positive");
         }
     }
-    
+
     @Override
     public Promise<Void> store(
             String id,
@@ -76,7 +75,7 @@ public class PgVectorStore implements VectorStore {
             Map<String, String> metadata) {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
             final long startTime = System.currentTimeMillis();
-            
+
             try {
                 if (vector.length != vectorDimension) {
                     throw new IllegalArgumentException(
@@ -84,31 +83,31 @@ public class PgVectorStore implements VectorStore {
                                     vectorDimension, vector.length)
                     );
                 }
-                
+
                 String sql = String.format(
                         "INSERT INTO %s (id, content, vector, metadata) VALUES (?, ?, ?::vector, ?::jsonb) " +
                         "ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content, vector = EXCLUDED.vector, metadata = EXCLUDED.metadata",
                         tableName
                 );
-                
+
                 try (Connection conn = dataSource.getConnection();
                      PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    
+
                     stmt.setString(1, id);
                     stmt.setString(2, content);
                     stmt.setString(3, vectorToString(vector));
                     stmt.setString(4, metadataToJson(metadata));
-                    
+
                     stmt.executeUpdate();
                 }
-                
+
                 long duration = System.currentTimeMillis() - startTime;
                 metricsCollector.recordTimer("ai.vectorstore.store_latency", duration);
                 metricsCollector.incrementCounter("ai.vectorstore.store_operations", "store", tableName);
-                
+
                 log.debug("Stored vector {} (took {} ms)", id, duration);
                 return null;
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.store_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error storing vector {}: {}", id, e.getMessage(), e);
@@ -116,7 +115,7 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     @Override
     public Promise<List<VectorSearchResult>> search(
             float[] queryVector,
@@ -133,7 +132,7 @@ public class PgVectorStore implements VectorStore {
             Map<String, String> filterMetadata) {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
             final long startTime = System.currentTimeMillis();
-            
+
             try {
                 if (queryVector.length != vectorDimension) {
                     throw new IllegalArgumentException(
@@ -141,7 +140,7 @@ public class PgVectorStore implements VectorStore {
                                     vectorDimension, queryVector.length)
                     );
                 }
-                
+
                 StringBuilder sqlBuilder = new StringBuilder();
                 sqlBuilder.append(String.format(
                         "SELECT id, content, vector, metadata, 1 - (vector <=> ?::vector) as similarity " +
@@ -154,23 +153,23 @@ public class PgVectorStore implements VectorStore {
                 }
 
                 sqlBuilder.append("ORDER BY similarity DESC LIMIT ?");
-                
+
                 List<VectorSearchResult> results = new ArrayList<>();
                 try (Connection conn = dataSource.getConnection();
                      PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
-                    
+
                     String vectorStr = vectorToString(queryVector);
                     int paramIndex = 1;
                     stmt.setString(paramIndex++, vectorStr);
                     stmt.setString(paramIndex++, vectorStr);
                     stmt.setDouble(paramIndex++, threshold);
-                    
+
                     if (filterMetadata != null && !filterMetadata.isEmpty()) {
                         stmt.setString(paramIndex++, metadataToJson(filterMetadata));
                     }
-                    
+
                     stmt.setInt(paramIndex++, limit);
-                    
+
                     try (ResultSet rs = stmt.executeQuery()) {
                         int rank = 0;
                         while (rs.next()) {
@@ -185,14 +184,14 @@ public class PgVectorStore implements VectorStore {
                         }
                     }
                 }
-                
+
                 long duration = System.currentTimeMillis() - startTime;
                 metricsCollector.recordTimer("ai.vectorstore.search_latency", duration);
                 metricsCollector.incrementCounter("ai.vectorstore.search_operations", "store", tableName);
-                
+
                 log.debug("Found {} results in {} ms", results.size(), duration);
                 return results;
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.search_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error searching vectors: {}", e.getMessage(), e);
@@ -200,7 +199,7 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     @Override
     public Promise<List<VectorSearchResult>> searchById(
             String queryId,
@@ -209,7 +208,7 @@ public class PgVectorStore implements VectorStore {
         return getById(queryId)
                 .then(result -> search(result.getVector(), limit, threshold));
     }
-    
+
     @Override
     public Promise<VectorSearchResult> getById(String id) {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
@@ -217,12 +216,12 @@ public class PgVectorStore implements VectorStore {
                     "SELECT id, content, vector, metadata FROM %s WHERE id = ?",
                     tableName
             );
-            
+
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
-                
+
                 stmt.setString(1, id);
-                
+
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return new VectorSearchResult(
@@ -236,26 +235,26 @@ public class PgVectorStore implements VectorStore {
                     }
                 }
             }
-            
+
             throw new IllegalArgumentException("Vector not found: " + id);
         });
     }
-    
+
     @Override
     public Promise<Void> delete(String id) {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
             String sql = String.format("DELETE FROM %s WHERE id = ?", tableName);
-            
+
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
-                
+
                 stmt.setString(1, id);
                 stmt.executeUpdate();
-                
+
                 metricsCollector.incrementCounter("ai.vectorstore.delete_operations", "store", tableName);
                 log.debug("Deleted vector {}", id);
                 return null;
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.delete_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error deleting vector {}: {}", id, e.getMessage(), e);
@@ -263,7 +262,7 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     @Override
     public Promise<Void> clear() {
         log.warn("DESTRUCTIVE OPERATION: clear() called on vector store '{}'. "
@@ -274,16 +273,16 @@ public class PgVectorStore implements VectorStore {
             // so it is safe to use in a DDL statement where parameterized queries
             // are not supported.
             String sql = "TRUNCATE TABLE " + tableName;
-            
+
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
-                
+
                 stmt.execute(sql);
-                
+
                 metricsCollector.incrementCounter("ai.vectorstore.clear_operations", "store", tableName);
                 log.warn("DESTRUCTIVE OPERATION COMPLETED: Cleared all vectors from '{}'", tableName);
                 return null;
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.clear_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error clearing vectors: {}", e.getMessage(), e);
@@ -291,21 +290,21 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     @Override
     public Promise<Long> count() {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
             String sql = String.format("SELECT COUNT(*) as count FROM %s", tableName);
-            
+
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery(sql)) {
-                
+
                 if (rs.next()) {
                     return rs.getLong("count");
                 }
                 return 0L;
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.count_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error counting vectors: {}", e.getMessage(), e);
@@ -313,24 +312,24 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     @Override
     public Promise<Boolean> exists(String id) {
         return Promise.ofBlocking(new java.util.concurrent.ForkJoinPool(), () -> {
             String sql = String.format("SELECT EXISTS(SELECT 1 FROM %s WHERE id = ?)", tableName);
-            
+
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
-                
+
                 stmt.setString(1, id);
-                
+
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return rs.getBoolean(1);
                     }
                     return false;
                 }
-                
+
             } catch (Exception e) {
                 metricsCollector.incrementCounter("ai.vectorstore.exists_errors", "store", tableName, "error", e.getClass().getSimpleName());
                 log.error("Error checking vector existence: {}", e.getMessage(), e);
@@ -338,7 +337,7 @@ public class PgVectorStore implements VectorStore {
             }
         });
     }
-    
+
     // Helper methods
     private String vectorToString(float[] vector) {
         StringBuilder sb = new StringBuilder("[");
@@ -349,7 +348,7 @@ public class PgVectorStore implements VectorStore {
         sb.append("]");
         return sb.toString();
     }
-    
+
     private float[] stringToVector(String str) {
         String cleaned = str.replaceAll("[\\[\\]]", "");
         String[] parts = cleaned.split(",");
@@ -359,7 +358,7 @@ public class PgVectorStore implements VectorStore {
         }
         return result;
     }
-    
+
     private String metadataToJson(Map<String, String> metadata) {
         try {
             return objectMapper.writeValueAsString(metadata != null ? metadata : Collections.emptyMap());

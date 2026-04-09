@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
  * Lightweight HTTP server that serves Polyfix reports via the shared HttpServerBuilder
  * abstraction. Exposes JSON data under <code>/api/report</code>, a health endpoint, and
  * serves the SPA bundle from the configured static directory.
- 
+
  * @doc.type class
  * @doc.purpose Handles report server operations
  * @doc.layer core

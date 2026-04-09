@@ -1,10 +1,8 @@
 package com.ghatana.refactorer.server.observability;
 
-import com.ghatana.platform.observability.MetricsCollectorFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Tags;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

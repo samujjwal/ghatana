@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** JUnit test execution tool (stub). 
+/** JUnit test execution tool (stub).
  * @doc.type class
  * @doc.purpose Handles j unit tool operations
  * @doc.layer core

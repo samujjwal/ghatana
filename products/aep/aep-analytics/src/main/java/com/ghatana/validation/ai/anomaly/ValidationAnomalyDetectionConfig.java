@@ -5,7 +5,7 @@ import java.util.Objects;
 
 /**
  * Configuration for anomaly detection operations.
- 
+
  *
  * @doc.type class
  * @doc.purpose Validation anomaly detection config
@@ -37,7 +37,7 @@ public class ValidationAnomalyDetectionConfig {
     public String getShardId() { return shardId; }
     public String getAlgorithm() { return algorithm; }
     public Map<String, Object> getParameters() { return Map.copyOf(parameters); }
-    
+
     // Fluent style getters for method chaining
     public double threshold() { return threshold; }
     public double sensitivityThreshold() { return threshold; } // Alias for compatibility

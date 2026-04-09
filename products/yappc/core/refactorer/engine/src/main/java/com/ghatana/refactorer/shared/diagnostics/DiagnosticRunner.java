@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Interface for diagnostic runners that can analyze code and produce diagnostics. 
+ * Interface for diagnostic runners that can analyze code and produce diagnostics.
  * @doc.type interface
  * @doc.purpose Defines the contract for diagnostic runner
  * @doc.layer core

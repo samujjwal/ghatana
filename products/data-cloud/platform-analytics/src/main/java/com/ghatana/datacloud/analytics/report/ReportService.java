@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.analytics.report;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
-import com.ghatana.datacloud.analytics.QueryResult;
 import com.ghatana.datacloud.analytics.export.EntityExportService;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

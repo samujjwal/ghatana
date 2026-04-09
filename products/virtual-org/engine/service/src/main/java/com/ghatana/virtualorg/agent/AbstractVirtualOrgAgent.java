@@ -236,7 +236,7 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
 
     public boolean isHealthy() {
         AgentStateProto state = getState();
-        return state != AgentStateProto.AGENT_STATE_ERROR 
+        return state != AgentStateProto.AGENT_STATE_ERROR
             && state != AgentStateProto.AGENT_STATE_TERMINATED;
     }
 
@@ -682,7 +682,7 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
      */
     protected void storeDecision(@NotNull DecisionProto decision, @NotNull TaskProto task) {
         // Default: log only (memory integration can be added later)
-        log.debug("Decision stored: decision_id={}, task_id={}", 
+        log.debug("Decision stored: decision_id={}, task_id={}",
                 decision.getDecisionId(), task.getTaskId());
     }
 
@@ -698,7 +698,7 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
             @NotNull List<ToolCallProto> toolCalls,
             @NotNull TaskProto task) {
         // Default: return empty results (tool execution can be added later)
-        log.debug("Tool execution requested: count={}, task_id={}", 
+        log.debug("Tool execution requested: count={}, task_id={}",
                 toolCalls.size(), task.getTaskId());
         return Promise.of(List.of());
     }
@@ -709,7 +709,7 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
      */
     protected boolean isRunning() {
         AgentStateProto state = getState();
-        return state == AgentStateProto.AGENT_STATE_IDLE 
+        return state == AgentStateProto.AGENT_STATE_IDLE
             || state == AgentStateProto.AGENT_STATE_BUSY;
     }
 

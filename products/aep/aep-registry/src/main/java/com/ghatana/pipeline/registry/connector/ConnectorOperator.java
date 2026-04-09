@@ -1,6 +1,5 @@
 package com.ghatana.pipeline.registry.connector;
 
-import com.ghatana.platform.domain.pipeline.ConnectorSpec;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec.ConnectorType;
 import io.activej.promise.Promise;
 

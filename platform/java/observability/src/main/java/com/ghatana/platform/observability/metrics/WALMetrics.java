@@ -28,13 +28,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * MeterRegistry registry = new SimpleMeterRegistry();
  * WALMetrics metrics = new WALMetrics("partition-0-wal", registry);
  * WriteAheadLog wal = new WriteAheadLog(walFile, metrics);
- * 
+ *
  * // Record append with latency tracking
  * Timer.Sample sample = metrics.recordAppendStart();
  * try {
  *     wal.append(event);
  *     metrics.recordAppendSuccess(sample);
- *     
+ *
  *     // Update file size gauge
  *     metrics.recordWALSize(walFile.length());
  *     // Gauge: wal.size.bytes{name="partition-0-wal"} = 1048576
@@ -50,13 +50,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * // Example 2: WAL recovery on startup (crash recovery)
  * WALMetrics metrics = new WALMetrics("event-wal", registry);
  * WriteAheadLog wal = new WriteAheadLog(walFile, metrics);
- * 
+ *
  * // Record recovery duration
  * Timer.Sample sample = metrics.recordRecoveryStart();
  * try {
  *     List<Event> events = wal.recover();
  *     metrics.recordRecoveryComplete(events.size());
- *     
+ *
  *     log.info("Recovered {} events from WAL", events.size());
  *     // Gauge: wal.recovered.events{name="event-wal"} = 5432
  *     // Timer: wal.recovery.duration{name="event-wal"} = 150ms
@@ -71,14 +71,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * // Example 3: WAL truncation (after checkpoint)
  * WALMetrics metrics = new WALMetrics("checkpoint-wal", registry);
  * WriteAheadLog wal = new WriteAheadLog(walFile, metrics);
- * 
+ *
  * // Checkpoint completed - truncate WAL to offset
  * long checkpointOffset = 1000;
  * wal.truncate(checkpointOffset);
- * 
+ *
  * metrics.recordTruncate();
  * // Counter: wal.truncations{name="checkpoint-wal"} incremented
- * 
+ *
  * metrics.recordWALSize(walFile.length());
  * // Gauge: wal.size.bytes{name="checkpoint-wal"} = 524288 (reduced)
  * }</pre>
@@ -96,7 +96,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * //   for: 10m
  * //   annotations:
  * //     summary: "WAL {{ $labels.name }} exceeds 10GB"
- * 
+ *
  * WALMetrics metrics = new WALMetrics("critical-wal", registry);
  * // Grafana dashboard queries:
  * // - rate(wal_append_successes_total[5m])  # Append rate
@@ -107,14 +107,14 @@ import java.util.concurrent.atomic.AtomicLong;
  * <pre>{@code
  * // Example 5: Multi-partition WAL monitoring
  * MeterRegistry registry = new SimpleMeterRegistry();
- * 
+ *
  * Map<Integer, WALMetrics> partitionWALs = new HashMap<>();
  * for (int partition = 0; partition < 16; partition++) {
  *     String walName = "partition-" + partition + "-wal";
  *     WALMetrics metrics = new WALMetrics(walName, registry);
  *     partitionWALs.put(partition, metrics);
  * }
- * 
+ *
  * // Grafana aggregates across partitions:
  * // sum(rate(wal_append_successes_total[5m])) by (name)  # Per-partition throughput
  * // max(wal_size_bytes) by (name)  # Largest WAL file
@@ -175,7 +175,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class WALMetrics {
     private static final String METRIC_PREFIX = "wal.";
-    
+
     // Counters
     private final Counter appendStarts;
     private final Counter appendSuccesses;
@@ -184,18 +184,18 @@ public class WALMetrics {
     private final Counter recoveryCompletes;
     private final Counter recoveryErrors;
     private final Counter truncations;
-    
+
     // Gauges
     private final AtomicLong walSizeBytes;
     private final AtomicLong lastRecoveredCount;
-    
+
     // Timers
     private final Timer appendLatency;
     private final Timer recoveryDuration;
-    
+
     /**
      * Create a new WALMetrics instance.
-     * 
+     *
      * @param name      Name for metrics (will be used as a tag)
      * @param registry  Metrics registry
      */
@@ -205,73 +205,73 @@ public class WALMetrics {
                 .tag("name", name)
                 .description("Number of append operations started")
                 .register(registry);
-                
+
         this.appendSuccesses = Counter.builder(METRIC_PREFIX + "append.successes")
                 .tag("name", name)
                 .description("Number of successful append operations")
                 .register(registry);
-                
+
         this.appendErrors = Counter.builder(METRIC_PREFIX + "append.errors")
                 .tag("name", name)
                 .description("Number of failed append operations")
                 .register(registry);
-                
+
         this.recoveryStarts = Counter.builder(METRIC_PREFIX + "recovery.starts")
                 .tag("name", name)
                 .description("Number of recovery operations started")
                 .register(registry);
-                
+
         this.recoveryCompletes = Counter.builder(METRIC_PREFIX + "recovery.completes")
                 .tag("name", name)
                 .description("Number of successful recovery operations")
                 .register(registry);
-                
+
         this.recoveryErrors = Counter.builder(METRIC_PREFIX + "recovery.errors")
                 .tag("name", name)
                 .description("Number of failed recovery operations")
                 .register(registry);
-                
+
         this.truncations = Counter.builder(METRIC_PREFIX + "truncations")
                 .tag("name", name)
                 .description("Number of WAL truncations")
                 .register(registry);
-        
+
         // Initialize gauges
-        this.walSizeBytes = registry.gauge(METRIC_PREFIX + "size.bytes", 
-                Tags.of("name", name), 
+        this.walSizeBytes = registry.gauge(METRIC_PREFIX + "size.bytes",
+                Tags.of("name", name),
                 new AtomicLong(0));
-                
-        this.lastRecoveredCount = registry.gauge(METRIC_PREFIX + "recovered.events", 
-                Tags.of("name", name), 
+
+        this.lastRecoveredCount = registry.gauge(METRIC_PREFIX + "recovered.events",
+                Tags.of("name", name),
                 new AtomicLong(0));
-        
+
         // Initialize timers
         this.appendLatency = Timer.builder(METRIC_PREFIX + "append.latency")
                 .tag("name", name)
                 .description("Time taken for append operations")
                 .publishPercentiles(0.5, 0.95, 0.99)
                 .register(registry);
-                
+
         this.recoveryDuration = Timer.builder(METRIC_PREFIX + "recovery.duration")
                 .tag("name", name)
                 .description("Time taken for recovery operations")
                 .publishPercentiles(0.5, 0.95, 0.99)
                 .register(registry);
     }
-    
+
     /**
      * Record the start of an append operation.
-     * 
+     *
      * @return A timer sample to measure latency
      */
     public Timer.Sample recordAppendStart() {
         appendStarts.increment();
         return Timer.start();
     }
-    
+
     /**
      * Record a successful append operation.
-     * 
+     *
      * @param sample The timer sample from recordAppendStart()
      */
     public void recordAppendSuccess(Timer.Sample sample) {
@@ -280,55 +280,55 @@ public class WALMetrics {
         }
         appendSuccesses.increment();
     }
-    
+
     /**
      * Record a failed append operation.
      */
     public void recordAppendError() {
         appendErrors.increment();
     }
-    
+
     /**
      * Record the start of a recovery operation.
-     * 
+     *
      * @return A timer sample to measure duration
      */
     public Timer.Sample recordRecoveryStart() {
         recoveryStarts.increment();
         return Timer.start();
     }
-    
+
     /**
      * Record a successful recovery operation.
-     * 
+     *
      * @param eventCount Number of events recovered
      */
     public void recordRecoveryComplete(int eventCount) {
         recoveryCompletes.increment();
         lastRecoveredCount.set(eventCount);
-        
+
         // Stop the timer if it was started
         Timer.Sample sample = Timer.start();
         sample.stop(recoveryDuration);
     }
-    
+
     /**
      * Record a failed recovery operation.
      */
     public void recordRecoveryError() {
         recoveryErrors.increment();
     }
-    
+
     /**
      * Record a WAL truncation.
      */
     public void recordTruncate() {
         truncations.increment();
     }
-    
+
     /**
      * Record the current size of the WAL file.
-     * 
+     *
      * @param sizeBytes Current size in bytes
      */
     public void recordWALSize(long sizeBytes) {

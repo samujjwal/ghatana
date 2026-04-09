@@ -5,11 +5,11 @@ import java.util.Map;
 
 /**
  * Statistics about a state store's current status and performance metrics.
- * 
+ *
  * Day 27 Implementation: Provides monitoring data for state store health and performance.
  */
 public class StateStoreStats {
-    
+
     private final long totalKeys;
     private final long totalSizeBytes;
     private final long keysWithTtl;
@@ -27,8 +27,8 @@ public class StateStoreStats {
     private final boolean healthy;
     private final long uptimeMs;
     private final Map<String, Object> additionalMetrics;
-    
-    public StateStoreStats(long totalKeys, long totalSizeBytes, long keysWithTtl, 
+
+    public StateStoreStats(long totalKeys, long totalSizeBytes, long keysWithTtl,
                           long expiredKeys, long totalReads, long totalWrites,
                           long totalDeletes, double avgReadLatencyMs, double avgWriteLatencyMs,
                           int checkpointCount, Instant lastCheckpointTime, String backendType,
@@ -52,7 +52,7 @@ public class StateStoreStats {
         this.uptimeMs = uptimeMs;
         this.additionalMetrics = additionalMetrics;
     }
-    
+
     // Getters
     public long getTotalKeys() {
         return totalKeys;
@@ -121,7 +121,7 @@ public class StateStoreStats {
     public Map<String, Object> getAdditionalMetrics() {
         return additionalMetrics;
     }
-    
+
     /**
      * Create basic stats for a healthy store.
      */
@@ -129,7 +129,7 @@ public class StateStoreStats {
         return new StateStoreStats(0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0, null,
                                   backendType, 0, 0, true, 0, Map.of());
     }
-    
+
     /**
      * Create basic stats for an unhealthy store.
      */

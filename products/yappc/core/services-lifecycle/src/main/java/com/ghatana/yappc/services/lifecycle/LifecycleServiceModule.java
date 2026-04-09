@@ -7,7 +7,6 @@ package com.ghatana.yappc.services.lifecycle;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.governance.PolicyEngine;
 import com.ghatana.agent.framework.llm.LLMGatewayAdapter;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.security.port.JwtTokenProvider;
@@ -17,7 +16,6 @@ import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
-import com.ghatana.yappc.services.security.SecurityHeadersServlet;
 import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
 import com.ghatana.yappc.services.ai.AiServiceModule;
 import com.ghatana.yappc.services.evolve.EvolutionService;
@@ -50,7 +48,6 @@ import com.ghatana.yappc.agent.AepEventPublisher;
 import com.ghatana.yappc.agent.AgentHeartbeatService;
 import com.ghatana.yappc.agent.YappcAgentRegistryAdapter;
 import com.ghatana.yappc.agent.YappcAgentSystem;
-import com.ghatana.yappc.services.lifecycle.AepEventBridge;
 
 import javax.sql.DataSource;
 import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchOperator;
@@ -66,14 +63,12 @@ import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.services.lifecycle.dlq.JdbcDlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import com.ghatana.platform.observability.MetricsProvider;
 // ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleJdbcWorkflowStateStore;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
 // ─── Agent Orchestration Bootstrapper (YAPPC-Ph6) ─────────────────────────
-import com.ghatana.yappc.services.lifecycle.YappcAgentOrchestrationBootstrapper;
 import com.ghatana.agent.framework.loader.AgentDefinitionLoader;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;

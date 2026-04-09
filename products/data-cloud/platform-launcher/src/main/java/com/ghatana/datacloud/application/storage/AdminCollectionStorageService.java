@@ -4,7 +4,6 @@ import com.ghatana.platform.core.exception.BaseException;
 import com.ghatana.platform.core.exception.ErrorCode;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfile;
-import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.entity.storage.StorageProfile;
 import io.activej.promise.Promise;
@@ -35,7 +34,7 @@ import java.util.stream.Collectors;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * AdminCollectionStorageService service = new AdminCollectionStorageService(
  *         connectorRegistry,

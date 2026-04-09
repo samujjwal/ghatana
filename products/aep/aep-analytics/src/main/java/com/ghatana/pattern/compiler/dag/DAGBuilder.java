@@ -18,11 +18,11 @@ import java.util.UUID;
 
 /**
  * Builder for constructing Directed Acyclic Graphs (DAG) from ASTs.
- * 
+ *
  * <p>The DAGBuilder converts the hierarchical AST representation into a graph-based
  * DAG that represents operator dependencies and data flow. The DAG enables parallel
  * execution planning and graph-based optimizations.
- * 
+ *
  * @doc.pattern Builder Pattern (DAG construction), Graph Pattern (operator dependencies)
  * @doc.compiler-phase DAG Generation (third phase after AST building)
  * @doc.threading Thread-safe; each build() call creates independent DAG structures
@@ -31,7 +31,7 @@ import java.util.UUID;
  * @doc.apiNote Build DAG from validated AST; DAG is optimized by DAGOptimizer before execution
  * @doc.limitation No cycle detection (AST structure guarantees acyclic); no dynamic edge addition
  * @doc.sideEffects Emits metrics for DAG build success/failure and node/edge counts
- * 
+ *
  * <h2>AST to DAG Conversion</h2>
  * <pre>
  * AST Tree Structure          DAG Graph Structure
@@ -44,7 +44,7 @@ import java.util.UUID;
  *                                           │
  *                                          Evt2
  * </pre>
- * 
+ *
  * <p><b>DAG Properties:</b>
  * <ul>
  *   <li><b>Nodes</b>: Operators with unique IDs and metadata</li>
@@ -54,30 +54,30 @@ import java.util.UUID;
  * </ul>
  */
 public class DAGBuilder {
-    
+
     private final OperatorRegistry operatorRegistry;
     private final MetricsCollector metrics;
-    
+
     // Metrics
-    
-    
+
+
     private final Timer dagBuildTimer;
-    
+
     public DAGBuilder(OperatorRegistry operatorRegistry, MeterRegistry meterRegistry) {
         this.operatorRegistry = operatorRegistry;
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
-        
+
         // Initialize metrics
         // Counters migrated to MetricsCollector
-        
+
         // See metrics field for counter operations
-        
+
         this.dagBuildTimer = Timer.builder("pattern.compiler.dag.build.time").register(meterRegistry);
     }
-    
+
     /**
      * Build a DAG from an AST.
-     * 
+     *
      * @param ast the AST to convert to DAG
      * @return the constructed DAG
      * @throws PatternValidationException if DAG construction fails
@@ -86,19 +86,19 @@ public class DAGBuilder {
         if (ast == null) {
             throw new PatternValidationException("AST cannot be null");
         }
-        
+
         try {
             return dagBuildTimer.recordCallable(() -> {
                 try {
                     List<OperatorDAG.OperatorNode> nodes = new ArrayList<>();
                     List<OperatorDAG.OperatorEdge> edges = new ArrayList<>();
-                    
+
                     // Build nodes and edges from AST
                     buildNodesAndEdges(ast.getRoot(), nodes, edges);
-                    
+
                     // Find root node
                     String rootNodeId = findRootNodeId(nodes, edges);
-                    
+
                     // Create DAG
                     OperatorDAG dag = OperatorDAG.builder()
                             .nodes(nodes)
@@ -106,10 +106,10 @@ public class DAGBuilder {
                             .rootNodeId(rootNodeId)
                         .metadata(createDAGMetadata(ast, nodes, edges))
                         .build();
-                
+
                 metrics.incrementCounter("pattern.compiler.dag.build.success");
                 return dag;
-                
+
             } catch (Exception e) {
                 metrics.incrementCounter("pattern.compiler.dag.build.failure");
                 if (e instanceof PatternValidationException) {
@@ -125,12 +125,12 @@ public class DAGBuilder {
             throw new PatternValidationException("DAG construction failed", e);
         }
     }
-    
+
     private void buildNodesAndEdges(ASTNode astNode, List<OperatorDAG.OperatorNode> nodes, List<OperatorDAG.OperatorEdge> edges) {
         if (astNode == null) {
             return;
         }
-        
+
         // Create DAG node from AST node
         OperatorDAG.OperatorNode dagNode = OperatorDAG.OperatorNode.builder()
                 .id(astNode.getId())
@@ -138,15 +138,15 @@ public class DAGBuilder {
                 .operatorSpec(astNode.getOperatorSpec())
                 .metadata(astNode.getMetadata())
                 .build();
-        
+
         nodes.add(dagNode);
-        
+
         // Process children and create edges
         for (ASTNode child : astNode.getChildren()) {
             if (child != null) {
                 // Recursively build child nodes
                 buildNodesAndEdges(child, nodes, edges);
-                
+
                 // Create edge from parent to child
                 OperatorDAG.OperatorEdge edge = OperatorDAG.OperatorEdge.builder()
                         .fromNodeId(astNode.getId())
@@ -154,34 +154,34 @@ public class DAGBuilder {
                         .edgeType(OperatorDAG.EdgeType.DATA_FLOW)
                         .metadata(Map.of("astDepth", astNode.getDepth()))
                         .build();
-                
+
                 edges.add(edge);
             }
         }
     }
-    
+
     private String findRootNodeId(List<OperatorDAG.OperatorNode> nodes, List<OperatorDAG.OperatorEdge> edges) {
         if (nodes.isEmpty()) {
             return null;
         }
-        
+
         // Find nodes that are not targets of any edge (root nodes)
         Map<String, Boolean> isTarget = new HashMap<>();
-        
+
         for (OperatorDAG.OperatorEdge edge : edges) {
             isTarget.put(edge.getToNodeId(), true);
         }
-        
+
         for (OperatorDAG.OperatorNode node : nodes) {
             if (!isTarget.getOrDefault(node.getId(), false)) {
                 return node.getId();
             }
         }
-        
+
         // If no root found, return the first node
         return nodes.get(0).getId();
     }
-    
+
     private Map<String, Object> createDAGMetadata(AST ast, List<OperatorDAG.OperatorNode> nodes, List<OperatorDAG.OperatorEdge> edges) {
         return Map.of(
             "nodeCount", nodes.size(),
@@ -333,8 +333,3 @@ public class DAGBuilder {
         return result.toString();
     }
 }
-
-
-
-
-

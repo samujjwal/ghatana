@@ -18,7 +18,6 @@ import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
 import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
 import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.kernel.consent.ConsentService.*;
 import com.ghatana.phr.kernel.policy.PhrDataClassification;
 import com.ghatana.phr.kernel.service.ConsentManagementService.*;
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

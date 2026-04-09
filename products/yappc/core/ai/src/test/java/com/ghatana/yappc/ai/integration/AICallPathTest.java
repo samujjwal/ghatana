@@ -3,7 +3,6 @@ package com.ghatana.yappc.ai.integration;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.metrics.AIMetricsCollector;
 import com.ghatana.yappc.ai.router.AIModelRouter;
-import com.ghatana.yappc.ai.router.AIRequest;
 import com.ghatana.yappc.ai.router.AIRequest.TaskType;
 import com.ghatana.yappc.ai.router.AIResponse;
 import com.ghatana.yappc.ai.service.YAPPCAIService;

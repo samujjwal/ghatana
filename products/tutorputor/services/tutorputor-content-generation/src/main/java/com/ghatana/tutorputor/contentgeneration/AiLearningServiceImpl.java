@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -79,7 +78,7 @@ public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServi
 
     private AiLearningProto.GeneratePathResponse parseResponse(String json, String subject, String goal) throws IOException {
         JsonNode root = objectMapper.readTree(json);
-        
+
         AiLearningProto.GeneratePathResponse.Builder builder = AiLearningProto.GeneratePathResponse.newBuilder()
                 .setPathId(root.path("pathId").asText(UUID.randomUUID().toString()))
                 .setTitle(root.path("title").asText(subject + " Mastery"))
@@ -99,7 +98,7 @@ public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServi
                 if (node.has("prerequisites")) {
                     node.get("prerequisites").forEach(p -> nodeBuilder.addPrerequisites(p.asText()));
                 }
-                
+
                 if (node.has("learningObjectives")) {
                     node.get("learningObjectives").forEach(obj -> nodeBuilder.addLearningObjectives(obj.asText()));
                 }
@@ -107,7 +106,7 @@ public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServi
                 builder.addNodes(nodeBuilder);
             }
         }
-        
+
         return builder.build();
     }
 

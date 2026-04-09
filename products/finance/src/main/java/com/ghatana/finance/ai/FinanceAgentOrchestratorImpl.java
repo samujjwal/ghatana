@@ -30,7 +30,7 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
 
     public FinanceAgentOrchestratorImpl() {
     }
-    
+
     @Override
     public AgentResponse executeAgent(KernelAgent agent, AgentRequest request) {
         Objects.requireNonNull(agent, "agent must not be null");

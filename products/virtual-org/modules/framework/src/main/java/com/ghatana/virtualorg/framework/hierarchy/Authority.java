@@ -41,7 +41,7 @@ import java.util.Set;
  * @doc.pattern Value Object
  */
 public record Authority(Set<String> decisions) {
-    
+
     /**
      * Compact constructor with defensive copy.
      *
@@ -50,7 +50,7 @@ public record Authority(Set<String> decisions) {
     public Authority {
         decisions = Set.copyOf(decisions);
     }
-    
+
     /**
      * Checks if this authority covers a decision type.
      *
@@ -60,7 +60,7 @@ public record Authority(Set<String> decisions) {
     public boolean canDecide(String decisionType) {
         return decisions.contains(decisionType);
     }
-    
+
     /**
      * Gets the number of decisions covered by this authority.
      *
@@ -69,7 +69,7 @@ public record Authority(Set<String> decisions) {
     public int getDecisionCount() {
         return decisions.size();
     }
-    
+
     /**
      * Checks if this authority is empty (no decisions).
      *
@@ -78,7 +78,7 @@ public record Authority(Set<String> decisions) {
     public boolean isEmpty() {
         return decisions.isEmpty();
     }
-    
+
     /**
      * Creates a builder for Authority.
      *
@@ -87,7 +87,7 @@ public record Authority(Set<String> decisions) {
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for Authority.
      *
@@ -102,7 +102,7 @@ public record Authority(Set<String> decisions) {
      */
     public static class Builder {
         private final Set<String> decisions = new HashSet<>();
-        
+
         /**
          * Adds a decision type to this authority.
          *
@@ -117,7 +117,7 @@ public record Authority(Set<String> decisions) {
             decisions.add(decisionType);
             return this;
         }
-        
+
         /**
          * Adds multiple decision types to this authority.
          *
@@ -130,7 +130,7 @@ public record Authority(Set<String> decisions) {
             }
             return this;
         }
-        
+
         /**
          * Builds the Authority.
          *

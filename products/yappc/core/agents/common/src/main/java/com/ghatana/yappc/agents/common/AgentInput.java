@@ -19,17 +19,17 @@ public abstract class AgentInput {
      * Unique identifier for this input request.
      */
     private String requestId;
-    
+
     /**
      * User or system that initiated this request.
      */
     private String initiator;
-    
+
     /**
      * Timestamp when this input was created.
      */
     private Long timestamp;
-    
+
     /**
      * Optional context information.
      */

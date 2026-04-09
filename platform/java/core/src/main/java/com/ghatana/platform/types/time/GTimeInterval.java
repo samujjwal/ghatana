@@ -16,7 +16,7 @@ import java.util.Objects;
  * @doc.pattern ValueObject
  */
 public record GTimeInterval(GTimestamp start, GTimestamp end) {
-    
+
     public GTimeInterval {
         Objects.requireNonNull(start, "Start time cannot be null");
         Objects.requireNonNull(end, "End time cannot be null");
@@ -24,11 +24,11 @@ public record GTimeInterval(GTimestamp start, GTimestamp end) {
             throw new IllegalArgumentException("Start time cannot be after end time");
         }
     }
-    
+
     public static GTimeInterval between(GTimestamp start, GTimestamp end) {
         return new GTimeInterval(start, end);
     }
-    
+
     public static GTimeInterval between(Instant start, Instant end) {
         return new GTimeInterval(GTimestamp.of(start), GTimestamp.of(end));
     }
@@ -40,7 +40,7 @@ public record GTimeInterval(GTimestamp start, GTimestamp end) {
     public boolean isAfter(Instant instant) {
         return start.toInstant().isAfter(instant);
     }
-    
+
     public boolean contains(Instant instant) {
         return !isBefore(instant) && !isAfter(instant);
     }

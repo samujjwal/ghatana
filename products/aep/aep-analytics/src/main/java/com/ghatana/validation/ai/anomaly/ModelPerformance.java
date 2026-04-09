@@ -2,14 +2,14 @@ package com.ghatana.validation.ai.anomaly;
 
 /**
  * Model performance metrics.
- * 
+ *
  * @doc.type class
  * @doc.purpose Model performance tracking
  * @doc.layer product
  * @doc.pattern Value Object
  */
 public class ModelPerformance {
-    
+
     private final String modelId;
     private final double accuracy;
     private final double precision;
@@ -21,7 +21,7 @@ public class ModelPerformance {
     private final long falseNegatives;
     private final double averageLatencyMs;
     private final long timestamp;
-    
+
     public ModelPerformance(String modelId, double accuracy, double precision,
                            double recall, double f1Score, long totalPredictions,
                            long correctPredictions, long falsePositives,
@@ -38,7 +38,7 @@ public class ModelPerformance {
         this.averageLatencyMs = averageLatencyMs;
         this.timestamp = System.currentTimeMillis();
     }
-    
+
     public String getModelId() { return modelId; }
     public double getAccuracy() { return accuracy; }
     public double getPrecision() { return precision; }
@@ -50,7 +50,7 @@ public class ModelPerformance {
     public long getFalseNegatives() { return falseNegatives; }
     public double getAverageLatencyMs() { return averageLatencyMs; }
     public long getTimestamp() { return timestamp; }
-    
+
     /**
      * Creates a default performance with zero metrics.
      */

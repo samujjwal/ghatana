@@ -63,18 +63,18 @@ public class MapOperator extends AbstractStreamOperator {
         payload.put("name", getName());
         payload.put("version", getVersion());
         payload.put("description", getDescription());
-        
+
         Map<String, Object> config = new HashMap<>();
         config.put("mapperType", "custom_function");
         payload.put("config", config);
-        
+
         List<String> capabilities = List.of("stream.map", "event.transform");
         payload.put("capabilities", capabilities);
-        
+
         Map<String, String> headers = new HashMap<>();
         headers.put("operatorId", getId().toString());
         headers.put("tenantId", getId().getNamespace());
-        
+
         return GEvent.builder()
             .type("operator.registered")
             .headers(headers)

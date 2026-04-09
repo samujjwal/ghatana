@@ -7,7 +7,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for PatternQueryBuilder DSL. 
+/** Unit tests for PatternQueryBuilder DSL.
  * @doc.type class
  * @doc.purpose Handles pattern query builder test operations
  * @doc.layer core

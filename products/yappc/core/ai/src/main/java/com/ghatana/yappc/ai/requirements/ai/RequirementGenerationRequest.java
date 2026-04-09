@@ -1,6 +1,5 @@
 package com.ghatana.yappc.ai.requirements.ai;
 
-import java.util.List;
 import java.util.Objects;
 
 /**

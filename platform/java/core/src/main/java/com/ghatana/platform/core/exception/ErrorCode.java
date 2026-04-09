@@ -29,7 +29,7 @@ public enum ErrorCode {
     INITIALIZATION_ERROR("GEN-004", "Initialization error", 500),
     INVALID_REQUEST("GEN-400", "Invalid request format or parameters", 400),
     RATE_LIMITED("GEN-429", "Rate limit exceeded", 429),
-    
+
     // Authentication and authorization errors (401/403)
     AUTHENTICATION_ERROR("AUTH-001", "Authentication error", 401),
     AUTHORIZATION_ERROR("AUTH-002", "Authorization error", 403),
@@ -39,39 +39,39 @@ public enum ErrorCode {
     GOVERNANCE_POLICY_VIOLATION("AUTH-006", "Governance policy violation", 403),
     UNAUTHORIZED("AUTH-401", "Authentication required", 401),
     FORBIDDEN("AUTH-403", "Access denied", 403),
-    
+
     // Resource errors (404/409)
     RESOURCE_NOT_FOUND("RES-001", "Resource not found", 404),
     RESOURCE_ALREADY_EXISTS("RES-002", "Resource already exists", 409),
     RESOURCE_CONFLICT("RES-003", "Resource conflict", 409),
     NOT_FOUND("RES-404", "Resource not found", 404),
     CONFLICT("RES-409", "Resource already exists or conflicts with existing resource", 409),
-    
+
     // Input/Output errors
     IO_ERROR("IO-001", "I/O error"),
     SERIALIZATION_ERROR("IO-002", "Serialization error"),
     DESERIALIZATION_ERROR("IO-003", "Deserialization error"),
-    
+
     // Network errors
     NETWORK_ERROR("NET-001", "Network error"),
     CONNECTION_ERROR("NET-002", "Connection error"),
     TIMEOUT_ERROR("NET-003", "Timeout error"),
-    
+
     // Database errors
     DATABASE_ERROR("DB-001", "Database error"),
     QUERY_ERROR("DB-002", "Query error"),
     TRANSACTION_ERROR("DB-003", "Transaction error"),
-    
+
     // Service errors
     SERVICE_UNAVAILABLE("SVC-001", "Service unavailable"),
     SERVICE_TIMEOUT("SVC-002", "Service timeout"),
     SERVICE_ERROR("SVC-003", "Service error"),
-    
+
     // Agent errors
     AGENT_NOT_FOUND("AGT-001", "Agent not found"),
     AGENT_INITIALIZATION_ERROR("AGT-002", "Agent initialization error"),
     AGENT_EXECUTION_ERROR("AGT-003", "Agent execution error"),
-    
+
     // Event errors
     EVENT_VALIDATION_ERROR("EVT-001", "Event validation error"),
     EVENT_PROCESSING_ERROR("EVT-002", "Event processing error"),
@@ -79,17 +79,17 @@ public enum ErrorCode {
     EVENT_SCHEMA_MAPPING_ERROR("EVT-004", "Event schema mapping error"),
     EVENT_CODEGEN_ERROR("EVT-005", "Event code generation error"),
     EVENT_CACHE_ERROR("EVT-006", "Generated event cache error"),
-    
+
     // Pipeline errors
     PIPELINE_CONFIGURATION_ERROR("PIP-001", "Pipeline configuration error"),
     PIPELINE_EXECUTION_ERROR("PIP-002", "Pipeline execution error"),
     PIPELINE_TIMEOUT("PIP-003", "Pipeline timeout"),
-    
+
     // Storage errors
     STORAGE_ERROR("STG-001", "Storage error", 500),
     STORAGE_QUOTA_EXCEEDED("STG-002", "Storage quota exceeded", 507),
     STORAGE_UNAVAILABLE("STG-003", "Storage unavailable", 503),
-    
+
     // Knowledge Graph specific errors (KG-*)
     GRAPH_CONNECTION_ERROR("KG-3001", "Unable to connect to graph database", 503),
     GRAPH_QUERY_ERROR("KG-3002", "Graph query execution failed", 500),
@@ -104,18 +104,18 @@ public enum ErrorCode {
     EVENT_PUBLISHING_ERROR("KG-6003", "Failed to publish event", 500),
     INTERNAL_ERROR("KG-9001", "Internal server error", 500),
     TIMEOUT("KG-9003", "Operation timed out", 504);
-    
+
     private final String code;
     private final String defaultMessage;
     private final Integer httpStatus;
-    
+
     /**
      * Constructor for error codes without HTTP status (defaults to 500).
      */
     ErrorCode(String code, String defaultMessage) {
         this(code, defaultMessage, 500);
     }
-    
+
     /**
      * Constructor for error codes with explicit HTTP status.
      */
@@ -124,7 +124,7 @@ public enum ErrorCode {
         this.defaultMessage = defaultMessage;
         this.httpStatus = httpStatus;
     }
-    
+
     /**
      * Gets the error code.
      *
@@ -133,7 +133,7 @@ public enum ErrorCode {
     public String getCode() {
         return code;
     }
-    
+
     /**
      * Gets the default error message.
      *
@@ -142,7 +142,7 @@ public enum ErrorCode {
     public String getDefaultMessage() {
         return defaultMessage;
     }
-    
+
     /**
      * Gets the HTTP status code for this error.
      *
@@ -151,7 +151,7 @@ public enum ErrorCode {
     public int getHttpStatus() {
         return httpStatus != null ? httpStatus : 500;
     }
-    
+
     /**
      * Gets the error category from the code prefix.
      *
@@ -161,7 +161,7 @@ public enum ErrorCode {
         int dashIndex = code.indexOf('-');
         return dashIndex > 0 ? code.substring(0, dashIndex) : "GENERAL";
     }
-    
+
     /**
      * Gets the error code by its string representation.
      *

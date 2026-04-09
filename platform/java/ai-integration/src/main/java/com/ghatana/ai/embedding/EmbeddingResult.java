@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /**
  * Immutable value object representing the result of an embedding operation.
- * 
+ *
  * @doc.type class
  * @doc.purpose Represents the result of an embedding operation with the original text and its vector representation.
  * @doc.layer domain
@@ -35,7 +35,7 @@ public final class EmbeddingResult {
     public float[] getVector() {
         return vector.clone();
     }
-    
+
     /**
      * Convenience method to get the embedding vector (alias for getVector).
      */
@@ -52,8 +52,8 @@ public final class EmbeddingResult {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         EmbeddingResult that = (EmbeddingResult) o;
-        return text.equals(that.text) && 
-               model.equals(that.model) && 
+        return text.equals(that.text) &&
+               model.equals(that.model) &&
                java.util.Arrays.equals(vector, that.vector);
     }
 
@@ -72,7 +72,7 @@ public final class EmbeddingResult {
                ", model='" + model + '\'' +
                '}';
     }
-    
+
     /**
      * Creates an EmbeddingResult from an OpenAI Embedding object using official SDK.
      *

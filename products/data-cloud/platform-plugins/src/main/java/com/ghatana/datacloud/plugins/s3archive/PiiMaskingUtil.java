@@ -71,16 +71,16 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
             Pattern.CASE_INSENSITIVE);
-    
+
     private static final Pattern PHONE_PATTERN = Pattern.compile(
             "\\+?[0-9]{1,3}[-.\\s]?\\(?[0-9]{3}\\)?[-.\\s]?[0-9]{3}[-.\\s]?[0-9]{4}");
-    
+
     private static final Pattern SSN_PATTERN = Pattern.compile(
             "\\d{3}-\\d{2}-\\d{4}|\\d{9}");
-    
+
     private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile(
             "\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}");
-    
+
     private static final Pattern IPV4_PATTERN = Pattern.compile(
             "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 

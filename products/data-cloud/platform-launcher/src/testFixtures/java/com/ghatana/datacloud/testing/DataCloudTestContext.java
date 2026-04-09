@@ -5,7 +5,6 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Query;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.platform.testing.activej.EventloopTestUtil;
-import io.activej.promise.Promises;
 
 import java.time.Duration;
 import java.util.ArrayList;

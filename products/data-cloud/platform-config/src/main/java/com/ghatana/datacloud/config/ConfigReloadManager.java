@@ -7,7 +7,6 @@ import com.ghatana.datacloud.config.model.ConfigKey;
 import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

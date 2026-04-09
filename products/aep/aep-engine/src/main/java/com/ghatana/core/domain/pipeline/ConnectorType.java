@@ -2,19 +2,19 @@ package com.ghatana.core.domain.pipeline;
 
 /**
  * Types of connectors in the pipeline system.
- * 
+ *
  * <p>Defines the role and behavior of connectors within event processing pipelines.
  * Each connector type has specific characteristics and constraints.
- * 
+ *
  * @doc.type enum
  * @doc.purpose Pipeline connector classification
  * @doc.layer domain
  */
 public enum ConnectorType {
-    
+
     /**
      * Input connector for ingesting events into the pipeline.
-     * 
+     *
      * <p>Input connectors are responsible for:
      * <ul>
      *   <li>Receiving events from external sources</li>
@@ -24,10 +24,10 @@ public enum ConnectorType {
      * </ul>
      */
     INPUT,
-    
+
     /**
      * Output connector for publishing processed events.
-     * 
+     *
      * <p>Output connectors are responsible for:
      * <ul>
      *   <li>Publishing events to external destinations</li>
@@ -37,10 +37,10 @@ public enum ConnectorType {
      * </ul>
      */
     OUTPUT,
-    
+
     /**
      * Transform connector for processing and modifying events.
-     * 
+     *
      * <p>Transform connectors are responsible for:
      * <ul>
      *   <li>Applying business logic to events</li>
@@ -50,10 +50,10 @@ public enum ConnectorType {
      * </ul>
      */
     TRANSFORM,
-    
+
     /**
      * Filter connector for conditional event routing.
-     * 
+     *
      * <p>Filter connectors are responsible for:
      * <ul>
      *   <li>Evaluating conditions on events</li>
@@ -63,10 +63,10 @@ public enum ConnectorType {
      * </ul>
      */
     FILTER,
-    
+
     /**
      * Join connector for combining multiple event streams.
-     * 
+     *
      * <p>Join connectors are responsible for:
      * <ul>
      *   <li>Combining events from multiple sources</li>
@@ -76,10 +76,10 @@ public enum ConnectorType {
      * </ul>
      */
     JOIN,
-    
+
     /**
      * Aggregate connector for event aggregation operations.
-     * 
+     *
      * <p>Aggregate connectors are responsible for:
      * <ul>
      *   <li>Grouping events by keys</li>
@@ -89,10 +89,10 @@ public enum ConnectorType {
      * </ul>
      */
     AGGREGATE,
-    
+
     /**
      * Split connector for event stream division.
-     * 
+     *
      * <p>Split connectors are responsible for:
      * <ul>
      *   <li>Dividing event streams</li>
@@ -102,10 +102,10 @@ public enum ConnectorType {
      * </ul>
      */
     SPLIT,
-    
+
     /**
      * Custom connector for specialized processing.
-     * 
+     *
      * <p>Custom connectors allow for:
      * <ul>
      *   <li>User-defined processing logic</li>

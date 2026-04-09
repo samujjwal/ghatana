@@ -1,7 +1,6 @@
 package com.ghatana.agent.learning.consolidation;
 
 import com.ghatana.agent.memory.model.MemoryItem;
-import com.ghatana.agent.memory.model.Provenance;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

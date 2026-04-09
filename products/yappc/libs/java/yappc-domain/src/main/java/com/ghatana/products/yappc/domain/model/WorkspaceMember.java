@@ -40,7 +40,7 @@ import java.util.UUID;
  * @doc.pattern Entity
  */
 @Entity
-@Table(name = "workspace_member", 
+@Table(name = "workspace_member",
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_workspace_member_workspace_user", columnNames = {"workspace_id", "user_id"})
     },

@@ -197,9 +197,9 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
 
         // WHEN: Publish event, unsubscribe, publish again
         runPromise(() -> eventBus.publish("test.event", new TestEvent("data1")));
-        
+
         eventBus.unsubscribe(subscriptionId);
-        
+
         runPromise(() -> eventBus.publish("test.event", new TestEvent("data2")));
 
         // THEN: Only first event received
@@ -286,7 +286,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
         }
 
         void unsubscribe(String subscriptionId) {
-            subscriptions.values().forEach(list -> 
+            subscriptions.values().forEach(list ->
                 list.removeIf(entry -> entry.subscriptionId.equals(subscriptionId))
             );
         }

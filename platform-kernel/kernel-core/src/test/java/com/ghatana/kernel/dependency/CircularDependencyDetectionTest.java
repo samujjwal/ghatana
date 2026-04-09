@@ -38,14 +38,14 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         // GIVEN: Module A depends on B, Module B depends on A
         TestModule moduleA = new TestModule("module-a", "1.0.0");
         TestModule moduleB = new TestModule("module-b", "1.0.0");
-        
+
         moduleA.addDependency(new KernelDependency(
             "module-b",
             "1.0.0",
             KernelDependency.DependencyType.MODULE,
             false
         ));
-        
+
         moduleB.addDependency(new KernelDependency(
             "module-a",
             "1.0.0",
@@ -55,7 +55,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
 
         // WHEN: Register module A
         registry.registerModule(moduleA);
-        
+
         // THEN: Registering module B should detect circular dependency
         assertThatThrownBy(() -> registry.registerModule(moduleB))
             .isInstanceOf(IllegalStateException.class)
@@ -72,7 +72,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         TestModule moduleB = new TestModule("module-b", "1.0.0");
         TestModule moduleC = new TestModule("module-c", "1.0.0");
         TestModule moduleD = new TestModule("module-d", "1.0.0");
-        
+
         moduleA.addDependency(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleB.addDependency(new KernelDependency("module-c", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleC.addDependency(new KernelDependency("module-d", "1.0.0", KernelDependency.DependencyType.MODULE, false));
@@ -82,7 +82,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         registry.registerModule(moduleB);
         registry.registerModule(moduleC);
         registry.registerModule(moduleD);
-        
+
         // THEN: Registering module A should detect circular dependency
         assertThatThrownBy(() -> registry.registerModule(moduleA))
             .isInstanceOf(IllegalStateException.class)
@@ -116,7 +116,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         TestModule moduleB = new TestModule("module-b", "1.0.0");
         TestModule moduleC = new TestModule("module-c", "1.0.0");
         TestModule moduleA = new TestModule("module-a", "1.0.0");
-        
+
         moduleB.addDependency(new KernelDependency("module-d", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleC.addDependency(new KernelDependency("module-d", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleA.addDependency(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false));
@@ -132,7 +132,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
 
         // THEN: All modules registered successfully
         assertThat(registry.getAllModules()).hasSize(4);
-        
+
         // AND: Dependency resolution works correctly
         List<KernelModule> resolved = registry.resolveDependencies(moduleA);
         assertThat(resolved).containsExactlyInAnyOrder(moduleB, moduleC, moduleD);
@@ -145,7 +145,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         TestModule moduleA = new TestModule("module-a", "1.0.0");
         TestModule moduleB = new TestModule("module-b", "1.0.0");
         TestModule moduleC = new TestModule("module-c", "1.0.0");
-        
+
         moduleA.addDependency(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleB.addDependency(new KernelDependency("module-c", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleC.addDependency(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, true)); // optional
@@ -168,7 +168,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         TestModule moduleA = new TestModule("module-a", "1.0.0");
         TestModule moduleB = new TestModule("module-b", "1.0.0");
         TestModule moduleC = new TestModule("module-c", "1.0.0");
-        
+
         moduleA.addDependency(new KernelDependency("module-b", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleB.addDependency(new KernelDependency("module-c", "1.0.0", KernelDependency.DependencyType.MODULE, false));
         moduleC.addDependency(new KernelDependency("module-a", "1.0.0", KernelDependency.DependencyType.MODULE, false));
@@ -176,7 +176,7 @@ class CircularDependencyDetectionTest extends EventloopTestBase {
         // WHEN: Register modules
         registry.registerModule(moduleA);
         registry.registerModule(moduleB);
-        
+
         // THEN: Error message should show the cycle path
         assertThatThrownBy(() -> registry.registerModule(moduleC))
             .isInstanceOf(IllegalStateException.class)

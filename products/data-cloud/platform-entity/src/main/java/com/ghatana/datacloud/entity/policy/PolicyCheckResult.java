@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * Result of a content policy check operation.
- 
+
  *
  * @doc.type record
  * @doc.purpose Policy check result

@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
-import java.util.UUID;
 
 /**
  * Shared test constants for all Data Cloud test suites.

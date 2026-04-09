@@ -1,6 +1,5 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -95,7 +94,7 @@ class ExecutionAuditTest {
     @DisplayName("Should maintain audit trail chronology")
     void shouldMaintainAuditTrailChronology() {
         Instant now = Instant.now();
-        
+
         auditService.logRouting("order-1", "routing-1", "NASDAQ", "user-1", now);
         auditService.logFill("order-1", "fill-1", 50L, BigDecimal.valueOf(150.50), "user-1", now.plusSeconds(10));
         auditService.logFill("order-1", "fill-2", 50L, BigDecimal.valueOf(150.51), "user-1", now.plusSeconds(20));
@@ -266,7 +265,7 @@ class ExecutionAuditTest {
             return entry;
         }
 
-        StateTransition logStateTransition(String orderId, ExecutionStatus fromState, ExecutionStatus toState, 
+        StateTransition logStateTransition(String orderId, ExecutionStatus fromState, ExecutionStatus toState,
                                           String userId, Instant timestamp) {
             return new StateTransition(orderId, fromState, toState, userId, timestamp);
         }

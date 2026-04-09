@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Coordinates refactoring operations across multiple languages and files. 
+ * Coordinates refactoring operations across multiple languages and files.
  * @doc.type class
  * @doc.purpose Handles refactoring orchestrator operations
  * @doc.layer core

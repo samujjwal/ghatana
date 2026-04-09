@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.util.Map;
@@ -144,7 +143,7 @@ public final class FinanceCalendarService {
     private final FinanceSettlementPort settlement;
     private final FinanceReportingPort reporting;
     private final Executor executor;
-    
+
     private final Counter settlementCalculatedCounter;
     private final Counter businessDayCheckedCounter;
     private final Counter fiscalYearQueriedCounter;
@@ -165,7 +164,7 @@ public final class FinanceCalendarService {
         this.settlement = settlement;
         this.reporting = reporting;
         this.executor = executor;
-        
+
         this.settlementCalculatedCounter = Counter.builder("finance.calendar.settlement.calculated_total").register(registry);
         this.businessDayCheckedCounter = Counter.builder("finance.calendar.business_day.checked_total").register(registry);
         this.fiscalYearQueriedCounter = Counter.builder("finance.calendar.fiscal_year.queried_total").register(registry);
@@ -179,16 +178,16 @@ public final class FinanceCalendarService {
      */
     public Promise<FinanceSettlementResult> calculateSettlementDate(
             LocalDate tradeDate, int tPlusDays, FinanceMarket market) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             String jurisdiction = getJurisdictionForMarket(market);
-            
+
             return settlement.calculateSettlementDate(tradeDate, tPlusDays, market.name())
                 .then(settlementDate -> {
                     boolean adjustedForHoliday = !tradeDate.plusDays(tPlusDays).equals(settlementDate);
-                    
+
                     settlementCalculatedCounter.increment();
-                    
+
                     return Promise.of(new FinanceSettlementResult(
                         tradeDate, settlementDate, tPlusDays, market,
                         adjustedForHoliday, "SEC-RULE-15c3-1"
@@ -205,7 +204,7 @@ public final class FinanceCalendarService {
             return holidayCalendar.isBusinessDay(date, jurisdiction.name())
                 .then(isBusinessDay -> {
                     businessDayCheckedCounter.increment();
-                    
+
                     if (isBusinessDay) {
                         return Promise.of(new FinanceBusinessDayResult(
                             date, true, jurisdiction, null, List.of()
@@ -216,12 +215,12 @@ public final class FinanceCalendarService {
                             .then(isHoliday -> {
                                 if (isHoliday) {
                                     return Promise.of(new FinanceBusinessDayResult(
-                                        date, false, jurisdiction, "Public holiday", 
+                                        date, false, jurisdiction, "Public holiday",
                                         getMarketsForJurisdiction(jurisdiction)
                                     ));
                                 } else {
                                     return Promise.of(new FinanceBusinessDayResult(
-                                        date, false, jurisdiction, "Weekend", 
+                                        date, false, jurisdiction, "Weekend",
                                         getMarketsForJurisdiction(jurisdiction)
                                     ));
                                 }
@@ -248,22 +247,22 @@ public final class FinanceCalendarService {
     public Promise<FinanceReportingSchedule> getReportingSchedule(int year, FinanceJurisdiction jurisdiction) {
         return Promise.ofBlocking(executor, () -> {
             Map<FinanceReportType, List<LocalDate>> deadlines = new EnumMap<>(FinanceReportType.class);
-            
+
             // Calculate deadlines for different report types
             for (FinanceReportType reportType : FinanceReportType.values()) {
                 List<LocalDate> reportDeadlines = new ArrayList<>();
-                
+
                 for (int quarter = 1; quarter <= 4; quarter++) {
                     LocalDate quarterEnd = getQuarterEndDate(year, quarter, jurisdiction);
                     LocalDate deadline = reporting.getReportingDeadline(quarterEnd, reportType.name(), jurisdiction.name()).getResult();
                     reportDeadlines.add(deadline);
                 }
-                
+
                 deadlines.put(reportType, reportDeadlines);
             }
-            
+
             reportingDateCalculatedCounter.increment();
-            
+
             return Promise.of(new FinanceReportingSchedule(year, jurisdiction, deadlines));
         }).getResult();
     }
@@ -273,7 +272,7 @@ public final class FinanceCalendarService {
      */
     public Promise<LocalDate> calculateCorporateActionDate(
             LocalDate announcementDate, int days, FinanceMarket market) {
-        
+
         return settlement.calculateCorporateActionDate(announcementDate, days, market.name());
     }
 
@@ -282,11 +281,11 @@ public final class FinanceCalendarService {
      */
     public Promise<Integer> getBusinessDaysBetween(
             LocalDate startDate, LocalDate endDate, FinanceJurisdiction jurisdiction) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             int businessDays = 0;
             LocalDate current = startDate;
-            
+
             while (!current.isAfter(endDate)) {
                 boolean isBusinessDay = holidayCalendar.isBusinessDay(current, jurisdiction.name()).getResult();
                 if (isBusinessDay) {
@@ -294,7 +293,7 @@ public final class FinanceCalendarService {
                 }
                 current = current.plusDays(1);
             }
-            
+
             return Promise.of(businessDays);
         }).getResult();
     }
@@ -304,14 +303,14 @@ public final class FinanceCalendarService {
      */
     public Promise<LocalDate> addBusinessDays(
             LocalDate date, int businessDays, FinanceJurisdiction jurisdiction) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             if (businessDays == 0) {
                 return holidayCalendar.isBusinessDay(date, jurisdiction.name())
-                    .then(isBusinessDay -> isBusinessDay ? Promise.of(date) : 
+                    .then(isBusinessDay -> isBusinessDay ? Promise.of(date) :
                         holidayCalendar.nextBusinessDay(date, jurisdiction.name()));
             }
-            
+
             if (businessDays > 0) {
                 return addPositiveBusinessDays(date, businessDays, jurisdiction);
             } else {
@@ -325,11 +324,11 @@ public final class FinanceCalendarService {
      */
     public Promise<List<FinanceCalendarEvent>> getMarketHolidays(
             YearMonth month, FinanceJurisdiction jurisdiction) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             List<LocalDate> holidays = holidayCalendar.getHolidaysInMonth(month, jurisdiction.name()).getResult();
             List<FinanceCalendarEvent> events = new ArrayList<>();
-            
+
             for (LocalDate holiday : holidays) {
                 events.add(new FinanceCalendarEvent(
                     UUID.randomUUID().toString(),
@@ -342,7 +341,7 @@ public final class FinanceCalendarService {
                     Instant.now()
                 ));
             }
-            
+
             return Promise.of(events);
         }).getResult();
     }
@@ -351,11 +350,11 @@ public final class FinanceCalendarService {
 
     private Promise<LocalDate> addPositiveBusinessDays(
             LocalDate date, int businessDays, FinanceJurisdiction jurisdiction) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             LocalDate current = date;
             int daysAdded = 0;
-            
+
             while (daysAdded < businessDays) {
                 current = current.plusDays(1);
                 boolean isBusinessDay = holidayCalendar.isBusinessDay(current, jurisdiction.name()).getResult();
@@ -363,18 +362,18 @@ public final class FinanceCalendarService {
                     daysAdded++;
                 }
             }
-            
+
             return Promise.of(current);
         }).getResult();
     }
 
     private Promise<LocalDate> addNegativeBusinessDays(
             LocalDate date, int businessDays, FinanceJurisdiction jurisdiction) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             LocalDate current = date;
             int daysSubtracted = 0;
-            
+
             while (daysSubtracted < businessDays) {
                 current = current.minusDays(1);
                 boolean isBusinessDay = holidayCalendar.isBusinessDay(current, jurisdiction.name()).getResult();
@@ -382,7 +381,7 @@ public final class FinanceCalendarService {
                     daysSubtracted++;
                 }
             }
-            
+
             return Promise.of(current);
         }).getResult();
     }
@@ -519,14 +518,14 @@ public final class FinanceCalendarService {
         public Promise<LocalDate> calculateSettlementDate(LocalDate tradeDate, int tPlusDays, String market) {
             LocalDate settlement = tradeDate;
             int daysAdded = 0;
-            
+
             while (daysAdded < tPlusDays) {
                 settlement = settlement.plusDays(1);
                 if (settlement.getDayOfWeek().getValue() < 5) { // Business day
                     daysAdded++;
                 }
             }
-            
+
             return Promise.of(settlement);
         }
 

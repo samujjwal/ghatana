@@ -27,7 +27,7 @@ public class DataCloudLauncher {
 
     public static void main(String[] args) {
         log.info("Starting Data-Cloud Standalone...");
-        
+
         try {
             // Parse configuration from args or environment
             // Validate configuration before creating any resources (fail-fast)
@@ -40,23 +40,23 @@ public class DataCloudLauncher {
                 throw new IllegalStateException(
                         "No transport enabled. Configure DATACLOUD_HTTP_ENABLED, DATACLOUD_GRPC_ENABLED, DATACLOUD_GRPC_PORT, or pass --http/--grpc.");
             }
-            
+
             // Create and start client
             DataCloudClient client = DataCloud.create(config);
-            
+
             log.info("Data-Cloud Client started successfully");
             log.info("  Instance ID: {}", config.instanceId());
             log.info("  Max Connections: {}", config.maxConnectionsPerTenant());
             log.info("  Caching: {}", config.enableCaching() ? "enabled" : "disabled");
             log.info("  Metrics: {}", config.enableMetrics() ? "enabled" : "disabled");
-            
+
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Shutting down Data-Cloud...");
                 client.close();
                 log.info("Data-Cloud shutdown complete");
             }));
-            
+
             // Start HTTP server if configured
             if (startHttpServer) {
                 startHttpServer(client);
@@ -70,7 +70,7 @@ public class DataCloudLauncher {
             // Keep running
             log.info("Data-Cloud is ready to serve requests");
             Thread.currentThread().join();
-            
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.info("Data-Cloud interrupted, shutting down");

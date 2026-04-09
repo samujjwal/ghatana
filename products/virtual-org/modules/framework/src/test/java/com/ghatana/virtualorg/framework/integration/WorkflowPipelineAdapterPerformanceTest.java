@@ -284,4 +284,3 @@ class WorkflowPipelineAdapterPerformanceTest extends EventloopTestBase {
         }
     }
 }
-

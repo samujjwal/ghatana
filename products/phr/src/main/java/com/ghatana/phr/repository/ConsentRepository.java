@@ -73,7 +73,7 @@ public class ConsentRepository {
             return findByPatientAndPurposeJdbc(patientId, purpose);
         }
         return consents.values().stream()
-            .filter(consent -> consent.getPatientId().equals(patientId) 
+            .filter(consent -> consent.getPatientId().equals(patientId)
                 && consent.getPurpose().equals(purpose))
             .findFirst()
             .orElse(null);

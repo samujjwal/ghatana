@@ -23,9 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 import io.activej.bytebuf.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,9 +33,9 @@ import java.util.UUID;
 
 /**
  * JWT Authentication filter for AEP HTTP server.
- * 
+ *
  * <p>Enforces authentication on all non-public endpoints by validating
- * Bearer tokens in the Authorization header. Public endpoints (health, ready, 
+ * Bearer tokens in the Authorization header. Public endpoints (health, ready,
  * metrics) bypass authentication.
  *
  * <p>The filter expects a JWT secret to be configured via the {@code AEP_JWT_SECRET}
@@ -77,7 +75,7 @@ public final class AepAuthFilter implements AsyncServlet {
         this.next = next;
         this.jwtSecret = jwtSecret;
         this.authEnabled = authEnabled;
-        
+
         if (!authEnabled) {
             log.warn("JWT authentication DISABLED via AEP_AUTH_DISABLED=true — do NOT use in production");
         } else if (jwtSecret == null || jwtSecret.isBlank()) {
@@ -149,7 +147,7 @@ public final class AepAuthFilter implements AsyncServlet {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.contains(path) || 
+        return PUBLIC_PATHS.contains(path) ||
                path.startsWith("/health/") ||
                path.startsWith("/api/v1/status"); // Additional public status paths
     }
@@ -310,7 +308,7 @@ public final class AepAuthFilter implements AsyncServlet {
                 || hasPermission("deployment:delete");
         }
     }
-    
+
     public static class JwtValidationException extends Exception {
         public JwtValidationException(String message) {
             super(message);

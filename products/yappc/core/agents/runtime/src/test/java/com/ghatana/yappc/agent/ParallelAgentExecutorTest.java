@@ -7,7 +7,6 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.HealthStatus;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.framework.api.DefaultAgentContext;
 import com.ghatana.agent.framework.memory.EventLogMemoryStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;

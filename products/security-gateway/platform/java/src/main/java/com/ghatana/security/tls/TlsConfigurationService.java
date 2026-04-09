@@ -25,7 +25,7 @@ import java.security.SecureRandom;
 
 /**
  * Service for configuring TLS/SSL for the application.
- 
+
  *
  * @doc.type class
  * @doc.purpose Tls configuration service
@@ -34,7 +34,7 @@ import java.security.SecureRandom;
 */
 public class TlsConfigurationService {
     private static final Logger logger = LoggerFactory.getLogger(TlsConfigurationService.class);
-    
+
     private final TlsProperties tlsProperties;
     private SSLContext sslContext;
     private ServerSocketSettings serverSocketSettings;
@@ -43,14 +43,14 @@ public class TlsConfigurationService {
     private SocketSettings clientSslSettings;
     private static final String DEFAULT_PROTOCOL = "TLSv1.3";
     private static final String KEYSTORE_TYPE = "JKS";
-    
+
     public TlsConfigurationService(TlsProperties tlsProperties) {
         this.tlsProperties = tlsProperties;
     }
-    
+
     /**
      * Initializes the SSL context and socket settings.
-     * 
+     *
      * @throws TlsConfigurationException if the SSL context cannot be initialized
      */
     public void initialize() throws TlsConfigurationException {
@@ -58,7 +58,7 @@ public class TlsConfigurationService {
             logger.info("TLS is disabled in configuration");
             return;
         }
-        
+
         try {
             // Create key managers
             KeyManager[] keyManagers = createKeyManagers(
@@ -66,13 +66,13 @@ public class TlsConfigurationService {
                 tlsProperties.getKeyStorePassword(),
                 tlsProperties.getKeyStorePassword() // Using same password for key and keystore for simplicity
             );
-            
+
             // Create trust managers
             TrustManager[] trustManagers = createTrustManagers(
                 tlsProperties.getTrustStorePath().toFile(),
                 tlsProperties.getTrustStorePassword()
             );
-            
+
             // Initialize SSL context
             sslContext = createSslContext(
                 DEFAULT_PROTOCOL,
@@ -80,12 +80,12 @@ public class TlsConfigurationService {
                 trustManagers,
                 new SecureRandom()
             );
-            
+
             // Create SSL settings for server and client with proper error handling
             try {
                 serverSslSettings = createSslServerSettings();
                 clientSslSettings = createSslClientSettings();
-                
+
                 logger.info("TLS configuration initialized successfully with protocol: {}", DEFAULT_PROTOCOL);
             } catch (Exception e) {
                 String errorMsg = "Failed to create SSL settings: " + e.getMessage();
@@ -98,7 +98,7 @@ public class TlsConfigurationService {
             throw new TlsConfigurationException(errorMsg, e);
         }
     }
-    
+
     /**
      * Creates and initializes key managers from the specified keystore.
      *
@@ -112,17 +112,17 @@ public class TlsConfigurationService {
         if (!keystoreFile.exists()) {
             throw new TlsConfigurationException("Keystore file not found: " + keystoreFile.getAbsolutePath());
         }
-        
+
         KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
         try (InputStream is = new FileInputStream(keystoreFile)) {
             keyStore.load(is, keystorePass.toCharArray());
         }
-        
+
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(keyStore, keyPass.toCharArray());
         return kmf.getKeyManagers();
     }
-    
+
     /**
      * Creates and initializes trust managers from the specified truststore.
      */
@@ -130,17 +130,17 @@ public class TlsConfigurationService {
         if (!truststoreFile.exists()) {
             throw new TlsConfigurationException("Truststore file not found: " + truststoreFile.getAbsolutePath());
         }
-        
+
         KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE);
         try (InputStream is = new FileInputStream(truststoreFile)) {
             trustStore.load(is, truststorePass.toCharArray());
         }
-        
+
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(trustStore);
         return tmf.getTrustManagers();
     }
-    
+
     /**
      * Creates an SSL context with the specified parameters.
      */
@@ -150,10 +150,10 @@ public class TlsConfigurationService {
         sslContext.init(keyManagers, trustManagers, secureRandom);
         return sslContext;
     }
-    
+
     /**
      * Gets the SSL context.
-     * 
+     *
      * @return Configured SSLContext
      * @throws TlsConfigurationException if SSL context is not initialized
      */
@@ -163,10 +163,10 @@ public class TlsConfigurationService {
         }
         return sslContext;
     }
-    
+
     /**
      * Gets the server socket settings with SSL enabled.
-     * 
+     *
      * @return Configured ServerSocketSettings with SSL
      * @throws TlsConfigurationException if SSL context is not initialized
      */
@@ -181,7 +181,7 @@ public class TlsConfigurationService {
 
     /**
      * Gets the socket settings with SSL enabled.
-     * 
+     *
      * @return Configured SocketSettings with SSL
      * @throws TlsConfigurationException if SSL context is not initialized
      */
@@ -191,7 +191,7 @@ public class TlsConfigurationService {
         }
         return clientSocketSettings;
     }
-    
+
     /**
      * Creates server socket settings with SSL/TLS configuration.
      * @return Configured ServerSocketSettings
@@ -215,7 +215,7 @@ public class TlsConfigurationService {
             .withBacklog(tlsProperties.getBacklog())
             .build();
     }
-    
+
     /**
      * Creates client socket settings with SSL/TLS configuration.
      * @return Configured SocketSettings
@@ -237,7 +237,7 @@ public class TlsConfigurationService {
 //            .withSendBufferSize(tlsProperties.getSendBufferSize())
             .build();
     }
-    
+
     /**
      * Configures SSL settings for the given builder.
      * @param <T> The builder type
@@ -248,7 +248,7 @@ public class TlsConfigurationService {
         // SSL configuration is now handled through SSLContext and SSLParameters
         return builder;
     }
-    
+
     /**
      * Adds a header to the HTTP response.
      * @param response The HTTP response builder
@@ -259,10 +259,10 @@ public class TlsConfigurationService {
     public HttpResponse.Builder withHeader(HttpResponse.Builder response, String name, String value) {
         return response.withHeader(HttpHeaders.of(name), value);
     }
-    
+
     /**
      * Creates a servlet that enforces HTTPS.
-     * 
+     *
      * @param delegate The servlet to delegate to
      * @return A servlet that enforces HTTPS
      */
@@ -270,7 +270,7 @@ public class TlsConfigurationService {
         if (!tlsProperties.isEnabled()) {
             return delegate;
         }
-        
+
         return request -> {
             String protocol = request.getProtocol().isSecure() ? "https" : "http";
             String host = request.getHeader(HttpHeaders.HOST);
@@ -281,10 +281,10 @@ public class TlsConfigurationService {
             return HttpResponse.redirect302(location).toPromise();
         };
     }
-            
+
     /**
      * Adds security headers to the response.
-     * 
+     *
      * @param delegate The servlet to delegate to
      * @return A servlet that adds security headers
      */
@@ -302,10 +302,10 @@ public class TlsConfigurationService {
 //                    "connect-src 'self'")
 //            );
     }
-    
+
     /**
      * Checks if TLS is enabled.
-     * 
+     *
      * @return true if TLS is enabled, false otherwise
      */
     public boolean isEnabled() {

@@ -3,7 +3,6 @@ package com.ghatana.ai.llm;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

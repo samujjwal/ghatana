@@ -3,15 +3,12 @@ package com.ghatana.yappc.agents.testing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.EventLogMemoryStore;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.agent.*;
-import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
 import io.activej.promise.Promise;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

@@ -4,20 +4,15 @@ import io.activej.promise.Promise;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.TableScan;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.GenericParquetWriter;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.DataWriter;
-import org.apache.iceberg.io.OutputFile;
-import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +23,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
 
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
@@ -97,37 +91,37 @@ public class IcebergTableManager implements Closeable {
     public static final Schema EVENT_SCHEMA = new Schema(
             // Primary identifier
             required(1, "id", Types.StringType.get(), "Event UUID"),
-            
+
             // Tenant and organization
             required(2, "tenant_id", Types.StringType.get(), "Tenant identifier"),
-            
+
             // Event type
             required(3, "event_type_name", Types.StringType.get(), "Event type name"),
             required(4, "event_type_version", Types.StringType.get(), "Event type version"),
-            
+
             // Stream and partition
             required(5, "stream_name", Types.StringType.get(), "Event stream name"),
             required(6, "partition_id", Types.IntegerType.get(), "Partition identifier"),
             required(7, "event_offset", Types.LongType.get(), "Event offset in partition"),
-            
+
             // Timestamps
             required(8, "occurred_at", Types.TimestampType.withZone(), "When event occurred"),
             required(9, "detected_at", Types.TimestampType.withZone(), "When event was detected"),
             required(10, "ingested_at", Types.TimestampType.withZone(), "When event was ingested"),
-            
+
             // Content
             optional(11, "headers", Types.StringType.get(), "Event headers as JSON"),
             required(12, "payload", Types.StringType.get(), "Event payload as JSON"),
             optional(13, "content_type", Types.StringType.get(), "Content MIME type"),
-            
+
             // Correlation
             optional(14, "correlation_id", Types.StringType.get(), "Correlation ID for tracing"),
             optional(15, "causation_id", Types.StringType.get(), "Causation ID for event chain"),
             optional(16, "idempotency_key", Types.StringType.get(), "Idempotency key for dedup"),
-            
+
             // Derived partition column
             required(17, "detection_date", Types.DateType.get(), "Detection date for partitioning"),
-            
+
             // Metadata
             optional(18, "created_by", Types.StringType.get(), "Creator identifier")
     );
@@ -253,7 +247,7 @@ public class IcebergTableManager implements Closeable {
             Instant startTime,
             Instant endTime,
             int limit) {
-        
+
         try {
             // DC3-M7: Require at least one time-range predicate to prevent full-table scans
             // across potentially terabytes of Iceberg partitions.
@@ -285,7 +279,7 @@ public class IcebergTableManager implements Closeable {
             try (CloseableIterable<Record> results = IcebergGenerics.read(table)
                     .where(filter)
                     .build()) {
-                
+
                 int count = 0;
                 for (Record record : results) {
                     if (count >= limit) break;
@@ -317,7 +311,7 @@ public class IcebergTableManager implements Closeable {
             Instant snapshotTime,
             String tenantId,
             int limit) {
-        
+
         try {
             // Find snapshot at or before the given time
             Long snapshotId = findSnapshotAtTime(table, snapshotTime);
@@ -334,7 +328,7 @@ public class IcebergTableManager implements Closeable {
                     .useSnapshot(snapshotId)
                     .where(filter)
                     .build()) {
-                
+
                 int count = 0;
                 for (Record record : results) {
                     if (count >= limit) break;
@@ -385,7 +379,7 @@ public class IcebergTableManager implements Closeable {
      */
     public List<SnapshotInfo> listSnapshots(Table table) {
         List<SnapshotInfo> snapshots = new ArrayList<>();
-        
+
         for (org.apache.iceberg.Snapshot snapshot : table.snapshots()) {
             snapshots.add(new SnapshotInfo(
                     snapshot.snapshotId(),

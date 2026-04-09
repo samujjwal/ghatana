@@ -2,14 +2,12 @@ package com.ghatana.yappc.infrastructure.ai.scoring;
 
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
-import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.domain.ai.ConfidenceScore;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

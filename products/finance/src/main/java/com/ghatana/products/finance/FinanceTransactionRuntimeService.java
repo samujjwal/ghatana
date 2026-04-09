@@ -14,7 +14,6 @@ import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.promise.Promise;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;

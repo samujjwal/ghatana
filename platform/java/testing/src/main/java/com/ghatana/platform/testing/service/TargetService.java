@@ -3,10 +3,10 @@ package com.ghatana.platform.testing.service;
 /**
  * Canonical enumeration of EventCloud services that can be targeted by test harnesses
  * (chaos, performance, validation, etc).
- * 
+ *
  * <p>Moved from multi-agent-system:shared:common to core:testing:test-utils
  * as it's test-related infrastructure.
- 
+
  *
  * @doc.type enum
  * @doc.purpose Target service

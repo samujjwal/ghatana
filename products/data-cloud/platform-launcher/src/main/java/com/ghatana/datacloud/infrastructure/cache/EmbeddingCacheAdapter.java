@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Redis-backed embedding cache adapter using Lettuce.
@@ -212,23 +211,23 @@ public class EmbeddingCacheAdapter {
         try {
             ArrayList<String> keys = new ArrayList<>();
             ScanCursor cursor = ScanCursor.INITIAL;
-            
+
             do {
                 KeyScanCursor<String> scanResult = commands.scan(cursor,
                         ScanArgs.Builder.matches(CACHE_PREFIX + "*"));
                 cursor = scanResult;
                 keys.addAll(scanResult.getKeys());
             } while (!cursor.isFinished());
-            
+
             if (keys.size() > MAX_CACHE_SIZE) {
                 int toEvict = keys.size() - MAX_CACHE_SIZE;
                 Collections.shuffle(keys);
-                
+
                 String[] keysToDelete = new String[toEvict];
                 for (int i = 0; i < toEvict; i++) {
                     keysToDelete[i] = keys.get(i);
                 }
-                
+
                 commands.del(keysToDelete);
                 log.warn("Evicted {} embeddings from cache due to size limit", toEvict);
                 metricsCollector.incrementCounter("cache.embedding.evictions");

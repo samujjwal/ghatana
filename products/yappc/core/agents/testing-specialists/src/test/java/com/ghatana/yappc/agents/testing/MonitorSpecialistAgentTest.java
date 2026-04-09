@@ -12,7 +12,6 @@ import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
 import com.ghatana.yappc.agents.architecture.MonitorSpecialistAgent;
 import io.activej.promise.Promise;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

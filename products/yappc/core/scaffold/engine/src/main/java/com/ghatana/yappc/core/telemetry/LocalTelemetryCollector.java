@@ -127,7 +127,7 @@ public class LocalTelemetryCollector
             return Promise.of(null);
         }
 
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, 
+        return Promise.ofBlocking(BLOCKING_EXECUTOR,
                 () -> {
                     try {
                         // Anonymize event data

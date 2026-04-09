@@ -57,7 +57,7 @@ public record RawRoutingConfig(
             Map<String, String> labels,
             Map<String, String> annotations) {
 
-        
+
 
     public RawRoutingMetadata    {
         labels = labels != null ? Map.copyOf(labels) : Map.of();

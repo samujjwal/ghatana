@@ -4,17 +4,14 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Tag;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 /**
  * A simple implementation of MetricsCollectorFactory for the refactorer service.
  * This is a temporary solution until the actual implementation is available.
- 
+
  * @doc.type class
  * @doc.purpose Handles metrics collector factory operations
  * @doc.layer core
@@ -30,7 +27,7 @@ public class MetricsCollectorFactory {
 
     public Timer getOrCreateTimer(String name, String... tags) {
         String key = "timer:" + name + String.join(",", tags);
-        return (Timer) metrics.computeIfAbsent(key, k -> 
+        return (Timer) metrics.computeIfAbsent(key, k ->
             Timer.builder(name)
                 .tags(tags)
                 .publishPercentileHistogram()
@@ -40,7 +37,7 @@ public class MetricsCollectorFactory {
 
     public Counter getOrCreateCounter(String name, String... tags) {
         String key = "counter:" + name + String.join(",", tags);
-        return (Counter) metrics.computeIfAbsent(key, k -> 
+        return (Counter) metrics.computeIfAbsent(key, k ->
             Counter.builder(name)
                 .tags(tags)
                 .register(meterRegistry)

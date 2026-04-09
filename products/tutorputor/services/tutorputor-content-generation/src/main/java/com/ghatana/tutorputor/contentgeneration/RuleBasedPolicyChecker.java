@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * RuleBasedPolicyChecker checker = new RuleBasedPolicyChecker(metricsCollector);
- * 
+ *
  * // Configure profanity list
  * checker.updatePolicyConfiguration("tenant-123", PolicyType.PROFANITY,
  *     Map.of("words", List.of("badword1", "badword2")));
- * 
+ *
  * // Check content
  * PolicyCheckResult result = checker.checkContent(
  *     "tenant-123",
@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 public class RuleBasedPolicyChecker implements ContentPolicyChecker {
 
     private final MetricsCollector metrics;
-    
+
     // Tenant-specific rule configurations
     private final Map<String, Map<PolicyType, Map<String, Object>>> tenantConfigs;
 
@@ -63,29 +63,29 @@ public class RuleBasedPolicyChecker implements ContentPolicyChecker {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"
     );
-    
+
     private static final Pattern PHONE_PATTERN = Pattern.compile(
             "\\b(?:\\+?1[-.]?)?" +
             "(?:\\(?([2-9][0-9]{2})\\)?[-.]?)?" +
             "([2-9][0-9]{2})[-.]?([0-9]{4})\\b"
     );
-    
+
     private static final Pattern SSN_PATTERN = Pattern.compile(
             "\\b(?!000|666|9\\d{2})\\d{3}-?(?!00)\\d{2}-?(?!0000)\\d{4}\\b"
     );
-    
+
     private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile(
             "\\b(?:4[0-9]{12}(?:[0-9]{3})?|" +  // Visa
             "5[1-5][0-9]{14}|" +                 // MasterCard
             "3[47][0-9]{13}|" +                  // Amex
             "6(?:011|5[0-9]{2})[0-9]{12})\\b"    // Discover
     );
-    
+
     private static final Pattern IP_PATTERN = Pattern.compile(
             "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}" +
             "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"
     );
-    
+
     private static final Pattern POSTAL_CODE_PATTERN = Pattern.compile(
             "\\b\\d{5}(?:-\\d{4})?\\b"  // US ZIP codes
     );

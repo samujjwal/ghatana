@@ -5,7 +5,7 @@ import java.util.*;
 import org.apache.logging.log4j.Logger;
 
 /**
- * In-memory store for indexed TypeScript/JavaScript symbols and their exports. 
+ * In-memory store for indexed TypeScript/JavaScript symbols and their exports.
  * @doc.type class
  * @doc.purpose Handles symbol store operations
  * @doc.layer core

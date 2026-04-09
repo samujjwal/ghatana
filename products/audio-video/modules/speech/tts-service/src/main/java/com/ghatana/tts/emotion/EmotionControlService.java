@@ -126,4 +126,3 @@ public final class EmotionControlService {
         public boolean hasSsml() { return !ssmlOpenTag.isEmpty(); }
     }
 }
-

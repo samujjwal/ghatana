@@ -6,7 +6,6 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.virtualorg.framework.event.EventPublisher;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * REST API controller for HR department events.

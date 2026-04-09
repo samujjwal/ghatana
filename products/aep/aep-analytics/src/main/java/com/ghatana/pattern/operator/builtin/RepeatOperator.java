@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * REPEAT operator that matches repeated occurrences of its operand.
- * 
+ *
  * <p>This operator matches when its operand occurs a specified number of times.
  * For example, REPEAT(A, 3) matches when event A occurs exactly 3 times.
  * Supports quantifiers: + (1 or more), * (0 or more), {n} (exactly n), {n,m} (between n and m).
- * 
+ *
  * @doc.pattern Strategy SPI Pattern - Pluggable operator implementation via {@link Operator} interface,
  *               enabling dynamic operator registration and polymorphic validation.
  * @doc.operator-type Quantifier Operator - Repetition matching (REPEAT) for counting event occurrences.
@@ -53,7 +53,7 @@ import java.util.Map;
  *                  .parameter("maxGap", 300000L) // 5 minutes
  *                  .parameter("greedy", true)
  *                  .build()
- *              
+ *
  *              // 1 or more transactions (greedy)
  *              OperatorSpec.builder()
  *                  .type("REPEAT")
@@ -61,7 +61,7 @@ import java.util.Map;
  *                  .parameter("quantifier", "+")
  *                  .parameter("greedy", false)
  *                  .build()
- *              
+ *
  *              // Between 2-5 API calls
  *              OperatorSpec.builder()
  *                  .type("REPEAT")
@@ -77,7 +77,7 @@ import java.util.Map;
  *                 matching logic. Auto-computes minCount/maxCount from quantifier string during validation.
  */
 public class RepeatOperator implements Operator {
-    
+
     private static final String TYPE = "REPEAT";
     private static final OperatorMetadata METADATA = OperatorMetadata.builder()
             .type(TYPE)
@@ -87,104 +87,104 @@ public class RepeatOperator implements Operator {
             .supportsStateful(true)
             .supportsStateless(false)
             .build();
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public OperatorMetadata getMetadata() {
         return METADATA;
     }
-    
+
     @Override
     public void validate(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         if (spec == null) {
             throw new PatternValidationException("OperatorSpec cannot be null for REPEAT operator");
         }
-        
+
         if (!TYPE.equals(spec.getType())) {
             throw new PatternValidationException("Invalid operator type for RepeatOperator: " + spec.getType());
         }
-        
+
         // Validate operand count
         int operandCount = spec.getOperandCount();
         if (operandCount != 1) {
             throw new PatternValidationException(
                 String.format("REPEAT operator requires exactly 1 operand, got %d", operandCount));
         }
-        
+
         // Validate operand
         if (spec.getOperands() != null && !spec.getOperands().isEmpty()) {
             OperatorSpec operand = spec.getOperands().get(0);
             if (operand == null) {
                 throw new PatternValidationException("REPEAT operator operand cannot be null");
             }
-            
+
             if (operand.getType() == null || operand.getType().trim().isEmpty()) {
                 throw new PatternValidationException("REPEAT operator operand must have a valid type");
             }
         } else {
             throw new PatternValidationException("REPEAT operator must have exactly one operand");
         }
-        
+
         // Validate parameters
         validateParameters(spec, context);
     }
-    
+
     private void validateParameters(OperatorSpec spec, ValidationContext context) throws PatternValidationException {
         Map<String, Object> parameters = spec.getParameters();
         if (parameters == null) {
             throw new PatternValidationException("REPEAT operator requires parameters");
         }
-        
+
         // Validate quantifier parameter (required for REPEAT operator)
         Object quantifier = parameters.get("quantifier");
         if (quantifier == null) {
             throw new PatternValidationException("REPEAT operator requires quantifier parameter");
         }
-        
+
         if (!(quantifier instanceof String)) {
             throw new PatternValidationException("REPEAT operator quantifier parameter must be a string");
         }
-        
+
         String quantifierStr = (String) quantifier;
         if (!isValidQuantifier(quantifierStr)) {
             throw new PatternValidationException(
                 String.format("REPEAT operator quantifier must be one of: +, *, {n}, {n,m}, got: %s", quantifierStr));
         }
-        
+
         // Validate minCount and maxCount for range quantifiers
         if (quantifierStr.startsWith("{") && quantifierStr.endsWith("}")) {
             validateRangeQuantifier(quantifierStr, parameters);
         }
-        
+
         // Validate maxGap parameter if present
         Object maxGap = parameters.get("maxGap");
         if (maxGap != null) {
             if (!(maxGap instanceof Number)) {
                 throw new PatternValidationException("REPEAT operator maxGap parameter must be a number");
             }
-            
+
             long maxGapMs = ((Number) maxGap).longValue();
             if (maxGapMs < 0) {
                 throw new PatternValidationException("REPEAT operator maxGap parameter must be non-negative");
             }
         }
-        
+
         // Validate greedy parameter if present
         Object greedy = parameters.get("greedy");
         if (greedy != null && !(greedy instanceof Boolean)) {
             throw new PatternValidationException("REPEAT operator greedy parameter must be a boolean");
         }
     }
-    
+
     private boolean isValidQuantifier(String quantifier) {
         if ("+".equals(quantifier) || "*".equals(quantifier)) {
             return true;
         }
-        
+
         if (quantifier.startsWith("{") && quantifier.endsWith("}")) {
             String range = quantifier.substring(1, quantifier.length() - 1);
             if (range.contains(",")) {
@@ -207,10 +207,10 @@ public class RepeatOperator implements Operator {
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     private void validateRangeQuantifier(String quantifier, Map<String, Object> parameters) throws PatternValidationException {
         String range = quantifier.substring(1, quantifier.length() - 1);
         if (range.contains(",")) {
@@ -219,15 +219,15 @@ public class RepeatOperator implements Operator {
                 try {
                     int min = Integer.parseInt(parts[0].trim());
                     int max = Integer.parseInt(parts[1].trim());
-                    
+
                     if (min < 0) {
                         throw new PatternValidationException("REPEAT operator minCount must be non-negative");
                     }
-                    
+
                     if (max < min) {
                         throw new PatternValidationException("REPEAT operator maxCount must be greater than or equal to minCount");
                     }
-                    
+
                     // Set minCount and maxCount in parameters for runtime use
                     parameters.put("minCount", min);
                     parameters.put("maxCount", max);
@@ -241,7 +241,7 @@ public class RepeatOperator implements Operator {
                 if (count < 0) {
                     throw new PatternValidationException("REPEAT operator count must be non-negative");
                 }
-                
+
                 // Set minCount and maxCount in parameters for runtime use
                 parameters.put("minCount", count);
                 parameters.put("maxCount", count);
@@ -250,14 +250,9 @@ public class RepeatOperator implements Operator {
             }
         }
     }
-    
+
     @Override
     public boolean supports(OperatorSpec spec) {
         return TYPE.equals(spec.getType());
     }
 }
-
-
-
-
-

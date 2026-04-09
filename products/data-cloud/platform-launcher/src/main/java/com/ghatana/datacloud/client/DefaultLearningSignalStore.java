@@ -257,7 +257,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                         // Implement actual export logic based on format
                         long recordCount = signals.size();
                         long sizeBytes = 0;
-                        
+
                         switch (format) {
                             case JSON:
                                 sizeBytes = exportAsJson(signals, destination);
@@ -272,9 +272,9 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                             default:
                                 throw new IllegalArgumentException("Unsupported format: " + format);
                         }
-                        
+
                         log.info("Exported {} signals ({} bytes) to {}", recordCount, sizeBytes, destination);
-                        
+
                         return Promise.of(new ExportResult(
                                 destination,
                                 recordCount,
@@ -288,7 +288,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                     }
                 });
     }
-    
+
     private long exportAsJson(List<LearningSignal> signals, String destination) {
         // Simple JSON array format
         StringBuilder json = new StringBuilder("[");
@@ -305,7 +305,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         // In production: write to file/S3/blob storage
         return json.length();
     }
-    
+
     private long exportAsCsv(List<LearningSignal> signals, String destination) {
         // Simple CSV format with header
         StringBuilder csv = new StringBuilder("signalId,tenantId,type,confidence,timestamp\n");
@@ -422,7 +422,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         // Rough estimate: 1KB per signal
         return signals.size() * 1024L;
     }
-    
+
     /**
      * Imports learning signals from external source.
      *
@@ -433,7 +433,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
      */
     public Promise<ImportResult> importSignals(String tenantId, String source, ExportFormat format) {
         log.info("Importing learning signals from {} in {} format", source, format);
-        
+
         try {
             // Parse based on format
             final List<LearningSignal> signals;
@@ -451,13 +451,13 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                 default:
                     throw new IllegalArgumentException("Unsupported format: " + format);
             }
-            
+
             // Store batch
             return storeBatch(signals)
                     .then(batchResult -> {
                         log.info("Imported {} signals, {} succeeded, {} failed",
                                 signals.size(), batchResult.successCount(), batchResult.failureCount());
-                        
+
                         return Promise.of(new ImportResult(
                                 source,
                                 signals.size(),
@@ -467,13 +467,13 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
                                 Instant.now()
                         ));
                     });
-                    
+
         } catch (Exception e) {
             log.error("Import failed: {}", e.getMessage(), e);
             return Promise.ofException(e);
         }
     }
-    
+
     /**
      * Parses JSON array of learning signals.
      * Expected format: [{"signalId":"...", "tenantId":"...", "type":"...", ...}, ...]
@@ -485,7 +485,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         log.debug("Parsing JSON import for tenant {}", tenantId);
         return signals;
     }
-    
+
     /**
      * Parses CSV with header row.
      * Expected format: signalId,tenantId,type,confidence,timestamp\n...
@@ -497,7 +497,7 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
         log.debug("Parsing CSV import for tenant {}", tenantId);
         return signals;
     }
-    
+
     /**
      * Import result record.
      */
@@ -510,4 +510,3 @@ public class DefaultLearningSignalStore implements LearningSignalStore {
             Instant timestamp
     ) {}
 }
-

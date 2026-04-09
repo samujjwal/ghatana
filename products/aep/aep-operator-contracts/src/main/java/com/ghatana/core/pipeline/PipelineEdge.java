@@ -57,7 +57,7 @@ public record PipelineEdge(
         Objects.requireNonNull(from, "from cannot be null");
         Objects.requireNonNull(to, "to cannot be null");
         Objects.requireNonNull(label, "label cannot be null");
-        
+
         if (from.isBlank()) {
             throw new IllegalArgumentException("from cannot be blank");
         }

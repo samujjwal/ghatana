@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * Partition within an EventStream for parallel processing.
- * 
+ *
  * <p><b>Purpose</b><br>
  * Represents a single partition within an EventStream. Partitions enable:
  * <ul>
@@ -22,7 +22,7 @@ import java.util.UUID;
  *   <li><b>Ordering</b>: Events within a partition are strictly ordered</li>
  *   <li><b>Scalability</b>: More partitions = more parallelism</li>
  * </ul>
- * 
+ *
  * <p><b>Offset Semantics</b>:
  * <ul>
  *   <li>Offsets start at 0 and increase monotonically</li>
@@ -30,21 +30,21 @@ import java.util.UUID;
  *   <li>earliestOffset: Lowest available offset (after compaction/retention)</li>
  *   <li>currentOffset: Next offset to be assigned</li>
  * </ul>
- * 
+ *
  * <p><b>Leader Election</b>:
  * <ul>
  *   <li>Each partition has a leader node responsible for writes</li>
  *   <li>Leader handles all produce requests for this partition</li>
  *   <li>Leader election happens on node failure</li>
  * </ul>
- * 
+ *
  * <p><b>Usage</b>:
  * <pre>{@code
  * // Partitions are typically created by EventStream
  * EventStream stream = EventStream.builder()
  *     .partitionCount(8)
  *     .build();
- * 
+ *
  * // Access partition info
  * Partition partition = stream.getPartitions().get(0);
  * long nextOffset = partition.getCurrentOffset();
@@ -55,11 +55,11 @@ import java.util.UUID;
  * @doc.purpose Partition within stream for parallel processing and ordering
  * @doc.layer domain
  * @doc.pattern Domain Entity, Partitioned Log
- * 
+ *
  * @see EventStream
  * @see Event
  * @see ConsumerGroup
- * 
+ *
  * @author EventCloud Team
  * @since 1.0.0
  */
@@ -90,7 +90,7 @@ public class Partition {
 
     /**
      * Zero-based index of this partition within the stream.
-     * 
+     *
      * <p>Range: [0, stream.partitionCount - 1]
      */
     @NotNull
@@ -101,7 +101,7 @@ public class Partition {
 
     /**
      * Next offset to be assigned to a new event.
-     * 
+     *
      * <p>Starts at 0. Incremented atomically on each append.
      * <p>High watermark: all events with offset < currentOffset exist.
      */
@@ -112,7 +112,7 @@ public class Partition {
 
     /**
      * Earliest available offset in this partition.
-     * 
+     *
      * <p>Events with offset < earliestOffset have been:
      * <ul>
      *   <li>Deleted by retention policy</li>
@@ -129,7 +129,7 @@ public class Partition {
 
     /**
      * Node ID of the current leader for this partition.
-     * 
+     *
      * <p>The leader handles all write operations.
      * <p>Null if no leader is assigned (partition unavailable).
      */
@@ -138,7 +138,7 @@ public class Partition {
 
     /**
      * Epoch number for leader election.
-     * 
+     *
      * <p>Incremented on each leader change.
      * <p>Used to detect stale leaders and fence old writes.
      */
@@ -150,7 +150,7 @@ public class Partition {
 
     /**
      * When the last event was written to this partition.
-     * 
+     *
      * <p>Null if no events have been written.
      */
     @Column(name = "last_write_at")
@@ -175,7 +175,7 @@ public class Partition {
 
     /**
      * Gets the number of events in this partition.
-     * 
+     *
      * @return count of events (currentOffset - earliestOffset)
      */
     public long getEventCount() {
@@ -184,7 +184,7 @@ public class Partition {
 
     /**
      * Checks if this partition has any events.
-     * 
+     *
      * @return true if at least one event exists
      */
     public boolean hasEvents() {
@@ -193,10 +193,10 @@ public class Partition {
 
     /**
      * Advances the current offset after appending an event.
-     * 
+     *
      * <p><b>Thread Safety</b>: This should be called within a transaction
      * with proper locking to ensure atomic offset assignment.
-     * 
+     *
      * @return the offset assigned to the new event
      */
     public long assignNextOffset() {
@@ -208,7 +208,7 @@ public class Partition {
 
     /**
      * Advances the earliest offset after retention cleanup.
-     * 
+     *
      * @param newEarliest the new earliest offset
      * @throws IllegalArgumentException if newEarliest > currentOffset
      */
@@ -224,7 +224,7 @@ public class Partition {
 
     /**
      * Checks if an offset is valid (within available range).
-     * 
+     *
      * @param offset the offset to check
      * @return true if offset is available
      */
@@ -236,7 +236,7 @@ public class Partition {
 
     /**
      * Assigns a new leader to this partition.
-     * 
+     *
      * @param nodeId the new leader node ID
      */
     public void assignLeader(String nodeId) {
@@ -246,7 +246,7 @@ public class Partition {
 
     /**
      * Removes the leader from this partition.
-     * 
+     *
      * <p>Partition becomes unavailable for writes until new leader elected.
      */
     public void revokeLeader() {
@@ -255,7 +255,7 @@ public class Partition {
 
     /**
      * Checks if this partition has an active leader.
-     * 
+     *
      * @return true if a leader is assigned
      */
     public boolean hasLeader() {

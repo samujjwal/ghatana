@@ -21,7 +21,7 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 public class KernelTenantContext {
-    
+
     private final String tenantId;
     private final TenantType tenantType;
     private final Map<String, Object> tenantConfig;

@@ -1,6 +1,6 @@
 /**
  * AI Integration - Compatibility Layer (DEPRECATED)
- * 
+ *
  * This module is deprecated. Use:
  * - `:platform:java:ai-api` for stable interfaces
  * - `:platform:java:ai-experimental` for implementations

@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * Gradle Groovy DSL adapter that generates settings.gradle and version catalog
  * (libs.versions.toml). Implements Day 11 requirements for Gradle 8.x with version catalog support.
- 
+
  * @doc.type class
  * @doc.purpose Handles gradle groovy adapter operations
  * @doc.layer core

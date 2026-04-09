@@ -4,7 +4,6 @@ import com.ghatana.platform.core.exception.ErrorCodeMappers;
 import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.ghatana.refactorer.server.kg.config.KgConfiguration;
 import com.ghatana.refactorer.server.kg.config.KgConfigurationLoader;
-import com.ghatana.refactorer.server.kg.learning.CorrelationAnalyzer;
 import com.ghatana.refactorer.server.kg.learning.FrequentSequenceMiner;
 import io.activej.promise.Promise;
 import java.util.ArrayList;

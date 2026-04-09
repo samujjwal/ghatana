@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>This class provides a Java API to run jscodeshift transforms with proper error handling and
  * TypeScript support.
- 
+
  * @doc.type class
  * @doc.purpose Handles js code shift bridge operations
  * @doc.layer core

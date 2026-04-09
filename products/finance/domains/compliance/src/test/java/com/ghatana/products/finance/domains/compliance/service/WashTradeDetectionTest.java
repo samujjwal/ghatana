@@ -139,7 +139,7 @@ class WashTradeDetectionTest {
     }
 
     record Trade(String id, String buyer, String seller, String symbol, int quantity, BigDecimal price, LocalDateTime timestamp) {}
-    record WashTradeResult(boolean isWashTrade, List<String> matchingTrades, BigDecimal notionalAmount, 
+    record WashTradeResult(boolean isWashTrade, List<String> matchingTrades, BigDecimal notionalAmount,
                           double confidenceScore, String commonBeneficiary, long timeDifferenceMillis,
                           BigDecimal priceDifference, boolean isCircularPattern, int cycleLength) {
         WashTradeResult(boolean isWashTrade, List<String> matchingTrades, BigDecimal notionalAmount, double confidenceScore) {
@@ -164,7 +164,7 @@ class WashTradeDetectionTest {
                 for (int j = i + 1; j < trades.size(); j++) {
                     Trade t1 = trades.get(i);
                     Trade t2 = trades.get(j);
-                    if (t1.symbol().equals(t2.symbol()) && t1.quantity() == t2.quantity() && 
+                    if (t1.symbol().equals(t2.symbol()) && t1.quantity() == t2.quantity() &&
                         t1.price().compareTo(t2.price()) == 0 &&
                         t1.buyer().equals(t2.seller()) && t1.seller().equals(t2.buyer())) {
                         return new WashTradeResult(true, List.of(t1.id(), t2.id()), t1.price().multiply(BigDecimal.valueOf(t1.quantity())), 1.0);

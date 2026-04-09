@@ -1,6 +1,5 @@
 package com.ghatana.phr.observability;
 
-import com.ghatana.kernel.observability.ExplainabilityContext;
 import com.ghatana.kernel.observability.ExplainabilityFramework;
 import com.ghatana.kernel.observability.KernelTelemetryManager;
 

@@ -7,7 +7,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for SeqQueryBuilder DSL. 
+/** Unit tests for SeqQueryBuilder DSL.
  * @doc.type class
  * @doc.purpose Handles seq query builder test operations
  * @doc.layer core

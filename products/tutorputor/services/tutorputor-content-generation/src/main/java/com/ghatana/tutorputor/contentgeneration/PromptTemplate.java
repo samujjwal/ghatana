@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  *     .userPrompt("Summarize the following: {{text}}")
  *     .variable("text", "Lorem ipsum...")
  *     .build();
- * 
+ *
  * String resolved = template.resolve();  // Replaces {{text}} with value
  * }</pre>
  *

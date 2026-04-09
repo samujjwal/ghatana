@@ -1,11 +1,9 @@
 package com.ghatana.platform.workflow.operator;
 
-import com.ghatana.platform.types.identity.OperatorId;
 
 import com.ghatana.platform.domain.event.Event;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -52,7 +50,7 @@ import java.util.Objects;
  *         return Promise.of(OperatorResult.empty());
  *     }
  * }
- * 
+ *
  * OperatorResult result = filterProcess(event).getResult();
  * assert result.isSuccess();
  * assert result.getOutputEvents().isEmpty(); // Filtered out
@@ -68,7 +66,7 @@ import java.util.Objects;
  *         .build();
  *     return Promise.of(OperatorResult.of(transformed));
  * }
- * 
+ *
  * OperatorResult result = mapProcess(event).getResult();
  * assert result.isSuccess();
  * assert result.getOutputEvents().size() == 1;
@@ -88,7 +86,7 @@ import java.util.Objects;
  *     }
  *     return Promise.of(OperatorResult.of(outputs));
  * }
- * 
+ *
  * OperatorResult result = flatMapProcess(event).getResult();
  * assert result.isSuccess();
  * assert result.getOutputEvents().size() == 3; // Fan-out
@@ -108,7 +106,7 @@ import java.util.Objects;
  *         ));
  *     }
  * }
- * 
+ *
  * OperatorResult result = process(invalidEvent).getResult();
  * assert !result.isSuccess();
  * assert result.getErrorMessage().contains("Validation failed");
@@ -128,7 +126,7 @@ import java.util.Objects;
  *             .build()
  *         );
  * }
- * 
+ *
  * OperatorResult result = processWithTiming(event).getResult();
  * long latencyMs = result.getProcessingTimeNanos() / 1_000_000;
  * System.out.println("Processing latency: " + latencyMs + "ms");
@@ -141,14 +139,14 @@ import java.util.Objects;
  *     List<Promise<OperatorResult>> promises = events.stream()
  *         .map(this::process)
  *         .toList();
- *     
+ *
  *     return Promises.toList(promises).map(results -> {
  *         OperatorResult.Builder builder = OperatorResult.builder().success();
  *         results.forEach(builder::mergeWith);
  *         return builder.build();
  *     });
  * }
- * 
+ *
  * OperatorResult batchResult = processBatch(events).getResult();
  * assert batchResult.getOutputEvents().size() == 50; // Merged outputs
  * long totalTime = batchResult.getProcessingTimeNanos(); // Cumulative time
@@ -158,7 +156,7 @@ import java.util.Objects;
  * <pre>{@code
  * // Route failed events to dead-letter queue
  * OperatorResult result = operator.process(event).getResult();
- * 
+ *
  * if (!result.isSuccess()) {
  *     // Send to DLQ with error context
  *     deadLetterQueue.send(
@@ -226,18 +224,18 @@ import java.util.Objects;
  * @see UnifiedOperator
  * @see OperatorException
  * @see Event
- * 
+ *
  * @doc.type class
  * @doc.purpose Result of processing an event through an operator (outputs, success, errors, metrics)
  * @doc.layer core
  * @doc.pattern Value Object
- * 
+ *
  * @author Ghatana Platform Team
  * @version 2.0.0
  * @since 2025-10-25
  */
 public final class OperatorResult {
-    
+
     private final List<Event> outputEvents;
     private final boolean success;
     private final String errorMessage;
@@ -252,7 +250,7 @@ public final class OperatorResult {
 
     /**
      * Get output events produced by operator.
-     * 
+     *
      * @return unmodifiable list of output events (may be empty)
      */
     public List<Event> getOutputEvents() {
@@ -261,7 +259,7 @@ public final class OperatorResult {
 
     /**
      * Check if processing was successful.
-     * 
+     *
      * @return true if successful
      */
     public boolean isSuccess() {
@@ -270,7 +268,7 @@ public final class OperatorResult {
 
     /**
      * Get error message (if processing failed).
-     * 
+     *
      * @return error message or empty string if successful
      */
     public String getErrorMessage() {
@@ -279,7 +277,7 @@ public final class OperatorResult {
 
     /**
      * Get processing time in nanoseconds.
-     * 
+     *
      * @return processing time (nanos)
      */
     public long getProcessingTimeNanos() {
@@ -288,7 +286,7 @@ public final class OperatorResult {
 
     /**
      * Create successful result with no output events (filter dropped event).
-     * 
+     *
      * @return empty result
      */
     public static OperatorResult empty() {
@@ -297,7 +295,7 @@ public final class OperatorResult {
 
     /**
      * Create successful result with single output event.
-     * 
+     *
      * @param event output event
      * @return result with single event
      */
@@ -307,7 +305,7 @@ public final class OperatorResult {
 
     /**
      * Create successful result with multiple output events.
-     * 
+     *
      * @param events output events
      * @return result with multiple events
      */
@@ -319,7 +317,7 @@ public final class OperatorResult {
 
     /**
      * Create failed result with error message.
-     * 
+     *
      * @param errorMessage error description
      * @return failed result
      */
@@ -329,7 +327,7 @@ public final class OperatorResult {
 
     /**
      * Create result builder.
-     * 
+     *
      * @return new builder
      */
     public static Builder builder() {
@@ -340,7 +338,7 @@ public final class OperatorResult {
      * OperatorResult Builder.
      */
     public static final class Builder {
-        
+
         private final List<Event> outputEvents = new ArrayList<>();
         private boolean success = true;
         private String errorMessage;
@@ -350,7 +348,7 @@ public final class OperatorResult {
 
         /**
          * Mark result as successful.
-         * 
+         *
          * @return this builder
          */
         public Builder success() {
@@ -361,7 +359,7 @@ public final class OperatorResult {
 
         /**
          * Mark result as failed with error message.
-         * 
+         *
          * @param errorMessage error description
          * @return this builder
          */
@@ -373,7 +371,7 @@ public final class OperatorResult {
 
         /**
          * Add output event.
-         * 
+         *
          * @param event output event
          * @return this builder
          */
@@ -384,7 +382,7 @@ public final class OperatorResult {
 
         /**
          * Add multiple output events.
-         * 
+         *
          * @param events output events
          * @return this builder
          */
@@ -396,7 +394,7 @@ public final class OperatorResult {
 
         /**
          * Set processing time.
-         * 
+         *
          * @param processingTimeNanos processing time in nanoseconds
          * @return this builder
          * @throws IllegalArgumentException if processing time is negative
@@ -413,7 +411,7 @@ public final class OperatorResult {
 
         /**
          * Merge with another result (for batch processing).
-         * 
+         *
          * @param other other result to merge
          * @return this builder
          */
@@ -434,7 +432,7 @@ public final class OperatorResult {
 
         /**
          * Build immutable OperatorResult.
-         * 
+         *
          * @return operator result
          */
         public OperatorResult build() {

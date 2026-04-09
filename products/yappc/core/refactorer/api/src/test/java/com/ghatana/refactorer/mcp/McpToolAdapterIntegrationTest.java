@@ -9,7 +9,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Integration tests ensuring the MCP adapter drives the service-server gRPC facade correctly. 
+/** Integration tests ensuring the MCP adapter drives the service-server gRPC facade correctly.
  * @doc.type class
  * @doc.purpose Handles mcp tool adapter integration test operations
  * @doc.layer core

@@ -32,7 +32,7 @@ import java.util.Map;
  * @doc.pattern Component
  */
 public class BriefADRTemplate implements ADRTemplate {
-    
+
     @Override
     public ADRTemplateType templateType() {
         return ADRTemplateType.BRIEF;

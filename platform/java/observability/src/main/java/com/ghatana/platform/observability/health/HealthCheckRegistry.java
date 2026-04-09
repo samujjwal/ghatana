@@ -79,23 +79,23 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 1.0.0
  */
 public class HealthCheckRegistry {
-    
+
     private static final AtomicReference<HealthCheckRegistry> INSTANCE = new AtomicReference<>();
-    
+
     private final Map<String, HealthCheck> healthChecks = new ConcurrentHashMap<>();
     private final Map<String, HealthCheck.HealthCheckResult> lastResults = new ConcurrentHashMap<>();
     private final MetricsRegistry metricsRegistry;
-    
+
     public HealthCheckRegistry(MetricsRegistry metricsRegistry) {
         this.metricsRegistry = metricsRegistry;
     }
-    
+
     public static synchronized HealthCheckRegistry initialize(MetricsRegistry metricsRegistry) {
         HealthCheckRegistry registry = new HealthCheckRegistry(metricsRegistry);
         INSTANCE.set(registry);
         return registry;
     }
-    
+
     public static HealthCheckRegistry getInstance() {
         HealthCheckRegistry registry = INSTANCE.get();
         if (registry == null) {
@@ -103,14 +103,14 @@ public class HealthCheckRegistry {
         }
         return registry;
     }
-    
+
     /**
      * Register a health check.
      */
     public void register(HealthCheck healthCheck) {
         healthChecks.put(healthCheck.getName(), healthCheck);
     }
-    
+
     /**
      * Unregister a health check.
      */
@@ -118,14 +118,14 @@ public class HealthCheckRegistry {
         healthChecks.remove(name);
         lastResults.remove(name);
     }
-    
+
     /**
      * Get all registered health checks.
      */
     public Set<String> getHealthCheckNames() {
         return new HashSet<>(healthChecks.keySet());
     }
-    
+
     /**
      * Perform liveness check - basic service functionality.
      */
@@ -136,11 +136,11 @@ public class HealthCheckRegistry {
             .filter(this::isInternalCheck)
             .map(this::executeHealthCheck)
             .toList();
-        
+
         return Promises.toList(checks)
             .map(results -> aggregateResults("liveness", results));
     }
-    
+
     /**
      * Perform readiness check - service ready to handle requests.
      */
@@ -149,11 +149,11 @@ public class HealthCheckRegistry {
         List<Promise<NamedHealthResult>> checks = healthChecks.values().stream()
             .map(this::executeHealthCheck)
             .toList();
-        
+
         return Promises.toList(checks)
             .map(results -> aggregateResults("readiness", results));
     }
-    
+
     /**
      * Get detailed health status of all checks.
      */
@@ -161,7 +161,7 @@ public class HealthCheckRegistry {
         List<Promise<NamedHealthResult>> checks = healthChecks.values().stream()
             .map(this::executeHealthCheck)
             .toList();
-        
+
         return Promises.toList(checks)
             .map(results -> aggregateResults("health", results));
     }
@@ -189,7 +189,7 @@ public class HealthCheckRegistry {
     public Optional<HealthCheck.HealthCheckResult> getLastResult(String name) {
         return Optional.ofNullable(lastResults.get(name));
     }
-    
+
     private Promise<NamedHealthResult> executeHealthCheck(HealthCheck healthCheck) {
         Instant start = Instant.now();
         return Promise.ofCallback(cb -> {
@@ -215,15 +215,15 @@ public class HealthCheckRegistry {
                 });
         });
     }
-    
+
     private OverallHealthResult aggregateResults(String checkType, List<NamedHealthResult> results) {
         Map<String, HealthCheck.HealthCheckResult> resultMap = new HashMap<>();
         HealthCheck.Status overallStatus = HealthCheck.Status.UP;
         List<String> issues = new ArrayList<>();
-        
+
         for (NamedHealthResult namedResult : results) {
             resultMap.put(namedResult.name, namedResult.result);
-            
+
             if (namedResult.result.isUnhealthy()) {
                 overallStatus = HealthCheck.Status.DOWN;
                 issues.add(namedResult.name + ": " + namedResult.result.getMessage());
@@ -232,14 +232,14 @@ public class HealthCheckRegistry {
                 issues.add(namedResult.name + ": " + namedResult.result.getMessage());
             }
         }
-        
-        String message = overallStatus == HealthCheck.Status.UP ? 
-            "All health checks passed" : 
+
+        String message = overallStatus == HealthCheck.Status.UP ?
+            "All health checks passed" :
             "Health check issues: " + String.join(", ", issues);
-        
+
         return new OverallHealthResult(overallStatus, message, resultMap, checkType);
     }
-    
+
     private void recordHealthCheckMetrics(String checkName, HealthCheck.HealthCheckResult result) {
         if (metricsRegistry != null) {
             // Record health check execution
@@ -258,29 +258,29 @@ public class HealthCheckRegistry {
                 .record(result.getDuration());
         }
     }
-    
+
     private boolean isInternalCheck(HealthCheck healthCheck) {
         // Determine if this is an internal check (not external dependency)
         String name = healthCheck.getName().toLowerCase();
-        return !name.contains("database") && 
-               !name.contains("redis") && 
-               !name.contains("kafka") && 
+        return !name.contains("database") &&
+               !name.contains("redis") &&
+               !name.contains("kafka") &&
                !name.contains("external");
     }
-    
+
     /**
      * Named health check result for internal tracking.
      */
     private static class NamedHealthResult {
         final String name;
         final HealthCheck.HealthCheckResult result;
-        
+
         NamedHealthResult(String name, HealthCheck.HealthCheckResult result) {
             this.name = name;
             this.result = result;
         }
     }
-    
+
     /**
      * Overall health result aggregating multiple health checks.
      */
@@ -290,8 +290,8 @@ public class HealthCheckRegistry {
         private final Map<String, HealthCheck.HealthCheckResult> checks;
         private final String checkType;
         private final Instant timestamp;
-        
-        public OverallHealthResult(HealthCheck.Status status, String message, 
+
+        public OverallHealthResult(HealthCheck.Status status, String message,
                                  Map<String, HealthCheck.HealthCheckResult> checks, String checkType) {
             this.status = status;
             this.message = message;
@@ -299,13 +299,13 @@ public class HealthCheckRegistry {
             this.checkType = checkType;
             this.timestamp = Instant.now();
         }
-        
+
         public HealthCheck.Status getStatus() { return status; }
         public String getMessage() { return message; }
         public Map<String, HealthCheck.HealthCheckResult> getChecks() { return checks; }
         public String getCheckType() { return checkType; }
         public Instant getTimestamp() { return timestamp; }
-        
+
         public boolean isHealthy() { return status == HealthCheck.Status.UP; }
         public boolean isUnhealthy() { return status == HealthCheck.Status.DOWN; }
         public boolean isDegraded() { return status == HealthCheck.Status.DEGRADED; }

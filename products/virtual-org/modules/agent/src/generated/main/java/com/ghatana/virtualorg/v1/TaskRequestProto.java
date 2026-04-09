@@ -66,7 +66,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       taskId_ = s;
@@ -82,7 +82,7 @@ private static final long serialVersionUID = 0L;
       getTaskIdBytes() {
     java.lang.Object ref = taskId_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       taskId_ = b;
@@ -105,7 +105,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
+      com.google.protobuf.ByteString bs =
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
       description_ = s;
@@ -121,7 +121,7 @@ private static final long serialVersionUID = 0L;
       getDescriptionBytes() {
     java.lang.Object ref = description_;
     if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
+      com.google.protobuf.ByteString b =
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
       description_ = b;
@@ -137,7 +137,7 @@ private static final long serialVersionUID = 0L;
         java.lang.String, java.lang.String> defaultEntry =
             com.google.protobuf.MapEntry
             .<java.lang.String, java.lang.String>newDefaultInstance(
-                com.ghatana.virtualorg.v1.AgentProto.internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_ParametersEntry_descriptor, 
+                com.ghatana.virtualorg.v1.AgentProto.internal_static_com_ghatana_virtualorg_v1_TaskRequestProto_ParametersEntry_descriptor,
                 com.google.protobuf.WireFormat.FieldType.STRING,
                 "",
                 com.google.protobuf.WireFormat.FieldType.STRING,
@@ -646,7 +646,7 @@ java.lang.String defaultValue) {
         getTaskIdBytes() {
       java.lang.Object ref = taskId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         taskId_ = b;
@@ -718,7 +718,7 @@ java.lang.String defaultValue) {
         getDescriptionBytes() {
       java.lang.Object ref = description_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
+        com.google.protobuf.ByteString b =
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
         description_ = b;
@@ -954,4 +954,3 @@ java.lang.String defaultValue) {
   }
 
 }
-

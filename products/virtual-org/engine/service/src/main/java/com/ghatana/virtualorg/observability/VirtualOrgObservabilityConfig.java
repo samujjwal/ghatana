@@ -73,10 +73,10 @@ import java.util.concurrent.TimeUnit;
  *         "deployment.id", "deploy-456"
  *     )
  * );
- * 
+ *
  * // Initialize observability stack
  * config.initialize();
- * 
+ *
  * // Get tracer for instrumentation
  * Tracer tracer = config.getTracer();
  * Span span = tracer.spanBuilder("processTask").startSpan();
@@ -85,11 +85,11 @@ import java.util.concurrent.TimeUnit;
  * } finally {
  *     span.end();
  * }
- * 
+ *
  * // Get meter registry for metrics
  * MeterRegistry registry = config.getMeterRegistry();
  * registry.counter("tasks.processed", "status", "success").increment();
- * 
+ *
  * // Shutdown on service stop
  * config.shutdown();
  * }</pre>

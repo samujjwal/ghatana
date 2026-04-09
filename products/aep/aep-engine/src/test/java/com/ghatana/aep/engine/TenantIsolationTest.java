@@ -25,7 +25,7 @@ class TenantIsolationTest {
     @DisplayName("Should isolate tenant data")
     void shouldIsolateTenantData() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class TenantIsolationTest {
     @DisplayName("Should prevent cross-tenant access")
     void shouldPreventCrossTenantAccess() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class TenantIsolationTest {
     @DisplayName("Should handle tenant context propagation")
     void shouldHandleTenantContextPropagation() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class TenantIsolationTest {
     @DisplayName("Should handle tenant-specific patterns")
     void shouldHandleTenantSpecificPatterns() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class TenantIsolationTest {
     @DisplayName("Should handle tenant deletion")
     void shouldHandleTenantDeletion() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class TenantIsolationTest {
     @DisplayName("Should handle tenant quota enforcement")
     void shouldHandleTenantQuotaEnforcement() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

@@ -13,37 +13,37 @@ public enum AnomalyType {
      * Temporal anomalies - unusual timing patterns.
      */
     TEMPORAL("Temporal", "Unusual event timing or intervals"),
-    
+
     /**
      * Frequency anomalies - unusual occurrence rates.
      */
     FREQUENCY("Frequency", "Unusual event frequency or rate"),
-    
+
     /**
      * Feature anomalies - unusual feature values.
      */
     FEATURE("Feature", "Unusual feature values or combinations"),
-    
+
     /**
      * Sequence anomalies - unusual event sequences.
      */
     SEQUENCE("Sequence", "Unusual event sequences or order"),
-    
+
     /**
      * Distribution anomalies - unusual event distributions.
      */
     DISTRIBUTION("Distribution", "Unusual event type distributions"),
-    
+
     /**
      * Behavioral anomalies - unusual behavior patterns.
      */
     BEHAVIORAL("Behavioral", "Unusual behavioral patterns"),
-    
+
     /**
      * Statistical anomalies - statistical outliers.
      */
     STATISTICAL("Statistical", "Statistical outliers in event data"),
-    
+
     /**
      * Contextual anomalies - context-specific anomalies.
      */

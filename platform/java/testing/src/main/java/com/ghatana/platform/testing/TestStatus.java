@@ -3,7 +3,7 @@ package com.ghatana.platform.testing;
 /**
  * Canonical status values for tests across the platform.
  * Consolidates lifecycle and result-oriented states used by various modules.
- * 
+ *
  * @doc.type enum
  * @doc.purpose Canonical test lifecycle states for test execution tracking
  * @doc.layer core

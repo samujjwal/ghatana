@@ -7,7 +7,6 @@ package com.ghatana.datacloud.event.buffer;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

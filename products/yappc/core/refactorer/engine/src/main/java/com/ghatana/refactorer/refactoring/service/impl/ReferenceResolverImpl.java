@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Default implementation of {@link ReferenceResolver} that delegates to language-specific
  * resolvers.
- 
+
  * @doc.type class
  * @doc.purpose Handles reference resolver impl operations
  * @doc.layer core

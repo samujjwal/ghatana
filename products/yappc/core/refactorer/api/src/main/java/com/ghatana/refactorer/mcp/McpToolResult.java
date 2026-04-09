@@ -2,7 +2,7 @@ package com.ghatana.refactorer.mcp;
 
 import java.util.Map;
 
-/** Result of an MCP tool execution. Contains success status, result data, and optional message. 
+/** Result of an MCP tool execution. Contains success status, result data, and optional message.
  * @doc.type record
  * @doc.purpose Immutable data carrier for mcp tool result
  * @doc.layer core

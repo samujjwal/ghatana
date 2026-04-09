@@ -33,7 +33,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * // Tumbling window (non-overlapping 5-minute windows)
  * WindowingOperator tumblingOp = new WindowingOperator(

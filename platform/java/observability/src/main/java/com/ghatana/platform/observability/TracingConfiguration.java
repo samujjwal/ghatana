@@ -85,22 +85,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * @notes Singleton; call initialize() before getInstance(); supports no-op mode for disabled tracing
  */
 public final class TracingConfiguration {
-    
+
     /**
      * Singleton OpenTelemetry instance (AtomicReference for thread-safe lazy init).
      */
     private static final AtomicReference<OpenTelemetry> INSTANCE = new AtomicReference<>();
-    
+
     /**
      * Singleton Tracer instance (AtomicReference for thread-safe lazy init).
      */
     private static final AtomicReference<Tracer> TRACER = new AtomicReference<>();
-    
+
     /**
      * Private constructor to prevent instantiation (singleton pattern).
      */
     private TracingConfiguration() {}
-    
+
     /**
      * Initialize OpenTelemetry with environment-specific configuration.
      *
@@ -134,14 +134,14 @@ public final class TracingConfiguration {
         if (INSTANCE.get() != null) {
             return INSTANCE.get();
         }
-        
+
         if (!config.isEnabled()) {
             OpenTelemetry noop = OpenTelemetry.noop();
             INSTANCE.set(noop);
             TRACER.set(noop.getTracer("noop"));
             return noop;
         }
-        
+
         // Create resource with service information
         Resource resource = Resource.getDefault()
             .merge(Resource.builder()
@@ -149,16 +149,16 @@ public final class TracingConfiguration {
                 .put("service.version", config.getServiceVersion())
                 .put("deployment.environment", config.getEnvironment())
                 .build());
-        
+
         // Configure OTLP exporter
         OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
             .setEndpoint(config.getOtlpEndpoint())
             .setCompression("gzip")
             .build();
-        
+
         // Configure sampler based on environment
         Sampler sampler = createSampler(config);
-        
+
         // Build tracer provider
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
             .setResource(resource)
@@ -168,20 +168,20 @@ public final class TracingConfiguration {
                 .build())
             .setSampler(sampler)
             .build();
-        
+
         // Build OpenTelemetry SDK
         OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
             .setTracerProvider(tracerProvider)
             .setPropagators(ContextPropagators.create(
                 W3CTraceContextPropagator.getInstance()))
             .build();
-        
+
         INSTANCE.set(openTelemetry);
         TRACER.set(openTelemetry.getTracer(config.getServiceName(), config.getServiceVersion()));
-        
+
         return openTelemetry;
     }
-    
+
     /**
      * Creates environment-specific sampler for trace sampling.
      *
@@ -204,7 +204,7 @@ public final class TracingConfiguration {
             default -> Sampler.traceIdRatioBased(0.1); // Default to 10%
         };
     }
-    
+
     /**
      * Get the global OpenTelemetry instance.
      *
@@ -221,7 +221,7 @@ public final class TracingConfiguration {
         }
         return instance;
     }
-    
+
     /**
      * Get the global tracer instance.
      *
@@ -237,7 +237,7 @@ public final class TracingConfiguration {
         }
         return tracer;
     }
-    
+
     /**
      * Configuration class for tracing setup.
      */
@@ -247,8 +247,8 @@ public final class TracingConfiguration {
         private final String serviceVersion;
         private final String environment;
         private final String otlpEndpoint;
-        
-        public TracingConfig(boolean enabled, String serviceName, String serviceVersion, 
+
+        public TracingConfig(boolean enabled, String serviceName, String serviceVersion,
                            String environment, String otlpEndpoint) {
             this.enabled = enabled;
             this.serviceName = serviceName;
@@ -256,49 +256,49 @@ public final class TracingConfiguration {
             this.environment = environment;
             this.otlpEndpoint = otlpEndpoint != null ? otlpEndpoint : "http://localhost:4317";
         }
-        
+
         public boolean isEnabled() { return enabled; }
         public String getServiceName() { return serviceName; }
         public String getServiceVersion() { return serviceVersion; }
         public String getEnvironment() { return environment; }
         public String getOtlpEndpoint() { return otlpEndpoint; }
-        
+
         public static Builder builder() {
             return new Builder();
         }
-        
+
         public static class Builder {
             private boolean enabled = false;
             private String serviceName = "eventcloud-service";
             private String serviceVersion = "1.0.0";
             private String environment = "development";
             private String otlpEndpoint = "http://localhost:4317";
-            
+
             public Builder enabled(boolean enabled) {
                 this.enabled = enabled;
                 return this;
             }
-            
+
             public Builder serviceName(String serviceName) {
                 this.serviceName = serviceName;
                 return this;
             }
-            
+
             public Builder serviceVersion(String serviceVersion) {
                 this.serviceVersion = serviceVersion;
                 return this;
             }
-            
+
             public Builder environment(String environment) {
                 this.environment = environment;
                 return this;
             }
-            
+
             public Builder otlpEndpoint(String otlpEndpoint) {
                 this.otlpEndpoint = otlpEndpoint;
                 return this;
             }
-            
+
             public TracingConfig build() {
                 return new TracingConfig(enabled, serviceName, serviceVersion, environment, otlpEndpoint);
             }

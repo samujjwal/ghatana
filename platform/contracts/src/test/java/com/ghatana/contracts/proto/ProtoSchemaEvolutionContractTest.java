@@ -55,12 +55,12 @@ class ProtoSchemaEvolutionContractTest {
         void newOptionalFieldIsBackwardCompatible() {
             // V1: message User { string id = 1; string name = 2; }
             // V2: message User { string id = 1; string name = 2; string phone = 3; }
-            // 
+            //
             // Old consumer reading V2 data:
             // - Gets id and name (expected)
             // - phone field missing → uses default (empty string)
             // - No error, works fine!
-            
+
             String v1Fields = "id=1,name=2";
             String v2Fields = "id=1,name=2,phone=3";
 
@@ -72,14 +72,14 @@ class ProtoSchemaEvolutionContractTest {
         @DisplayName("new repeated field must not break serialization")
         void newRepeatedFieldIsBackwardCompatible() {
             // V1: message Schema { string name = 1; }
-            // V2: message Schema { 
-            //   string name = 1; 
+            // V2: message Schema {
+            //   string name = 1;
             //   repeated string tags = 2;  // Optional list
             // }
-            // 
+            //
             // Old consumer: ignores tags field
             // New consumer: sees empty tags list if not provided
-            
+
             String fieldNumber = "2";
             String fieldType = "repeated string";
 
@@ -92,13 +92,13 @@ class ProtoSchemaEvolutionContractTest {
         void newRequiredFieldIsUnsafe() {
             // V1: message User { string id = 1; }
             // V2: message User { required string id = 1; required string email = 2; }
-            // 
+            //
             // Old consumer sending data without email:
             // - V2 parser: ERROR! Required field missing
             // - **Breaking change!**
-            // 
+            //
             // Solution: new field must be optional, not required
-            
+
             String safePattern = "optional string email = 2";
             String unsafePattern = "required string email = 2";
 
@@ -134,7 +134,7 @@ class ProtoSchemaEvolutionContractTest {
             //   reserved "email"; // Field 3 removed, but don't reuse
             //   reserved 4;       // Never use field 4 either
             // }
-            
+
             int emailFieldNumber = 3;
             int phoneFieldNumber = 3;
 
@@ -145,8 +145,8 @@ class ProtoSchemaEvolutionContractTest {
         @Test
         @DisplayName("removed fields must be marked reserved")
         void removedFieldsMustBeReserved() {
-            // V1: message User { 
-            //   string id = 1; 
+            // V1: message User {
+            //   string id = 1;
             //   string deprecated_field = 2;  // Will be removed
             // }
             // V2: message User {
@@ -154,7 +154,7 @@ class ProtoSchemaEvolutionContractTest {
             //   reserved "deprecated_field";  // Prevent reuse
             //   reserved 2;                     // Prevent reuse of field number
             // }
-            
+
             // Contract: if removing a field, must reserve its name and number
             String reservedName = "deprecated_field";
             int reservedNumber = 2;
@@ -168,9 +168,9 @@ class ProtoSchemaEvolutionContractTest {
         void lowFieldNumbersAreMoreEfficient() {
             // Proto encoding: field numbers 1-15 use 1 byte tag
             // Field numbers 16+ use 2 bytes tag
-            // 
+            //
             // Contract: place frequently-used fields at numbers 1-15
-            
+
             int efficientFieldNumber = 1;
             int lessEfficientFieldNumber = 100;
 
@@ -184,7 +184,7 @@ class ProtoSchemaEvolutionContractTest {
             // V1: highest field number = 5
             // V2: highest field number = 10 (added new fields)
             // V3: highest field number = 10 (no new fields)
-            // 
+            //
             // Invalid: highest number goes down (field reuse)
             int v1Highest = 5;
             int v2Highest = 10;
@@ -208,11 +208,11 @@ class ProtoSchemaEvolutionContractTest {
         void fieldTypeChangesAreUnsafe() {
             // V1: message User { int32 age = 1; }
             // V2: message User { string age = 1; }  // BREAKING!
-            // 
+            //
             // Old data: age (binary-encoded as int32)
             // New parser: expects string (wrong format)
             // Result: Deserialization error or corrupted data
-            
+
             String v1Type = "int32";
             String v2Type = "string";
 
@@ -225,12 +225,12 @@ class ProtoSchemaEvolutionContractTest {
         void numericTypeChangesAreCompatible() {
             // Proto special case: int32 ↔ int64 ↔ sint32 ↔ sint64
             // Wire format is compatible (both use varint encoding)
-            // 
+            //
             // Example:
             // V1: int32 count = 1;
             // V2: int64 count = 1; // Safe change
             // (but be careful with precision and range)
-            
+
             String type1 = "int32";
             String type2 = "int64";
             String type3 = "sint64"; // All use variable-length int encoding
@@ -245,10 +245,10 @@ class ProtoSchemaEvolutionContractTest {
         void stringBytesChangesAreCompatible() {
             // Proto special case: string and bytes have same wire format
             // Both use length-delimited encoding
-            // 
+            //
             // V1: string text = 1;
             // V2: bytes text = 1; // Safe (wire-level compatible)
-            
+
             String type1 = "string";
             String type2 = "bytes";
 
@@ -263,9 +263,9 @@ class ProtoSchemaEvolutionContractTest {
             // bool: 1 byte (0 or 1)
             // enum: varint (like int32)
             // message: length-delimited (like string)
-            // 
+            //
             // Changing between these is unsafe
-            
+
             String boolType = "bool";
             String enumType = "MyEnum";
             String messageType = "NestedMessage";
@@ -288,13 +288,13 @@ class ProtoSchemaEvolutionContractTest {
         void enumValueNumbersAreImmutable() {
             // V1: enum Status { UNKNOWN = 0; ACTIVE = 1; INACTIVE = 2; }
             // V2: enum Status { UNKNOWN = 0; ACTIVE = 1; INACTIVE = 2; PENDING = 3; }
-            // 
+            //
             // **Good:** Added new value (PENDING = 3)
             //
             // ❌ Bad:
             // enum Status { UNKNOWN = 0; ARCHIVED = 1; INACTIVE = 2; PENDING = 3; }
             // (changed ACTIVE to ARCHIVED with same number)
-            
+
             int unknownValue = 0;
             int activeValue = 1;
             int inactiveValue = 2;
@@ -308,12 +308,12 @@ class ProtoSchemaEvolutionContractTest {
         @DisplayName("enum value 0 must always be default")
         void enumDefaultMustBeZero() {
             // Proto contract: enum value 0 is always the default
-            // 
+            //
             // V1: enum Color { UNKNOWN = 0; RED = 1; GREEN = 2; BLUE = 3; }
-            // 
+            //
             // If field is missing in protobuf, it defaults to UNKNOWN (0)
             // Must never be RED or GREEN
-            
+
             int defaultValue = 0;
             assertThat(defaultValue).isZero();
         }
@@ -323,15 +323,15 @@ class ProtoSchemaEvolutionContractTest {
         void removingEnumValueIsUnsafe() {
             // V1: enum Status { UNKNOWN = 0; ACTIVE = 1; INACTIVE = 2; }
             // V2: enum Status { UNKNOWN = 0; ACTIVE = 1; } // Removed INACTIVE
-            // 
+            //
             // Old consumer might have code:
             // switch (status) {
             //   case ACTIVE: ...
             //   case INACTIVE: ... // No longer valid!
             // }
-            // 
+            //
             // Result: Unrecognized enum value causes error
-            
+
             String v1Enum = "UNKNOWN=0,ACTIVE=1,INACTIVE=2";
             String v2Enum = "UNKNOWN=0,ACTIVE=1";
 
@@ -346,12 +346,12 @@ class ProtoSchemaEvolutionContractTest {
             // V1: enum Status { UNKNOWN = 0; ACTIVE = 1; INACTIVE = 2; }
             // V2: enum Status { UNKNOWN = 0; ACTIVE = 1; DISABLED = 2; }
             //     (renamed INACTIVE → DISABLED, same number 2)
-            // 
+            //
             // Wire format unchanged (still uses value 2)
             // Old consumer: sees value 2 as INACTIVE (expected)
             // New consumer: sees value 2 as DISABLED (expected)
             // Both work!
-            
+
             String v1Name = "INACTIVE";
             String v2Name = "DISABLED";
             int sharedValue = 2;
@@ -374,13 +374,13 @@ class ProtoSchemaEvolutionContractTest {
         @DisplayName("nested message type can be safely changed to top-level")
         void nestedMessageCanBeHoisted() {
             // V1: message Outer { message Inner { string value = 1; } Inner inner = 1; }
-            // V2: 
+            // V2:
             //   message Inner { string value = 1; }
             //   message Outer { Inner inner = 1; }
-            // 
+            //
             // Wire format is identical (Inner is still message type, same field number)
             // Safe change for decoupling
-            
+
             // The key is: field type remains 'message' at same field number
             assertThat("message Inner").isNotNull();
         }
@@ -391,7 +391,7 @@ class ProtoSchemaEvolutionContractTest {
             // V1: message User { Address address = 1; }
             // V2: message User { string address = 1; } // BREAKING!
             // Wire format changed (message is length-delimited, string is too, but interpretation differs)
-            
+
             String v1Type = "message Address";
             String v2Type = "string";
 
@@ -418,7 +418,7 @@ class ProtoSchemaEvolutionContractTest {
             //   reserved "email";     // Reserve the name
             //   reserved 3;           // Reserve the field number
             // }
-            
+
             String reservedName = "email";
             int reservedNumber = 3;
 
@@ -431,7 +431,7 @@ class ProtoSchemaEvolutionContractTest {
         void reservedPreventsReuse() {
             // If 'reserved 3;' exists, cannot use:
             // int32 newField = 3;  // Compiler error!
-            
+
             // This protects against data corruption from field number conflicts
             assertThat("reserved 3").contains("reserved");
         }

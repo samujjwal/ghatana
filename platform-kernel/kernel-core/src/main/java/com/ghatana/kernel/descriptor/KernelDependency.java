@@ -16,7 +16,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class KernelDependency {
-    
+
     private final String dependencyId;
     private final String versionConstraint;
     private final DependencyType type;
@@ -32,7 +32,7 @@ public final class KernelDependency {
      * @param optional whether this dependency is optional
      * @throws IllegalArgumentException if dependencyId is null or empty
      */
-    public KernelDependency(String dependencyId, String versionConstraint, 
+    public KernelDependency(String dependencyId, String versionConstraint,
                            DependencyType type, boolean optional) {
         this(dependencyId, versionConstraint, type, optional, "");
     }
@@ -80,12 +80,12 @@ public final class KernelDependency {
         if (versionConstraint.equals("*")) {
             return true;
         }
-        
+
         // Handle exact version match
         if (versionConstraint.matches("\\d+\\.\\d+\\.\\d+.*")) {
             return version.startsWith(versionConstraint.split("[-+]")[0]);
         }
-        
+
         // For more complex constraints, we'd need a semver parser
         // This is a simplified implementation
         return true;
@@ -181,32 +181,32 @@ public final class KernelDependency {
          * Dependency on another kernel module.
          */
         MODULE,
-        
+
         /**
          * Dependency on a kernel capability.
          */
         CAPABILITY,
-        
+
         /**
          * Dependency on a kernel plugin.
          */
         PLUGIN,
-        
+
         /**
          * Dependency on a kernel extension.
          */
         EXTENSION,
-        
+
         /**
          * Dependency on an external service.
          */
         EXTERNAL_SERVICE,
-        
+
         /**
          * Dependency on a specific feature being enabled.
          */
         FEATURE,
-        
+
         /**
          * Dependency on a configuration value.
          */

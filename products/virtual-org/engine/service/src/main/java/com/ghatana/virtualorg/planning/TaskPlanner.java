@@ -36,16 +36,16 @@ import org.jetbrains.annotations.NotNull;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * TaskPlanner planner = new LLMTaskPlanner(eventloop, llmClient, memory);
- * 
+ *
  * // Create initial plan
  * TaskProto task = TaskProto.newBuilder()
  *     .setTitle("Implement user authentication")
  *     .setType(TaskTypeProto.TASK_TYPE_FEATURE)
  *     .build();
- * 
+ *
  * TaskPlan plan = planner.createPlan(task).getResult();
  * logger.info("Plan has {} steps, confidence={}", plan.steps().size(), plan.confidence());
- * 
+ *
  * // Refine plan after partial execution
  * List<String> completed = List.of("step-1", "step-2");
  * String feedback = "Step 2 took longer than expected due to schema complexity";

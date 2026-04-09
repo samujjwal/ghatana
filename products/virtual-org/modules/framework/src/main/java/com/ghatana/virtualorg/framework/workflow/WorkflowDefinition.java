@@ -1,6 +1,5 @@
 package com.ghatana.virtualorg.framework.workflow;
 
-import com.ghatana.virtualorg.framework.hierarchy.Role;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +41,7 @@ import java.util.Objects;
  * @doc.pattern Value Object
  */
 public final class WorkflowDefinition {
-    
+
     private final String id;
     private final String name;
     private final String version;
@@ -51,7 +50,7 @@ public final class WorkflowDefinition {
     private final List<WorkflowStep> steps;
     private final int timeoutSeconds;
     private final int maxRetries;
-    
+
     private WorkflowDefinition(
             String id,
             String name,
@@ -72,35 +71,35 @@ public final class WorkflowDefinition {
         this.timeoutSeconds = timeoutSeconds;
         this.maxRetries = maxRetries;
     }
-    
+
     /**
      * Gets the workflow ID.
      */
     public String getId() {
         return id;
     }
-    
+
     /**
      * Gets the workflow name.
      */
     public String getName() {
         return name;
     }
-    
+
     /**
      * Gets the workflow version.
      */
     public String getVersion() {
         return version;
     }
-    
+
     /**
      * Gets the workflow description.
      */
     public String getDescription() {
         return description;
     }
-    
+
     /**
      * Gets the trigger event type that activates this workflow.
      *
@@ -116,28 +115,28 @@ public final class WorkflowDefinition {
     public List<WorkflowStep> getSteps() {
         return steps;
     }
-    
+
     /**
      * Gets the timeout in seconds.
      */
     public int getTimeoutSeconds() {
         return timeoutSeconds;
     }
-    
+
     /**
      * Gets the maximum number of retries.
      */
     public int getMaxRetries() {
         return maxRetries;
     }
-    
+
     /**
      * Creates a builder for WorkflowDefinition.
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for WorkflowDefinition.
      */
@@ -150,52 +149,52 @@ public final class WorkflowDefinition {
         private final List<WorkflowStep> steps = new ArrayList<>();
         private int timeoutSeconds = 300;
         private int maxRetries = 3;
-        
+
         public Builder id(String id) {
             this.id = id;
             return this;
         }
-        
+
         public Builder name(String name) {
             this.name = name;
             return this;
         }
-        
+
         public Builder version(String version) {
             this.version = version;
             return this;
         }
-        
+
         public Builder description(String description) {
             this.description = description;
             return this;
         }
-        
+
         public Builder triggerEvent(String triggerEvent) {
             this.triggerEvent = triggerEvent;
             return this;
         }
-        
+
         public Builder addStep(WorkflowStep step) {
             this.steps.add(step);
             return this;
         }
-        
+
         public Builder timeoutSeconds(int timeoutSeconds) {
             this.timeoutSeconds = timeoutSeconds;
             return this;
         }
-        
+
         public Builder maxRetries(int maxRetries) {
             this.maxRetries = maxRetries;
             return this;
         }
-        
+
         public WorkflowDefinition build() {
             return new WorkflowDefinition(id, name, version, description, triggerEvent, steps, timeoutSeconds, maxRetries);
         }
     }
-    
+
     /**
      * Represents a single step in a workflow.
      */
@@ -204,37 +203,37 @@ public final class WorkflowDefinition {
         private final String description;
         private final String assignedRole;
         private final int timeoutSeconds;
-        
+
         private WorkflowStep(String id, String description, String assignedRole, int timeoutSeconds) {
             this.id = Objects.requireNonNull(id, "id cannot be null");
             this.description = Objects.requireNonNull(description, "description cannot be null");
             this.assignedRole = Objects.requireNonNull(assignedRole, "assignedRole cannot be null");
             this.timeoutSeconds = timeoutSeconds;
         }
-        
+
         public String getId() {
             return id;
         }
-        
+
         public String getDescription() {
             return description;
         }
-        
+
         public String getAssignedRole() {
             return assignedRole;
         }
-        
+
         public int getTimeoutSeconds() {
             return timeoutSeconds;
         }
-        
+
         /**
          * Creates a workflow step.
          */
         public static WorkflowStep of(String id, String description, String assignedRole) {
             return new WorkflowStep(id, description, assignedRole, 60);
         }
-        
+
         /**
          * Creates a workflow step with timeout.
          */
@@ -242,7 +241,7 @@ public final class WorkflowDefinition {
             return new WorkflowStep(id, description, assignedRole, timeoutSeconds);
         }
     }
-    
+
     @Override
     public String toString() {
         return "WorkflowDefinition{" +

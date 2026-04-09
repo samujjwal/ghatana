@@ -15,14 +15,14 @@ package com.ghatana.platform.testing.data;
  */
 @FunctionalInterface
 public interface DataGenerator<T> {
-    
+
     /**
      * Generates a new instance of the test data.
      *
      * @return a new instance of T
      */
     T generate();
-    
+
     /**
      * Creates a new DataGenerator that always returns the same value.
      *
@@ -33,7 +33,7 @@ public interface DataGenerator<T> {
     static <T> DataGenerator<T> constant(T value) {
         return () -> value;
     }
-    
+
     /**
      * Creates a new DataGenerator that transforms the output of this generator.
      *
@@ -44,7 +44,7 @@ public interface DataGenerator<T> {
     default <R> DataGenerator<R> map(java.util.function.Function<? super T, ? extends R> mapper) {
         return () -> mapper.apply(generate());
     }
-    
+
     /**
      * Creates a new DataGenerator that applies the given function to the output of this generator.
      *

@@ -16,7 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Handles the execution of ESLint and parsing of its output. 
+ * Handles the execution of ESLint and parsing of its output.
  * @doc.type class
  * @doc.purpose Handles es lint runner operations
  * @doc.layer core

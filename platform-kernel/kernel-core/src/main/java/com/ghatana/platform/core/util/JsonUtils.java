@@ -24,10 +24,10 @@ import java.util.TimeZone;
 
 /**
  * Thread-safe JSON serialization utilities with pre-configured Jackson ObjectMapper instances.
- * 
+ *
  * Provides production-grade JSON operations with optimal Jackson configuration including
  * Java 8 Time API support (ISO-8601), null exclusion, and BigDecimal precision.
- * 
+ *
  * All methods are static. ObjectMapper instances are thread-safe singletons.
  *
  * @doc.type class
@@ -36,7 +36,7 @@ import java.util.TimeZone;
  * @doc.pattern Utility
  */
 public final class JsonUtils {
-    
+
     private static final ObjectMapper DEFAULT_MAPPER = createDefaultMapper();
     private static final ObjectMapper PRETTY_MAPPER = createPrettyMapper();
 
@@ -198,17 +198,17 @@ public final class JsonUtils {
             .enable(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS);
 
         builder.addModule(new JavaTimeModule()
-            .addSerializer(LocalDateTime.class, 
+            .addSerializer(LocalDateTime.class,
                 new com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE_TIME))
-            .addSerializer(LocalDate.class, 
+            .addSerializer(LocalDate.class,
                 new com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer(DateTimeFormatter.ISO_DATE))
-            .addSerializer(LocalTime.class, 
+            .addSerializer(LocalTime.class,
                 new com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer(DateTimeFormatter.ISO_TIME))
-            .addDeserializer(LocalDateTime.class, 
+            .addDeserializer(LocalDateTime.class,
                 com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer.INSTANCE)
-            .addDeserializer(LocalDate.class, 
+            .addDeserializer(LocalDate.class,
                 com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer.INSTANCE)
-            .addDeserializer(LocalTime.class, 
+            .addDeserializer(LocalTime.class,
                 com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer.INSTANCE)
         );
 

@@ -4,7 +4,6 @@ import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

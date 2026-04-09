@@ -26,14 +26,14 @@ class RateLimitingTest {
     void shouldEnforceRateLimitsPerUser() {
         MfaService mfaService = new MfaService();
         String userId = "user-123";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
         mfaService.verifyEnrollment(userId, "000000");
         mfaService.verifyEnrollment(userId, "000000");
         mfaService.verifyEnrollment(userId, "000000");
         mfaService.verifyEnrollment(userId, "000000");
         mfaService.verifyEnrollment(userId, "000000");
-        
+
         Promise<Boolean> result = mfaService.validateCode(userId, "000000");
         assertThat(result.getResult()).isFalse();
     }
@@ -43,9 +43,9 @@ class RateLimitingTest {
     void shouldEnforceRateLimitsPerIp() {
         MfaService mfaService = new MfaService();
         String userId = "user-456";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }
 
@@ -54,9 +54,9 @@ class RateLimitingTest {
     void shouldHandleRateLimitWindowSliding() {
         MfaService mfaService = new MfaService();
         String userId = "user-789";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }
 
@@ -66,10 +66,10 @@ class RateLimitingTest {
         MfaService mfaService = new MfaService();
         String userId1 = "user-1";
         String userId2 = "user-2";
-        
+
         mfaService.enrollUser(userId1, "Ghatana");
         mfaService.enrollUser(userId2, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId1)).isFalse();
         assertThat(mfaService.isMfaEnabled(userId2)).isFalse();
     }
@@ -79,9 +79,9 @@ class RateLimitingTest {
     void shouldProtectAgainstDosAttacks() {
         MfaService mfaService = new MfaService();
         String userId = "user-999";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }
 
@@ -90,9 +90,9 @@ class RateLimitingTest {
     void shouldHandleRateLimitBypassPrevention() {
         MfaService mfaService = new MfaService();
         String userId = "user-888";
-        
+
         mfaService.enrollUser(userId, "Ghatana");
-        
+
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }
 }

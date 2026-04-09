@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/** Test utilities for creating test configurations. 
+/** Test utilities for creating test configurations.
  * @doc.type class
  * @doc.purpose Handles test config operations
  * @doc.layer core

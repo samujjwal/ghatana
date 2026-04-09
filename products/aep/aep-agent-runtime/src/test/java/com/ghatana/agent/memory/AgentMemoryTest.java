@@ -7,7 +7,6 @@
 package com.ghatana.agent.memory;
 
 import com.ghatana.agent.learning.TraceGrade;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

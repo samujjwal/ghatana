@@ -20,7 +20,7 @@ class TestDataGeneratorTest {
     void shouldGenerateRandomString() {
         // When
         String result = TestDataGenerator.randomString();
-        
+
         // Then
         assertThat(result)
             .isNotBlank()
@@ -32,7 +32,7 @@ class TestDataGeneratorTest {
     void shouldGenerateRandomEmail() {
         // When
         String email = TestDataGenerator.randomEmail();
-        
+
         // Then
         assertThat(email)
             .isNotBlank()
@@ -46,7 +46,7 @@ class TestDataGeneratorTest {
     void shouldGenerateRandomInt(int max) {
         // When
         int result = TestDataGenerator.randomInt(0, max);
-        
+
         // Then
         assertThat(result)
             .isGreaterThanOrEqualTo(0)
@@ -60,7 +60,7 @@ class TestDataGeneratorTest {
         LocalDate date = TestDataGenerator.randomDate();
         LocalDate now = LocalDate.now();
         LocalDate oneYearAgo = now.minusYears(1);
-        
+
         // Then
         assertThat(date)
             .isAfterOrEqualTo(oneYearAgo)
@@ -72,7 +72,7 @@ class TestDataGeneratorTest {
     void shouldGenerateRandomName() {
         // When
         String name = TestDataGenerator.randomName();
-        
+
         // Then
         assertThat(name)
             .isNotBlank()
@@ -84,7 +84,7 @@ class TestDataGeneratorTest {
     void shouldGenerateRandomSentence() {
         // When
         String sentence = TestDataGenerator.randomSentence();
-        
+
         // Then
         assertThat(sentence)
             .isNotBlank()

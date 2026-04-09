@@ -45,10 +45,10 @@ import java.util.Optional;
  *     1000,  // max queue size
  *     eventloop
  * );
- * 
+ *
  * // Enqueue task
  * queue.enqueue(AgentRoleProto.SENIOR_ENGINEER, task).getResult();
- * 
+ *
  * // Dequeue task
  * Optional<TaskProto> task = queue.dequeue(AgentRoleProto.SENIOR_ENGINEER).getResult();
  * }</pre>

@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.Objects;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +26,11 @@ import org.slf4j.LoggerFactory;
  * PythonDiagnosticsService service = new PythonDiagnosticsService(context);
  * List<UnifiedDiagnostic> diagnostics = service.runDiagnostics().join();
  * }</pre>
- * 
+ *
  * @doc.type service
  * @doc.language python
  * @doc.tools ruff,black
- 
+
  * @doc.purpose Handles python diagnostics service operations
  * @doc.layer core
  * @doc.pattern Service
@@ -102,7 +101,7 @@ public class PythonDiagnosticsService {
 
     /**
      * Runs diagnostics using Ruff and optionally Black for formatting.
-     * 
+     *
      * @return Promise resolving to list of unified diagnostics
      * @doc.type method
      * @doc.promise ActiveJ Promise for async diagnostics execution
@@ -130,7 +129,7 @@ public class PythonDiagnosticsService {
 
     /**
      * Applies fixes for the given diagnostics.
-     * 
+     *
      * @param diagnostics List of diagnostics to fix
      * @return Promise resolving to true if all fixes applied successfully
      * @doc.type method
@@ -178,7 +177,7 @@ public class PythonDiagnosticsService {
 
     /**
      * Formats files using Black.
-     * 
+     *
      * @return Promise resolving to true if formatting succeeded
      * @doc.type method
      * @doc.promise ActiveJ Promise for async Black formatting

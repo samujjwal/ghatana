@@ -14,15 +14,15 @@ import io.activej.promise.Promise;
 public interface EvolutionService {
     /**
      * Proposes evolution plan from insights.
-     * 
+     *
      * @param insights The insights from learning phase
      * @return Promise of evolution plan
      */
     Promise<EvolutionPlan> propose(Insights insights);
-    
+
     /**
      * Proposes evolution with business/technical constraints.
-     * 
+     *
      * @param insights The insights
      * @param constraints Constraints to honor
      * @return Promise of constrained evolution plan

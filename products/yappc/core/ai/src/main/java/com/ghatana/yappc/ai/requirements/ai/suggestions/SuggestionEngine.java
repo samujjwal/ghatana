@@ -9,14 +9,12 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.yappc.ai.requirements.ai.persona.Persona;
-import com.ghatana.yappc.ai.requirements.ai.persona.PersonaPromptBuilder;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,16 +77,16 @@ import org.slf4j.LoggerFactory;
 public final class SuggestionEngine {
   private static final Logger logger = LoggerFactory.getLogger(SuggestionEngine.class);
   private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
-  
+
   private static final String SUGGESTION_PROMPT_TEMPLATE = """
       You are a %s analyzing software requirements.
-      
+
       Given the following feature description:
       "%s"
-      
+
       Generate 3-5 specific, actionable requirement suggestions that would improve or complement this feature.
       Consider: security, usability, performance, edge cases, and integration aspects.
-      
+
       Respond in JSON format:
       {
         "suggestions": [
@@ -154,8 +152,8 @@ public final class SuggestionEngine {
               .flatMap(List::stream)
               .sorted(Comparator.comparing(AISuggestion::rankScore).reversed())
               .collect(Collectors.toList());
-          
-          logger.info("Generated {} total suggestions from {} personas", 
+
+          logger.info("Generated {} total suggestions from {} personas",
               allSuggestions.size(), Persona.values().length);
           return allSuggestions;
         })
@@ -180,7 +178,7 @@ public final class SuggestionEngine {
     logger.debug("Generating suggestions for persona: {} on feature: {}", persona, feature);
 
     // Build persona-specific prompt
-    String prompt = String.format(SUGGESTION_PROMPT_TEMPLATE, 
+    String prompt = String.format(SUGGESTION_PROMPT_TEMPLATE,
         persona.displayName() + " (" + persona.getSystemPrompt() + ")",
         feature);
 
@@ -193,7 +191,7 @@ public final class SuggestionEngine {
 
     return llmService.complete(request)
         .map(result -> parseSuggestionsFromResponse(result, persona, requirementId, userId))
-        .whenException(ex -> 
+        .whenException(ex ->
             logger.warn("Failed to generate suggestions for persona {}: {}", persona, ex.getMessage()));
   }
 
@@ -205,19 +203,19 @@ public final class SuggestionEngine {
     try {
       String jsonContent = extractJsonContent(content);
       JsonNode rootNode = objectMapper.readTree(jsonContent);
-      JsonNode suggestionsNode = rootNode.has("suggestions") 
-          ? rootNode.get("suggestions") 
+      JsonNode suggestionsNode = rootNode.has("suggestions")
+          ? rootNode.get("suggestions")
           : rootNode;
 
       if (suggestionsNode.isArray()) {
         for (JsonNode suggNode : suggestionsNode) {
-          String suggestionText = getTextOrDefault(suggNode, "text", 
+          String suggestionText = getTextOrDefault(suggNode, "text",
               getTextOrDefault(suggNode, "suggestion", ""));
-          
+
           if (!suggestionText.isEmpty()) {
             float relevance = (float) getDoubleOrDefault(suggNode, "relevance", 0.7);
             float priority = (float) getDoubleOrDefault(suggNode, "priority", 0.5);
-            
+
             suggestions.add(new AISuggestion(
                 requirementId,
                 suggestionText,
@@ -232,7 +230,7 @@ public final class SuggestionEngine {
         }
       }
     } catch (JsonProcessingException e) {
-      logger.warn("Failed to parse JSON response for persona {}, attempting fallback: {}", 
+      logger.warn("Failed to parse JSON response for persona {}, attempting fallback: {}",
           persona, e.getMessage());
       suggestions.addAll(parseFallbackSuggestions(content, persona, requirementId, userId));
     }
@@ -245,7 +243,7 @@ public final class SuggestionEngine {
       String content, Persona persona, String requirementId, String userId) {
     List<AISuggestion> suggestions = new ArrayList<>();
     String[] lines = content.split("\n");
-    
+
     for (String line : lines) {
       line = line.trim();
       // Match patterns like "1. ", "- ", "* "
@@ -292,14 +290,14 @@ public final class SuggestionEngine {
   }
 
   private String getTextOrDefault(JsonNode node, String field, String defaultValue) {
-    return node.has(field) && !node.get(field).isNull() 
-        ? node.get(field).asText() 
+    return node.has(field) && !node.get(field).isNull()
+        ? node.get(field).asText()
         : defaultValue;
   }
 
   private double getDoubleOrDefault(JsonNode node, String field, double defaultValue) {
-    return node.has(field) && !node.get(field).isNull() 
-        ? node.get(field).asDouble() 
+    return node.has(field) && !node.get(field).isNull()
+        ? node.get(field).asDouble()
         : defaultValue;
   }
 

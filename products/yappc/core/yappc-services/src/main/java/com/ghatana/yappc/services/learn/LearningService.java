@@ -14,15 +14,15 @@ import io.activej.promise.Promise;
 public interface LearningService {
     /**
      * Analyzes observations to extract insights.
-     * 
+     *
      * @param observation The observation data
      * @return Promise of insights
      */
     Promise<Insights> analyze(Observation observation);
-    
+
     /**
      * Analyzes with historical context for deeper insights.
-     * 
+     *
      * @param observation Current observation
      * @param context Historical context
      * @return Promise of insights

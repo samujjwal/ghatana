@@ -40,7 +40,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             policy.put("action", "read");
             policy.put("resource", "document-1");
             policy.put("effect", "ALLOW");
-            
+
             assertThat(policy.get("effect")).isEqualTo("ALLOW");
         }
 
@@ -49,7 +49,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
         void multiplePolicyOrder() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Evaluate 30 access control policies in sequence
                 for (int i = 0; i < 30; i++) {
                     final int idx = i;
@@ -57,7 +57,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
                     policy.put("policyId", "acl-" + idx);
                     policy.put("precedence", 100 - idx);
                 }
-                
+
                 return result;
             });
         }
@@ -69,7 +69,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             policies.put("allow-read", "ALLOW");
             policies.put("deny-delete", "DENY");
             policies.put("allow-write", "ALLOW");
-            
+
             // Final result should be DENY (deny policy present)
             assertThat(policies.values().stream().anyMatch("DENY"::equals)).isTrue();
         }
@@ -78,7 +78,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
         @DisplayName("Tenant-specific access policies")
         void tenantAccessPolicies() {
             Map<String, Map<String, String>> tenantPolicies = new HashMap<>();
-            
+
             for (int i = 0; i < 10; i++) {
                 String tenantId = "t" + i;
                 Map<String, String> policies = new HashMap<>();
@@ -86,7 +86,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
                 policies.put("dataClassification", "restricted");
                 tenantPolicies.put(tenantId, policies);
             }
-            
+
             assertThat(tenantPolicies).hasSize(10);
         }
     }
@@ -102,7 +102,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             encrypionPolicy.put("algorithm", "AES-256-GCM");
             encrypionPolicy.put("keyRotationDays", 90);
             encrypionPolicy.put("tlsVersion", "1.3");
-            
+
             assertThat(encrypionPolicy.get("algorithm")).isEqualTo("AES-256-GCM");
         }
 
@@ -114,7 +114,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
                 String keyId = "key-" + i;
                 keyRotations.put(keyId, 90 - (i % 30)); // Staggered rotation days
             }
-            
+
             assertThat(keyRotations).hasSize(20);
         }
 
@@ -125,7 +125,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             for (int i = 0; i < 15; i++) {
                 secretTenants.add("t" + i);
             }
-            
+
             // Each tenant has isolated keys
             assertThat(secretTenants).hasSize(15);
         }
@@ -137,7 +137,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             policy.put("tlsRequired", true);
             policy.put("certificatePinning", true);
             policy.put("cipherStrength", 256);
-            
+
             assertThat(policy.get("tlsRequired")).isEqualTo(true);
         }
     }
@@ -153,7 +153,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             loggingPolicy.put("logLevel", "INFO");
             loggingPolicy.put("dataClassificationTracking", true);
             loggingPolicy.put("auditTrailRequired", true);
-            
+
             assertThat(loggingPolicy.get("auditTrailRequired")).isEqualTo(true);
         }
 
@@ -162,7 +162,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
         void auditTrailScale() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Log 100 security events
                 for (int i = 0; i < 100; i++) {
                     final int idx = i;
@@ -171,7 +171,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
                     event.put("eventType", idx % 3 == 0 ? "UNAUTHORIZED_ACCESS" : "POLICY_VIOLATION");
                     event.put("tenantId", "t" + (idx / 20));
                 }
-                
+
                 return result;
             });
         }
@@ -183,7 +183,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             auditEntries.put("entry-1", "hash-abc123");
             auditEntries.put("entry-2", "hash-def456");
             auditEntries.put("entry-3", "hash-ghi789");
-            
+
             assertThat(auditEntries.values())
                 .allMatch(v -> v.startsWith("hash-"));
         }
@@ -200,7 +200,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             anomalyPolicy.put("failedLoginThreshold", 5);
             anomalyPolicy.put("dataAccessAnomalyScore", 0.8);
             anomalyPolicy.put("autoLockoutEnabled", true);
-            
+
             assertThat(anomalyPolicy.get("autoLockoutEnabled")).isEqualTo(true);
         }
 
@@ -212,7 +212,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
             slaTimes.put("high", 60);            // 1 hour
             slaTimes.put("medium", 240);         // 4 hours
             slaTimes.put("low", 1440);           // 24 hours
-            
+
             assertThat(slaTimes.get("critical")).isLessThan(slaTimes.get("high"));
         }
 
@@ -221,7 +221,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
         void automatedResponse() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // 25 threat response actions
                 for (int i = 0; i < 25; i++) {
                     final int idx = i;
@@ -229,7 +229,7 @@ class SecurityGovernanceExpansionTest extends EventloopTestBase {
                     response.put("threatId", "threat-" + idx);
                     response.put("action", idx % 3 == 0 ? "BLOCK" : "ALERT");
                 }
-                
+
                 return result;
             });
         }

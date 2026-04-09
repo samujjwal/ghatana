@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 
 /**
  * Centralized manager for prompt templates with validation and variable substitution.
- * 
+ *
  * Supports variable placeholders in the format {{variableName}} and provides
  * validation utilities for prompt consistency.
- * 
+ *
  * @doc.type class
  * @doc.purpose Provides centralized prompt validation and template management utilities for AI chains.
  * @doc.layer utility
@@ -22,10 +22,10 @@ import java.util.regex.Pattern;
 public class PromptTemplateManager {
     private static final Logger log = LoggerFactory.getLogger(PromptTemplateManager.class);
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{([^}]+)\\}\\}");
-    
+
     private final Map<String, String> templates = new ConcurrentHashMap<>();
     private final Map<String, PromptTemplate> compiledTemplates = new ConcurrentHashMap<>();
-    
+
     /**
      * Registers a prompt template.
      *
@@ -40,12 +40,12 @@ public class PromptTemplateManager {
         if (template == null || template.trim().isEmpty()) {
             throw new IllegalArgumentException("template cannot be null or empty");
         }
-        
+
         templates.put(name, template);
         compiledTemplates.put(name, new PromptTemplate(template));
         log.debug("Registered prompt template: {}", name);
     }
-    
+
     /**
      * Gets a registered template by name.
      *
@@ -60,7 +60,7 @@ public class PromptTemplateManager {
         }
         return template;
     }
-    
+
     /**
      * Renders a template with the given variables.
      *
@@ -74,10 +74,10 @@ public class PromptTemplateManager {
         if (template == null) {
             throw new IllegalArgumentException("Template not found: " + name);
         }
-        
+
         return template.render(variables);
     }
-    
+
     /**
      * Renders a template with the given variables, using default values for missing variables.
      *
@@ -94,7 +94,7 @@ public class PromptTemplateManager {
         }
         return render(name, merged);
     }
-    
+
     /**
      * Gets all required variables for a template.
      *
@@ -109,7 +109,7 @@ public class PromptTemplateManager {
         }
         return new HashSet<>(template.getRequiredVariables());
     }
-    
+
     /**
      * Validates that all required variables are provided.
      *
@@ -125,7 +125,7 @@ public class PromptTemplateManager {
         }
         return variables.keySet().containsAll(required);
     }
-    
+
     /**
      * Gets missing variables for a template.
      *
@@ -142,7 +142,7 @@ public class PromptTemplateManager {
         }
         return missing;
     }
-    
+
     /**
      * Lists all registered template names.
      *
@@ -151,7 +151,7 @@ public class PromptTemplateManager {
     public Set<String> listTemplates() {
         return new HashSet<>(templates.keySet());
     }
-    
+
     /**
      * Removes a template.
      *
@@ -162,7 +162,7 @@ public class PromptTemplateManager {
         compiledTemplates.remove(name);
         log.debug("Removed prompt template: {}", name);
     }
-    
+
     /**
      * Clears all templates.
      */
@@ -171,31 +171,31 @@ public class PromptTemplateManager {
         compiledTemplates.clear();
         log.debug("Cleared all prompt templates");
     }
-    
+
     /**
      * Inner class representing a compiled prompt template.
      */
     private static class PromptTemplate {
         private final String template;
         private final List<String> requiredVariables;
-        
+
         PromptTemplate(String template) {
             this.template = template;
             this.requiredVariables = extractVariables(template);
         }
-        
+
         String render(Map<String, String> variables) {
             // Validate all required variables are present
             Set<String> provided = variables != null ? variables.keySet() : Set.of();
             Set<String> missing = new HashSet<>(requiredVariables);
             missing.removeAll(provided);
-            
+
             if (!missing.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Missing required variables: " + missing
                 );
             }
-            
+
             String result = template;
             if (variables != null) {
                 for (Map.Entry<String, String> entry : variables.entrySet()) {
@@ -203,14 +203,14 @@ public class PromptTemplateManager {
                     result = result.replace(placeholder, entry.getValue());
                 }
             }
-            
+
             return result;
         }
-        
+
         List<String> getRequiredVariables() {
             return new ArrayList<>(requiredVariables);
         }
-        
+
         private static List<String> extractVariables(String template) {
             List<String> variables = new ArrayList<>();
             Matcher matcher = VARIABLE_PATTERN.matcher(template);

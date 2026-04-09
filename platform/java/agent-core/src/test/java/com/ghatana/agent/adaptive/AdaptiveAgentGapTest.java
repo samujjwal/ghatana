@@ -126,7 +126,7 @@ class AdaptiveAgentGapTest {
             // Enough rounds to dominate any noise from the initial exploration.
             for (int i = 0; i < 300; i++) {
                 agent.recordFeedback(0, 0.0);  // failure
-                agent.recordFeedback(1, 0.1);  // failure  
+                agent.recordFeedback(1, 0.1);  // failure
                 agent.recordFeedback(2, 1.0);  // success
             }
 

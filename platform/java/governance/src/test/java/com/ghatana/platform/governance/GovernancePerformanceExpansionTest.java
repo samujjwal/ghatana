@@ -39,7 +39,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
                 AtomicInteger evaluatedCount = new AtomicInteger(0);
-                
+
                 // Evaluate 1000 policies in rapid succession
                 for (int i = 0; i < 1000; i++) {
                     final int idx = i;
@@ -48,7 +48,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                     policy.put("conditions", idx % 5 + 1);
                     evaluatedCount.incrementAndGet();
                 }
-                
+
                 assertThat(evaluatedCount.get()).isEqualTo(1000);
                 return result;
             });
@@ -60,7 +60,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             // Single policy with 500 conditions
             Map<String, Object> complexPolicy = new HashMap<>();
             List<Map<String, String>> conditions = new ArrayList<>();
-            
+
             for (int i = 0; i < 500; i++) {
                 Map<String, String> condition = new HashMap<>();
                 condition.put("field", "field-" + i);
@@ -68,7 +68,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                 condition.put("value", "value-" + i);
                 conditions.add(condition);
             }
-            
+
             complexPolicy.put("conditions", conditions);
             assertThat(conditions).hasSize(500);
         }
@@ -81,7 +81,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             for (int i = 0; i < 10000; i++) {
                 values.put("val-" + i, "resource-" + (i % 100));
             }
-            
+
             long resourceCount = values.values().stream()
                 .distinct().count();
             assertThat(resourceCount).isEqualTo(100);
@@ -92,7 +92,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         void concurrentPolicyEvaluation() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Simulate 100 concurrent policy evaluations
                 for (int i = 0; i < 100; i++) {
                     final int idx = i;
@@ -100,7 +100,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                     evaluation.put("evaluationId", "eval-" + idx);
                     evaluation.put("policyCount", 10 + (idx % 20));
                 }
-                
+
                 return result;
             });
         }
@@ -114,12 +114,12 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Role inheritance chain evaluation (50 levels)")
         void deepRoleInheritance() {
             Map<String, String> roleHierarchy = new HashMap<>();
-            
+
             // Create a 50-level role hierarchy
             for (int i = 0; i < 50; i++) {
                 roleHierarchy.put("role-" + i, i == 0 ? "base" : "role-" + (i - 1));
             }
-            
+
             assertThat(roleHierarchy).hasSize(50);
         }
 
@@ -127,11 +127,11 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("User with 1000+ role assignments")
         void massiveRoleAssignment() {
             Map<String, Integer> userRoles = new HashMap<>();
-            
+
             for (int i = 0; i < 1000; i++) {
                 userRoles.put("role-" + i, 1);
             }
-            
+
             assertThat(userRoles).hasSize(1000);
         }
 
@@ -140,7 +140,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         void permissionResolutionScale() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Resolve permissions for 500 user-role-resource combinations
                 for (int u = 0; u < 50; u++) {
                     for (int r = 0; r < 10; r++) {
@@ -149,7 +149,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                         permissionCheck.put("roleCount", r + 1);
                     }
                 }
-                
+
                 return result;
             });
         }
@@ -159,7 +159,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         void concurrentRoleOperations() {
             AtomicInteger assignments = new AtomicInteger(0);
             AtomicInteger revocations = new AtomicInteger(0);
-            
+
             // Simulate 100 concurrent role operations
             for (int i = 0; i < 100; i++) {
                 if (i % 2 == 0) {
@@ -168,7 +168,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                     revocations.incrementAndGet();
                 }
             }
-            
+
             assertThat(assignments.get()).isEqualTo(50);
             assertThat(revocations.get()).isEqualTo(50);
         }
@@ -182,11 +182,11 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Consent tracking for 50000+ data subjects")
         void massiveConsentTracking() {
             Map<String, Boolean> consents = new HashMap<>();
-            
+
             for (int i = 0; i < 50000; i++) {
                 consents.put("user-" + i, i % 2 == 0);
             }
-            
+
             long grantedCount = consents.values().stream()
                 .filter(v -> v).count();
             assertThat(consents).hasSize(50000);
@@ -198,7 +198,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         void batchRetentionProcessing() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // Process 10000 records for retention
                 for (int i = 0; i < 10000; i++) {
                     final int idx = i;
@@ -207,7 +207,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                     record.put("ageInDays", 100 + (idx % 200));
                     record.put("shouldDelete", idx % 3 == 0);
                 }
-                
+
                 return result;
             });
         }
@@ -216,14 +216,14 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Data classification across 1000+ datasets")
         void massiveClassification() {
             Map<String, String> classifications = new HashMap<>();
-            
+
             for (int i = 0; i < 1000; i++) {
-                String level = i % 4 == 0 ? "public" : 
+                String level = i % 4 == 0 ? "public" :
                              i % 4 == 1 ? "internal" :
                              i % 4 == 2 ? "confidential" : "restricted";
                 classifications.put("dataset-" + i, level);
             }
-            
+
             assertThat(classifications).hasSize(1000);
         }
 
@@ -231,7 +231,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Multi-tenant data isolation verification")
         void multiTenantDataStress() {
             Map<String, Map<String, Integer>> tenantData = new HashMap<>();
-            
+
             // 100 tenants with 100 datasets each
             for (int t = 0; t < 100; t++) {
                 Map<String, Integer> datasets = new HashMap<>();
@@ -240,7 +240,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                 }
                 tenantData.put("tenant-" + t, datasets);
             }
-            
+
             assertThat(tenantData).hasSize(100);
             assertThat(tenantData.get("tenant-0")).hasSize(100);
         }
@@ -255,7 +255,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         void massiveConcurrentUpdates() {
             runPromise(() -> {
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete();
-                
+
                 // 1000 concurrent policy modifications
                 for (int i = 0; i < 1000; i++) {
                     final int idx = i;
@@ -263,7 +263,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
                     update.put("policyId", "policy-" + (idx % 50));
                     update.put("version", idx / 50 + 1);
                 }
-                
+
                 return result;
             });
         }
@@ -272,14 +272,14 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Lock-free governance state transitions")
         void lockFreeTransitions() {
             AtomicInteger transitionCount = new AtomicInteger(0);
-            
+
             // Test 500 state transitions
             for (int i = 0; i < 500; i++) {
                 String[] states = {"ACTIVE", "INACTIVE", "ARCHIVED"};
                 String nextState = states[i % 3];
                 transitionCount.incrementAndGet();
             }
-            
+
             assertThat(transitionCount.get()).isEqualTo(500);
         }
 
@@ -290,14 +290,14 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             contentionMetrics.put("policyVersion", new AtomicInteger(0));
             contentionMetrics.put("roleUpdates", new AtomicInteger(0));
             contentionMetrics.put("consentUpdates", new AtomicInteger(0));
-            
+
             // Simulate high-contention updates
             for (int i = 0; i < 100; i++) {
                 contentionMetrics.get("policyVersion").incrementAndGet();
                 contentionMetrics.get("roleUpdates").incrementAndGet();
                 contentionMetrics.get("consentUpdates").incrementAndGet();
             }
-            
+
             assertThat(contentionMetrics.get("policyVersion").get()).isEqualTo(100);
         }
     }
@@ -314,11 +314,11 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             for (int i = 0; i < 100000; i++) {
                 largePolicy.append("condition-").append(i).append(":").append(i % 100).append(";");
             }
-            
+
             Map<String, Object> policy = new HashMap<>();
             policy.put("content", largePolicy.toString());
             policy.put("sizeBytes", largePolicy.length());
-            
+
             assertThat(policy.get("sizeBytes")).isInstanceOf(Integer.class);
         }
 
@@ -326,13 +326,13 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         @DisplayName("Memory-efficient policy caching")
         void efficientCaching() {
             Map<String, Integer> cacheHits = new HashMap<>();
-            
+
             // Simulate cache with 10000 entries, only 100 unique keys
             for (int i = 0; i < 10000; i++) {
                 String key = "policy-" + (i % 100);
                 cacheHits.put(key, cacheHits.getOrDefault(key, 0) + 1);
             }
-            
+
             assertThat(cacheHits).hasSize(100);
             long avgHitsPerKey = cacheHits.values().stream()
                 .mapToInt(Integer::intValue).sum() / cacheHits.size();

@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
  * @doc.examples See main() method for ClickHouse-backed service; constructor for custom storage integration
  * @doc.testing Test with TraceHttpServiceTest (integration tests with TestContainers for ClickHouse)
  * @doc.notes Follows EventCloud Architecture v4 ingress patterns; handlers delegate to TraceStorage abstraction
- * 
+ *
  * @author Ghatana Platform Team
  * @since 1.0.0
  */
@@ -93,7 +93,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
      * Abstracts ClickHouse, PostgreSQL, or other implementations.
      */
     private final TraceStorage storage;
-    
+
     /**
      * Jackson ObjectMapper for JSON serialization/deserialization.
      * Configured with JavaTimeModule and Jdk8Module for Java 8+ type support.
@@ -186,10 +186,10 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
     protected void setupService(ModuleBuilder builder) {
         // Bind TraceStorage instance
         builder.bind(TraceStorage.class).toInstance(storage);
-        
+
         // Bind ObjectMapper instance
         builder.bind(ObjectMapper.class).toInstance(objectMapper);
-        
+
         logger.info("Service bindings configured");
     }
 
@@ -250,21 +250,21 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
                 // Ingestion endpoints
                 .with(io.activej.http.HttpMethod.POST, "/api/v1/traces/spans", ingestHandler::handleSingleSpan)
                 .with(io.activej.http.HttpMethod.POST, "/api/v1/traces/spans/batch", ingestHandler::handleBatchSpans)
-                
-                // Query endpoints  
+
+                // Query endpoints
                 .with(io.activej.http.HttpMethod.GET, "/api/v1/traces/:traceId", request -> {
                     String traceId = request.getPathParameter("traceId");
                     return queryHandler.handleGetTraceById(request, traceId);
                 })
                 .with(io.activej.http.HttpMethod.GET, "/api/v1/traces", queryHandler::handleSearchTraces)
-                
+
                 // Statistics endpoint
                 .with(io.activej.http.HttpMethod.GET, "/api/v1/traces/stats", statisticsHandler::handleGetStatistics)
-                
+
                 // Health endpoints
                 .with(io.activej.http.HttpMethod.GET, "/health", healthHandler::handleLiveness)
                 .with(io.activej.http.HttpMethod.GET, "/health/ready", healthHandler::handleReadiness)
-                
+
                 // 404 handler (matches all methods and paths)
                 .with("/*", request -> {
                     logger.warn("404 Not Found: {} {}", request.getMethod(), request.getPath());
@@ -321,7 +321,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
     @Override
     protected void onApplicationStopping() {
         logger.info("Stopping TraceHttpService...");
-        
+
         try {
             // Close storage
             storage.close();
@@ -358,7 +358,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
      * <pre>{@code
      * # Start with defaults (localhost:8123, observability database)
      * java -jar trace-http-service.jar --port=8080
-     * 
+     *
      * # Connect to remote ClickHouse
      * java -jar trace-http-service.jar \
      *   --port=8080 \
@@ -375,12 +375,12 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
      */
     public static void main(String[] args) throws Exception {
         logger.info("Starting TraceHttpService with ClickHouse backend");
-        
+
         // Parse command-line arguments for ClickHouse configuration
         String chHost = "localhost";
         int chPort = 8123;
         String chDatabase = "observability";
-        
+
         for (String arg : args) {
             if (arg.startsWith("--ch-host=")) {
                 chHost = arg.substring("--ch-host=".length());
@@ -395,9 +395,9 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
                 chDatabase = arg.substring("--ch-database=".length());
             }
         }
-        
+
         logger.info("Configuring ClickHouse storage: host={}, port={}, database={}", chHost, chPort, chDatabase);
-        
+
         // Create ClickHouseTraceStorage with configuration from environment or defaults
         TraceStorage storage = ClickHouseTraceStorage.builder()
                 .withHost(chHost)
@@ -406,7 +406,7 @@ public class TraceHttpService extends UnifiedApplicationLauncher {
                 .withBatchSize(5000)
                 .withFlushInterval(java.time.Duration.ofSeconds(5))
                 .build();
-        
+
         TraceHttpService service = new TraceHttpService(storage);
         logger.info("TraceHttpService initialized with ClickHouse backend");
         service.launch(args);

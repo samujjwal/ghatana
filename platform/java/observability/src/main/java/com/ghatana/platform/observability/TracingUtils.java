@@ -157,7 +157,7 @@ public class TracingUtils {
      */
     public static void withSpan(TracingProvider tracingProvider, String spanName, Map<String, Object> attributes, Runnable runnable) {
         Span span = tracingProvider.createSpan(spanName, attributes);
-        
+
         try (Scope scope = span.makeCurrent()) {
             runnable.run();
         } catch (Throwable t) {
@@ -219,7 +219,7 @@ public class TracingUtils {
      */
     public static <T> T withSpan(TracingProvider tracingProvider, String spanName, Map<String, Object> attributes, Supplier<T> supplier) {
         Span span = tracingProvider.createSpan(spanName, attributes);
-        
+
         try (Scope scope = span.makeCurrent()) {
             return supplier.get();
         } catch (Throwable t) {
@@ -283,7 +283,7 @@ public class TracingUtils {
      */
     public static <T> T withSpan(TracingProvider tracingProvider, String spanName, Map<String, Object> attributes, Callable<T> callable) throws Exception {
         Span span = tracingProvider.createSpan(spanName, attributes);
-        
+
         try (Scope scope = span.makeCurrent()) {
             return callable.call();
         } catch (Throwable t) {
@@ -325,7 +325,7 @@ public class TracingUtils {
     public static <T, R> Function<T, R> wrapFunction(TracingProvider tracingProvider, String spanName, Function<T, R> function) {
         return input -> {
             Span span = tracingProvider.createSpan(spanName);
-            
+
             try (Scope scope = span.makeCurrent()) {
                 return function.apply(input);
             } catch (Throwable t) {

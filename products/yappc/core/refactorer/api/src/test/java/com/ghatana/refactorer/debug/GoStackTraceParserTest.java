@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.debug;
 
-/** Tests for {@link GoStackTraceParser}. 
+/** Tests for {@link GoStackTraceParser}.
  * @doc.type class
  * @doc.purpose Handles go stack trace parser test operations
  * @doc.layer core

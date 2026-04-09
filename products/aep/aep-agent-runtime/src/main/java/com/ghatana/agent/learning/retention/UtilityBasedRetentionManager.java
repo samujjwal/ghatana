@@ -1,7 +1,6 @@
 package com.ghatana.agent.learning.retention;
 
 import com.ghatana.agent.memory.model.MemoryItem;
-import com.ghatana.agent.memory.model.MemoryItemType;
 import com.ghatana.agent.memory.store.MemoryPlane;
 import com.ghatana.agent.memory.store.MemoryQuery;
 import io.activej.promise.Promise;
@@ -10,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 
 /**

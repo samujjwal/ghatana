@@ -86,7 +86,7 @@ class OrderAuditTrailTest {
 
         // WHEN: Modify order
         Order modified = original.withStatus(OrderStatus.APPROVED);
-        recordAudit("ORDER_MODIFIED", modified, "trader-1", 
+        recordAudit("ORDER_MODIFIED", modified, "trader-1",
             "Status changed to APPROVED");
 
         // THEN: Modification recorded
@@ -130,7 +130,7 @@ class OrderAuditTrailTest {
             BigDecimal.valueOf(50), BigDecimal.valueOf(150.00), BigDecimal.ZERO, testTime);
 
         // WHEN: Record fill
-        recordAudit("FILL_RECEIVED", order, "system", 
+        recordAudit("FILL_RECEIVED", order, "system",
             "Filled 50 @ 150.00");
 
         // THEN: Fill recorded

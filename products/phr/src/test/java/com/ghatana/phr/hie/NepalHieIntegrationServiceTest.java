@@ -3,7 +3,6 @@ package com.ghatana.phr.hie;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
-import com.ghatana.phr.api.FhirApiResponse;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 

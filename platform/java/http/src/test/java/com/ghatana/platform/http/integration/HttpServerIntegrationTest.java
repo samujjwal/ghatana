@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for HTTP server functionality.
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration tests for HTTP server request/response flows
  * @doc.layer platform
@@ -28,19 +28,19 @@ class HttpServerIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle GET and POST methods")
     void shouldHandleGetAndPost(HttpMethod method) {
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
-            .with(method, "/test", request -> 
+            .with(method, "/test", request ->
                 HttpResponse.ok200()
                     .withBody(("Method: " + method.name()).getBytes(StandardCharsets.UTF_8))
                     .toPromise())
             .build();
-        
+
         HttpRequest request = switch (method) {
             case GET -> HttpRequest.get("http://localhost/test").build();
             case POST -> HttpRequest.post("http://localhost/test").build();
             default -> throw new IllegalStateException("Unexpected value: " + method);
         };
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains(method.name());
@@ -57,13 +57,13 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/headers")
             .withHeader(HttpHeaders.AUTHORIZATION, "Bearer test-token")
             .build();
-        
+
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("Bearer test-token");
@@ -80,10 +80,10 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/search?q=test").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("Query: test");
@@ -100,13 +100,13 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.post("http://localhost/data")
             .withBody("test data".getBytes(StandardCharsets.UTF_8))
             .build();
-        
+
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String responseBody = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(responseBody).contains("test data");
@@ -123,14 +123,14 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.post("http://localhost/json")
             .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .withBody("{\"data\":\"test\"}".getBytes(StandardCharsets.UTF_8))
             .build();
-        
+
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
@@ -143,7 +143,7 @@ class HttpServerIntegrationTest extends EventloopTestBase {
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
             .with(HttpMethod.GET, "/known", request -> HttpResponse.ok200().toPromise())
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/unknown").build();
         // RoutingServlet throws HttpError(404) for unknown routes — verify the exception code
         assertThatThrownBy(() -> runPromise(() -> servlet.serve(request)))
@@ -156,15 +156,15 @@ class HttpServerIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle error responses")
     void shouldHandleErrorResponses() {
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
-            .with(HttpMethod.GET, "/error", request -> 
+            .with(HttpMethod.GET, "/error", request ->
                 HttpResponse.ofCode(500)
                     .withBody("Internal Server Error".getBytes(StandardCharsets.UTF_8))
                     .toPromise())
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/error").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(500);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("Internal Server Error");
@@ -174,7 +174,7 @@ class HttpServerIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle concurrent requests")
     void shouldHandleConcurrentRequests() {
         AtomicInteger requestCount = new AtomicInteger(0);
-        
+
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
             .with(HttpMethod.GET, "/concurrent", request -> {
                 int count = requestCount.incrementAndGet();
@@ -183,15 +183,15 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request1 = HttpRequest.get("http://localhost/concurrent").build();
         HttpRequest request2 = HttpRequest.get("http://localhost/concurrent").build();
         HttpRequest request3 = HttpRequest.get("http://localhost/concurrent").build();
-        
+
         HttpResponse response1 = runPromise(() -> servlet.serve(request1));
         HttpResponse response2 = runPromise(() -> servlet.serve(request2));
         HttpResponse response3 = runPromise(() -> servlet.serve(request3));
-        
+
         assertThat(response1.getCode()).isEqualTo(200);
         assertThat(response2.getCode()).isEqualTo(200);
         assertThat(response3.getCode()).isEqualTo(200);
@@ -202,16 +202,16 @@ class HttpServerIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle custom response headers")
     void shouldHandleCustomResponseHeaders() {
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
-            .with(HttpMethod.GET, "/custom-headers", request -> 
+            .with(HttpMethod.GET, "/custom-headers", request ->
                 HttpResponse.ok200()
                     .withHeader(HttpHeaders.of("X-Custom-Header"), "custom-value")
                     .withHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
                     .toPromise())
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/custom-headers").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.of("X-Custom-Header"))).isEqualTo("custom-value");
         assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-cache");
@@ -228,12 +228,12 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.put("http://localhost/update")
             .withBody("new data".getBytes(StandardCharsets.UTF_8))
             .build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String responseBody = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(responseBody).contains("new data");
@@ -250,10 +250,10 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/users/123").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("123");
@@ -263,15 +263,15 @@ class HttpServerIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle request timeout scenarios")
     void shouldHandleRequestTimeoutScenarios() {
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
-            .with(HttpMethod.GET, "/timeout", request -> 
+            .with(HttpMethod.GET, "/timeout", request ->
                 HttpResponse.ofCode(408)
                     .withBody("Request Timeout".getBytes(StandardCharsets.UTF_8))
                     .toPromise())
             .build();
-        
+
         HttpRequest request = HttpRequest.get("http://localhost/timeout").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(408);
     }
 
@@ -282,7 +282,7 @@ class HttpServerIntegrationTest extends EventloopTestBase {
         for (int i = 0; i < largeBody.length; i++) {
             largeBody[i] = (byte) (i % 256);
         }
-        
+
         RoutingServlet servlet = RoutingServlet.builder(eventloop())
             .with(HttpMethod.POST, "/large", request -> {
                 int bodySize = request.getBody().asArray().length;
@@ -291,13 +291,13 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                     .toPromise();
             })
             .build();
-        
+
         HttpRequest request = HttpRequest.post("http://localhost/large")
             .withBody(largeBody)
             .build();
-        
+
         HttpResponse response = runPromise(() -> servlet.serve(request));
-        
+
         assertThat(response.getCode()).isEqualTo(200);
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("10000");
@@ -322,13 +322,13 @@ class HttpServerIntegrationTest extends EventloopTestBase {
                 }
             })
             .build();
-        
+
         HttpRequest jsonRequest = HttpRequest.get("http://localhost/negotiate")
             .withHeader(HttpHeaders.ACCEPT, "application/json")
             .build();
-        
+
         HttpResponse jsonResponse = runPromise(() -> servlet.serve(jsonRequest));
-        
+
         assertThat(jsonResponse.getCode()).isEqualTo(200);
         assertThat(jsonResponse.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
     }

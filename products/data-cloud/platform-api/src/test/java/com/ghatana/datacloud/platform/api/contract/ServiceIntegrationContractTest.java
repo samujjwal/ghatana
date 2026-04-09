@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -150,7 +149,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
             EnrichedEvent event = new EnrichedEvent();
             event.id = "evt-eval-1";
             event.data = Map.of("amount", 10000);
-            
+
             PolicyEvaluationResult result = new PolicyEvaluationResult();
             result.eventId = event.id;
             result.policyId = "policy-fraud-detection";
@@ -159,7 +158,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
                     .thenReturn(Promise.of(result));
 
             long startTime = System.currentTimeMillis();
-            PolicyEvaluationResult response = runPromise(() -> 
+            PolicyEvaluationResult response = runPromise(() ->
                     aepProcessor.evaluatePolicy(event));
             long durationMs = System.currentTimeMillis() - startTime;
 
@@ -329,7 +328,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         void dataLossMustBePrevented() {
             EnrichedEvent event = new EnrichedEvent();
             event.id = "evt-persist-1";
-            
+
             // Even if AEP is down, event should be persisted in Data Cloud
             // and retried later (async)
             lenient().when(aepProcessor.streamEvent(any()))
@@ -360,7 +359,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
             // If AEP is overwhelmed, it can request backpressure:
             // HTTP 429 Too Many Requests
             // Response header: Retry-After: 60
-            
+
             // Data Cloud respects the backpressure and buffers events
             int tooManyRequests = 429;
             assertThat(tooManyRequests).isBetween(400, 499);
@@ -371,7 +370,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         void callsMustHaveTimeout() {
             // Request header: X-Request-Timeout: 10000 (milliseconds)
             // or standard: Timeout: 10000ms
-            
+
             String timeoutHeader = "X-Request-Timeout";
             assertThat(timeoutHeader).isNotBlank();
         }

@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Defines audit policies for kernel components.
@@ -20,7 +19,7 @@ import java.util.Objects;
  * @since 1.0.0
  */
 public final class AuditPolicy {
-    
+
     private final boolean enabled;
     private final AuditLevel level;
     private final Duration retentionPeriod;

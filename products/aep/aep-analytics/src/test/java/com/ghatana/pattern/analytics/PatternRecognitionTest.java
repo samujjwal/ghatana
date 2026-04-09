@@ -25,7 +25,7 @@ class PatternRecognitionTest {
     @DisplayName("Should recognize patterns")
     void shouldRecognizePatterns() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -33,7 +33,7 @@ class PatternRecognitionTest {
     @DisplayName("Should detect anomalies")
     void shouldDetectAnomalies() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -41,7 +41,7 @@ class PatternRecognitionTest {
     @DisplayName("Should classify patterns")
     void shouldClassifyPatterns() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -49,7 +49,7 @@ class PatternRecognitionTest {
     @DisplayName("Should handle pattern updates")
     void shouldHandlePatternUpdates() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -57,7 +57,7 @@ class PatternRecognitionTest {
     @DisplayName("Should handle pattern deletion")
     void shouldHandlePatternDeletion() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 
@@ -65,7 +65,7 @@ class PatternRecognitionTest {
     @DisplayName("Should handle pattern queries")
     void shouldHandlePatternQueries() {
         AepEngine engine = Aep.forTesting();
-        
+
         assertThat(engine).isNotNull();
     }
 }

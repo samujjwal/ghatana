@@ -49,16 +49,16 @@
  *     .fileFormat(FileFormat.PARQUET)
  *     .compressionCodec("zstd")
  *     .build();
- * 
+ *
  * // Create and initialize plugin
  * CoolTierStoragePlugin plugin = new CoolTierStoragePlugin(config);
  * plugin.initialize(context);
  * plugin.start();
- * 
+ *
  * // Migrate events from L1 (Postgres) to L2 (Iceberg)
  * List<Event> eventsToMigrate = postgresPlugin.readByTimeRange(...);
  * plugin.appendBatch(eventsToMigrate);
- * 
+ *
  * // Time-travel query - read events as of yesterday
  * Instant snapshotTime = Instant.now().minus(Duration.ofDays(1));
  * List<Event> historicalEvents = plugin.readAtSnapshot(tenantId, streamName, snapshotTime);

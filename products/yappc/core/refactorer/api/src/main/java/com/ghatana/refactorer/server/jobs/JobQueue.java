@@ -4,7 +4,7 @@ import java.util.Optional;
 
 /**
  * Interface for a job queue that manages job execution.
- 
+
  * @doc.type interface
  * @doc.purpose Defines the contract for job queue
  * @doc.layer core

@@ -1,7 +1,6 @@
 package com.ghatana.products.finance.domains.referencedata.feed;
 
 import com.ghatana.products.finance.domains.referencedata.domain.Instrument;
-import com.ghatana.products.finance.domains.referencedata.domain.InstrumentStatus;
 import com.ghatana.products.finance.domains.referencedata.service.InstrumentService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;

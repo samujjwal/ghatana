@@ -1,16 +1,13 @@
 package com.ghatana.products.finance.domains.ems.service;
 
-import com.ghatana.products.finance.domains.ems.domain.ExecutionSide;
 import com.ghatana.products.finance.domains.ems.domain.ExecutionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -36,7 +33,7 @@ class ExecutionRecoveryTest {
     @DisplayName("Should recover from venue connection failure")
     void shouldRecoverFromVenueConnectionFailure() {
         String orderId = "order-1";
-        
+
         recoveryManager.recordFailure(orderId, "Connection lost to NASDAQ");
         RecoveryAction action = recoveryManager.determineRecoveryAction(orderId);
 
@@ -63,7 +60,7 @@ class ExecutionRecoveryTest {
     @DisplayName("Should handle duplicate fill detection")
     void shouldHandleDuplicateFillDetection() {
         String fillId = "fill-1";
-        
+
         recoveryManager.recordFill(fillId, 100L);
         boolean isDuplicate = recoveryManager.isDuplicateFill(fillId);
 
@@ -161,7 +158,7 @@ class ExecutionRecoveryTest {
     @DisplayName("Should log recovery actions for audit")
     void shouldLogRecoveryActionsForAudit() {
         String orderId = "order-1";
-        
+
         recoveryManager.recordFailure(orderId, "Connection timeout");
         recoveryManager.determineRecoveryAction(orderId);
 

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Tests for DefaultSnapshotTester functionality 
+/** Tests for DefaultSnapshotTester functionality
  * @doc.type class
  * @doc.purpose Handles default snapshot tester test operations
  * @doc.layer core

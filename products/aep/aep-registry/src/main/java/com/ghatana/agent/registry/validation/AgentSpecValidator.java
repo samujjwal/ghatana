@@ -34,16 +34,16 @@ public class AgentSpecValidator {
 
         // Validate required fields
         validateRequiredFields(agentSpec, errors);
-        
+
         // Validate input schema
         validateInputSchema(agentSpec, errors);
-        
+
         // Validate output schema
         validateOutputSchema(agentSpec, errors);
-        
+
         // Validate config schema
         validateConfigSchema(agentSpec, errors);
-        
+
 
         return errors;
     }
@@ -76,7 +76,7 @@ public class AgentSpecValidator {
 
         // Valid input types
         Set<String> validTypes = Set.of("topic", "http", "grpc");
-        
+
         // Check for duplicate input IDs
         Set<String> inputIds = new HashSet<>();
         int inputIndex = 1;
@@ -90,17 +90,17 @@ public class AgentSpecValidator {
                 inputIndex++;
                 continue;
             }
-            
+
             if (!inputIds.add(input.getId())) {
                 errors.add(String.format("Duplicate input ID: %s", input.getId()));
             }
-            
+
             if (input.getType() == null || input.getType().trim().isEmpty()) {
                 errors.add(String.format("Input '%s': Type is required", input.getId()));
             } else if (!validTypes.contains(input.getType().toLowerCase())) {
                 errors.add(String.format("Input '%s': Invalid type '%s'. Must be one of: [topic, http, grpc]", input.getId(), input.getType()));
             }
-            
+
             // Validate event types if specified
             if (input.getEventTypesCount() == 0) {
                 errors.add(String.format("Input '%s': At least one event type is required", input.getId()));
@@ -112,7 +112,7 @@ public class AgentSpecValidator {
                     }
                 }
             }
-            
+
             inputIndex++;
         }
     }
@@ -126,7 +126,7 @@ public class AgentSpecValidator {
         Set<String> validTypes = Set.of("topic", "http", "grpc");
         Set<String> outputNames = new HashSet<>();
         int outputIndex = 1;
-        
+
         for (OutputProto output : agentSpec.getOutputsList()) {
             if (output.getName() == null) {
                 errors.add(String.format("Output #%d: Name is required", outputIndex));
@@ -137,13 +137,13 @@ public class AgentSpecValidator {
                     errors.add(String.format("Duplicate output name: %s", output.getName()));
                 }
             }
-            
+
             if (output.getType() == null || output.getType().trim().isEmpty()) {
                 errors.add(String.format("Output '%s': Type is required", output.getName()));
             } else if (!validTypes.contains(output.getType().toLowerCase())) {
                 errors.add(String.format("Output '%s': Invalid type '%s'. Must be one of: [topic, http, grpc]", output.getName(), output.getType()));
             }
-            
+
             outputIndex++;
         }
     }
@@ -163,7 +163,7 @@ public class AgentSpecValidator {
     private void validateRuntimeType(String runtimeType, List<String> errors) {
         Set<String> supportedTypes = Set.of("java", "python", "nodejs");
         if (runtimeType == null || runtimeType.trim().isEmpty() || !supportedTypes.contains(runtimeType)) {
-            errors.add(String.format("Unsupported runtime type: %s. Supported types: [java, python, nodejs]", 
+            errors.add(String.format("Unsupported runtime type: %s. Supported types: [java, python, nodejs]",
                 runtimeType == null ? "null" : runtimeType));
         }
     }

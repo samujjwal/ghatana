@@ -10,12 +10,9 @@
  */
 package com.ghatana.media.service.grpc;
 
-import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.*;
 import com.ghatana.media.stt.api.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Adapter for exposing SttEngine via gRPC.

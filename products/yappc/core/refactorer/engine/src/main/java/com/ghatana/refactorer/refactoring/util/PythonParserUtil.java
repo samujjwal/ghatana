@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility class for parsing and analyzing Python code. 
+ * Utility class for parsing and analyzing Python code.
  * @doc.type class
  * @doc.purpose Handles python parser util operations
  * @doc.layer core

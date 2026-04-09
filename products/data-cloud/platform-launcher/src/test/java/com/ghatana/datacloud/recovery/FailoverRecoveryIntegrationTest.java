@@ -16,10 +16,10 @@ import static org.mockito.Mockito.*;
  *              data recovery, cluster membership changes, and RTO/RPO objectives.
  * @doc.layer product
  * @doc.pattern Service
- * 
+ *
  * Requirement: DC-F-020 - Disaster Recovery
  * Coverage: 32 comprehensive test cases across 4 test categories
- * 
+ *
  * Expected Outcomes:
  * - Automatic failover correctness
  * - Data recovery from WAL and backups

@@ -1,6 +1,5 @@
 package com.ghatana.yappc.ai.requirements.api.fixtures;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -8,18 +7,18 @@ import java.util.UUID;
 
 /**
  * Test data fixtures for API testing.
- * 
+ *
  * Provides factory methods for creating test entities and JSON payloads.
- 
+
  * @doc.type class
  * @doc.purpose Handles test data fixtures operations
  * @doc.layer core
  * @doc.pattern ValueObject
 */
 public class TestDataFixtures {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     // User fixtures
     public static ObjectNode createTestUser() {
         ObjectNode user = objectMapper.createObjectNode();
@@ -29,7 +28,7 @@ public class TestDataFixtures {
         user.put("role", "ADMIN");
         return user;
     }
-    
+
     public static ObjectNode createTestUser(String email, String name) {
         ObjectNode user = objectMapper.createObjectNode();
         user.put("id", UUID.randomUUID().toString());
@@ -38,7 +37,7 @@ public class TestDataFixtures {
         user.put("role", "USER");
         return user;
     }
-    
+
     // Workspace fixtures
     public static ObjectNode createTestWorkspace() {
         ObjectNode workspace = objectMapper.createObjectNode();
@@ -48,7 +47,7 @@ public class TestDataFixtures {
         workspace.put("createdBy", UUID.randomUUID().toString());
         return workspace;
     }
-    
+
     public static ObjectNode createTestWorkspace(String name) {
         ObjectNode workspace = objectMapper.createObjectNode();
         workspace.put("id", UUID.randomUUID().toString());
@@ -57,14 +56,14 @@ public class TestDataFixtures {
         workspace.put("createdBy", UUID.randomUUID().toString());
         return workspace;
     }
-    
+
     public static ObjectNode createCreateWorkspaceRequest(String name) {
         ObjectNode request = objectMapper.createObjectNode();
         request.put("name", name);
         request.put("description", "Workspace: " + name);
         return request;
     }
-    
+
     // Project fixtures
     public static ObjectNode createTestProject(String workspaceId) {
         ObjectNode project = objectMapper.createObjectNode();
@@ -75,7 +74,7 @@ public class TestDataFixtures {
         project.put("status", "ACTIVE");
         return project;
     }
-    
+
     public static ObjectNode createTestProject(String workspaceId, String name) {
         ObjectNode project = objectMapper.createObjectNode();
         project.put("id", UUID.randomUUID().toString());
@@ -85,14 +84,14 @@ public class TestDataFixtures {
         project.put("status", "ACTIVE");
         return project;
     }
-    
+
     public static ObjectNode createCreateProjectRequest(String name) {
         ObjectNode request = objectMapper.createObjectNode();
         request.put("name", name);
         request.put("description", "Project: " + name);
         return request;
     }
-    
+
     // Requirement fixtures
     public static ObjectNode createTestRequirement(String projectId) {
         ObjectNode requirement = objectMapper.createObjectNode();
@@ -105,7 +104,7 @@ public class TestDataFixtures {
         requirement.put("status", "DRAFT");
         return requirement;
     }
-    
+
     public static ObjectNode createTestRequirement(String projectId, String title) {
         ObjectNode requirement = objectMapper.createObjectNode();
         requirement.put("id", UUID.randomUUID().toString());
@@ -117,7 +116,7 @@ public class TestDataFixtures {
         requirement.put("status", "DRAFT");
         return requirement;
     }
-    
+
     public static ObjectNode createCreateRequirementRequest(String title) {
         ObjectNode request = objectMapper.createObjectNode();
         request.put("title", title);
@@ -126,7 +125,7 @@ public class TestDataFixtures {
         request.put("priority", "SHOULD_HAVE");
         return request;
     }
-    
+
     // AI Suggestion fixtures
     public static ObjectNode createTestAISuggestion(String requirementId) {
         ObjectNode suggestion = objectMapper.createObjectNode();
@@ -138,7 +137,7 @@ public class TestDataFixtures {
         suggestion.put("type", "ENHANCEMENT");
         return suggestion;
     }
-    
+
     // Export fixtures
     public static ObjectNode createExportRequest(String format, String... requirementIds) {
         ObjectNode request = objectMapper.createObjectNode();
@@ -149,7 +148,7 @@ public class TestDataFixtures {
         }
         return request;
     }
-    
+
     // Authentication fixtures
     public static ObjectNode createLoginRequest(String email, String password) {
         ObjectNode request = objectMapper.createObjectNode();
@@ -157,7 +156,7 @@ public class TestDataFixtures {
         request.put("password", password);
         return request;
     }
-    
+
     public static ObjectNode createTestAuthToken() {
         ObjectNode token = objectMapper.createObjectNode();
         token.put("accessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test");
@@ -165,7 +164,7 @@ public class TestDataFixtures {
         token.put("expiresIn", 3600);
         return token;
     }
-    
+
     /**
      * Convert object to JSON string
      */
@@ -176,7 +175,7 @@ public class TestDataFixtures {
             throw new RuntimeException("Failed to serialize to JSON", e);
         }
     }
-    
+
     /**
      * Parse JSON string to ObjectNode
      */
@@ -187,7 +186,7 @@ public class TestDataFixtures {
             throw new RuntimeException("Failed to parse JSON", e);
         }
     }
-    
+
     /**
      * Create a new ObjectNode for building JSON objects
      */

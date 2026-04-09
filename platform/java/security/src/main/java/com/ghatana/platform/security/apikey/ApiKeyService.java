@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Service for managing API keys.
@@ -27,7 +26,7 @@ public class ApiKeyService {
 
     private static final int API_KEY_LENGTH = 32;
     private static final String API_KEY_PREFIX = "ak_";
-    
+
     private final ApiKeyRepository apiKeyRepository;
     private final SecureRandom secureRandom;
 
@@ -52,7 +51,7 @@ public class ApiKeyService {
      */
     public ApiKey createApiKey(String name, String description, String owner, Instant expiresAt) {
         String key = generateApiKey();
-        
+
         ApiKey apiKey = ApiKey.builder()
                 .key(key)
                 .name(name)
@@ -60,7 +59,7 @@ public class ApiKeyService {
                 .owner(owner)
                 .expiresAt(expiresAt)
                 .build();
-        
+
         return apiKeyRepository.save(apiKey);
     }
 
@@ -120,23 +119,23 @@ public class ApiKeyService {
      */
     public ApiKey updateApiKey(String id, String name, String description, Instant expiresAt, Boolean enabled) {
         ApiKey apiKey = getApiKeyById(id);
-        
+
         if (name != null) {
             apiKey.setName(name);
         }
-        
+
         if (description != null) {
             apiKey.setDescription(description);
         }
-        
+
         if (expiresAt != null) {
             apiKey.setExpiresAt(expiresAt);
         }
-        
+
         if (enabled != null) {
             apiKey.setEnabled(enabled);
         }
-        
+
         return apiKeyRepository.save(apiKey);
     }
 
@@ -161,20 +160,20 @@ public class ApiKeyService {
      */
     public ApiKey validateApiKey(String key) {
         Optional<ApiKey> optionalApiKey = apiKeyRepository.findByKey(key);
-        
+
         if (optionalApiKey.isEmpty()) {
             throw new ServiceException("Invalid API key");
         }
-        
+
         ApiKey apiKey = optionalApiKey.get();
-        
+
         if (!apiKey.isValid()) {
             throw new ServiceException("API key is not valid");
         }
-        
+
         apiKey.updateLastUsed();
         apiKeyRepository.save(apiKey);
-        
+
         return apiKey;
     }
 

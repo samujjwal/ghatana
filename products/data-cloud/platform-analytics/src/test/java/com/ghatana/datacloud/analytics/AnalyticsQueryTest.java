@@ -6,8 +6,6 @@
  */
 package com.ghatana.datacloud.analytics;
 
-import com.ghatana.datacloud.analytics.report.ReportFormat;
-import com.ghatana.datacloud.analytics.report.ReportType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +31,7 @@ class AnalyticsQueryTest {
             .queryText("SELECT * FROM products")
             .status("SUBMITTED")
             .build();
-        
+
         assertThat(query).isNotNull();
         assertThat(query.getQueryText()).contains("SELECT");
         assertThat(query.getStatus()).isEqualTo("SUBMITTED");
@@ -43,7 +41,7 @@ class AnalyticsQueryTest {
     @DisplayName("Should parse SQL queries")
     void shouldParseSqlQueries() {
         String queryText = "SELECT name, price FROM products WHERE price > 100";
-        
+
         assertThat(queryText).contains("SELECT");
         assertThat(queryText).contains("FROM");
         assertThat(queryText).contains("WHERE");
@@ -58,7 +56,7 @@ class AnalyticsQueryTest {
             .optimized(true)
             .estimatedCost(10.0)
             .build();
-        
+
         assertThat(plan).isNotNull();
         assertThat(plan.isOptimized()).isTrue();
         assertThat(plan.getEstimatedCost()).isPositive();
@@ -74,7 +72,7 @@ class AnalyticsQueryTest {
             .status("FAILED")
             .error("Syntax error")
             .build();
-        
+
         assertThat(query.getStatus()).isEqualTo("FAILED");
         assertThat(query.getError()).isNotNull();
     }
@@ -88,7 +86,7 @@ class AnalyticsQueryTest {
             .rowCount(1)
             .executionTimeMs(50L)
             .build();
-        
+
         assertThat(result).isNotNull();
         assertThat(result.getRowCount()).isEqualTo(1);
     }
@@ -98,7 +96,7 @@ class AnalyticsQueryTest {
     void shouldHandleQueryTimeouts() {
         long timeoutMs = 5000L;
         long executionTimeMs = 6000L;
-        
+
         assertThat(executionTimeMs).isGreaterThan(timeoutMs);
     }
 }

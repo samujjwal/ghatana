@@ -25,30 +25,30 @@ import java.util.function.Consumer;
  * @doc.pattern Service
  */
 public class ObserveServiceImpl implements ObserveService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(ObserveServiceImpl.class);
-    
+
     private final MetricsCollector metrics;
     private final AuditLogger auditLogger;
-    
+
     public ObserveServiceImpl(
             MetricsCollector metrics,
             AuditLogger auditLogger) {
         this.metrics = metrics;
         this.auditLogger = auditLogger;
     }
-    
+
     @Override
     public Promise<Observation> collect(RunResult run) {
         long startTime = System.currentTimeMillis();
-        
+
         return collectObservationData(run)
                 .then(observation -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = Map.of("run_status", run.status().name());
                     metrics.recordTimer("yappc.observe.collect", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.observe.collect", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("observe.collect", run, observation))
                             .map(v -> observation);
                 })
@@ -61,7 +61,7 @@ public class ObserveServiceImpl implements ObserveService {
                         Map.of("run_status", run.status().name()));
                 });
     }
-    
+
     @Override
     public Promise<Void> streamObservations(RunResult run, Consumer<Observation> consumer) {
         return collect(run)
@@ -82,12 +82,12 @@ public class ObserveServiceImpl implements ObserveService {
                         Map.of("run_status", run.status().name()));
                 });
     }
-    
+
     private Promise<Observation> collectObservationData(RunResult run) {
         List<Metric> collectedMetrics = collectMetrics(run);
         List<LogEntry> collectedLogs = collectLogs(run);
         List<TraceSpan> collectedTraces = collectTraces(run);
-        
+
         Observation observation = Observation.builder()
                 .id(UUID.randomUUID().toString())
                 .runRef(run.runSpecRef())
@@ -96,10 +96,10 @@ public class ObserveServiceImpl implements ObserveService {
                 .traces(collectedTraces)
                 .collectedAt(Instant.now())
                 .build();
-        
+
         return Promise.of(observation);
     }
-    
+
     private List<Metric> collectMetrics(RunResult run) {
         String projectRef = run.runSpecRef(); // best available project context
         long durationMs = run.completedAt() != null
@@ -118,7 +118,7 @@ public class ObserveServiceImpl implements ObserveService {
         );
         return collectedMetrics;
     }
-    
+
     private List<LogEntry> collectLogs(RunResult run) {
         List<LogEntry> logs = List.of(
             LogEntry.builder()
@@ -134,15 +134,15 @@ public class ObserveServiceImpl implements ObserveService {
                     .context(Map.of("run_id", run.id(), "status", run.status().name()))
                     .build()
         );
-        
+
         return logs;
     }
-    
+
     private List<TraceSpan> collectTraces(RunResult run) {
         long startTimeMs = run.startedAt().toEpochMilli();
-        long endTimeMs = run.completedAt() != null ? 
+        long endTimeMs = run.completedAt() != null ?
             run.completedAt().toEpochMilli() : Instant.now().toEpochMilli();
-        
+
         List<TraceSpan> traces = List.of(
             TraceSpan.builder()
                     .traceId(run.id())
@@ -154,20 +154,20 @@ public class ObserveServiceImpl implements ObserveService {
                     .tags(Map.of("run_id", run.id(), "status", run.status().name()))
                     .build()
         );
-        
+
         return traces;
     }
-    
+
     private double calculateSuccessRate(RunResult run) {
         if (run.taskResults().isEmpty()) {
             return 0.0;
         }
-        
+
         long successCount = run.taskResults().stream()
                 .filter(r -> r.status().name().equals("SUCCESS"))
                 .count();
-        
+
         return (double) successCount / run.taskResults().size() * 100.0;
     }
-    
+
 }

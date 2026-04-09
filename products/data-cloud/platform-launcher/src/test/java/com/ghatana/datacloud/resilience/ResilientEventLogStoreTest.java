@@ -9,7 +9,6 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -458,9 +457,9 @@ class ResilientEventLogStoreTest extends EventloopTestBase {
         @DisplayName("[DC-009-20]: large_batch_operations_handled")
         void largeBatchOperationsHandled() {
             // Given: 10,000 event entries
-            List<EventLogStore.EventEntry> largeEntries = 
+            List<EventLogStore.EventEntry> largeEntries =
                 List.of(new EventLogStore.EventEntry[10000]);
-            List<Offset> largeOffsets = 
+            List<Offset> largeOffsets =
                 List.of(new Offset[10000]);
 
             when(delegate.appendBatch(tenantContext, largeEntries))

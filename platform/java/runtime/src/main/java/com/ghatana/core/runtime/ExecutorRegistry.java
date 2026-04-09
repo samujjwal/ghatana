@@ -18,21 +18,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Central registry for all executor pools in the Ghatana platform.
- * 
+ *
  * <p>Provides shared executor instances for different workload types:
  * <ul>
  *   <li><b>Blocking Executor:</b> For I/O-bound operations (database, file, network)</li>
  *   <li><b>CPU Executor:</b> For CPU-bound computations</li>
  *   <li><b>Scheduled Executor:</b> For delayed and periodic tasks</li>
  * </ul>
- * 
+ *
  * <p><b>Usage:</b>
  * <pre>{@code
  * // Inject via constructor
  * public MyService(ExecutorRegistry executorRegistry) {
  *     this.executor = executorRegistry.blocking();
  * }
- * 
+ *
  * // Use with Promise.ofBlocking
  * public Promise<Result> fetchData() {
  *     return Promise.ofBlocking(executorRegistry.blocking(), () -> {
@@ -87,13 +87,13 @@ public class ExecutorRegistry {
             new NamedThreadFactory("ghatana-scheduled")
         );
 
-        log.info("ExecutorRegistry initialized: blocking={}, cpu={}, scheduled={}", 
+        log.info("ExecutorRegistry initialized: blocking={}, cpu={}, scheduled={}",
             blockingThreads, cpuThreads, scheduledThreads);
     }
 
     /**
      * Returns the executor for blocking I/O operations.
-     * 
+     *
      * <p>Use this for:
      * <ul>
      *   <li>Database queries</li>
@@ -111,7 +111,7 @@ public class ExecutorRegistry {
 
     /**
      * Returns the executor for CPU-bound operations.
-     * 
+     *
      * <p>Use this for:
      * <ul>
      *   <li>Computation-heavy tasks</li>
@@ -129,7 +129,7 @@ public class ExecutorRegistry {
 
     /**
      * Returns the scheduled executor for delayed and periodic tasks.
-     * 
+     *
      * <p>Use this for:
      * <ul>
      *   <li>Timeouts</li>
@@ -147,12 +147,12 @@ public class ExecutorRegistry {
 
     /**
      * Creates a Promise that completes after the specified delay.
-     * 
+     *
      * <p>Use instead of Thread.sleep() in async code:
      * <pre>{@code
      * // ❌ WRONG - blocks the event loop
      * Thread.sleep(1000);
-     * 
+     *
      * // ✅ CORRECT - non-blocking delay
      * executorRegistry.delay(Duration.ofSeconds(1))
      *     .then(v -> continueProcessing());
@@ -174,7 +174,7 @@ public class ExecutorRegistry {
 
     /**
      * Wraps a blocking operation in a Promise using the blocking executor.
-     * 
+     *
      * <p>Convenience method equivalent to:
      * <pre>{@code
      * Promise.ofBlocking(executorRegistry.blocking(), supplier);
@@ -203,7 +203,7 @@ public class ExecutorRegistry {
 
     /**
      * Gracefully shuts down all executors.
-     * 
+     *
      * @param timeout Maximum time to wait for tasks to complete
      * @return Promise that completes when shutdown is finished
      */

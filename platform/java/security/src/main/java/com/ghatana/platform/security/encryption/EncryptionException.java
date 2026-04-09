@@ -2,7 +2,7 @@ package com.ghatana.platform.security.encryption;
 
 /**
  * Exception thrown when an error occurs during encryption or decryption operations.
- 
+
  *
  * @doc.type class
  * @doc.purpose Encryption exception
@@ -10,7 +10,7 @@ package com.ghatana.platform.security.encryption;
  * @doc.pattern Exception
 */
 public class EncryptionException extends RuntimeException {
-    
+
     /**
      * Constructs a new encryption exception with the specified detail message.
      *
@@ -19,7 +19,7 @@ public class EncryptionException extends RuntimeException {
     public EncryptionException(String message) {
         super(message);
     }
-    
+
     /**
      * Constructs a new encryption exception with the specified detail message and cause.
      *
@@ -29,7 +29,7 @@ public class EncryptionException extends RuntimeException {
     public EncryptionException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     /**
      * Constructs a new encryption exception with the specified cause.
      *

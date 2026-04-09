@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,7 +44,7 @@ class UtilityEdgeCaseTest {
                 sb.append("a");
             }
             String veryLong = sb.toString();
-            
+
             assertThat(StringUtils.isBlank(veryLong)).isFalse();
             assertThat(StringUtils.truncate(veryLong, 100)).hasSize(103); // 100 + "..."
         }
@@ -322,7 +321,7 @@ class UtilityEdgeCaseTest {
                 sb.append("test-");
             }
             String largeString = sb.toString();
-            
+
             long start = System.currentTimeMillis();
             StringUtils.isBlank(largeString);
             long duration = System.currentTimeMillis() - start;

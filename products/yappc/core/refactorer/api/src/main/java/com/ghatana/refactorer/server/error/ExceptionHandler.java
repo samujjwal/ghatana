@@ -4,7 +4,6 @@ import com.ghatana.platform.core.exception.ErrorCode;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.refactorer.server.dto.RestModels;
 import io.activej.http.HttpResponse;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

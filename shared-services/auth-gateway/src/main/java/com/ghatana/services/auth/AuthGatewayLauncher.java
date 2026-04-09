@@ -9,8 +9,6 @@ import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.HealthCheckServlet;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
-import com.ghatana.platform.security.model.User;
-import com.ghatana.platform.observability.CorrelationContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.TracingConfiguration;

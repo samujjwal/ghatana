@@ -69,7 +69,7 @@ public record CompiledPermissionsConfig(
             String role,
             String condition
     ) {
-        
+
 
     public CompiledPermissionRule   {
         Objects.requireNonNull(role, "Role cannot be null");

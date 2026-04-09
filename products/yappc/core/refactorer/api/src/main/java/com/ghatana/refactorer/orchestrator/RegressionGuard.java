@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Tracks diagnostic counts to detect regressions after applying fixes. This is a simplified
  * implementation that logs regressions but does not perform rollbacks.
- 
+
  * @doc.type class
  * @doc.purpose Handles regression guard operations
  * @doc.layer core

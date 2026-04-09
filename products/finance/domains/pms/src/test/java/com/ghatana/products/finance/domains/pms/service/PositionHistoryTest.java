@@ -157,8 +157,8 @@ class PositionHistoryTest {
 
         List<PositionSnapshot> getHistoryBetween(String symbol, Instant start, Instant end) {
             return snapshots.stream()
-                .filter(s -> s.symbol().equals(symbol) 
-                    && !s.timestamp().isBefore(start) 
+                .filter(s -> s.symbol().equals(symbol)
+                    && !s.timestamp().isBefore(start)
                     && !s.timestamp().isAfter(end))
                 .toList();
         }

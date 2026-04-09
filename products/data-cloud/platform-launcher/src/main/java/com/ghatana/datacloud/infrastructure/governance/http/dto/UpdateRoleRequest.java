@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.infrastructure.governance.http.dto;
 
-import java.util.Objects;
 
 /**
  * HTTP request DTO for updating an existing role.

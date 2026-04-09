@@ -31,7 +31,7 @@ import java.util.Set;
  * Provides centralized policy enforcement for pattern learning endpoints with comprehensive
  * governance controls including RBAC, audit logging, and policy validation.
  * Migrated to use PolicyService for modern policy-based access control.
- 
+
  *
  * @doc.type class
  * @doc.purpose Iam policy enforcer
@@ -40,14 +40,14 @@ import java.util.Set;
 */
 public class IamPolicyEnforcer {
     private static final Logger logger = LoggerFactory.getLogger(IamPolicyEnforcer.class);
-    
+
     // Pattern learning permission scopes
     public static final String PATTERNS_RECOMMEND_PERMISSION = "patterns:recommend:*";
     public static final String PATTERNS_EVALUATE_PERMISSION = "patterns:evaluate:*";
-    
+
     private final PolicyService policyService;
     private final AuditPolicyProto auditPolicy;
-    
+
     /**
      * Creates a new IAM Policy Enforcer with the specified PolicyService and audit policy.
      *
@@ -59,7 +59,7 @@ public class IamPolicyEnforcer {
         this.auditPolicy = auditPolicy;
         logger.info("IamPolicyEnforcer initialized with audit policy enabled: {}", auditPolicy.getEnabled());
     }
-    
+
     /**
      * Enforces policy for pattern recommendation requests.
      * Validates that the user has the required patterns.recommend permission.
@@ -72,7 +72,7 @@ public class IamPolicyEnforcer {
     public PolicyEnforcementResult enforcePatternRecommendPolicy(User user, String tenantId, String resourceId) {
         return enforcePolicy(user, tenantId, resourceId, PATTERNS_RECOMMEND_PERMISSION, "PATTERN_RECOMMEND");
     }
-    
+
     /**
      * Enforces policy for pattern evaluation requests.
      * Validates that the user has the required patterns.evaluate permission.
@@ -85,94 +85,94 @@ public class IamPolicyEnforcer {
     public PolicyEnforcementResult enforcePatternEvaluatePolicy(User user, String tenantId, String resourceId) {
         return enforcePolicy(user, tenantId, resourceId, PATTERNS_EVALUATE_PERMISSION, "PATTERN_EVALUATE");
     }
-    
+
     /**
      * Core policy enforcement logic that validates permissions and generates audit events.
      */
-    private PolicyEnforcementResult enforcePolicy(User user, String tenantId, String resourceId, 
+    private PolicyEnforcementResult enforcePolicy(User user, String tenantId, String resourceId,
                                                   String requiredPermission, String eventType) {
         try {
             // Validate user authentication
             if (user == null || !user.isAuthenticated()) {
-                return createDeniedResult("User not authenticated", user, tenantId, resourceId, 
+                return createDeniedResult("User not authenticated", user, tenantId, resourceId,
                                         requiredPermission, eventType);
             }
-            
+
             // Check RBAC permissions using PolicyService
             Set<String> userRoles = user.getRoles();
-            
+
             // Create a Principal for PolicyService (tenantId is passed as method parameter)
             Principal principal = new Principal(tenantId, userRoles.stream().toList());
-            
+
             // Use resourceId as the resource for policy check
             boolean hasPermission = policyService.isAuthorized(principal, requiredPermission, resourceId);
-            
+
             if (!hasPermission) {
-                return createDeniedResult("Insufficient permissions", user, tenantId, resourceId, 
+                return createDeniedResult("Insufficient permissions", user, tenantId, resourceId,
                                         requiredPermission, eventType);
             }
-            
+
             // Policy enforcement successful
-            AuditEvent auditEvent = createAuditEvent(eventType, user.getUserId(), resourceId, 
+            AuditEvent auditEvent = createAuditEvent(eventType, user.getUserId(), resourceId,
                                                    "GRANTED", Map.of(
                 "tenantId", tenantId,
                 "permission", requiredPermission,
                 "userRoles", userRoles
             ));
-            
+
             return PolicyEnforcementResult.builder()
                     .granted(true)
                     .reason("Access granted - user has required permission")
                     .auditEvent(auditEvent)
                     .build();
-                    
+
         } catch (Exception e) {
-            logger.error("Policy enforcement failed for user {} on resource {}", 
+            logger.error("Policy enforcement failed for user {} on resource {}",
                         user != null ? user.getUserId() : "unknown", resourceId, e);
-            return createDeniedResult("Policy enforcement error", user, tenantId, resourceId, 
+            return createDeniedResult("Policy enforcement error", user, tenantId, resourceId,
                                     requiredPermission, eventType);
         }
     }
-    
+
     /**
      * Creates a denied policy enforcement result with audit logging.
      */
-    private PolicyEnforcementResult createDeniedResult(String reason, User user, String tenantId, 
-                                                      String resourceId, String requiredPermission, 
+    private PolicyEnforcementResult createDeniedResult(String reason, User user, String tenantId,
+                                                      String resourceId, String requiredPermission,
                                                       String eventType) {
         String userId = user != null ? user.getUserId() : "anonymous";
         Set<String> userRoles = user != null ? user.getRoles() : Set.of();
-        
+
         AuditEvent auditEvent = createAuditEvent(eventType, userId, resourceId, "DENIED", Map.of(
                 "tenantId", tenantId,
                 "permission", requiredPermission,
                 "userRoles", userRoles,
                 "reason", reason
         ));
-        
+
         return PolicyEnforcementResult.builder()
                 .granted(false)
                 .reason(reason)
                 .auditEvent(auditEvent)
                 .build();
     }
-    
+
     /**
      * Creates an audit event for policy enforcement actions.
      */
-    private AuditEvent createAuditEvent(String eventType, String principal, String resource, 
+    private AuditEvent createAuditEvent(String eventType, String principal, String resource,
                                        String status, Map<String, Object> details) {
         if (!auditPolicy.getEnabled()) {
             return null; // Audit logging disabled
         }
-        
+
         AuditEvent.Builder builder = AuditEvent.builder()
                 .eventType(eventType)
                 .timestamp(Instant.now())
                 .principal(principal)
                 .resourceId(resource)
                 .success("SUCCESS".equalsIgnoreCase(status));
-        
+
         if (details != null) {
             builder.details(details);
         }
@@ -180,13 +180,13 @@ public class IamPolicyEnforcer {
         if (status != null) {
             builder.detail("status", status);
         }
-        
+
         return builder.build();
     }
-    
+
     /**
      * Checks if a user has any of the specified permissions.
-     * 
+     *
      * @param user the user to check permissions for
      * @param permissions the set of permissions to check (user needs at least one)
      * @return true if user has any of the specified permissions
@@ -195,7 +195,7 @@ public class IamPolicyEnforcer {
         if (user == null || !user.isAuthenticated() || permissions == null || permissions.isEmpty()) {
             return false;
         }
-        
+
         Set<String> userRoles = user.getRoles();
         // Create a Principal and check if any permission is granted using PolicyService
         // Using "default" tenant ID and "*" as wildcard resource
@@ -203,7 +203,7 @@ public class IamPolicyEnforcer {
         return permissions.stream()
                 .anyMatch(permission -> policyService.isAuthorized(principal, permission, "*"));
     }
-    
+
     /**
      * Validates policy compatibility for schema evolution scenarios.
      * Ensures that policy changes don't violate existing compatibility requirements.
@@ -212,31 +212,31 @@ public class IamPolicyEnforcer {
      * @param proposedPolicy the proposed compatibility policy
      * @return true if the policy change is compatible
      */
-    public boolean validatePolicyCompatibility(CompatibilityPolicyProto currentPolicy, 
+    public boolean validatePolicyCompatibility(CompatibilityPolicyProto currentPolicy,
                                              CompatibilityPolicyProto proposedPolicy) {
         // NONE policy allows any change
         if (currentPolicy == CompatibilityPolicyProto.NONE) {
             return true;
         }
-        
+
         // FULL compatibility requires both policies to be the same or more restrictive
         if (currentPolicy == CompatibilityPolicyProto.FULL) {
-            return proposedPolicy == CompatibilityPolicyProto.FULL || 
+            return proposedPolicy == CompatibilityPolicyProto.FULL ||
                    proposedPolicy == CompatibilityPolicyProto.BACKWARD ||
                    proposedPolicy == CompatibilityPolicyProto.FORWARD;
         }
-        
+
         // BACKWARD/FORWARD compatibility allows same policy or more restrictive
         if (currentPolicy == CompatibilityPolicyProto.BACKWARD) {
             return proposedPolicy == CompatibilityPolicyProto.BACKWARD ||
                    proposedPolicy == CompatibilityPolicyProto.FULL;
         }
-        
+
         if (currentPolicy == CompatibilityPolicyProto.FORWARD) {
             return proposedPolicy == CompatibilityPolicyProto.FORWARD ||
                    proposedPolicy == CompatibilityPolicyProto.FULL;
         }
-        
+
         return false;
     }
 }

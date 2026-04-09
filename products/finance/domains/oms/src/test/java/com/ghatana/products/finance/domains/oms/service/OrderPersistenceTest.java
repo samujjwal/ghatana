@@ -151,7 +151,7 @@ class OrderPersistenceTest {
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
             "idempotency-key-6", testTime, testTimeBs);
-        
+
         Order approved = Order.newOrder("ORD-007", "client-1", "account-1", "INST-001",
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
@@ -177,7 +177,7 @@ class OrderPersistenceTest {
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
             "idempotency-key-8", testTime, testTimeBs);
-        
+
         Order client2Order = Order.newOrder("ORD-009", "client-2", "account-2", "INST-001",
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
@@ -242,7 +242,7 @@ class OrderPersistenceTest {
             OrderSide.BUY, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(150.00), null,
             "idempotency-key-12", testTime, testTimeBs);
-        
+
         Order order2 = Order.newOrder("ORD-013", "client-1", "account-1", "INST-001",
             OrderSide.SELL, OrderType.LIMIT, TimeInForce.DAY,
             BigDecimal.valueOf(100), BigDecimal.valueOf(151.00), null,

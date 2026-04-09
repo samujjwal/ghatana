@@ -12,10 +12,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Manages a service process.
- * 
+ *
  * Wraps a Java process for an AEP service with proper
  * lifecycle management and monitoring.
- * 
+ *
  * @doc.type class
  * @doc.purpose Service process management
  * @doc.layer orchestration
@@ -47,24 +47,24 @@ public class ServiceProcess {
             // Build Java process command
             List<String> command = new ArrayList<>();
             command.add("java");
-            
+
             // Add JVM arguments
             for (String jvmArg : configuration.getJvmArgs()) {
                 command.add(jvmArg);
             }
-            
+
             // Add classpath (assuming Gradle build)
             command.add("-cp");
             command.add(getClasspath());
-            
+
             // Add main class
             command.add(configuration.getMainClass());
-            
+
             // Add port argument
             command.add("--http.listenAddresses=0.0.0.0:" + configuration.getPort());
 
             ProcessBuilder processBuilder = new ProcessBuilder(command);
-            
+
             // Set environment variables
             for (String envVar : configuration.getEnvironmentVars()) {
                 String[] parts = envVar.split("=", 2);
@@ -72,15 +72,15 @@ public class ServiceProcess {
                     processBuilder.environment().put(parts[0], parts[1]);
                 }
             }
-            
+
             // Redirect output to logs
             processBuilder.redirectErrorStream(true);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
             // Start the process
             process = processBuilder.start();
-            
-            LOG.info("Service process started: {} (PID: {})", 
+
+            LOG.info("Service process started: {} (PID: {})",
                     configuration.getName(), getPid());
         }
     }
@@ -94,19 +94,19 @@ public class ServiceProcess {
                 return;
             }
 
-            LOG.info("Stopping service process: {} (PID: {})", 
+            LOG.info("Stopping service process: {} (PID: {})",
                     configuration.getName(), getPid());
 
             // Try graceful shutdown first
             if (process.isAlive()) {
                 process.destroy();
-                
+
                 // Wait for graceful shutdown
                 if (!process.waitFor(10, TimeUnit.SECONDS)) {
-                    LOG.warn("Graceful shutdown timed out, force killing process: {}", 
+                    LOG.warn("Graceful shutdown timed out, force killing process: {}",
                             configuration.getName());
                     process.destroyForcibly();
-                    
+
                     // Wait for force kill
                     if (!process.waitFor(5, TimeUnit.SECONDS)) {
                         LOG.error("Failed to kill process: {}", configuration.getName());

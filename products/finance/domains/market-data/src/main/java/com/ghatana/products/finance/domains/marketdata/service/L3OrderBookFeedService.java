@@ -5,14 +5,12 @@ import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
-import com.ghatana.products.finance.domains.marketdata.domain.MarketTick;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 

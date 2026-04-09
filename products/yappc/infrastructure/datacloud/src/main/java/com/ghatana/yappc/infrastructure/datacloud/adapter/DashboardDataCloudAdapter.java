@@ -15,21 +15,21 @@ import java.util.UUID;
 
 /**
  * Data-Cloud adapter for Dashboard repository.
- * 
+ *
  * <p>Implements YAPPC DashboardRepository using data-cloud as backend.
  * All methods return ActiveJ Promises for non-blocking async execution.
- * 
+ *
  * @doc.type class
  * @doc.purpose Dashboard repository data-cloud adapter
  * @doc.layer infrastructure
  * @doc.pattern Adapter
  */
 public class DashboardDataCloudAdapter implements DashboardRepository {
-    
+
     private static final String COLLECTION = "dashboard";
-    
+
     private final YappcDataCloudRepository<Dashboard> repository;
-    
+
     public DashboardDataCloudAdapter(
         @NotNull DataCloudClient client,
         @NotNull YappcEntityMapper mapper
@@ -41,7 +41,7 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
             Dashboard.class
         );
     }
-    
+
     @Override
     public Promise<List<Dashboard>> findByWorkspaceIdPaged(
             @NotNull UUID workspaceId, int offset, int limit) {
@@ -53,12 +53,12 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
                 .limit(limit)
                 .toList());
     }
-    
+
     @Override
     public Promise<Long> countByWorkspaceId(@NotNull UUID workspaceId) {
         return findByWorkspaceId(workspaceId).map(list -> (long) list.size());
     }
-    
+
     @Override
     public Promise<Optional<Dashboard>> findDefaultByWorkspaceId(@NotNull UUID workspaceId) {
         Map<String, Object> filter = new HashMap<>();
@@ -67,7 +67,7 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
         return repository.findByFilter(filter, null, 1, 0)
             .map(results -> results.isEmpty() ? Optional.empty() : Optional.of(results.get(0)));
     }
-    
+
     @Override
     public Promise<Optional<Dashboard>> findByWorkspaceIdAndName(
             @NotNull UUID workspaceId, @NotNull String name) {
@@ -77,21 +77,21 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
         return repository.findByFilter(filter, null, 1, 0)
             .map(results -> results.isEmpty() ? Optional.empty() : Optional.of(results.get(0)));
     }
-    
+
     @Override
     public Promise<Optional<Dashboard>> findByIdAndWorkspaceId(
             @NotNull UUID id, @NotNull UUID workspaceId) {
         return repository.findById(id)
             .map(opt -> opt.filter(d -> workspaceId.equals(d.getWorkspaceId())));
     }
-    
+
     @Override
     public Promise<List<Dashboard>> findByWorkspaceId(@NotNull UUID workspaceId) {
         Map<String, Object> filter = new HashMap<>();
         filter.put("workspaceId", workspaceId.toString());
         return repository.findByFilter(filter, null, 1000, 0);
     }
-    
+
     @Override
     public Promise<Void> deleteByIdAndWorkspaceId(@NotNull UUID id, @NotNull UUID workspaceId) {
         return findByIdAndWorkspaceId(id, workspaceId)
@@ -99,7 +99,7 @@ public class DashboardDataCloudAdapter implements DashboardRepository {
                 ? repository.deleteById(id)
                 : Promise.complete());
     }
-    
+
     @Override
     public Promise<Boolean> existsByIdAndWorkspaceId(@NotNull UUID id, @NotNull UUID workspaceId) {
         return findByIdAndWorkspaceId(id, workspaceId).map(Optional::isPresent);

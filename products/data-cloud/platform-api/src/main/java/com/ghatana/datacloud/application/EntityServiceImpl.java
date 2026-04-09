@@ -37,7 +37,7 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public Promise<Entity> createEntity(String tenantId, String collectionName, 
+    public Promise<Entity> createEntity(String tenantId, String collectionName,
                                         Map<String, Object> data, String userId) {
         validateInputs(tenantId, collectionName, data, userId);
 
@@ -68,7 +68,7 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public Promise<Entity> updateEntity(String tenantId, String collectionName, 
+    public Promise<Entity> updateEntity(String tenantId, String collectionName,
                                         UUID entityId, Map<String, Object> data, String userId) {
         validateInputs(tenantId, collectionName, userId);
         Objects.requireNonNull(entityId, "Entity ID required");
@@ -132,7 +132,7 @@ public class EntityServiceImpl implements EntityService {
     }
 
     @Override
-    public Promise<Void> deleteEntity(String tenantId, String collectionName, 
+    public Promise<Void> deleteEntity(String tenantId, String collectionName,
                                        UUID entityId, String userId) {
         validateInputs(tenantId, collectionName, userId);
         Objects.requireNonNull(entityId, "Entity ID required");
@@ -149,7 +149,7 @@ public class EntityServiceImpl implements EntityService {
             });
     }
 
-    private void validateInputs(String tenantId, String collectionName, 
+    private void validateInputs(String tenantId, String collectionName,
                                  Map<String, Object> data, String userId) {
         validateInputs(tenantId, collectionName, userId);
         Objects.requireNonNull(data, "Data required");

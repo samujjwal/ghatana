@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -200,4 +199,3 @@ class AepApiVersionRegistryTest {
                 .isThrownBy(() -> AepApiVersionRegistry.ApiVersion.current(null));
     }
 }
-

@@ -101,4 +101,3 @@ public class SearchQueryBuilder implements DataCloudClient.SearchQuery.Builder {
         }
     }
 }
-

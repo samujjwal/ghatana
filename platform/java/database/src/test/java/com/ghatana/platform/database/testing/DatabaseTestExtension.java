@@ -16,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 // Logging
 import org.slf4j.Logger;
@@ -27,13 +26,9 @@ import javax.sql.DataSource;
 
 // Java
 import java.lang.reflect.Field;
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.Optional;
 
 // TestContainers
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.DockerClientFactory;
 
 /**
@@ -76,9 +71,9 @@ import org.testcontainers.DockerClientFactory;
  * // 1. Basic usage with parameter injection
  * @ExtendWith(DatabaseTestExtension.class)
  * class UserRepositoryTest {
- *     
+ *
  *     @Test
- *     void shouldSaveUser(TransactionManager txManager, 
+ *     void shouldSaveUser(TransactionManager txManager,
  *                         EntityManagerProvider emProvider) {
  *         // Transaction automatically rolls back after test
  *         txManager.inTransaction(em -> {
@@ -86,11 +81,11 @@ import org.testcontainers.DockerClientFactory;
  *             em.persist(user);
  *             return user;
  *         });
- *         
+ *
  *         // Verify in new transaction
- *         User saved = txManager.inReadOnlyTransaction(em -> 
+ *         User saved = txManager.inReadOnlyTransaction(em ->
  *             em.find(User.class, user.getId()));
- *         
+ *
  *         assertThat(saved.getEmail()).isEqualTo("john@example.com");
  *     }
  * }
@@ -98,13 +93,13 @@ import org.testcontainers.DockerClientFactory;
  * // 2. Field injection with @Inject
  * @ExtendWith(DatabaseTestExtension.class)
  * class OrderRepositoryTest {
- *     
+ *
  *     @Inject
  *     private TransactionManager txManager;
- *     
+ *
  *     @Inject
  *     private JdbcTemplate jdbcTemplate;
- *     
+ *
  *     @Test
  *     void shouldCreateOrder() {
  *         Order order = txManager.inTransaction(em -> {
@@ -112,14 +107,14 @@ import org.testcontainers.DockerClientFactory;
  *             em.persist(o);
  *             return o;
  *         });
- *         
+ *
  *         // Verify with JDBC
  *         Integer count = jdbcTemplate.queryForObject(
  *             "SELECT COUNT(*) FROM orders WHERE id = ?",
  *             (rs, rowNum) -> rs.getInt(1),
  *             order.getId()
  *         );
- *         
+ *
  *         assertThat(count).isEqualTo(1);
  *     }
  * }
@@ -132,7 +127,7 @@ import org.testcontainers.DockerClientFactory;
  *     formatSql = true
  * )
  * class CustomConfigTest {
- *     
+ *
  *     @Test
  *     void testWithCustomConfig(JpaConfig config) {
  *         assertThat(config.isShowSql()).isTrue();
@@ -143,19 +138,19 @@ import org.testcontainers.DockerClientFactory;
  * // 4. Direct container access for setup
  * @ExtendWith(DatabaseTestExtension.class)
  * class MigrationTest {
- *     
+ *
  *     @Test
  *     void shouldRunMigrations(DatabaseTestContainer container, DataSource ds) {
  *         // Container running with JDBC URL
  *         String jdbcUrl = container.getJdbcUrl();
  *         logger.info("Database running at: {}", jdbcUrl);
- *         
+ *
  *         // Run Flyway migrations
  *         FlywayMigration migration = FlywayMigration.builder()
  *             .dataSource(ds)
  *             .locations("classpath:db/migration")
  *             .build();
- *         
+ *
  *         MigrationResult result = migration.migrate();
  *         assertThat(result.migrationsExecuted).isGreaterThan(0);
  *     }
@@ -165,10 +160,10 @@ import org.testcontainers.DockerClientFactory;
  * @ExtendWith(DatabaseTestExtension.class)
  * @TestInstance(TestInstance.Lifecycle.PER_CLASS)  // Share container
  * class PerformanceTest {
- *     
+ *
  *     @Inject
  *     private TransactionManager txManager;
- *     
+ *
  *     @BeforeAll
  *     void loadTestData() {
  *         // Load 10,000 test records once
@@ -179,17 +174,17 @@ import org.testcontainers.DockerClientFactory;
  *             return null;
  *         });
  *     }
- *     
+ *
  *     @Test
  *     void benchmarkQuery() {
  *         // All tests share same container and data
  *         long start = System.nanoTime();
- *         List<User> users = txManager.inReadOnlyTransaction(em -> 
+ *         List<User> users = txManager.inReadOnlyTransaction(em ->
  *             em.createQuery("SELECT u FROM User u", User.class)
  *                 .setMaxResults(100)
  *                 .getResultList());
  *         long durationMs = (System.nanoTime() - start) / 1_000_000;
- *         
+ *
  *         assertThat(durationMs).isLessThan(100);
  *     }
  * }
@@ -197,7 +192,7 @@ import org.testcontainers.DockerClientFactory;
  * // 6. Multiple database components
  * @ExtendWith(DatabaseTestExtension.class)
  * class IntegrationTest {
- *     
+ *
  *     @Test
  *     void testWithAllComponents(
  *             DataSource dataSource,
@@ -206,17 +201,17 @@ import org.testcontainers.DockerClientFactory;
  *             EntityManagerProvider emProvider,
  *             TransactionManager txManager,
  *             JpaConfig config) {
- *         
+ *
  *         // Use JDBC for bulk insert
  *         jdbc.batchUpdate("INSERT INTO users (email) VALUES (?)",
  *             Arrays.asList("user1@example.com", "user2@example.com"),
  *             (ps, email) -> ps.setString(1, email));
- *         
+ *
  *         // Use JPA for query
- *         List<User> users = txManager.inReadOnlyTransaction(em -> 
+ *         List<User> users = txManager.inReadOnlyTransaction(em ->
  *             em.createQuery("SELECT u FROM User u", User.class)
  *                 .getResultList());
- *         
+ *
  *         assertThat(users).hasSize(2);
  *     }
  * }
@@ -242,7 +237,7 @@ import org.testcontainers.DockerClientFactory;
  * <pre>{@code
  * @ExtendWith(DatabaseTestExtension.class)
  * class IsolationTest {
- *     
+ *
  *     @Test
  *     void test1(TransactionManager txManager) {
  *         txManager.inTransaction(em -> {
@@ -250,11 +245,11 @@ import org.testcontainers.DockerClientFactory;
  *             return null;
  *         });
  *     }
- *     
+ *
  *     @Test
  *     void test2(TransactionManager txManager) {
  *         // test1's user NOT visible here - isolated
- *         long count = txManager.inReadOnlyTransaction(em -> 
+ *         long count = txManager.inReadOnlyTransaction(em ->
  *             em.createQuery("SELECT COUNT(u) FROM User u", Long.class)
  *                 .getSingleResult());
  *         assertThat(count).isEqualTo(0);
@@ -299,11 +294,11 @@ import org.testcontainers.DockerClientFactory;
  * @doc.layer core
  * @doc.pattern Extension
  */
-public class DatabaseTestExtension implements 
+public class DatabaseTestExtension implements
         BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseTestExtension.class);
-    private static final ExtensionContext.Namespace NAMESPACE = 
+    private static final ExtensionContext.Namespace NAMESPACE =
             ExtensionContext.Namespace.create(DatabaseTestExtension.class);
     private static final String DATABASE_KEY = "database";
     private static final String DATA_SOURCE_KEY = "dataSource";
@@ -320,29 +315,29 @@ public class DatabaseTestExtension implements
         boolean dockerAvailable = isDockerAvailable();
         Assumptions.assumeTrue(dockerAvailable,
                 () -> "Skipping database tests because Docker is unavailable");
-        
+
         // Create and start the database container
         DatabaseTestContainer database = createDatabaseContainer(context);
         database.start();
-        
+
         // Store the container in the extension context
         getStore(context).put(DATABASE_KEY, database);
-        
+
         // Initialize and store other components
         DataSource dataSource = database.getDataSource();
         getStore(context).put(DATA_SOURCE_KEY, dataSource);
         getStore(context).put(JDBC_TEMPLATE_KEY, new JdbcTemplate(dataSource));
-        
+
         // If entity packages are specified, create JPA components
         String[] entityPackages = getEntityPackages(context);
         if (entityPackages != null && entityPackages.length > 0) {
             JpaConfig jpaConfig = database.createJpaConfig(entityPackages);
             EntityManagerFactory emf = jpaConfig.createEntityManagerFactory(dataSource);
             getStore(context).put(ENTITY_MANAGER_FACTORY_KEY, emf);
-            
+
             EntityManagerProvider empProvider = new EntityManagerProvider(emf);
             getStore(context).put(ENTITY_MANAGER_PROVIDER_KEY, empProvider);
-            
+
             TransactionManager txManager = new TransactionManager(empProvider);
             getStore(context).put(TRANSACTION_MANAGER_KEY, txManager);
         }
@@ -351,21 +346,21 @@ public class DatabaseTestExtension implements
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
         LOG.debug("Tearing down database test container for class: {}", context.getDisplayName());
-        
+
         // Close EntityManagerFactory if it exists
         EntityManagerFactory emf = getStore(context).remove(ENTITY_MANAGER_FACTORY_KEY, EntityManagerFactory.class);
         if (emf != null && emf.isOpen()) {
             LOG.debug("Closing EntityManagerFactory");
             emf.close();
         }
-        
+
         // Stop the database container
         DatabaseTestContainer database = getStore(context).remove(DATABASE_KEY, DatabaseTestContainer.class);
         if (database != null) {
             LOG.debug("Stopping database container");
             database.stop();
         }
-        
+
         // Clear all stored components
         getStore(context).remove(DATA_SOURCE_KEY);
         getStore(context).remove(JDBC_TEMPLATE_KEY);
@@ -380,7 +375,7 @@ public class DatabaseTestExtension implements
         if (txManager != null) {
             txManager.begin();
         }
-        
+
         // Inject fields into the test instance
         Object testInstance = context.getTestInstance().orElse(null);
         if (testInstance != null) {
@@ -399,7 +394,7 @@ public class DatabaseTestExtension implements
     }
 
     @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) 
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
         return type == DatabaseTestContainer.class ||
@@ -411,10 +406,10 @@ public class DatabaseTestExtension implements
     }
 
     @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) 
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        
+
         if (type == DatabaseTestContainer.class) {
             return getStore(extensionContext).get(DATABASE_KEY, DatabaseTestContainer.class);
         } else if (type == DataSource.class) {
@@ -428,7 +423,7 @@ public class DatabaseTestExtension implements
         } else if (type == TransactionManager.class) {
             return getStore(extensionContext).get(TRANSACTION_MANAGER_KEY, TransactionManager.class);
         }
-        
+
         throw new org.junit.jupiter.api.extension.ParameterResolutionException("Unsupported parameter type: " + type.getName());
     }
 
@@ -439,13 +434,13 @@ public class DatabaseTestExtension implements
     private DatabaseTestContainer createDatabaseContainer(ExtensionContext context) {
         // Look for @DatabaseTest annotation on the test class
         Optional<DatabaseTest> annotation = findAnnotation(context, DatabaseTest.class);
-        
+
         DatabaseTestContainer.Builder builder = DatabaseTestContainer.builder();
-        
+
         // Apply configuration from annotation if present
         if (annotation.isPresent()) {
             DatabaseTest dbTest = annotation.get();
-            
+
             // Set database properties
             if (!dbTest.image().isEmpty()) {
                 builder.image(dbTest.image());
@@ -459,19 +454,19 @@ public class DatabaseTestExtension implements
             if (!dbTest.password().isEmpty()) {
                 builder.password(dbTest.password());
             }
-            
+
             // Set migration locations if specified
             if (dbTest.migrations().length > 0) {
                 builder.withMigrations(dbTest.migrations());
             }
-            
+
             // Note: startupTimeout is not supported in the current DatabaseTest annotation
             // If needed, add it to the annotation and uncomment the following:
             // if (dbTest.startupTimeout() > 0) {
             //     builder.startupTimeout(Duration.ofSeconds(dbTest.startupTimeout()));
             // }
         }
-        
+
         return builder.build();
     }
 
@@ -496,10 +491,10 @@ public class DatabaseTestExtension implements
 
     private void injectFields(Object testInstance, ExtensionContext context) {
         Class<?> testClass = testInstance.getClass();
-        
+
         // Get all fields including inherited ones
         Field[] fields = getAllFields(testClass);
-        
+
         for (Field field : fields) {
             Object value = getFieldValue(field.getType(), getStore(context));
             if (value != null) {
@@ -512,11 +507,11 @@ public class DatabaseTestExtension implements
             }
         }
     }
-    
+
     private Field[] getAllFields(Class<?> clazz) {
         Field[] fields = clazz.getDeclaredFields();
         Class<?> superClass = clazz.getSuperclass();
-        
+
         if (superClass != null) {
             Field[] superFields = getAllFields(superClass);
             Field[] allFields = new Field[fields.length + superFields.length];
@@ -524,10 +519,10 @@ public class DatabaseTestExtension implements
             System.arraycopy(superFields, 0, allFields, fields.length, superFields.length);
             return allFields;
         }
-        
+
         return fields;
     }
-    
+
     private Object getFieldValue(Class<?> fieldType, ExtensionContext.Store store) {
         if (DatabaseTestContainer.class.isAssignableFrom(fieldType)) {
             return store.get(DATABASE_KEY, DatabaseTestContainer.class);

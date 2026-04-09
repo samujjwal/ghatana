@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Python language resolver implementation. 
+ * Python language resolver implementation.
  * @doc.type class
  * @doc.purpose Handles python language resolver operations
  * @doc.layer core

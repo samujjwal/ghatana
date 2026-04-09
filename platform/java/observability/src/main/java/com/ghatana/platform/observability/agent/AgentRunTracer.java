@@ -9,7 +9,6 @@
  */
 package com.ghatana.platform.observability.agent;
 
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;

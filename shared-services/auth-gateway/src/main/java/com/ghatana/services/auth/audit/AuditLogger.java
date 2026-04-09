@@ -164,7 +164,7 @@ public class AuditLogger {
     /**
      * Logs authorization decision.
      */
-    public Promise<Void> logAuthorizationDecision(String userId, String tenantId, String resource, 
+    public Promise<Void> logAuthorizationDecision(String userId, String tenantId, String resource,
                                                    String action, boolean granted) {
         return logEvent(AuditEvent.builder()
                 .eventType(granted ? AuditEventType.AUTHZ_ACCESS_GRANTED : AuditEventType.AUTHZ_ACCESS_DENIED)

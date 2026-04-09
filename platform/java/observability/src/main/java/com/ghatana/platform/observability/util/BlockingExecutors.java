@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * (database queries, Redis calls, HTTP requests) without blocking ActiveJ's Eventloop.
  * This prevents Eventloop starvation while maintaining controlled concurrency.
  * </p>
- * 
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li><b>Fixed Thread Pool</b>: Size based on CPU cores (min 4 threads)</li>
@@ -21,12 +21,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>Shared Pool</b>: Single instance for all observability blocking operations</li>
  *   <li><b>Auto-Sized</b>: max(4, availableProcessors())</li>
  * </ul>
- * 
+ *
  * @doc.type class
  * @doc.purpose Centralized thread pool for blocking I/O operations with CPU-aware sizing
  * @doc.layer core
  * @doc.pattern Thread Pool, Executor Factory
- * 
+ *
  * <h2>Example Usage</h2>
  * <pre>{@code
  * // In RedisSessionManager, RedisCache, etc.
@@ -58,11 +58,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     });
  * }
  * }</pre>
- * 
+ *
  * <h2>Why Separate Executor?</h2>
  * ActiveJ's Eventloop is single-threaded and must never block. Blocking operations
  * (I/O, database, network) must run in separate thread pool:
- * 
+ *
  * <pre>{@code
  * ❌ WRONG - Blocks Eventloop (starvation!)
  * public Promise<String> getData() {
@@ -77,7 +77,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     });
  * }
  * }</pre>
- * 
+ *
  * <h2>Thread Pool Sizing</h2>
  * <ul>
  *   <li><b>Pool Size</b>: max(4, CPU cores)</li>
@@ -85,10 +85,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>8-core machine</b>: 8 threads</li>
  *   <li><b>16-core machine</b>: 16 threads</li>
  * </ul>
- * 
+ *
  * <b>Why CPU-based?</b> Balances concurrency (I/O-bound) with resource usage.
  * For mostly I/O operations, can handle more concurrent tasks than CPU cores.
- * 
+ *
  * <h2>Thread Naming</h2>
  * Threads named "observability-blocking-N" (N = 1, 2, 3, ...) for:
  * <ul>
@@ -96,14 +96,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>Debugging blocked operations</li>
  *   <li>Performance profiling</li>
  * </ul>
- * 
+ *
  * <h2>Lifecycle</h2>
  * <ul>
  *   <li><b>Creation</b>: Static initialization (JVM startup)</li>
  *   <li><b>Shutdown</b>: Daemon threads, auto-terminated on JVM exit</li>
  *   <li><b>No manual shutdown</b>: Application-scoped lifecycle</li>
  * </ul>
- * 
+ *
  * <h2>Performance Characteristics</h2>
  * <ul>
  *   <li><b>Task Submission</b>: O(1) via ThreadPoolExecutor queue</li>
@@ -111,7 +111,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li><b>Context Switch</b>: ~1-10μs per switch</li>
  *   <li><b>Queue</b>: Unbounded (LinkedBlockingQueue)</li>
  * </ul>
- * 
+ *
  * <h2>When to Use</h2>
  * Use blockingExecutor() for:
  * <ul>
@@ -121,7 +121,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>File I/O</li>
  *   <li>Any blocking third-party library</li>
  * </ul>
- * 
+ *
  * <b>Do NOT use for</b>:
  * <ul>
  *   <li>CPU-intensive calculations (use ForkJoinPool)</li>

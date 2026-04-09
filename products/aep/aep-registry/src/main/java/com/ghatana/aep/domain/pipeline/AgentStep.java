@@ -11,7 +11,7 @@ public class AgentStep extends com.ghatana.agent.registry.domain.AgentStep {
     public AgentStep() {
         super();
     }
-    
+
     public AgentStep(String stepId, String agentId, String stepType) {
         super(stepId, agentId, stepType);
     }

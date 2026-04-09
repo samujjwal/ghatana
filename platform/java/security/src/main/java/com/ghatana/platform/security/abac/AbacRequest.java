@@ -1,7 +1,6 @@
 package com.ghatana.platform.security.abac;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 

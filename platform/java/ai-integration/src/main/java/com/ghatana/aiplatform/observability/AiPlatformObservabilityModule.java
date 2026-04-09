@@ -15,7 +15,7 @@ import io.activej.inject.module.AbstractModule;
  *   <li>{@link QualityMonitor}</li>
  * </ul>
  * backed by the shared {@link MetricsCollector} abstraction.</p>
- 
+
  *
  * @doc.type class
  * @doc.purpose Ai platform observability module

@@ -91,7 +91,7 @@ class AIFrameworkIntegrationTest {
     @Test
     @DisplayName("Should record model performance")
     void testRecordModelPerformance() {
-        ModelGovernanceService.ModelPerformanceMetrics metrics = 
+        ModelGovernanceService.ModelPerformanceMetrics metrics =
             new ModelGovernanceService.ModelPerformanceMetrics(0.95, 0.92);
 
         assertDoesNotThrow(() -> governance.recordModelPerformance("model-1", metrics));
@@ -100,7 +100,7 @@ class AIFrameworkIntegrationTest {
     @Test
     @DisplayName("Should configure autonomy level")
     void testConfigureAutonomyLevel() {
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             autonomyManager.configureAutonomyLevel("agent-1", AutonomyManager.AutonomyLevel.MEDIUM)
         );
 
@@ -140,13 +140,13 @@ class AIFrameworkIntegrationTest {
     @DisplayName("Should evaluate agent performance")
     void testEvaluateAgent() {
         MockAgent agent = new MockAgent("test-agent");
-        AIEvaluationFramework.EvaluationCriteria criteria = 
+        AIEvaluationFramework.EvaluationCriteria criteria =
             AIEvaluationFramework.EvaluationCriteria.builder()
                 .withAccuracyThreshold(0.9)
                 .withPerformanceThreshold(100)
                 .build();
 
-        AIEvaluationFramework.EvaluationResult result = 
+        AIEvaluationFramework.EvaluationResult result =
             evaluationFramework.evaluateAgent(agent, criteria);
 
         assertNotNull(result);
@@ -159,7 +159,7 @@ class AIFrameworkIntegrationTest {
         List<String> agentIds = List.of("agent-1", "agent-2", "agent-3");
         MockComparisonCriteria criteria = new MockComparisonCriteria();
 
-        AIEvaluationFramework.ComparisonReport report = 
+        AIEvaluationFramework.ComparisonReport report =
             evaluationFramework.compareAgents(agentIds, criteria);
 
         assertNotNull(report);
@@ -356,7 +356,7 @@ class AIFrameworkIntegrationTest {
         }
 
         @Override
-        public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request, 
+        public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request,
                                           AgentOrchestrator.KernelAgent agent) {
             return "critical-decision".equals(request.getOperation());
         }
@@ -386,7 +386,7 @@ class AIFrameworkIntegrationTest {
 
     private static class MockAIEvaluationFramework implements AIEvaluationFramework {
         @Override
-        public EvaluationResult evaluateAgent(AgentOrchestrator.KernelAgent agent, 
+        public EvaluationResult evaluateAgent(AgentOrchestrator.KernelAgent agent,
                                              EvaluationCriteria criteria) {
             return EvaluationResult.builder()
                 .agentId(agent.getAgentId())

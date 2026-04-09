@@ -138,7 +138,7 @@ public interface MetricsCollector {
      * value2, ...)
      */
     void incrementCounter(String metricName, String... keyValues);
-    
+
     /**
      * Increments a counter metric by 1 with a Map of tags.
      *
@@ -217,7 +217,7 @@ public interface MetricsCollector {
         // This keeps existing call sites compiling while allowing a future improvement to honor tags.
         recordTimer(name, durationMs);
     }
-    
+
     /**
      * Compatibility overload that accepts a Map of tags.
      *

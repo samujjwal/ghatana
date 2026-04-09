@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for session management.
- * 
+ *
  * @doc.type class
  * @doc.purpose Integration tests for secure session lifecycle and management
  * @doc.layer service
@@ -31,13 +31,13 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldCreateSecureSessionOnLogin() {
         String userId = "user-123";
         String sessionId = UUID.randomUUID().toString();
-        
+
         Map<String, Object> session = new HashMap<>();
         session.put("sessionId", sessionId);
         session.put("userId", userId);
         session.put("createdAt", System.currentTimeMillis());
         session.put("lastAccessedAt", System.currentTimeMillis());
-        
+
         assertThat(session.get("sessionId")).isNotNull();
         assertThat(session.get("userId")).isEqualTo(userId);
         assertThat(sessionId.length()).isGreaterThan(20);
@@ -48,7 +48,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldRegenerateSessionIdOnLogin() {
         String oldSessionId = "old-session-" + UUID.randomUUID();
         String newSessionId = "new-session-" + UUID.randomUUID();
-        
+
         assertThat(newSessionId).isNotEqualTo(oldSessionId);
     }
 
@@ -59,7 +59,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         sessionData.put("userId", "user-123");
         sessionData.put("roles", new String[]{"USER", "ADMIN"});
         sessionData.put("permissions", new String[]{"read", "write"});
-        
+
         // Session data should be encrypted in storage
         assertThat(sessionData.get("userId")).isNotNull();
         assertThat(sessionData.get("roles")).isNotNull();
@@ -71,13 +71,13 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         long sessionCreated = System.currentTimeMillis();
         long sessionTimeout = 30 * 60 * 1000; // 30 minutes
         long currentTime = sessionCreated + sessionTimeout + 1000;
-        
+
         AtomicBoolean sessionExpired = new AtomicBoolean(false);
-        
+
         if (currentTime > sessionCreated + sessionTimeout) {
             sessionExpired.set(true);
         }
-        
+
         assertThat(sessionExpired.get()).isTrue();
     }
 
@@ -85,10 +85,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     @DisplayName("should extend session on activity")
     void shouldExtendSessionOnActivity() {
         long lastAccessed = System.currentTimeMillis();
-        
+
         // Simulate user activity
         long newLastAccessed = System.currentTimeMillis();
-        
+
         assertThat(newLastAccessed).isGreaterThanOrEqualTo(lastAccessed);
     }
 
@@ -98,13 +98,13 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         long sessionCreated = System.currentTimeMillis();
         long absoluteTimeout = 8 * 60 * 60 * 1000; // 8 hours
         long currentTime = sessionCreated + absoluteTimeout + 1000;
-        
+
         AtomicBoolean sessionExpired = new AtomicBoolean(false);
-        
+
         if (currentTime > sessionCreated + absoluteTimeout) {
             sessionExpired.set(true);
         }
-        
+
         assertThat(sessionExpired.get()).isTrue();
     }
 
@@ -113,10 +113,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldInvalidateSessionOnLogout() {
         String sessionId = UUID.randomUUID().toString();
         AtomicBoolean sessionValid = new AtomicBoolean(true);
-        
+
         // Logout - invalidate session
         sessionValid.set(false);
-        
+
         assertThat(sessionValid.get()).isFalse();
     }
 
@@ -128,10 +128,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         userSessions.put("session-1", true);
         userSessions.put("session-2", true);
         userSessions.put("session-3", true);
-        
+
         // Password changed - invalidate all sessions
         userSessions.replaceAll((k, v) -> false);
-        
+
         assertThat(userSessions.values()).allMatch(valid -> !valid);
     }
 
@@ -140,18 +140,18 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldSupportConcurrentSessionLimitPerUser() {
         int maxSessions = 3;
         AtomicInteger activeSessions = new AtomicInteger(0);
-        
+
         // Create sessions up to limit
         for (int i = 0; i < maxSessions; i++) {
             activeSessions.incrementAndGet();
         }
-        
+
         // Attempt to create one more
         AtomicBoolean canCreateSession = new AtomicBoolean(false);
         if (activeSessions.get() < maxSessions) {
             canCreateSession.set(true);
         }
-        
+
         assertThat(canCreateSession.get()).isFalse();
         assertThat(activeSessions.get()).isEqualTo(maxSessions);
     }
@@ -163,15 +163,15 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         sessions.put("session-1", System.currentTimeMillis() - 3000);
         sessions.put("session-2", System.currentTimeMillis() - 2000);
         sessions.put("session-3", System.currentTimeMillis() - 1000);
-        
+
         // Find oldest session
         String oldestSession = sessions.entrySet().stream()
             .min(Map.Entry.comparingByValue())
             .map(Map.Entry::getKey)
             .orElse(null);
-        
+
         assertThat(oldestSession).isEqualTo("session-1");
-        
+
         // Remove oldest
         sessions.remove(oldestSession);
         assertThat(sessions).hasSize(2);
@@ -186,10 +186,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         sessionActivity.put("ipAddress", "192.168.1.1");
         sessionActivity.put("userAgent", "Mozilla/5.0...");
         sessionActivity.put("requestCount", 0);
-        
+
         // Track activity
         sessionActivity.put("requestCount", (Integer) sessionActivity.get("requestCount") + 1);
-        
+
         assertThat(sessionActivity.get("requestCount")).isEqualTo(1);
     }
 
@@ -198,14 +198,14 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldDetectSuspiciousSessionActivity() {
         String originalIp = "192.168.1.1";
         String currentIp = "10.0.0.1";
-        
+
         AtomicBoolean suspicious = new AtomicBoolean(false);
-        
+
         // IP address changed
         if (!originalIp.equals(currentIp)) {
             suspicious.set(true);
         }
-        
+
         assertThat(suspicious.get()).isTrue();
     }
 
@@ -216,7 +216,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         session.put("sessionId", UUID.randomUUID().toString());
         session.put("userId", "user-123");
         session.put("persistent", true);
-        
+
         // Session should be stored in persistent storage
         assertThat(session.get("persistent")).isEqualTo(true);
     }
@@ -229,7 +229,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         cookieAttributes.put("Secure", "true");
         cookieAttributes.put("SameSite", "Strict");
         cookieAttributes.put("Path", "/");
-        
+
         assertThat(cookieAttributes.get("HttpOnly")).isEqualTo("true");
         assertThat(cookieAttributes.get("Secure")).isEqualTo("true");
         assertThat(cookieAttributes.get("SameSite")).isEqualTo("Strict");
@@ -240,7 +240,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     void shouldSupportRememberMeFunctionality() {
         boolean rememberMe = true;
         long sessionTimeout = rememberMe ? 30L * 24 * 60 * 60 * 1000 : 30 * 60 * 1000;
-        
+
         // Remember me extends session to 30 days
         assertThat(sessionTimeout).isEqualTo(30L * 24 * 60 * 60 * 1000);
     }
@@ -252,14 +252,14 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         Map<String, Object> session1 = new HashMap<>();
         session1.put("sessionId", sessionId);
         session1.put("version", 1);
-        
+
         Map<String, Object> session2 = new HashMap<>();
         session2.put("sessionId", sessionId);
         session2.put("version", 2);
-        
+
         // Latest version wins
         int latestVersion = Math.max((Integer) session1.get("version"), (Integer) session2.get("version"));
-        
+
         assertThat(latestVersion).isEqualTo(2);
     }
 
@@ -269,14 +269,14 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         Map<String, Long> sessions = new HashMap<>();
         long now = System.currentTimeMillis();
         long timeout = 30 * 60 * 1000;
-        
+
         sessions.put("session-1", now - timeout - 1000); // Expired
         sessions.put("session-2", now - 1000); // Active
         sessions.put("session-3", now - timeout - 2000); // Expired
-        
+
         // Remove expired sessions
         sessions.entrySet().removeIf(entry -> now > entry.getValue() + timeout);
-        
+
         assertThat(sessions).hasSize(1);
         assertThat(sessions).containsKey("session-2");
     }
@@ -285,10 +285,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     @DisplayName("should support session data encryption")
     void shouldSupportSessionDataEncryption() {
         String sensitiveData = "user-password-hash";
-        
+
         // Simulate encryption
         String encryptedData = "encrypted_" + sensitiveData.hashCode();
-        
+
         assertThat(encryptedData).isNotEqualTo(sensitiveData);
         assertThat(encryptedData).startsWith("encrypted_");
     }
@@ -299,17 +299,17 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         Map<String, String> sessionFingerprint = new HashMap<>();
         sessionFingerprint.put("userAgent", "Mozilla/5.0...");
         sessionFingerprint.put("ipAddress", "192.168.1.1");
-        
+
         Map<String, String> requestFingerprint = new HashMap<>();
         requestFingerprint.put("userAgent", "Mozilla/5.0...");
         requestFingerprint.put("ipAddress", "192.168.1.1");
-        
+
         AtomicBoolean fingerprintMatch = new AtomicBoolean(true);
-        
+
         if (!sessionFingerprint.equals(requestFingerprint)) {
             fingerprintMatch.set(false);
         }
-        
+
         assertThat(fingerprintMatch.get()).isTrue();
     }
 
@@ -320,7 +320,7 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
         Map<String, Object> session = new HashMap<>();
         session.put("sessionId", UUID.randomUUID().toString());
         session.put("storageType", "distributed");
-        
+
         assertThat(session.get("storageType")).isEqualTo("distributed");
     }
 
@@ -328,10 +328,10 @@ class SessionManagementIntegrationTest extends EventloopTestBase {
     @DisplayName("should handle session replication across nodes")
     void shouldHandleSessionReplicationAcrossNodes() {
         String sessionId = UUID.randomUUID().toString();
-        
+
         // Session replicated to multiple nodes
         AtomicInteger replicatedNodes = new AtomicInteger(3);
-        
+
         assertThat(replicatedNodes.get()).isGreaterThan(1);
     }
 }

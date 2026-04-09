@@ -64,8 +64,10 @@ subprojects {
     apply(plugin = "idea")
 
     // Convention plugins — provide all standard Java/test/CI config
+    // Convention plugins - provide all standard Java/test/CI config
     apply(plugin = "com.ghatana.java-conventions")
-    apply(plugin = "com.ghatana.test-failure-tolerance")
+    apply(plugin = "com.ghatana.testing-conventions-simplified")
+    apply(plugin = "com.ghatana.quality-conventions")
     apply(plugin = "com.ghatana.integration-test-profile")
 
     group = "com.ghatana"

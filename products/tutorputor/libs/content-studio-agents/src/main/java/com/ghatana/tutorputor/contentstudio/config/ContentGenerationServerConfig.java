@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Configuration and bootstrap for the Content Generation gRPC server.
- * 
+ *
  * <p>This class handles:
  * <ul>
  *   <li>LLM provider configuration (OpenAI, Ollama)</li>
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 public class ContentGenerationServerConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(ContentGenerationServerConfig.class);
-    
+
     private final int port;
     private final LLMGateway llmGateway;
     private final MeterRegistry meterRegistry;
@@ -73,7 +73,7 @@ public class ContentGenerationServerConfig {
      * @param meterRegistry the metrics registry
      * @param executor the executor for async operations
      */
-    public ContentGenerationServerConfig(int port, LLMGateway llmGateway, 
+    public ContentGenerationServerConfig(int port, LLMGateway llmGateway,
                                           MeterRegistry meterRegistry, Executor executor) {
         this.port = port;
         this.llmGateway = llmGateway;
@@ -89,14 +89,14 @@ public class ContentGenerationServerConfig {
     public void start() throws IOException {
         ContentGenerationServiceImpl service = new ContentGenerationServiceImpl(
             llmGateway, executor, meterRegistry);
-        
+
         server = ServerBuilder.forPort(port)
             .addService(service)
             .build()
             .start();
-        
+
         LOG.info("Content Generation gRPC server started on port {}", port);
-        
+
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Shutting down gRPC server...");
@@ -227,7 +227,7 @@ public class ContentGenerationServerConfig {
      */
     public static void main(String[] args) throws IOException, InterruptedException {
         int port = Integer.parseInt(System.getenv().getOrDefault("GRPC_PORT", "50051"));
-        
+
         ContentGenerationServerConfig config = new ContentGenerationServerConfig(port);
         config.start();
         config.blockUntilShutdown();

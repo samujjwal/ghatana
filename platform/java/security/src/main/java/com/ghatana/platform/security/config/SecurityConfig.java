@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Configuration interface for security settings.
- * 
+ *
  * <p>Implementations provide API key mappings and default role configuration.
  * This is the canonical location for security configuration — replacing
  * the deprecated {@code com.ghatana.core.config.SecurityConfig}.</p>

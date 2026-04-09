@@ -2,7 +2,6 @@ package com.ghatana.datacloud.plugins.s3archive;
 
 import com.ghatana.datacloud.event.model.Event;
 import com.ghatana.datacloud.event.spi.StoragePlugin;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -116,8 +114,8 @@ public class ArchiveMigrationScheduler implements AutoCloseable {
         this.totalBatchesMigrated = new AtomicLong(0);
 
         // Initialize metrics
-        this.meterRegistry = builder.meterRegistry != null 
-                ? builder.meterRegistry 
+        this.meterRegistry = builder.meterRegistry != null
+                ? builder.meterRegistry
                 : new SimpleMeterRegistry();
 
         this.migrationTimer = Timer.builder("eventcloud.archive.migration.latency")
@@ -366,7 +364,7 @@ public class ArchiveMigrationScheduler implements AutoCloseable {
                 totalErrors += result.errors();
 
             } catch (Exception e) {
-                log.error("Failed to migrate stream {}/{}", 
+                log.error("Failed to migrate stream {}/{}",
                         stream.tenantId(), stream.streamName(), e);
                 totalErrors++;
             }

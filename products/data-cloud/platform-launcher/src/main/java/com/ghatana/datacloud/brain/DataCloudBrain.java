@@ -49,15 +49,15 @@ import java.util.Optional;
  * <h2>Usage Example</h2>
  * <pre>{@code
  * DataCloudBrain brain = DataCloudBrain.create(config);
- * 
+ *
  * // Process a record
  * ProcessingResult result = brain.process(eventRecord, context)
  *     .getResult();
- * 
+ *
  * // Semantic search
  * SearchResults results = brain.search("server errors", context)
  *     .getResult();
- * 
+ *
  * // Learn from feedback
  * brain.feedback(FeedbackEvent.positive(recordId, "accurate"))
  *     .getResult();

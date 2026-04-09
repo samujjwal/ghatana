@@ -143,10 +143,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void detectBitFlip() {
             byte[] plaintext = "Sensitive Data".getBytes(StandardCharsets.UTF_8);
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext));
-            
+
             // Flip single bit in middle
             encrypted[encrypted.length / 2] ^= 0x01;
-            
+
             // Decryption should fail or return invalid data
             assertThatThrownBy(() -> {
                 runPromise(() -> provider.decrypt(encrypted));
@@ -158,10 +158,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void detectTruncation() {
             byte[] plaintext = "Test Data".getBytes(StandardCharsets.UTF_8);
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext));
-            
+
             // Truncate to 50%
             byte[] truncated = Arrays.copyOf(encrypted, encrypted.length / 2);
-            
+
             assertThatThrownBy(() -> {
                 runPromise(() -> provider.decrypt(truncated));
             }).isInstanceOf(Exception.class);
@@ -172,11 +172,11 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void detectAppendedBytes() {
             byte[] plaintext = "Data".getBytes(StandardCharsets.UTF_8);
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext));
-            
+
             // Append garbage
             byte[] extended = Arrays.copyOf(encrypted, encrypted.length + 10);
             extended[encrypted.length] = (byte) 0xFF;
-            
+
             assertThatThrownBy(() -> {
                 runPromise(() -> provider.decrypt(extended));
             }).isInstanceOf(Exception.class);
@@ -187,10 +187,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void differentKeysRejectCiphertext() {
             AesGcmEncryptionProvider provider1 = AesGcmEncryptionProvider.withNewKey(256, "key-1");
             AesGcmEncryptionProvider provider2 = AesGcmEncryptionProvider.withNewKey(256, "key-2");
-            
+
             byte[] plaintext = "Secret".getBytes(StandardCharsets.UTF_8);
             byte[] encrypted = runPromise(() -> provider1.encrypt(plaintext));
-            
+
             assertThatThrownBy(() -> {
                 runPromise(() -> provider2.decrypt(encrypted));
             }).isInstanceOf(Exception.class);
@@ -200,10 +200,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         @DisplayName("IV/nonce reuse produces different ciphertexts")
         void nonceDiversity() {
             byte[] plaintext = "Deterministic?".getBytes(StandardCharsets.UTF_8);
-            
+
             byte[] encrypted1 = runPromise(() -> provider.encrypt(plaintext));
             byte[] encrypted2 = runPromise(() -> provider.encrypt(plaintext));
-            
+
             // With random IV (as GCM should), ciphertexts should differ
             assertThat(encrypted1).isNotEqualTo(encrypted2);
         }
@@ -222,10 +222,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void utf8NonAscii() {
             String original = "Hello 世界 مرحبا мир";
             byte[] plaintext = original.getBytes(StandardCharsets.UTF_8);
-            
+
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext));
             byte[] decrypted = runPromise(() -> provider.decrypt(encrypted));
-            
+
             String recovered = new String(decrypted, StandardCharsets.UTF_8);
             assertThat(recovered).isEqualTo(original);
         }
@@ -235,10 +235,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void unicodeSpecial() {
             String original = "🔒🔐🗝️💬📞";
             byte[] plaintext = original.getBytes(StandardCharsets.UTF_8);
-            
+
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext));
             byte[] decrypted = runPromise(() -> provider.decrypt(encrypted));
-            
+
             String recovered = new String(decrypted, StandardCharsets.UTF_8);
             assertThat(recovered).isEqualTo(original);
         }
@@ -249,10 +249,10 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
             String text = "Test";
             byte[] utf8 = text.getBytes(StandardCharsets.UTF_8);
             byte[] utf16 = text.getBytes(StandardCharsets.UTF_16);
-            
+
             byte[] encrypted1 = runPromise(() -> provider.encrypt(utf8));
             byte[] encrypted2 = runPromise(() -> provider.encrypt(utf16));
-            
+
             assertThat(encrypted1).isNotEqualTo(encrypted2);
         }
     }
@@ -271,7 +271,7 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
             byte[] plaintext = "Concurrent Test Data".getBytes(StandardCharsets.UTF_8);
             java.util.List<byte[]> encryptedResults = new java.util.concurrent.CopyOnWriteArrayList<>();
             java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(5);
-            
+
             for (int i = 0; i < 5; i++) {
                 new Thread(() -> {
                     try {
@@ -282,7 +282,7 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
                     }
                 }).start();
             }
-            
+
             latch.await();
             // All should produce valid ciphertexts (even if different due to IV)
             assertThat(encryptedResults).hasSize(5);
@@ -294,7 +294,7 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
         void concurrentRoundTrip() throws InterruptedException {
             java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(10);
             java.util.List<Boolean> allValid = new java.util.concurrent.CopyOnWriteArrayList<>();
-            
+
             for (int i = 0; i < 10; i++) {
                 final byte[] plaintext = ("Thread " + i).getBytes(StandardCharsets.UTF_8);
                 new Thread(() -> {
@@ -307,7 +307,7 @@ class AesGcmEncryptionProviderExpansionTest extends EventloopTestBase {
                     }
                 }).start();
             }
-            
+
             latch.await();
             assertThat(allValid).hasSize(10).allMatch(b -> b);
         }

@@ -1,7 +1,6 @@
 plugins {
     id("java-library")
     id("jacoco")
-    id("com.ghatana.jacoco-conventions")
 }
 
 group = "com.ghatana.products.yappc.services"

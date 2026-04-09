@@ -32,4 +32,3 @@ public record ConfigReference(
         return inline != null && !inline.isEmpty();
     }
 }
-

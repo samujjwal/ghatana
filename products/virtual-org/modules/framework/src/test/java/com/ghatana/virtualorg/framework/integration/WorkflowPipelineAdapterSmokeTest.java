@@ -83,4 +83,3 @@ class WorkflowPipelineAdapterSmokeTest {
         // Note: We can't access private field, but constructor validation ensures it's set
     }
 }
-

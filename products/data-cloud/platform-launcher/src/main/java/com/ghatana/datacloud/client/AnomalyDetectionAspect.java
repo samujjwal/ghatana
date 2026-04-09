@@ -114,7 +114,7 @@ public final class AnomalyDetectionAspect implements AIAspect<Record, Record> {
         return detector.detect(features)
                 .map(result -> {
                     boolean isAnomaly = result.score() >= threshold;
-                    
+
                     context.setAttribute(ATTR_DETECTED, isAnomaly);
                     context.setAttribute(ATTR_SCORE, result.score());
                     context.setAttribute(ATTR_TYPE, result.type());

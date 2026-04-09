@@ -5,7 +5,7 @@ import java.util.Optional;
 
 /**
  * Repository for managing API keys.
- 
+
  *
  * @doc.type interface
  * @doc.purpose Api key repository

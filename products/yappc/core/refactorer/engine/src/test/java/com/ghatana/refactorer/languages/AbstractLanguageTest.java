@@ -20,9 +20,9 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Base class for language-specific test classes. Provides common setup and utilities for testing
  * language implementations with ActiveJ Promise support.
- * 
+ *
  * Extends EventloopTestBase to provide Reactor and Promise execution support.
- 
+
  * @doc.type class
  * @doc.purpose Handles abstract language test operations
  * @doc.layer core

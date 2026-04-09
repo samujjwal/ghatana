@@ -112,7 +112,7 @@ public final class RegulatoryReportingDomainModule implements KernelModule {
     @Override
     public Promise<Void> start() {
         log.info("Starting Regulatory Reporting Domain module");
-        
+
             started = true;
             log.info("Regulatory Reporting Domain module started successfully");
         return Promise.complete();
@@ -121,7 +121,7 @@ public final class RegulatoryReportingDomainModule implements KernelModule {
     @Override
     public Promise<Void> stop() {
         log.info("Stopping Regulatory Reporting Domain module");
-        
+
             started = false;
             log.info("Regulatory Reporting Domain module stopped successfully");
         return Promise.complete();

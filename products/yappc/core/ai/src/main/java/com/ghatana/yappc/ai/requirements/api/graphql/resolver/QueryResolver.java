@@ -2,7 +2,6 @@ package com.ghatana.yappc.ai.requirements.api.graphql.resolver;
 
 import com.ghatana.platform.security.model.User;
 import com.ghatana.yappc.ai.requirements.ai.RequirementEmbeddingService;
-import com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion;
 import com.ghatana.yappc.ai.requirements.application.project.ProjectService;
 import com.ghatana.yappc.ai.requirements.application.requirement.RequirementRepository;
 import com.ghatana.yappc.ai.requirements.application.workspace.WorkspaceService;
@@ -266,4 +265,3 @@ public class QueryResolver implements GraphQLQueryResolver {
                 });
     }
 }
-

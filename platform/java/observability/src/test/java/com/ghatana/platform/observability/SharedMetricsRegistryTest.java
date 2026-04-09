@@ -227,4 +227,3 @@ class SharedMetricsRegistryTest {
                 .isThrownBy(() -> reg.registeredMetrics().add("injected"));
     }
 }
-

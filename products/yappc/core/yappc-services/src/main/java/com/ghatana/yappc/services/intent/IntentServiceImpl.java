@@ -12,9 +12,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * @doc.type class
@@ -23,13 +21,13 @@ import java.util.UUID;
  * @doc.pattern Service
  */
 public class IntentServiceImpl implements IntentService {
-    
+
     private static final Logger log = LoggerFactory.getLogger(IntentServiceImpl.class);
-    
+
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
-    
+
     public IntentServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
@@ -38,18 +36,18 @@ public class IntentServiceImpl implements IntentService {
         this.auditLogger = auditLogger;
         this.metrics = metrics;
     }
-    
+
     @Override
     public Promise<IntentSpec> capture(IntentInput input) {
         long startTime = System.currentTimeMillis();
-        
+
         return parseIntentWithAI(input)
                 .then(spec -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(input.tenantId());
                     metrics.recordTimer("yappc.intent.capture", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.intent.capture", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("intent.capture", input, spec))
                             .map(v -> spec);
                 })
@@ -62,18 +60,18 @@ public class IntentServiceImpl implements IntentService {
                         ServiceObservability.tenantTag(input.tenantId()));
                 });
     }
-    
+
     @Override
     public Promise<IntentAnalysis> analyze(IntentSpec spec) {
         long startTime = System.currentTimeMillis();
-        
+
         return analyzeIntentWithAI(spec)
                 .then(analysis -> {
                     long duration = System.currentTimeMillis() - startTime;
                     Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
                     metrics.recordTimer("yappc.intent.analyze", duration, tags);
                     ServiceObservability.incrementSuccess(metrics, "yappc.intent.analyze", tags);
-                    
+
                     return auditLogger.log(ServiceObservability.auditEvent("intent.analyze", spec, analysis))
                             .map(v -> analysis);
                 })
@@ -86,10 +84,10 @@ public class IntentServiceImpl implements IntentService {
                         ServiceObservability.tenantTag(spec.tenantId()));
                 });
     }
-    
+
     private Promise<IntentSpec> parseIntentWithAI(IntentInput input) {
         String prompt = buildIntentCapturePrompt(input);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.3)
@@ -97,10 +95,10 @@ public class IntentServiceImpl implements IntentService {
                 .build())
                 .map(result -> parseIntentFromAIResponse(result, input));
     }
-    
+
     private Promise<IntentAnalysis> analyzeIntentWithAI(IntentSpec spec) {
         String prompt = buildIntentAnalysisPrompt(spec);
-        
+
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.2)
@@ -108,14 +106,14 @@ public class IntentServiceImpl implements IntentService {
                 .build())
                 .map(result -> parseAnalysisFromAIResponse(result, spec));
     }
-    
+
     private String buildIntentCapturePrompt(IntentInput input) {
         return """
             You are a product planning expert. Analyze the following product idea and extract structured information.
-            
+
             Product Idea:
             %s
-            
+
             Respond with a JSON object containing:
             {
               "productName": "string",
@@ -124,19 +122,19 @@ public class IntentServiceImpl implements IntentService {
               "personas": [{"name": "string", "description": "string", "needs": ["string"], "painPoints": ["string"]}],
               "constraints": [{"type": "budget|timeline|technical|regulatory", "description": "string", "severity": "hard|soft"}]
             }
-            
+
             Provide ONLY the JSON object, no additional text.
             """.formatted(input.rawText());
     }
-    
+
     private String buildIntentAnalysisPrompt(IntentSpec spec) {
         return """
             Analyze the following product intent for feasibility, risks, and gaps.
-            
+
             Product: %s
             Description: %s
             Goals: %s
-            
+
             Respond with a JSON object:
             {
               "feasible": boolean,
@@ -146,18 +144,18 @@ public class IntentServiceImpl implements IntentService {
               "scores": {"complexity": 0.0-1.0, "feasibility": 0.0-1.0, "innovation": 0.0-1.0},
               "summary": "string"
             }
-            
+
             Provide ONLY the JSON object.
-            """.formatted(spec.productName(), spec.description(), 
+            """.formatted(spec.productName(), spec.description(),
                 spec.goals().stream().map(GoalSpec::description).toList());
     }
-    
+
     private IntentSpec parseIntentFromAIResponse(CompletionResult result, IntentInput input) {
         return StructuredOutputParser.parseIntentSpec(result.text(), input);
     }
-    
+
     private IntentAnalysis parseAnalysisFromAIResponse(CompletionResult result, IntentSpec spec) {
         return StructuredOutputParser.parseIntentAnalysis(result.text(), spec.id());
     }
-    
+
 }

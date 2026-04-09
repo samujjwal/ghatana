@@ -7,7 +7,6 @@ import com.ghatana.virtualorg.memory.AgentMemory;
 import com.ghatana.virtualorg.tool.ToolExecutor;
 import com.ghatana.virtualorg.tool.ToolRegistry;
 import com.ghatana.virtualorg.v1.*;
-import com.google.protobuf.Timestamp;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -16,10 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import com.ghatana.virtualorg.util.DecisionExtractor;
 
 /**
  * Senior Engineer Agent for complex feature implementation and technical leadership.
@@ -168,7 +165,7 @@ public class SeniorEngineerAgent extends AbstractVirtualOrgAgent {
     @NotNull
     protected Promise<TaskResponseProto> doProcessTask(@NotNull TaskRequestProto request) {
         TaskProto task = request.getTask();
-        log.info("Senior Engineer processing task: taskId={}, type={}, title={}", 
+        log.info("Senior Engineer processing task: taskId={}, type={}, title={}",
             task.getTaskId(), task.getType(), task.getTitle());
 
         // Get available tools (synchronous)
@@ -178,7 +175,7 @@ public class SeniorEngineerAgent extends AbstractVirtualOrgAgent {
         return memory.retrieveContext(task)
             .whenException(e -> log.warn("Failed to retrieve context, using empty", e))
             .map(context -> context != null ? context : "")
-            .then(context -> 
+            .then(context ->
                 // Use LLM to reason about the task
                 llmClient.reason(task, context, tools)
                     .then(llmResponse -> {
@@ -211,7 +208,7 @@ public class SeniorEngineerAgent extends AbstractVirtualOrgAgent {
                         });
                     })
             )
-            .then(response -> 
+            .then(response ->
                 // Store experience in memory
                 memory.store(task, response)
                     .whenException(e -> log.warn("Failed to store in memory", e))

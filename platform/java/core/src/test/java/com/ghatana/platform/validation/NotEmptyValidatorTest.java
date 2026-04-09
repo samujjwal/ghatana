@@ -14,7 +14,7 @@ class NotEmptyValidatorTest {
     @Test
     void testValidateNull() {
         ValidationResult result = validator.validate(null, "field");
-        
+
         assertFalse(result.isValid());
         assertEquals("NOT_EMPTY", result.getErrors().get(0).getCode());
     }
@@ -22,7 +22,7 @@ class NotEmptyValidatorTest {
     @Test
     void testValidateEmpty() {
         ValidationResult result = validator.validate("", "field");
-        
+
         assertFalse(result.isValid());
         assertEquals("NOT_EMPTY", result.getErrors().get(0).getCode());
     }
@@ -30,7 +30,7 @@ class NotEmptyValidatorTest {
     @Test
     void testValidateWhitespace() {
         ValidationResult result = validator.validate("   ", "field");
-        
+
         assertFalse(result.isValid());
         assertEquals("NOT_EMPTY", result.getErrors().get(0).getCode());
     }
@@ -38,7 +38,7 @@ class NotEmptyValidatorTest {
     @Test
     void testValidateNonEmpty() {
         ValidationResult result = validator.validate("value", "field");
-        
+
         assertTrue(result.isValid());
         assertFalse(result.hasErrors());
     }

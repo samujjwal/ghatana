@@ -80,7 +80,7 @@ public interface KernelSecurityManager {
 
         @Override
         public String toString() {
-            return String.format("Action{resource='%s', operation='%s', scope='%s'}", 
+            return String.format("Action{resource='%s', operation='%s', scope='%s'}",
                 resource, operation, scope);
         }
     }

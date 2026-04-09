@@ -44,7 +44,7 @@ public record PipelineStage(
         Objects.requireNonNull(stageId, "stageId cannot be null");
         Objects.requireNonNull(operatorId, "operatorId cannot be null");
         Objects.requireNonNull(config, "config cannot be null");
-        
+
         if (stageId.isBlank()) {
             throw new IllegalArgumentException("stageId cannot be blank");
         }

@@ -99,7 +99,7 @@ public class EventHandler {
                 var filtered = events.stream()
                     .skip(finalFromOffset)
                     .toList();
-                
+
                 var eventResponses = new java.util.ArrayList<Map<String, Object>>();
                 for (int i = 0; i < filtered.size(); i++) {
                     var e = filtered.get(i);
@@ -110,7 +110,7 @@ public class EventHandler {
                         "timestamp", e.timestamp().toString()
                     ));
                 }
-                
+
                 return http.jsonResponse(Map.of(
                     "events", eventResponses,
                     "nextOffset", (long)(finalFromOffset + filtered.size()),

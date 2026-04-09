@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Simple console-based progress reporter for testing. 
+ * Simple console-based progress reporter for testing.
  * @doc.type class
  * @doc.purpose Handles console progress reporter operations
  * @doc.layer core

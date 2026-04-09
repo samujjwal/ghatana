@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * EntitySuggestionService appService = new EntitySuggestionService(
  *         aiAdapter,

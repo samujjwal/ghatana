@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Context information for a fix suggestion. 
+ * Context information for a fix suggestion.
  * @doc.type class
  * @doc.purpose Handles fix context operations
  * @doc.layer core

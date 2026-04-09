@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * </ul>
  *
  * <h2>Usage Example</h2>
- * 
+ *
  * <pre>{@code
  * LearningLoop loop = LearningLoop.builder()
  *         .feedbackCollector(collector)
@@ -70,7 +70,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *         .cycleInterval(Duration.ofSeconds(30))
  *         .strategy(LearningStrategy.GRADUAL)
  *         .build();
- * 
+ *
  * loop.addLearner(patternLearner);
  * loop.addLearner(modelLearner);
  * loop.start();

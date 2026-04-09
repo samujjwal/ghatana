@@ -1,6 +1,5 @@
 package com.ghatana.platform.testing.activej;
 
-import com.ghatana.platform.testing.activej.EventloopTestUtil;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;

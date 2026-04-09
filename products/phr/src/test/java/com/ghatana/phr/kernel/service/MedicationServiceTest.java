@@ -1,10 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
-import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.phr.kernel.service.MedicationService.*;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -13,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;

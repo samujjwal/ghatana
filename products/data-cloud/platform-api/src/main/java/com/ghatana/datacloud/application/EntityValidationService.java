@@ -31,7 +31,7 @@ import java.util.*;
  *
  * <p>
  * <b>Usage</b><br>
- * 
+ *
  * <pre>{@code
  * EntityValidationService validator = new EntityValidationService(
  *         collectionRepository,

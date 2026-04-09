@@ -6,7 +6,6 @@ package com.ghatana.datacloud.plugin;
 
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +16,6 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -170,7 +168,7 @@ class PluginRegistryImplTest extends EventloopTestBase {
             runPromise(() -> registry.register(plugin));
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> 
+            PluginRegistry.HookResult result = runPromise(() ->
                 registry.executeHook("plugin-1", "processData", Map.of("key", "value")));
 
             // Then
@@ -193,7 +191,7 @@ class PluginRegistryImplTest extends EventloopTestBase {
             runPromise(() -> registry.register(plugin));
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> 
+            PluginRegistry.HookResult result = runPromise(() ->
                 registry.executeHook("plugin-1", "processData", Map.of()));
 
             // Then
@@ -214,7 +212,7 @@ class PluginRegistryImplTest extends EventloopTestBase {
             runPromise(() -> registry.register(plugin));
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> 
+            PluginRegistry.HookResult result = runPromise(() ->
                 registry.executeHook("plugin-1", "missingHook", Map.of()));
 
             // Then

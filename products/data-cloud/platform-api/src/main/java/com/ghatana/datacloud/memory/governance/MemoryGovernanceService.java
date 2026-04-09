@@ -5,7 +5,6 @@
 package com.ghatana.datacloud.memory.governance;
 
 import com.ghatana.agent.framework.memory.MemoryNamespace;
-import com.ghatana.agent.framework.memory.MemoryScope;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

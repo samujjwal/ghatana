@@ -108,18 +108,18 @@ public class Policy {
         if (resource == null || resourceId == null) {
             return false;
         }
-        
+
         // Exact match
         if (resource.equals(resourceId)) {
             return true;
         }
-        
+
         // Wildcard match
         if (resource.endsWith("*")) {
             String prefix = resource.substring(0, resource.length() - 1);
             return resourceId.startsWith(prefix);
         }
-        
+
         return false;
     }
 

@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Service for running ESLint on TypeScript/JavaScript files. Provides advanced static analysis and
  * code quality checks.
- 
+
  * @doc.type class
  * @doc.purpose Handles es lint service operations
  * @doc.layer core

@@ -7,7 +7,6 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -54,7 +53,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void multiplePluginsCanBeDiscovered() {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
@@ -108,7 +107,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void exposedServicesAreAccessibleToOtherPlugins() {
             TestServiceExposingPlugin servicePlugin = new TestServiceExposingPlugin();
             TestServiceConsumingPlugin consumerPlugin = new TestServiceConsumingPlugin();
-            
+
             registry.register(servicePlugin);
             registry.register(consumerPlugin);
 
@@ -123,7 +122,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void serviceVersionsAreCompatible() {
             TestServiceExposingPlugin servicePlugin = new TestServiceExposingPlugin();
             TestServiceConsumingPlugin consumerPlugin = new TestServiceConsumingPlugin();
-            
+
             assertThat(servicePlugin.getServiceVersion())
                     .isEqualTo(consumerPlugin.getRequiredServiceVersion());
         }
@@ -154,7 +153,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void pluginsCanSubscribeToEvents() {
             TestEventPublishingPlugin publisher = new TestEventPublishingPlugin();
             TestEventSubscribingPlugin subscriber = new TestEventSubscribingPlugin();
-            
+
             registry.register(publisher);
             registry.register(subscriber);
 
@@ -170,7 +169,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void eventMessagesArePassedCorrectly() {
             TestEventPublishingPlugin publisher = new TestEventPublishingPlugin();
             TestEventSubscribingPlugin subscriber = new TestEventSubscribingPlugin();
-            
+
             registry.register(publisher);
             registry.register(subscriber);
 
@@ -188,7 +187,7 @@ class PluginIntegrationTest extends PluginTestBase {
             TestEventPublishingPlugin publisher = new TestEventPublishingPlugin();
             TestEventSubscribingPlugin subscriber1 = new TestEventSubscribingPlugin();
             TestEventSubscribingPlugin subscriber2 = new TestEventSubscribingPlugin();
-            
+
             registry.register(publisher);
             registry.register(subscriber1);
             registry.register(subscriber2);
@@ -215,7 +214,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void compatibleVersionsAreAccepted() {
             TestServiceExposingPlugin servicePlugin = new TestServiceExposingPlugin("1.0.0");
             TestServiceConsumingPlugin consumerPlugin = new TestServiceConsumingPlugin("1.0.0");
-            
+
             assertThat(servicePlugin.getServiceVersion())
                     .isEqualTo(consumerPlugin.getRequiredServiceVersion());
         }
@@ -225,7 +224,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void versionMismatchIsDetected() {
             TestServiceExposingPlugin servicePlugin = new TestServiceExposingPlugin("2.0.0");
             TestServiceConsumingPlugin consumerPlugin = new TestServiceConsumingPlugin("1.0.0");
-            
+
             assertThat(servicePlugin.getServiceVersion())
                     .isNotEqualTo(consumerPlugin.getRequiredServiceVersion());
         }
@@ -236,7 +235,7 @@ class PluginIntegrationTest extends PluginTestBase {
             // Assume 1.x is compatible with 1.y (minor version compatibility)
             String providerVersion = "1.2.0";
             String consumerVersion = "1.0.0";
-            
+
             // Both should be compatible within same major version
             assertThat(providerVersion.split("\\.")[0])
                     .isEqualTo(consumerVersion.split("\\.")[0]);
@@ -257,7 +256,7 @@ class PluginIntegrationTest extends PluginTestBase {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin3 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
             registry.register(plugin3);
@@ -276,7 +275,7 @@ class PluginIntegrationTest extends PluginTestBase {
             TestServiceExposingPlugin service = new TestServiceExposingPlugin();
             TestEventPublishingPlugin eventBus = new TestEventPublishingPlugin();
             TestServiceConsumingPlugin consumer = new TestServiceConsumingPlugin();
-            
+
             registry.register(service);
             registry.register(eventBus);
             registry.register(consumer);
@@ -301,10 +300,10 @@ class PluginIntegrationTest extends PluginTestBase {
         @DisplayName("dependent plugins are initialized in correct order")
         void dependentPluginsAreInitializedInCorrectOrder() {
             List<String> initOrder = new ArrayList<>();
-            
+
             TestEventPublishingPlugin publisher = new TestEventPublishingPlugin();
             TestEventSubscribingPlugin subscriber = new TestEventSubscribingPlugin();
-            
+
             registry.register(publisher);
             registry.register(subscriber);
 
@@ -320,7 +319,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void allPluginsAreStartedAfterInitialization() {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 
@@ -338,7 +337,7 @@ class PluginIntegrationTest extends PluginTestBase {
         void allPluginsAreStoppedTogetherOnShutdown() {
             InMemoryStoragePlugin plugin1 = new InMemoryStoragePlugin();
             InMemoryStoragePlugin plugin2 = new InMemoryStoragePlugin();
-            
+
             registry.register(plugin1);
             registry.register(plugin2);
 

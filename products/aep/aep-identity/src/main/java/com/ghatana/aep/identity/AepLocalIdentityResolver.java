@@ -8,11 +8,8 @@ import com.ghatana.identity.AgentIdentity;
 import com.ghatana.identity.spi.IdentityResolver;
 import io.activej.promise.Promise;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

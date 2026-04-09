@@ -7,7 +7,6 @@ import com.ghatana.pattern.api.model.PatternSpecification;
 import com.ghatana.pattern.api.model.PatternStatus;
 import com.ghatana.pattern.storage.PatternRepository;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
 import io.micrometer.core.instrument.MeterRegistry;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
@@ -22,10 +21,10 @@ import java.util.UUID;
 
 /**
  * PostgreSQL implementation of {@link PatternRepository} with metrics and async execution.
- * 
+ *
  * <p>Provides JDBC-based persistence for patterns using PostgreSQL-specific features (JSONB, arrays).
  * All database operations are wrapped in ActiveJ Promises for non-blocking execution.
- * 
+ *
  * @doc.pattern Repository Pattern - Concrete implementation of PatternRepository interface using
  *               PostgreSQL as backing store. Enables switching to different storage backends
  *               (Redis, MongoDB) without changing consuming code.
@@ -46,7 +45,7 @@ import java.util.UUID;
  *                 compiled_at TIMESTAMP WITH TIME ZONE,
  *                 UNIQUE (tenant_id, name)
  *             );
- *             
+ *
  *             -- Required indexes for performance
  *             CREATE INDEX idx_patterns_tenant ON patterns(tenant_id);
  *             CREATE INDEX idx_patterns_tenant_status ON patterns(tenant_id, status);
@@ -114,7 +113,7 @@ import java.util.UUID;
  *                  <td>Database error count (by operation, error type)</td>
  *                </tr>
  *              </table>
- *              
+ *
  *              <p><strong>Micrometer Integration:</strong> Uses {@code Timer.Sample} for operation
  *              timing and {@code MetricsCollector} for error counting.
  * @doc.threading Thread-Safe - JDBC Connection pooling ensures thread safety. Multiple concurrent
@@ -157,19 +156,19 @@ import java.util.UUID;
  *              <pre>
  *              PostgresPatternRepository repository = new PostgresPatternRepository(
  *                  dataSource, objectMapper, meterRegistry, metricsCollector);
- *              
+ *
  *              PatternSpecification spec = PatternSpecification.builder()
  *                  .tenantId("tenant-123")
  *                  .name("fraud-detection")
  *                  .eventTypes(List.of("login.failed", "transaction.high"))
  *                  .build();
- *              
+ *
  *              // Save pattern (async, returns Promise)
  *              repository.save(spec)
  *                  .whenComplete((metadata, error) -> {
  *                      if (error == null) {
  *                          System.out.println("Saved pattern: " + metadata.getId());
- *                          
+ *
  *                          // Metrics automatically collected (save timer)
  *                          // pattern.repository.save: 25ms
  *                      } else {
@@ -179,7 +178,7 @@ import java.util.UUID;
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Query by Event Type (Array Containment):</strong>
  *              <pre>
  *              // Find all patterns containing "transaction" event type
@@ -189,19 +188,19 @@ import java.util.UUID;
  *                          // SQL: WHERE event_types @> ARRAY['transaction']::text[]
  *                          // Returns patterns with event_types = ['transaction', 'payment']
  *                          // or ['transaction'] or ['login', 'transaction', 'logout']
- *                          patterns.forEach(p -> 
+ *                          patterns.forEach(p ->
  *                              System.out.println("Pattern: " + p.getName()));
  *                      }
  *                  });
  *              </pre>
- *              
+ *
  *              <strong>Status Update with Timestamp:</strong>
  *              <pre>
  *              // Activate pattern (updates status + activated_at timestamp)
  *              repository.updateStatus(patternId, PatternStatus.ACTIVE)
  *                  .whenComplete((void, error) -> {
  *                      if (error == null) {
- *                          // SQL: UPDATE patterns SET status = 'ACTIVE', 
+ *                          // SQL: UPDATE patterns SET status = 'ACTIVE',
  *                          //      activated_at = CURRENT_TIMESTAMP WHERE id = ?
  *                          System.out.println("Pattern activated");
  *                      }
@@ -228,7 +227,7 @@ import java.util.UUID;
  * @doc.pattern Repository
  */
 public class PostgresPatternRepository implements PatternRepository {
-    
+
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
     private final MetricsCollector metrics;
@@ -238,7 +237,7 @@ public class PostgresPatternRepository implements PatternRepository {
         this.objectMapper = objectMapper;
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
     }
-    
+
     @Override
     public Promise<PatternMetadata> save(PatternSpecification spec) {
         long startTime = System.currentTimeMillis();
@@ -282,7 +281,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<Optional<PatternMetadata>> findById(UUID id) {
         long startTime = System.currentTimeMillis();
@@ -315,7 +314,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<List<PatternMetadata>> findByTenant(String tenantId, PatternStatus status) {
         long startTime = System.currentTimeMillis();
@@ -359,7 +358,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<List<PatternMetadata>> findByTenantAndName(String tenantId, String name) {
         long startTime = System.currentTimeMillis();
@@ -393,7 +392,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<PatternMetadata> updatePattern(UUID id, PatternSpecification newSpec) {
         long startTime = System.currentTimeMillis();
@@ -440,7 +439,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<Void> updateStatus(UUID id, PatternStatus status) {
         long startTime = System.currentTimeMillis();
@@ -471,7 +470,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<Void> delete(UUID id) {
         long startTime = System.currentTimeMillis();
@@ -500,7 +499,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<Boolean> exists(UUID id) {
         long startTime = System.currentTimeMillis();
@@ -528,7 +527,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     @Override
     public Promise<Long> countByTenant(String tenantId, PatternStatus status) {
         long startTime = System.currentTimeMillis();
@@ -570,7 +569,7 @@ public class PostgresPatternRepository implements PatternRepository {
             return Promise.ofException(e);
         }
     }
-    
+
     private PatternMetadata convertToMetadata(PatternSpecification spec) {
         return PatternMetadata.builder()
                 .id(spec.getId())
@@ -587,7 +586,7 @@ public class PostgresPatternRepository implements PatternRepository {
                 .eventTypes(spec.getEventTypes())
                 .build();
     }
-    
+
     private PatternMetadata convertToMetadata(ResultSet rs) throws SQLException {
         return PatternMetadata.builder()
                 .id((UUID) rs.getObject("id"))
@@ -654,7 +653,3 @@ public class PostgresPatternRepository implements PatternRepository {
         }
     }
 }
-
-
-
-

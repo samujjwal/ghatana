@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * Node.js stack trace parser that handles standard Node.js stack traces with optional
  * configuration-driven patterns.
- 
+
  * @doc.type class
  * @doc.purpose Handles node stack trace parser operations
  * @doc.layer core

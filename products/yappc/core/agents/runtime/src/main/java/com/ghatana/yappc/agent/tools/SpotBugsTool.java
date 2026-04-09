@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agent.tools;
 
-/** SpotBugs analysis tool (stub). 
+/** SpotBugs analysis tool (stub).
  * @doc.type class
  * @doc.purpose Handles spot bugs tool operations
  * @doc.layer core

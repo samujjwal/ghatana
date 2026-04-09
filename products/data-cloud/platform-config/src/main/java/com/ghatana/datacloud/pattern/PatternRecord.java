@@ -16,7 +16,6 @@
 
 package com.ghatana.datacloud.pattern;
 
-import com.ghatana.datacloud.DataRecord;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,7 +23,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Immutable representation of a learned pattern.

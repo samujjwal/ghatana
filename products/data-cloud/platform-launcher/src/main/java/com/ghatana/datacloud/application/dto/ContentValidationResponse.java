@@ -40,18 +40,18 @@ public final class ContentValidationResponse {
      * @param durationMs processing duration in milliseconds (non-negative)
      * @throws NullPointerException if any non-optional parameter is null
      */
-    private ContentValidationResponse(String tenantId, boolean passed, 
+    private ContentValidationResponse(String tenantId, boolean passed,
             List<Map<String, Object>> violations, long durationMs) {
         this.tenantId = Objects.requireNonNull(tenantId, "tenantId cannot be null");
         this.violations = Objects.requireNonNull(violations, "violations cannot be null");
-        
+
         if (tenantId.isBlank()) {
             throw new IllegalArgumentException("tenantId cannot be blank");
         }
         if (durationMs < 0) {
             throw new IllegalArgumentException("durationMs cannot be negative");
         }
-        
+
         this.passed = passed;
         this.durationMs = durationMs;
     }

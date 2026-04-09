@@ -104,7 +104,7 @@ public final class EmbeddingAspect implements AIAspect<Record, Record> {
     @Override
     public Promise<Record> process(Record input, AIAspectContext context) {
         String text = textExtractor.apply(input);
-        
+
         if (text == null || text.isBlank()) {
             return Promise.of(input);
         }
@@ -115,7 +115,7 @@ public final class EmbeddingAspect implements AIAspect<Record, Record> {
                     context.setAttribute(ATTR_VECTOR, vector);
                     context.setAttribute(ATTR_DIMENSION, embeddingService.dimension());
                     context.setAttribute(ATTR_MODEL, embeddingService.modelName());
-                    
+
                     // Return input unchanged (embedding stored in context/metadata)
                     return input;
                 });

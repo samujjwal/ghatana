@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @doc.language rust
  * @doc.tools cargo,clippy,rustfmt
  * @since 2.0.0 - Migrated to Promise-based API
- 
+
  * @doc.purpose Handles rust language service operations
  * @doc.layer core
  * @doc.pattern Service

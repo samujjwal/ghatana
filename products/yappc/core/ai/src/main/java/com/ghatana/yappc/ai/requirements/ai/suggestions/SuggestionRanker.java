@@ -1,6 +1,5 @@
 package com.ghatana.yappc.ai.requirements.ai.suggestions;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 

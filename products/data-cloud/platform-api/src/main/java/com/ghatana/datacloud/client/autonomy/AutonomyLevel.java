@@ -38,7 +38,7 @@ package com.ghatana.datacloud.client.autonomy;
  * if (level.requiresHumanApproval()) {
  *     requestApproval(action);
  * }
- * 
+ *
  * // Transition logic
  * AutonomyLevel next = level.upgrade();
  * }</pre>

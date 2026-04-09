@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
 
 /**
  * Production-ready implementation of the ContentGenerationService gRPC service.
- * 
+ *
  * <p>This service provides AI-powered educational content generation including:
  * <ul>
  *   <li>Learning claims generation with Bloom's taxonomy alignment</li>
@@ -46,11 +46,11 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private static final Logger LOG = LoggerFactory.getLogger(ContentGenerationServiceImpl.class);
     private static final ObjectMapper MAPPER = JsonUtils.getDefaultMapper();
-    
+
     private final LLMGateway llmGateway;
     private final Executor executor;
     private final MeterRegistry meterRegistry;
-    
+
     // Metrics
     private final Counter claimsGeneratedCounter;
     private final Counter examplesGeneratedCounter;
@@ -71,7 +71,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
         this.llmGateway = llmGateway;
         this.executor = executor;
         this.meterRegistry = meterRegistry;
-        
+
         // Initialize metrics
         this.claimsGeneratedCounter = Counter.builder("tutorputor.content.claims.generated")
             .description("Number of learning claims generated")
@@ -104,12 +104,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void generateClaims(GenerateClaimsRequest request, StreamObserver<GenerateClaimsResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Generating claims for topic='{}', gradeLevel='{}', domain='{}', maxClaims={}, requestId={}",
             request.getTopic(), request.getGradeLevel(), request.getDomain(), request.getMaxClaims(), requestId);
-        
+
         String prompt = buildClaimsPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(2000)
@@ -167,20 +167,20 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private String buildClaimsPrompt(GenerateClaimsRequest request) {
         int maxClaims = request.getMaxClaims() > 0 ? request.getMaxClaims() : 5;
-        
+
         return String.format("""
             You are an expert educational content designer creating learning claims.
-            
+
             ## Task
             Generate %d distinct, testable learning claims for the topic: "%s"
-            
+
             ## Requirements
             1. Each claim must be a single, verifiable statement of what a learner will know or be able to do
             2. Claims must progress through Bloom's Taxonomy levels (REMEMBER, UNDERSTAND, APPLY, ANALYZE, EVALUATE, CREATE)
             3. Language must be appropriate for %s students
             4. Claims must be specific to %s domain
             5. Each claim must be independently assessable
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "claims": [
@@ -191,7 +191,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                 }
               ]
             }
-            
+
             Generate exactly %d claims with diverse Bloom's levels.
             """,
             maxClaims,
@@ -204,12 +204,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private List<LearningClaim> parseClaimsResponse(String llmResponse) {
         List<LearningClaim> claims = new ArrayList<>();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode claimsNode = root.get("claims");
-            
+
             if (claimsNode != null && claimsNode.isArray()) {
                 int index = 0;
                 for (JsonNode claimNode : claimsNode) {
@@ -218,7 +218,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                         .setText(getTextOrDefault(claimNode, "text", ""))
                         .setBloomLevel(getTextOrDefault(claimNode, "bloom_level", "UNDERSTAND"))
                         .setOrderIndex(index);
-                    
+
                     claims.add(builder.build());
                     index++;
                 }
@@ -226,7 +226,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
         } catch (Exception e) {
             LOG.error("Failed to parse claims from LLM response", e);
         }
-        
+
         return claims;
     }
 
@@ -238,12 +238,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void analyzeContentNeeds(AnalyzeContentNeedsRequest request, StreamObserver<AnalyzeContentNeedsResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Analyzing content needs for claim, bloomLevel='{}', domain='{}', requestId={}",
             request.getBloomLevel(), request.getDomain(), requestId);
-        
+
         String prompt = buildContentNeedsPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(1500)
@@ -297,18 +297,18 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     private String buildContentNeedsPrompt(AnalyzeContentNeedsRequest request) {
         return String.format("""
             You are an instructional design expert analyzing what types of supporting content a learning claim requires.
-            
+
             ## Learning Claim
             "%s"
-            
+
             ## Claim Characteristics
             - Bloom's Level: %s
             - Grade Level: %s
             - Domain: %s
-            
+
             ## Task
             Analyze what types of supporting content would best help learners master this claim.
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "examples": {
@@ -343,11 +343,11 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private ContentNeeds parseContentNeedsResponse(String llmResponse) {
         ContentNeeds.Builder builder = ContentNeeds.newBuilder();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
-            
+
             // Parse examples needs
             JsonNode examplesNode = root.get("examples");
             if (examplesNode != null) {
@@ -356,17 +356,17 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                     .setCount(getIntOrDefault(examplesNode, "count", 2))
                     .setNecessity(getDoubleOrDefault(examplesNode, "necessity", 0.8))
                     .setRationale(getTextOrDefault(examplesNode, "rationale", ""));
-                
+
                 JsonNode typesNode = examplesNode.get("types");
                 if (typesNode != null && typesNode.isArray()) {
                     for (JsonNode typeNode : typesNode) {
                         exampleBuilder.addTypes(typeNode.asText());
                     }
                 }
-                
+
                 builder.setExamples(exampleBuilder.build());
             }
-            
+
             // Parse simulation needs
             JsonNode simNode = root.get("simulation");
             if (simNode != null) {
@@ -378,7 +378,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                     .setRationale(getTextOrDefault(simNode, "rationale", ""))
                     .build());
             }
-            
+
             // Parse animation needs
             JsonNode animNode = root.get("animation");
             if (animNode != null) {
@@ -390,11 +390,11 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                     .setRationale(getTextOrDefault(animNode, "rationale", ""))
                     .build());
             }
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse content needs from LLM response", e);
         }
-        
+
         return builder.build();
     }
 
@@ -406,12 +406,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void generateExamples(GenerateExamplesRequest request, StreamObserver<GenerateExamplesResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Generating examples for claimRef='{}', types={}, count={}, requestId={}",
             request.getClaimRef(), request.getExampleTypesList(), request.getCount(), requestId);
-        
+
         String prompt = buildExamplesPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(2500)
@@ -465,30 +465,30 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private String buildExamplesPrompt(GenerateExamplesRequest request) {
         int count = request.getCount() > 0 ? request.getCount() : 2;
-        String types = request.getExampleTypesCount() > 0 
+        String types = request.getExampleTypesCount() > 0
             ? String.join(", ", request.getExampleTypesList())
             : "REAL_WORLD, PROBLEM_SOLVING";
-        
+
         return String.format("""
             You are an expert educational content creator generating examples for a learning claim.
-            
+
             ## Learning Claim
             Reference: %s
             Claim: "%s"
-            
+
             ## Target Audience
             - Grade Level: %s
             - Domain: %s
-            
+
             ## Requirements
             Generate %d examples of the following types: %s
-            
+
             Each example must:
             1. Directly support understanding the claim
             2. Be age-appropriate and culturally sensitive
             3. Include clear learning points
             4. Connect to real-world applications
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "examples": [
@@ -515,12 +515,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private List<Example> parseExamplesResponse(String llmResponse) {
         List<Example> examples = new ArrayList<>();
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode examplesNode = root.get("examples");
-            
+
             if (examplesNode != null && examplesNode.isArray()) {
                 int idx = 1;
                 for (JsonNode exNode : examplesNode) {
@@ -531,14 +531,14 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                         .setDescription(getTextOrDefault(exNode, "description", ""))
                         .setContent(getTextOrDefault(exNode, "content", ""))
                         .setRelevanceScore(getDoubleOrDefault(exNode, "relevance_score", 0.8));
-                    
+
                     JsonNode tagsNode = exNode.get("tags");
                     if (tagsNode != null && tagsNode.isArray()) {
                         for (JsonNode tag : tagsNode) {
                             builder.addTags(tag.asText());
                         }
                     }
-                    
+
                     examples.add(builder.build());
                     idx++;
                 }
@@ -546,7 +546,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
         } catch (Exception e) {
             LOG.error("Failed to parse examples from LLM response", e);
         }
-        
+
         return examples;
     }
 
@@ -558,12 +558,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void generateSimulation(GenerateSimulationRequest request, StreamObserver<GenerateSimulationResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Generating simulation for claimRef='{}', interactionType='{}', complexity='{}', requestId={}",
             request.getClaimRef(), request.getInteractionType(), request.getComplexity(), requestId);
-        
+
         String prompt = buildSimulationPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(3000)
@@ -618,23 +618,23 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     private String buildSimulationPrompt(GenerateSimulationRequest request) {
         return String.format("""
             You are an expert simulation designer creating an interactive physics/science simulation.
-            
+
             ## Learning Claim
             Reference: %s
             Claim: "%s"
-            
+
             ## Simulation Requirements
             - Grade Level: %s
             - Domain: %s
             - Interaction Type: %s
             - Complexity: %s
-            
+
             ## Available Entity Types
             BALL, BOX, PLATFORM, RAMP, SPRING, PENDULUM, PULLEY, WALL, LEVER, WHEEL
-            
+
             ## Task
             Design a simulation manifest that helps learners explore and understand the claim.
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "manifest": {
@@ -684,17 +684,17 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
             .setManifestId(UUID.randomUUID().toString())
             .setVersion("1.0")
             .setDomain(request.getDomain());
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
             JsonNode manifestNode = root.get("manifest");
-            
+
             if (manifestNode != null) {
                 builder.setTitle(getTextOrDefault(manifestNode, "title", "Simulation"))
                        .setDescription(getTextOrDefault(manifestNode, "description", ""))
                        .setDomainConfig(getTextOrDefault(manifestNode, "domain_config", "{}"));
-                
+
                 // Parse entities
                 JsonNode entitiesNode = manifestNode.get("entities");
                 if (entitiesNode != null && entitiesNode.isArray()) {
@@ -704,7 +704,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                             .setLabel(getTextOrDefault(entityNode, "label", "Entity"))
                             .setEntityType(getTextOrDefault(entityNode, "entity_type", "BALL"))
                             .setVisual(getTextOrDefault(entityNode, "visual", "{}"));
-                        
+
                         JsonNode posNode = entityNode.get("position");
                         if (posNode != null) {
                             entityBuilder.setPosition(Position.newBuilder()
@@ -713,11 +713,11 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                                 .setZ(getDoubleOrDefault(posNode, "z", 0))
                                 .build());
                         }
-                        
+
                         builder.addEntities(entityBuilder.build());
                     }
                 }
-                
+
                 // Parse steps
                 JsonNode stepsNode = manifestNode.get("steps");
                 if (stepsNode != null && stepsNode.isArray()) {
@@ -726,18 +726,18 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                             .setId(getTextOrDefault(stepNode, "id", "step"))
                             .setDescription(getTextOrDefault(stepNode, "description", ""))
                             .setDuration(getIntOrDefault(stepNode, "duration", 1000));
-                        
+
                         JsonNode actionsNode = stepNode.get("actions");
                         if (actionsNode != null && actionsNode.isArray()) {
                             for (JsonNode action : actionsNode) {
                                 stepBuilder.addActions(action.asText());
                             }
                         }
-                        
+
                         builder.addSteps(stepBuilder.build());
                     }
                 }
-                
+
                 // Parse keyframes
                 JsonNode keyframesNode = manifestNode.get("keyframes");
                 if (keyframesNode != null && keyframesNode.isArray()) {
@@ -750,11 +750,11 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                     }
                 }
             }
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse simulation from LLM response", e);
         }
-        
+
         return builder.build();
     }
 
@@ -766,12 +766,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void validateContent(ValidateContentRequest request, StreamObserver<ValidateContentResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Validating content for experienceId='{}', domain='{}', requestId={}",
             request.getExperienceId(), request.getDomain(), requestId);
-        
+
         String prompt = buildValidationPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(2000)
@@ -820,27 +820,27 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private String buildValidationPrompt(ValidateContentRequest request) {
         String claims = String.join("\n- ", request.getClaimTextsList());
-        
+
         return String.format("""
             You are an educational content quality assessor validating learning content.
-            
+
             ## Content to Validate
             - Title: %s
             - Description: %s
             - Domain: %s
             - Claims:
             - %s
-            
+
             ## Validation Dimensions
             1. **Educational** (0-100): Learning objectives clarity, Bloom's alignment, scaffolding
             2. **Experiential** (0-100): Engagement, interactivity, real-world relevance
             3. **Safety** (0-100): Age-appropriateness, no harmful content, accessibility
             4. **Technical** (0-100): Simulation accuracy, rendering feasibility
             5. **Accessibility** (0-100): Multiple modalities, clear language, inclusive design
-            
+
             ## Task
             Evaluate the content across all dimensions and identify any issues.
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "status": "valid",
@@ -863,7 +863,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                 }
               ]
             }
-            
+
             Status should be: "valid" (>80), "warning" (60-80), or "invalid" (<60)
             """,
             request.getTitle(),
@@ -877,15 +877,15 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                                                             GenerationMetadata metadata) {
         ValidateContentResponse.Builder builder = ValidateContentResponse.newBuilder()
             .setRequestId(requestId);
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
-            
+
             builder.setStatus(getTextOrDefault(root, "status", "valid"))
                    .setOverallScore(getIntOrDefault(root, "overall_score", 80))
                    .setCanPublish(getBoolOrDefault(root, "can_publish", true));
-            
+
             // Parse dimension scores
             JsonNode scoresNode = root.get("dimension_scores");
             if (scoresNode != null) {
@@ -895,7 +895,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                     builder.putDimensionScores(field.getKey(), field.getValue().asInt());
                 }
             }
-            
+
             // Parse issues
             JsonNode issuesNode = root.get("issues");
             if (issuesNode != null && issuesNode.isArray()) {
@@ -909,16 +909,16 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                         .build());
                 }
             }
-            
+
             builder.setIssueCount(builder.getIssuesCount());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse validation response from LLM", e);
             builder.setStatus("error")
                    .setOverallScore(0)
                    .setCanPublish(false);
         }
-        
+
         builder.setMetadata(metadata);
         return builder.build();
     }
@@ -931,12 +931,12 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
     public void enhanceContent(EnhanceContentRequest request, StreamObserver<EnhanceContentResponse> responseObserver) {
         Instant start = Instant.now();
         String requestId = request.getRequestId().isEmpty() ? UUID.randomUUID().toString() : request.getRequestId();
-        
+
         LOG.info("Enhancing content for experienceId='{}', types={}, requestId={}",
             request.getExperienceId(), request.getEnhancementTypesList(), requestId);
-        
+
         String prompt = buildEnhancementPrompt(request);
-        
+
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(prompt)
             .maxTokens(2500)
@@ -986,13 +986,13 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
 
     private String buildEnhancementPrompt(EnhanceContentRequest request) {
         String claims = String.join("\n- ", request.getClaimTextsList());
-        String types = request.getEnhancementTypesCount() > 0 
+        String types = request.getEnhancementTypesCount() > 0
             ? String.join(", ", request.getEnhancementTypesList())
             : "engagement, real_world, assessment, scaffolding";
-        
+
         return String.format("""
             You are an educational content enhancement specialist.
-            
+
             ## Content to Enhance
             - Title: %s
             - Description: %s
@@ -1000,18 +1000,18 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
             - Grade Level: %s
             - Claims:
             - %s
-            
+
             ## Enhancement Types Requested: %s
-            
+
             ## Enhancement Categories
             - **engagement**: Gamification, interactive elements, curiosity hooks
             - **real_world**: Real-world applications, current events, career connections
             - **assessment**: Formative assessments, self-check questions, reflection prompts
             - **scaffolding**: Prerequisites, hints, alternative explanations, worked examples
-            
+
             ## Task
             Generate specific, actionable enhancement suggestions.
-            
+
             ## Output Format (JSON only, no markdown)
             {
               "enhancements": [
@@ -1041,13 +1041,13 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                                                             GenerationMetadata metadata) {
         EnhanceContentResponse.Builder builder = EnhanceContentResponse.newBuilder()
             .setRequestId(requestId);
-        
+
         try {
             String json = extractJson(llmResponse);
             JsonNode root = MAPPER.readTree(json);
-            
+
             builder.setOverallConfidence(getDoubleOrDefault(root, "overall_confidence", 0.8));
-            
+
             JsonNode enhancementsNode = root.get("enhancements");
             if (enhancementsNode != null && enhancementsNode.isArray()) {
                 for (JsonNode enhNode : enhancementsNode) {
@@ -1062,15 +1062,15 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                         .build());
                 }
             }
-            
+
             builder.setEnhancementCount(builder.getEnhancementsCount());
-            
+
         } catch (Exception e) {
             LOG.error("Failed to parse enhancement response from LLM", e);
             builder.setOverallConfidence(0.0)
                    .setEnhancementCount(0);
         }
-        
+
         builder.setMetadata(metadata);
         return builder.build();
     }
@@ -1101,7 +1101,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
         if (response == null || response.isEmpty()) {
             return "{}";
         }
-        
+
         // Try to extract from markdown code block
         int jsonStart = response.indexOf("```json");
         if (jsonStart != -1) {
@@ -1111,7 +1111,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                 return response.substring(start, end).trim();
             }
         }
-        
+
         // Try to extract from any code block
         jsonStart = response.indexOf("```");
         if (jsonStart != -1) {
@@ -1121,7 +1121,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                 return response.substring(start, end).trim();
             }
         }
-        
+
         // Try to find raw JSON
         int braceStart = response.indexOf("{");
         if (braceStart != -1) {
@@ -1130,7 +1130,7 @@ public class ContentGenerationServiceImpl extends ContentGenerationServiceGrpc.C
                 return response.substring(braceStart, braceEnd + 1);
             }
         }
-        
+
         return response;
     }
 

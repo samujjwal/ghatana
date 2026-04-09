@@ -8,8 +8,6 @@ import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.DeterminismGuarantee;
-import com.ghatana.agent.FailureMode;
-import com.ghatana.agent.StateMutability;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.datacloud.client.DataCloudClient;
 import com.ghatana.datacloud.entity.EntityInterface;

@@ -22,16 +22,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * YOLOv8 integration for cost-optimized object detection.
  * Uses GPL-3.0 licensed YOLOv8 with OpenCV for high-performance detection.
- * 
+ *
  * @doc.type component
  * @doc.purpose Object detection using YOLOv8
  * @doc.layer vision-core
  * @doc.pattern adapter
  */
 public class YoloV8Adapter implements VisionDetector {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(YoloV8Adapter.class);
-    
+
     static {
         try {
             NativeLoader.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -41,17 +41,17 @@ public class YoloV8Adapter implements VisionDetector {
             throw new RuntimeException("OpenCV initialization failed", e);
         }
     }
-    
+
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final Path modelPath;
     private final Map<String, Integer> classMapping;
     private final double confidenceThreshold;
     private final double nmsThreshold;
     private Net net;
-    
+
     private static final int INPUT_SIZE = 640;
     private static final int MAX_DETECTIONS = 100;
-    
+
     private static final List<String> COCO_CLASSES = Arrays.asList(
         "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
         "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
@@ -63,102 +63,102 @@ public class YoloV8Adapter implements VisionDetector {
         "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase",
         "scissors", "teddy bear", "hair drier", "toothbrush"
     );
-    
+
     public YoloV8Adapter(Path modelPath, double confidenceThreshold, double nmsThreshold) {
         this.modelPath = modelPath;
         this.confidenceThreshold = confidenceThreshold;
         this.nmsThreshold = nmsThreshold;
         this.classMapping = createClassMapping();
     }
-    
+
     public void initialize(String modelName) {
         if (initialized.get()) {
             LOG.warn("YOLOv8 already initialized");
             return;
         }
-        
+
         try {
             Path modelFile = modelPath.resolve(modelName + ".pt");
             if (!Files.exists(modelFile)) {
                 throw new RuntimeException("YOLOv8 model not found: " + modelFile);
             }
-            
+
             initializeYoloModel(modelFile.toString());
             initialized.set(true);
             LOG.info("YOLOv8 initialized successfully with model: {}", modelName);
-            
+
         } catch (Exception e) {
             LOG.error("YOLOv8 initialization failed", e);
             throw new RuntimeException("YOLOv8 initialization failed", e);
         }
     }
-    
+
     public List<DetectedObject> detectObjects(byte[] imageData, DetectionOptions options) {
         ensureInitialized();
-        
+
         try {
             Mat image = bytesToMat(imageData);
             Mat processedImage = preprocessImage(image);
             List<YoloDetection> rawDetections = runInference(processedImage);
             List<DetectedObject> detectedObjects = postProcessDetections(rawDetections, image.size());
-            
+
             if (options.getTargetClasses() != null && !options.getTargetClasses().isEmpty()) {
                 detectedObjects = filterByClasses(detectedObjects, options.getTargetClasses());
             }
-            
+
             detectedObjects.sort((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()));
-            
+
             if (options.getMaxDetections() > 0) {
                 detectedObjects = detectedObjects.subList(0, Math.min(detectedObjects.size(), options.getMaxDetections()));
             }
-            
+
             return detectedObjects;
-            
+
         } catch (Exception e) {
             LOG.error("Object detection failed", e);
             throw new RuntimeException("Object detection failed", e);
         }
     }
-    
+
     public List<DetectedObject> detectObjectsInFrame(Mat frame, DetectionOptions options) {
         ensureInitialized();
-        
+
         try {
             Mat processedFrame = preprocessImage(frame);
             List<YoloDetection> rawDetections = runInference(processedFrame);
             List<DetectedObject> detectedObjects = postProcessDetections(rawDetections, frame.size());
-            
+
             if (options.getTargetClasses() != null && !options.getTargetClasses().isEmpty()) {
                 detectedObjects = filterByClasses(detectedObjects, options.getTargetClasses());
             }
-            
+
             detectedObjects.sort((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()));
             if (options.getMaxDetections() > 0) {
                 detectedObjects = detectedObjects.subList(0, Math.min(detectedObjects.size(), options.getMaxDetections()));
             }
-            
+
             return detectedObjects;
-            
+
         } catch (Exception e) {
             LOG.error("Frame object detection failed", e);
             throw new RuntimeException("Frame object detection failed", e);
         }
     }
-    
+
     public boolean isInitialized() {
         return initialized.get();
     }
-    
+
     public List<String> getSupportedClasses() {
         return new ArrayList<>(COCO_CLASSES);
     }
-    
+
     private void ensureInitialized() {
         if (!initialized.get()) {
             throw new IllegalStateException("YOLOv8 not initialized");
         }
     }
-    
+
     private Map<String, Integer> createClassMapping() {
         Map<String, Integer> mapping = new HashMap<>();
         for (int i = 0; i < COCO_CLASSES.size(); i++) {
@@ -166,7 +166,7 @@ public class YoloV8Adapter implements VisionDetector {
         }
         return mapping;
     }
-    
+
     private void initializeYoloModel(String modelPath) {
         LOG.info("Loading YOLOv8 ONNX model from: {}", modelPath);
         net = Dnn.readNetFromONNX(modelPath);
@@ -177,7 +177,7 @@ public class YoloV8Adapter implements VisionDetector {
         net.setPreferableTarget(Dnn.DNN_TARGET_CPU);
         LOG.info("YOLOv8 ONNX model loaded — output layers: {}", getOutputLayerNames());
     }
-    
+
     private Mat bytesToMat(byte[] imageData) {
         try {
             BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageData));
@@ -186,12 +186,12 @@ public class YoloV8Adapter implements VisionDetector {
             throw new RuntimeException("Failed to convert image data to Mat", e);
         }
     }
-    
+
     private Mat bufferedImageToMat(BufferedImage bufferedImage) {
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
         int channels = bufferedImage.getColorModel().hasAlpha() ? 4 : 3;
-        
+
         Mat mat = new Mat(height, width, CvType.CV_8UC(channels));
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -205,7 +205,7 @@ public class YoloV8Adapter implements VisionDetector {
         }
         return mat;
     }
-    
+
     private Mat preprocessImage(Mat image) {
         Mat resized = new Mat();
         Imgproc.resize(image, resized, new Size(INPUT_SIZE, INPUT_SIZE));
@@ -213,7 +213,7 @@ public class YoloV8Adapter implements VisionDetector {
         resized.convertTo(normalized, CvType.CV_32F, 1.0/255.0);
         return Dnn.blobFromImage(normalized, 1.0, new Size(INPUT_SIZE, INPUT_SIZE), new Scalar(0, 0, 0), true, false);
     }
-    
+
     private List<YoloDetection> runInference(Mat processedImage) {
         if (net == null || net.empty()) {
             LOG.warn("YOLOv8 net not initialised — returning empty detections");
@@ -273,19 +273,19 @@ public class YoloV8Adapter implements VisionDetector {
         }
         return candidates;
     }
-    
+
     private List<DetectedObject> postProcessDetections(List<YoloDetection> rawDetections, Size originalSize) {
         List<DetectedObject> detectedObjects = new ArrayList<>();
         double scaleX = originalSize.width / INPUT_SIZE;
         double scaleY = originalSize.height / INPUT_SIZE;
-        
+
         for (YoloDetection detection : rawDetections) {
             if (detection.confidence >= confidenceThreshold) {
                 double x = detection.x * scaleX;
                 double y = detection.y * scaleY;
                 double width = detection.width * scaleX;
                 double height = detection.height * scaleY;
-                
+
                 BoundingBox bbox = BoundingBox.builder().x(x).y(y).width(width).height(height).build();
                 ObjectAttributes attributes = ObjectAttributes.builder().size(calculateObjectSize(width, height)).build();
                 DetectedObject obj = DetectedObject.builder()
@@ -297,10 +297,10 @@ public class YoloV8Adapter implements VisionDetector {
                 detectedObjects.add(obj);
             }
         }
-        
+
         return applyNonMaximumSuppression(detectedObjects);
     }
-    
+
     private List<DetectedObject> applyNonMaximumSuppression(List<DetectedObject> detections) {
         List<DetectedObject> filtered = new ArrayList<>();
         for (DetectedObject detection : detections) {
@@ -318,7 +318,7 @@ public class YoloV8Adapter implements VisionDetector {
         }
         return filtered;
     }
-    
+
     private List<DetectedObject> filterByClasses(List<DetectedObject> detections, Set<String> targetClasses) {
         List<DetectedObject> filtered = new ArrayList<>();
         for (DetectedObject detection : detections) {
@@ -328,14 +328,14 @@ public class YoloV8Adapter implements VisionDetector {
         }
         return filtered;
     }
-    
+
     private String calculateObjectSize(double width, double height) {
         double area = width * height;
         if (area < 10000) return "small";
         if (area < 50000) return "medium";
         return "large";
     }
-    
+
     private static class YoloDetection {
         final int classId;
         final double confidence;
@@ -343,7 +343,7 @@ public class YoloV8Adapter implements VisionDetector {
         final double y;
         final double width;
         final double height;
-        
+
         YoloDetection(int classId, double confidence, double x, double y, double width, double height) {
             this.classId = classId;
             this.confidence = confidence;

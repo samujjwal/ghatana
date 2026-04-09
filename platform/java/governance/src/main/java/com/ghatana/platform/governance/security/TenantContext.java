@@ -67,7 +67,7 @@ import java.util.concurrent.Callable;
  * // ✅ CORRECT: Explicit scope transfer
  * String originalTenant = TenantContext.getCurrentTenantId();
  * Principal originalPrincipal = TenantContext.current().orElse(null);
- * 
+ *
  * executor.submit(() -> {
  *     try (AutoCloseable scope = TenantContext.scope(originalPrincipal)) {
  *         // New thread has correct tenant/principal context
@@ -99,11 +99,11 @@ import java.util.concurrent.Callable;
 public class TenantContext {
     private static final ThreadLocal<Principal> CURRENT_PRINCIPAL = new ThreadLocal<>();
     private static final ThreadLocal<String> CURRENT_TENANT_ID = new ThreadLocal<>();
-    
+
     private TenantContext() {
         // Utility class
     }
-    
+
     /**
      * Gets the current tenant ID.
      *
@@ -113,7 +113,7 @@ public class TenantContext {
         String tenantId = CURRENT_TENANT_ID.get();
         return tenantId != null ? tenantId : "default-tenant";
     }
-    
+
     /**
      * Sets the current tenant ID.
      *
@@ -122,7 +122,7 @@ public class TenantContext {
     public static void setCurrentTenantId(String tenantId) {
         CURRENT_TENANT_ID.set(tenantId);
     }
-    
+
     /**
      * Gets the current principal.
      *
@@ -131,7 +131,7 @@ public class TenantContext {
     public static Optional<Principal> current() {
         return Optional.ofNullable(CURRENT_PRINCIPAL.get());
     }
-    
+
     /**
      * A scope handle that can be closed without throwing checked exceptions.
      * Used with try-with-resources to restore the previous tenant context.
@@ -152,12 +152,12 @@ public class TenantContext {
     public static Scope scope(Principal principal) {
         Principal previous = CURRENT_PRINCIPAL.get();
         String previousTenantId = CURRENT_TENANT_ID.get();
-        
+
         CURRENT_PRINCIPAL.set(principal);
         if (principal != null) {
             CURRENT_TENANT_ID.set(principal.getTenantId());
         }
-        
+
         return () -> {
             CURRENT_PRINCIPAL.set(previous);
             CURRENT_TENANT_ID.set(previousTenantId);

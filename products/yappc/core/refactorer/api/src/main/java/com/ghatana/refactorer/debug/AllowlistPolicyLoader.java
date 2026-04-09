@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Loads AllowlistPolicy from a JSON file at config/debug/safe-commands.allowlist.json 
+ * Loads AllowlistPolicy from a JSON file at config/debug/safe-commands.allowlist.json
  * @doc.type class
  * @doc.purpose Handles allowlist policy loader operations
  * @doc.layer core

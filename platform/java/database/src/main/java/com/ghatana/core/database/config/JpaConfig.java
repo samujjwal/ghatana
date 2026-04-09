@@ -47,7 +47,7 @@ import java.util.Properties;
  *     .password("dbpass")
  *     .entityPackages("com.example.entity")
  *     .build();
- * 
+ *
  * DataSource dataSource = config.createDataSource();
  * EntityManagerFactory emf = config.createEntityManagerFactory(dataSource);
  *
@@ -151,18 +151,18 @@ import java.util.Properties;
  */
 public final class JpaConfig {
     private static final Logger LOG = LoggerFactory.getLogger(JpaConfig.class);
-    
+
     // Default connection pool settings
     private static final int DEFAULT_POOL_SIZE = 20;
     private static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration DEFAULT_IDLE_TIMEOUT = Duration.ofMinutes(10);
     private static final Duration DEFAULT_MAX_LIFETIME = Duration.ofMinutes(30);
-    
+
     // Default JPA settings
     private static final String DEFAULT_DIALECT = "org.hibernate.dialect.PostgreSQLDialect";
     private static final String DEFAULT_DDL_AUTO = "none";
     private static final int DEFAULT_BATCH_SIZE = 100;
-    
+
     private final String jdbcUrl;
     private final String username;
     private final String password;
@@ -178,7 +178,7 @@ public final class JpaConfig {
     private final String dialect;
     private final boolean enableCache;
     private final int batchSize;
-    
+
     private JpaConfig(Builder builder) {
         // Align validation to throw IllegalArgumentException with messages expected by tests
         if (builder.jdbcUrl == null || builder.jdbcUrl.trim().isEmpty()) {
@@ -213,27 +213,27 @@ public final class JpaConfig {
         this.enableCache = builder.enableCache;
         this.batchSize = builder.batchSize;
     }
-    
+
     /**
      * Creates a production-ready HikariCP data source.
-     * 
+     *
      * @return Configured DataSource with connection pooling
      */
     public DataSource createDataSource() {
         LOG.info("Creating HikariCP data source for URL: {}", jdbcUrl);
-        
+
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(username);
         config.setPassword(password);
-        
+
         // Pool settings
         config.setMaximumPoolSize(poolSize);
         config.setConnectionTimeout(connectionTimeout.toMillis());
         config.setIdleTimeout(idleTimeout.toMillis());
         config.setMaxLifetime(maxLifetime.toMillis());
         config.setAutoCommit(false);
-        
+
         // Performance optimizations
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
@@ -245,38 +245,38 @@ public final class JpaConfig {
         config.addDataSourceProperty("cacheServerConfiguration", "true");
         config.addDataSourceProperty("elideSetAutoCommits", "true");
         config.addDataSourceProperty("maintainTimeStats", "false");
-        
+
         // Health check
         config.setHealthCheckRegistry(null);
         config.setLeakDetectionThreshold(60000); // 1 minute
-        
+
         return new HikariDataSource(config);
     }
-    
+
     /**
      * Creates JPA properties for Hibernate.
-     * 
+     *
      * @return Production-ready JPA properties
      */
     public Properties createJpaProperties() {
         Properties properties = new Properties();
-        
+
         // Basic Hibernate settings
     properties.setProperty(AvailableSettings.HBM2DDL_AUTO, ddlAuto);
     properties.setProperty(AvailableSettings.DIALECT, dialect);
     properties.setProperty(AvailableSettings.SHOW_SQL, Boolean.toString(showSql));
     properties.setProperty(AvailableSettings.FORMAT_SQL, Boolean.toString(formatSql));
-        
+
         // Performance settings
     properties.setProperty(AvailableSettings.STATEMENT_BATCH_SIZE, Integer.toString(batchSize));
     properties.setProperty(AvailableSettings.ORDER_INSERTS, "true");
     properties.setProperty(AvailableSettings.ORDER_UPDATES, "true");
     properties.setProperty(AvailableSettings.BATCH_VERSIONED_DATA, "true");
-        
+
         // Connection handling
         properties.put(AvailableSettings.CONNECTION_PROVIDER_DISABLES_AUTOCOMMIT, true);
         properties.put(AvailableSettings.AUTOCOMMIT, false);
-        
+
         // Cache settings
         if (enableCache) {
             properties.setProperty(AvailableSettings.USE_SECOND_LEVEL_CACHE, "true");
@@ -286,33 +286,33 @@ public final class JpaConfig {
             properties.setProperty(AvailableSettings.USE_SECOND_LEVEL_CACHE, "false");
             properties.setProperty(AvailableSettings.USE_QUERY_CACHE, "false");
         }
-        
+
         // Statistics (disabled in production for performance)
     properties.setProperty(AvailableSettings.GENERATE_STATISTICS, "false");
-        
+
         // Validation
     properties.setProperty(AvailableSettings.JAKARTA_VALIDATION_MODE, "callback");
-        
+
         // Logging
     properties.setProperty(AvailableSettings.LOG_SESSION_METRICS, "false");
-        
+
         return properties;
     }
-    
+
     /**
      * Creates the EntityManagerFactory with the given data source.
-     * 
+     *
      * @param dataSource The data source to use
      * @return Configured EntityManagerFactory
      */
     public EntityManagerFactory createEntityManagerFactory(DataSource dataSource) {
         Preconditions.requireNonNull(dataSource, "DataSource cannot be null");
-        
+
         LOG.info("Creating EntityManagerFactory for packages: {}", String.join(", ", entityPackages));
-        
+
         Properties properties = createJpaProperties();
         HibernatePersistenceProvider provider = new HibernatePersistenceProvider();
-        
+
         PersistenceUnitInfo persistenceUnitInfo;
         if (entityClassNames != null && entityClassNames.length > 0) {
             // If explicit entity class names were provided, use them directly (skip scanning)
@@ -324,13 +324,13 @@ public final class JpaConfig {
                 properties
             );
         }
-        
+
         return provider.createContainerEntityManagerFactory(persistenceUnitInfo, properties);
     }
-    
+
     /**
      * Safely shuts down a data source.
-     * 
+     *
      * @param dataSource The data source to shut down
      */
     public static void shutdownDataSource(DataSource dataSource) {
@@ -341,16 +341,16 @@ public final class JpaConfig {
             }
         }
     }
-    
+
     /**
      * Creates a new builder for JpaConfig.
-     * 
+     *
      * @return A new builder instance
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for JpaConfig with fluent API and sensible defaults.
      */
@@ -370,12 +370,12 @@ public final class JpaConfig {
         private boolean enableCache = true;
     private String[] entityClassNames = new String[0];
         private int batchSize = DEFAULT_BATCH_SIZE;
-        
+
         private Builder() {}
-        
+
         /**
          * Sets the JDBC URL.
-         * 
+         *
          * @param jdbcUrl The JDBC URL
          * @return This builder
          */
@@ -383,10 +383,10 @@ public final class JpaConfig {
             this.jdbcUrl = jdbcUrl;
             return this;
         }
-        
+
         /**
          * Sets the database username.
-         * 
+         *
          * @param username The username
          * @return This builder
          */
@@ -394,10 +394,10 @@ public final class JpaConfig {
             this.username = username;
             return this;
         }
-        
+
         /**
          * Sets the database password.
-         * 
+         *
          * @param password The password
          * @return This builder
          */
@@ -405,10 +405,10 @@ public final class JpaConfig {
             this.password = password;
             return this;
         }
-        
+
         /**
          * Sets the entity packages to scan.
-         * 
+         *
          * @param packages The entity packages
          * @return This builder
          */
@@ -436,10 +436,10 @@ public final class JpaConfig {
             }
             return this;
         }
-        
+
         /**
          * Sets the connection pool size.
-         * 
+         *
          * @param poolSize The pool size (default: 20)
          * @return This builder
          */
@@ -448,10 +448,10 @@ public final class JpaConfig {
             this.poolSize = poolSize;
             return this;
         }
-        
+
         /**
          * Sets the connection timeout.
-         * 
+         *
          * @param timeout The connection timeout (default: 30 seconds)
          * @return This builder
          */
@@ -459,10 +459,10 @@ public final class JpaConfig {
             this.connectionTimeout = Preconditions.requireNonNull(timeout, "Connection timeout cannot be null");
             return this;
         }
-        
+
         /**
          * Sets the idle timeout.
-         * 
+         *
          * @param timeout The idle timeout (default: 10 minutes)
          * @return This builder
          */
@@ -470,10 +470,10 @@ public final class JpaConfig {
             this.idleTimeout = Preconditions.requireNonNull(timeout, "Idle timeout cannot be null");
             return this;
         }
-        
+
         /**
          * Sets the maximum connection lifetime.
-         * 
+         *
          * @param lifetime The max lifetime (default: 30 minutes)
          * @return This builder
          */
@@ -481,10 +481,10 @@ public final class JpaConfig {
             this.maxLifetime = Preconditions.requireNonNull(lifetime, "Max lifetime cannot be null");
             return this;
         }
-        
+
         /**
          * Enables or disables SQL logging.
-         * 
+         *
          * @param showSql Whether to show SQL (default: false)
          * @return This builder
          */
@@ -492,10 +492,10 @@ public final class JpaConfig {
             this.showSql = showSql;
             return this;
         }
-        
+
         /**
          * Enables or disables SQL formatting.
-         * 
+         *
          * @param formatSql Whether to format SQL (default: false)
          * @return This builder
          */
@@ -503,10 +503,10 @@ public final class JpaConfig {
             this.formatSql = formatSql;
             return this;
         }
-        
+
         /**
          * Sets the DDL auto strategy.
-         * 
+         *
          * @param ddlAuto The DDL auto strategy (default: "none")
          * @return This builder
          */
@@ -514,10 +514,10 @@ public final class JpaConfig {
             this.ddlAuto = Preconditions.requireNonNull(ddlAuto, "DDL auto cannot be blank");
             return this;
         }
-        
+
         /**
          * Sets the SQL dialect.
-         * 
+         *
          * @param dialect The SQL dialect (default: PostgreSQL)
          * @return This builder
          */
@@ -525,10 +525,10 @@ public final class JpaConfig {
             this.dialect = Preconditions.requireNonNull(dialect, "Dialect cannot be blank");
             return this;
         }
-        
+
         /**
          * Enables or disables second-level cache.
-         * 
+         *
          * @param enableCache Whether to enable cache (default: true)
          * @return This builder
          */
@@ -536,10 +536,10 @@ public final class JpaConfig {
             this.enableCache = enableCache;
             return this;
         }
-        
+
         /**
          * Sets the batch size for operations.
-         * 
+         *
          * @param batchSize The batch size (default: 100)
          * @return This builder
          */
@@ -548,17 +548,17 @@ public final class JpaConfig {
             this.batchSize = batchSize;
             return this;
         }
-        
+
         /**
          * Builds the JpaConfig instance.
-         * 
+         *
          * @return A new JpaConfig instance
          */
         public JpaConfig build() {
             return new JpaConfig(this);
         }
     }
-    
+
     // Getters
     public String getJdbcUrl() { return jdbcUrl; }
     public String getUsername() { return username; }

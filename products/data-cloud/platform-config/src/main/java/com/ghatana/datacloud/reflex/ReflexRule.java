@@ -16,7 +16,6 @@
 
 package com.ghatana.datacloud.reflex;
 
-import io.activej.promise.Promise;
 import lombok.Builder;
 import lombok.Value;
 

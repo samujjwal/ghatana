@@ -14,10 +14,10 @@ import java.util.Objects;
 
 /**
  * Configuration properties for metrics collection and reporting.
- * 
+ *
  * <p>This class holds configuration options for various metrics-related settings
  * including enabled metrics, percentiles, and distribution statistics.</p>
- * 
+ *
  * <p>Example configuration (in application.yaml or application.properties):</p>
  * <pre>
  * security:
@@ -35,7 +35,7 @@ import java.util.Objects;
  *       expiry: 5m
  *       buffer-length: 3
  * </pre>
- 
+
  *
  * @doc.type class
  * @doc.purpose Metrics properties
@@ -54,34 +54,34 @@ public class MetricsProperties {
 
     /**
      * Creates a new MetricsProperties instance from a Config object.
-     * 
+     *
      * @param config The configuration source
      * @throws NullPointerException if config is null
      */
     public MetricsProperties(Config config) {
         Objects.requireNonNull(config, "Config cannot be null");
-        
+
         this.enabled = Boolean.parseBoolean(config.get("enabled", "true"));
         this.enableJvm = Boolean.parseBoolean(config.get("enable-jvm", "true"));
         this.enableSystem = Boolean.parseBoolean(config.get("enable-system", "true"));
         this.enableHttp = Boolean.parseBoolean(config.get("enable-http", "true"));
-        
+
         // Parse percentiles (e.g., "0.5,0.95,0.99")
         String[] percentilesStr = config.get("percentiles", "0.5,0.95,0.99").split(",");
         this.percentiles = new double[percentilesStr.length];
         for (int i = 0; i < percentilesStr.length; i++) {
             this.percentiles[i] = Double.parseDouble(percentilesStr[i].trim());
         }
-        
+
         // Parse SLA durations (e.g., "1s,5s,10s")
         String[] slaDurations = config.get("sla-http-durations", "1s,5s,10s").split(",");
         this.slaHttpDurations = new Duration[slaDurations.length];
         for (int i = 0; i < slaDurations.length; i++) {
             this.slaHttpDurations[i] = DistributionProperties.parseDuration(slaDurations[i].trim());
         }
-        
+
         this.distribution = new DistributionProperties(config.getChild("distribution"));
-        
+
         // Parse tags (key1:value1,key2:value2)
         this.tags = new HashMap<>();
         String tagsStr = config.get("tags", "");
@@ -95,82 +95,82 @@ public class MetricsProperties {
             }
         }
     }
-    
+
     /**
      * Checks if metrics collection is enabled.
-     * 
+     *
      * @return true if metrics are enabled, false otherwise
      */
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     /**
      * Checks if JVM metrics collection is enabled.
-     * 
+     *
      * @return true if JVM metrics are enabled, false otherwise
      */
     public boolean isEnableJvm() {
         return enableJvm;
     }
-    
+
     /**
      * Checks if system metrics collection is enabled.
-     * 
+     *
      * @return true if system metrics are enabled, false otherwise
      */
     public boolean isEnableSystem() {
         return enableSystem;
     }
-    
+
     /**
      * Checks if HTTP metrics collection is enabled.
-     * 
+     *
      * @return true if HTTP metrics are enabled, false otherwise
      */
     public boolean isEnableHttp() {
         return enableHttp;
     }
-    
+
     /**
      * Gets the percentiles to calculate for timer and distribution metrics.
-     * 
+     *
      * @return Array of percentiles (e.g., [0.5, 0.95, 0.99])
      */
     public double[] getPercentiles() {
         return percentiles;
     }
-    
+
     /**
      * Gets the SLA boundaries for HTTP request durations.
-     * 
+     *
      * @return Array of duration boundaries
      */
     public Duration[] getSlaHttpDurations() {
         return slaHttpDurations;
     }
-    
+
     /**
      * Gets the distribution statistics configuration.
-     * 
+     *
      * @return The distribution properties
      */
     public DistributionProperties getDistribution() {
         return distribution;
     }
-    
+
     /**
      * Gets the common tags to apply to all metrics.
-     * 
+     *
      * @return Map of tag names to values
      */
     public Map<String, String> getTags() {
         return tags;
     }
-    
+
     /**
      * Creates a MeterFilter for HTTP request metrics with the configured SLA boundaries.
-     * 
+     *
      * @return A configured MeterFilter instance
      */
     public MeterFilter httpSlaFilter() {
@@ -193,7 +193,7 @@ public class MetricsProperties {
             }
         };
     }
-    
+
     @Override
     public String toString() {
         return "MetricsProperties{" +
@@ -207,7 +207,7 @@ public class MetricsProperties {
                 ", tags=" + tags +
                 '}';
     }
-    
+
     /**
      * Configuration for distribution statistics.
      */
@@ -217,7 +217,7 @@ public class MetricsProperties {
         private final Duration maximumExpectedValue;
         private final Duration expiry;
         private final int bufferLength;
-        
+
         public DistributionProperties(Config config) {
             this.percentilesHistogram = Boolean.parseBoolean(config.get("percentiles-histogram", "true"));
             this.minimumExpectedValue = parseDuration(config.get("minimum-expected-value", "1ms"));
@@ -225,30 +225,30 @@ public class MetricsProperties {
             this.expiry = parseDuration(config.get("expiry", "5m"));
             this.bufferLength = Integer.parseInt(config.get("buffer-length", "3"));
         }
-        
+
         public boolean isPercentilesHistogram() {
             return percentilesHistogram;
         }
-        
+
         public Duration getMinimumExpectedValue() {
             return minimumExpectedValue;
         }
-        
+
         public Duration getMaximumExpectedValue() {
             return maximumExpectedValue;
         }
-        
+
         public Duration getExpiry() {
             return expiry;
         }
-        
+
         public int getBufferLength() {
             return bufferLength;
         }
-        
+
         /**
          * Creates a DistributionStatisticConfig with the current settings.
-         * 
+         *
          * @return A configured DistributionStatisticConfig
          */
         public DistributionStatisticConfig toDistributionStatisticConfig() {
@@ -260,7 +260,7 @@ public class MetricsProperties {
                     .bufferLength(bufferLength)
                     .build();
         }
-        
+
         @Override
         public String toString() {
             return "DistributionProperties{" +
@@ -271,11 +271,11 @@ public class MetricsProperties {
                     ", bufferLength=" + bufferLength +
                     '}';
         }
-        
+
         public static DistributionProperties fromConfig(Config config) {
             return new DistributionProperties(config);
         }
-        
+
         private static Duration parseDuration(String duration) {
             try {
                 return Duration.parse(duration);
@@ -284,10 +284,10 @@ public class MetricsProperties {
             }
         }
     }
-    
+
     public static MetricsProperties fromConfig(Config config) {
         Objects.requireNonNull(config, "Config cannot be null");
-        
+
         return new MetricsProperties(
             config,
             config.get(ConfigConverters.ofBoolean(), "enabled", true),
@@ -300,7 +300,7 @@ public class MetricsProperties {
             parseTags(config.getChild("tags"))
         );
     }
-    
+
     private static double[] parsePercentiles(String percentilesStr) {
         String[] percentilesStrArray = percentilesStr.split(",");
         double[] percentiles = new double[percentilesStrArray.length];
@@ -309,7 +309,7 @@ public class MetricsProperties {
         }
         return percentiles;
     }
-    
+
     private static Duration[] parseSlaDurations(String slaDurationsStr) {
         String[] slaDurationsStrArray = slaDurationsStr.split(",");
         Duration[] slaDurations = new Duration[slaDurationsStrArray.length];
@@ -318,7 +318,7 @@ public class MetricsProperties {
         }
         return slaDurations;
     }
-    
+
     private static Map<String, String> parseTags(Config tagsConfig) {
         Map<String, String> tags = new HashMap<>();
         String tagsStr = tagsConfig.get("tags", "");
@@ -333,7 +333,7 @@ public class MetricsProperties {
         }
         return tags;
     }
-    
+
     public MetricsProperties(Config config, boolean enabled, boolean enableJvm, boolean enableSystem, boolean enableHttp, double[] percentiles, Duration[] slaHttpDurations, DistributionProperties distribution, Map<String, String> tags) {
         this.enabled = enabled;
         this.enableJvm = enableJvm;

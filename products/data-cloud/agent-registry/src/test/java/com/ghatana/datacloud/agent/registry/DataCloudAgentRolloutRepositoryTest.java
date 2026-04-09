@@ -8,7 +8,6 @@ import com.ghatana.agent.release.rollout.AgentRolloutApprovalState;
 import com.ghatana.agent.release.rollout.AgentRolloutRecord;
 import com.ghatana.datacloud.client.DataCloudClient;
 import com.ghatana.datacloud.entity.EntityInterface;
-import com.ghatana.datacloud.entity.storage.QuerySpecInterface;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

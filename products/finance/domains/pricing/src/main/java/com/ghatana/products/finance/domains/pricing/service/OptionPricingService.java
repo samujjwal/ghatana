@@ -5,13 +5,7 @@ import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.math.BigDecimal;
 import java.math.MathContext;
-import java.math.RoundingMode;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 /**

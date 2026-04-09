@@ -9,8 +9,6 @@ import com.ghatana.platform.security.crypto.PasswordHasher;
 import com.ghatana.platform.domain.auth.Session;
 import com.ghatana.platform.domain.auth.SessionId;
 import com.ghatana.platform.domain.auth.Token;
-import com.ghatana.platform.domain.auth.TokenId;
-import com.ghatana.platform.domain.auth.TokenType;
 import com.ghatana.platform.domain.auth.User;
 import com.ghatana.platform.domain.auth.UserId;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -23,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +31,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for AuthenticationServiceImpl.
- * 
+ *
  * <p>Tests validate:
  * - Authentication with valid/invalid credentials
  * - User registration with duplicate checks
@@ -43,14 +40,14 @@ import static org.mockito.Mockito.*;
  * - Account security (locked accounts, OAuth users)
  * - Metrics collection for all operations
  * - Tenant isolation
- * 
+ *
  * <p><b>GIVEN-WHEN-THEN Structure</b><br>
  * All tests follow GIVEN-WHEN-THEN pattern with clear documentation.
- * 
+ *
  * <p><b>ActiveJ Promise Testing</b><br>
- * This test class extends EventloopTestBase and uses runPromise() 
+ * This test class extends EventloopTestBase and uses runPromise()
  * for all async operations (MANDATORY for ActiveJ Promises).
- * 
+ *
  * @see AuthenticationServiceImpl
  * @see EventloopTestBase
  */
@@ -92,7 +89,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies successful authentication with valid credentials.
-     * 
+     *
      * GIVEN: User with valid password hash exists
      * WHEN: authenticate() called with correct password
      * THEN: Returns successful AuthResult with session and token
@@ -113,7 +110,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of((Void) null));
 
         // WHEN: Authenticate with correct credentials
-        AuthResult result = runPromise(() -> 
+        AuthResult result = runPromise(() ->
             authService.authenticate(TENANT_ID, TEST_EMAIL, TEST_PASSWORD)
         );
 
@@ -147,7 +144,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies authentication failure with invalid password.
-     * 
+     *
      * GIVEN: User exists with different password
      * WHEN: authenticate() called with wrong password
      * THEN: Returns failure AuthResult with generic error message
@@ -164,7 +161,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(user)));
 
         // WHEN: Authenticate with wrong password
-        AuthResult result = runPromise(() -> 
+        AuthResult result = runPromise(() ->
             authService.authenticate(TENANT_ID, TEST_EMAIL, "wrongPassword")
         );
 
@@ -186,7 +183,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies authentication failure with non-existent email.
-     * 
+     *
      * GIVEN: Email does not exist in database
      * WHEN: authenticate() called
      * THEN: Returns failure with generic error (prevent enumeration)
@@ -200,7 +197,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.empty()));
 
         // WHEN: Authenticate with non-existent email
-        AuthResult result = runPromise(() -> 
+        AuthResult result = runPromise(() ->
             authService.authenticate(TENANT_ID, TEST_EMAIL, TEST_PASSWORD)
         );
 
@@ -222,7 +219,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies authentication failure when account is locked.
-     * 
+     *
      * GIVEN: User account is locked
      * WHEN: authenticate() called
      * THEN: Returns failure with account locked message
@@ -239,7 +236,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(user)));
 
         // WHEN: Authenticate with locked account
-        AuthResult result = runPromise(() -> 
+        AuthResult result = runPromise(() ->
             authService.authenticate(TENANT_ID, TEST_EMAIL, TEST_PASSWORD)
         );
 
@@ -261,7 +258,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies authentication failure for OAuth users (no password hash).
-     * 
+     *
      * GIVEN: User has no password hash (OAuth user)
      * WHEN: authenticate() called with password
      * THEN: Returns failure with generic error
@@ -288,7 +285,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(user)));
 
         // WHEN: Authenticate OAuth user with password
-        AuthResult result = runPromise(() -> 
+        AuthResult result = runPromise(() ->
             authService.authenticate(TENANT_ID, TEST_EMAIL, TEST_PASSWORD)
         );
 
@@ -312,7 +309,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies successful user registration.
-     * 
+     *
      * GIVEN: Email does not exist
      * WHEN: register() called with valid data
      * THEN: User created with hashed password
@@ -328,7 +325,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenAnswer(invocation -> Promise.of(invocation.getArgument(0)));
 
         // WHEN: Register new user
-        User registered = runPromise(() -> 
+        User registered = runPromise(() ->
             authService.register(
                 TENANT_ID,
                 TEST_EMAIL,
@@ -365,7 +362,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies registration failure with duplicate email.
-     * 
+     *
      * GIVEN: Email already exists
      * WHEN: register() called
      * THEN: Exception thrown
@@ -380,7 +377,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(existingUser)));
 
         // WHEN/THEN: Registration fails
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             runPromise(() -> authService.register(
                 TENANT_ID,
                 TEST_EMAIL,
@@ -403,7 +400,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies successful logout with session revocation.
-     * 
+     *
      * GIVEN: Valid session exists
      * WHEN: logout() called
      * THEN: Session revoked
@@ -415,7 +412,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
         // GIVEN: Valid session exists
         SessionId sessionId = SessionId.random();
         Session session = createTestSession(UserId.random(), sessionId);
-        
+
         when(sessionStore.findById(TENANT_ID, sessionId))
             .thenReturn(Promise.of(Optional.of(session)));
         when(sessionStore.invalidate(TENANT_ID, sessionId))
@@ -436,7 +433,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies logout handles non-existent session gracefully.
-     * 
+     *
      * GIVEN: Session does not exist
      * WHEN: logout() called
      * THEN: No exception thrown (no-op)
@@ -460,7 +457,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies session validation for valid active session.
-     * 
+     *
      * GIVEN: Valid active session exists
      * WHEN: validateSession() called
      * THEN: Returns true
@@ -488,7 +485,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(session)));
 
         // WHEN: Validate session
-        boolean isValid = runPromise(() -> 
+        boolean isValid = runPromise(() ->
             authService.validateSession(TENANT_ID, sessionId)
         );
 
@@ -507,7 +504,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies session validation fails for expired session.
-     * 
+     *
      * GIVEN: Expired session exists
      * WHEN: validateSession() called
      * THEN: Returns false
@@ -535,7 +532,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(session)));
 
         // WHEN: Validate expired session
-        boolean isValid = runPromise(() -> 
+        boolean isValid = runPromise(() ->
             authService.validateSession(TENANT_ID, sessionId)
         );
 
@@ -554,7 +551,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies session validation fails for non-existent session.
-     * 
+     *
      * GIVEN: Session does not exist
      * WHEN: validateSession() called
      * THEN: Returns false
@@ -568,7 +565,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.empty()));
 
         // WHEN: Validate non-existent session
-        boolean isValid = runPromise(() -> 
+        boolean isValid = runPromise(() ->
             authService.validateSession(TENANT_ID, sessionId)
         );
 
@@ -582,7 +579,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies session refresh extends TTL.
-     * 
+     *
      * GIVEN: Valid session exists
      * WHEN: refreshSession() called
      * THEN: New session with extended expiry returned
@@ -613,7 +610,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of((Void) null));
 
         // WHEN: Refresh session
-        Session refreshed = runPromise(() -> 
+        Session refreshed = runPromise(() ->
             authService.refreshSession(TENANT_ID, sessionId)
         );
 
@@ -640,7 +637,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies refresh fails for expired session.
-     * 
+     *
      * GIVEN: Expired session exists
      * WHEN: refreshSession() called
      * THEN: Exception thrown
@@ -667,7 +664,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(session)));
 
         // WHEN/THEN: Refresh fails
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             runPromise(() -> authService.refreshSession(TENANT_ID, sessionId))
         )
         .as("Should throw exception for expired session")
@@ -676,7 +673,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies refresh fails for non-existent session.
-     * 
+     *
      * GIVEN: Session does not exist
      * WHEN: refreshSession() called
      * THEN: Exception thrown
@@ -690,7 +687,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.empty()));
 
         // WHEN/THEN: Refresh fails
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             runPromise(() -> authService.refreshSession(TENANT_ID, sessionId))
         )
         .as("Should throw exception for non-existent session")
@@ -701,7 +698,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies password change with correct current password.
-     * 
+     *
      * GIVEN: User with valid current password
      * WHEN: changePassword() called with correct current password
      * THEN: Password updated
@@ -756,7 +753,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies password change fails with incorrect current password.
-     * 
+     *
      * GIVEN: User with valid current password
      * WHEN: changePassword() called with wrong current password
      * THEN: Exception thrown
@@ -777,7 +774,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(user)));
 
         // WHEN/THEN: Change password fails
-        assertThatThrownBy(() -> 
+        assertThatThrownBy(() ->
             runPromise(() -> authService.changePassword(
                 TENANT_ID,
                 userId,
@@ -796,7 +793,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies password reset request for existing email.
-     * 
+     *
      * GIVEN: User with email exists
      * WHEN: requestPasswordReset() called
      * THEN: Reset token generated and returned
@@ -811,7 +808,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.of(user)));
 
         // WHEN: Request password reset
-        Optional<String> resetToken = runPromise(() -> 
+        Optional<String> resetToken = runPromise(() ->
             authService.requestPasswordReset(TENANT_ID, TEST_EMAIL)
         );
 
@@ -832,7 +829,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
     /**
      * Verifies password reset request returns empty for non-existent email.
-     * 
+     *
      * GIVEN: Email does not exist
      * WHEN: requestPasswordReset() called
      * THEN: Empty Optional returned (security - don't reveal existence)
@@ -845,7 +842,7 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             .thenReturn(Promise.of(Optional.empty()));
 
         // WHEN: Request password reset
-        Optional<String> resetToken = runPromise(() -> 
+        Optional<String> resetToken = runPromise(() ->
             authService.requestPasswordReset(TENANT_ID, TEST_EMAIL)
         );
 

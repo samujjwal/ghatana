@@ -16,11 +16,11 @@ import com.ghatana.platform.core.exception.GovernancePolicyException;
  * @doc.pattern Exception
  */
 public class ModelNotApprovedException extends GovernancePolicyException {
-    
+
     public ModelNotApprovedException(String message) {
         super(message);
     }
-    
+
     public ModelNotApprovedException(String message, Throwable cause) {
         super(message, cause);
     }

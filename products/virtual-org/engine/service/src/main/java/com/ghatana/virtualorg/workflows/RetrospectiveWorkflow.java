@@ -71,12 +71,12 @@ public class RetrospectiveWorkflow extends BaseWorkflow {
         // 5. Facilitate discussion and voting
         // 6. Create prioritized action items
         // 7. Calculate team health score
-        
+
         String teamId = requireInput(context, "teamId", String.class);
         String sprintId = requireInput(context, "sprintId", String.class);
-        
+
         log.info("Executing retrospective for team: {}, sprint: {}", teamId, sprintId);
-        
+
         // For now, return success with minimal data
         return Promise.of(WorkflowResult.success()
             .withOutput("retroSummary", "Retrospective completed")

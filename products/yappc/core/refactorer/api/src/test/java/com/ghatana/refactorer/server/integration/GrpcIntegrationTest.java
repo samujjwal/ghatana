@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration tests exercising the gRPC transport implementation backed by the shared service
  * runtime.
- 
+
  * @doc.type class
  * @doc.purpose Handles grpc integration test operations
  * @doc.layer core

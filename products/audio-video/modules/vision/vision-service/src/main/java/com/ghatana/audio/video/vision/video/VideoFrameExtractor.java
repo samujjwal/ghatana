@@ -141,7 +141,7 @@ public class VideoFrameExtractor {
 
     /**
      * Extract frames from a video file.
-     * 
+     *
      * @param videoPath Path to the video file
      * @param outputDir Directory to store extracted frames
      * @param config Extraction configuration
@@ -164,7 +164,7 @@ public class VideoFrameExtractor {
         Path canonicalOutput = outputDir.toAbsolutePath().normalize();
 
         List<String> command = buildFFmpegCommand(canonicalVideo, canonicalOutput, config);
-        
+
         Files.createDirectories(canonicalOutput);
 
         LOG.info("Extracting frames from video: {} with fps={}, maxFrames={}",
@@ -212,17 +212,17 @@ public class VideoFrameExtractor {
 
     /**
      * Extract a single frame at a specific timestamp.
-     * 
+     *
      * @param videoPath Path to the video file
      * @param timestampMs Timestamp in milliseconds
      * @param outputPath Output path for the frame
      * @throws IOException If extraction fails
      */
-    public void extractFrameAtTimestamp(Path videoPath, long timestampMs, Path outputPath) 
+    public void extractFrameAtTimestamp(Path videoPath, long timestampMs, Path outputPath)
             throws IOException {
-        
+
         double timestampSec = timestampMs / 1000.0;
-        
+
         List<String> command = List.of(
             FFMPEG_COMMAND,
             "-ss", String.format("%.3f", timestampSec),
@@ -293,12 +293,12 @@ public class VideoFrameExtractor {
         return command;
     }
 
-    private List<ExtractedFrame> collectExtractedFrames(Path outputDir, ExtractionConfig config) 
+    private List<ExtractedFrame> collectExtractedFrames(Path outputDir, ExtractionConfig config)
             throws IOException {
-        
+
         List<ExtractedFrame> frames = new ArrayList<>();
-        
-        File[] files = outputDir.toFile().listFiles((dir, name) -> 
+
+        File[] files = outputDir.toFile().listFiles((dir, name) ->
             name.startsWith("frame_") && name.endsWith("." + config.getFormat()));
 
         if (files == null || files.length == 0) {
@@ -320,7 +320,7 @@ public class VideoFrameExtractor {
 
     /**
      * Check if FFmpeg is available on the system.
-     * 
+     *
      * @return true if FFmpeg is available, false otherwise
      */
     public static boolean isFFmpegAvailable() {
@@ -328,7 +328,7 @@ public class VideoFrameExtractor {
             Process process = new ProcessBuilder(FFMPEG_COMMAND, "-version")
                 .redirectErrorStream(true)
                 .start();
-            
+
             boolean finished = process.waitFor(5, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
@@ -344,7 +344,7 @@ public class VideoFrameExtractor {
 
     /**
      * Get video metadata using FFprobe.
-     * 
+     *
      * @param videoPath Path to the video file
      * @return Video metadata
      * @throws IOException If metadata extraction fails

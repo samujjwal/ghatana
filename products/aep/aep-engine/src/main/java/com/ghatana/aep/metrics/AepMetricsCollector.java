@@ -5,7 +5,6 @@
 package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 

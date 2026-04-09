@@ -56,7 +56,7 @@ import java.util.Objects;
  *     private final double minConfidence;
  *     private StateStore<String, SequenceDatabase> dataStore;
  *     private Map<String, Double> frequentSequences;
- *     
+ *
  *     public AprioriMiner(OperatorId id, double minSupport, double minConfidence,
  *                         MetricsCollector metrics) {
  *         super(id, "Apriori Miner", "Discovers frequent event sequences",
@@ -64,11 +64,11 @@ import java.util.Objects;
  *         this.minSupport = minSupport;
  *         this.minConfidence = minConfidence;
  *     }
- *     
+ *
  *     @Override
  *     protected Promise<Void> doInitialize(OperatorConfig config) {
  *         this.dataStore = StateStoreFactory.createHybrid(config);
- *         
+ *
  *         // Load existing model if available
  *         return dataStore.get("model", Map.class)
  *             .map(optional -> {
@@ -76,40 +76,40 @@ import java.util.Objects;
  *                 return null;
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         // Online learning: accumulate events
  *         String tenantId = event.getTenantId();
- *         
+ *
  *         return dataStore.get(tenantId, SequenceDatabase.class)
  *             .map(optional -> optional.orElse(new SequenceDatabase()))
  *             .then(db -> {
  *                 db.add(event);
- *                 
+ *
  *                 // Trigger retraining every N events
  *                 if (db.size() % 1000 == 0) {
  *                     return train(db.getEvents())
  *                         .map(v -> OperatorResult.empty());
  *                 }
- *                 
+ *
  *                 return dataStore.put(tenantId, db, Optional.empty())
  *                     .map(v -> OperatorResult.empty());
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public Promise<Void> train(List<Event> events) {
  *         // Run Apriori algorithm
  *         AprioriAlgorithm apriori = new AprioriAlgorithm(minSupport, minConfidence);
  *         Map<String, Double> newSequences = apriori.mine(events);
- *         
+ *
  *         this.frequentSequences = newSequences;
- *         
+ *
  *         // Persist model
  *         return dataStore.put("model", frequentSequences, Optional.empty());
  *     }
- *     
+ *
  *     @Override
  *     public Map<String, Object> getModelMetrics() {
  *         return Map.of(
@@ -127,19 +127,19 @@ import java.util.Objects;
  * public class TemporalCorrelationAnalyzer extends AbstractLearningOperator {
  *     private StateStore<String, CorrelationMatrix> correlationStore;
  *     private CorrelationMatrix matrix;
- *     
+ *
  *     public TemporalCorrelationAnalyzer(OperatorId id, MetricsCollector metrics) {
- *         super(id, "Temporal Correlation Analyzer", 
+ *         super(id, "Temporal Correlation Analyzer",
  *               "Analyzes temporal correlations between event types",
  *               List.of("learning.correlation", "learning.temporal"), metrics);
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         // Update correlation matrix incrementally
  *         String eventType = event.getType();
  *         long timestamp = event.getMetadata().getTimestamp();
- *         
+ *
  *         // Check for correlated events within time window
  *         return correlationStore.get("recent_events", List.class)
  *             .map(optional -> optional.orElse(new ArrayList<>()))
@@ -150,20 +150,20 @@ import java.util.Objects;
  *                         matrix.incrementCorrelation(recent.getType(), eventType);
  *                     }
  *                 }
- *                 
+ *
  *                 // Add current event to recent events
  *                 recentEvents.add(event);
- *                 
+ *
  *                 // Prune old events
- *                 recentEvents.removeIf(e -> 
+ *                 recentEvents.removeIf(e ->
  *                     timestamp - e.getMetadata().getTimestamp() > 60000);
- *                 
+ *
  *                 return correlationStore.put("recent_events", recentEvents,
  *                                           Optional.of(Duration.ofMinutes(1)))
  *                     .map(v -> OperatorResult.empty());
  *             });
  *     }
- *     
+ *
  *     @Override
  *     public Map<String, Object> getModelMetrics() {
  *         return Map.of(
@@ -180,29 +180,29 @@ import java.util.Objects;
  * public class PatternSynthesizer extends AbstractLearningOperator {
  *     private final OperatorCatalog catalog;
  *     private StateStore<String, List<String>> discoveredPatterns;
- *     
+ *
  *     public PatternSynthesizer(OperatorId id, OperatorCatalog catalog,
  *                               MetricsCollector metrics) {
- *         super(id, "Pattern Synthesizer", 
+ *         super(id, "Pattern Synthesizer",
  *               "Converts frequent sequences to pattern operators",
  *               List.of("learning.synthesis", "learning.pattern"), metrics);
  *         this.catalog = catalog;
  *     }
- *     
+ *
  *     @Override
  *     public Promise<OperatorResult> process(Event event) {
  *         // Input: pattern.discovered event from FrequentSequenceMiner
  *         if (!event.getType().equals("pattern.discovered")) {
  *             return Promise.of(OperatorResult.empty());
  *         }
- *         
+ *
  *         List<String> sequence = event.getPayload().getList("sequence");
  *         double support = event.getPayload().getDouble("support");
  *         double confidence = event.getPayload().getDouble("confidence");
- *         
+ *
  *         // Synthesize SEQ pattern operator
  *         SeqOperator seqPattern = synthesizeSequence(sequence, support, confidence);
- *         
+ *
  *         // Register in catalog
  *         return catalog.register(seqPattern)
  *             .then(v -> {
@@ -213,18 +213,18 @@ import java.util.Objects;
  *                     .addPayload("quality_score", confidence)
  *                     .addPayload("support", support)
  *                     .build();
- *                 
+ *
  *                 return Promise.of(OperatorResult.of(synthesizedEvent));
  *             });
  *     }
- *     
- *     private SeqOperator synthesizeSequence(List<String> sequence, 
+ *
+ *     private SeqOperator synthesizeSequence(List<String> sequence,
  *                                           double support, double confidence) {
  *         // Convert sequence to SEQ pattern
  *         List<UnifiedOperator> subPatterns = sequence.stream()
  *             .map(type -> new TypeFilterOperator(...))
  *             .toList();
- *         
+ *
  *         return new SeqOperator(
  *             OperatorId.of("ghatana", "pattern", "discovered-seq", "1.0.0"),
  *             subPatterns,
@@ -286,12 +286,12 @@ import java.util.Objects;
  * @see AbstractPatternOperator
  * @see UnifiedOperator
  * @see OperatorType#LEARNING
- * 
+ *
  * @doc.type class
  * @doc.purpose Abstract base class for ML-driven learning operators
  * @doc.layer core
  * @doc.pattern Template Method (process, train extension points)
- * 
+ *
  * @since 2.0
  */
 public abstract class AbstractLearningOperator extends AbstractOperator {
@@ -420,7 +420,7 @@ public abstract class AbstractLearningOperator extends AbstractOperator {
     @Override
     public String toString() {
         return String.format("LearningOperator[id=%s, name=%s, state=%s, model=%s]",
-                getId(), getName(), getState(), 
+                getId(), getName(), getState(),
                 getModelMetrics().getOrDefault("model_version", "unknown"));
     }
 }

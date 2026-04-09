@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

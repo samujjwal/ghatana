@@ -35,7 +35,7 @@ public class TieredStoragePlugin<T> implements StoragePlugin<T> {
 
     private StoragePlugin<T> hotPlugin;
     private StoragePlugin<T> warmPlugin;
-    
+
     private PluginState state = PluginState.UNLOADED;
 
     public TieredStoragePlugin(String hotPluginId, String warmPluginId, Duration hotTierThreshold) {
@@ -71,10 +71,10 @@ public class TieredStoragePlugin<T> implements StoragePlugin<T> {
     public @NotNull Promise<Void> initialize(@NotNull PluginContext context) {
         this.hotPlugin = (StoragePlugin<T>) context.findPlugin(hotPluginId)
                 .orElseThrow(() -> new IllegalStateException("Hot tier plugin not found: " + hotPluginId));
-        
+
         this.warmPlugin = (StoragePlugin<T>) context.findPlugin(warmPluginId)
                 .orElseThrow(() -> new IllegalStateException("Warm tier plugin not found: " + warmPluginId));
-        
+
         state = PluginState.INITIALIZED;
         return Promise.complete();
     }

@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +45,13 @@ import java.util.Map;
  *     toolRegistry,
  *     eventloop
  * );
- * 
+ *
  * // Execute single tool
  * ToolCallProto result = executor.execute(
  *     "git",
  *     Map.of("operation", "status", "repoPath", "/repo")
  * ).getResult();
- * 
+ *
  * // Execute multiple tools in parallel
  * List<ToolCallProto> results = executor.executeAll(toolCalls).getResult();
  * }</pre>
@@ -112,7 +111,7 @@ public class DefaultToolExecutor implements ToolExecutor {
                         return createErrorToolCall(toolName, arguments, result.error(), duration);
                     }
                 })
-                .whenException(e -> 
+                .whenException(e ->
                     log.error("Tool execution exception: tool={}", toolName, e)
                 );
     }

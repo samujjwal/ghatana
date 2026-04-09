@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Entity Query Performance Benchmark (TEST-088)
- * 
+ *
  * @doc.type class
  * @doc.purpose Performance benchmark for entity queries - target < 200ms p99
  * @doc.layer product
@@ -39,7 +39,7 @@ class EntityQueryBenchmark extends EventloopTestBase {
 
         // Benchmark
         long[] latencies = new long[BENCHMARK_ITERATIONS];
-        
+
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
             long start = System.nanoTime();
             simulateSimpleQuery();
@@ -48,9 +48,9 @@ class EntityQueryBenchmark extends EventloopTestBase {
         }
 
         long p99 = calculateP99(latencies);
-        
+
         System.out.println("Simple Query p99 latency: " + p99 + "ms");
-        
+
         assertThat(p99)
             .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, P99_THRESHOLD_MS)
             .isLessThanOrEqualTo(P99_THRESHOLD_MS);
@@ -60,18 +60,18 @@ class EntityQueryBenchmark extends EventloopTestBase {
     @DisplayName("[TEST-088]: complex_query_with_joins_performance")
     void complexQueryWithJoinsPerformance() {
         long[] latencies = new long[100];
-        
+
         for (int i = 0; i < 100; i++) {
             long start = System.nanoTime();
             simulateComplexQuery();
             long end = System.nanoTime();
             latencies[i] = (end - start) / 1_000_000;
         }
-        
+
         long p95 = calculateP95(latencies);
-        
+
         System.out.println("Complex Query p95 latency: " + p95 + "ms");
-        
+
         // Complex queries should still be under 500ms p95
         assertThat(p95).isLessThanOrEqualTo(500);
     }
@@ -80,18 +80,18 @@ class EntityQueryBenchmark extends EventloopTestBase {
     @DisplayName("[TEST-088]: aggregation_query_performance")
     void aggregationQueryPerformance() {
         long[] latencies = new long[100];
-        
+
         for (int i = 0; i < 100; i++) {
             long start = System.nanoTime();
             simulateAggregationQuery();
             long end = System.nanoTime();
             latencies[i] = (end - start) / 1_000_000;
         }
-        
+
         long p99 = calculateP99(latencies);
-        
+
         System.out.println("Aggregation Query p99 latency: " + p99 + "ms");
-        
+
         // Aggregation queries should be under 300ms p99
         assertThat(p99).isLessThanOrEqualTo(300);
     }

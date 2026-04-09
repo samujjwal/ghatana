@@ -141,7 +141,7 @@ public class MfaService {
             }
 
             boolean valid = validateTotp(config.secret(), code);
-            
+
             if (valid) {
                 failedAttempts.remove(userId);
                 log.info("MFA validation successful for user: {}", userId);
@@ -177,7 +177,7 @@ public class MfaService {
                     updatedCodes[i] = null;
                     MfaConfig updatedConfig = new MfaConfig(config.secret(), updatedCodes, config.enabled());
                     userMfaConfigs.put(userId, updatedConfig);
-                    
+
                     failedAttempts.remove(userId);
                     log.info("Backup code validated for user: {}", userId);
                     return true;
@@ -199,7 +199,7 @@ public class MfaService {
         return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
             MfaConfig removed = userMfaConfigs.remove(userId);
             failedAttempts.remove(userId);
-            
+
             if (removed != null) {
                 log.info("MFA disabled for user: {}", userId);
                 return true;

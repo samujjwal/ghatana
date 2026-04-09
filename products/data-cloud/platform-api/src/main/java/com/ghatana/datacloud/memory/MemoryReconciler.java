@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,7 +74,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *     .salienceScorer(salienceScorer)
  *     .reconciliationInterval(Duration.ofMinutes(1))
  *     .build();
- * 
+ *
  * reconciler.start();
  * // ... application runs ...
  * reconciler.stop();

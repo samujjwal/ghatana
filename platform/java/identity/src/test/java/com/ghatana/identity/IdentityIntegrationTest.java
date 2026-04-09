@@ -231,7 +231,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
                 String token2 = runPromise(() -> tokenProvider.createToken("t1", "agent-" + idx, Duration.ofMinutes(10)));
 
                 assertThat(token1).isNotEqualTo(token2);
-                
+
                 Optional<TokenClaims> claims1 = runPromise(() -> tokenProvider.verifyToken(token1));
                 Optional<TokenClaims> claims2 = runPromise(() -> tokenProvider.verifyToken(token2));
 

@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *     Map.of("action", "remove", "target", "import"));
  * kb.addFixRecipe("python", "F401", recipe);
  * }</pre>
- 
+
  * @doc.type class
  * @doc.purpose Handles knowledge base operations
  * @doc.layer core

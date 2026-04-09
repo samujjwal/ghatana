@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Factory for creating TutorPutor agents with all dependencies wired.
- * 
+ *
  * <p>This factory:
  * <ul>
  *   <li>Creates and configures all agent dependencies</li>
@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
 public class TutorPutorAgentFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(TutorPutorAgentFactory.class);
-    
+
     private final MeterRegistry meterRegistry;
     private final Executor executor;
     private final LLMGateway llmGateway;
@@ -55,8 +55,8 @@ public class TutorPutorAgentFactory {
         this.llmGateway = builder.llmGateway;
         this.knowledgeBaseService = builder.knowledgeBaseService;
         this.qualityValidator = new ContentQualityValidator(meterRegistry);
-        
-        LOG.info("TutorPutorAgentFactory initialized with LLM provider: {}", 
+
+        LOG.info("TutorPutorAgentFactory initialized with LLM provider: {}",
             builder.llmProvider);
     }
 
@@ -73,7 +73,7 @@ public class TutorPutorAgentFactory {
             executor,
             meterRegistry
         );
-        
+
         return new ContentGenerationAgent(generator, knowledgeBaseService, qualityValidator);
     }
 
@@ -163,7 +163,7 @@ public class TutorPutorAgentFactory {
         public Builder withOpenAIProvider(@NotNull String apiKey, @NotNull String model) {
             Objects.requireNonNull(apiKey, "apiKey cannot be null");
             Objects.requireNonNull(model, "model cannot be null");
-            
+
             this.llmProvider = "openai";
             MetricsCollector metricsCollector = MetricsCollectorFactory.create(meterRegistry);
 
@@ -208,7 +208,7 @@ public class TutorPutorAgentFactory {
         public Builder withOllamaProvider(@NotNull String baseUrl, @NotNull String model) {
             Objects.requireNonNull(baseUrl, "baseUrl cannot be null");
             Objects.requireNonNull(model, "model cannot be null");
-            
+
             this.llmProvider = "ollama";
             MetricsCollector metricsCollector = MetricsCollectorFactory.create(meterRegistry);
 
@@ -268,12 +268,12 @@ public class TutorPutorAgentFactory {
                 meterRegistry = new SimpleMeterRegistry();
                 LOG.warn("No MeterRegistry provided, using SimpleMeterRegistry");
             }
-            
+
             if (executor == null) {
                 executor = Executors.newVirtualThreadPerTaskExecutor();
                 LOG.info("Using virtual thread executor");
             }
-            
+
             if (httpClient == null) {
                 Eventloop eventloop = Eventloop.builder().build();
                 Thread eventloopThread = new Thread(eventloop::run, "tutorputor-agent-factory-eventloop");
@@ -285,7 +285,7 @@ public class TutorPutorAgentFactory {
                 httpClient = HttpClient.create(reactor, dnsClient);
                 LOG.info("Created default HTTP client");
             }
-            
+
             if (llmGateway == null) {
                 // Default to Ollama for local development
                 String ollamaUrl = System.getenv().getOrDefault("OLLAMA_URL", "http://localhost:11434");
@@ -313,11 +313,11 @@ public class TutorPutorAgentFactory {
                 llmProvider = "ollama";
                 LOG.info("Using default Ollama provider at {}", ollamaUrl);
             }
-            
+
             if (knowledgeBaseService == null) {
                 knowledgeBaseService = new KnowledgeBaseService(httpClient, meterRegistry);
             }
-            
+
             return new TutorPutorAgentFactory(this);
         }
     }

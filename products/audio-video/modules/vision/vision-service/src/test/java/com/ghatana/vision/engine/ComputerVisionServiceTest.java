@@ -1,14 +1,11 @@
 package com.ghatana.vision.engine;
 
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import com.ghatana.vision.engine.VisionModelEngine.VisionException;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
@@ -115,11 +112,11 @@ class ComputerVisionServiceTest {
         void detectedObjectsContainExpectedLabels() {
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE);
             assertThat(detections).isNotEmpty();
-            
+
             Set<String> labels = detections.stream()
                     .map(VisionModelEngine.DetectedObject::label)
                     .collect(Collectors.toSet());
-            
+
             assertThat(labels).isNotEmpty();
         }
 
@@ -127,7 +124,7 @@ class ComputerVisionServiceTest {
         @DisplayName("detected objects have valid confidence scores")
         void detectedObjectsHaveValidConfidence() {
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE);
-            
+
             detections.forEach(obj ->
                     assertThat(obj.confidence()).isBetween(0.0, 1.0)
             );
@@ -137,7 +134,7 @@ class ComputerVisionServiceTest {
         @DisplayName("detected objects have valid bounding boxes")
         void detectedObjectsHaveValidBoundingBoxes() {
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE);
-            
+
             detections.forEach(obj -> {
                 assertThat(obj.x()).isBetween(0.0, 1.0);
                 assertThat(obj.y()).isBetween(0.0, 1.0);
@@ -152,7 +149,7 @@ class ComputerVisionServiceTest {
             List<VisionModelEngine.DetectedObject> low = lowConfidenceEngine.detectObjects(SAMPLE_IMAGE);
             List<VisionModelEngine.DetectedObject> medium = engine.detectObjects(SAMPLE_IMAGE);
             List<VisionModelEngine.DetectedObject> high = highConfidenceEngine.detectObjects(SAMPLE_IMAGE);
-            
+
             // Higher threshold should result in fewer detections
             assertThat(low.size()).isGreaterThanOrEqualTo(medium.size());
             assertThat(medium.size()).isGreaterThanOrEqualTo(high.size());
@@ -163,9 +160,9 @@ class ComputerVisionServiceTest {
         void allDetectionsMeetThreshold() {
             double threshold = 0.7;
             VisionModelEngine strictEngine = new VisionModelEngine("yolo-v8", threshold);
-            
+
             List<VisionModelEngine.DetectedObject> detections = strictEngine.detectObjects(SAMPLE_IMAGE);
-            
+
             detections.forEach(obj ->
                     assertThat(obj.confidence()).isGreaterThanOrEqualTo(threshold)
             );
@@ -176,7 +173,7 @@ class ComputerVisionServiceTest {
         void differentImagesMayProduceDifferentDetections() {
             List<VisionModelEngine.DetectedObject> detections1 = engine.detectObjects(SAMPLE_IMAGE);
             List<VisionModelEngine.DetectedObject> detections2 = engine.detectObjects(SAMPLE_IMAGE_2);
-            
+
             // Results should be based on image content (may or may not be identical)
             assertThat(detections1).isNotNull();
             assertThat(detections2).isNotNull();
@@ -187,7 +184,7 @@ class ComputerVisionServiceTest {
         void detectionIsDeterministic() {
             List<VisionModelEngine.DetectedObject> d1 = engine.detectObjects(SAMPLE_IMAGE);
             List<VisionModelEngine.DetectedObject> d2 = engine.detectObjects(SAMPLE_IMAGE);
-            
+
             assertThat(d1).hasSize(d2.size());
             for (int i = 0; i < d1.size(); i++) {
                 assertThat(d1.get(i).label()).isEqualTo(d2.get(i).label());
@@ -208,7 +205,7 @@ class ComputerVisionServiceTest {
         @DisplayName("classification returns valid result")
         void classificationReturnsValidResult() {
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE);
-            
+
             assertThat(result).isNotNull();
             assertThat(result.label()).isNotBlank();
         }
@@ -217,7 +214,7 @@ class ComputerVisionServiceTest {
         @DisplayName("classification confidence is in valid range")
         void classificationConfidenceIsValid() {
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE);
-            
+
             assertThat(result.confidence()).isBetween(0.0, 1.0);
         }
 
@@ -225,7 +222,7 @@ class ComputerVisionServiceTest {
         @DisplayName("top labels list is non-empty")
         void topLabelsListIsNonEmpty() {
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE);
-            
+
             assertThat(result.topLabels()).isNotEmpty();
         }
 
@@ -233,7 +230,7 @@ class ComputerVisionServiceTest {
         @DisplayName("classified label is in top labels list")
         void classifiedLabelIsInTopLabels() {
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE);
-            
+
             assertThat(result.topLabels()).contains(result.label());
         }
 
@@ -242,7 +239,7 @@ class ComputerVisionServiceTest {
         void classificationIsDeterministic() {
             VisionModelEngine.ClassificationResult c1 = engine.classify(SAMPLE_IMAGE);
             VisionModelEngine.ClassificationResult c2 = engine.classify(SAMPLE_IMAGE);
-            
+
             assertThat(c1.label()).isEqualTo(c2.label());
             assertThat(c1.confidence()).isEqualTo(c2.confidence());
         }
@@ -260,7 +257,7 @@ class ComputerVisionServiceTest {
         @DisplayName("OCR returns valid result")
         void ocrReturnsValidResult() {
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE);
-            
+
             assertThat(result).isNotNull();
         }
 
@@ -268,7 +265,7 @@ class ComputerVisionServiceTest {
         @DisplayName("extracted text is non-null")
         void extractedTextIsNonNull() {
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE);
-            
+
             assertThat(result.text()).isNotNull();
         }
 
@@ -276,7 +273,7 @@ class ComputerVisionServiceTest {
         @DisplayName("OCR confidence is in valid range")
         void ocrConfidenceIsValid() {
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE);
-            
+
             assertThat(result.confidence()).isBetween(0.0, 1.0);
         }
 
@@ -284,7 +281,7 @@ class ComputerVisionServiceTest {
         @DisplayName("text regions contain valid bounding boxes")
         void textRegionsContainValidBoundingBoxes() {
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE);
-            
+
             result.textRegions().forEach(region -> {
                 assertThat(region.x()).isBetween(0.0, 1.0);
                 assertThat(region.y()).isBetween(0.0, 1.0);
@@ -298,7 +295,7 @@ class ComputerVisionServiceTest {
         void ocrIsDeterministic() {
             VisionModelEngine.OcrResult r1 = engine.extractText(SAMPLE_IMAGE);
             VisionModelEngine.OcrResult r2 = engine.extractText(SAMPLE_IMAGE);
-            
+
             assertThat(r1.text()).isEqualTo(r2.text());
             assertThat(r1.confidence()).isEqualTo(r2.confidence());
         }
@@ -316,7 +313,7 @@ class ComputerVisionServiceTest {
         @DisplayName("face detection returns non-null list")
         void faceDetectionReturnsNonNullList() {
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE);
-            
+
             assertThat(faces).isNotNull();
         }
 
@@ -324,7 +321,7 @@ class ComputerVisionServiceTest {
         @DisplayName("face detection results have valid bounding boxes")
         void faceDetectionResultsHaveValidBoundingBoxes() {
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE);
-            
+
             faces.forEach(face -> {
                 assertThat(face.x()).isBetween(0.0, 1.0);
                 assertThat(face.y()).isBetween(0.0, 1.0);
@@ -337,7 +334,7 @@ class ComputerVisionServiceTest {
         @DisplayName("face detection confidence is in valid range")
         void faceDetectionConfidenceIsValid() {
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE);
-            
+
             faces.forEach(face ->
                     assertThat(face.confidence()).isBetween(0.0, 1.0)
             );
@@ -347,7 +344,7 @@ class ComputerVisionServiceTest {
         @DisplayName("face landmarks are included in results")
         void faceLandmarksAreIncluded() {
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE);
-            
+
             if (!faces.isEmpty()) {
                 faces.forEach(face ->
                         assertThat(face.landmarks()).isNotNull()
@@ -360,7 +357,7 @@ class ComputerVisionServiceTest {
         void faceDetectionIsDeterministic() {
             List<VisionModelEngine.FaceDetection> f1 = engine.detectFaces(SAMPLE_IMAGE);
             List<VisionModelEngine.FaceDetection> f2 = engine.detectFaces(SAMPLE_IMAGE);
-            
+
             assertThat(f1).hasSize(f2.size());
             for (int i = 0; i < f1.size(); i++) {
                 assertThat(f1.get(i).confidence()).isEqualTo(f2.get(i).confidence());
@@ -426,7 +423,7 @@ class ComputerVisionServiceTest {
             List<VisionModelEngine.DetectedObject>[] results = new List[threadCount];
             Thread[] threads = new Thread[threadCount];
             CountDownLatch latch = new CountDownLatch(threadCount);
-            
+
             for (int i = 0; i < threadCount; i++) {
                 final int index = i;
                 threads[i] = new Thread(() -> {
@@ -435,9 +432,9 @@ class ComputerVisionServiceTest {
                 });
                 threads[i].start();
             }
-            
+
             latch.await();
-            
+
             // All results should be consistent
             int firstSize = results[0].size();
             for (int i = 1; i < threadCount; i++) {
@@ -470,7 +467,7 @@ class ComputerVisionServiceTest {
             for (int i = 0; i < LARGE_IMAGE.length; i++) {
                 LARGE_IMAGE[i] = (byte) (i % 256);
             }
-            
+
             assertThatCode(() -> engine.detectObjects(LARGE_IMAGE))
                     .doesNotThrowAnyException();
         }
@@ -496,7 +493,7 @@ class ComputerVisionServiceTest {
         void zeroThresholdAcceptsAll() {
             VisionModelEngine zeroEngine = new VisionModelEngine("yolo-v8", 0.0);
             List<VisionModelEngine.DetectedObject> detections = zeroEngine.detectObjects(SAMPLE_IMAGE);
-            
+
             assertThat(detections).isNotEmpty();
         }
 
@@ -505,7 +502,7 @@ class ComputerVisionServiceTest {
         void maxThresholdRejectsAll() {
             VisionModelEngine maxEngine = new VisionModelEngine("yolo-v8", 1.0);
             List<VisionModelEngine.DetectedObject> detections = maxEngine.detectObjects(SAMPLE_IMAGE);
-            
+
             // May be empty or contain items with confidence == 1.0
             detections.forEach(obj -> assertThat(obj.confidence()).isEqualTo(1.0));
         }
@@ -515,10 +512,10 @@ class ComputerVisionServiceTest {
         void midRangeThresholdsFilter() {
             VisionModelEngine mid1 = new VisionModelEngine("yolo-v8", 0.3);
             VisionModelEngine mid2 = new VisionModelEngine("yolo-v8", 0.7);
-            
+
             List<VisionModelEngine.DetectedObject> d1 = mid1.detectObjects(SAMPLE_IMAGE);
             List<VisionModelEngine.DetectedObject> d2 = mid2.detectObjects(SAMPLE_IMAGE);
-            
+
             assertThat(d1.size()).isGreaterThanOrEqualTo(d2.size());
         }
     }
@@ -550,7 +547,7 @@ class ComputerVisionServiceTest {
         void invalidThresholdRaisesException() {
             assertThatThrownBy(() -> new VisionModelEngine("yolo-v8", -0.1))
                     .isInstanceOf(IllegalArgumentException.class);
-            
+
             assertThatThrownBy(() -> new VisionModelEngine("yolo-v8", 1.1))
                     .isInstanceOf(IllegalArgumentException.class);
         }

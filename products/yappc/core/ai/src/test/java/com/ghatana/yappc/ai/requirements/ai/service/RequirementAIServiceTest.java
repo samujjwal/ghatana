@@ -27,11 +27,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +69,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
         // Default mocks
         when(personaRepository.findById(anyString())).thenReturn(Promise.of(Optional.of(Persona.DEFAULT)));
         when(promptTemplateManager.getTemplate(anyString())).thenReturn(new PromptTemplate("template"));
-        
+
         // Mock LLM response
         CompletionResult mockResult = CompletionResult.builder()
                 .text("Mock response")

@@ -1,6 +1,5 @@
 package com.ghatana.plugin.fraud.impl;
 
-import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;

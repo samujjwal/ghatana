@@ -9,7 +9,6 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**

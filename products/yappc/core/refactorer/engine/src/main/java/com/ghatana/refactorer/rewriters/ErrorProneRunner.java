@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>This class provides a way to run Java compilation with Error Prone enabled and parse the
  * resulting diagnostics into a unified format that can be processed by the rest of the system.
- 
+
  * @doc.type class
  * @doc.purpose Handles error prone runner operations
  * @doc.layer core

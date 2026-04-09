@@ -14,7 +14,7 @@ import java.util.Optional;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * OrganizationalMemory memory = new InMemoryOrganizationalMemory();
- * 
+ *
  * // Store a decision
  * memory.store(MemoryEntry.of(
  *     "sprint-decision",
@@ -22,7 +22,7 @@ import java.util.Optional;
  *     "Decided to prioritize feature X",
  *     "ProductManager"
  * ));
- * 
+ *
  * // Retrieve recent decisions
  * List<MemoryEntry> decisions = memory.search("sprint", 10);
  * }</pre>
@@ -39,14 +39,14 @@ import java.util.Optional;
  * @doc.pattern Port
  */
 public interface OrganizationalMemory {
-    
+
     /**
      * Stores a memory entry.
      *
      * @param entry the memory entry to store
      */
     void store(MemoryEntry entry);
-    
+
     /**
      * Retrieves a memory entry by ID.
      *
@@ -54,7 +54,7 @@ public interface OrganizationalMemory {
      * @return optional containing the entry if found
      */
     Optional<MemoryEntry> retrieve(String id);
-    
+
     /**
      * Searches memory entries by query.
      *
@@ -63,7 +63,7 @@ public interface OrganizationalMemory {
      * @return list of matching entries
      */
     List<MemoryEntry> search(String query, int limit);
-    
+
     /**
      * Searches memory entries by category.
      *
@@ -72,7 +72,7 @@ public interface OrganizationalMemory {
      * @return list of entries in category
      */
     List<MemoryEntry> searchByCategory(String category, int limit);
-    
+
     /**
      * Searches memory entries by actor.
      *
@@ -81,7 +81,7 @@ public interface OrganizationalMemory {
      * @return list of entries created by actor
      */
     List<MemoryEntry> searchByActor(String actor, int limit);
-    
+
     /**
      * Gets recent memory entries.
      *
@@ -89,12 +89,12 @@ public interface OrganizationalMemory {
      * @return list of recent entries
      */
     List<MemoryEntry> getRecent(int limit);
-    
+
     /**
      * Clears all memory entries.
      */
     void clear();
-    
+
     /**
      * Gets the total number of entries.
      */

@@ -1,7 +1,6 @@
 package com.ghatana.kernel.policy;
 
 import com.ghatana.kernel.scope.ScopeDescriptor;
-import com.ghatana.kernel.scope.ScopeType;
 
 import java.util.Map;
 import java.util.Objects;
@@ -56,12 +55,12 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
                 "product-health", Set.of("healthcare-pack", "shared-infrastructure"),
                 "product-regulatory", Set.of("regulatory-pack", "shared-infrastructure"),
                 "product-recommendation", Set.of("recommendation-pack", "analytics-pack"),
-                
+
                 // Domain packs can access shared infrastructure
                 "healthcare-pack", Set.of("shared-infrastructure"),
                 "regulatory-pack", Set.of("shared-infrastructure"),
                 "recommendation-pack", Set.of("shared-infrastructure"),
-                
+
                 // Shared infrastructure can access core services
                 "shared-infrastructure", Set.of("kernel-core")
         );
@@ -80,11 +79,11 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
     public BoundaryDecision resolve(ScopeDescriptor source, ScopeDescriptor target,
                                    String resource, String action,
                                    ClassificationDescriptor classification) {
-        
+
         // Check scope dependency rules
         Set<String> allowedTargets = scopeDependencies.getOrDefault(source.getScopeId(), Set.of());
         if (!allowedTargets.contains(target.getScopeId()) && !allowedTargets.contains("*")) {
-            return BoundaryDecision.deny("Scope dependency not allowed: " + 
+            return BoundaryDecision.deny("Scope dependency not allowed: " +
                     source + " → " + target);
         }
 
@@ -97,7 +96,7 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
         String sourceRegion = source.getMetadata("region", "US");
         Set<String> restrictedScopes = regionalRestrictions.getOrDefault(sourceRegion, Set.of());
         if (restrictedScopes.contains(target.getScopeType().name().toLowerCase())) {
-            return BoundaryDecision.deny("Regional restriction: " + sourceRegion + 
+            return BoundaryDecision.deny("Regional restriction: " + sourceRegion +
                     " cannot access " + target.getScopeType());
         }
 
@@ -105,8 +104,8 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
         boolean requiresConsent = classification.getSensitivityLevel()
                 .compareTo(ClassificationDescriptor.SensitivityLevel.CONFIDENTIAL) >= 0;
 
-        Set<String> requiredFeatures = requiresConsent ? 
-                Set.of("cross-scope.consent." + target.getScopeType().name().toLowerCase()) : 
+        Set<String> requiredFeatures = requiresConsent ?
+                Set.of("cross-scope.consent." + target.getScopeType().name().toLowerCase()) :
                 Set.of();
 
         return new BoundaryDecision(
@@ -125,7 +124,7 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
     private boolean isResourceActionAllowed(ScopeDescriptor source, ScopeDescriptor target,
                                           String resource, String action,
                                           ClassificationDescriptor classification) {
-        
+
         // Read-only access to patient records
         if (resource.equals("patient.records") && !action.equals("read")) {
             return false;

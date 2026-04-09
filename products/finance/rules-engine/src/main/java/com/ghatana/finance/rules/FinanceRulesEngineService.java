@@ -151,7 +151,7 @@ public final class FinanceRulesEngineService {
     public Promise<FinanceRuleResult> evaluateTradingCompliance(
             FinanceTransactionContext transaction,
             FinanceComplianceContext compliance) {
-        
+
         Map<String, Object> input = new HashMap<>();
         input.put("transaction", Map.of(
             "id", transaction.transactionId(),
@@ -182,7 +182,7 @@ public final class FinanceRulesEngineService {
     public Promise<FinanceRuleResult> evaluateAMLRules(
             FinanceTransactionContext transaction,
             FinanceComplianceContext compliance) {
-        
+
         Map<String, Object> input = new HashMap<>();
         input.put("transaction", Map.of(
             "id", transaction.transactionId(),
@@ -213,7 +213,7 @@ public final class FinanceRulesEngineService {
             FinanceTransactionContext transaction,
             FinanceComplianceContext compliance,
             Map<String, Object> riskLimits) {
-        
+
         Map<String, Object> input = new HashMap<>();
         input.put("transaction", Map.of(
             "id", transaction.transactionId(),
@@ -241,7 +241,7 @@ public final class FinanceRulesEngineService {
     public Promise<FinanceRuleResult> evaluateReportingRules(
             FinanceTransactionContext transaction,
             FinanceComplianceContext compliance) {
-        
+
         Map<String, Object> input = new HashMap<>();
         input.put("transaction", Map.of(
             "id", transaction.transactionId(),
@@ -271,7 +271,7 @@ public final class FinanceRulesEngineService {
             String policyPath,
             Map<String, Object> input,
             FinanceComplianceContext compliance) {
-        
+
         return Promise.ofBlocking(executor, () -> doEvaluateFinanceRule(policyPath, input, compliance));
     }
 
@@ -280,7 +280,7 @@ public final class FinanceRulesEngineService {
             String policyPath,
             Map<String, Object> input,
             FinanceComplianceContext compliance) throws Exception {
-        
+
         String normalizedPath = policyPath.startsWith("/") ? policyPath.substring(1) : policyPath;
         String url = opaBaseUrl + "/v1/data/" + normalizedPath;
 
@@ -318,19 +318,19 @@ public final class FinanceRulesEngineService {
 
         if (!resultNode.isMissingNode()) {
             resultMap = MAPPER.convertValue(resultNode, Map.class);
-            
+
             // Extract compliance result
             Object compliantVal = resultMap.get("compliant");
             if (compliantVal instanceof Boolean b) {
                 compliant = b;
             }
-            
+
             // Extract risk level
             Object riskVal = resultMap.get("riskLevel");
             if (riskVal instanceof String s) {
                 riskLevel = s;
             }
-            
+
             // Extract violations
             Object violationsVal = resultMap.get("violations");
             if (violationsVal instanceof Map) {
@@ -350,9 +350,9 @@ public final class FinanceRulesEngineService {
             }
         }
 
-        log.debug("Finance rules result: policy={} compliant={} riskLevel={} violations={}", 
+        log.debug("Finance rules result: policy={} compliant={} riskLevel={} violations={}",
             policyPath, compliant, riskLevel, violations.size());
-        
+
         return new FinanceRuleResult(compliant, violations, riskLevel, resultMap, policyPath, compliance);
     }
 
@@ -364,10 +364,10 @@ public final class FinanceRulesEngineService {
      */
     public Promise<Map<String, FinanceRuleResult>> batchEvaluate(
             Map<String, RuleEvaluationRequest> evaluations) {
-        
+
         return Promise.ofBlocking(executor, () -> {
             Map<String, FinanceRuleResult> results = new HashMap<>();
-            
+
             for (Map.Entry<String, RuleEvaluationRequest> entry : evaluations.entrySet()) {
                 try {
                     FinanceRuleResult result = doEvaluateFinanceRule(
@@ -381,7 +381,7 @@ public final class FinanceRulesEngineService {
                     // Continue with other evaluations
                 }
             }
-            
+
             return results;
         });
     }

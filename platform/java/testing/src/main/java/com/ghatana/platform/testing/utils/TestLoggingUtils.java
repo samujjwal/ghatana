@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Utility
  */
 public final class TestLoggingUtils {
-    
+
     private TestLoggingUtils() {
         // Utility class
     }
-    
+
     /**
      * Creates a logger for the specified class.
      *
@@ -27,7 +27,7 @@ public final class TestLoggingUtils {
     public static Logger getLogger(Class<?> clazz) {
         return LoggerFactory.getLogger(clazz);
     }
-    
+
     /**
      * Creates a logger with the specified name.
      *
@@ -37,7 +37,7 @@ public final class TestLoggingUtils {
     public static Logger getLogger(String name) {
         return LoggerFactory.getLogger(name);
     }
-    
+
     /**
      * Logs the start of a test.
      *
@@ -49,7 +49,7 @@ public final class TestLoggingUtils {
             logger.info("===== TEST START: {} =====", testName);
         }
     }
-    
+
     /**
      * Logs the end of a test.
      *
@@ -63,7 +63,7 @@ public final class TestLoggingUtils {
             logger.info("===== TEST {}: {} =====\n", status, testName);
         }
     }
-    
+
     /**
      * Logs a test step.
      *

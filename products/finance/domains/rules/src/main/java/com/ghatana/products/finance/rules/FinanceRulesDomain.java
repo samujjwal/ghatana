@@ -98,7 +98,7 @@ public final class FinanceRulesDomain implements KernelModule {
             FINANCE_TRADE_PROCESSING,
             FINANCE_COMPLIANCE_CHECKING,
             FINANCE_RISK_MANAGEMENT,
-            
+
             // Reused kernel capabilities
             KernelCapability.Core.CONFIG_MANAGEMENT,
             KernelCapability.Core.EVENT_PROCESSING,
@@ -113,7 +113,7 @@ public final class FinanceRulesDomain implements KernelModule {
             KernelDependency.onCapability("config"),
             KernelDependency.onCapability("event-store"),
             KernelDependency.onCapability("audit"),
-            
+
             // Platform capabilities
             KernelDependency.onCapability("data.storage"),
             KernelDependency.onCapability("observability.framework")
@@ -138,7 +138,7 @@ public final class FinanceRulesDomain implements KernelModule {
     public Promise<Void> start() {
         log.info("Starting Finance Rules domain");
 
-        
+
             // Start rules service
             rulesService.start();
 
@@ -150,7 +150,7 @@ public final class FinanceRulesDomain implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Finance Rules domain");
 
-        
+
             // Stop rules service
             if (rulesService != null) {
                 rulesService.stop();
@@ -165,7 +165,7 @@ public final class FinanceRulesDomain implements KernelModule {
         try {
             boolean rulesHealthy = rulesService != null && rulesService.isHealthy();
 
-            return rulesHealthy 
+            return rulesHealthy
                 ? HealthStatus.healthy("Finance rules service operational")
                 : HealthStatus.unhealthy("Finance rules service degraded");
         } catch (Exception e) {

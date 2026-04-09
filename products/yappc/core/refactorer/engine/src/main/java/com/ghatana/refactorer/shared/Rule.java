@@ -5,7 +5,7 @@ import com.ghatana.platform.domain.Severity;
 import java.util.Objects;
 
 /**
- * Represents a validation or linting rule that can be applied to source code. 
+ * Represents a validation or linting rule that can be applied to source code.
  * @doc.type class
  * @doc.purpose Handles rule operations
  * @doc.layer core

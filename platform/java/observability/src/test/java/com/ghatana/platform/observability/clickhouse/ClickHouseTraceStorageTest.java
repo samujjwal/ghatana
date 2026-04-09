@@ -1,6 +1,5 @@
 package com.ghatana.platform.observability.clickhouse;
 
-import com.ghatana.platform.observability.clickhouse.ClickHouseTraceStorage;
 import com.ghatana.platform.observability.trace.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,7 +12,7 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * Unit tests for ClickHouseTraceStorage.
- * 
+ *
  * Tests core functionality and configuration validation.
  */
 @DisplayName("ClickHouseTraceStorage Unit Tests")
@@ -31,7 +30,7 @@ class ClickHouseTraceStorageTest {
                 .withBatchSize(5000)
                 .withFlushInterval(Duration.ofSeconds(5))
                 .build();
-        
+
         baseTime = Instant.now();
     }
 
@@ -64,7 +63,7 @@ class ClickHouseTraceStorageTest {
                 .withLimit(100)
                 .withOffset(0)
                 .build();
-        
+
         assertThat(query).isNotNull();
         assertThat(query.getServiceName()).contains("api-service");
         assertThat(query.getOperationName()).contains("GET /users");
@@ -82,7 +81,7 @@ class ClickHouseTraceStorageTest {
                 .withMinDurationMs(50)
                 .withMaxDurationMs(10000)
                 .build();
-        
+
         assertThat(query).isNotNull();
         assertThat(query.getServiceName()).contains("api-service");
         assertThat(query.getStatus()).contains("ERROR");
@@ -94,7 +93,7 @@ class ClickHouseTraceStorageTest {
     @DisplayName("Should build query without filters")
     void testBuildQueryWithoutFilters() {
         TraceQuery query = TraceQuery.builder().build();
-        
+
         assertThat(query).isNotNull();
         assertThat(query.getServiceName()).isEmpty();
         assertThat(query.getOperationName()).isEmpty();
@@ -130,7 +129,7 @@ class ClickHouseTraceStorageTest {
                 .withEndTime(baseTime.plusMillis(100))
                 .withStatus("OK")
                 .build();
-        
+
         assertThat(span).isNotNull();
         assertThat(span.traceId()).isEqualTo("trace-1");
         assertThat(span.spanId()).isEqualTo("span-1");
@@ -152,7 +151,7 @@ class ClickHouseTraceStorageTest {
                 .withEndTime(baseTime.plusMillis(150))
                 .withStatus("OK")
                 .build();
-        
+
         assertThat(span).isNotNull();
         assertThat(span.parentSpanId()).contains("span-1");
     }
@@ -168,7 +167,7 @@ class ClickHouseTraceStorageTest {
                 .withDurationMs(1000)
                 .withStatus("OK")
                 .build();
-        
+
         assertThat(trace).isNotNull();
         assertThat(trace.traceId()).isEqualTo("trace-1");
         assertThat(trace.serviceName()).isEqualTo("api-service");
@@ -189,7 +188,7 @@ class ClickHouseTraceStorageTest {
                 .withP95DurationMs(4000)
                 .withP99DurationMs(4500)
                 .build();
-        
+
         assertThat(stats).isNotNull();
         assertThat(stats.totalTraces()).isEqualTo(100);
         assertThat(stats.totalSpans()).isEqualTo(500);
@@ -197,7 +196,7 @@ class ClickHouseTraceStorageTest {
     }
 
     // Helper method
-    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId, 
+    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId,
                                     String operationName, String status) {
         return SpanData.builder()
                 .withTraceId(traceId)

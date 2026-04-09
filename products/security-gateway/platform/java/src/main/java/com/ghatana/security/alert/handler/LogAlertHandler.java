@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Logs security alerts to the application logs.
- 
+
  *
  * @doc.type class
  * @doc.purpose Log alert handler
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 */
 public class LogAlertHandler implements SecurityAlertManager.SecurityAlertHandler {
     private static final Logger logger = LoggerFactory.getLogger(LogAlertHandler.class);
-    
+
     @Override
     public Promise<Void> handle(SecurityAlert alert) {
         String logMessage = String.format(
@@ -28,13 +28,13 @@ public class LogAlertHandler implements SecurityAlertManager.SecurityAlertHandle
             alert.getMessage(),
             alert.getDetails()
         );
-        
+
         switch (alert.getSeverity()) {
             case CRITICAL -> logger.error(logMessage);
             case HIGH -> logger.warn(logMessage);
             case MEDIUM, LOW, INFO, WARNING, NONE, INFORMATIONAL -> logger.info(logMessage);
         }
-        
+
         return Promise.complete();
     }
 }

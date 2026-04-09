@@ -63,7 +63,7 @@ public record ContentGenerationRequest(
      * @return a new request
      */
     public static ContentGenerationRequest forLearner(
-            String topic, String domain, String gradeLevel, 
+            String topic, String domain, String gradeLevel,
             ContentType contentType, String learnerId) {
         return new ContentGenerationRequest(
             topic, domain, gradeLevel, contentType,

@@ -7,7 +7,6 @@ package com.ghatana.platform.security.port;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.domain.auth.Token;
 import com.ghatana.platform.domain.auth.TokenId;
-import com.ghatana.platform.domain.auth.UserId;
 import io.activej.promise.Promise;
 
 import java.util.Optional;

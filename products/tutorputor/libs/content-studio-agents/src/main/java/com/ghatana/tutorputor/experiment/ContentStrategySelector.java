@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Content strategy selector that integrates with A/B experiments.
- * 
+ *
  * <p>Selects content generation strategies based on experiment assignments,
  * supporting multiple simultaneous experiments with fallback to defaults.
  *
@@ -39,11 +39,11 @@ public class ContentStrategySelector {
         this.experimentManager = experimentManager;
         this.defaultStrategyId = defaultStrategyId;
         this.strategies = new ConcurrentHashMap<>();
-        
+
         // Register built-in strategies
         registerBuiltInStrategies();
-        
-        LOG.info("ContentStrategySelector initialized with default strategy: {}", 
+
+        LOG.info("ContentStrategySelector initialized with default strategy: {}",
             defaultStrategyId);
     }
 
@@ -65,30 +65,30 @@ public class ContentStrategySelector {
      * @return the selected strategy
      */
     public ContentStrategy selectStrategy(
-            @NotNull String experimentId, 
+            @NotNull String experimentId,
             @NotNull String userId) {
-        
+
         ExperimentManager.Variant variant = experimentManager.getVariant(experimentId, userId);
-        
+
         if (variant == null) {
             LOG.debug("User {} not in experiment {}, using default", userId, experimentId);
             return getDefaultStrategy();
         }
-        
+
         String strategyId = (String) variant.config().getOrDefault("strategyId", defaultStrategyId);
         ContentStrategy strategy = strategies.get(strategyId);
-        
+
         if (strategy == null) {
             LOG.warn("Strategy {} not found, using default", strategyId);
             return getDefaultStrategy();
         }
-        
+
         // Record exposure
         experimentManager.recordExposure(experimentId, userId, variant.id());
-        
-        LOG.debug("Selected strategy {} for user {} in experiment {}", 
+
+        LOG.debug("Selected strategy {} for user {} in experiment {}",
             strategyId, userId, experimentId);
-        
+
         return strategy;
     }
 
