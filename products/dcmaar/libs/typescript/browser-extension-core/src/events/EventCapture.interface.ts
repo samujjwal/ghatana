@@ -4,52 +4,75 @@
  * Defines the contract for capturing browser events (tabs, navigation, network, etc.)
  * Implementations should use browser extension APIs only.
  *
+ * Event shape follows the PlatformEvent<T> contract defined in @ghatana/realtime/events:
+ *   - `id`        — unique event UUID
+ *   - `type`      — discriminated event kind
+ *   - `timestamp` — Unix millisecond epoch
+ *   - `source`    — origin description  ({ type: 'browser', id: ... })
+ *   - `data`      — domain-specific payload
+ *
+ * When @ghatana/realtime is linked into the DCMAAR workspace, replace the local
+ * BrowserEventSource/BrowserPlatformEvent definitions below with direct imports from
+ * '@ghatana/realtime/events'.
+ *
  * @module core/interfaces/EventCapture
  */
 
-/**
- * Browser event types
- */
-export type BrowserEvent =
-  | TabEvent
-  | NavigationEvent
-  | NetworkEvent
-  | WebRequestEvent
-  | HistoryEvent
-  | FlowEvent;
+// ---------------------------------------------------------------------------
+// Platform event contract (mirrors @ghatana/realtime/events PlatformEvent<T>)
+// ---------------------------------------------------------------------------
 
 /**
- * Tab event
+ * Identifies the browser extension as the event source.
  */
-export interface TabEvent {
-  type: 'tab';
+export interface BrowserEventSource {
+  /** Always 'browser' for extension-captured events. */
+  readonly type: 'browser';
+  /** Extension or tab instance identifier. */
+  readonly id: string;
+}
+
+/**
+ * Base event shape for all DCMAAR browser-extension events.
+ * Structurally compatible with PlatformEvent<T> from @ghatana/realtime/events.
+ */
+export interface BrowserPlatformEvent<T = unknown> {
+  /** Unique event identifier (UUID v4). */
+  readonly id: string;
+  /** Discriminated event type string (e.g. 'tab.created'). */
+  readonly type: string;
+  /** Unix millisecond timestamp of event creation. */
+  readonly timestamp: number;
+  /** Always browser-sourced in this package. */
+  readonly source: BrowserEventSource;
+  /** Domain-specific payload. */
+  readonly data: T;
+  /** Optional correlation id for distributed tracing. */
+  readonly correlationId?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Domain payload types
+// ---------------------------------------------------------------------------
+
+export interface TabEventData {
   action: 'created' | 'updated' | 'removed' | 'activated' | 'moved' | 'attached' | 'detached';
   tabId: number;
   windowId?: number;
   url?: string;
   title?: string;
   active?: boolean;
-  timestamp: number;
 }
 
-/**
- * Navigation event
- */
-export interface NavigationEvent {
-  type: 'navigation';
+export interface NavigationEventData {
   action: 'before' | 'committed' | 'completed' | 'error' | 'replaced';
   tabId: number;
   url: string;
   frameId: number;
   transitionType?: string;
-  timestamp: number;
 }
 
-/**
- * Network request event
- */
-export interface NetworkEvent {
-  type: 'network';
+export interface NetworkEventData {
   action: 'request' | 'response' | 'error' | 'redirect';
   requestId: string;
   url: string;
@@ -59,56 +82,90 @@ export interface NetworkEvent {
   contentType?: string;
   duration?: number;
   error?: string;
-  timestamp: number;
 }
 
-/**
- * Web request event
- */
-export interface WebRequestEvent {
-  type: 'webrequest';
+export interface WebRequestEventData {
   action: 'before' | 'sent' | 'headers' | 'redirect' | 'response' | 'completed' | 'error';
   requestId: string;
   url: string;
   method: string;
   tabId?: number;
-  resourceType: string; // main_frame, sub_frame, stylesheet, script, image, etc.
-  timestamp: number;
+  /** e.g. main_frame, sub_frame, stylesheet, script, image */
+  resourceType: string;
 }
 
-/**
- * History navigation event
- */
-export interface HistoryEvent {
-  type: 'history';
+export interface HistoryEventData {
   action: 'visited' | 'deleted';
   url: string;
   title?: string;
   visitTime: number;
-  timestamp: number;
 }
 
-/**
- * Flow lifecycle event
- */
-export interface FlowEvent {
-  type: 'flow';
+export interface FlowEventData {
   flowId: string;
   action: 'start' | 'step' | 'complete' | 'abandon' | 'error';
   step?: string;
   url?: string;
   tabId?: number;
-  timestamp: number;
   data?: Record<string, unknown>;
 }
 
+// ---------------------------------------------------------------------------
+// Domain event interfaces (extend BrowserPlatformEvent)
+// ---------------------------------------------------------------------------
+
+export interface TabEvent extends BrowserPlatformEvent<TabEventData> {
+  readonly type: 'tab';
+  readonly source: BrowserEventSource;
+}
+
+export interface NavigationEvent extends BrowserPlatformEvent<NavigationEventData> {
+  readonly type: 'navigation';
+  readonly source: BrowserEventSource;
+}
+
+export interface NetworkEvent extends BrowserPlatformEvent<NetworkEventData> {
+  readonly type: 'network';
+  readonly source: BrowserEventSource;
+}
+
+export interface WebRequestEvent extends BrowserPlatformEvent<WebRequestEventData> {
+  readonly type: 'webrequest';
+  readonly source: BrowserEventSource;
+}
+
+export interface HistoryEvent extends BrowserPlatformEvent<HistoryEventData> {
+  readonly type: 'history';
+  readonly source: BrowserEventSource;
+}
+
+export interface FlowEvent extends BrowserPlatformEvent<FlowEventData> {
+  readonly type: 'flow';
+  readonly source: BrowserEventSource;
+}
+
 /**
- * Event handler function
+ * Discriminated union of all browser event types.
+ */
+export type BrowserEvent =
+  | TabEvent
+  | NavigationEvent
+  | NetworkEvent
+  | WebRequestEvent
+  | HistoryEvent
+  | FlowEvent;
+
+// ---------------------------------------------------------------------------
+// Handler / Filter / Capture contracts (unchanged)
+// ---------------------------------------------------------------------------
+
+/**
+ * Event handler function.
  */
 export type EventHandler<T = BrowserEvent> = (event: T) => void | Promise<void>;
 
 /**
- * Event filter options
+ * Event filter options.
  */
 export interface EventFilter {
   /** Filter by event types */
@@ -126,31 +183,6 @@ export interface EventFilter {
  *
  * Captures browser events using extension APIs and forwards them to handlers.
  * Implementations should be lightweight and non-blocking.
- *
- * @example
- * ```typescript
- * class TabEventCapture implements EventCapture {
- *   private handlers: Set<EventHandler> = new Set();
- *
- *   captureTabEvents(): void {
- *     browser.tabs.onCreated.addListener((tab) => {
- *       const event: TabEvent = {
- *         type: 'tab',
- *         action: 'created',
- *         tabId: tab.id!,
- *         url: tab.url,
- *         title: tab.title,
- *         timestamp: Date.now(),
- *       };
- *       this.handlers.forEach(h => h(event));
- *     });
- *   }
- *
- *   onEvent(handler: EventHandler): void {
- *     this.handlers.add(handler);
- *   }
- * }
- * ```
  */
 export interface EventCapture {
   /**

@@ -43,8 +43,15 @@ export class CanvasLifecycle {
     private listeners: Set<PhaseChangeListener> = new Set();
     private phaseHistory: PhaseTransition[] = [];
 
-    constructor(initialPhase: LifecyclePhase = LifecyclePhase.SHAPE) {
+    constructor(initialPhase: LifecyclePhase = LifecyclePhase.INTENT) {
         this.currentPhase = initialPhase;
+        // Seed history with the initial state so getPhaseHistory() always reflects visited phases
+        this.phaseHistory.push({
+            fromPhase: initialPhase,
+            toPhase: initialPhase,
+            timestamp: Date.now(),
+            triggeredBy: 'system',
+        });
     }
 
     /**
@@ -59,6 +66,13 @@ export class CanvasLifecycle {
      */
     getPhaseHistory(): PhaseTransition[] {
         return [...this.phaseHistory];
+    }
+
+    /**
+     * Check if transition to given phase is valid from current phase
+     */
+    canTransitionTo(toPhase: LifecyclePhase): boolean {
+        return canTransitionToPhase(this.currentPhase, toPhase);
     }
 
     /**
@@ -178,7 +192,7 @@ export class CanvasLifecycle {
  */
 export function useCanvasLifecycle(canvasState?: CanvasState) {
     const [lifecycle] = React.useState(() => {
-        const initialPhase = canvasState?.lifecyclePhase || LifecyclePhase.SHAPE;
+        const initialPhase = canvasState?.lifecyclePhase || LifecyclePhase.INTENT;
         const mgr = new CanvasLifecycle(initialPhase);
         if (canvasState) {
             mgr.restoreFromCanvasState(canvasState);
@@ -202,6 +216,16 @@ export function useCanvasLifecycle(canvasState?: CanvasState) {
         [lifecycle]
     );
 
+    const canTransitionTo = React.useCallback(
+        (toPhase: LifecyclePhase) => lifecycle.canTransitionTo(toPhase),
+        [lifecycle, currentPhase],
+    );
+
+    const getPhaseHistory = React.useCallback(
+        () => lifecycle.getPhaseHistory(),
+        [lifecycle],
+    );
+
     const canPerformOperation = React.useCallback(
         (operation: Parameters<typeof lifecycle.canPerformOperation>[0]) => {
             return lifecycle.canPerformOperation(operation);
@@ -216,8 +240,10 @@ export function useCanvasLifecycle(canvasState?: CanvasState) {
     return {
         currentPhase,
         transitionToPhase,
+        canTransitionTo,
         canPerformOperation,
         getAllowedOperations,
+        getPhaseHistory,
         lifecycle,
     };
 }

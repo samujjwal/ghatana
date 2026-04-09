@@ -16,14 +16,39 @@
 
 import { atom } from 'jotai';
 
-// Re-export types
-export type {
-  Breadcrumb,
-  User,
-  Project,
-  Notification,
-  BootstrapSession,
-} from '@yappc/canvas';
+export interface Breadcrumb {
+  id?: string;
+  label: string;
+  href?: string;
+  path?: string;
+  icon?: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  message: string;
+}
+
+export interface BootstrapSession {
+  id: string;
+  projectId?: string;
+  phase?: string;
+  status?: string;
+}
 
 // Local type definitions for missing types
 export interface SecurityAlert {
@@ -51,15 +76,19 @@ const createWorkspaceService = () => ({
 
 export const userAtom = atom(null);
 export const isAuthenticatedAtom = atom(false);
-export const breadcrumbsAtom = atom([]);
+export const breadcrumbsAtom = atom<Breadcrumb[]>([]);
 export const currentProjectAtom = atom(null);
 export const sidebarCollapsedAtom = atom(false);
 export const notificationsAtom = atom([]);
 export const unreadNotificationsCountAtom = atom(0);
 export const globalSearchOpenAtom = atom(false);
+globalSearchOpenAtom.debugLabel = 'globalSearchOpenAtom';
 export const globalSearchQueryAtom = atom('');
+globalSearchQueryAtom.debugLabel = 'globalSearchQueryAtom';
 export const globalSearchResultsAtom = atom([]);
+globalSearchResultsAtom.debugLabel = 'globalSearchResultsAtom';
 export const globalSearchLoadingAtom = atom(false);
+globalSearchLoadingAtom.debugLabel = 'globalSearchLoadingAtom';
 export const bootstrapSessionAtom = atom(null);
 export const savedSessionsAtom = atom([]);
 export const selectedTemplateAtom = atom(null);

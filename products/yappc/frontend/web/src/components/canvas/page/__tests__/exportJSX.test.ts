@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { describe, test, expect } from 'vitest';
 
-import { exportToJSX } from './exportJSX';
+import { exportToJSX } from '../exportJSX';
 
-import type { ComponentData } from './schemas';
+import type { ComponentData } from '../schemas';
 
 describe('exportJSX', () => {
   test('should export single button component', () => {
@@ -94,7 +94,7 @@ describe('exportJSX', () => {
     const jsx = exportToJSX(components);
 
     expect(jsx).toContain('Typography');
-    expect(jsx).toContain('as="h1"');
+    expect(jsx).toContain('variant="h1"');
     expect(jsx).toContain('align="center"');
     expect(jsx).toContain('Welcome');
   });

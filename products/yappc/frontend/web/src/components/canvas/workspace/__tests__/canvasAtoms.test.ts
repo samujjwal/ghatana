@@ -24,9 +24,9 @@ describe('Canvas Interaction Mode Atom', () => {
         store = createStore();
     });
 
-    it('defaults to navigate mode', () => {
+    it('defaults to select mode', () => {
         const mode = store.get(canvasInteractionModeAtom);
-        expect(mode).toBe('navigate');
+        expect(mode).toBe('select');
     });
 
     it('can be set to sketch mode', () => {
@@ -64,9 +64,9 @@ describe('Sketch Tool Atoms', () => {
     });
 
     describe('sketchToolAtom', () => {
-        it('defaults to pen tool', () => {
+        it('defaults to select tool', () => {
             const tool = store.get(sketchToolAtom);
-            expect(tool).toBe('pen');
+            expect(tool).toBe('select');
         });
 
         it('can be set to rect tool', () => {
@@ -97,9 +97,9 @@ describe('Sketch Tool Atoms', () => {
     });
 
     describe('sketchColorAtom', () => {
-        it('defaults to black', () => {
+        it('defaults to dark slate color', () => {
             const color = store.get(sketchColorAtom);
-            expect(color).toBe('#000000');
+            expect(color).toBe('#0f172a');
         });
 
         it('can be set to custom color', () => {
@@ -172,9 +172,9 @@ describe('Diagram Atoms', () => {
     });
 
     describe('diagramTypeAtom', () => {
-        it('defaults to mermaid', () => {
+        it('defaults to flowchart', () => {
             const type = store.get(diagramTypeAtom);
-            expect(type).toBe('mermaid');
+            expect(type).toBe('flowchart');
         });
 
         it('can be set to sequence diagram', () => {
@@ -212,9 +212,9 @@ describe('Diagram Atoms', () => {
     });
 
     describe('diagramContentAtom', () => {
-        it('defaults to sample diagram', () => {
+        it('defaults to null', () => {
             const content = store.get(diagramContentAtom);
-            expect(content).toBe('graph TD\n  A[Start] --> B[End]');
+            expect(content).toBeNull();
         });
 
         it('can be set to flowchart syntax', () => {

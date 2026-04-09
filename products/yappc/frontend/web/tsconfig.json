@@ -20,11 +20,15 @@
     "noFallthroughCasesInSwitch": true,
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "rootDirs": [".", "./.react-router/types"],
+    "rootDir": "..",
+    "rootDirs": [
+      ".",
+      "./.react-router/types",
+      "../libs/yappc-ui/src/components/components/Toast",
+      "../libs/yappc-ui/src/components/utils"
+    ],
     "types": ["vite/client", "@react-router/node"],
     "paths": {
-      "@yappc/canvas": ["src/types/module-shims.d.ts"],
-      "@yappc/canvas/*": ["src/types/module-shims.d.ts"],
       "@yappc/ai": ["src/types/module-shims.d.ts"],
       "@yappc/ai/*": ["src/types/module-shims.d.ts"],
       "@ghatana/canvas": ["src/types/module-shims.d.ts"],
@@ -39,7 +43,13 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", ".react-router/types/**/*.ts"],
+  "include": [
+    "src",
+    ".react-router/types/**/*.ts",
+    "../libs/yappc-ui/src/components/components/Toast/Toast.tailwind.tsx",
+    "../libs/yappc-ui/src/components/components/Toast/index.ts",
+    "../libs/yappc-ui/src/components/utils/cn.ts"
+  ],
   "references": [
     {
       "path": "../libs/api/tsconfig.json"

@@ -26,7 +26,7 @@ import {
   authTokenAtom,
   authLoadingAtom,
   authErrorAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 
 import type { User } from '@yappc/core/types';
 

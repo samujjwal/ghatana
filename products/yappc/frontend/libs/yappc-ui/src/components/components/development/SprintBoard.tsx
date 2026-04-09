@@ -80,7 +80,7 @@ import {
   sprintBoardAtom,
   selectedStoryAtom,
   sprintStoriesAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   DropdownMenu,
   DropdownMenuContent,

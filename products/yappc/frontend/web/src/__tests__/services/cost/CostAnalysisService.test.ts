@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { CostAnalysisService } from '../../src/services/cost/CostAnalysisService';
-import { InMemoryCloudCostRepository } from '../../src/repositories/CloudCostRepository';
-import { CloudCost } from '../../src/models/cost/CloudCost.entity';
-import * as CostCalculations from '../../src/utils/cost/CostCalculations';
+import { CostAnalysisService } from '../../../services/cost/CostAnalysisService';
+import { InMemoryCloudCostRepository } from '../../../repositories/CloudCostRepository';
+import { CloudCost } from '../../../models/cost/CloudCost.entity';
+import * as CostCalculations from '../../../utils/cost/CostCalculations';
 
 /**
  * Unit tests for CostAnalysisService

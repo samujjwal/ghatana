@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./events": {
+      "types": "./src/events/index.ts",
+      "import": "./src/events/index.ts"
     }
   },
   "files": [
@@ -20,15 +24,19 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
     "docs:api": "typedoc"
   },
   "peerDependencies": {
     "react": "^19.2.4"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
   "devDependencies": {
     "typedoc": "^0.28.18",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "ghatana",

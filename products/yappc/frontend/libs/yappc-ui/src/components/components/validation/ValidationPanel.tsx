@@ -39,7 +39,7 @@ import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 
-import { validationStateAtom } from '@yappc/canvas';
+import { validationStateAtom } from '@yappc/state';
 import {
   DropdownMenu,
   DropdownMenuContent,

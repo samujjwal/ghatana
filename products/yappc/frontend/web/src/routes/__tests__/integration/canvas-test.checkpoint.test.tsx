@@ -44,7 +44,7 @@ import {
   type Checkpoint,
   type TimelineBranch,
   type UndoConflict,
-} from '@yappc/canvas';
+} from '../../../lib/canvas-legacy/history/checkpoint-manager';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -715,6 +715,7 @@ describe('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
 
       // Simulate another actor's actions
       recordAction(actorState, 'edit', 'Other User Edit', { data: 'test' }, {});
+      setActor(actorState, 'user1', 'Test User');
 
       render(
         <TimelineManager
@@ -733,6 +734,7 @@ describe('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
     it('force undo bypasses conflict detection', () => {
       const actorState = createCheckpointManagerState('user2', 'Other User');
       recordAction(actorState, 'edit', 'Other User Edit', { data: 'test' }, {});
+      setActor(actorState, 'user1', 'Test User');
 
       render(<TimelineManager initialState={actorState} />);
 
@@ -747,6 +749,7 @@ describe('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
     it('displays unresolved conflicts', () => {
       const actorState = createCheckpointManagerState('user2', 'Other User');
       recordAction(actorState, 'edit', 'Other User Edit', { data: 'test' }, {});
+      setActor(actorState, 'user1', 'Test User');
 
       render(<TimelineManager initialState={actorState} />);
 
@@ -817,6 +820,7 @@ describe('Feature 2.11: Undo/Redo UX - Integration Tests', () => {
       const onConflictDetected = vi.fn();
       const actorState = createCheckpointManagerState('user2', 'Other User');
       recordAction(actorState, 'edit', 'Other User Edit', { data: 'test' }, {});
+      setActor(actorState, 'user1', 'Test User');
 
       render(
         <TimelineManager

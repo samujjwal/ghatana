@@ -81,6 +81,14 @@ export interface CanvasChangeEvent {
   data: unknown;
 }
 
+interface CanvasChangeEventMap {
+  'nodes-change': { nodes: CanvasNode[]; event: unknown };
+  'edges-change': { edges: CanvasEdge[]; event: unknown };
+  'viewport-change': { viewport: CanvasViewport; event: unknown };
+  'cursors-change': { cursors: UserCursor[] };
+  'selections-change': { selections: Map<string, CanvasSelection>; event?: unknown };
+}
+
 // =============================================================================
 // Canvas Collaboration Class
 // =============================================================================
@@ -90,14 +98,14 @@ export interface CanvasChangeEvent {
  */
 export class CanvasCollaboration {
   private collab: CollaborationManager;
-  private nodesMap: Y.Map<unknown>;
-  private edgesMap: Y.Map<unknown>;
-  private viewportMap: Y.Map<unknown>;
-  private selectionsMap: Y.Map<unknown>;
+  private nodesMap: Y.Map<Omit<CanvasNode, 'id'>>;
+  private edgesMap: Y.Map<Omit<CanvasEdge, 'id'>>;
+  private viewportMap: Y.Map<number>;
+  private selectionsMap: Y.Map<CanvasSelection>;
   private userId: string;
   private listeners: Map<
     CanvasChangeType,
-    Set<(event: CanvasChangeEvent) => void>
+    Set<(event: CanvasChangeEventMap[CanvasChangeType]) => void>
   >;
   private cursors: Map<string, UserCursor>;
   private cursorUpdateInterval: number | null = null;
@@ -363,9 +371,9 @@ export class CanvasCollaboration {
    */
   getViewport(): CanvasViewport {
     return {
-      x: this.viewportMap.get('x') || 0,
-      y: this.viewportMap.get('y') || 0,
-      zoom: this.viewportMap.get('zoom') || 1,
+      x: this.viewportMap.get('x') ?? 0,
+      y: this.viewportMap.get('y') ?? 0,
+      zoom: this.viewportMap.get('zoom') ?? 1,
     };
   }
 
@@ -400,7 +408,7 @@ export class CanvasCollaboration {
    * Get selection for a specific user
    */
   getUserSelection(userId: string): CanvasSelection | null {
-    return this.selectionsMap.get(userId) || null;
+    return this.selectionsMap.get(userId) ?? null;
   }
 
   /**
@@ -529,26 +537,34 @@ export class CanvasCollaboration {
   /**
    * Subscribe to canvas changes
    */
-  on(
-    type: CanvasChangeType,
-    callback: (event: CanvasChangeEvent) => void
+  on<K extends CanvasChangeType>(
+    type: K,
+    callback: (event: CanvasChangeEventMap[K]) => void
   ): () => void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
-    this.listeners.get(type)!.add(callback);
+    this.listeners
+      .get(type)!
+      .add(callback as (event: CanvasChangeEventMap[CanvasChangeType]) => void);
 
     return () => {
-      this.listeners.get(type)?.delete(callback);
+      this.listeners
+        .get(type)
+        ?.delete(callback as (event: CanvasChangeEventMap[CanvasChangeType]) => void);
     };
   }
 
   /**
    * Emit a canvas change event
    */
-  private emit(type: CanvasChangeType, data: unknown): void {
-    const event: CanvasChangeEvent = { type, data };
-    this.listeners.get(type)?.forEach((callback) => callback(event));
+  private emit<K extends CanvasChangeType>(
+    type: K,
+    data: CanvasChangeEventMap[K]
+  ): void {
+    this.listeners.get(type)?.forEach((callback) =>
+      callback(data as CanvasChangeEventMap[CanvasChangeType])
+    );
   }
 
   // ===========================================================================

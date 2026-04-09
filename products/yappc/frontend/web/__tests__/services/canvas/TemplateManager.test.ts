@@ -6,7 +6,7 @@
  * @doc.layer product
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { TemplateManager, useTemplateManager } from '../../../src/services/canvas/templates/TemplateManager';
 import type { CanvasTemplate } from '../../../src/services/canvas/templates/TemplateManager';
@@ -35,7 +35,7 @@ describe('TemplateManager', () => {
             const id = await manager.save(template);
 
             expect(id).toBeDefined();
-            expect(id).toMatch(/^template-\d+$/);
+            expect(id).toMatch(/^template-\d+/);
         });
 
         it('should retrieve all templates', async () => {
@@ -122,7 +122,7 @@ describe('TemplateManager', () => {
         });
 
         it('should search by name', async () => {
-            const results = await manager.search('API');
+            const results = await manager.search('API Template');
             expect(results).toHaveLength(1);
             expect(results[0].name).toBe('API Template');
         });
@@ -170,8 +170,8 @@ describe('TemplateManager', () => {
             const template = await manager.getById(id);
 
             // Mock document.createElement and click
-            const createElementSpy = jest.spyOn(document, 'createElement');
-            const clickMock = jest.fn();
+            const createElementSpy = vi.spyOn(document, 'createElement');
+            const clickMock = vi.fn();
 
             createElementSpy.mockReturnValue({
                 click: clickMock,
@@ -273,7 +273,7 @@ describe('useTemplateManager Hook', () => {
         const { result } = renderHook(() => useTemplateManager());
 
         // Mock localStorage to throw error
-        const setItemSpy = jest.spyOn(Storage.prototype, 'setItem');
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
         setItemSpy.mockImplementation(() => {
             throw new Error('Storage full');
         });

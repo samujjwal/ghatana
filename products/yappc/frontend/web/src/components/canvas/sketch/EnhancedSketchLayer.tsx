@@ -15,9 +15,8 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { Stage, Layer, Line, Rect, Ellipse } from 'react-konva';
 
-// Use shared sketch library for types and hooks
-import { useSketchTools } from '@yappc/canvas/sketch';
-import type { SketchTool, SketchToolConfig, StrokeData, ShapeData } from '@yappc/canvas/sketch';
+import { useSketchTools } from './useSketchTools';
+import type { SketchTool, SketchToolConfig, StrokeData, ShapeData } from './types';
 
 // App-specific state
 import { canvasAtom } from '../../../components/canvas/workspace/canvasAtoms';

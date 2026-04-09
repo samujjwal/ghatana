@@ -56,7 +56,8 @@ export function UnifiedLeftRail({
   const [ui, setUI] = useAtom(uiAtom);
 
   // Get visible panels based on context
-  const visiblePanels = usePanelRegistry(context);
+  const registry = usePanelRegistry();
+  const visiblePanels = registry.getVisiblePanels(context);
 
   // Debug: Log panel registry state
   React.useEffect(() => {

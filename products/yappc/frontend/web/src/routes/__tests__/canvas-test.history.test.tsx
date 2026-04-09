@@ -24,7 +24,7 @@ import {
   markSavePending,
   type DocumentVersion,
   type DocumentTemplate,
-} from '@yappc/canvas';
+} from '../../lib/canvas-legacy/history/history-manager';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**

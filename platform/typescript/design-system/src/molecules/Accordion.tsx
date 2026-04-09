@@ -170,3 +170,29 @@ export const Accordion: React.FC<AccordionProps> = ({
 };
 
 Accordion.displayName = 'Accordion';
+
+/**
+ * MUI-compatible AccordionSummary stub.
+ * Used by code that follows the MUI Accordion sub-component API.
+ */
+export const AccordionSummary: React.FC<{
+    children?: React.ReactNode;
+    expandIcon?: React.ReactNode;
+    'aria-controls'?: string;
+    id?: string;
+}> = ({ children, expandIcon }) => (
+    <div className="flex items-center justify-between px-4 py-3">
+        <span>{children}</span>
+        {expandIcon && <span>{expandIcon}</span>}
+    </div>
+);
+AccordionSummary.displayName = 'AccordionSummary';
+
+/**
+ * MUI-compatible AccordionDetails stub.
+ * Used by code that follows the MUI Accordion sub-component API.
+ */
+export const AccordionDetails: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
+    <div className="px-4 pb-3">{children}</div>
+);
+AccordionDetails.displayName = 'AccordionDetails';

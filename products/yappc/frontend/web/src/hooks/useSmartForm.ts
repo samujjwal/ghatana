@@ -12,7 +12,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
   generateFormPredictions,
   applyPredictions,
@@ -20,7 +20,6 @@ import {
   getPredictionReasoning,
   type FormPredictionContext,
   type FormFieldPrediction,
-  type FormPredictionRequest,
 } from '../services/ai/FormPredictionService';
 
 // ============================================================================
@@ -75,7 +74,7 @@ export function useSmartForm<T extends Record<string, unknown>>(
     onPredictionsChange,
   } = options;
 
-  const queryClient = useQueryClient();
+  useQueryClient();
   const [values, setValues] = useState<T>(initialValues as T);
   const [isApplyingPredictions, setIsApplyingPredictions] = useState(false);
 

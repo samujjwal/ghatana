@@ -1,9 +1,8 @@
 // @ts-nocheck
 import { useCallback, useRef, useState } from 'react';
 
-// Import from shared library instead of local files
-import { simplifyPoints } from '@yappc/canvas/sketch';
-import type { SketchTool, SketchToolConfig, StrokeData, ShapeData, Point } from '@yappc/canvas/sketch';
+import { simplifyPoints } from './smoothStroke';
+import type { SketchTool, SketchToolConfig, StrokeData, ShapeData, Point } from './types';
 
 /**
  *

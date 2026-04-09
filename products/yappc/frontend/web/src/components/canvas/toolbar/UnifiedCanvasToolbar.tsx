@@ -15,6 +15,8 @@
  */
 
 import { useCallback, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 import { Undo2 as Undo, Redo2 as Redo, Sparkles as AutoAwesome, HelpCircle as Help, CheckCircle, AlertTriangle as Warning, AlertCircle as ErrorIcon, Code as CodeIcon, CloudCheck as CloudDone, CloudOff, RefreshCw as Sync, MoreVertical as MoreVert, Navigation as NavigationIcon, Paintbrush as BrushIcon, GitBranch as DiagramIcon } from 'lucide-react';
 import { Menu, MenuItem, Tooltip } from '@ghatana/design-system';
 import React, { useState } from 'react';
@@ -168,7 +170,9 @@ function IconButton({
         success: 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30',
         warning: 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30',
         error: 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30',
-        primary: 'text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30',
+        primary: active
+            ? 'bg-grey-100 dark:bg-grey-800 text-primary-600'
+            : 'text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30',
         secondary: 'text-secondary-600 hover:bg-secondary-50 dark:hover:bg-secondary-900/30',
     }[variant];
 

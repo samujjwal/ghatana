@@ -81,9 +81,15 @@ export interface BudgetPlan {
 export class CostForecastingService {
   /**
    * Initialize service with repository
-   * @param repository Data access layer for costs
+   * @param repository Data access layer for costs (optional; defaults to an in-memory no-op)
    */
-  constructor(private readonly repository: CloudCostRepository) {}
+  constructor(private readonly repository: CloudCostRepository = {
+    findByPeriod: async () => [],
+    findById: async () => null,
+    findAll: async () => [],
+    save: async (item: unknown) => item,
+    delete: async () => {},
+  } as unknown as CloudCostRepository) {}
 
   /**
    * Forecast costs for specified number of months

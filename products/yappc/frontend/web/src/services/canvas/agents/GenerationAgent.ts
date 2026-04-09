@@ -22,15 +22,6 @@ import {
   isCanvasAIAvailable,
 } from '../api/CanvasAIService';
 
-// Reuse existing code generation infrastructure
-import {
-  generateCodeFromNode,
-  generateCodeFromFlow,
-  type CodeGenerationOptions,
-  type CodeGenerationResult as LibCodeGenerationResult,
-  type GeneratedFile,
-} from '@yappc/canvas';
-
 // ============================================================================
 // Types
 // ============================================================================

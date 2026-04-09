@@ -13,7 +13,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { axe, toHaveNoViolations } from 'jest-axe';
+import { axe, toHaveNoViolations } from './axe-vitest-shim';
 
 // Import all new components
 import { AIStatusBar } from '../../components/ai/AIStatusBar';

@@ -44,7 +44,7 @@ describe('ComponentRegistry', () => {
     test('should throw for non-existent component type+version', () => {
       expect(() => {
         ComponentRegistry.update('nonexistent', '1.0.0', { label: 'X' });
-      }).toThrow('Component not found: nonexistent:1.0.0');
+      }).toThrow('Component not found: nonexistent@1.0.0');
     });
   });
 

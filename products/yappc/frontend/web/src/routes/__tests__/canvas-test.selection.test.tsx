@@ -6,7 +6,7 @@ import {
   applyRotation,
   updateLayerOrder,
   batchUpdatePositions,
-} from '@yappc/canvas';
+} from '../../lib/canvas-legacy/elements/transformations';
 
 /**
  * Integration tests for element manipulation in canvas-test route.

@@ -20,9 +20,6 @@ import { getCanvasState, CanvasContentType } from '../../config/canvas-states';
 import { Suspense, ComponentType } from 'react';
 import { Box, Spinner as CircularProgress } from '@ghatana/design-system';
 
-// Dev playground for quick testing
-import { CanvasPlayground } from '@yappc/canvas';
-
 // All canvas implementations
 import { CodeEditorCanvas } from './content/CodeEditorCanvas';
 import { StickyNotesCanvas } from './content/StickyNotesCanvas';
@@ -145,12 +142,6 @@ export const Canvas = () => {
       <Suspense fallback={<CanvasLoadingFallback />}>
         <ContentComponent />
       </Suspense>
-
-      {process.env.NODE_ENV !== 'production' && (
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 999, backgroundColor: 'var(--bg-canvas)' }}>
-          <CanvasPlayground />
-        </div>
-      )}
     </Box>
   );
 };

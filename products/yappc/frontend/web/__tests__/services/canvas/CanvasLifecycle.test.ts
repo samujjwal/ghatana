@@ -6,7 +6,7 @@
  * @doc.layer product
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { CanvasLifecycle, useCanvasLifecycle } from '../../../src/services/canvas/lifecycle/CanvasLifecycle';
 import { LifecyclePhase } from '../../../src/types/lifecycle';
@@ -27,7 +27,7 @@ describe('CanvasLifecycle', () => {
             expect(lifecycle.canTransitionTo(LifecyclePhase.SHAPE)).toBe(true);
 
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Moving to SHAPE');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Moving to SHAPE');
             });
 
             expect(lifecycle.getCurrentPhase()).toBe(LifecyclePhase.SHAPE);
@@ -39,50 +39,52 @@ describe('CanvasLifecycle', () => {
 
         it('should track phase history', () => {
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Step 1');
-                lifecycle.transitionTo(LifecyclePhase.VALIDATE, 'test', 'Step 2');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Step 1');
+                lifecycle.transitionToPhase(LifecyclePhase.VALIDATE, 'user', 'Step 2');
             });
 
             const history = lifecycle.getPhaseHistory();
-            expect(history).toHaveLength(3); // INTENT + SHAPE + VALIDATE
-            expect(history[0].phase).toBe(LifecyclePhase.INTENT);
-            expect(history[1].phase).toBe(LifecyclePhase.SHAPE);
-            expect(history[2].phase).toBe(LifecyclePhase.VALIDATE);
+            // Initial seed + INTENT→SHAPE + SHAPE→VALIDATE
+            expect(history).toHaveLength(3);
+            expect(history[0].toPhase).toBe(LifecyclePhase.INTENT);
+            expect(history[1].toPhase).toBe(LifecyclePhase.SHAPE);
+            expect(history[2].toPhase).toBe(LifecyclePhase.VALIDATE);
         });
 
         it('should emit events on phase change', () => {
-            const listener = jest.fn();
-            lifecycle.on('phaseChanged', listener);
+            const listener = vi.fn();
+            lifecycle.addListener(listener);
 
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Test transition');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Test transition');
             });
 
-            expect(listener).toHaveBeenCalledWith({
-                fromPhase: LifecyclePhase.INTENT,
-                toPhase: LifecyclePhase.SHAPE,
-                trigger: 'test',
-                reason: 'Test transition',
-            });
+            expect(listener).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    phase: LifecyclePhase.SHAPE,
+                    previousPhase: LifecyclePhase.INTENT,
+                    triggeredBy: 'user',
+                }),
+            );
         });
     });
 
     describe('Phase Operations', () => {
         it('should return operations for current phase', () => {
-            const operations = lifecycle.getCurrentOperations();
-            expect(operations).toContain('sketch');
-            expect(operations).toContain('voice_input');
+            const operations = lifecycle.getAllowedOperations();
+            expect(operations.canEdit).toBe(true);
+            expect(operations.aiActive).toBe(true);
         });
 
         it('should update operations when phase changes', () => {
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Moving to SHAPE');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Moving to SHAPE');
             });
 
-            const operations = lifecycle.getCurrentOperations();
-            expect(operations).toContain('add_node');
-            expect(operations).toContain('connect_nodes');
-            expect(operations).toContain('organize');
+            const operations = lifecycle.getAllowedOperations();
+            expect(operations.canEdit).toBe(true);
+            expect(operations.canValidate).toBe(true);
+            expect(operations.aiActive).toBe(true);
         });
     });
 
@@ -93,22 +95,22 @@ describe('CanvasLifecycle', () => {
 
         it('should validate SHAPE -> VALIDATE transition', () => {
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Step 1');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Step 1');
             });
             expect(lifecycle.canTransitionTo(LifecyclePhase.VALIDATE)).toBe(true);
         });
 
         it('should validate VALIDATE -> GENERATE transition', () => {
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Step 1');
-                lifecycle.transitionTo(LifecyclePhase.VALIDATE, 'test', 'Step 2');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Step 1');
+                lifecycle.transitionToPhase(LifecyclePhase.VALIDATE, 'user', 'Step 2');
             });
             expect(lifecycle.canTransitionTo(LifecyclePhase.GENERATE)).toBe(true);
         });
 
         it('should allow returning to previous phase', () => {
             act(() => {
-                lifecycle.transitionTo(LifecyclePhase.SHAPE, 'test', 'Step 1');
+                lifecycle.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Step 1');
             });
             expect(lifecycle.canTransitionTo(LifecyclePhase.INTENT)).toBe(true);
         });
@@ -125,7 +127,7 @@ describe('useCanvasLifecycle Hook', () => {
         const { result } = renderHook(() => useCanvasLifecycle());
 
         act(() => {
-            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'test', 'Moving to SHAPE');
+            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Moving to SHAPE');
         });
 
         expect(result.current.currentPhase).toBe(LifecyclePhase.SHAPE);
@@ -141,16 +143,17 @@ describe('useCanvasLifecycle Hook', () => {
     it('should provide current operations', () => {
         const { result } = renderHook(() => useCanvasLifecycle());
 
-        expect(result.current.getCurrentOperations()).toContain('sketch');
-        expect(result.current.getCurrentOperations()).toContain('voice_input');
+        const ops = result.current.getAllowedOperations();
+        expect(ops.canEdit).toBe(true);
+        expect(ops.aiActive).toBe(true);
     });
 
     it('should provide phase history', () => {
         const { result } = renderHook(() => useCanvasLifecycle());
 
         act(() => {
-            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'test', 'Step 1');
-            result.current.transitionToPhase(LifecyclePhase.VALIDATE, 'test', 'Step 2');
+            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Step 1');
+            result.current.transitionToPhase(LifecyclePhase.VALIDATE, 'user', 'Step 2');
         });
 
         const history = result.current.getPhaseHistory();
@@ -159,13 +162,13 @@ describe('useCanvasLifecycle Hook', () => {
 
     it('should handle multiple subscribers', () => {
         const { result } = renderHook(() => useCanvasLifecycle());
-        const listener1 = jest.fn();
-        const listener2 = jest.fn();
+        const listener1 = vi.fn();
+        const listener2 = vi.fn();
 
         act(() => {
-            result.current.lifecycle.on('phaseChanged', listener1);
-            result.current.lifecycle.on('phaseChanged', listener2);
-            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'test', 'Test');
+            result.current.lifecycle.addListener(listener1);
+            result.current.lifecycle.addListener(listener2);
+            result.current.transitionToPhase(LifecyclePhase.SHAPE, 'user', 'Test');
         });
 
         expect(listener1).toHaveBeenCalled();

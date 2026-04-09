@@ -56,7 +56,7 @@ Related inventory entry: [APP_CREATOR_PAGE_SPECS.md – 6. Login & Page Builder]
 ### 3.2 Manual test route (`PageBuilderManualTest.tsx`)
 
 - Integrates:
-  - `CanvasProvider` / `createDefaultDocument` from `@yappc/canvas`.
+  - `CanvasProvider` / `createDefaultDocument` from the web-local canvas ownership layer or `@ghatana/canvas` where applicable.
   - `PageBuilderProvider` from `@yappc/page-builder`.
 - Manages local state for:
   - `pages`, `devices`, `selectedComponent`.

@@ -10,15 +10,15 @@
 
 import React, { useCallback, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
-import { 
-  CanvasCollaborationProvider, 
-  useCanvasCollaboration,
-  CollaborationBar,
-  RemoteCursor,
-} from '@yappc/canvas';
 import { useAuth } from '../hooks/useAuth';
 import { LifecyclePhase } from '../types/lifecycle';
 import { FOWStage } from '../types/fow-stages';
+import {
+  CanvasCollaborationProvider,
+  useCanvasCollaboration,
+} from './collaboration/CanvasCollaborationProvider';
+import { CollaborationBar } from './collaboration/CollaborationBar';
+import { RemoteCursor } from './collaboration/RemoteCursor';
 import { SimplifiedCanvasWorkspace } from './canvas/SimplifiedCanvasWorkspace';
 
 /**
@@ -65,10 +65,10 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
   fowStage = FOWStage.FOUNDATION,
 }) => {
   const {
-    backend,
-    yjs,
+    currentUser,
     isConnected,
     remoteUsers,
+    syncStatus,
     updateCursor,
     updateSelection,
   } = useCanvasCollaboration();
@@ -105,14 +105,10 @@ const CollaborativeCanvasInner: React.FC<Omit<CollaborativeCanvasProps, 'canvasI
       {/* Collaboration Bar */}
       <div className="absolute top-4 right-4 z-10">
         <CollaborationBar
-          currentUser={{
-            userId: backend.state.currentUserId,
-            userName: yjs.currentUser.name,
-            userColor: yjs.currentUser.color,
-          }}
+          currentUser={currentUser}
           remoteUsers={remoteUsers}
           isConnected={isConnected}
-          syncStatus={yjs.syncStatus}
+          syncStatus={syncStatus}
         />
       </div>
 

@@ -29,19 +29,27 @@ export interface APIError {
 export class CanvasAPIClient {
     private readonly config: Required<APIConfig>;
 
-    constructor(config: APIConfig) {
+    constructor(config: APIConfig & { baseURL?: string; maxRetries?: number; getAuthToken?: () => string | null }) {
         this.config = {
             timeout: 30000,
             retryAttempts: 3,
             retryDelay: 1000,
-            ...config,
+            baseUrl: config.baseURL ?? config.baseUrl ?? '',
+            retryAttempts: config.maxRetries ?? config.retryAttempts ?? 3,
+            timeout: config.timeout ?? 30000,
+            retryDelay: config.retryDelay ?? 1000,
         };
+        if (config.getAuthToken) {
+            this._getAuthToken = config.getAuthToken;
+        }
     }
+
+    private _getAuthToken: (() => string | null) | null = null;
 
     /**
      * Save snapshot to backend
      */
-    public async saveSnapshot(snapshot: CanvasSnapshot): Promise<void> {
+    public async saveSnapshot(snapshot: CanvasSnapshot): Promise<unknown> {
         return this.retry(async () => {
             const response = await this.fetch('/api/canvas/snapshots', {
                 method: 'POST',
@@ -49,7 +57,13 @@ export class CanvasAPIClient {
             });
 
             if (!response.ok) {
-                throw this.createError(response);
+                throw await this.createError(response);
+            }
+
+            try {
+                return await response.json();
+            } catch {
+                return undefined;
             }
         });
     }
@@ -66,7 +80,7 @@ export class CanvasAPIClient {
             }
 
             if (!response.ok) {
-                throw this.createError(response);
+                throw await this.createError(response);
             }
 
             return response.json();
@@ -85,7 +99,7 @@ export class CanvasAPIClient {
             const response = await this.fetch(`/api/canvas/snapshots?${params}`);
 
             if (!response.ok) {
-                throw this.createError(response);
+                throw await this.createError(response);
             }
 
             return response.json();
@@ -102,7 +116,7 @@ export class CanvasAPIClient {
             });
 
             if (!response.ok) {
-                throw this.createError(response);
+                throw await this.createError(response);
             }
         });
     }
@@ -142,7 +156,7 @@ export class CanvasAPIClient {
     /**
      * Batch save multiple snapshots
      */
-    public async batchSave(snapshots: CanvasSnapshot[]): Promise<void> {
+    public async batchSave(snapshots: CanvasSnapshot[]): Promise<unknown> {
         return this.retry(async () => {
             const response = await this.fetch('/api/canvas/snapshots/batch', {
                 method: 'POST',
@@ -150,7 +164,13 @@ export class CanvasAPIClient {
             });
 
             if (!response.ok) {
-                throw this.createError(response);
+                throw await this.createError(response);
+            }
+
+            try {
+                return await response.json();
+            } catch {
+                return undefined;
             }
         });
     }
@@ -193,7 +213,12 @@ export class CanvasAPIClient {
 
                 // Don't retry on client errors (4xx)
                 if (error instanceof Error && 'status' in error) {
-                    const status = (error as unknown).status;
+                    const status = (error as unknown as { status: number }).status;
+                    if (status >= 400 && status < 500) {
+                        throw error;
+                    }
+                } else if (error !== null && typeof error === 'object' && 'status' in error) {
+                    const status = (error as { status: number }).status;
                     if (status >= 400 && status < 500) {
                         throw error;
                     }
@@ -238,6 +263,8 @@ export class CanvasAPIClient {
      * Get authentication token from various sources
      */
     private getAuthToken(): string | null {
+        if (this._getAuthToken) return this._getAuthToken();
+
         // Try localStorage first
         const localToken = localStorage.getItem('auth_token');
         if (localToken) return localToken;

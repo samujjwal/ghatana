@@ -71,7 +71,7 @@ import {
   complianceStatusAtom,
   securityScoreAtom,
   securityAlertsAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import { CardDescription, CardTitle } from '@yappc/ui';
 import {
   DropdownMenu,

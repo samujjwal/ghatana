@@ -1,0 +1,10 @@
+flowchart TD
+  App["App"] --> Router["routes.tsx"]
+  Router --> Layout["DefaultLayout"]
+  Layout --> Pages["lazy page modules"]
+  Pages --> Hooks["hooks / state"]
+  Hooks --> LibApi["src/lib/api/*"]
+  Hooks --> LegacyApi["src/api/* (legacy)"]
+  Hooks --> Services["src/services/* (legacy)"]
+  Layout --> SharedUI["workspace shared UI packages"]
+

@@ -1,0 +1,9 @@
+flowchart LR
+  Poller["FeatureStoreIngestLauncher"] --> EventLog["EventLogStore"]
+  Poller --> Extract["feature extraction"]
+  Extract --> Breaker["CircuitBreaker"]
+  Breaker --> Store["FeatureStoreService"]
+  Poller --> Offset["tenant offsets"]
+  Poller --> DLQ["DeadLetterQueue"]
+  Poller --> Metrics["MetricsCollector"]
+

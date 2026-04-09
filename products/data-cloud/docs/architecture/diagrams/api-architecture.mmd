@@ -1,0 +1,11 @@
+flowchart TD
+  UI["UI / clients"] --> HTTP["HTTP routes in DataCloudHttpServer"]
+  Service["service clients"] --> GRPC["gRPC event services"]
+  Tests["tests / docs"] --> OpenAPI["docs/openapi.yaml"]
+  AltSpec["api/data-cloud-api.openapi.yaml"] -. ambiguous .-> Clients["potential generated clients"]
+  HTTP --> Handlers["launcher/http/handlers"]
+  GRPC --> EventSvc["grpc service classes"]
+  Handlers --> Runtime["runtime services"]
+  EventSvc --> Runtime
+  PlatformAPI["platform-api DTO/controllers"] -. partial library layer .-> Runtime
+

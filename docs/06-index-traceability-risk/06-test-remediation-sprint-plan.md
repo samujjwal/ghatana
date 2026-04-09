@@ -103,15 +103,15 @@ Every task below is assigned to a sprint later in this document.
 | `DOC-001` | Create canonical audit baseline doc | None | Audit baseline | Lists trusted evidence sources, stale-doc exceptions, and current facts |
 | `DOC-002` | Reconcile root traceability/risk docs with current code/tests | `DOC-001` | Updated docs or supersession notes | No known contradictions on kernel cycle/concurrency or PHR test counts |
 | `TRC-001` | Create first-pass repo traceability matrix | `DOC-001` | Traceability matrix | Kernel, YAPPC, Data-Cloud, PHR, Finance all represented |
-| `QG-001` | Remove zero-threshold Java gate in shared build | None | Build change | Shared Java build fails when coverage is absent or below target |
+| `QG-001` | Remove zero-threshold JaCoCo pass-through in shared Java build and add proper coverage verification | None | Build change | Shared Java build fails when coverage is absent or below target |
 | `QG-002` | Set Java thresholds to standard | `QG-001` | Threshold config | Default Java gate is at least 85% line / 80% branch |
-| `QG-003` | Set TS thresholds to standard | None | Threshold config | Default TS gate is at least 85% line / 80% branch |
+| `QG-003` | Raise TS thresholds from current 40%/35% to standard | None | Threshold config | Default TS gate increased from 40% lines/35% branches to 85% line / 80% branch |
 | `QG-004` | Fail CI on missing coverage artifacts | `QG-001`, `QG-003` | CI rule | Missing coverage output fails the workflow |
 | `QG-007` | Add release-gated suite manifest template per product | None | Manifest skeletons | Kernel, YAPPC, Data-Cloud, PHR, Finance each have a manifest |
 
 **Sprint 1 exit criteria**
 
-- shared Java no longer permits `0.00` thresholds
+- shared Java build migrated from deprecated common-build.gradle.kts to proper convention plugins with coverage verification
 - TS release workflows no longer rely on optional strict mode
 - missing coverage artifacts fail CI
 - traceability matrix exists in first-pass form
@@ -147,7 +147,7 @@ Every task below is assigned to a sprint later in this document.
 
 | ID | Task | Dependencies | Deliverable | Acceptance Criteria |
 |---|---|---|---|---|
-| `KRN-001` | Make `topologicalSort()` fail fast on cycles | `QG-001` | Kernel code change | Cycle causes explicit failure, not partial order |
+| `KRN-001` | Add cycle detection to existing `topologicalSort()` method | `QG-001` | Kernel code change | Cycle detection throws explicit exception instead of silent incomplete ordering |
 | `KRN-002` | Replace disabled cycle suite with active tests against current contract | `KRN-001` | Active cycle tests | Disabled archived assumptions removed from release confidence path |
 | `KRN-003` | Add `startAllModules()` rollback and partial-failure tests | `KRN-001` | New tests | Failed startup proves reverse-order rollback and error propagation |
 | `KRN-004` | Add plugin lifecycle tests | `KRN-001` | New tests | install/uninstall/reinstall and capability cleanup covered |
@@ -173,7 +173,7 @@ Every task below is assigned to a sprint later in this document.
 | `YAP-001` | Reactivate canvas persistence/reload tests | `QG-005` | Active E2E tests | Save and reload preserve expected canvas state |
 | `YAP-002` | Reactivate keyboard shortcut and multi-select tests | `QG-005` | Active E2E tests | Select all, copy/paste, duplicate, multi-select assert exact outcomes |
 | `YAP-003` | Reactivate `useCanvasScene` behavior/integration suites | `QG-005` | Active unit/integration tests | No-op changes do not persist; real changes do |
-| `YAP-005` | Burn down skipped YAPPC tests outside release gate, tranche 1 | `YAP-004` | Skip reduction | Total skipped YAPPC tests reduced by at least 50% |
+| `YAP-005` | Audit and burn down actual skipped YAPPC tests (excluding node_modules/.ignored) | `YAP-004` | Skip reduction | Total skipped YAPPC tests in active codebase reduced by at least 50% |
 
 **Sprint 4 exit criteria**
 

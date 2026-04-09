@@ -1,19 +1,4 @@
 // @ts-nocheck
-import {
-  canvasDocumentAtom,
-  isCanvasNode,
-  isCanvasEdge,
-  convertCanvasNodeToReactFlowNode,
-  convertCanvasEdgeToReactFlowEdge,
-  updateSelectionAtom,
-  clearSelectionAtom,
-  addElementAtom,
-  batchUpdateElementsAtom,
-  removeElementAtom,
-  updateElementAtom,
-  convertReactFlowNodeToCanvasNode,
-  convertReactFlowEdgeToCanvasEdge,
-} from '@yappc/canvas';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 
@@ -23,6 +8,14 @@ import { useCanvasPersistence } from '@/services/canvas/CanvasPersistence';
 import { useCanvasLifecycle } from '@/services/canvas/lifecycle/CanvasLifecycle';
 import type { LifecyclePhase } from '@yappc/core/types/lifecycle';
 import {
+  convertCanvasEdgeToReactFlowEdge,
+  convertCanvasNodeToReactFlowNode,
+  convertReactFlowEdgeToCanvasEdge,
+  convertReactFlowNodeToCanvasNode,
+  isCanvasEdge,
+  isCanvasNode,
+} from './canvasDocumentAdapters';
+import {
   toReactFlowNode,
   toReactFlowEdge,
   fromReactFlowNodes,
@@ -31,9 +24,16 @@ import {
   normalizeConnectionsForCompare,
 } from '@/components/canvas/utils/transform';
 import {
+  addElementAtom,
+  batchUpdateElementsAtom,
   canvasAtom,
+  canvasDocumentAtom,
+  clearSelectionAtom,
+  removeElementAtom,
   type CanvasElement,
   type CanvasState,
+  updateElementAtom,
+  updateSelectionAtom,
 } from '@/components/canvas/workspace/canvasAtoms';
 
 import type { DragEndEvent } from '@dnd-kit/core';
@@ -171,25 +171,24 @@ export const useCanvasScene = ({
   }), [canvasState.selectedElements, setCanvasState]);
   // Inline selection change handler (previously in useCanvasSelection)
   const handleSelectionChange = useCallback((selectedIds: string[]) => {
-      setCanvasState((prev) => {
-        const prevIds = prev.selectedElements || [];
-        const prevSet = new Set(prevIds);
-        const nextSet = new Set(selectedIds);
-        if (
-          prevSet.size === nextSet.size &&
-          [...prevSet].every((id) => nextSet.has(id))
-        ) {
-          return prev;
-        }
+    setCanvasState((prev) => {
+      const prevIds = prev.selectedElements || [];
+      const prevSet = new Set(prevIds);
+      const nextSet = new Set(selectedIds);
+      if (
+        prevSet.size === nextSet.size &&
+        [...prevSet].every((id) => nextSet.has(id))
+      ) {
+        return prev;
+      }
 
-        setSelection({ selectedIds });
-        return {
-          ...prev,
-          selectedElements: selectedIds,
-        };
-      });
-    },
-  });
+      setSelection({ selectedIds });
+      return {
+        ...prev,
+        selectedElements: selectedIds,
+      };
+    });
+  }, [setCanvasState, setSelection]);
 
   // Initialize editor with ReactFlow instance when available
   useEffect(() => {

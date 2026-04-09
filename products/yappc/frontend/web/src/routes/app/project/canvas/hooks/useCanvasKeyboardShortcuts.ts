@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect } from 'react';
 import type { Node, Edge } from '@xyflow/react';
-import type { SketchTool } from '@yappc/canvas/sketch';
+import type { SketchTool } from '../../../../../components/canvas/sketch/types';
 import type { CanvasElement, CanvasState } from '@/components/canvas/workspace/canvasAtoms';
 
 interface CopiedNode {

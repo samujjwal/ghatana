@@ -1,0 +1,19 @@
+flowchart TD
+  Dev["Developer / CI"] --> Image["Docker image"]
+  Image --> Helm["Helm chart"]
+  Terraform["Terraform AWS infra"] --> EKS["EKS cluster"]
+  Terraform --> RDS["RDS PostgreSQL"]
+  Terraform --> MSK["MSK Kafka"]
+  Terraform --> Redis["ElastiCache Redis"]
+  Terraform --> OS["OpenSearch"]
+  Terraform --> CH["ClickHouse nodes"]
+  Terraform --> S3["S3 buckets"]
+  Helm --> EKS
+  EKS --> Pod["data-cloud pod(s)"]
+  Pod --> RDS
+  Pod --> MSK
+  Pod --> Redis
+  Pod --> OS
+  Pod --> CH
+  Pod --> S3
+

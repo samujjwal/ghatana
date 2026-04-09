@@ -58,7 +58,7 @@ const DiffStat: React.FC<DiffStatProps> = ({ icon, label, value, color }) => (
         className="p-4 flex items-center gap-3 border border-solid border-gray-200 dark:border-gray-700"
     >
         <Box
-            className="w-[40px] h-[40px] rounded-full flex items-center justify-center" style={{ backgroundColor: `${color }}
+            className="w-[40px] h-[40px] rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}` }}
         >
             {icon}
         </Box>

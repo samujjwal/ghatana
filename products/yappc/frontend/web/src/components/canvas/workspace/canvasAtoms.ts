@@ -112,7 +112,7 @@ export {
   canvasProjectMetadataAtom,
   // Bounding box
   boundingBoxAtom,
-} from '@yappc/canvas/state';
+} from './canvasSharedState';
 
 // Re-export types from library
 export type {
@@ -129,7 +129,7 @@ export type {
   ValidationIssue,
   Collaborator,
   CanvasProjectMetadata,
-} from '@yappc/canvas/state';
+} from './canvasSharedState';
 
 /**
  * Backward-compat alias for `hybridCanvasStateAtom`.
@@ -137,7 +137,7 @@ export type {
  * that never existed in the original file). This alias keeps them working.
  * @deprecated Import `hybridCanvasStateAtom` from `@ghatana/yappc-canvas/state`.
  */
-export { hybridCanvasStateAtom as canvasAtom } from '@yappc/canvas/state';
+export { hybridCanvasStateAtom as canvasAtom } from './canvasSharedState';
 
 // ============================================================================
 // ReactFlow-specific types (cannot live in platform-agnostic library)

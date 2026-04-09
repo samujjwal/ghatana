@@ -193,8 +193,10 @@ export class AIService {
 
   private calculateConfidence(response: LLMResponse): number {
     // Calculate confidence based on token probabilities and response quality
-    const baseConfidence = response.tokenProbs?.
-      reduce((sum: number, prob: number) => sum + prob, 0) / (response.tokenProbs.length || 1) || 0.8;
+    const tokenProbs = response.tokenProbs ?? [];
+    const baseConfidence = tokenProbs.length > 0
+      ? tokenProbs.reduce((sum: number, prob: number) => sum + prob, 0) / tokenProbs.length
+      : 0.8;
 
     // Penalize very short or very long responses
     const lengthPenalty = response.text.length < 10 || response.text.length > 4000 ? 0.8 : 1.0;

@@ -15,7 +15,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { Surface as Paper, ToggleButtonGroup, ToggleButton, Box, Button, Tooltip, IconButton, Menu, MenuItem, ListItemText, Divider, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@ghatana/design-system';
+import { Surface as Paper, ToggleButtonGroup, ToggleButton, Box, Button, Tooltip, IconButton, Menu, type MenuItem as MenuItemData, Divider, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@ghatana/design-system';
 import { GitBranch as FlowchartIcon, ArrowLeftRight as SequenceIcon, FileCode as ClassIcon, Share2 as StateIcon, Activity as GanttIcon, HardDrive as ERIcon, Pencil as EditIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, RefreshCw as ResetIcon } from 'lucide-react';
 import {
     diagramTypeAtom,
@@ -62,7 +62,16 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
     // Local edit buffer for the code editor dialog (avoids live-typing dispatching commands)
     const [editBuffer, setEditBuffer] = useState(nodeDiagramContent ?? '');
     const [showEditor, setShowEditor] = useState(false);
-    const [templateMenuAnchor, setTemplateMenuAnchor] = useState<HTMLElement | null>(null);
+    const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
+
+    const templateMenuItems: MenuItemData[] = [
+        { key: 'flowchart', label: 'Basic Flowchart', icon: <FlowchartIcon size={16} />, onClick: () => { handleTemplateSelect('flowchart'); setTemplateMenuOpen(false); } },
+        { key: 'sequence', label: 'Sequence Diagram', icon: <SequenceIcon size={16} />, onClick: () => { handleTemplateSelect('sequence'); setTemplateMenuOpen(false); } },
+        { key: 'class', label: 'Class Diagram', icon: <ClassIcon size={16} />, onClick: () => { handleTemplateSelect('class'); setTemplateMenuOpen(false); } },
+        { key: 'state', label: 'State Diagram', icon: <StateIcon size={16} />, onClick: () => { handleTemplateSelect('state'); setTemplateMenuOpen(false); } },
+        { key: 'gantt', label: 'Gantt Chart', icon: <GanttIcon size={16} />, onClick: () => { handleTemplateSelect('gantt'); setTemplateMenuOpen(false); } },
+        { key: 'erDiagram', label: 'ER Diagram', icon: <ERIcon size={16} />, onClick: () => { handleTemplateSelect('erDiagram'); setTemplateMenuOpen(false); } },
+    ];
 
     // Sync buffer when the selected node changes or its content changes externally
     useEffect(() => {
@@ -76,12 +85,9 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
         executeCommand(new UpdateNodeDataCommand(nodeId, { diagramContent: old }, { diagramContent: newContent }, 'Update diagram content'));
     };
 
-    const handleDiagramTypeChange = (
-        _event: React.MouseEvent<HTMLElement>,
-        newType: typeof diagramType | null,
-    ) => {
-        if (newType === null) return;
-        setDiagramType(newType);
+    const handleDiagramTypeChange = (newType: string) => {
+        if (!newType) return;
+        setDiagramType(newType as typeof diagramType);
         // Auto-load template for the selected type and write to the node
         const templateKey = newType === 'mermaid' ? 'flowchart' : newType;
         if (templateKey in MERMAID_TEMPLATES) {
@@ -91,7 +97,7 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
 
     const handleTemplateSelect = (templateKey: keyof typeof MERMAID_TEMPLATES) => {
         writeContent(MERMAID_TEMPLATES[templateKey]);
-        setTemplateMenuAnchor(null);
+        setTemplateMenuOpen(false);
     };
 
     const handleApplyEditor = () => {
@@ -148,46 +154,22 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                 <Divider orientation="vertical" flexItem />
 
                 {/* Template Selector */}
-                <Button
-                    variant="outlined"
-                    size="sm"
-                    onClick={(e) => setTemplateMenuAnchor(e.currentTarget)}
-                    className="min-w-[120px]"
-                    disabled={!nodeId}
-                >
-                    Templates
-                </Button>
-
                 <Menu
-                    anchorEl={templateMenuAnchor}
-                    open={Boolean(templateMenuAnchor)}
-                    onClose={() => setTemplateMenuAnchor(null)}
-                >
-                    <MenuItem onClick={() => handleTemplateSelect('flowchart')}>
-                        <FlowchartIcon className="mr-2" />
-                        <ListItemText primary="Flowchart" secondary="Basic flow diagram" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleTemplateSelect('sequence')}>
-                        <SequenceIcon className="mr-2" />
-                        <ListItemText primary="Sequence" secondary="Interaction diagram" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleTemplateSelect('class')}>
-                        <ClassIcon className="mr-2" />
-                        <ListItemText primary="Class" secondary="UML class diagram" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleTemplateSelect('state')}>
-                        <StateIcon className="mr-2" />
-                        <ListItemText primary="State" secondary="State machine" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleTemplateSelect('gantt')}>
-                        <GanttIcon className="mr-2" />
-                        <ListItemText primary="Gantt" secondary="Timeline chart" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleTemplateSelect('erDiagram')}>
-                        <ERIcon className="mr-2" />
-                        <ListItemText primary="ER Diagram" secondary="Entity relationship" />
-                    </MenuItem>
-                </Menu>
+                    items={templateMenuItems}
+                    open={templateMenuOpen}
+                    onOpenChange={setTemplateMenuOpen}
+                    trigger={
+                        <Button
+                            variant="outlined"
+                            size="sm"
+                            onClick={() => setTemplateMenuOpen(true)}
+                            className="min-w-[120px]"
+                            disabled={!nodeId}
+                        >
+                            Templates
+                        </Button>
+                    }
+                />
 
                 <Divider orientation="vertical" flexItem />
 
@@ -211,7 +193,7 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                 {/* Zoom Controls */}
                 <Box className="flex gap-1 items-center">
                     <Tooltip title="Zoom Out">
-                        <IconButton size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5}>
+                        <IconButton size="sm" aria-label="Zoom Out" onClick={handleZoomOut} disabled={zoom <= 0.5}>
                             <ZoomOutIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -221,13 +203,13 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                     </Box>
 
                     <Tooltip title="Zoom In">
-                        <IconButton size="sm" onClick={handleZoomIn} disabled={zoom >= 2}>
+                        <IconButton size="sm" aria-label="Zoom In" onClick={handleZoomIn} disabled={zoom >= 2}>
                             <ZoomInIcon size={16} />
                         </IconButton>
                     </Tooltip>
 
                     <Tooltip title="Reset Zoom">
-                        <IconButton size="sm" onClick={handleResetZoom}>
+                        <IconButton size="sm" aria-label="Reset Zoom" onClick={handleResetZoom}>
                             <ResetIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -251,6 +233,7 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         onChange={(e) => setEditBuffer(e.target.value)}
                         variant="outlined"
                         placeholder="Enter Mermaid diagram code..."
+                        label="Mermaid code"
                         className="font-mono text-sm"
                     />
                 </DialogContent>

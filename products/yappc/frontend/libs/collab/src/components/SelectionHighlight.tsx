@@ -8,9 +8,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useMemo } from 'react';
 
-import { cn } from '@ghatana/design-system';
-
 import { type TextCursor } from '../DocumentCollaboration';
+import { cn } from './cn';
 
 // =============================================================================
 // Types

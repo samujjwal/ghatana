@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { describe, test, expect, beforeEach } from 'vitest';
 
-import { NavigationService } from './NavigationService';
+import { NavigationService } from '../NavigationService';
 
 describe('NavigationService', () => {
   beforeEach(() => {

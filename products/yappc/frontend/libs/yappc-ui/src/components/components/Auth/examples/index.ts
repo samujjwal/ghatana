@@ -55,7 +55,7 @@ export type { AppProps } from './AppExample';
  *
  * 1. Install dependencies:
  * ```bash
- * pnpm add @yappc/ui @yappc/canvas @yappc/api jotai react-router-dom zod
+ * pnpm add @yappc/ui @yappc/state @yappc/api jotai react-router-dom zod
  * ```
  *
  * 2. Create main.tsx:
@@ -184,7 +184,7 @@ export type { AppProps } from './AppExample';
  * ```tsx
  * import { createBrowserRouter } from 'react-router-dom';
  * import { ProtectedRoute } from '@yappc/ui';
- * import { useAuth } from '@yappc/canvas';
+ * import { useAuth } from '../../../hooks/auth';
  *
  * const AppLayout = () => {
  *   const { user, isAuthenticated, isLoading } = useAuth();

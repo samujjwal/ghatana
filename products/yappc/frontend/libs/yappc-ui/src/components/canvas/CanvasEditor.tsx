@@ -1,7 +1,7 @@
 /**
  * CanvasEditor
  *
- * Thin wrapper around `@yappc/canvas` Canvas component.
+ * Thin wrapper around the platform canvas component.
  * Handles document loading, error boundary, and integrates workspace/project
  * context so callers only need to pass a document ID.
  *
@@ -18,7 +18,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Lazy-load the heavy canvas to avoid blocking the initial bundle
 const CanvasLazy = React.lazy(() =>
-  import('@yappc/canvas').then((m) => ({ default: m.Canvas }))
+  import('@ghatana/canvas').then((m) => ({ default: m.Canvas }))
 );
 
 export interface CanvasEditorProps {

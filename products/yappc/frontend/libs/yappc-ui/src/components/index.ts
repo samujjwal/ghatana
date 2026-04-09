@@ -536,7 +536,7 @@ export * from './workspace';
 // Project Components
 export * from './project';
 
-// Canvas Wrapper Components (lazy-loaded @yappc/canvas integration)
+// Canvas wrapper components
 export { CanvasEditor, CanvasVersionHistory } from './canvas';
 export type { CanvasEditorProps, CanvasVersionHistoryProps } from './canvas';
 

@@ -71,6 +71,13 @@ export interface DocumentChangeEvent {
   data: unknown;
 }
 
+interface DocumentChangeEventMap {
+  'text-change': { delta: unknown; text: string; event: unknown };
+  'cursors-change': { cursors: TextCursor[] };
+  'comments-change': { comments: DocumentComment[]; event: unknown };
+  'versions-change': { versions: DocumentVersion[]; event: unknown };
+}
+
 // =============================================================================
 // Document Collaboration Class
 // =============================================================================
@@ -81,13 +88,13 @@ export interface DocumentChangeEvent {
 export class DocumentCollaboration {
   private collab: CollaborationManager;
   private text: Y.Text;
-  private commentsArray: Y.Array<unknown>;
-  private versionsArray: Y.Array<unknown>;
+  private commentsArray: Y.Array<DocumentComment>;
+  private versionsArray: Y.Array<DocumentVersion>;
   private metaMap: Y.Map<unknown>;
   private userId: string;
   private listeners: Map<
     DocumentChangeType,
-    Set<(event: DocumentChangeEvent) => void>
+    Set<(event: DocumentChangeEventMap[DocumentChangeType]) => void>
   >;
   private cursors: Map<string, TextCursor>;
 
@@ -337,6 +344,9 @@ export class DocumentCollaboration {
       const index = this.findCommentIndex(id);
       if (index !== -1) {
         const comment = this.commentsArray.get(index);
+        if (!comment) {
+          return;
+        }
         this.commentsArray.delete(index, 1);
         this.commentsArray.insert(index, [{ ...comment, ...updates }]);
       }
@@ -386,6 +396,9 @@ export class DocumentCollaboration {
       const index = this.findCommentIndex(commentId);
       if (index !== -1) {
         const comment = this.commentsArray.get(index);
+        if (!comment) {
+          return;
+        }
         this.commentsArray.delete(index, 1);
         this.commentsArray.insert(index, [
           {
@@ -499,7 +512,7 @@ export class DocumentCollaboration {
    * Get metadata field
    */
   getMetadataField<T = unknown>(key: string): T | undefined {
-    return this.metaMap.get(key);
+    return this.metaMap.get(key) as T | undefined;
   }
 
   // ===========================================================================
@@ -509,26 +522,38 @@ export class DocumentCollaboration {
   /**
    * Subscribe to document changes
    */
-  on(
-    type: DocumentChangeType,
-    callback: (event: DocumentChangeEvent) => void
+  on<K extends DocumentChangeType>(
+    type: K,
+    callback: (event: DocumentChangeEventMap[K]) => void
   ): () => void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
-    this.listeners.get(type)!.add(callback);
+    this.listeners
+      .get(type)!
+      .add(
+        callback as (event: DocumentChangeEventMap[DocumentChangeType]) => void
+      );
 
     return () => {
-      this.listeners.get(type)?.delete(callback);
+      this.listeners
+        .get(type)
+        ?.delete(
+          callback as (event: DocumentChangeEventMap[DocumentChangeType]) => void
+        );
     };
   }
 
   /**
    * Emit a document change event
    */
-  private emit(type: DocumentChangeType, data: unknown): void {
-    const event: DocumentChangeEvent = { type, data };
-    this.listeners.get(type)?.forEach((callback) => callback(event));
+  private emit<K extends DocumentChangeType>(
+    type: K,
+    data: DocumentChangeEventMap[K]
+  ): void {
+    this.listeners.get(type)?.forEach((callback) =>
+      callback(data as DocumentChangeEventMap[DocumentChangeType])
+    );
   }
 
   // ===========================================================================

@@ -122,13 +122,7 @@ export const handlers = [
 // Setup MSW server for Node.js environment
 export const server = setupServer(...handlers);
 
-// Setup MSW for browser environment
-if (typeof window !== 'undefined') {
-  const { worker } = require('./browser');
-  worker.start({
-    onUnhandledRequest: 'bypass',
-  });
-}
+// Browser MSW worker setup is handled separately in the app (not in test utilities)
 
 // Export utilities for testing
 export { http, HttpResponse, delay } from 'msw';

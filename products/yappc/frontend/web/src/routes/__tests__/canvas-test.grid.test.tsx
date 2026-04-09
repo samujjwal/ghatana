@@ -12,7 +12,7 @@ import {
   type GridConfig,
   type DistributionOptions,
   type AlignmentOptions,
-} from '@yappc/canvas';
+} from '../../lib/canvas-legacy/layout/grid-system';
 
 /**
  * Integration tests for grid/snapping in canvas-test route.

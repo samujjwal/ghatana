@@ -13,7 +13,7 @@
 import React, { ReactNode } from 'react';
 import { Sparkles as AutoAwesome, Lightbulb as LightBulbIcon } from 'lucide-react';
 import { Typography, Button, Chip, Box } from '@ghatana/design-system';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { useSmartForm, type UseSmartFormOptions, type UseSmartFormResult } from '../../hooks/useSmartForm';
 import type { FormFieldPrediction } from '../../services/ai/FormPredictionService';
 

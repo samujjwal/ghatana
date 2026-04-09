@@ -32,18 +32,22 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: unknown) => <>{children}</>,
 }));
 
-vi.mock('@yappc/ui/utils', () => ({
+vi.mock('../../utils/cn', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
 }));
 
-vi.mock('@yappc/ui/components/Button', () => ({
+vi.mock('@ghatana/design-system', () => ({
   Button: ({ children, onClick, ...props }: unknown) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
+  Input: (props: unknown) => <input {...(props as object)} />,
 }));
 
-vi.mock('@yappc/ui/components/Input', () => ({
-  Input: (props: unknown) => <input {...props} />,
+vi.mock('../../state/atoms', () => ({
+  currentProjectAtom: { _mockAtom: 'currentProjectAtom' },
+  breadcrumbsAtom: { _mockAtom: 'breadcrumbsAtom' },
+  unreadNotificationsCountAtom: { _mockAtom: 'unreadNotificationsCountAtom' },
+  activeProjectAtom: { _mockAtom: 'currentProjectAtom' },
 }));
 
 // Import after mocks
@@ -64,9 +68,9 @@ describe('UnifiedProjectDashboard', () => {
     (useNavigate as unknown).mockReturnValue(mockNavigate);
     (useAtomValue as unknown).mockImplementation((atom: unknown) => {
       const atomStr = atom?.toString?.() || '';
-      if (atomStr.includes('currentProject')) return mockProject;
-      if (atomStr.includes('breadcrumbs')) return [];
-      if (atomStr.includes('unreadNotifications')) return 3;
+      if (atom?._mockAtom === 'currentProjectAtom') return mockProject;
+      if (atom?._mockAtom === 'breadcrumbsAtom') return [];
+      if (atom?._mockAtom === 'unreadNotificationsCountAtom') return 3;
       return null;
     });
   });
@@ -239,12 +243,12 @@ describe('UnifiedProjectDashboard', () => {
     it('should render breadcrumbs when available', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         const atomStr = atom?.toString?.() || '';
-        if (atomStr.includes('currentProject')) return mockProject;
-        if (atomStr.includes('breadcrumbs')) return [
+        if (atom?._mockAtom === 'currentProjectAtom') return mockProject;
+        if (atom?._mockAtom === 'breadcrumbsAtom') return [
           { id: '1', label: 'Development', href: '/project/123/dev' },
           { id: '2', label: 'Sprint Board', href: '/project/123/dev/board' },
         ];
-        if (atomStr.includes('unreadNotifications')) return 0;
+        if (atom?._mockAtom === 'unreadNotificationsCountAtom') return 0;
         return null;
       });
 
@@ -257,11 +261,11 @@ describe('UnifiedProjectDashboard', () => {
     it('should navigate on breadcrumb click', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         const atomStr = atom?.toString?.() || '';
-        if (atomStr.includes('currentProject')) return mockProject;
-        if (atomStr.includes('breadcrumbs')) return [
+        if (atom?._mockAtom === 'currentProjectAtom') return mockProject;
+        if (atom?._mockAtom === 'breadcrumbsAtom') return [
           { id: '1', label: 'Development', href: '/project/123/dev' },
         ];
-        if (atomStr.includes('unreadNotifications')) return 0;
+        if (atom?._mockAtom === 'unreadNotificationsCountAtom') return 0;
         return null;
       });
 
@@ -277,9 +281,9 @@ describe('UnifiedProjectDashboard', () => {
     it('should handle missing project gracefully', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         const atomStr = atom?.toString?.() || '';
-        if (atomStr.includes('currentProject')) return null;
-        if (atomStr.includes('breadcrumbs')) return [];
-        if (atomStr.includes('unreadNotifications')) return 0;
+        if (atom?._mockAtom === 'currentProjectAtom') return null;
+        if (atom?._mockAtom === 'breadcrumbsAtom') return [];
+        if (atom?._mockAtom === 'unreadNotificationsCountAtom') return 0;
         return null;
       });
 
@@ -301,9 +305,9 @@ describe('UnifiedProjectDashboard', () => {
     it('should handle zero notifications', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         const atomStr = atom?.toString?.() || '';
-        if (atomStr.includes('currentProject')) return mockProject;
-        if (atomStr.includes('breadcrumbs')) return [];
-        if (atomStr.includes('unreadNotifications')) return 0;
+        if (atom?._mockAtom === 'currentProjectAtom') return mockProject;
+        if (atom?._mockAtom === 'breadcrumbsAtom') return [];
+        if (atom?._mockAtom === 'unreadNotificationsCountAtom') return 0;
         return null;
       });
 

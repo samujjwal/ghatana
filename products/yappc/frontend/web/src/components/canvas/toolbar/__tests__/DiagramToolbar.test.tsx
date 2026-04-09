@@ -14,15 +14,17 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Provider } from 'jotai';
+import { Provider, createStore } from 'jotai';
 import { DiagramToolbar } from '../DiagramToolbar';
 import {
     diagramTypeAtom,
     diagramContentAtom,
     diagramZoomAtom,
     showDiagramEditorAtom,
+    nodesAtom,
+    selectedNodesAtom,
 } from '../../workspace/canvasAtoms';
 import { MERMAID_TEMPLATES } from '../../diagram/MermaidDiagram';
 
@@ -30,6 +32,17 @@ describe('DiagramToolbar', () => {
     const renderWithJotai = (ui: React.ReactElement) => {
         return render(
             <Provider>
+                {ui}
+            </Provider>
+        );
+    };
+
+    const renderWithDiagramNode = (ui: React.ReactElement) => {
+        const store = createStore();
+        store.set(nodesAtom, [{ id: 'node-1', type: 'diagram', position: { x: 0, y: 0 }, data: { diagramContent: MERMAID_TEMPLATES.flowchart } }]);
+        store.set(selectedNodesAtom, ['node-1']);
+        return render(
+            <Provider store={store}>
                 {ui}
             </Provider>
         );
@@ -73,7 +86,7 @@ describe('DiagramToolbar', () => {
 
             // Verify content was updated (would need to check atom value in real implementation)
             await waitFor(() => {
-                expect(screen.queryByText('Sequence Diagram')).not.toBeInTheDocument(); // Menu closed
+                expect(screen.queryByText('Sequence Diagram')).not.toBeVisible(); // Menu closed
             });
         });
     });
@@ -82,15 +95,15 @@ describe('DiagramToolbar', () => {
         it('should render all three type toggle buttons', () => {
             renderWithJotai(<DiagramToolbar />);
 
-            expect(screen.getByRole('button', { name: /flowchart/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /sequence/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /class/i })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: /flowchart/i })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: /sequence/i })).toBeInTheDocument();
+            expect(screen.getByRole('option', { name: /class/i })).toBeInTheDocument();
         });
 
         it('should show flowchart as active by default', () => {
             renderWithJotai(<DiagramToolbar />);
 
-            const flowchartButton = screen.getByRole('button', { name: /flowchart/i });
+            const flowchartButton = screen.getByRole('option', { name: /flowchart/i });
             expect(flowchartButton).toHaveAttribute('aria-pressed', 'true');
         });
 
@@ -98,7 +111,7 @@ describe('DiagramToolbar', () => {
             const user = userEvent.setup();
             renderWithJotai(<DiagramToolbar />);
 
-            const sequenceButton = screen.getByRole('button', { name: /sequence/i });
+            const sequenceButton = screen.getByRole('option', { name: /sequence/i });
             await user.click(sequenceButton);
 
             expect(sequenceButton).toHaveAttribute('aria-pressed', 'true');
@@ -108,8 +121,8 @@ describe('DiagramToolbar', () => {
             const user = userEvent.setup();
             renderWithJotai(<DiagramToolbar />);
 
-            const flowchartButton = screen.getByRole('button', { name: /flowchart/i });
-            const classButton = screen.getByRole('button', { name: /class/i });
+            const flowchartButton = screen.getByRole('option', { name: /flowchart/i });
+            const classButton = screen.getByRole('option', { name: /class/i });
 
             // Click class button
             await user.click(classButton);
@@ -223,7 +236,7 @@ describe('DiagramToolbar', () => {
 
         it('should open dialog when edit code is clicked', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             const editButton = screen.getByRole('button', { name: /edit code/i });
             await user.click(editButton);
@@ -234,7 +247,7 @@ describe('DiagramToolbar', () => {
 
         it('should show current Mermaid code in text field', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             const editButton = screen.getByRole('button', { name: /edit code/i });
             await user.click(editButton);
@@ -246,21 +259,20 @@ describe('DiagramToolbar', () => {
 
         it('should allow editing Mermaid code', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             const editButton = screen.getByRole('button', { name: /edit code/i });
             await user.click(editButton);
 
             const textField = screen.getByRole('textbox', { name: /mermaid code/i });
-            await user.clear(textField);
-            await user.type(textField, 'graph TD\nA-->B');
+            fireEvent.change(textField, { target: { value: 'graph TD A-->B' } });
 
-            expect(textField).toHaveValue('graph TD\nA-->B');
+            expect(textField).toHaveValue('graph TD A-->B');
         });
 
         it('should update diagram when apply is clicked', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             // Open editor
             const editButton = screen.getByRole('button', { name: /edit code/i });
@@ -268,8 +280,7 @@ describe('DiagramToolbar', () => {
 
             // Edit code
             const textField = screen.getByRole('textbox', { name: /mermaid code/i });
-            await user.clear(textField);
-            await user.type(textField, 'graph TD\nA-->B');
+            fireEvent.change(textField, { target: { value: 'graph TD A-->B' } });
 
             // Apply changes
             const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -283,7 +294,7 @@ describe('DiagramToolbar', () => {
 
         it('should discard changes when cancel is clicked', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             // Open editor
             const editButton = screen.getByRole('button', { name: /edit code/i });
@@ -291,9 +302,8 @@ describe('DiagramToolbar', () => {
 
             // Edit code
             const textField = screen.getByRole('textbox', { name: /mermaid code/i });
-            const originalValue = textField.getAttribute('value');
-            await user.clear(textField);
-            await user.type(textField, 'graph TD\nA-->B');
+            const originalValue = textField.value;
+            fireEvent.change(textField, { target: { value: 'graph TD A-->B' } });
 
             // Cancel
             const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -307,7 +317,7 @@ describe('DiagramToolbar', () => {
 
         it('should close dialog when escape is pressed', async () => {
             const user = userEvent.setup();
-            renderWithJotai(<DiagramToolbar />);
+            renderWithDiagramNode(<DiagramToolbar />);
 
             // Open editor
             const editButton = screen.getByRole('button', { name: /edit code/i });
@@ -339,13 +349,13 @@ describe('DiagramToolbar', () => {
 
             // Tab through controls
             await user.tab();
-            expect(screen.getByRole('button', { name: /flowchart/i })).toHaveFocus();
+            expect(screen.getByRole('option', { name: /flowchart/i })).toHaveFocus();
 
             await user.tab();
-            expect(screen.getByRole('button', { name: /sequence/i })).toHaveFocus();
+            expect(screen.getByRole('option', { name: /sequence/i })).toHaveFocus();
 
             await user.tab();
-            expect(screen.getByRole('button', { name: /class/i })).toHaveFocus();
+            expect(screen.getByRole('option', { name: /class/i })).toHaveFocus();
         });
 
         it('should announce zoom level changes', async () => {

@@ -403,6 +403,9 @@ export class CanvasEditor {
         this.rfInstance = null;
         this.eventListeners.clear();
         this.clipboard = null;
+        this.selection.selectedNodes = [];
+        this.selection.selectedEdges = [];
+        this.selection.lastSelected = null;
     }
 }
 

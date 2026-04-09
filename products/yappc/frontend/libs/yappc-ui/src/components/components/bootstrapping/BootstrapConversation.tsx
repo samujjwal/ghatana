@@ -37,7 +37,7 @@ import type {
   Question,
   InputMode,
   AgentStatus,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   currentPhaseAtom,
   conversationHistoryAtom,
@@ -47,7 +47,7 @@ import {
   agentStatusMessageAtom,
   inputModeAtom,
   confidenceScoreAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   DropdownMenu,
   DropdownMenuContent,

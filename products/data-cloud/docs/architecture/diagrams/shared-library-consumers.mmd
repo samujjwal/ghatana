@@ -1,0 +1,14 @@
+flowchart LR
+  SPI["spi"] --> Runtime["platform-launcher"]
+  SPI --> API["platform-api"]
+  SPI --> Ingest["feature-store-ingest"]
+  Entity["platform-entity"] --> Runtime
+  Entity --> API
+  Event["platform-event"] --> Runtime
+  Config["platform-config"] --> Runtime
+  Config --> API
+  Analytics["platform-analytics"] --> Runtime
+  Analytics --> API
+  Runtime --> Launcher["launcher"]
+  Runtime --> Registry["agent-registry"]
+

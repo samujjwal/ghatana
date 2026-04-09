@@ -50,7 +50,7 @@ import {
   useAgents,
   useAgentExecution,
   useWorkflowAnalytics,
-} from '@yappc/canvas';
+} from '../../../hooks/agent/useWorkflowAgents';
 import type { Item } from '@yappc/core/types/devsecops';
 import type {
   WorkflowAgent,

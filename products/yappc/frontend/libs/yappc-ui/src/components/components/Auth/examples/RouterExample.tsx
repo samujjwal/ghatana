@@ -18,7 +18,7 @@ import {
   type RouteObject,
 } from 'react-router-dom';
 
-import { useAuth } from '@yappc/canvas';
+import { useAuth } from '../../../hooks/auth';
 
 import { Spinner } from '../../Loading/Spinner';
 import { ProtectedRoute, withProtectedRoute } from '../ProtectedRoute';

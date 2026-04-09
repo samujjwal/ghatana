@@ -2,7 +2,7 @@
 import { useEffect, useCallback } from 'react';
 
 // Import from shared library
-import type { SketchTool } from '@yappc/canvas/sketch';
+import type { SketchTool } from './types';
 
 /**
  *

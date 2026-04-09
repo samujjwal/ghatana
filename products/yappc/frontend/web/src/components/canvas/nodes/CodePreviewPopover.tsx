@@ -11,7 +11,7 @@
  */
 
 import React, { useState } from 'react';
-import { Popper as Popover, Box, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemButton, Divider, Button, Typography, Chip, IconButton, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
+import { Popper as Popover, Box, ListItem, ListItemText, ListItemButton, Divider, Button, Typography, Chip, IconButton, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
 import { Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, X as CloseIcon, ExternalLink as OpenIcon, Trash2 as DeleteIcon } from 'lucide-react';
 import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
 import { getAssociationColor } from '../../../hooks/useCodeAssociations';
@@ -115,7 +115,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                 <Box
                     className="p-4 flex items-center justify-between border-gray-200 dark:border-gray-700 border-b" >
                     <Typography as="h6">Linked Code</Typography>
-                    <IconButton size="sm" onClick={onClose}>
+                    <IconButton size="sm" onClick={onClose} aria-label="Close">
                         <CloseIcon />
                     </IconButton>
                 </Box>
@@ -140,8 +140,8 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                 {!isLoading && !error && (
                     <Box className="flex flex-1 overflow-hidden">
                         {/* Association List */}
-                        <List
-                            className="overflow-auto w-[200px] border-r border-gray-200 dark:border-gray-700"
+                        <ul
+                            className="overflow-auto w-[200px] border-r border-gray-200 dark:border-gray-700 list-none m-0 p-0"
                         >
                             {associations.map((assoc) => (
                                 <ListItemButton
@@ -149,9 +149,9 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                                     selected={assoc.id === selectedAssociation?.id}
                                     onClick={() => setSelectedAssociation(assoc)}
                                 >
-                                    <ListItemIcon>
+                                    <span className="flex items-center shrink-0 mr-2">
                                         {getRelationshipIcon(assoc.relationship)}
-                                    </ListItemIcon>
+                                    </span>
                                     <ListItemText
                                         primary={
                                             <Box className="flex items-center gap-1">
@@ -171,7 +171,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                                     />
                                 </ListItemButton>
                             ))}
-                        </List>
+                        </ul>
 
                         {/* Code Preview */}
                         <Box className="flex-1 flex flex-col overflow-hidden">
@@ -246,7 +246,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                                                         onClose();
                                                     }
                                                 }}
-                                                title="Remove association"
+                                                aria-label="Remove association"
                                             >
                                                 <DeleteIcon />
                                             </IconButton>

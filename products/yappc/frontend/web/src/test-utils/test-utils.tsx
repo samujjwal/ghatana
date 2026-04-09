@@ -4,8 +4,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
+import { ThemeProvider } from '@ghatana/theme';
 
 import { handlers } from './msw-handlers';
 

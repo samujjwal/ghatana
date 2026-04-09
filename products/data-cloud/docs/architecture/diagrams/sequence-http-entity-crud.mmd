@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant U as User/UI
+  participant C as UI API Adapter
+  participant H as DataCloudHttpServer
+  participant E as EntityCrudHandler
+  participant R as Repository/Store
+  participant DB as Entity Tables
+  U->>C: create/update/list entity or collection
+  C->>H: HTTP /api/v1/entities/*
+  H->>H: CORS/rate limit/size/optional security
+  H->>E: dispatch request
+  E->>R: validate and persist/query
+  R->>DB: read/write rows
+  DB-->>R: result
+  R-->>E: entity/result set
+  E-->>H: JSON payload
+  H-->>C: HTTP response
+  C-->>U: render state
+

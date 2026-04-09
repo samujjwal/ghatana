@@ -141,7 +141,10 @@ export async function generateFormPredictions(
   // Validate predictions against schema
   const validatedPredictions = filteredPredictions.filter(prediction => {
     try {
-      schema.shape[prediction.fieldName]?.safeParse(prediction.predictedValue);
+      if (schema instanceof z.ZodObject) {
+        const fieldSchema = schema.shape[prediction.fieldName];
+        return fieldSchema ? fieldSchema.safeParse(prediction.predictedValue).success : true;
+      }
       return true;
     } catch {
       return false;
