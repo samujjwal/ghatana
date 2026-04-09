@@ -28,8 +28,8 @@ option csharp_namespace = "Ghatana.Contracts.Common.V1";
 
 // RangeConstraint defines a numeric range constraint
 message RangeConstraintProto {
-  optional double min = 1;  // Optional minimum value (inclusive)
-  optional double max = 2;  // Optional maximum value (inclusive)
+  double min = 1;  // Optional minimum value (inclusive)
+  double max = 2;  // Optional maximum value (inclusive)
   bool min_exclusive = 3;   // If true, min is exclusive
   bool max_exclusive = 4;   // If true, max is exclusive
 
@@ -43,9 +43,9 @@ message RangeConstraintProto {
 
 // SizeConstraint defines size constraints for collections/strings
 message SizeConstraintProto {
-  optional int32 min = 1;  // Optional minimum size
-  optional int32 max = 2;  // Optional maximum size
-  optional int32 exact = 3; // Required exact size
+  int32 min = 1;  // Optional minimum size
+  int32 max = 2;  // Optional maximum size
+  int32 exact = 3; // Required exact size
 
   // Optional error messages
   string min_message = 10;

@@ -51,7 +51,7 @@ dependencies {
 
     // ActiveJ async runtime
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.activej.http)
     api(libs.activej.inject)
 
@@ -81,11 +81,11 @@ dependencies {
     // -------------------------------------------------------------------------
     // TESTING
     // -------------------------------------------------------------------------
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-    testImplementation(libs.activej.test)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:aep:aep-engine"))
     testImplementation(project(":products:aep:aep-analytics"))

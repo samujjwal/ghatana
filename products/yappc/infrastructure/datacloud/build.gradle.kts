@@ -35,7 +35,7 @@ dependencies {
     
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.jupiter.engine)

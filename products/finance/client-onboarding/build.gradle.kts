@@ -45,5 +45,4 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.activej.test)
-}
+    }

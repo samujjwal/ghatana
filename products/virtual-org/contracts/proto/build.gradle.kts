@@ -19,9 +19,7 @@ dependencies {
     api(libs.grpc.stub)
     api(libs.grpc.netty.shaded)
     
-    // Google common protos
-    api(libs.google.common.protos)
-    
+            
     // Common contracts (shared types)
     api(project(":platform:contracts"))
 }

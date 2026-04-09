@@ -26,18 +26,18 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     
     // JSON Path — internal implementation detail, not exported
-    implementation(libs.json.path)
+    implementation("com.jayway.jsonpath:json-path:2.9.0")
     
     // Data Faker — internal implementation detail, not exported
-    implementation(libs.datafaker)
+    implementation("net.datafaker:datafaker:2.3.1")
     
     // gRPC — internal implementation detail, not exported
-    implementation(libs.grpc.api)
+    implementation("io.grpc:grpc-api:1.79.0")
     implementation(libs.grpc.stub)
     
     // JUnit 5 — exposed as api so products don't need to re-declare
     api(libs.junit.jupiter)
-    api(libs.junit.jupiter.api)
+    api(libs.bundles.testing.core)
     api(libs.junit.jupiter.params)
     
     // Assertions — exposed as api so products don't need to re-declare
@@ -51,14 +51,14 @@ dependencies {
     implementation(libs.testcontainers.core)
     implementation(libs.testcontainers.junit.jupiter)
     implementation(libs.testcontainers.postgresql)
-    implementation(libs.testcontainers.kafka)
-    implementation(libs.testcontainers.mongodb)
+    implementation("org.testcontainers:kafka:1.21.4")
+    implementation("org.testcontainers:mongodb:1.21.4")
     
     // PostgreSQL JDBC driver — internal to testing module
     implementation(libs.postgresql)
     
     // Awaitility for async testing — exposed so products can use it
-    api(libs.awaitility)
+    api("org.awaitility:awaitility:4.2.2")
     
     // Logging for tests — internal
     implementation(libs.log4j.slf4j.impl)
@@ -70,8 +70,8 @@ dependencies {
     
     // ArchUnit — exposed as api so product test suites can write boundary tests
     // using GhatanaBoundaryRules without adding a direct archunit dependency.
-    api(libs.archunit.junit5)
-    testImplementation(libs.archunit.junit5)
+    api("com.tngtech.archunit:archunit-junit5:1.3.0")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
 }
 
 tasks.test {

@@ -50,7 +50,7 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)

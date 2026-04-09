@@ -31,7 +31,7 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
     
     // ActiveJ framework
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.activej.promise)
     api(libs.activej.inject)
     api(libs.activej.launcher)
@@ -42,7 +42,7 @@ dependencies {
     implementation(libs.slf4j.api)
     
     // Testing Utilities (Exposed in API since they are in main source)
-    api(libs.junit.jupiter.api)
+    api(libs.bundles.testing.core)
     
     // Testing
     testImplementation(project(":platform:java:testing"))

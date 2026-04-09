@@ -18,11 +18,11 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":products:data-cloud:platform-entity"))
 
-    api(platform(libs.jackson.bom))
+    api(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))
     api(libs.jackson.annotations)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.activej.promise)
-    api(libs.jakarta.validation.api)
+    api("jakarta.validation:jakarta.validation-api:3.0.2")
 
     implementation(project(":platform:java:config"))
 
@@ -36,7 +36,7 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
 
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)

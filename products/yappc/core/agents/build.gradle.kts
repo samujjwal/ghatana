@@ -15,6 +15,8 @@ java {
 }
 
 dependencies {
+    // JavaParser for code analysis and migration
+    implementation("com.github.javaparser:javaparser-core:3.25.1")
 
     // YAPPC Agent Registry Port — decouples from AEP at compile-time
     // (AEP impl is wired at runtime via AepAgentRegistryAdapter in yappc-infrastructure)
@@ -57,9 +59,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
 
-    // Migration tooling
-    implementation(libs.javaparser.core)
-
+    
     // Utilities
     implementation(libs.commons.lang3)
     implementation(libs.guava)

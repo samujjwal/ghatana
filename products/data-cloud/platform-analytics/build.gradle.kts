@@ -23,11 +23,11 @@ dependencies {
     api(project(":platform:java:testing"))
 
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.jackson.databind)
 
-    implementation(libs.caffeine)
-    implementation(libs.jsqlparser)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    implementation("com.github.jsqlparser:jsqlparser:4.9")
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

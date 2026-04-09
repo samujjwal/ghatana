@@ -27,9 +27,6 @@ dependencies {
 
     // OpenTelemetry for unified telemetry
     api(libs.opentelemetry.api)
-    implementation(libs.opentelemetry.sdk)
-    implementation(libs.opentelemetry.exporter.otlp)
-    implementation(libs.opentelemetry.sdk.testing)
 
     // ActiveJ
     api(libs.activej.inject)
@@ -38,12 +35,8 @@ dependencies {
     implementation(libs.activej.promise)
 
     // Validation
-    api(libs.jakarta.validation.api)
-    implementation(libs.hibernate.validator)
 
-    implementation(libs.joda.time)
-    implementation(libs.commons.text)
-
+    
     implementation(project(":platform:java:runtime"))
     // platform:java:testing provides TestStatus and other domain types used by
     // the scaffold engine's failure-injection testing framework
@@ -52,7 +45,7 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.mockito.core)

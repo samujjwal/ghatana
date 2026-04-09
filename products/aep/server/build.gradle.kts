@@ -55,7 +55,7 @@ dependencies {
     implementation(libs.activej.http)
     implementation(libs.activej.inject)
     implementation(libs.activej.config)
-    implementation(libs.activej.eventloop)
+    implementation(libs.bundles.activej.core)
     implementation(libs.activej.promise)
     
     // Jackson for JSON
@@ -73,7 +73,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.activej.test)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.platform.launcher)
 }

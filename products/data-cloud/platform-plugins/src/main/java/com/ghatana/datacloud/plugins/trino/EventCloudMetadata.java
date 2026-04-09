@@ -194,7 +194,6 @@ public class EventCloudMetadata implements ConnectorMetadata {
         return new ArrayList<>(tables.keySet());
     }
 
-    @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
         if (!tables.containsKey(tableName)) {
             return null;

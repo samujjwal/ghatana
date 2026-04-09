@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
     application
-    alias(libs.plugins.protobuf)
+    id("com.ghatana.protobuf-conventions")
 }
 
 application {
@@ -35,10 +35,10 @@ dependencies {
     implementation(libs.activej.http)
 
     // LangChain4J
-    implementation(libs.langchain4j)
+    implementation(libs.langchain4j.core)
     implementation(libs.langchain4j.open.ai)
-    implementation(libs.langchain4j.anthropic)
-
+    implementation("dev.langchain4j:langchain4j-anthropic:0.36.2")
+    
     // Jackson
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -61,18 +61,15 @@ dependencies {
     implementation(libs.jedis)
 
     // Git
-    implementation(libs.jgit)
-
+    implementation("org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r")
+    
     // Config
-    implementation(libs.typesafe.config)
-
+    
     // Observability
     implementation(libs.micrometer.core)
-    implementation(libs.micrometer.registry.otlp)
-    implementation(libs.opentelemetry.api)
-    implementation(libs.opentelemetry.sdk)
-    implementation(libs.opentelemetry.exporter.otlp)
-
+    implementation("io.micrometer:micrometer-registry-otlp:1.15.0")
+        implementation(libs.opentelemetry.api)
+        
     // Logging
     implementation(libs.slf4j.api)
     runtimeOnly(libs.log4j.slf4j.impl)
@@ -85,16 +82,11 @@ dependencies {
     implementation(libs.okhttp)
 
     // Testing
-    testImplementation(libs.bundles.test.essentials)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(project(":platform:java:testing"))
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.25.3"
-    }
-}
 
 // Resolve duplicate jars in distributions (e.g., workflow from both platform and product modules)
 tasks.withType<AbstractArchiveTask>().configureEach {

@@ -3,7 +3,7 @@ plugins {
     application
     kotlin("jvm") version "1.9.22"
     id("jacoco")
-    alias(libs.plugins.protobuf)
+    id("com.ghatana.protobuf-conventions")
 }
 
 group = "com.ghatana.tutorputor"
@@ -106,39 +106,8 @@ tasks.jacocoTestCoverageVerification {
     }
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.25.1"
-    }
-    plugins {
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.60.0"
-        }
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.plugins {
-                create("grpc")
-            }
-        }
-    }
-}
 
-sourceSets {
-    main {
-        proto {
-            srcDir("src/main/proto")
-        }
-        java {
-            srcDirs("build/generated/source/proto/main/grpc")
-            srcDirs("build/generated/source/proto/main/java")
-        }
-    }
-}
 
-tasks.named("compileJava") {
-    dependsOn("generateProto")
-}
 
 // Handle duplicate proto files in resources
 tasks.withType<Copy>().configureEach {

@@ -32,7 +32,7 @@ dependencies {
 
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -31,17 +31,17 @@ dependencies {
     api(libs.hikaricp)
     
     // Jakarta Persistence API
-    api(libs.jakarta.persistence.api)
+    api("jakarta.persistence:jakarta.persistence-api:3.1.0")
     
     // Hibernate (for JPA implementation)
-    api(libs.hibernate.core)
+    api("org.hibernate.orm:hibernate-core:6.6.1.Final")
     
     // Flyway Migration
     api(libs.flyway.core)
     
     // Redis
     api(libs.jedis)
-    api(libs.lettuce.core)
+    api("io.lettuce:lettuce-core:6.4.0.RELEASE")
     
     // Database Drivers (optional - consumers should include what they need)
     compileOnly(libs.postgresql)

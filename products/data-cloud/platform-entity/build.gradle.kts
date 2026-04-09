@@ -20,19 +20,19 @@ dependencies {
     api(project(":platform:java:observability"))
 
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
-    api(platform(libs.jackson.bom))
+    api(libs.bundles.activej.core)
+    api(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))
     api(libs.jackson.annotations)
     api(libs.jackson.databind)
     api(libs.jackson.datatype.jsr310)
     api(libs.jakarta.persistence.api)
-    api(libs.jakarta.validation.api)
+    api("jakarta.validation:jakarta.validation-api:3.0.2")
 
     implementation(libs.hibernate.core)
-    implementation(libs.hibernate.validator)
-    implementation(libs.caffeine)
+    implementation("org.hibernate.validator:hibernate-validator:8.0.1.Final")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
@@ -45,7 +45,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
-    compileOnly(libs.spotbugs.annotations)
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
 }
 
 tasks.test {

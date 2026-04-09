@@ -29,7 +29,7 @@ dependencies {
     implementation(libs.activej.http)
     implementation(libs.activej.inject)
     implementation(libs.activej.config)
-    implementation(libs.activej.eventloop)
+    implementation(libs.bundles.activej.core)
     implementation(libs.activej.promise)
     implementation(libs.activej.csp)
     implementation(libs.activej.bytebuf)
@@ -49,7 +49,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.archunit.junit5)
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
     
     // Testcontainers for integration testing
     testImplementation("org.testcontainers:testcontainers:1.19.7")

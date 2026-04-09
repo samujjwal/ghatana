@@ -88,7 +88,7 @@ dependencies {
 
     // gRPC (from services:api)
     implementation(libs.grpc.stub)
-    implementation(libs.grpc.netty)
+    implementation(libs.grpc.netty.shaded)
 
     // AI/ML (from services:ai)
     implementation("dev.langchain4j:langchain4j:0.25.0")

@@ -1,0 +1,229 @@
+/**
+ * Build Isolation Configuration
+ *
+ * Ensures proper build isolation to prevent cross-product dependencies
+ * and optimize build performance for large monorepos.
+ */
+
+// =============================================================================
+// Task Dependency Isolation
+// =============================================================================
+
+// Prevent cross-product task dependencies
+gradle.taskGraph.whenReady { graph ->
+    val violations = mutableListOf<String>()
+
+    graph.allTasks.forEach { task ->
+        // Check for cross-product dependencies
+        task.taskDependencies.getDependencies(task).forEach { dependency ->
+            val taskProduct = extractProductFromPath(task.path)
+            val depProduct = extractProductFromPath(dependency.path)
+
+            if (taskProduct != null && depProduct != null && taskProduct != depProduct) {
+                // Allow certain cross-product dependencies that are legitimate
+                if (!isAllowedCrossProductDependency(task.path, dependency.path)) {
+                    violations.add("${task.path} depends on ${dependency.path} (cross-product)")
+                }
+            }
+        }
+    }
+
+    if (violations.isNotEmpty()) {
+        logger.warn("Cross-product task dependencies detected:")
+        violations.forEach { logger.warn("  - $it") }
+    }
+}
+
+// Helper functions for product extraction
+fun extractProductFromPath(path: String): String? {
+    return when {
+        path.startsWith(":products:") -> path.substringAfter(":products:").substringBefore(":")
+        path.startsWith(":platform:") -> "platform"
+        path.startsWith(":shared-services:") -> "shared-services"
+        path.startsWith(":integration-tests:") -> "integration-tests"
+        else -> null
+    }
+}
+
+fun isAllowedCrossProductDependency(taskPath: String, depPath: String): Boolean {
+    val allowedPatterns = setOf(
+        // Platform dependencies are allowed from any product
+        ":platform:",
+        // Shared services dependencies are allowed
+        ":shared-services:",
+        // Integration tests can depend on anything
+        ":integration-tests:",
+        // Root aggregation tasks
+        ":buildAll",
+        ":testAll"
+    )
+
+    return allowedPatterns.any { depPath.startsWith(it) }
+}
+
+// =============================================================================
+// Module Isolation Validation
+// =============================================================================
+tasks.register("validateBuildIsolation") {
+    group = "verification"
+    description = "Validates build isolation rules"
+
+    doLast {
+        val violations = mutableListOf<String>()
+
+        // Check for inappropriate cross-module dependencies
+        subprojects.forEach { subproject ->
+            val buildFile = subproject.buildFile
+            if (buildFile.exists()) {
+                val content = buildFile.readText()
+
+                // Check for hardcoded dependencies on other products
+                val productDeps = Regex("""project\(":products:([^"]+)"""")
+                productDeps.findAll(content).forEach { match ->
+                    val targetProduct = match.groupValues[1].substringBefore(":")
+                    val currentProduct = extractProductFromPath(subproject.path)
+
+                    if (currentProduct != null && targetProduct != currentProduct) {
+                        violations.add("${subproject.path}: Direct dependency on product $targetProduct")
+                    }
+                }
+
+                // Check for bypassing convention plugins
+                if (content.contains("java") && content.contains("toolchain") &&
+                    !content.contains("com.ghatana.java-conventions")) {
+                    violations.add("${subproject.path}: Manual Java configuration (should use convention plugins)")
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Build isolation violations:\n" +
+                violations.joinToString("\n") { "  - $it" } + "\n" +
+                "Fix these issues to ensure proper build isolation."
+            )
+        }
+
+        logger.lifecycle("Build isolation validation passed")
+    }
+}
+
+// =============================================================================
+// Dependency Resolution Isolation
+// =============================================================================
+// Prevent dependency resolution conflicts between modules
+configurations.all {
+    resolutionStrategy {
+        // Force consistent versions across the monorepo
+        force(
+            "org.slf4j:slf4j-api:${libs.versions.slf4j.get()}",
+            "com.fasterxml.jackson:jackson-core:${libs.versions.jackson.get()}",
+            "org.junit.jupiter:junit-jupiter:${libs.versions.junit.get()}"
+        )
+
+        // Prefer project modules over external dependencies
+        preferProjectModules()
+
+        // Conflict resolution strategy
+        conflictResolutionStrategy {
+            // Use the highest version for most conflicts
+            selectNewest()
+
+            // Specific conflict rules for critical libraries
+            eachDependency { details ->
+                if (details.requested.group == "org.slf4j") {
+                    details.useVersion(libs.versions.slf4j.get())
+                }
+                if (details.requested.group == "com.fasterxml.jackson") {
+                    details.useVersion(libs.versions.jackson.get())
+                }
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Parallel Execution Safety
+// =============================================================================
+// Ensure tasks can run safely in parallel
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    // Use different database names for parallel test execution
+    systemProperty("test.db.name", "test_${project.name.replace(":", "_")}")
+
+    // Use different ports for web services in tests
+    systemProperty("test.server.port", (8080 + project.name.hashCode % 1000).toString())
+}
+
+// =============================================================================
+// Build Cache Isolation
+// =============================================================================
+// Ensure build cache keys are properly isolated
+tasks.configureEach {
+    // Include project name in cache key for better isolation
+    inputs.property("project-name", project.name)
+    inputs.property("project-path", project.path)
+
+    // Exclude volatile inputs from cache key
+    inputs.property("timestamp", System.currentTimeMillis()).skipWhenTrue()
+}
+
+// =============================================================================
+// Resource Isolation
+// =============================================================================
+// Prevent resource conflicts between parallel tasks
+tasks.withType<JavaCompile>().configureEach {
+    // Use different annotation processor paths
+    options.annotationProcessorGeneratedSourcesDirectory =
+        file("${project.buildDir}/generated/sources/annotationProcessor/java/main")
+
+    // Enable incremental annotation processing
+    options.compilerArgs.add("-Xmaxerrs")
+    options.compilerArgs.add("100")
+}
+
+// =============================================================================
+// Monitoring and Diagnostics
+// =============================================================================
+tasks.register("analyzeBuildIsolation") {
+    group = "help"
+    description = "Analyzes build isolation and identifies potential issues"
+
+    doLast {
+        println("=== Build Isolation Analysis ===")
+
+        // Analyze task graph
+        val taskCount = gradle.taskGraph.allTasks.size
+        println("Total tasks in graph: $taskCount")
+
+        // Analyze cross-product dependencies
+        val crossProductDeps = mutableListOf<String>()
+        gradle.taskGraph.allTasks.forEach { task ->
+            task.taskDependencies.getDependencies(task).forEach { dep ->
+                val taskProduct = extractProductFromPath(task.path)
+                val depProduct = extractProductFromPath(dep.path)
+
+                if (taskProduct != null && depProduct != null && taskProduct != depProduct) {
+                    crossProductDeps.add("${task.path} -> ${dep.path}")
+                }
+            }
+        }
+
+        if (crossProductDeps.isNotEmpty()) {
+            println("\nCross-product dependencies:")
+            crossProductDeps.forEach { println("  - $it") }
+        } else {
+            println("\nNo cross-product dependencies found")
+        }
+
+        // Analyze module dependencies
+        val moduleCount = gradle.rootProject.childProjects.size
+        println("\nTotal modules: $moduleCount")
+
+        val javaModules = gradle.rootProject.childProjects.values.count { subproject ->
+            subproject.file("src/main/java").exists() || subproject.file("src/main/kotlin").exists()
+        }
+        println("Java modules: $javaModules")
+
+        println("==============================")
+    }
+}

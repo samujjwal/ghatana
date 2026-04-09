@@ -24,7 +24,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     compileOnly(libs.spotbugs.annotations)
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))

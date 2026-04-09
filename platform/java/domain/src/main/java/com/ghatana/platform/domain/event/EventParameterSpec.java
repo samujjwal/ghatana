@@ -1,7 +1,7 @@
 package com.ghatana.platform.domain.event;
 
 import com.ghatana.contracts.common.v1.DataClassificationProto;
-import com.ghatana.contracts.event.v1.DeprecationInfoPojo;
+import com.ghatana.contracts.event.v1.DeprecationInfoProto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -119,7 +119,7 @@ import java.util.Map;
  * </ul>
  *
  * <h2>Deprecation & Migration</h2>
- * Deprecated parameters include {@link DeprecationInfoPojo}:
+ * Deprecated parameters include {@link DeprecationInfoProto}:
  * <ul>
  *   <li>Deprecation reason (why parameter is being removed)</li>
  *   <li>Recommended alternative parameter name</li>
@@ -173,7 +173,7 @@ import java.util.Map;
  *   EventParameterSpec.builder()
  *       .name("legacyField")
  *       .type(EventParameterType.STRING)
- *       .deprecation(DeprecationInfoPojo.builder()
+ *       .deprecation(DeprecationInfoProto.builder()
  *           .reason("Renamed to modernField for clarity")
  *           .alternative("modernField")
  *           .removalDate("2024-12-31")
@@ -193,7 +193,7 @@ import java.util.Map;
  * @see EventType
  * @see Event
  * @see EventParameterType
- * @see DeprecationInfoPojo
+ * @see DeprecationInfoProto
  * @see DataClassificationProto
  * @since 1.1.0
  *
@@ -265,7 +265,7 @@ public class EventParameterSpec {
      * If non-null, indicates that this parameter is deprecated and provides
      * information about alternatives and removal timeline for migration planning.
      */
-    private DeprecationInfoPojo deprecation;
+    private DeprecationInfoProto deprecation;
 
     /**
      * Whether this parameter should be indexed for faster querying.

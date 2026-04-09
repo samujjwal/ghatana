@@ -29,7 +29,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-    testImplementation(libs.wiremock)
+    testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

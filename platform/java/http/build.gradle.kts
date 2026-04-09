@@ -31,16 +31,16 @@ dependencies {
     
     // ActiveJ HTTP
     api(libs.activej.http)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.http)
     
     // OkHttp client
-    api(libs.okhttp)
+    api("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Guava
     api(libs.guava)
 
     // Caffeine for bounded tenant limiter cache
-    implementation(libs.caffeine)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     
     // JSON Processing
     api(libs.jackson.databind)
@@ -52,7 +52,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
     testImplementation(libs.mockito.core)

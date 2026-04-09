@@ -17,9 +17,12 @@ dependencies {
     testImplementation(project(":products:phr"))
     testImplementation(project(":products:finance"))
 
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.activej.test)
-    testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.testing.core)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+// Fix JaCoCo task dependency
+tasks.named("jacocoTestReport") {
+    dependsOn("compileJava")
 }

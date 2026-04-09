@@ -19,7 +19,7 @@ dependencies {
     api(libs.activej.promise)
     api(libs.activej.http)
     // gRPC — optional, only needed for TenantGrpcInterceptor
-    compileOnly(libs.grpc.api)
+    compileOnly("io.grpc:grpc-api:1.79.0")
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.jackson.databind)
     
@@ -36,7 +36,7 @@ dependencies {
     testImplementation(project(":platform:java:agent-core"))  // For MemoryStore
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.archunit)
+    testImplementation("com.tngtech.archunit:archunit:1.3.0")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -1,23 +1,12 @@
 /**
- * Ghatana Monorepo — Root Build Configuration
+ * Ghatana Monorepo - Simplified Root Build Configuration
  *
  * Design Principles:
- * - MINIMAL:    Only truly global configuration lives here.
- * - DELEGATING: Java / test / quality settings come from convention plugins.
- * - STABLE:     Changes here affect ALL modules; prefer convention plugins instead.
- *
- * Convention plugins (buildSrc/src/main/kotlin):
- *   com.ghatana.java-conventions       — Java 21 toolchain, compiler, Javadoc, JAR manifest
- *   com.ghatana.testing-conventions    — JUnit Platform, JaCoCo, parallel tests, Docker compat
- *   com.ghatana.quality-conventions    — Checkstyle, PMD, Spotless
- *   com.ghatana.lombok-conventions     — Lombok annotation processing
- *   com.ghatana.integration-test-profile — Integration-tag filtering (applied from subprojects{})
- *   com.ghatana.test-failure-tolerance   — Configurable failure-rate gate (applied from subprojects{})
+ * - MINIMAL: Only truly global configuration lives here
+ * - DELEGATING: All module configuration handled by convention plugins
+ * - ISOLATED: No cross-product task dependencies
+ * - FAST: Minimal configuration time overhead
  */
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.cyclonedx.gradle.CyclonedxAggregateTask
-import org.cyclonedx.gradle.CyclonedxDirectTask
 
 plugins {
     id("java-platform")
@@ -29,59 +18,44 @@ group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
 // =============================================================================
-// Java Version Validation
+// Repository Configuration - Centralized in settings.gradle.kts only
 // =============================================================================
-apply(from = file("gradle/java-version-check.gradle"))
 
 // =============================================================================
-// Repository Configuration
-// =============================================================================
-allprojects {
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://repo1.maven.org/maven2/") }
-        // mavenLocal() is only enabled for local platform library development.
-        // Activate with: ./gradlew <task> -PlocalBuild=true
-        if (findProperty("localBuild") == "true") {
-            mavenLocal()
-        }
-    }
-}
-
-// =============================================================================
-// Convention Plugins — Applied to all Java/Kotlin subprojects
+// Convention Plugin Application - Automatic for Java modules
 // =============================================================================
 subprojects {
-    // Skip modules with no Java / Kotlin sources
-    if (!file("$projectDir/src/main/java").exists() &&
-        !file("$projectDir/src/main/kotlin").exists() &&
-        !file("$projectDir/src/test/java").exists()) {
-        return@subprojects
+    // Helper function to check if project has Java sources
+    fun hasJavaSources(): Boolean {
+        return file("$projectDir/src/main/java").exists() ||
+               file("$projectDir/src/main/kotlin").exists() ||
+               file("$projectDir/src/test/java").exists() ||
+               file("$projectDir/src/test/kotlin").exists()
     }
-
-    // Base library plugin — every Java module is a library by default
-    apply(plugin = "java-library")
-    apply(plugin = "idea")
-
-    // Convention plugins — provide all standard Java/test/CI config
-    // Convention plugins - provide all standard Java/test/CI config
-    apply(plugin = "com.ghatana.java-conventions")
-    apply(plugin = "com.ghatana.testing-conventions-simplified")
-    apply(plugin = "com.ghatana.quality-conventions")
-    apply(plugin = "com.ghatana.integration-test-profile")
-
-    group = "com.ghatana"
-    version = rootProject.version
-
-    // Produce sources and Javadoc JARs for all modules (required for publishing)
-    configure<JavaPluginExtension> {
-        withJavadocJar()
-        withSourcesJar()
-    }
-
-    // Platform boundary guardrails — prevent platform modules from depending on products
-    if (project.path.startsWith(":platform:")) {
-        apply(from = rootProject.file("gradle/platform-boundary-check.gradle"))
+    
+    // Apply standard conventions to all Java projects
+    if (hasJavaSources()) {
+        apply(plugin = "java-library")
+        apply(plugin = "idea")
+        apply(plugin = "com.ghatana.java-conventions")
+        apply(plugin = "com.ghatana.testing-conventions")
+        apply(plugin = "com.ghatana.quality-conventions")
+        apply(plugin = "com.ghatana.lombok-conventions")
+        
+        // Standard group and version
+        group = rootProject.group
+        version = rootProject.version
+        
+        // Produce sources and Javadoc JARs for all modules
+        configure<JavaPluginExtension> {
+            withJavadocJar()
+            withSourcesJar()
+        }
+        
+        // Platform boundary guardrails - prevent platform modules from depending on products
+        if (project.path.startsWith(":platform:")) {
+            apply(from = rootProject.file("gradle/platform-boundary-check.gradle"))
+        }
     }
 }
 
@@ -96,70 +70,21 @@ idea {
 }
 
 // =============================================================================
-// Architectural Guardrails
+// Architectural Guardrails - Minimal and Essential
 // =============================================================================
 apply(from = file("gradle/product-isolation.gradle"))
 apply(from = file("gradle/doc-tag-check.gradle"))
 
-// Wire checkDocTags into standard `check` so it runs on every CI build.
+// Wire critical checks into standard build lifecycle
 tasks.named("check") {
     dependsOn("checkDocTags")
 }
 
 // =============================================================================
-// Aggregate Build / Test Tasks
-// =============================================================================
-tasks.register("buildPlatform") {
-    group = "build"
-    description = "Build all platform modules"
-    dependsOn(
-        ":platform:java:core:build",
-        ":platform:java:database:build",
-        ":platform:java:http:build",
-        ":platform:java:security:build",
-        ":platform:java:observability:build",
-        ":platform:java:testing:build"
-    )
-}
-
-tasks.register("testPlatform") {
-    group = "verification"
-    description = "Test all platform modules"
-    dependsOn(
-        ":platform:java:core:test",
-        ":platform:java:database:test",
-        ":platform:java:http:test",
-        ":platform:java:security:test",
-        ":platform:java:observability:test",
-        ":platform:java:testing:test"
-    )
-}
-
-tasks.register("buildProducts") {
-    group = "build"
-    description = "Build all product modules"
-    dependsOn(
-        ":products:aep:build",
-        ":products:data-cloud:build",
-        ":products:yappc:build",
-        ":products:flashit:build",
-        ":products:software-org:build",
-        ":products:virtual-org:build",
-        ":products:security-gateway:build"
-    )
-}
-
-tasks.register("buildAll") {
-    group = "build"
-    description = "Build entire monorepo"
-    dependsOn("buildPlatform", "buildProducts")
-}
-
-// =============================================================================
-// SBOM Generation (CycloneDX)
+// SBOM Generation - Essential for Security Compliance
 // =============================================================================
 allprojects {
-    tasks.withType<CyclonedxDirectTask>().configureEach {
+    tasks.withType<org.cyclonedx.gradle.CyclonedxDirectTask>().configureEach {
         includeConfigs = listOf("runtimeClasspath", "compileClasspath")
         skipConfigs = listOf("testRuntimeClasspath", "testCompileClasspath")
         includeLicenseText = false
@@ -169,7 +94,7 @@ allprojects {
     }
 }
 
-tasks.withType<CyclonedxAggregateTask>().configureEach {
+tasks.withType<org.cyclonedx.gradle.CyclonedxAggregateTask>().configureEach {
     includeLicenseText = false
     includeBuildSystem = true
     jsonOutput.set(project.file("build/sbom/bom.json"))
@@ -177,7 +102,7 @@ tasks.withType<CyclonedxAggregateTask>().configureEach {
 }
 
 // =============================================================================
-// Platform BOM Validation
+// Platform BOM Validation - Essential Build Integrity Check
 // =============================================================================
 tasks.register("validatePlatformBom") {
     group = "verification"
@@ -204,8 +129,51 @@ tasks.register("validatePlatformBom") {
         }
         
         println("Platform BOM validation passed")
-        println("All critical build files validated")
     }
 }
 
-
+// =============================================================================
+// Build Health Check - Quick diagnostics
+// =============================================================================
+tasks.register("buildHealth") {
+    group = "verification"
+    description = "Quick build health diagnostics"
+    
+    doLast {
+        println("=== Build Health Report ===")
+        println("Java Version: ${System.getProperty("java.version")}")
+        println("Gradle Version: ${project.gradle.gradleVersion}")
+        println("Total Projects: ${gradle.rootProject.childProjects.size}")
+        
+        val javaProjects = gradle.rootProject.childProjects.values.count { subproject ->
+            subproject.file("src/main/java").exists() ||
+            subproject.file("src/main/kotlin").exists()
+        }
+        println("Java Projects: $javaProjects")
+        
+        // Check for common issues
+        val issues = mutableListOf<String>()
+        
+        // Check for duplicate plugin applications
+        gradle.rootProject.childProjects.values.forEach { subproject ->
+            val buildFile = subproject.buildFile
+            if (buildFile.exists()) {
+                val content = buildFile.readText()
+                if (content.contains("java") && 
+                    content.contains("toolchain") && 
+                    !content.contains("com.ghatana.java-conventions")) {
+                    issues.add("${subproject.path}: Manual Java configuration detected")
+                }
+            }
+        }
+        
+        if (issues.isNotEmpty()) {
+            println("\n=== Issues Found ===")
+            issues.forEach { println("  - $it") }
+        } else {
+            println("\n=== No Issues Found ===")
+        }
+        
+        println("========================")
+    }
+}

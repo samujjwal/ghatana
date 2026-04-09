@@ -20,21 +20,16 @@ dependencies {
     implementation(project(":platform:java:database"))    // Absorbed from auth-service
     
     // ActiveJ - Use canonical versions from libs.versions.toml
-    implementation(libs.activej.eventloop)
-    implementation(libs.activej.promise)
-    implementation(libs.activej.http)
-    implementation(libs.activej.inject)     // Absorbed from auth-service
-    implementation(libs.activej.launcher)   // Absorbed from auth-service
+    implementation(libs.bundles.activej.http)
     
     // OAuth2 & JWT (absorbed from auth-service)
-    implementation(libs.nimbus.oauth2.sdk)
-    implementation(libs.nimbus.jose.jwt)
+    implementation(libs.bundles.security.core)
     
     // Password hashing (absorbed from auth-service)
-    implementation(libs.jbcrypt)
+    implementation("org.mindrot:jbcrypt:0.4")
     
     // Session caching (absorbed from auth-service)
-    implementation(libs.caffeine)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     
     // JSON
     implementation(libs.jackson.databind)

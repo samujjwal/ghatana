@@ -77,7 +77,7 @@ dependencies {
     compileOnly(libs.trino.spi)
     compileOnly(libs.trino.plugin.toolkit)
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)

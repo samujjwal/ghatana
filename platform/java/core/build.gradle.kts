@@ -35,13 +35,12 @@ dependencies {
     api(libs.jackson.datatype.jdk8)
     
     // Validation
-    api(libs.jakarta.validation.api)
+    api("jakarta.validation:jakarta.validation-api:3.0.2")
 
     // Protobuf
     api(libs.protobuf.java)
-    api(libs.javax.annotation.api)
-    api(libs.google.common.protos)
-    
+    api("javax.annotation:javax.annotation-api:1.3.2")
+        
     // JWT (Nimbus JOSE + JWT)
     api(libs.nimbus.jose.jwt)
     
@@ -59,7 +58,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.archunit)
+    testImplementation("com.tngtech.archunit:archunit:1.3.0")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.log4j.slf4j.impl)

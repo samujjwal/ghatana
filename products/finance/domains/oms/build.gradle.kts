@@ -42,7 +42,7 @@ dependencies {
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
+    
     implementation(libs.hikaricp)
     implementation(libs.jedis)
     implementation(libs.kafka.clients)

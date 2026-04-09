@@ -27,7 +27,6 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     
     // Jakarta validation
-    api(libs.jakarta.validation.api)
     
     // Jackson for serialization
     api(platform(libs.jackson.bom))
@@ -37,7 +36,7 @@ dependencies {
     api(libs.jackson.datatype.jdk8)
     
     // Testing
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.jupiter.engine)

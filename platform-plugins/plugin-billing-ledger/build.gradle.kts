@@ -51,7 +51,7 @@ jacoco {
 }
 
 tasks.jacocoTestReport {
-    dependsOn(tasks.test)
+    dependsOn(tasks.test, "compileJava")
     reports {
         xml.required.set(true)
         html.required.set(true)

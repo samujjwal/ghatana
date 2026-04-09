@@ -27,13 +27,13 @@ dependencies {
 
     // ActiveJ async
     api(libs.activej.promise)
-    implementation(libs.activej.eventloop)
+    implementation(libs.bundles.activej.core)
 
     // Redis client
     implementation(libs.jedis)
 
     // Local fallback — Caffeine for in-process cache
-    implementation(libs.caffeine)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // JSON serialization
     implementation(libs.jackson.databind)

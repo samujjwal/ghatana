@@ -36,16 +36,16 @@ dependencies {
     api(project(":products:data-cloud:platform-config"))
 
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
-    api(platform(libs.jackson.bom))
+    api(libs.bundles.activej.core)
+    api(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))
     api(libs.jackson.databind)
     api(libs.micrometer.core)
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    compileOnly(libs.spotbugs.annotations)
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)

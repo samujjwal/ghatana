@@ -33,7 +33,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.activej.test)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
 }
 

@@ -8,7 +8,6 @@ import com.ghatana.yappc.ai.requirements.application.workspace.WorkspaceService;
 import com.ghatana.yappc.ai.requirements.domain.project.Project;
 import com.ghatana.yappc.ai.requirements.domain.requirement.Requirement;
 import com.ghatana.yappc.ai.requirements.domain.workspace.Workspace;
-import graphql.kickstart.tools.GraphQLQueryResolver;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

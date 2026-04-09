@@ -39,8 +39,7 @@ dependencies {
     implementation(project(":platform:java:agent-core"))
 
     // AI-specific dependencies
-    implementation(libs.langchain4j)
-    implementation(libs.openai.client)
+    implementation(libs.bundles.ai.integration)
 
     // ActiveJ - for async operations and DI
     implementation(libs.activej.promise)
@@ -78,20 +77,12 @@ dependencies {
     implementation(libs.micrometer.core)
 
     // PostgreSQL
-    implementation(libs.postgresql)
-    implementation(libs.hikaricp)
-    implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
+    implementation(libs.bundles.database.core)
 
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.junit.jupiter)
-    testImplementation(libs.activej.test)
-    testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.bundles.testing.core)
+    testImplementation(libs.bundles.testing.containers)
 }
 
 tasks.register<JavaExec>("validateContracts") {
@@ -99,4 +90,9 @@ tasks.register<JavaExec>("validateContracts") {
     description = "Validates Finance contracts for deployment"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("com.ghatana.finance.contracts.ContractValidationRunner")
+}
+
+// Fix JaCoCo task dependency
+tasks.named("jacocoTestReport") {
+    dependsOn("compileJava")
 }

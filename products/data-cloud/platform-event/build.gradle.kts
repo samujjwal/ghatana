@@ -21,13 +21,13 @@ dependencies {
     api(project(":platform-kernel:kernel-plugin"))
 
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.jakarta.persistence.api)
 
     implementation(libs.hibernate.core)
-    implementation(libs.kafka.clients)
+    implementation("org.apache.kafka:kafka-clients:3.8.0")
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)

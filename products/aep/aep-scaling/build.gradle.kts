@@ -19,7 +19,7 @@ dependencies {
 
     // ActiveJ for async operations
     implementation(libs.activej.promise)
-    implementation(libs.activej.eventloop)
+    implementation(libs.bundles.activej.core)
 
     // Jackson for JSON processing
     implementation(libs.jackson.databind)

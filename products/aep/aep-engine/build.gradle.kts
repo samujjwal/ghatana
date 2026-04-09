@@ -19,7 +19,7 @@ dependencies {
     api(project(":products:aep:aep-operator-contracts"))
 
     // ActiveJ - core async framework
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.activej.promise)
     api(libs.activej.http)
     api(libs.activej.csp)
@@ -55,7 +55,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.activej.test)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
 }
 

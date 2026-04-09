@@ -31,7 +31,7 @@ dependencies {
 
     // ── ActiveJ ─────────────────────────────────────────────────────────────
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
 
     // ── Jackson ─────────────────────────────────────────────────────────────
     implementation(libs.jackson.databind)
@@ -48,7 +48,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.activej.test)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.platform.launcher)
 }

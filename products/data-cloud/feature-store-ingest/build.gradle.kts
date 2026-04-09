@@ -36,7 +36,7 @@ dependencies {
     implementation(libs.hikaricp)
     
     // ActiveJ runtime
-    implementation(libs.activej.eventloop)
+    implementation(libs.bundles.activej.core)
     implementation(libs.activej.promise)
     implementation(libs.activej.datastream)
     implementation(libs.activej.inject)
@@ -51,7 +51,7 @@ dependencies {
     
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

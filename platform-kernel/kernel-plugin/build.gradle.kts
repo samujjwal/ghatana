@@ -43,16 +43,19 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
 
     // Testing
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.engine)
-    testImplementation(libs.junit.jupiter.params)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// Fix JaCoCo task dependency
+tasks.named("jacocoTestReport") {
+    dependsOn("compileJava")
 }
 
 // Exclude failing test files from compilation (tests need refactoring to use real classes)

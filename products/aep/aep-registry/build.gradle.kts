@@ -28,8 +28,8 @@ dependencies {
     implementation(project(":platform-kernel:kernel-core"))
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:contracts"))
-    compileOnly(libs.jakarta.persistence.api)
-    compileOnly(libs.hibernate.core)
+    compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    compileOnly("org.hibernate.orm:hibernate-core:6.6.1.Final")
     
     // gRPC dependencies
     implementation(libs.grpc.netty.shaded)
@@ -45,7 +45,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     
     // Jakarta
-    implementation(libs.jakarta.inject)
+    implementation("jakarta.inject:jakarta.inject-api:2.0.1")
     
     // ActiveJ
     implementation(libs.activej.promise)

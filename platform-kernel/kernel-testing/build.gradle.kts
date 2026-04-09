@@ -24,13 +24,10 @@ dependencies {
     api(project(":platform-kernel:kernel-core"))
 
     // ActiveJ test support
-    api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
 
     // JUnit
-    api(libs.junit.jupiter)
-    api(libs.junit.jupiter.api)
-    api(libs.junit.jupiter.engine)
+    api(libs.bundles.testing.core)
 
     // Assertions
     api(libs.assertj.core)
@@ -44,4 +41,9 @@ dependencies {
 
     // Test runtime
     runtimeOnly(libs.junit.platform.launcher)
+}
+
+// Fix JaCoCo task dependency
+tasks.named("jacocoTestReport") {
+    dependsOn("compileJava")
 }

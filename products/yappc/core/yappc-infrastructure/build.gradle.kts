@@ -35,8 +35,7 @@ dependencies {
     implementation(libs.micrometer.registry.prometheus)
     
     // Configuration
-    implementation(libs.typesafe.config)
-    
+        
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

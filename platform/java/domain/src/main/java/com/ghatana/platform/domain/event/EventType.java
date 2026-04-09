@@ -2,10 +2,10 @@ package com.ghatana.platform.domain.event;
 
 import com.ghatana.contracts.common.v1.CompatibilityPolicyProto;
 import com.ghatana.contracts.event.v1.EventContextTypeProto;
-import com.ghatana.contracts.event.v1.EventStorageHintsPojo;
-import com.ghatana.contracts.event.v1.GovernancePojo;
+import com.ghatana.contracts.event.v1.EventStorageHintsProto;
+import com.ghatana.contracts.event.v1.GovernanceProto;
 import com.ghatana.contracts.event.v1.LifecycleStatusProto;
-import com.ghatana.contracts.event.v1.SemanticVersionPojo;
+import com.ghatana.contracts.event.v1.SemanticVersionProto;
 import com.ghatana.platform.domain.exception.SchemaValidationException;
 
 import java.util.Map;
@@ -100,7 +100,7 @@ import java.util.Map;
  * @see GEventType (canonical implementation with full feature set)
  * @see com.ghatana.platform.domain.event.Event (events validated against EventType)
  * @see EventParameterSpec (field-level parameter definitions)
- * @see GovernancePojo (governance and lifecycle information)
+ * @see GovernanceProto (governance and lifecycle information)
  */
 public interface EventType {
     String getVersion();
@@ -123,7 +123,7 @@ public interface EventType {
 
     String getNamespace();
 
-    SemanticVersionPojo getSemanticVersion();
+    SemanticVersionProto getSemanticVersion();
 
     EventContextTypeProto getContextType();
 
@@ -145,9 +145,9 @@ public interface EventType {
 
     java.util.Set<String> getAliases();
 
-    GovernancePojo getGovernance();
+    GovernanceProto getGovernance();
 
-    EventStorageHintsPojo getStorageHints();
+    EventStorageHintsProto getStorageHints();
 
     LifecycleStatusProto getStatus();
 
