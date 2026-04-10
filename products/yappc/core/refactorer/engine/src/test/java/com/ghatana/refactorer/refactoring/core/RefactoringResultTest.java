@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
  */
 
 class RefactoringResultTest {
-    
+
     // Constants for duplicate literals
     private static final String FILE1_JAVA = "file1.java";
 

@@ -48,6 +48,39 @@ plugins {
 }
 
 // =============================================================================
+// Build Cache — local + optional remote
+// =============================================================================
+// Local cache is always active.  Remote cache is activated in CI by setting:
+//   GRADLE_CACHE_URL   — HTTP endpoint of the Gradle Build Cache Node
+//   GRADLE_CACHE_USER  — cache credentials username
+//   GRADLE_CACHE_PASS  — cache credentials password
+//
+// Self-hosted option (free):
+//   docker run -p 5071:5071 gradle/build-cache-node:latest
+//
+// GitHub Actions option (zero-infra):
+//   Use actions/cache with gradle-build-action which manages the cache via the
+//   GH Actions API automatically when GRADLE_CACHE_URL is not set.
+buildCache {
+    local {
+        isEnabled = true
+        isPush = true
+    }
+    remote<HttpBuildCache> {
+        val cacheUrl = System.getenv("GRADLE_CACHE_URL")
+        isEnabled = cacheUrl != null
+        if (cacheUrl != null) {
+            url = uri(cacheUrl)
+            isPush = System.getenv("CI") != null
+            isAllowUntrustedServer = false
+            credentials {
+                username = System.getenv("GRADLE_CACHE_USER") ?: ""
+                password = System.getenv("GRADLE_CACHE_PASS") ?: ""
+            }
+        }
+    }
+}
+// =============================================================================
 // Platform Kernel
 // =============================================================================
 include(":platform-kernel:kernel-core")

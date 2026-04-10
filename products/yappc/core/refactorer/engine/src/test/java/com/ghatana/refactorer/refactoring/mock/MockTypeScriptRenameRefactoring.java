@@ -30,7 +30,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
     private static final String NAME = "Mock TypeScript Rename Refactoring";
     private static final String DESCRIPTION =
             "Mock implementation for testing TypeScript refactoring";
-    
+
     // Constants for duplicate literals
     private static final String WORD_BOUNDARY = "\\b";
     private static final String WHITESPACE_PARENTHESES = "\\s*\\(";

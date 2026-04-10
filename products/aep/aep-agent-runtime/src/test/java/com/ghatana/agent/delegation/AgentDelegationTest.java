@@ -31,7 +31,7 @@ class AgentDelegationTest {
     @Test
     @DisplayName("Should handle agent composition")
     void shouldHandleAgentComposition() {
-        assertThat(ExecutionTier.values().length).isEqualTo(3);
+        assertThat(ExecutionTier.values().length).isEqualTo(4);
     }
 
     @Test
@@ -58,7 +58,8 @@ class AgentDelegationTest {
         assertThat(ExecutionTier.values()).containsExactly(
             ExecutionTier.JAVA_IMPLEMENTED,
             ExecutionTier.SERVICE_ORCHESTRATED,
-            ExecutionTier.LLM_EXECUTED
+            ExecutionTier.LLM_EXECUTED,
+            ExecutionTier.UNRESOLVABLE
         );
     }
 }

@@ -94,8 +94,13 @@ tasks.withType<Test>().configureEach {
     // Docker Desktop 29 rejects docker-java's default API version (1.24).
     // Setting api.version=1.44 works cross-platform (Linux Docker accepts any version).
     jvmArgs("-Dapi.version=1.44")
+    // ArchUnit and large integration suites OOM with Gradle's default worker heap.
+    // Keep a larger per-worker heap and cap fork count to avoid memory pressure.
+    maxHeapSize = "1536m"
     // Parallel test execution — scales with available CPU cores
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2)
+        .coerceAtLeast(1)
+        .coerceAtMost(4)
 }
 
 // ── JAR Manifest ─────────────────────────────────────────────────────────────
@@ -111,7 +116,11 @@ tasks.withType<Jar>().configureEach {
 }
 
 // ── Dependency Guard: Block deprecated shared:* modules ──────────────────────
-configurations.all {
+// configurations.configureEach is lazy and configuration-cache safe.
+// configurations.all eagerly iterates ALL configurations including Gradle-internal
+// ones (e.g. incrementalScalaAnalysis, jacocoAgent), causing unnecessary
+// resolution strategy overhead on every configuration phase.
+configurations.configureEach {
     resolutionStrategy.eachDependency {
         if (requested.group == project.rootProject.name
             && requested.name.startsWith("shared-")

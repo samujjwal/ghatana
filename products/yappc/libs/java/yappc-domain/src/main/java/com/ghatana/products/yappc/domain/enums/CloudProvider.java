@@ -1,5 +1,7 @@
 package com.ghatana.products.yappc.domain.enums;
 
+import java.util.Objects;
+
 /**
  * Enumeration of supported cloud providers in the YAPPC platform.
  *
@@ -85,6 +87,7 @@ public enum CloudProvider {
      * @return the matching CloudProvider or OTHER if not found
      */
     public static CloudProvider fromShortCode(String shortCode) {
+        Objects.requireNonNull(shortCode, "shortCode must not be null");
         for (CloudProvider provider : values()) {
             if (provider.shortCode.equalsIgnoreCase(shortCode)) {
                 return provider;

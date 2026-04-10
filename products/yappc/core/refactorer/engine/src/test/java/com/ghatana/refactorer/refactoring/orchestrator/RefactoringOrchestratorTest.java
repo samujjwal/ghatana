@@ -48,7 +48,7 @@ class RefactoringOrchestratorTest {
     private ExecutorService executor;
     private PolyfixProjectContext projectContext;
     private RefactoringOrchestrator orchestrator;
-    
+
     // Constants for duplicate literals
     private static final String OLD_NAME = "oldName";
 

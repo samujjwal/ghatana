@@ -28,7 +28,7 @@ class PolyfixConfigLoaderTest {
 
     @TempDir Path tempDir;
     private Path configFile;
-    
+
     // Constants for duplicate literals
     private static final String ESLINT = "eslint";
     private static final String RUFF = "ruff";

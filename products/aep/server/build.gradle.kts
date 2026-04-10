@@ -154,7 +154,7 @@ tasks.register("verifyOpenApiSync") {
 }
 
 tasks.named("processResources") { dependsOn("syncOpenApiSpec") }
-tasks.named("sourcesJar") { dependsOn("syncOpenApiSpec") }
-tasks.named("spotlessJava") { dependsOn("syncOpenApiSpec") }
-tasks.named("spotlessMisc") { dependsOn("syncOpenApiSpec") }
-tasks.named("spotlessXml") { dependsOn("syncOpenApiSpec") }
+tasks.matching { it.name == "sourcesJar" }.configureEach { dependsOn("syncOpenApiSpec") }
+tasks.matching { it.name == "spotlessJava" }.configureEach { dependsOn("syncOpenApiSpec") }
+tasks.matching { it.name == "spotlessMisc" }.configureEach { dependsOn("syncOpenApiSpec") }
+tasks.matching { it.name == "spotlessXml" }.configureEach { dependsOn("syncOpenApiSpec") }

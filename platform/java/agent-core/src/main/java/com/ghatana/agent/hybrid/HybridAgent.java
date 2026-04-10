@@ -158,7 +158,8 @@ public class HybridAgent
 
         return probabilisticAgent.process(ctx, input)
                 .then(probResult -> {
-                    if (probResult.isSuccess()) {
+                    if (probResult.isSuccess()
+                            && probResult.getConfidence() >= hybridConfig.getEscalationConfidenceThreshold()) {
                         Map<String, Object> output = enrichOutput(probResult, "probabilistic");
                         return Promise.of(AgentResult.<Map<String, Object>>builder()
                                 .output(output)
@@ -168,7 +169,9 @@ public class HybridAgent
                                 .build());
                     }
                     return fallbackToDeterministic(ctx, input,
-                            "Probabilistic: " + probResult.getStatus());
+                            "Probabilistic: " + (probResult.isSuccess()
+                                    ? "low confidence"
+                                    : probResult.getStatus()));
                 }, ex -> {
                     log.warn("Probabilistic agent error, falling back: {}", ex.getMessage());
                     return fallbackToDeterministic(ctx, input,
@@ -235,12 +238,12 @@ public class HybridAgent
                     .build());
         }
         return probabilisticAgent.process(ctx, input)
-                .map(r -> {
+                .then(r -> {
                     Map<String, Object> output = enrichOutput(r, "probabilistic");
                     output.put("_hybrid.escalationReason", reason);
-                    return r.toBuilder().output(output)
-                            .explanation("Escalated to probabilistic: " + reason).build();
-                });
+                    return Promise.of(r.toBuilder().output(output)
+                            .explanation("Escalated to probabilistic: " + reason).build());
+                }, ex -> Promise.of(AgentResult.failure(ex, descriptor.getAgentId(), Duration.ZERO)));
     }
 
     private Promise<AgentResult<Map<String, Object>>> fallbackToDeterministic(
@@ -254,12 +257,12 @@ public class HybridAgent
                     .build());
         }
         return deterministicAgent.process(ctx, input)
-                .map(r -> {
+                .then(r -> {
                     Map<String, Object> output = enrichOutput(r, "deterministic");
                     output.put("_hybrid.fallbackReason", reason);
-                    return r.toBuilder().output(output)
-                            .explanation("Fallback to deterministic: " + reason).build();
-                });
+                    return Promise.of(r.toBuilder().output(output)
+                            .explanation("Fallback to deterministic: " + reason).build());
+                }, ex -> Promise.of(AgentResult.failure(ex, descriptor.getAgentId(), Duration.ZERO)));
     }
 
     private Map<String, Object> enrichOutput(AgentResult<Map<String, Object>> result, String source) {

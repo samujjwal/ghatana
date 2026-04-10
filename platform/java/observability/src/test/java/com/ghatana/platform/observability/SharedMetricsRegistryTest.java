@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
@@ -223,7 +224,7 @@ class SharedMetricsRegistryTest {
     void registeredMetrics_unmodifiable() {
         SharedMetricsRegistry reg = buildRegistry();
         reg.counter("m1");
-        assertThatIllegalArgumentException()
+        assertThatExceptionOfType(UnsupportedOperationException.class)
                 .isThrownBy(() -> reg.registeredMetrics().add("injected"));
     }
 }

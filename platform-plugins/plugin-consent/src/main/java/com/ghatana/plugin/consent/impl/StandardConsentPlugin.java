@@ -186,6 +186,15 @@ public class StandardConsentPlugin implements ConsentPlugin {
         );
 
         consents.put(consentId, revoked);
+        List<ConsentRecord> history = subjectHistory.get(existing.subjectId());
+        if (history != null) {
+            for (int i = 0; i < history.size(); i++) {
+                if (history.get(i).consentId().equals(consentId)) {
+                    history.set(i, revoked);
+                    break;
+                }
+            }
+        }
 
         LOG.info("Revoked consent {} for subject {}", consentId, existing.subjectId());
         return Promise.complete();

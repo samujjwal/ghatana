@@ -42,7 +42,7 @@ class PythonIntegrationTest extends EventloopTestBase {
     private Path fixtureDir;
     private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**",
             "**/node_modules/**");
-    
+
     // Constants for duplicate literals
     private static final String SRC = "SRC";
     private static final String SRC_MAIN_PY = "src/main.py";
@@ -323,7 +323,7 @@ class PythonIntegrationTest extends EventloopTestBase {
                 "Should have fewer or equal diagnostics after fixes");
 
         // Check for specific fixes
-        String finalContent = Files.readString(fixtureDir.resolve("SRC/main.py"));
+        String finalContent = Files.readString(fixtureDir.resolve(SRC_MAIN_PY));
         assertTrue(finalContent.contains(IMPORT_REQUESTS), "Should add requests import");
         assertTrue(finalContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import");
 

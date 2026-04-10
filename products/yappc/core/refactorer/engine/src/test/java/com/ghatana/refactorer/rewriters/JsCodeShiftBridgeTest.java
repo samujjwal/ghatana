@@ -42,7 +42,7 @@ class JsCodeShiftBridgeTest {
 
     private JsCodeShiftBridge bridge;
     private Path tempDir;
-    
+
     // Constants for duplicate literals
     private static final String PACKAGE_JSON = "package.json";
     private static final String VERSION_FLAG = "--version";

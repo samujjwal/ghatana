@@ -37,7 +37,7 @@ class RuffRunnerTest extends EventloopTestBase {
 
         private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**",
                         "**/node_modules/**");
-        
+
         // Constants for duplicate literals
         private static final String SYNTAX_ERROR_PY = "syntax_error.py";
         private static final String UNUSED_IMPORT_PY = "unused_import.py";

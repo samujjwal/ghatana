@@ -2,12 +2,6 @@ package com.ghatana.yappc.ai.requirements.api;
 
 import com.ghatana.yappc.ai.requirements.api.config.RequirementsConfig;
 import com.ghatana.yappc.ai.requirements.api.http.RequirementsHttpServer;
-import com.ghatana.yappc.ai.requirements.api.rest.WorkspaceController;
-import com.ghatana.yappc.ai.requirements.api.rest.ProjectController;
-import com.ghatana.yappc.ai.requirements.api.rest.RequirementController;
-import com.ghatana.yappc.ai.requirements.api.rest.ExportController;
-import com.ghatana.yappc.ai.api.http.filter.AuthenticationFilter;
-import com.ghatana.yappc.ai.requirements.api.http.filter.CorsFilter;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpResponse;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -69,7 +63,7 @@ import java.util.concurrent.ExecutionException;
 @Testcontainers(disabledWithoutDocker = true)
 @Tag("integration")
 public abstract class AbstractIntegrationTest extends EventloopTestBase {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class);
 
     /** Test database username. Never null. */
@@ -173,7 +167,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         httpClient = HttpClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
             io.activej.dns.DnsClient.builder(io.activej.reactor.Reactor.getCurrentReactor(),
                 java.net.InetAddress.getLoopbackAddress()).build()).build();
-        
+
         // Clear test data before each test
         cleanupTestData();
     }

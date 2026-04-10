@@ -57,7 +57,7 @@ public final class AepQuickStartTemplates {
                         .maxRetries(3)
                         .timeoutMs(10_000L)
                         .checkpointing(true))
-                .addStage(PipelineStageSpecBuilder.create("event-ingest")
+                .addStage(PipelineStageSpecBuilder.create("event-ingest", "event-ingest")
                         .ofType("KAFKA_SOURCE")
                         .describedAs("Ingests payment events from the Kafka topic")
                         .withConfiguration(cfg -> cfg
@@ -66,7 +66,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("feature-extraction")
+                .addStage(PipelineStageSpecBuilder.create("feature-extraction", "feature-extraction")
                         .ofType("ENRICHMENT")
                         .describedAs("Extracts risk features from payment event fields")
                         .withConfiguration(cfg -> cfg
@@ -75,7 +75,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("anomaly-detector")
+                .addStage(PipelineStageSpecBuilder.create("anomaly-detector", "anomaly-detector")
                         .ofType("ML_SCORING")
                         .describedAs("Scores each event with the fraud ML model")
                         .withConfiguration(cfg -> cfg
@@ -84,7 +84,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("fraud-alert-sink")
+                .addStage(PipelineStageSpecBuilder.create("fraud-alert-sink", "fraud-alert-sink")
                         .ofType("SINK")
                         .describedAs("Writes high-risk events to the fraud alert store")
                         .withConfiguration(cfg -> cfg
@@ -297,7 +297,7 @@ public final class AepQuickStartTemplates {
                         .maxRetries(3)
                         .timeoutMs(30_000L)
                         .checkpointing(true))
-                .addStage(PipelineStageSpecBuilder.create("shared-ingest")
+                .addStage(PipelineStageSpecBuilder.create("shared-ingest", "shared-ingest")
                         .ofType("KAFKA_SOURCE")
                         .describedAs("Ingests events from the shared input topic")
                         .withConfiguration(cfg -> cfg
@@ -306,7 +306,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("tenant-classifier")
+                .addStage(PipelineStageSpecBuilder.create("tenant-classifier", "tenant-classifier")
                         .ofType("ENRICHMENT")
                         .describedAs("Extracts and validates the tenant identifier from each event")
                         .withConfiguration(cfg -> cfg
@@ -315,7 +315,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("tenant-router")
+                .addStage(PipelineStageSpecBuilder.create("tenant-router", "tenant-router")
                         .ofType("FILTER")
                         .describedAs("Routes events to the correct per-tenant downstream sink")
                         .withConfiguration(cfg -> cfg
@@ -324,7 +324,7 @@ public final class AepQuickStartTemplates {
                                 .executionStrategy("AT_LEAST_ONCE")
                                 .faultTolerant(true))
                         .build())
-                .addStage(PipelineStageSpecBuilder.create("per-tenant-sink")
+                .addStage(PipelineStageSpecBuilder.create("per-tenant-sink", "per-tenant-sink")
                         .ofType("SINK")
                         .describedAs("Delivers events to the correct tenant-scoped storage")
                         .withConfiguration(cfg -> cfg

@@ -28,7 +28,7 @@ class ErrorProneRunnerTest {
 
     private ErrorProneRunner runner;
     private String javacPath;
-    
+
     // Constants for duplicate literals
     private static final String BRACE_CLOSE = "    } \n";
     private static final String TEST_JAVA = "Test.java";

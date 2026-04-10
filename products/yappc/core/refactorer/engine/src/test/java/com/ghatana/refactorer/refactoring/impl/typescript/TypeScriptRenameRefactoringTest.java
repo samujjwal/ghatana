@@ -41,7 +41,7 @@ class TypeScriptRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private boolean isTypeScriptAvailable;
-    
+
     // Constants for duplicate literals
     private static final String NEW_NAME = "newName";
     private static final String FUNCTION = "function";

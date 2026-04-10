@@ -163,7 +163,7 @@ class DeterministicAgentBehavioralTest {
 
             runPromise(() -> agent.initialize(config));
 
-            Map<String, Object> input = Map.of("event", "START");
+            Map<String, Object> input = Map.of("entityId", "workflow-1", "event", "START");
             AgentResult<?> result = runPromise(() -> agent.process(agentContext, input));
 
             assertThat(result.isSuccess()).isTrue();

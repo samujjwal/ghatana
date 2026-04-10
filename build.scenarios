@@ -1,0 +1,85 @@
+// =============================================================================
+// Gradle Build Scenarios — for use with gradle-profiler
+//
+// Install:  https://github.com/gradle/gradle-profiler
+// Run all:  gradle-profiler --benchmark --project-dir . --scenario-file build.scenarios
+// Run one:  gradle-profiler --benchmark --project-dir . --scenario-file build.scenarios \
+//               --scenario incremental_platform_core
+// =============================================================================
+
+// ----------------------------------------------------------------------------
+// Scenario 1: Full cold build (no local cache, no daemon)
+// Use this to measure worst-case CI time after clearing caches.
+// ----------------------------------------------------------------------------
+cold_build {
+    title = "Cold full build (no cache, no daemon)"
+    tasks = ["build"]
+    gradle-args = ["--no-build-cache", "--no-daemon", "--rerun-tasks"]
+    warm-ups = 1
+    iterations = 3
+    cleanup-tasks = ["clean"]
+}
+
+// ----------------------------------------------------------------------------
+// Scenario 2: Incremental build — change a single source file in agent-core
+// Simulates the most common developer workflow: edit one class, rebuild.
+// A healthy incremental build should complete in < 5 s for a leaf module.
+// ----------------------------------------------------------------------------
+incremental_platform_core {
+    title = "Incremental build — agent-core source change"
+    tasks = [":platform:java:agent-core:compileJava"]
+    apply-abi-change-to = "platform/java/agent-core/src/main/java/com/ghatana/agent/deterministic/DeterministicAgent.java"
+    warm-ups = 3
+    iterations = 10
+}
+
+// ----------------------------------------------------------------------------
+// Scenario 3: Incremental build — change a platform contract (ABI change)
+// Simulates changing a public API method signature. This forces recompilation
+// of all downstream consumers and measures incremental build fan-out cost.
+// ----------------------------------------------------------------------------
+incremental_platform_contract_abi {
+    title = "Incremental ABI change — platform contracts"
+    tasks = ["compileJava"]
+    apply-abi-change-to = "platform/contracts/src/main/java/com/ghatana/contracts/AgentContract.java"
+    warm-ups = 2
+    iterations = 5
+}
+
+// ----------------------------------------------------------------------------
+// Scenario 4: Test-only run — agent-core unit tests
+// Measures test execution time in isolation with the build cache warm.
+// Expected: < 10 s with cache hits on compile tasks.
+// ----------------------------------------------------------------------------
+test_agent_core {
+    title = "Unit tests — platform:java:agent-core"
+    tasks = [":platform:java:agent-core:test"]
+    warm-ups = 2
+    iterations = 5
+}
+
+// ----------------------------------------------------------------------------
+// Scenario 5: Configuration time only
+// ./gradlew help exercises the full project graph without executing any tasks.
+// A healthy configuration time for 175 modules should be < 8 s with the CC.
+// ----------------------------------------------------------------------------
+configuration_time {
+    title = "Configuration phase only (./gradlew help)"
+    tasks = ["help"]
+    gradle-args = ["--configuration-cache"]
+    warm-ups = 5
+    iterations = 10
+}
+
+// ----------------------------------------------------------------------------
+// Scenario 6: Up-to-date check (nothing changed)
+// All tasks should be UP-TO-DATE or FROM-CACHE.
+// Target: < 3 s total.
+// ----------------------------------------------------------------------------
+up_to_date_build {
+    title = "UP-TO-DATE run — nothing changed"
+    tasks = ["build"]
+    warm-ups = 3
+    iterations = 5
+}
+

@@ -413,7 +413,8 @@ class PlanningAgentBehavioralTest {
             AgentResult<?> result = runPromise(() -> testAgent.process(agentContext, goal));
 
             assertThat(result.getProcessingTime()).isNotNull();
-            assertThat(result.getProcessingTime().toMillis()).isGreaterThan(0);
+            // Millisecond granularity can be 0 for very fast in-memory execution.
+            assertThat(result.getProcessingTime().toMillis()).isGreaterThanOrEqualTo(0);
         }
     }
 

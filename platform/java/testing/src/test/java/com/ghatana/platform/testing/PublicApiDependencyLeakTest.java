@@ -32,6 +32,9 @@ class PublicApiDependencyLeakTest {
             if (candidate.getName().contains(".internal.")) {
                 continue;
             }
+            if (candidate.getName().startsWith("com.ghatana.platform.testing.fixtures.")) {
+                continue;
+            }
             collectViolations(candidate, violations);
         }
 

@@ -248,7 +248,7 @@ class BillingServiceTest extends EventloopTestBase {
             runPromise(() -> serviceWithLedger.closeEncounter(enc.id()));
 
             assertEquals(1, capturingLedger.posted.size());
-            assertEquals("enc-ledger:" + enc.id(), capturingLedger.posted.get(0).getTransactionId(),
+            assertEquals("enc:" + enc.id(), capturingLedger.posted.get(0).getTransactionId(),
                 "Transaction ID must contain encounter ID for ledger idempotency");
         }
     }

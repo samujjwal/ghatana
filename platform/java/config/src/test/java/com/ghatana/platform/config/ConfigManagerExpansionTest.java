@@ -280,7 +280,7 @@ class ConfigManagerExpansionTest {
                         "app.settings", createMockSource(Map.of("threads", "10")))));
 
             Optional<ConfigSource> nested = manager.getConfig("app.settings");
-            assertThat(nested).isEmpty(); // May return empty or the config, depends on implementation
+            assertThat(nested).isPresent();
         }
     }
 

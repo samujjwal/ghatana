@@ -33,7 +33,7 @@ class GoToolsRunnerTest {
 
     private GoToolsRunner runner;
     private Path tempDir;
-    
+
     // Constants for duplicate literals
     private static final String VERSION_FLAG = "-version";
     private static final String GO_MOD = "go.mod";

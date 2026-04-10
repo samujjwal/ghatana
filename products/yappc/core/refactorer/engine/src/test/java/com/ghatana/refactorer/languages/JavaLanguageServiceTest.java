@@ -34,7 +34,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
 
     @Mock
     private UnifiedDiagnostic mockDiagnostic;
-    
+
     // Constants for duplicate literals
     private static final String TEST_JAVA = "Test.java";
 

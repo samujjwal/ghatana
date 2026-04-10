@@ -194,11 +194,41 @@ public class DeterministicAgent
         }
 
         Map<String, Object> output = new LinkedHashMap<>(result.getActions());
-        output.put("_matchedRules", result.getMatchedRules().stream()
-                .map(Rule::getId).toList());
+        List<String> matchedRuleIds = new ArrayList<>();
+        for (Rule rule : result.getMatchedRules()) {
+            matchedRuleIds.add(rule.getId());
+        }
+        output.put("_matchedRules", matchedRuleIds);
 
-        return Promise.of(AgentResult.success(output, descriptor.getAgentId(),
-                result.getEvaluationTime()));
+        // Generate explanation for matched rules with condition details and input values
+        StringBuilder explanationBuilder = new StringBuilder("Rules matched: ");
+        for (int i = 0; i < result.getMatchedRules().size(); i++) {
+            Rule rule = result.getMatchedRules().get(i);
+            if (i > 0) explanationBuilder.append("; ");
+            explanationBuilder.append(rule.getId()).append(" (")
+                    .append(rule.getName()).append("): ");
+
+            // Add condition details with actual input values
+            for (int j = 0; j < rule.getConditions().size(); j++) {
+                if (j > 0) explanationBuilder.append(" AND ");
+                RuleCondition condition = rule.getConditions().get(j);
+                Object fieldValue = RuleCondition.resolve(condition.getField(), input);
+                explanationBuilder.append(condition.getField())
+                        .append("=").append(fieldValue)
+                        .append(" ").append(condition.getOperator().toString())
+                        .append(" ").append(condition.getValue());
+            }
+        }
+        String explanation = explanationBuilder.toString();
+
+        return Promise.of(AgentResult.<Map<String, Object>>builder()
+                .output(output)
+                .confidence(1.0)
+                .status(AgentResultStatus.SUCCESS)
+                .agentId(descriptor.getAgentId())
+                .processingTime(result.getEvaluationTime())
+                .explanation(explanation)
+                .build());
     }
 
     private Promise<AgentResult<Map<String, Object>>> evaluateThresholds(

@@ -26,6 +26,15 @@ plugins {
 // Property to control Javadoc generation (disabled by default for speed)
 val enableJavadoc = project.findProperty("enableJavadoc")?.toString()?.toBoolean() ?: false
 
+// Sources JAR generated only when publishing.  Skipped on every-day builds to
+// save ~15 % per-module build time.  Enable with: ./gradlew build -PwithSourcesJar=true
+val withSourcesJar = project.findProperty("withSourcesJar")?.toString()?.toBoolean() ?: false
+
+// JaCoCo only fires during CI or when explicitly requested locally.
+// Avoids doubling test time on every developer build.
+val withCoverage: Boolean = System.getenv("CI") != null ||
+    project.hasProperty("coverage")
+
 // Java 21 Toolchain with IDE compatibility
 java {
     if (!toolchain.languageVersion.isPresent) {
@@ -33,11 +42,8 @@ java {
     }
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
-    withSourcesJar()
-    // Javadoc JAR only created if Javadoc is enabled
-    if (enableJavadoc) {
-        withJavadocJar()
-    }
+    if (withSourcesJar) withSourcesJar()
+    if (enableJavadoc)  withJavadocJar()
 }
 
 // Compiler Configuration - ActiveJ/Jackson compatible
@@ -76,10 +82,27 @@ tasks.withType<Test>().configureEach {
     }
     
     // Testcontainers / Docker Desktop 29+ compatibility
-    jvmArgs("-Dapi.version=1.44")
-    
+    jvmArgs("-Dapi.version=1.44", "-XX:+UseZGC", "-XX:+ZGenerational")
+    maxHeapSize = "1536m"
+
     // Parallel test execution
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2)
+        .coerceAtLeast(1)
+        .coerceAtMost(4)
+    // NOTE: forkEvery intentionally omitted.  Setting forkEvery > 0 causes Gradle
+    // to SIGTERM the test JVM at the class boundary, which races with the XML result
+    // writer and produces "Could not write XML test results" errors and null-byte
+    // corruption in the output files.  Java 21 + ZGC handles metaspace pressure
+    // well without per-class JVM recycling.
+}
+
+// JaCoCo — wire finalizedBy only when coverage is requested.
+// Without this guard, running ./gradlew compileJava triggers JaCoCo
+// instrumentation even though no tests were executed.
+if (withCoverage) {
+    tasks.withType<Test>().configureEach {
+        finalizedBy(tasks.named("jacocoTestReport"))
+    }
 }
 
 // JaCoCo Configuration - use hardcoded version
@@ -88,6 +111,9 @@ configure<JacocoPluginExtension> {
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {
+    // Use mustRunAfter instead of dependsOn so the task graph stays lazy —
+    // JaCoCo report won't force test execution when only compiling.
+    mustRunAfter(tasks.withType<Test>())
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -150,7 +176,11 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         trimTrailingWhitespace()
         endWithNewline()
     }
-    isEnforceCheck = true
+    // Format checks are enforced on CI and when explicitly requested.
+    // On local builds this is opt-in to avoid adding ~5-15 s per module.
+    // Enable locally with: ./gradlew spotlessCheck -PenforceFormatting=true
+    isEnforceCheck = System.getenv("CI") != null ||
+        project.hasProperty("enforceFormatting")
 }
 
 // JAR Manifest with full metadata
@@ -166,7 +196,9 @@ tasks.withType<Jar>().configureEach {
 }
 
 // Dependency Guard: Block deprecated shared:* modules
-configurations.all {
+// configureEach is lazy and configuration-cache safe; configurations.all is eager
+// and runs against Gradle-internal configurations (e.g. incrementalScalaAnalysis).
+configurations.configureEach {
     resolutionStrategy.eachDependency {
         if (requested.group == project.rootProject.name
             && requested.name.startsWith("shared-")) {

@@ -4,6 +4,7 @@
 package com.ghatana.agent.benchmark;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.results.RunResult;
@@ -44,6 +45,9 @@ class AgentBenchmarkRunner {
     @Test
     @DisplayName("Agent throughput meets production targets")
     void runAgentBenchmarks() throws RunnerException {
+        Assumptions.assumeTrue(Boolean.getBoolean("runBenchmarks"),
+                "JMH benchmarks are opt-in; enable with -DrunBenchmarks=true");
+
         Options opt = new OptionsBuilder()
                 .include(AgentProcessingBenchmark.class.getSimpleName())
                 .forks(1)

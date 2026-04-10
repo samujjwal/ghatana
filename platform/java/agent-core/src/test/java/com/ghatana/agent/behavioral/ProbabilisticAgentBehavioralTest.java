@@ -79,6 +79,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));
@@ -125,7 +126,10 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
+
+            agent.setFallbackModels(List.of(fallbackModel));
 
             runPromise(() -> agent.initialize(config));
 
@@ -145,6 +149,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));
@@ -169,6 +174,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));
@@ -227,7 +233,10 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
+
+            agent.setFallbackModels(List.of(fallbackModel));
 
             runPromise(() -> agent.initialize(config));
 
@@ -248,7 +257,10 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
+
+            agent.setFallbackModels(List.of(fallbackModel));
 
             runPromise(() -> agent.initialize(config));
 
@@ -268,12 +280,10 @@ class ProbabilisticAgentBehavioralTest {
 
             when(primaryModel.infer(anyMap())).thenReturn(Promise.of(rawResult));
 
-            // Mock calibrator to return different value
-            when(calibrator.calibrate(rawScore)).thenReturn(calibratedScore);
-
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));
@@ -356,6 +366,8 @@ class ProbabilisticAgentBehavioralTest {
                     .modelVersion("v1")
                     .build();
 
+            agent.setFallbackModels(List.of(fallbackModel));
+
             runPromise(() -> agent.initialize(config));
 
             Map<String, Object> input = Map.of("features", "test");
@@ -433,7 +445,10 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
+
+            agent.setFallbackModels(List.of(fallbackModel));
 
             runPromise(() -> agent.initialize(config));
 
@@ -465,6 +480,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion(modelVersion)
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));
@@ -492,6 +508,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig configV1 = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(configV1));
@@ -502,6 +519,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig configV2 = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v2")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agentV2.initialize(configV2));
@@ -531,6 +549,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder()
                     .subtype(ProbabilisticSubtype.ML_MODEL)
                     .modelVersion("v1")
+                    .confidenceThreshold(0.5)
                     .build();
 
             runPromise(() -> agent.initialize(config));

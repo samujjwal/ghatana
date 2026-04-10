@@ -155,7 +155,7 @@ public class ESLintSetupHelper {
             try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
                 PolyfixProjectContext context =
                         new PolyfixProjectContext(projectRoot, config, services, executor, logger);
-                
+
                 try {
                     ESLintService esLintService = new ESLintService(context);
                     logger.info("ESLint service initialized successfully");

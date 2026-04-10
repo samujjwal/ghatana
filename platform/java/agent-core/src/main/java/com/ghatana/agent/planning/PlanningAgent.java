@@ -199,7 +199,18 @@ public abstract class PlanningAgent<I, O>
         log.info("PlanningAgent [{}] completed plan in {} steps, elapsed={}ms",
                 agentId, stepResults.size(), elapsed.toMillis());
 
-        return Promise.of(AgentResult.success(result, agentId, elapsed));
+        String explanation = String.format("Plan completed successfully in %d steps (%dms): %s",
+                stepResults.size(), elapsed.toMillis(),
+                stepResults.stream().map(StepResult::stepName).collect(java.util.stream.Collectors.joining(" -> ")));
+
+        return Promise.of(AgentResult.<O>builder()
+                .output(result)
+                .confidence(1.0)
+                .status(AgentResultStatus.SUCCESS)
+                .agentId(agentId)
+                .processingTime(elapsed)
+                .explanation(explanation)
+                .build());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -17,6 +17,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Entity Storage Tests
@@ -82,6 +84,15 @@ class EntityStorageTest {
     @DisplayName("Should handle storage failures")
     void shouldHandleStorageFailures() {
         EntityRepository repository = mock(EntityRepository.class);
+
+        Entity entity = Entity.builder()
+            .tenantId("tenant-123")
+            .collectionName("test-collection")
+            .data(new HashMap<>())
+            .build();
+
+        when(repository.findById(any(String.class), any(String.class), any(UUID.class)))
+            .thenReturn(Promise.of(Optional.of(entity)));
 
         Promise<Optional<Entity>> result = repository.findById("tenant-123", "test-collection", UUID.randomUUID());
 
