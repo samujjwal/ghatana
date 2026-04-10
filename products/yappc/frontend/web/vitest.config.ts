@@ -14,10 +14,13 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
       '@ghatana/design-system': resolve(__dirname, '../../../../platform/typescript/design-system/src'),
       '@yappc/api': resolve(__dirname, '../libs/api/src'),
+      '@yappc/devsecops': resolve(__dirname, '../libs/yappc-devsecops/src'),
       '@yappc/auth': resolve(__dirname, '../libs/yappc-auth/src'),
       '@yappc/auth/rbac': resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
       '@yappc/chat': resolve(__dirname, '../libs/yappc-chat/src'),
       '@yappc/collab': resolve(__dirname, '../libs/collab/src'),
+      '@yappc/initialization-ui': resolve(__dirname, '../libs/yappc-initialization-ui/src'),
+      '@yappc/development-ui': resolve(__dirname, '../libs/yappc-development-ui/src'),
       '@ghatana/code-editor': resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       '@yappc/state': resolve(__dirname, 'src/__mocks__/@yappc/state.ts'),
       '@ghatana/platform-utils': resolve(

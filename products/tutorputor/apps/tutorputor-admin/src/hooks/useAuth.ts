@@ -5,7 +5,8 @@
  * Jotai atom. Exposes `user`, `tenantId`, and `accessToken` for admin views.
  *
  * For generic token-level auth shared across products, use
- * {@link @ghatana/platform-shell#useAuth} instead.
+ * For generic token-level auth state shared across products, use
+ * `authTokenAtom` from `@ghatana/state`.
  *
  * @doc.type hook
  * @doc.purpose TutorPutor Admin session check + auth state

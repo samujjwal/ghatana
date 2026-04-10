@@ -33,9 +33,6 @@
       "@ghatana/design-system/icons": [
         "../../../../platform/typescript/design-system/src/icons/index.tsx"
       ],
-      "@ghatana/ui-integration": [
-        "../../../../platform/typescript/ui-integration/src/index.ts"
-      ],
       "@ghatana/tokens": [
         "../../../../platform/typescript/tokens/src/index.ts"
       ],

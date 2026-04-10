@@ -1,0 +1,41 @@
+{
+  "name": "@ghatana/wizard",
+  "sideEffects": false,
+  "version": "0.1.0",
+  "description": "Wizard and stepper library for Ghatana platform",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ghatana/design-system": "workspace:*",
+    "@ghatana/platform-utils": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "keywords": ["ghatana", "wizard", "stepper"],
+  "author": "Ghatana Platform Team",
+  "license": "UNLICENSED",
+  "private": true
+}

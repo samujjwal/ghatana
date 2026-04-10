@@ -6,7 +6,7 @@
  * full User object, permission/role checks, and cross-tab session sync.
  *
  * For generic token-level auth state shared across products, use
- * {@link @ghatana/platform-shell#useAuth} which reads from authTokenAtom.
+ * `authTokenAtom` from `@ghatana/state`.
  *
  * @doc.type hook
  * @doc.purpose YAPPC product auth state — wraps AuthService singleton

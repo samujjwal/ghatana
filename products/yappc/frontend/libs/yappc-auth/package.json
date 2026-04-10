@@ -3,45 +3,39 @@
   "version": "1.0.0",
   "description": "YAPPC authentication and security library",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./rbac": {
-      "import": "./dist/auth/rbac/index.mjs",
-      "require": "./dist/auth/rbac/index.js",
-      "types": "./dist/auth/rbac/index.d.ts"
+      "types": "./dist/auth/rbac/index.d.ts",
+      "import": "./dist/auth/rbac/index.js"
     },
     "./oauth": {
-      "import": "./dist/auth/oauth/index.mjs",
-      "require": "./dist/auth/oauth/index.js",
-      "types": "./dist/auth/oauth/index.d.ts"
+      "types": "./dist/auth/oauth/index.d.ts",
+      "import": "./dist/auth/oauth/index.js"
     },
     "./security": {
-      "import": "./dist/security/index.mjs",
-      "require": "./dist/security/index.js",
-      "types": "./dist/security/index.d.ts"
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js"
     }
   },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "lint": "eslint src --ext .ts,.tsx",
-    "type-check": "tsc --noEmit"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "zod": "^4.3.6",
-    "tslib": "^2.8.1"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
-    "tsup": "^8.5.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

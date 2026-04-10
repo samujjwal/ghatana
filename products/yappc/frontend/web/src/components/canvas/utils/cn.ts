@@ -1,1 +1,1 @@
-export { cn } from '../../../utils/cn';
+export { cn, type ClassValue } from '@ghatana/platform-utils';

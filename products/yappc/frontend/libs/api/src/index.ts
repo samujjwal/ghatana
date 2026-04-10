@@ -114,24 +114,8 @@ export {
 } from '@apollo/client/react';
 
 // =============================================================================
-// DevSecOps API Client (Legacy)
-// =============================================================================
-
-export * from './devsecops/client';
-export { devsecopsClient } from './devsecops/client';
-
-// =============================================================================
 // AI Service API Client
 // =============================================================================
 
 export * from './ai';
 export { aiClient } from './ai';
-
-// ============================================================================
-// DEPRECATION WARNING
-// ============================================================================
-
-console.warn(
-  '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/api instead. ' +
-    'See: docs/NAMING_CONVENTIONS.md'
-);

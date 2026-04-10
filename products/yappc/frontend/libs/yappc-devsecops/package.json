@@ -1,0 +1,30 @@
+{
+  "name": "@yappc/devsecops",
+  "version": "1.0.0",
+  "description": "YAPPC DevSecOps-specific API concerns",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@yappc/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "keywords": ["yappc", "devsecops", "api"],
+  "license": "Apache-2.0"
+}

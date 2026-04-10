@@ -20,7 +20,7 @@ import {
   LogEntry,
   Resource,
   WizardStep,
-} from '@yappc/ui';
+} from '@yappc/initialization-ui';
 
 // ============================================================================
 // Types
