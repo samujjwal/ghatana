@@ -143,7 +143,7 @@
     "vite-plugin-stylelint": "^6.0.4",
     "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^6.0.5",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.4",
     "webpack-bundle-analyzer": "^5.2.0",
     "which": "^6.0.0",
     "yaml": "^2.8.2"
