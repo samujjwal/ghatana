@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`3cea720`](https://github.com/samujjwal/ghatana/commit/3cea7202c362025488b825e1f6f31cbe9470169c)
 - **Changed**: gradle simplification 4 WIP [`7ea7531`](https://github.com/samujjwal/ghatana/commit/7ea75314eb4b27a2989a4edbcde4655f4ac14843)
 - **Changed**: frontend refactor WIP 1 [`b4488d6`](https://github.com/samujjwal/ghatana/commit/b4488d6ddf605a52d30d8e5c9b95e0634ade0744)
 - **Changed**: yappc + build [`e28392b`](https://github.com/samujjwal/ghatana/commit/e28392b1b5a211237c306726a12ddbd8d4b1e62f)
