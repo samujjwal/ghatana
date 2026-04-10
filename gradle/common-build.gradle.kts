@@ -1,24 +1,7 @@
-// =============================================================================
-// DEPRECATED — This file is no longer applied anywhere in the build.
-// =============================================================================
-//
-// All shared build configuration has been migrated to the convention plugins:
-//
-//   buildSrc/src/main/kotlin/com.ghatana.java-conventions.gradle.kts
-//   buildSrc/src/main/kotlin/com.ghatana.testing-conventions.gradle.kts
-//   buildSrc/src/main/kotlin/com.ghatana.quality-conventions.gradle.kts
-//   buildSrc/src/main/kotlin/com.ghatana.lombok-conventions.gradle.kts
-//
-// The root build.gradle.kts applies these plugins to all Java subprojects via
-// its subprojects{} block.  Module builds only need to declare their plugin
-// choice + dependencies.
-//
-// This file is kept for historical reference and will be deleted in a future
-// cleanup pass after confirming no scripts reference it.
-// See: GRADLE_BUILD_SYSTEM_REFACTORING_PLAN.md Phase 2 Task 2.2
-// =============================================================================
+// Common build configuration for all Java/Kotlin modules
 
-
+// Apply common plugins and configurations to subprojects (excluding data-cloud)
+subprojects {
     // Skip data-cloud projects - they use their own build configuration
     if (project.path.startsWith(":products:data-cloud")) {
         return@subprojects
@@ -41,7 +24,14 @@
         apply(plugin = "com.ghatana.jacoco-conventions")
     }
     apply(plugin = "com.ghatana.testing.test-dependency-audit")
-    apply(plugin = "org.owasp.dependencycheck")
+
+    // OWASP Dependency Check makes network calls to the NVD database and can add
+    // 10–30 minutes to a cold build.  Apply it only when explicitly requested so
+    // that PR builds stay fast.  Run it as a scheduled job:
+    //   ./gradlew dependencyCheckAggregate -PrunDependencyCheck
+    if (project.hasProperty("runDependencyCheck")) {
+        apply(plugin = "org.owasp.dependencycheck")
+    }
     // TODO: re-enable pitest after verifying ReportingExtension usage in Gradle 9
     // apply(plugin = "info.solidsoft.pitest")
     
@@ -90,7 +80,12 @@
             events("passed", "skipped", "failed")
             showStandardStreams = true
         }
-        finalizedBy("jacocoTestReport")
+        // Wire into JaCoCo only on CI or when coverage is explicitly requested.
+        // Without this guard, every ./gradlew compileJava triggers JaCoCo
+        // instrumentation, which roughly doubles incremental build time locally.
+        if (System.getenv("CI") != null || project.hasProperty("coverage")) {
+            finalizedBy("jacocoTestReport")
+        }
         // Configure system properties for tests
         systemProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
         
@@ -207,12 +202,11 @@
         }
         // SpotBugs and PMD tasks remain enabled for static analysis runs
     }
-    
-    // Ensure any future tasks are also configured for selected tools
-    tasks.whenTaskAdded {
-        val n = name.lowercase()
-        // PMD tasks are now enabled with ignoreFailures=true (see PMD config above)
-    }
+
+    // NOTE: tasks.whenTaskAdded has been removed.  It was a no-op (empty body)
+    // and is a deprecated, eager API that prevents the configuration cache from
+    // serialising the task graph.  If per-task post-registration logic is ever
+    // needed, use tasks.configureEach instead.
 
     // SpotBugs: enabled with ignoreFailures=true to report findings without failing build
     // When findings are triaged, set ignoreFailures=false to enforce
@@ -222,7 +216,7 @@
     tasks.withType<org.gradle.api.plugins.quality.Checkstyle>().configureEach { it.isIgnoreFailures = false }
     tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach { it.isIgnoreFailures = false }
     
-    // Spotless configuration - temporarily disabling all checks
+    // Spotless configuration
     configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         java {
             target("src/**/*.java")
@@ -239,25 +233,29 @@
             target("**/*.xml", "**/*.xsd")
             // XML formatting enabled
         }
-        // Enforce Spotless checks during 'check' lifecycle
-        enforceCheck = true
+        // Format checks are enforced on CI and when explicitly requested locally.
+        // Gate with -PenforceFormatting=true for a pre-commit local check.
+        enforceCheck = System.getenv("CI") != null || project.hasProperty("enforceFormatting")
     }
-    
-    // OWASP Dependency Check configuration
-    configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension> {
-        formats.set(listOf("HTML", "JSON", "JUNIT"))
-        failBuildOnCVSS.set(7.0)
-        suppressionFile.set(rootProject.file("config/dependency-check/suppressions.xml"))
-        skipConfigurations.set(listOf("checkstyle", "pmd", "spotbugs", "jacoco"))
-        analyzers {
-            assemblyEnabled.set(false)
-            nodeEnabled.set(false)
-            nodeAudit {
-                enabled.set(false)
-            }
-            retirejs {
-                enabled.set(false)
+
+    // OWASP Dependency Check — only configured when the plugin is actually applied
+    // (controlled by the -PrunDependencyCheck property guard above).
+    if (project.hasProperty("runDependencyCheck")) {
+        configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension> {
+            formats.set(listOf("HTML", "JSON", "JUNIT"))
+            failBuildOnCVSS.set(7.0)
+            suppressionFile.set(rootProject.file("config/dependency-check/suppressions.xml"))
+            skipConfigurations.set(listOf("checkstyle", "pmd", "spotbugs", "jacoco"))
+            analyzers {
+                assemblyEnabled.set(false)
+                nodeEnabled.set(false)
+                nodeAudit {
+                    enabled.set(false)
+                }
+                retirejs {
+                    enabled.set(false)
+                }
             }
         }
     }
-}
+} // end subprojects

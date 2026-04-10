@@ -77,7 +77,7 @@ public class AuthGatewayLauncher extends Launcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthGatewayLauncher.class);
     private static final int DEFAULT_PORT = 8081;
-    
+
     // Constants for duplicate literals
     private static final String AUTH_GATEWAY = "auth-gateway";
     private static final String EMAIL = "email";

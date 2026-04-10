@@ -3,6 +3,7 @@ package com.ghatana.architecture;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,10 +27,17 @@ class GlobalLibsImportGuardTest {
 
         List<String> violations = new ArrayList<>();
 
-        Files.walk(libsJavaRoot)
-                .filter(path -> path.toString().endsWith(".java"))
-                .filter(path -> path.toString().contains("src/main/java"))
-                .forEach(path -> scanFileForDisallowedImports(path, violations));
+        try {
+            Files.walk(libsJavaRoot)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("src/main/java"))
+                    .forEach(path -> scanFileForDisallowedImports(path, violations));
+        } catch (UncheckedIOException e) {
+            String message = e.getMessage();
+            if (message == null || !message.contains(".attach_pid")) {
+                throw e;
+            }
+        }
 
         assertTrue(
                 violations.isEmpty(),

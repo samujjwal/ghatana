@@ -9,6 +9,7 @@ package com.ghatana.datacloud.featurestore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +61,8 @@ class FeatureIngestionPipelineTest {
     @Test
     @DisplayName("Should handle ingestion failures")
     void shouldHandleIngestionFailures() {
-        Map<String, Object> nullPayload = Map.of("null_field", null);
+        Map<String, Object> nullPayload = new HashMap<>();
+        nullPayload.put("null_field", null);
 
         assertThat(nullPayload).containsKey("null_field");
     }

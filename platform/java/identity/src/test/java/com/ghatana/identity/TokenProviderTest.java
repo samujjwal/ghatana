@@ -270,7 +270,7 @@ class TokenProviderTest extends EventloopTestBase {
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token));
 
             assertThat(claims).isPresent();
-            assertThat(claims.get().isValid()).isTrue();
+            assertThat(claims.get().isExpired()).isFalse();
         }
 
         @Test

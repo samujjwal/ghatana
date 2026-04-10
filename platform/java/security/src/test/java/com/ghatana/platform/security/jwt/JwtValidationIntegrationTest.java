@@ -32,7 +32,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         // Use simple constructor with secret key and 1 hour validity
-        tokenProvider = new JwtTokenProvider("test-secret-key-32bytes-long!!", 3_600_000);
+        tokenProvider = new JwtTokenProvider("test-secret-key-at-least-32-bytes-long!!", 3_600_000);
     }
 
     // ── Token creation and validation ─────────────────────────────────────────
@@ -187,7 +187,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @DisplayName("token signed with different key is rejected")
         void tokenSignedWithDifferentKey_isRejected() {
             // Provider 2 uses a different key
-            JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-32bytes!", 3_600_000);
+            JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-at-least-32-bytes!", 3_600_000);
             String foreignToken = otherProvider.createToken("user-x", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Our provider should reject a token signed by a different key

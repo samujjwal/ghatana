@@ -51,6 +51,8 @@ class ReportingTest {
             .format(ReportFormat.CSV)
             .formattedBody("name,price\nProduct A,100\n")
             .rowCount(1)
+            .contentType("text/csv")
+            .executionTime(Duration.ofMillis(100))
             .build();
 
         assertThat(result).isNotNull();
@@ -108,6 +110,8 @@ class ReportingTest {
             .format(ReportFormat.JSON)
             .rows(List.of(Map.of("key", "value")))
             .rowCount(1)
+            .contentType("application/json")
+            .executionTime(Duration.ofMillis(50))
             .build();
 
         assertThat(result.getReportId()).isEqualTo(reportId);

@@ -43,6 +43,7 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
     private final Map<String, LedgerEntry> entries = new ConcurrentHashMap<>();
     private final Map<String, LedgerAccount> accounts = new ConcurrentHashMap<>();
     private final Map<String, String> transactionToEntry = new ConcurrentHashMap<>();
+    private final Set<String> reversedTransactions = ConcurrentHashMap.newKeySet();
 
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
@@ -92,6 +93,7 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
         entries.clear();
         accounts.clear();
         transactionToEntry.clear();
+        reversedTransactions.clear();
         this.state = PluginState.UNLOADED;
         LOG.info("BillingLedgerPlugin shutdown");
         return Promise.complete();
@@ -108,7 +110,7 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
         }
 
         String entryId = UUID.randomUUID().toString();
-        Instant now = Instant.now();
+        Instant postedAt = transaction.getOccurredAt() != null ? transaction.getOccurredAt() : Instant.now();
 
         LedgerEntry entry = new LedgerEntry(
             entryId,
@@ -118,7 +120,7 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
             transaction.getAmount(),
             transaction.getCurrency(),
             transaction.getDescription(),
-            now
+            postedAt
         );
 
         entries.put(entryId, entry);
@@ -166,6 +168,7 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
         );
 
         entries.put(reversalId, reversal);
+        reversedTransactions.add(originalTransactionId);
 
         // Update balances (reverse the amounts)
         updateBalance(original.creditAccount(), original.amount().negate(), original.currency());
@@ -179,6 +182,10 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
 
     @Override
     public Promise<PostingStatus> getPostingStatus(String transactionId) {
+        if (reversedTransactions.contains(transactionId)) {
+            return Promise.of(PostingStatus.REVERSED);
+        }
+
         String entryId = transactionToEntry.get(transactionId);
         if (entryId == null) {
             return Promise.of(PostingStatus.NOT_FOUND);
@@ -189,9 +196,6 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
             return Promise.of(PostingStatus.NOT_FOUND);
         }
 
-        if (entry.description() != null && entry.description().startsWith("Reversal:")) {
-            return Promise.of(PostingStatus.REVERSED);
-        }
 
         return Promise.of(PostingStatus.POSTED);
     }

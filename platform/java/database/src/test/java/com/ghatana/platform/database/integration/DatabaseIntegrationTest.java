@@ -13,6 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Map;
 
@@ -42,13 +44,26 @@ class DatabaseIntegrationTest {
     @DisplayName("Should handle transaction commit and rollback")
     void shouldHandleTransactionCommitAndRollback() {
         DataSource mockDataSource = mock(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+        Connection mockConnection = mock(Connection.class);
+        PreparedStatement mockPreparedStatement = mock(PreparedStatement.class);
 
-        jdbcTemplate.inTransaction(jdbc -> {
-            return jdbc.update("INSERT INTO test_table (value) VALUES (?)", "test");
-        });
+        try {
+            when(mockDataSource.getConnection()).thenReturn(mockConnection);
+            when(mockConnection.getAutoCommit()).thenReturn(true);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1);
 
-        assertThat(jdbcTemplate).isNotNull();
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource);
+            jdbcTemplate.inTransaction((JdbcTemplate.VoidTransactionCallback) jdbc ->
+                    jdbc.update("INSERT INTO test_table (value) VALUES (?)", "test"));
+
+            verify(mockPreparedStatement).executeUpdate();
+            verify(mockConnection).setAutoCommit(false);
+            verify(mockConnection).commit();
+            verify(mockConnection).setAutoCommit(true);
+        } catch (java.sql.SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

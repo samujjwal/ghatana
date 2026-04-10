@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class QualityMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(QualityMonitor.class);
-    
+
     // Constants for duplicate literals
     private static final String TENANT_ID_MUST_NOT_BE_NULL = "tenantId must not be null";
     private static final String MODEL_NAME_MUST_NOT_BE_NULL = "modelName must not be null";

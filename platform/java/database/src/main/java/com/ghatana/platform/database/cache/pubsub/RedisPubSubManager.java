@@ -183,7 +183,12 @@ public class RedisPubSubManager {
                 logger.info("[RedisPubSub] Stopping subscriber for channel: {}", channelName);
 
                 if (pubSubHandler != null) {
-                    pubSubHandler.unsubscribe();
+                    try {
+                        pubSubHandler.unsubscribe();
+                    } catch (RuntimeException ex) {
+                        // Idempotent stop: unsubscribe may fail if the pubsub connection is already closed.
+                        logger.debug("[RedisPubSub] Ignoring unsubscribe error during stop: {}", ex.getMessage());
+                    }
                 }
 
                 if (subscriberExecutor != null) {

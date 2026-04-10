@@ -32,21 +32,21 @@ public class EdgeCaseTests {
         @DisplayName("limit boundary: maximum value (1000000)")
         void shouldHandleMaxLimit() {
             Map<String, Object> response = queryWithLimit(1000000);
-            assertThat(response.get("limit")).isEqualTo(1000000);
+            assertThat(response.get("limit")).isEqualTo(1000000L);
         }
 
         @Test
         @DisplayName("limit boundary: minimum value (1)")
         void shouldHandleMinLimit() {
             Map<String, Object> response = queryWithLimit(1);
-            assertThat(response.get("limit")).isEqualTo(1);
+            assertThat(response.get("limit")).isEqualTo(1L);
         }
 
         @Test
         @DisplayName("offset boundary: zero offset")
         void shouldHandleZeroOffset() {
             Map<String, Object> response = queryWithOffset(0);
-            assertThat(response.get("offset")).isEqualTo(0);
+            assertThat(response.get("offset")).isEqualTo(0L);
         }
 
         @Test
@@ -76,7 +76,7 @@ public class EdgeCaseTests {
         @DisplayName("numeric boundary: zero value")
         void shouldHandleZeroValue() {
             Map<String, Object> response = createDatasetWithRowCount(0);
-            assertThat(response.get("rowCount")).isEqualTo(0);
+            assertThat(response.get("rowCount")).isEqualTo(0L);
         }
 
         @Test
@@ -164,14 +164,14 @@ public class EdgeCaseTests {
         @DisplayName("concurrent reads: same dataset from 10 threads")
         void shouldHandleConcurrentReads() {
             Map<String, Object> response = simulateConcurrentReads(10);
-            assertThat(response.get("successCount")).isEqualTo(10);
+            assertThat(response.get("successCount")).isEqualTo(10L);
         }
 
         @Test
         @DisplayName("concurrent writes: 5 clients creating collections")
         void shouldHandleConcurrentWrites() {
             Map<String, Object> response = simulateConcurrentWrites(5);
-            assertThat(response.get("created")).isEqualTo(5);
+            assertThat(response.get("created")).isEqualTo(5L);
         }
 
         @Test
@@ -185,7 +185,7 @@ public class EdgeCaseTests {
         @DisplayName("concurrent delete: prevents double-delete")
         void shouldPreventDoubleDelete() {
             Map<String, Object> response = simulateConcurrentDelete(3);
-            assertThat(response.get("deletedCount")).isEqualTo(1);
+            assertThat(response.get("deletedCount")).isEqualTo(1L);
         }
 
         @Test
@@ -354,7 +354,7 @@ public class EdgeCaseTests {
         @DisplayName("retry logic: automatic retry on transient failure")
         void shouldRetryOnTransientFailure() {
             Map<String, Object> response = executeWithTransientFailure();
-            assertThat(response.get("retries")).isEqualTo(1);
+            assertThat(response.get("retries")).isEqualTo(1L);
             assertThat(response.get("success")).isEqualTo(true);
         }
 

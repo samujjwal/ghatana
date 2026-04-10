@@ -39,7 +39,7 @@ import java.util.*;
 public class JsonSchemaBundleToPojoGenerator {
 
     private static final ObjectMapper M = new ObjectMapper();
-    
+
     // Constants for duplicate literals
     private static final String ROOT_PREFIX = "--root=";
     private static final String OVERRIDE_PREFIX = "--override=";

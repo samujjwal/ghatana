@@ -31,7 +31,7 @@ class ReferenceResolverTest {
     private Path javaFile;
     private Path pythonFile;
     private Path typescriptFile;
-    
+
     // Constants for duplicate literals
     private static final String INDENTATION = "        \n";
     private static final String JAVA = "java";

@@ -37,6 +37,7 @@ class DiagnosticPerformanceBenchmarkTest {
     @BeforeEach
     void setUp() throws IOException {
         benchmark = new DiagnosticPerformanceBenchmark(tempDir);
+        benchmark.initialize();
 
         // Create test projects of different sizes
         smallProjectFiles = createTestProject(10);

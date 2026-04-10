@@ -124,6 +124,8 @@ tasks.register("validateConfigSchemas") {
 
 // SpotBugs configuration - exclude JMH generated classes
 spotbugs {
+    // Plugin defaults resolve SpotBugs 4.7.x here, which cannot scan Java 21 bytecode.
+    toolVersion.set("4.8.6")
     ignoreFailures = false
     showStackTraces = true
     showProgress = false

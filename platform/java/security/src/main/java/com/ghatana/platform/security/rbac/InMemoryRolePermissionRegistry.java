@@ -19,6 +19,9 @@ public class InMemoryRolePermissionRegistry implements RolePermissionRegistry {
 
     @Override
     public Set<String> getPermissions(String role) {
+        if (role == null || role.isBlank()) {
+            return null;
+        }
         return rolePermissions.get(role);
     }
 

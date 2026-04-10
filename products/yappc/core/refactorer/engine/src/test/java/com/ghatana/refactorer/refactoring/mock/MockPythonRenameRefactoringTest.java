@@ -38,7 +38,7 @@ class MockPythonRenameRefactoringTest {
     private Path testFile;
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
-    
+
     // Constants for duplicate literals
     private static final String FUNCTION = "FUNCTION";
     private static final String NEW_NAME = "new_name";

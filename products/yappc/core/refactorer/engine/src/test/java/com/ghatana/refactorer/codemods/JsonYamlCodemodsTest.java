@@ -168,7 +168,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
         Files.writeString(jsonFile, "{}");
 
         // Create schemas with different extensions
-        Path schemaJson = schemaDir.resolve("TEST_SCHEMA_JSON");
+        Path schemaJson = schemaDir.resolve(TEST_SCHEMA_JSON);
         Path schemaYaml = schemaDir.resolve("test.schema.yaml");
 
         Files.writeString(schemaJson, "{}");
@@ -180,7 +180,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
         ArgumentCaptor<String> schemaPathCaptor = ArgumentCaptor.forClass(String.class);
         verify(mockNodeBridge).executeScript(anyString(), schemaPathCaptor.capture(), anyString());
 
-        assertThat(schemaPathCaptor.getValue()).endsWith("TEST_SCHEMA_JSON");
+        assertThat(schemaPathCaptor.getValue()).endsWith(TEST_SCHEMA_JSON);
 
         // Test finding .yaml schema when .json doesn't exist
         Files.delete(schemaJson);

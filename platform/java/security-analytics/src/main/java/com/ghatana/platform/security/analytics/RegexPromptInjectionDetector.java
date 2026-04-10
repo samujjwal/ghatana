@@ -43,7 +43,11 @@ public final class RegexPromptInjectionDetector implements PromptInjectionDetect
         rule("(?i)(disregard|override|bypass|unlock)\\s+(your|all|the)\\s+(system\\s+)?prompt",
             "prompt-override", 0.95),
         rule("(?i)(---+|===+|###)\\s*\\n\\s*(new instruction|ignore above|system prompt)",
-            "boundary-injection", 0.88)
+            "boundary-injection", 0.88),
+        rule("(?i)(;\\s*drop\\s+table|\\bselect\\s+\\*\\s+from\\b|\\bunion\\s+select\\b|\\bexec\\s+sp_executesql\\b)",
+            "sql-injection-signature", 0.98),
+        rule("(?i)<script\\b[^>]*>",
+            "xss-script-tag", 0.90)
     );
 
     @Override

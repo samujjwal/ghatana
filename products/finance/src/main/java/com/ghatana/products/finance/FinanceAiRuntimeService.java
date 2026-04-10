@@ -62,12 +62,11 @@ public final class FinanceAiRuntimeService
             autonomyManager = injector.getInstance(AutonomyManager.class);
             FinanceFraudDetectionKernelAgent fraudAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
             orchestrator.registerAgent(fraudAgent);
-
             return Promise.complete();
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             started.set(false);
             closePool();
-            throw exception;
+            return Promise.ofException(exception);
         }
     }
 
@@ -78,12 +77,16 @@ public final class FinanceAiRuntimeService
         }
 
         log.info("Stopping Finance AI runtime");
-        injector = null;
-        orchestrator = null;
-        governanceService = null;
-        autonomyManager = null;
-        closePool();
-        return Promise.complete();
+        try {
+            injector = null;
+            orchestrator = null;
+            governanceService = null;
+            autonomyManager = null;
+            closePool();
+            return Promise.complete();
+        } catch (Exception exception) {
+            return Promise.ofException(exception);
+        }
     }
 
     @Override

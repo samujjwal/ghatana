@@ -42,7 +42,7 @@ class PythonRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private Logger logger;
-    
+
     // Constants for duplicate literals
     private static final String NEW_NAME = "new_name";
 

@@ -28,7 +28,7 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
     private static final String ID = "python.rename.mock";
     private static final String NAME = "Mock Python Rename Refactoring";
     private static final String DESCRIPTION = "Mock implementation for testing Python refactoring";
-    
+
     // Constants for duplicate literals
     private static final String WORD_BOUNDARY = "\\b";
     private static final String FUNCTION_TYPE = "FUNCTION";

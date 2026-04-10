@@ -77,7 +77,7 @@ public final class AsyncBridge {
      * @return Promise that completes with the result
      */
     public static <T> Promise<T> runBlocking(Supplier<T> supplier) {
-        Reactor reactor = Reactor.getCurrentReactor();
+        Reactor reactor = currentReactorOrNull();
         if (reactor == null) {
             log.warn("No reactor in current thread, executing synchronously");
             try {
@@ -99,7 +99,7 @@ public final class AsyncBridge {
      * @return Promise that completes with the result
      */
     public static <T> Promise<T> runBlocking(Executor executor, Supplier<T> supplier) {
-        Reactor reactor = Reactor.getCurrentReactor();
+        Reactor reactor = currentReactorOrNull();
         if (reactor == null) {
             log.warn("No reactor in current thread, executing synchronously");
             try {
@@ -124,9 +124,9 @@ public final class AsyncBridge {
      * @return Promise that mirrors the future's completion
      */
     public static <T> Promise<T> fromFuture(CompletableFuture<T> future) {
-        Reactor reactor = Reactor.getCurrentReactor();
+        Reactor reactor = currentReactorOrNull();
         if (reactor == null) {
-            log.warn("No reactor in current thread, blocking on future");
+            log.warn("No reactor in current thread, bridging future synchronously");
             try {
                 return Promise.of(future.join());
             } catch (Exception e) {
@@ -134,7 +134,23 @@ public final class AsyncBridge {
             }
         }
 
-        return Promise.ofFuture(reactor, future);
+        if (future.isDone()) {
+            try {
+                return Promise.of(future.join());
+            } catch (Exception e) {
+                return Promise.ofException(e);
+            }
+        }
+
+        return Promise.ofBlocking(reactor, future::join);
+    }
+
+    private static Reactor currentReactorOrNull() {
+        try {
+            return Reactor.getCurrentReactor();
+        } catch (IllegalStateException e) {
+            return null;
+        }
     }
 
     /**

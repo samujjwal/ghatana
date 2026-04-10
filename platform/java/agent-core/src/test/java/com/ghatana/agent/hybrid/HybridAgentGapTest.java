@@ -170,17 +170,16 @@ class HybridAgentGapTest {
     class BothAgentsFailTests {
 
         @Test
-        void detFirstBothFailResultsInExceptionOrDegraded() {
+        void detFirstBothFailReturnsFailedResult() {
             StubAgent det = new StubAgent("det-fail", Map.of(), 0.0, true, false);
             StubAgent prob = new StubAgent("prob-fail", Map.of(), 0.0, true, false);
 
             HybridAgent agent = createHybrid("h-both-fail-1", det, prob,
                     HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST);
 
-            // When both agents fail, the exception from prob propagates
-            // since the hybrid agent has no final catch-all handler
-            assertThatThrownBy(() -> runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))))
-                    .isInstanceOf(RuntimeException.class);
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1)));
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED);
+            assertThat(result.getExplanation()).contains("RuntimeException");
         }
 
         @Test

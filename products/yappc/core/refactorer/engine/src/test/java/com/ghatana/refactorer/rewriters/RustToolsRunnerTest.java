@@ -36,7 +36,7 @@ class RustToolsRunnerTest {
                     + "\"compact_inline_tables\":false,\"indent_tables\":false,"
                     + "\"indent_entries\":false,\"reorder_keys\":false,"
                     + "\"allowed_blank_lines\":1,\"trailing_newline\":true}}";
-    
+
     // Constants for duplicate literals
     private static final String CARGO = "cargo";
     private static final String CHECK_FLAG = "--check";

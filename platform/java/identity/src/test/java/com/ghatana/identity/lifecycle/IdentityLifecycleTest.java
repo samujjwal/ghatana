@@ -50,7 +50,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("registered identity is resolvable by tenant and agent ID")
         void registeredIdentity_isResolvableByTenantAndAgentId() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-001", "tenant-a", "reasoning-agent", Set.of("read", "execute"), Instant.now());
+                    "tenant-a", "agent-001", "reasoning-agent", Set.of("read", "execute"), Instant.now());
             resolver.register(identity);
 
             Optional<AgentIdentity> result = runPromise(
@@ -74,7 +74,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("agent registered in one tenant is not visible in another tenant")
         void agentInOneTenant_notVisibleInAnotherTenant() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-001", "tenant-a", "code-agent", Set.of("read"), Instant.now());
+                    "tenant-a", "agent-001", "code-agent", Set.of("read"), Instant.now());
             resolver.register(identity);
 
             Optional<AgentIdentity> tenantBResult = runPromise(
@@ -94,7 +94,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("deregistered agent is no longer resolvable")
         void deregisteredAgent_isNoLongerResolvable() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-002", "tenant-a", "temp-agent", Set.of("read"), Instant.now());
+                    "tenant-a", "agent-002", "temp-agent", Set.of("read"), Instant.now());
             resolver.register(identity);
             resolver.deregister("tenant-a", "agent-002");
 
@@ -122,7 +122,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("credential issued for valid agent has all required fields")
         void credentialIssued_forValidAgent_hasAllRequiredFields() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-003", "tenant-a", "data-agent", Set.of("read"), Instant.now());
+                    "tenant-a", "agent-003", "data-agent", Set.of("read"), Instant.now());
             resolver.register(identity);
 
             CredentialToken token = runPromise(
@@ -141,7 +141,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("freshly issued token is not expired")
         void freshlyIssuedToken_isNotExpired() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-004", "tenant-a", "fresh-agent", Set.of("read"), Instant.now());
+                    "tenant-a", "agent-004", "fresh-agent", Set.of("read"), Instant.now());
             resolver.register(identity);
 
             CredentialToken token = runPromise(
@@ -154,7 +154,7 @@ class IdentityLifecycleTest extends EventloopTestBase {
         @DisplayName("TTL beyond max is capped at 1 hour")
         void ttlBeyondMax_isCappedAtOneHour() {
             AgentIdentity identity = new AgentIdentity(
-                    "agent-005", "tenant-a", "capped-agent", Set.of("read"), Instant.now());
+                    "tenant-a", "agent-005", "capped-agent", Set.of("read"), Instant.now());
             resolver.register(identity);
 
             CredentialToken token = runPromise(

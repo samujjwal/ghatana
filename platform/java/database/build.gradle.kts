@@ -38,7 +38,8 @@ dependencies {
     
     // Flyway Migration
     api(libs.flyway.core)
-    
+    api(libs.flyway.postgresql)
+
     // Redis
     api(libs.jedis)
     api("io.lettuce:lettuce-core:6.4.0.RELEASE")

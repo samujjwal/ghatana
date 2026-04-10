@@ -49,7 +49,7 @@ class PipelineRecordTest {
         Map<String, Object> map = record.toFieldMap();
 
         assertThat(map).containsEntry("id", "00000000-0000-0000-0000-000000000001");
-        assertThat(map).containsEntry("tenantId", "tenant-a");
+        assertThat(map).containsEntry("tenantId", "TenantId[value=tenant-a]");
         assertThat(map).containsEntry("name", "my-pipeline");
         assertThat(map).containsEntry("description", "A test pipeline");
         assertThat(map).containsEntry("version", 3);

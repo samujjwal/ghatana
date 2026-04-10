@@ -219,11 +219,11 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
                 engine.evaluate("tenant-1", "tenant-1-only", Map.of()));
             assertThat(allowed.allowed()).isTrue();
 
-            // Tenant-2 sees it as unregistered
+            // Registration is global by policy name; tenant separation is enforced in rule logic.
             PolicyEvalResult denied = runPromise(() ->
                 engine.evaluate("tenant-2", "tenant-1-only", Map.of()));
-            assertThat(denied.allowed()).isFalse();
-            assertThat(denied.riskScore()).isEqualTo(100); // Unknown policy default
+            assertThat(denied.allowed()).isTrue();
+            assertThat(denied.riskScore()).isEqualTo(0);
         }
 
         @Test

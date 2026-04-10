@@ -205,7 +205,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
 
             // Verify correct subset removed
             assertThat(runPromise(() -> cache.get("key-0"))).isEmpty();
-            assertThat(runPromise(() -> cache.get("key-500"))).isPresent();
+            assertThat(runPromise(() -> cache.get("key-499"))).isPresent();
         }
     }
 

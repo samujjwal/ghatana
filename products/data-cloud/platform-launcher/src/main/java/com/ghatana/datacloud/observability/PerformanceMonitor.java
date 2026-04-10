@@ -48,11 +48,11 @@ public class PerformanceMonitor {
     private static final double MIN_EVENT_THROUGHPUT = 10000.0;
     private static final double MAX_ERROR_RATE = 0.01;
     private static final double AVAILABILITY_THRESHOLD = 0.999;
-    
+
     // HTTP status code constants
     private static final int HTTP_CLIENT_ERROR = 400;
     private static final int HTTP_SERVER_ERROR = 500;
-    
+
     // Consumer lag threshold
     private static final int CONSUMER_LAG_THRESHOLD = 1000;
 

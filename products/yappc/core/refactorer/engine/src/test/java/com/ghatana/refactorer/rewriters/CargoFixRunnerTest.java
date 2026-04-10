@@ -25,7 +25,7 @@ class CargoFixRunnerTest {
 
     private CargoFixRunner cargoFix;
     private Path tempDir;
-    
+
     // Constants for duplicate literals
     private static final String STDOUT_PREFIX = "Stdout: ";
     private static final String STDERR_PREFIX = "Stderr: ";

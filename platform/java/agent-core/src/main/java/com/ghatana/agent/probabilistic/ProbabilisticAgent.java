@@ -11,6 +11,7 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -127,6 +128,7 @@ public class ProbabilisticAgent
         return model.infer(input)
                 .map(result -> {
                     double calibrated = calibrator.calibrate(result.rawConfidence());
+                    Duration processingTime = Duration.ofMillis(Math.max(result.latencyMs(), 0L));
 
                     ctx.recordMetric("agent.model.latency.ms", result.latencyMs());
                     ctx.recordMetric("agent.model.rawConfidence", result.rawConfidence());
@@ -152,10 +154,24 @@ public class ProbabilisticAgent
                             ? AgentResultStatus.SUCCESS
                             : AgentResultStatus.LOW_CONFIDENCE;
 
+                    Map<String, Object> metrics = new LinkedHashMap<>();
+                    metrics.put("modelId", result.modelId());
+                    metrics.put("modelVersion", result.modelId());
+                    metrics.put("rawConfidence", result.rawConfidence());
+                    metrics.put("calibratedConfidence", calibrated);
+                    metrics.put("latencyMs", result.latencyMs());
+                    if (probConfig.getModelVersion() != null) {
+                        metrics.put("configuredModelVersion", probConfig.getModelVersion());
+                    }
+
                     return AgentResult.<Map<String, Object>>builder()
                             .output(output)
                             .confidence(calibrated)
                             .status(status)
+                             .agentId(descriptor.getAgentId())
+                             .metrics(metrics)
+                             .processingTime(processingTime)
+                             .startedAt(Instant.now().minus(processingTime))
                             .explanation(String.format("Model %s: confidence=%.3f (%s)",
                                     result.modelId(), calibrated,
                                     status == AgentResultStatus.SUCCESS ? "above threshold" : "below threshold"))

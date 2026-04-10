@@ -49,7 +49,7 @@ public class CrossLanguageRefactoringTest {
 
     private Path pythonFile;
     private Path typescriptFile;
-    
+
     // Constants for duplicate literals
     private static final String FUNCTION = "FUNCTION";
     private static final String TYPESCRIPT = "typescript";

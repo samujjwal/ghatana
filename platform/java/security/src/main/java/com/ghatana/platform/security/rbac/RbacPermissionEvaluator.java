@@ -20,14 +20,21 @@ public class RbacPermissionEvaluator implements PermissionEvaluator {
     }
 
     public boolean hasPermission(String role, Set<String> roles, String permission) {
+        if (roles == null || permission == null || permission.isBlank()) {
+            return false;
+        }
         // For backward compatibility, check if any of the user's roles has the permission
         // on an unspecified resource (wildcard "*")
         return roles.stream()
+                .filter(r -> r != null && !r.isBlank())
                 .anyMatch(r -> policyService.hasPermission(r, "*", permission));
     }
 
     @Override
     public boolean hasPermission(String role, String permission) {
+        if (role == null || role.isBlank() || permission == null || permission.isBlank()) {
+            return false;
+        }
         return policyService.hasPermission(role, "*", permission);
     }
 }

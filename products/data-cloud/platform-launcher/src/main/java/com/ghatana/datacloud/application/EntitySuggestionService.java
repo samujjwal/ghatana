@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
 public class EntitySuggestionService {
 
     private static final Logger log = LoggerFactory.getLogger(EntitySuggestionService.class);
-    
+
     // Constants for duplicate literals
     private static final String TENANT = "tenant";
     private static final String COLLECTION = "collection";

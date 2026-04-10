@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultWorkflowAgentService implements WorkflowAgentService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultWorkflowAgentService.class);
-    
+
     // Constants for duplicate literals
     private static final String ROLE = "role";
     private static final String STATUS = "status";

@@ -61,7 +61,7 @@ class TransactionRollbackTest extends EventloopTestBase {
             try {
                 counters.set(0, 50);
                 counters.set(1, 250);
-                if (counters.get(0) + counters.get(1) != 300) {
+                if (counters.get(0) + counters.get(1) == 300) {
                     throw new Exception("Integrity check failed");
                 }
             } catch (Exception e) {

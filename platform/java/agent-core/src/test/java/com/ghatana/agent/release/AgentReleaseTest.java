@@ -165,6 +165,10 @@ class AgentReleaseTest {
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE)
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("test.purpose")
+                    .capabilityMaturityProfile("L1")
                     .build();
 
             assertThat(release.isDispatchable()).isTrue();
@@ -184,6 +188,10 @@ class AgentReleaseTest {
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .state(AgentReleaseState.BLOCKED)
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("test.purpose")
+                    .capabilityMaturityProfile("L1")
                     .build();
 
             assertThat(release.isDispatchable()).isFalse();

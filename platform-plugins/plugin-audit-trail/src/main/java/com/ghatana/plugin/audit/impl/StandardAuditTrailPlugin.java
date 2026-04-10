@@ -217,6 +217,8 @@ public class StandardAuditTrailPlugin implements AuditTrailPlugin {
             return Promise.complete();
         } catch (IOException e) {
             return Promise.ofException(e);
+        } catch (UnsupportedOperationException e) {
+            return Promise.ofException(e);
         }
     }
 

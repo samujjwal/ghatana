@@ -36,7 +36,7 @@ class JavaRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private String originalContent;
-    
+
     // Constants for duplicate literals
     private static final String SHOULD_HAVE_AT_LEAST_ONE_CHANGE = "Should have at least one change";
 

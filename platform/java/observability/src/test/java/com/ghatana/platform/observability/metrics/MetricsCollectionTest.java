@@ -35,9 +35,11 @@ class MetricsCollectionTest {
         collector.incrementCounter("requests.total", "method", "POST", "status", "200");
         collector.incrementCounter("requests.total", "method", "GET", "status", "200");
 
-        Counter counter = registry.find("requests.total").counter();
-        assertThat(counter).isNotNull();
-        assertThat(counter.count()).isEqualTo(2.0);
+        assertThat(registry.find("requests.total").counters()).isNotEmpty();
+        double totalCount = registry.find("requests.total").counters().stream()
+            .mapToDouble(Counter::count)
+            .sum();
+        assertThat(totalCount).isEqualTo(2.0);
     }
 
     @Test

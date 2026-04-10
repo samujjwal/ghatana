@@ -31,6 +31,12 @@ configure<JacocoPluginExtension> {
     toolVersion = "0.8.14"
 }
 
+// JaCoCo only fires during CI or when explicitly requested locally.
+// Guards against JaCoCo instrumentation being triggered by non-test tasks
+// such as compileJava (via the eager finalizedBy() that was previously here).
+val withCoverage: Boolean = System.getenv("CI") != null ||
+    project.hasProperty("coverage")
+
 // Integration Test Profile
 val integrationMode: Boolean = project.hasProperty("runIntegrationTests")
 
@@ -44,15 +50,14 @@ private val integrationSystemProperties = mapOf(
 
 // Test Configuration
 tasks.withType<Test>().configureEach {
+    // Single useJUnitPlatform() call — calling it multiple times is a no-op but
+    // redundant calls show up as misconfiguration warnings in --info output.
     useJUnitPlatform()
     ignoreFailures = false  // Tests should fail the build
-    
+
     if (integrationMode) {
-        useJUnitPlatform()
         integrationSystemProperties.forEach { (k, v) -> systemProperty(k, v) }
         logger.lifecycle("[$path] Integration test profile ACTIVE - all tags included")
-    } else {
-        useJUnitPlatform()
     }
 
     testLogging {
@@ -62,21 +67,32 @@ tasks.withType<Test>().configureEach {
         showStandardStreams = false
     }
 
-    // Parallel execution - use half the available CPUs to avoid OOM in CI
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    // Parallel execution — use half available CPUs to leave headroom for IDE + Docker.
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2)
+        .coerceAtLeast(1)
+        .coerceAtMost(4)
+    maxHeapSize = "1536m"
+    // NOTE: forkEvery intentionally omitted.  Setting forkEvery > 0 causes Gradle
+    // to SIGTERM the test JVM at the class boundary, which races with the XML result
+    // writer and produces "Could not write XML test results" / null-byte corruption.
+    // Java 21 + ZGC handles metaspace pressure well without per-class JVM recycling.
 
     // Docker Desktop 29+ compatibility for Testcontainers
     jvmArgs("-Dapi.version=1.44")
 
-    // Wire into JaCoCo - only if jacocoTestReport task exists
-    finalizedBy(project.tasks.findByName("jacocoTestReport") ?: "test")
+    // Wire into JaCoCo only when coverage is enabled.
+    if (withCoverage) {
+        finalizedBy(project.tasks.named("jacocoTestReport"))
+    }
 }
 
-// JaCoCo Test Report - only configure if task exists
+// JaCoCo Test Report — mustRunAfter keeps the task graph lazy so that
+// jacocoTestReport doesn't force Test execution when the user only runs
+// compileJava or assembleJar.
 project.tasks.findByName("jacocoTestReport")?.let { task ->
     task as org.gradle.testing.jacoco.tasks.JacocoReport
-    task.dependsOn(tasks.withType<Test>())
-    
+    task.mustRunAfter(tasks.withType<Test>())
+
     task.reports {
         xml.required.set(true)
         html.required.set(true)

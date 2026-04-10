@@ -110,7 +110,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
     private static final Logger log = LoggerFactory.getLogger(TimeSeriesConnector.class);
     private static final long DEFAULT_RETENTION_MILLIS = 30 * 24 * 60 * 60 * 1000L; // 30 days
-    
+
     // Constants for duplicate literals
     private static final String COLLECTION = "collection";
     private static final String OPERATION = "operation";
@@ -121,7 +121,7 @@ public class TimeSeriesConnector implements StorageConnector {
     private static final String TENANT_ID_CANNOT_BE_NULL = "TenantId cannot be null";
     private static final String COUNT_TAG = "count";
     private static final String TENANT = "tenant";
-    
+
     private final MetricsCollector metrics;
     private final Map<String, List<Entity>> timeSeriesStore = new ConcurrentHashMap<>();
 
