@@ -356,7 +356,9 @@ export class AnomalyDetectionService {
       network_connections: "DDoS_PATTERN",
       cpu_utilization: "RESOURCE_EXHAUSTION",
       memory_utilization: "RESOURCE_EXHAUSTION",
+      memory_usage_percent: "RESOURCE_EXHAUSTION",
       disk_io_rate: "RESOURCE_EXHAUSTION",
+      disk_io_bytes: "RESOURCE_EXHAUSTION",
       process_count: "RESOURCE_EXHAUSTION",
       failed_logins: "FAILED_AUTHENTICATION",
       privilege_escalations: "PRIVILEGE_ESCALATION",
@@ -365,7 +367,7 @@ export class AnomalyDetectionService {
       custom: "UNKNOWN",
     };
 
-    return mapping[metricType];
+    return mapping[metricType] ?? "UNKNOWN";
   }
 
   /**

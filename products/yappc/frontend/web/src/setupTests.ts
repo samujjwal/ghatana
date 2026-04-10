@@ -120,3 +120,19 @@ window.requestIdleCallback = vi.fn((callback: (deadline: unknown) => void) => {
 window.cancelIdleCallback = (id) => {
   clearTimeout(id);
 };
+
+// Mock Web Worker (not available in jsdom)
+// spatialIndexService and other modules that use Worker should be mocked at the test level
+// but a global stub prevents instantiation errors during module loading.
+if (typeof window !== 'undefined' && typeof Worker === 'undefined') {
+  // @ts-ignore
+  global.Worker = class MockWorker {
+    onmessage: ((event: MessageEvent) => void) | null = null;
+    onerror: ((event: ErrorEvent) => void) | null = null;
+    postMessage = vi.fn();
+    terminate = vi.fn();
+    addEventListener = vi.fn();
+    removeEventListener = vi.fn();
+    dispatchEvent = vi.fn(() => true);
+  };
+}

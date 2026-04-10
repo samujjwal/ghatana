@@ -91,7 +91,7 @@ export function PriorityTasksList({
     const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
     const [processingTasks, setProcessingTasks] = useState<Set<string>>(new Set());
 
-    const hasActions = Boolean(onApprove || onReject);
+    const hasActions = Boolean(onApprove || onReject || onBulkApprove || onBulkReject);
     const isBulkActionEnabled = selectedTasks.size > 0 && (onBulkApprove || onBulkReject);
 
     const toggleSelection = (taskId: string, e: React.MouseEvent | React.ChangeEvent<HTMLInputElement>) => {
@@ -181,12 +181,20 @@ export function PriorityTasksList({
                     </Typography>
                     {hasActions && (
                         <div className="flex gap-1">
-                            <Button size="sm" variant="text" onClick={selectAll} disabled={selectedTasks.size === tasks.length}>
+                            <button
+                                className="px-2 py-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={selectAll}
+                                disabled={selectedTasks.size === tasks.length}
+                            >
                                 Select All
-                            </Button>
-                            <Button size="sm" variant="text" onClick={clearSelection} disabled={selectedTasks.size === 0}>
+                            </button>
+                            <button
+                                className="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={clearSelection}
+                                disabled={selectedTasks.size === 0}
+                            >
                                 Clear
-                            </Button>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -268,13 +276,7 @@ export function PriorityTasksList({
                                                 {task.dueDate && (
                                                     <span className="flex items-center gap-1 text-sm text-gray-500">
                                                         <AccessTime className="w-4 h-4" />
-                                                        {new Date(task.dueDate).toLocaleDateString()}
-                                                    </span>
-                                                )}
-                                                {task.isBlocked && (
-                                                    <span className="flex items-center gap-1 text-sm text-red-600 font-medium">
-                                                        <Block className="w-4 h-4" />
-                                                        Blocked
+                                                        {new Date(task.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })}
                                                     </span>
                                                 )}
                                             </div>

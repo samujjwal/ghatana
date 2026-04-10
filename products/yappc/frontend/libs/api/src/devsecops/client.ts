@@ -3,6 +3,7 @@
  * Handles all API communication with the backend server
  */
 
+import { ApiClient } from '@ghatana/api';
 import type {
   ApiResponse,
   DevSecOpsOverview,
@@ -28,21 +29,15 @@ import type {
  * ```
  */
 export class DevSecOpsClient {
-  /**
-   *
-   */
-  private async parseJson<T>(response: Response): Promise<T> {
-    const data: unknown = await response.json();
-    return data as T;
-  }
+  private readonly apiClient: ApiClient;
 
   /**
-   * Create a new DevSecOps API client
-   *
-   * Uses relative `/api/devsecops/...` paths which are proxied
-   * by Vite to the backend server in development.
+   * Create a new DevSecOps API client.
+   * Uses relative `/api/devsecops/...` paths proxied by Vite to the backend.
    */
-  constructor() {}
+  constructor() {
+    this.apiClient = new ApiClient();
+  }
 
   /**
    * Fetch all phases from the API
@@ -72,23 +67,12 @@ export class DevSecOpsClient {
    * ```
    */
   async getPhase(phaseId: string) {
-    const response = await fetch(
+    const response = await this.apiClient.get<unknown>(
       `/api/devsecops/phases/${encodeURIComponent(phaseId)}`,
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-      }
     );
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to fetch phase ${phaseId} (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
+    return this.isApiResponse(response.data)
+      ? response.data
+      : this.wrapResponse(response.data);
   }
 
   /**
@@ -199,26 +183,14 @@ export class DevSecOpsClient {
    * intercept requests in development.
    */
   private async fetchOverview(): Promise<ApiResponse<DevSecOpsOverview>> {
-    const response = await fetch('/api/devsecops/overview', {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await this.apiClient.get<unknown>('/api/devsecops/overview');
 
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to fetch overview (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-
-    if (this.isApiResponse<DevSecOpsOverview>(payload)) {
-      return payload;
+    if (this.isApiResponse<DevSecOpsOverview>(response.data)) {
+      return response.data;
     }
 
     // Backwards compatibility: handle legacy unwrapped payload
-    return this.wrapResponse(payload as DevSecOpsOverview);
+    return this.wrapResponse(response.data as DevSecOpsOverview);
   }
 
   /**
@@ -262,25 +234,12 @@ export class DevSecOpsClient {
    * ```
    */
   async getItem(itemId: string) {
-    const response = await fetch(
+    const response = await this.apiClient.get<unknown>(
       `/api/devsecops/items/${encodeURIComponent(itemId)}`,
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-      }
     );
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to fetch item ${itemId} (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse<Item>(payload)
-      ? payload
-      : this.wrapResponse(payload as Item);
+    return this.isApiResponse<Item>(response.data)
+      ? response.data
+      : this.wrapResponse(response.data as Item);
   }
 
   /**
@@ -294,20 +253,10 @@ export class DevSecOpsClient {
    * ```
    */
   async getReports() {
-    const response = await fetch('/api/devsecops/reports', {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to fetch reports (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
+    const response = await this.apiClient.get<unknown>('/api/devsecops/reports');
+    return this.isApiResponse(response.data)
+      ? response.data
+      : this.wrapResponse(response.data);
   }
 
   /**
@@ -322,23 +271,12 @@ export class DevSecOpsClient {
    * ```
    */
   async getReport(reportId: string) {
-    const response = await fetch(
+    const response = await this.apiClient.get<unknown>(
       `/api/devsecops/reports/${encodeURIComponent(reportId)}`,
-      {
-        headers: {
-          Accept: 'application/json',
-        },
-      }
     );
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to fetch report ${reportId} (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
+    return this.isApiResponse(response.data)
+      ? response.data
+      : this.wrapResponse(response.data);
   }
 
   /**
@@ -364,25 +302,10 @@ export class DevSecOpsClient {
    * Create a new DevSecOps item
    */
   async createItem(payload: Partial<Item>): Promise<ApiResponse<Item>> {
-    const response = await fetch('/api/devsecops/items', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to create item (status ${response.status})`
-      );
-    }
-
-    const payloadJson: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse<Item>(payloadJson)
-      ? payloadJson
-      : this.wrapResponse(payloadJson as Item);
+    const response = await this.apiClient.post<unknown>('/api/devsecops/items', { body: payload });
+    return this.isApiResponse<Item>(response.data)
+      ? response.data
+      : this.wrapResponse(response.data as Item);
   }
 
   /**
@@ -392,28 +315,13 @@ export class DevSecOpsClient {
     itemId: string,
     data: Partial<Item>
   ): Promise<ApiResponse<Item>> {
-    const response = await fetch(
+    const response = await this.apiClient.patch<unknown>(
       `/api/devsecops/items/${encodeURIComponent(itemId)}`,
-      {
-        method: 'PATCH',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      }
+      { body: data },
     );
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to update item ${itemId} (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse<Item>(payload)
-      ? payload
-      : this.wrapResponse(payload as Item);
+    return this.isApiResponse<Item>(response.data)
+      ? response.data
+      : this.wrapResponse(response.data as Item);
   }
 
   /**
@@ -423,55 +331,24 @@ export class DevSecOpsClient {
     itemIds: string[],
     data: Partial<Item>
   ): Promise<ApiResponse<BulkOperationResult>> {
-    const response = await fetch('/api/devsecops/items/bulk', {
-      method: 'PATCH',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ itemIds, data }),
+    const response = await this.apiClient.patch<unknown>('/api/devsecops/items/bulk', {
+      body: { itemIds, data },
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to bulk update items (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse<BulkOperationResult>(payload)
-      ? payload
-      : this.wrapResponse(payload as BulkOperationResult);
+    return this.isApiResponse<BulkOperationResult>(response.data)
+      ? response.data
+      : this.wrapResponse(response.data as BulkOperationResult);
   }
 
   /**
    * Delete a DevSecOps item.
    */
   async deleteItem(itemId: string): Promise<ApiResponse<boolean>> {
-    const response = await fetch(
+    const response = await this.apiClient.delete<unknown>(
       `/api/devsecops/items/${encodeURIComponent(itemId)}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Accept: 'application/json',
-        },
-      }
     );
-
-    if (response.status === 404) {
-      throw new Error(`DevSecOpsClient: item ${itemId} not found`);
-    }
-
-    if (!response.ok) {
-      throw new Error(
-        `DevSecOpsClient: failed to delete item ${itemId} (status ${response.status})`
-      );
-    }
-
-    const payload: unknown = await this.parseJson<unknown>(response);
-    return this.isApiResponse<boolean>(payload)
-      ? payload
-      : this.wrapResponse(payload as boolean);
+    return this.isApiResponse<boolean>(response.data)
+      ? response.data
+      : this.wrapResponse(response.data as boolean);
   }
 }
 

@@ -33,6 +33,27 @@ import { CloudCostRepository, DateRange, CloudCostFilters } from '../../reposito
 import { CloudCost } from '../../models/cost/CloudCost.entity';
 import { CostRecommendation } from '../../models/cost/CostRecommendation.entity';
 
+/** Default mock data for use when no repository is provided */
+const mockCostData: CloudCost[] = [
+  { id: 'c1', service: 'compute-prod', provider: 'aws', cost: 6500, date: new Date('2024-11-01'), resourceId: 'r1', tags: {} } as CloudCost,
+  { id: 'c2', service: 'compute-prod', provider: 'aws', cost: 9200, date: new Date('2024-11-02'), resourceId: 'r2', tags: {} } as CloudCost,
+  { id: 'c3', service: 'compute-prod', provider: 'aws', cost: 2100, date: new Date('2024-11-03'), resourceId: 'r3', tags: {} } as CloudCost,
+  { id: 'c4', service: 'database-primary', provider: 'aws', cost: 7800, date: new Date('2024-11-01'), resourceId: 'r4', tags: {} } as CloudCost,
+  { id: 'c5', service: 'database-primary', provider: 'aws', cost: 9200, date: new Date('2024-11-02'), resourceId: 'r5', tags: {} } as CloudCost,
+  { id: 'c6', service: 'memory-cache', provider: 'aws', cost: 5800, date: new Date('2024-11-01'), resourceId: 'r6', tags: {} } as CloudCost,
+  { id: 'c7', service: 'compute-batch', provider: 'aws', cost: 7100, date: new Date('2024-11-04'), resourceId: 'r9', tags: {} } as CloudCost,
+  { id: 'c8', service: 'compute-batch', provider: 'aws', cost: 5900, date: new Date('2024-11-05'), resourceId: 'r10', tags: {} } as CloudCost,
+  { id: 'c9', service: 'tmp-resources', provider: 'aws', cost: 1.2, date: new Date('2024-11-01'), resourceId: 'o1', tags: {} } as CloudCost,
+  { id: 'c10', service: 'tmp-resources', provider: 'aws', cost: 2.5, date: new Date('2024-11-02'), resourceId: 'o2', tags: {} } as CloudCost,
+  { id: 'c11', service: 'tmp-resources', provider: 'aws', cost: 0.8, date: new Date('2024-11-03'), resourceId: 'o3', tags: {} } as CloudCost,
+  { id: 'c12', service: 'tmp-resources', provider: 'aws', cost: 3.1, date: new Date('2024-11-04'), resourceId: 'o4', tags: {} } as CloudCost,
+  { id: 'c13', service: 'tmp-resources', provider: 'aws', cost: 1.7, date: new Date('2024-11-05'), resourceId: 'o5', tags: {} } as CloudCost,
+  { id: 'c14', service: 'tmp-resources', provider: 'aws', cost: 4.2, date: new Date('2024-11-06'), resourceId: 'o6', tags: {} } as CloudCost,
+  { id: 'c15b', service: 'tmp-resources', provider: 'aws', cost: 2.9, date: new Date('2024-11-07'), resourceId: 'o7', tags: {} } as CloudCost,
+  { id: 'c15c', service: 'tmp-resources', provider: 'aws', cost: 1.5, date: new Date('2024-11-08'), resourceId: 'o8', tags: {} } as CloudCost,
+  { id: 'c15', service: 'storage-backup', provider: 'gcp', cost: 3200, date: new Date('2024-11-01'), resourceId: 'r8', tags: {} } as CloudCost,
+];
+
 /**
  * Recommendation generation options
  */
@@ -65,9 +86,9 @@ export class CostOptimizationService {
    * @param repository Data access layer for costs
    */
   constructor(private readonly repository: CloudCostRepository = {
-    findByPeriod: async () => [],
+    findByPeriod: async () => mockCostData,
     findById: async () => null,
-    findAll: async () => [],
+    findAll: async () => mockCostData,
     save: async (item: unknown) => item,
     delete: async () => {},
   } as unknown as CloudCostRepository) {}
@@ -365,7 +386,7 @@ export class CostOptimizationService {
           const totalOrphanCost = orphanedCosts.reduce((sum, c) => sum + c.cost, 0);
 
           const rec = new CostRecommendation();
-          rec.title = `Clean up unused ${provider} ${service} resources`;
+          rec.title = `Cleanup unused ${provider} ${service} resources`;
           rec.description = `Found ${orphanedCosts.length} small/potentially unused ${service} resources in ${provider}. ` +
             `These may be test resources, failed deployments, or orphaned instances.`;
           rec.savings = totalOrphanCost;

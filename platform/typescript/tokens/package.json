@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/tokens",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Global design tokens for Ghatana platform - framework-agnostic design tokens",
   "type": "module",
@@ -58,8 +59,7 @@
       "import": "./dist/safe-area.css",
       "default": "./dist/safe-area.css",
       "node": "./dist/safe-area.js"
-    }
-    ,
+    },
     "./dist/*": "./dist/*"
   },
   "files": [

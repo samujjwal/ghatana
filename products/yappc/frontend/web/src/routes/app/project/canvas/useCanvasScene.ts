@@ -169,26 +169,6 @@ export const useCanvasScene = ({
       setCanvasState((prev: unknown) => ({ ...prev, selectedElements: selectedIds }));
     },
   }), [canvasState.selectedElements, setCanvasState]);
-  // Inline selection change handler (previously in useCanvasSelection)
-  const handleSelectionChange = useCallback((selectedIds: string[]) => {
-    setCanvasState((prev) => {
-      const prevIds = prev.selectedElements || [];
-      const prevSet = new Set(prevIds);
-      const nextSet = new Set(selectedIds);
-      if (
-        prevSet.size === nextSet.size &&
-        [...prevSet].every((id) => nextSet.has(id))
-      ) {
-        return prev;
-      }
-
-      setSelection({ selectedIds });
-      return {
-        ...prev,
-        selectedElements: selectedIds,
-      };
-    });
-  }, [setCanvasState, setSelection]);
 
   // Initialize editor with ReactFlow instance when available
   useEffect(() => {

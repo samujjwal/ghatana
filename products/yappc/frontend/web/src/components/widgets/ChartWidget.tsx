@@ -112,38 +112,44 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
   function renderChart() {
     if (type === 'bar') {
       return (
-        <BarChart data-testid="recharts-bar-chart" {...commonProps}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={xKey} />
-          <YAxis />
-          <Tooltip data-testid="recharts-tooltip" />
-          {showLegend && <Legend />}
-          {renderBars()}
-        </BarChart>
+        <div data-testid="recharts-bar-chart">
+          <BarChart {...commonProps}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={xKey} />
+            <YAxis />
+            <Tooltip />
+            {showLegend && <Legend />}
+            {renderBars()}
+          </BarChart>
+        </div>
       );
     }
     if (type === 'area') {
       return (
-        <AreaChart data-testid="recharts-area-chart" {...commonProps}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey={xKey} />
-          <YAxis />
-          <Tooltip data-testid="recharts-tooltip" />
-          {showLegend && <Legend />}
-          {renderAreas()}
-        </AreaChart>
+        <div data-testid="recharts-area-chart">
+          <AreaChart {...commonProps}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey={xKey} />
+            <YAxis />
+            <Tooltip />
+            {showLegend && <Legend />}
+            {renderAreas()}
+          </AreaChart>
+        </div>
       );
     }
     // default: line
     return (
-      <LineChart data-testid="recharts-line-chart" {...commonProps}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey={xKey} />
-        <YAxis />
-        <Tooltip data-testid="recharts-tooltip" />
-        {showLegend && <Legend />}
-        {renderLines()}
-      </LineChart>
+      <div data-testid="recharts-line-chart">
+        <LineChart {...commonProps}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey={xKey} />
+          <YAxis />
+          <Tooltip />
+          {showLegend && <Legend />}
+          {renderLines()}
+        </LineChart>
+      </div>
     );
   }
 

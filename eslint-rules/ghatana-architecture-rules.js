@@ -438,6 +438,46 @@ module.exports = {
             "@ghatana/design-system/components/CommandPalette",
             'Use the public API: import { CommandPalette } from "@ghatana/design-system"',
           ],
+          [
+            "@yappc/canvas",
+            'Import directly from "@ghatana/canvas" — @yappc/canvas was removed in Sprint 4 (zero additions over @ghatana/canvas)',
+          ],
+          [
+            "@ghatana/audit-ui",
+            'Import from "@ghatana/design-system/audit" — @ghatana/audit-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@ghatana/privacy-ui",
+            'Import from "@ghatana/design-system/privacy" — @ghatana/privacy-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@ghatana/security-ui",
+            'Import from "@ghatana/design-system/security" — @ghatana/security-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@ghatana/voice-ui",
+            'Import from "@ghatana/design-system/voice" — @ghatana/voice-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@ghatana/nlp-ui",
+            'Import from "@ghatana/design-system/nlp" — @ghatana/nlp-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@ghatana/selection-ui",
+            'Import from "@ghatana/design-system/selection" — @ghatana/selection-ui was merged into @ghatana/design-system in Sprint 1',
+          ],
+          [
+            "@dcmaar/agent-types",
+            'Import from "@dcmaar/types/agent" — @dcmaar/agent-types was merged into @dcmaar/types in Sprint 2',
+          ],
+          [
+            "@dcmaar/agent-ui",
+            'Import from "@dcmaar/ui/agent" — @dcmaar/agent-ui was merged into @dcmaar/ui in Sprint 2',
+          ],
+          [
+            "@dcmaar/browser-extension-ui",
+            'Import from "@dcmaar/ui/extension" — @dcmaar/browser-extension-ui was merged into @dcmaar/ui in Sprint 2',
+          ],
         ]);
 
         return {

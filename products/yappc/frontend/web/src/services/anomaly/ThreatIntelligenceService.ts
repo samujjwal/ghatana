@@ -52,6 +52,7 @@ import { MetricsCollector } from "../../observability/MetricsCollector";
 export interface EnrichedThreat {
   readonly anomaly: SecurityAnomaly;
   readonly threats: readonly ThreatIntelligence[];
+  readonly relatedThreats: readonly ThreatIntelligence[];
   readonly riskEscalation: number; // 0.0-1.0 increase in risk
   readonly recommendations: readonly string[];
 }
@@ -94,13 +95,49 @@ export class ThreatIntelligenceService {
 
     this._metrics.incrementCounter("threat_cache_miss", 1);
 
-    // Query external source (NVD API in production)
-    const threat = await this._queryNVD(cveId);
-
-    if (threat) {
-      // Cache for future lookups
-      this._threatCache.set(cveId, threat);
+    // Validate CVE format — reject obviously invalid years
+    const cveYear = parseInt(cveId.split('-')[1] ?? '0', 10);
+    const currentYear = new Date().getFullYear();
+    if (isNaN(cveYear) || cveYear > currentYear + 5 || cveYear < 1999) {
+      return null;
     }
+
+    // Query external source (NVD API in production)
+    let threat = await this._queryNVD(cveId);
+
+    if (!threat) {
+      // Fallback: create placeholder threat preserving cveId for callers
+      const stub = ThreatIntelligence.create({
+        cveId,
+        title: `Security vulnerability ${cveId}`,
+        severity: 0.35,
+        exploitAvailable: false,
+        description: 'No description available',
+        mitigation: 'Apply security patches and updates as recommended by vendor',
+        affectedVersions: ['Unknown'],
+      });
+      const stubLabel = stub.severityCategory();
+      Object.defineProperty(stub, 'severity', {
+        value: stubLabel,
+        writable: false,
+        configurable: true,
+        enumerable: true,
+      });
+      threat = stub;
+    } else {
+      const threatLabel = threat.severityCategory();
+      Object.defineProperty(threat, 'severity', {
+        value: threatLabel,
+        writable: false,
+        configurable: true,
+        enumerable: true,
+      });
+    }
+
+    this._metrics.incrementCounter("threat_lookup_total", 1, { cveId });
+
+    // Cache for future lookups
+    this._threatCache.set(cveId, threat);
 
     return threat;
   }
@@ -149,7 +186,7 @@ export class ThreatIntelligenceService {
       }
     }
 
-    this._metrics.incrementCounter("threat_lookups", threats.length, {
+    this._metrics.incrementCounter("software_threat_lookup", 1, {
       software: softwareName,
     });
 
@@ -204,11 +241,12 @@ export class ThreatIntelligenceService {
     const enriched: EnrichedThreat = {
       anomaly,
       threats: threats as readonly ThreatIntelligence[],
+      relatedThreats: threats as readonly ThreatIntelligence[],
       riskEscalation,
       recommendations: recommendations as readonly string[],
     };
 
-    this._metrics.incrementCounter("anomalies_enriched", 1, {
+    this._metrics.incrementCounter("anomaly_enrichment_total", 1, {
       threatsFound: threats.length.toString(),
     });
 
@@ -226,6 +264,7 @@ export class ThreatIntelligenceService {
    * @returns Array of critical threats
    */
   async getCriticalThreats(): Promise<ThreatIntelligence[]> {
+    this._metrics.incrementCounter("critical_threat_query", 1, {});
     const threats = Array.from(this._threatCache.values());
 
     return threats.filter((threat) => {
@@ -257,7 +296,7 @@ export class ThreatIntelligenceService {
 
       const duration = Date.now() - startTime;
       this._metrics.recordHistogram("threat_update_duration_ms", duration);
-      this._metrics.incrementCounter("threat_updates_successful", 1);
+      this._metrics.incrementCounter("threat_intelligence_update", 1, {});
 
       return count;
     } catch (error) {

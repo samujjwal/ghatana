@@ -225,16 +225,15 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
             >
                 <DialogTitle>Edit Diagram Code</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        multiline
-                        fullWidth
+                    <label htmlFor="mermaid-code-editor" className="block text-sm font-medium mb-1">Mermaid code</label>
+                    <textarea
+                        id="mermaid-code-editor"
+                        aria-label="Mermaid code"
                         rows={15}
                         value={editBuffer}
                         onChange={(e) => setEditBuffer(e.target.value)}
-                        variant="outlined"
                         placeholder="Enter Mermaid diagram code..."
-                        label="Mermaid code"
-                        className="font-mono text-sm"
+                        className="w-full font-mono text-sm border border-gray-300 rounded p-2 resize-y"
                     />
                 </DialogContent>
                 <DialogActions>

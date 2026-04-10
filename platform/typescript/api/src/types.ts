@@ -1,6 +1,40 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /**
+ * Minimal schema interface compatible with Zod (`z.ZodType`) and any other
+ * schema library that exposes a `.parse()` method.
+ *
+ * Pass a `ResponseSchema<T>` as the `schema` option on a request to validate
+ * the response data at runtime. If validation fails, the client throws a
+ * {@link ValidationError}.
+ *
+ * @example
+ * ```ts
+ * import { z } from 'zod';
+ * const UserSchema = z.object({ id: z.string(), name: z.string() });
+ * const user = await client.get('/me', { schema: UserSchema });
+ * ```
+ */
+export interface ResponseSchema<T = unknown> {
+  parse(data: unknown): T;
+}
+
+/**
+ * Thrown when the response body does not satisfy the provided
+ * {@link ResponseSchema}. Callers can distinguish validation failures
+ * from network / HTTP errors by checking `instanceof ValidationError`.
+ */
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly cause: unknown,
+  ) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+/**
  * Categorises an API error so callers can respond appropriately without
  * inspecting raw HTTP status codes.
  *
@@ -15,6 +49,13 @@ export interface ApiRequestInit extends Omit<RequestInit, "body" | "method"> {
   query?: Record<string, string | number | boolean | null | undefined>;
   headers?: Record<string, string>;
   timeoutMs?: number;
+  /**
+   * Optional schema used to validate the parsed response data.
+   * Accepts any object with a `.parse(data: unknown): T` method, making it
+   * compatible with Zod, Valibot, and other schema-validation libraries.
+   * Throws {@link ValidationError} when the response does not satisfy the schema.
+   */
+  schema?: ResponseSchema;
 }
 
 export interface ApiRequest extends ApiRequestInit {

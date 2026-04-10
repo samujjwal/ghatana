@@ -2,7 +2,7 @@
  * NotificationService Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   processNotifications,
   getNotificationStats,
@@ -85,6 +85,7 @@ describe('NotificationService', () => {
     });
 
     it('should suppress notifications during quiet hours', async () => {
+      // Use 00:00-23:59 to ensure quiet hours covers any local time
       const request: NotificationRequest = {
         notifications: [
           {
@@ -100,7 +101,7 @@ describe('NotificationService', () => {
         userContext: {
           preferences: {
             enableConsolidation: true,
-            quietHours: { start: '22:00', end: '06:00' },
+            quietHours: { start: '00:00', end: '23:59' },
             categories: { info: true, success: true, warning: true, error: true, task: true, mention: true, system: true },
             priorities: { urgent: true, high: true, normal: true, low: true },
           },

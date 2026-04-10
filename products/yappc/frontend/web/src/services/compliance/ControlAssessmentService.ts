@@ -31,6 +31,7 @@ export interface IControlAssessmentService {
  */
 export class ControlAssessmentService implements IControlAssessmentService {
   private controls: Map<string, ComplianceControl> = new Map();
+  private controlScores: Map<string, number> = new Map();
 
   /**
    * Assess control with evidence
@@ -51,6 +52,9 @@ export class ControlAssessmentService implements IControlAssessmentService {
       status = ControlStatus.NON_COMPLIANT;
     }
 
+    // Store score so scoreControl can retrieve it
+    this.controlScores.set(controlId, score);
+
     const control = this.controls.get(controlId);
     if (control) {
       control.updateStatus(status, score);
@@ -64,6 +68,8 @@ export class ControlAssessmentService implements IControlAssessmentService {
    * Get control score
    */
   async scoreControl(controlId: string): Promise<number> {
+    const storedScore = this.controlScores.get(controlId);
+    if (storedScore !== undefined) return storedScore;
     const control = this.controls.get(controlId);
     return control?.score || 0;
   }

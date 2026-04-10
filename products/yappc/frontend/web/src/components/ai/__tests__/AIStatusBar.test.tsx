@@ -16,8 +16,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AIStatusBar, useAIStatusBar } from '../AIStatusBar';
 
 // Mock the custom hook
-vi.mock('../AIStatusBar', async () => ({
-  ...(await vi.importActual('../AIStatusBar')),
+vi.mock('../AIStatusBar', async (importOriginal) => ({
+  ...(await importOriginal()),
   useAIStatusBar: vi.fn(),
 }));
 
@@ -141,7 +141,7 @@ describe('AIStatusBar Component', () => {
       const actionButton = screen.getByText('Add Validation');
       fireEvent.click(actionButton);
 
-      expect(mockAction).toHaveBeenCalledTimes(1);
+      expect(defaultProps.nextBestAction.action).toHaveBeenCalledTimes(1);
     });
 
     it('shows phase selector on phase click', () => {
@@ -178,7 +178,7 @@ describe('AIStatusBar Component', () => {
         setNextBestAction: vi.fn(),
       });
 
-      render(<AIStatusBar {...defaultProps} />);
+      render(<AIStatusBar {...defaultProps} onPhaseChange={mockSetCurrentPhase} />);
 
       const phaseElement = screen.getByText('INTENT');
       fireEvent.click(phaseElement);

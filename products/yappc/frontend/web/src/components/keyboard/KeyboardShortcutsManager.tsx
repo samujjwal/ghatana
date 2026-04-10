@@ -347,7 +347,10 @@ export function KeyboardShortcutsHelp({
       <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        data-testid="keyboard-shortcuts-help"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      >
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
@@ -393,8 +396,16 @@ export function KeyboardShortcutsHelp({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
-            Press <ShortcutKey keyLabel="Esc" /> to close
+          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+            <span>Press <ShortcutKey keyLabel="Esc" /> to close</span>
+            <button
+              onClick={onClose}
+              tabIndex={0}
+              className="px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300"
+              onKeyDown={(e) => { if (e.key === 'Enter') onClose(); }}
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>

@@ -71,7 +71,19 @@ export function useResourcePrediction(
   });
 
   const allocations = allocationResponse?.allocations || [];
-  const capacityPlan = allocationResponse?.capacityPlan || null;
+  const defaultCapacityPlan: CapacityPlan | null = teamMembers.length > 0
+    ? {
+        teamId: 'default',
+        period: 'current',
+        totalCapacity: teamMembers.reduce((sum, m) => sum + m.availability, 0),
+        allocated: 0,
+        available: teamMembers.reduce((sum, m) => sum + m.availability, 0),
+        utilizationRate: 0,
+        overloadRisk: 'low',
+        recommendations: [],
+      }
+    : null;
+  const capacityPlan = allocationResponse?.capacityPlan || defaultCapacityPlan;
 
   // Mutation for allocating resources
   const allocateMutation = useMutation({

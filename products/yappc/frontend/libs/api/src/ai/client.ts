@@ -10,6 +10,7 @@
  * @doc.pattern API Client
  */
 
+import { ApiClient } from '@ghatana/api';
 import type {
   AIInsight,
   Prediction,
@@ -156,30 +157,16 @@ export interface RagResponse {
  * Includes automatic retries, caching, and error handling.
  */
 export class AIClient {
-  private baseUrl: string;
+  private readonly apiClient: ApiClient;
   private cache = new Map<string, { data: unknown; timestamp: number }>();
 
-  /**
-   *
-   */
-  private async parseJson<T>(response: Response): Promise<T> {
-    const data: unknown = await response.json();
-    return data as T;
-  }
+  private readonly toInsightArray = (value: unknown): AIInsight[] =>
+    Array.isArray(value) ? (value as AIInsight[]) : [];
 
-  /**
-   *
-   */
-  private toInsightArray(value: unknown): AIInsight[] {
-    return Array.isArray(value) ? (value as AIInsight[]) : [];
-  }
   private readonly cacheTTL = 30000; // 30 seconds
 
-  /**
-   *
-   */
   constructor(baseUrl = '/api/ai') {
-    this.baseUrl = baseUrl;
+    this.apiClient = new ApiClient({ baseUrl });
   }
 
   /**
@@ -201,12 +188,8 @@ export class AIClient {
     if (params.phaseId) queryParams.append('phaseId', params.phaseId);
     if (params.limit) queryParams.append('limit', params.limit.toString());
 
-    const response = await fetch(`${this.baseUrl}/insights?${queryParams}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch insights: ${response.statusText}`);
-    }
-
-    const rawInsights: unknown = await this.parseJson<unknown>(response);
+    const response = await this.apiClient.get<unknown>(`/insights?${queryParams}`);
+    const rawInsights = response.data;
     const insights = this.toInsightArray(rawInsights);
     this.setCache(cacheKey, insights);
     return insights;
@@ -231,12 +214,8 @@ export class AIClient {
     if (params.workflowId) queryParams.append('workflowId', params.workflowId);
     if (params.limit) queryParams.append('limit', params.limit.toString());
 
-    const response = await fetch(`${this.baseUrl}/predictions?${queryParams}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch predictions: ${response.statusText}`);
-    }
-
-    const predictions = await this.parseJson<Prediction[]>(response);
+    const response = await this.apiClient.get<Prediction[]>(`/predictions?${queryParams}`);
+    const predictions = response.data;
     this.setCache(cacheKey, predictions);
     return predictions;
   }
@@ -260,12 +239,8 @@ export class AIClient {
     }
     if (params.limit) queryParams.append('limit', params.limit.toString());
 
-    const response = await fetch(`${this.baseUrl}/anomalies?${queryParams}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch anomalies: ${response.statusText}`);
-    }
-
-    const anomalies = await this.parseJson<AnomalyAlert[]>(response);
+    const response = await this.apiClient.get<AnomalyAlert[]>(`/anomalies?${queryParams}`);
+    const anomalies = response.data;
     this.setCache(cacheKey, anomalies);
     return anomalies;
   }
@@ -274,17 +249,7 @@ export class AIClient {
    * Acknowledge an anomaly alert
    */
   async acknowledgeAnomaly(anomalyId: string): Promise<void> {
-    const response = await fetch(
-      `${this.baseUrl}/anomalies/${anomalyId}/acknowledge`,
-      {
-        method: 'POST',
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to acknowledge anomaly: ${response.statusText}`);
-    }
-
+    await this.apiClient.post<void>(`/anomalies/${anomalyId}/acknowledge`);
     // Invalidate anomalies cache
     this.invalidateCache('anomalies:');
   }
@@ -298,19 +263,8 @@ export class AIClient {
     input?: string;
     limit?: number;
   }): Promise<RecommendationSuggestion[]> {
-    const response = await fetch(`${this.baseUrl}/recommendations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch recommendations: ${response.statusText}`
-      );
-    }
-
-    return this.parseJson<RecommendationSuggestion[]>(response);
+    const response = await this.apiClient.post<RecommendationSuggestion[]>('/recommendations', { body: params });
+    return response.data;
   }
 
   /**
@@ -319,17 +273,8 @@ export class AIClient {
   async sendCopilotMessage(
     request: CopilotChatRequest
   ): Promise<CopilotChatResponse> {
-    const response = await fetch(`${this.baseUrl}/copilot/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to send copilot message: ${response.statusText}`);
-    }
-
-    return this.parseJson<CopilotChatResponse>(response);
+    const response = await this.apiClient.post<CopilotChatResponse>('/copilot/chat', { body: request });
+    return response.data;
   }
 
   /**
@@ -338,17 +283,8 @@ export class AIClient {
   async generatePlan(
     request: GeneratePlanRequest
   ): Promise<GeneratePlanResponse> {
-    const response = await fetch(`${this.baseUrl}/generate-plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to generate plan: ${response.statusText}`);
-    }
-
-    return this.parseJson<GeneratePlanResponse>(response);
+    const response = await this.apiClient.post<GeneratePlanResponse>('/generate-plan', { body: request });
+    return response.data;
   }
 
   /**
@@ -357,36 +293,16 @@ export class AIClient {
   async semanticSearch(
     request: SemanticSearchRequest
   ): Promise<SemanticSearchResponse> {
-    const response = await fetch(`${this.baseUrl}/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to perform semantic search: ${response.statusText}`
-      );
-    }
-
-    return this.parseJson<SemanticSearchResponse>(response);
+    const response = await this.apiClient.post<SemanticSearchResponse>('/search', { body: request });
+    return response.data;
   }
 
   /**
    * Query using RAG (Retrieval-Augmented Generation)
    */
   async ragQuery(request: RagRequest): Promise<RagResponse> {
-    const response = await fetch(`${this.baseUrl}/rag`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to perform RAG query: ${response.statusText}`);
-    }
-
-    return this.parseJson<RagResponse>(response);
+    const response = await this.apiClient.post<RagResponse>('/rag', { body: request });
+    return response.data;
   }
 
   /**

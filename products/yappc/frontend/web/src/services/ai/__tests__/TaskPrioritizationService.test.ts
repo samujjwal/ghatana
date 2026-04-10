@@ -18,7 +18,7 @@ describe('TaskPrioritizationService', () => {
           {
             id: '1',
             title: 'Low priority task',
-            type: 'Code',
+            type: 'Design',
             priority: 'Low',
             status: 'pending',
             project: 'test',
@@ -27,7 +27,7 @@ describe('TaskPrioritizationService', () => {
           {
             id: '2',
             title: 'High priority task',
-            type: 'Code',
+            type: 'Deploy',
             priority: 'High',
             status: 'pending',
             project: 'test',

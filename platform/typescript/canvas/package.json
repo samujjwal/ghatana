@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/canvas",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Ghatana Platform Canvas - Hybrid renderer (custom + ReactFlow) for all Ghatana products",
   "type": "module",

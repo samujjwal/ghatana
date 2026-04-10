@@ -48,6 +48,26 @@ JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(secret, expiryMs)
 **Purpose:** Shared infrastructure used by multiple products  
 **Location:** `platform/typescript/*`, `platform/java/*`
 
+#### Canonical TypeScript Platform Packages
+
+| Package Name | Location | Purpose |
+|-------------|----------|---------|
+| `@ghatana/api` | `platform/typescript/api` | Fetch-based HTTP client with middleware and retries |
+| `@ghatana/canvas` | `platform/typescript/canvas` | Hybrid canvas renderer (custom + ReactFlow) |
+| `@ghatana/charts` | `platform/typescript/charts` | Chart primitives built on Recharts |
+| `@ghatana/code-editor` | `platform/typescript/code-editor` | Lazily-loaded Monaco editor component |
+| `@ghatana/design-system` | `platform/typescript/design-system` | WCAG AA UI component library |
+| `@ghatana/i18n` | `platform/typescript/i18n` | Internationalization framework |
+| `@ghatana/platform-shell` | `platform/typescript/platform-shell` | Platform chrome: NavBar, TenantSelector, NotificationCenter |
+| `@ghatana/platform-utils` | `platform/typescript/foundation/platform-utils` | Cross-cutting utility functions |
+| `@ghatana/realtime` | `platform/typescript/realtime` | WebSocket / SSE helpers |
+| `@ghatana/sso-client` | `platform/typescript/sso-client` | SSO/JWT authentication client |
+| `@ghatana/platform-testing` | `platform/typescript/testing` | Shared test helpers (accessibility, WCAG, performance) |
+| `@ghatana/theme` | `platform/typescript/theme` | Unified theme system |
+| `@ghatana/tokens` | `platform/typescript/tokens` | Framework-agnostic design tokens |
+| `@ghatana/ui-integration` | `platform/typescript/ui-integration` | AI features + collaboration integration layer |
+| `@ghatana/accessibility-audit` | `platform/typescript/accessibility-audit` | Automated WCAG audit helpers |
+
 #### Examples
 
 ```
@@ -63,6 +83,10 @@ JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(secret, expiryMs)
 - Be descriptive but concise
 - No product-specific names
 - Must be genuinely reusable across products
+
+> **Note on `@ghatana/dcmaar` and `@ghatana/dcmaar-backend-shim`**: Both are `"private": true`  
+> workspace root/shim entries inside `products/dcmaar/`. They are never imported as libraries  
+> and the `@ghatana/` scope is used only for workspace identification. No rename is required.
 
 ---
 

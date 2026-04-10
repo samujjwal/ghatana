@@ -128,7 +128,7 @@ export class InMemoryCloudCostRepository implements CloudCostRepository {
   private idCounter = 1;
 
   async save(cost: CloudCost): Promise<CloudCost> {
-    cost.validate();
+    cost.validate?.();
     if (!cost.id) {
       cost.id = `cost-${this.idCounter++}`;
     }

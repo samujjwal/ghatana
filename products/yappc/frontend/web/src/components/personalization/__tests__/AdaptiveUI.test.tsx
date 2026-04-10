@@ -28,7 +28,7 @@ describe('AdaptiveUI', () => {
     }
     render(<AdaptiveUI />);
     expect(screen.getByText(/Switch to/)).toBeDefined();
-    expect(screen.getByText(/navigation/i)).toBeDefined();
+    expect(screen.getAllByText(/navigation/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/AI assistance/)).toBeDefined();
   });
 
@@ -50,7 +50,8 @@ describe('AdaptiveUI', () => {
     const onApplyNav = vi.fn();
     render(<AdaptiveUI onApplyNavigation={onApplyNav} />);
     const applyButtons = screen.getAllByText('Apply');
-    fireEvent.click(applyButtons[1]);
+    // Click the last available Apply button for the navigation suggestion
+    fireEvent.click(applyButtons[applyButtons.length - 1]);
     expect(onApplyNav).toHaveBeenCalled();
   });
 

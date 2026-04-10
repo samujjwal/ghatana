@@ -19,7 +19,7 @@ let nextMsgId = 1;
 const resolvers = new Map<number, { resolve: (val: unknown) => void; reject: (err: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 let worker: Worker | null = null;
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && typeof Worker !== 'undefined') {
     worker = new Worker(new URL('./spatial.worker.ts', import.meta.url), { type: 'module' });
 
     worker.onmessage = (event) => {

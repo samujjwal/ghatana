@@ -2,7 +2,7 @@
  * ErrorRecovery Component Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorRecovery, OfflineBanner, ErrorBoundary } from '../ErrorRecovery';
 import type { ErrorInfo } from '../../../hooks/useErrorRecovery';
@@ -33,7 +33,7 @@ describe('ErrorRecovery', () => {
       retryable: true,
     };
 
-    const onRetry = jest.fn();
+    const onRetry = vi.fn();
     render(<ErrorRecovery errorInfo={errorInfo} onRetry={onRetry} />);
 
     expect(screen.getByText('Retry')).toBeDefined();
@@ -62,7 +62,7 @@ describe('ErrorRecovery', () => {
       retryable: true,
     };
 
-    const onDismiss = jest.fn();
+    const onDismiss = vi.fn();
     render(<ErrorRecovery errorInfo={errorInfo} onDismiss={onDismiss} />);
 
     // Close icon should be present
@@ -83,7 +83,7 @@ describe('OfflineBanner', () => {
   });
 
   it('should render sync button when hasPendingOperations', () => {
-    const onSync = jest.fn();
+    const onSync = vi.fn();
     render(<OfflineBanner hasPendingOperations={1} onSync={onSync} />);
 
     expect(screen.getByText('Sync Now')).toBeDefined();

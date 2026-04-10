@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useCallback } from 'react';
 import { FileText as Description } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,56 +47,60 @@ const PHASE_CONFIG: Record<
   { label: string; color: string; description: string }
 > = {
   INTENT: {
-    label: 'Intent',
+    label: 'INTENT',
     color: 'bg-purple-100 dark:bg-purple-900/30 border-purple-500',
     description: 'Define goals and requirements',
   },
   SHAPE: {
-    label: 'Shape',
+    label: 'SHAPE',
     color: 'bg-blue-100 dark:bg-blue-900/30 border-blue-500',
     description: 'Design architecture and components',
   },
   VALIDATE: {
-    label: 'Validate',
+    label: 'VALIDATE',
     color: 'bg-green-100 dark:bg-green-900/30 border-green-500',
     description: 'Verify design and requirements',
   },
   GENERATE: {
-    label: 'Generate',
+    label: 'GENERATE',
     color: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500',
     description: 'Generate code and assets',
   },
   BUILD: {
-    label: 'Build',
+    label: 'BUILD',
     color: 'bg-orange-100 dark:bg-orange-900/30 border-orange-500',
     description: 'Build and compile',
   },
   RUN: {
-    label: 'Run',
+    label: 'RUN',
     color: 'bg-red-100 dark:bg-red-900/30 border-red-500',
     description: 'Execute and test',
   },
   IMPROVE: {
-    label: 'Improve',
+    label: 'IMPROVE',
     color: 'bg-pink-100 dark:bg-pink-900/30 border-pink-500',
     description: 'Refine and optimize',
   },
 };
 
-function PhaseZoneCard({
+const PhaseZoneCard = React.memo(function PhaseZoneCard({
   zone,
-  zoom,
+  showDetails,
+  showArtifacts,
   isActive,
-  onClick,
+  onPhaseClick,
 }: {
   zone: PhaseZone;
-  zoom: number;
+  showDetails: boolean;
+  showArtifacts: boolean;
   isActive: boolean;
-  onClick?: () => void;
+  onPhaseClick?: (phase: LifecyclePhase) => void;
 }) {
-  const config = PHASE_CONFIG[zone.phase];
-  const showDetails = zoom > 0.5;
-  const showArtifacts = zoom > 0.75;
+  const config = PHASE_CONFIG[zone.phase] ?? {
+    label: zone.phase,
+    color: 'bg-gray-100 dark:bg-gray-900/30 border-gray-500',
+    description: 'Lifecycle phase',
+  };
 
   return (
     <div
@@ -114,12 +118,16 @@ function PhaseZoneCard({
         width: `${zone.width}px`,
         height: `${zone.height}px`,
       }}
-      onClick={onClick}
+      tabIndex={0}
+      role="button"
+      aria-label={`Lifecycle phase: ${config.label}`}
+      onClick={() => onPhaseClick?.(zone.phase)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onPhaseClick?.(zone.phase); }}
     >
       <div className="p-4 h-full flex flex-col">
         {/* Phase Header */}
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-text-primary">
+          <h3 className="text-lg font-bold text-text-primary" tabIndex={0}>
             {config.label}
           </h3>
           {zone.status === 'completed' && (
@@ -165,7 +173,9 @@ function PhaseZoneCard({
       </div>
     </div>
   );
-}
+});
+
+const MAX_RENDERED_ZONES = 100;
 
 export function ZoomableLifecycleZones({
   zones,
@@ -174,53 +184,67 @@ export function ZoomableLifecycleZones({
   onPhaseClick,
   className,
 }: ZoomableLifecycleZonesProps) {
-  const visibleZones = useMemo(() => {
-    // At low zoom, show only active and adjacent phases
-    if (zoom < 0.3) {
-      const activeIndex = zones.findIndex((z) => z.phase === activePhase);
-      if (activeIndex === -1) return zones;
+  // Stable callback ref to avoid re-creating click handlers each render
+  const onPhaseClickRef = useRef(onPhaseClick);
+  onPhaseClickRef.current = onPhaseClick;
+  const handlePhaseClick = useCallback((phase: LifecyclePhase) => {
+    onPhaseClickRef.current?.(phase);
+  }, []);
 
-      return zones.filter((_, index) => Math.abs(index - activeIndex) <= 1);
+  const cappedZones = useMemo(() =>
+    zones.length > MAX_RENDERED_ZONES ? zones.slice(0, MAX_RENDERED_ZONES) : zones,
+  [zones]);
+
+  // Use ref for activePhase in useMemo to avoid recomputing visibleZones on every activePhase change
+  const activePhaseRef = useRef(activePhase);
+  activePhaseRef.current = activePhase;
+
+  // Only recompute when zoom crosses the 0.3 threshold (not on every zoom/activePhase change)
+  const isLowZoom = zoom < 0.3;
+  const visibleZones = useMemo(() => {
+    if (isLowZoom) {
+      const activeIndex = cappedZones.findIndex((z) => z.phase === activePhaseRef.current);
+      if (activeIndex === -1) return cappedZones;
+      return cappedZones.filter((_, index) => Math.abs(index - activeIndex) <= 1);
     }
-    return zones;
-  }, [zones, zoom, activePhase]);
+    return cappedZones;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- activePhase used via ref to avoid unnecessary recomputes
+  }, [cappedZones, isLowZoom]);
+
+  // Stable boolean flags - only change when zoom crosses meaningful thresholds
+  const showDetails = zoom > 0.5;
+  const showArtifacts = zoom > 0.75;
+
+  const connectionLines = useMemo(() =>
+    visibleZones.slice(0, -1).map((zone, index) => {
+      const nextZone = visibleZones[index + 1];
+      if (!nextZone) return null;
+      const startX = zone.x + zone.width;
+      const startY = zone.y + zone.height / 2;
+      const endX = nextZone.x;
+      const endY = nextZone.y + nextZone.height / 2;
+      return (
+        <g key={`${zone.phase}-${nextZone.phase}`}>
+          <line x1={startX} y1={startY} x2={endX} y2={endY}
+            stroke="currentColor" strokeWidth="2" strokeDasharray="5,5"
+            className="text-gray-300 dark:text-gray-700" />
+          <polygon
+            points={`${endX},${endY} ${endX - 10},${endY - 5} ${endX - 10},${endY + 5}`}
+            fill="currentColor" className="text-gray-300 dark:text-gray-700" />
+        </g>
+      );
+    }),
+  [visibleZones]);
 
   return (
-    <div className={cn('relative w-full h-full', className)}>
+    <div
+      data-testid="lifecycle-zones"
+      aria-label="Lifecycle phases"
+      className={cn('relative w-full h-full', className)}
+    >
       {/* Connection Lines */}
-      <svg
-        className="absolute inset-0 pointer-events-none"
-        style={{ zIndex: 0 }}
-      >
-        {visibleZones.slice(0, -1).map((zone, index) => {
-          const nextZone = visibleZones[index + 1];
-          if (!nextZone) return null;
-
-          const startX = zone.x + zone.width;
-          const startY = zone.y + zone.height / 2;
-          const endX = nextZone.x;
-          const endY = nextZone.y + nextZone.height / 2;
-
-          return (
-            <g key={`${zone.phase}-${nextZone.phase}`}>
-              <line
-                x1={startX}
-                y1={startY}
-                x2={endX}
-                y2={endY}
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-                className="text-gray-300 dark:text-gray-700"
-              />
-              <polygon
-                points={`${endX},${endY} ${endX - 10},${endY - 5} ${endX - 10},${endY + 5}`}
-                fill="currentColor"
-                className="text-gray-300 dark:text-gray-700"
-              />
-            </g>
-          );
-        })}
+      <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        {connectionLines}
       </svg>
 
       {/* Phase Zones */}
@@ -228,9 +252,10 @@ export function ZoomableLifecycleZones({
         <PhaseZoneCard
           key={zone.phase}
           zone={zone}
-          zoom={zoom}
+          showDetails={showDetails}
+          showArtifacts={showArtifacts}
           isActive={zone.phase === activePhase}
-          onClick={() => onPhaseClick?.(zone.phase)}
+          onPhaseClick={handlePhaseClick}
         />
       ))}
     </div>

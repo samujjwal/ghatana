@@ -3,14 +3,7 @@
   "version": "1.0.0",
   "description": "Platform TypeScript packages for Ghatana",
   "private": true,
-  "workspaces": [
-    "privacy-ui",
-    "security-ui", 
-    "voice-ui",
-    "nlp-ui",
-    "audit-ui",
-    "selection-ui"
-  ],
+  "workspaces": [],
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",

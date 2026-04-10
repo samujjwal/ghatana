@@ -34,6 +34,7 @@ export interface AIStatusBarProps {
   currentPhase: LifecyclePhase;
   phaseProgress: number;
   nextBestAction?: NextBestAction | null;
+  onPhaseChange?: (phase: LifecyclePhase) => void;
   className?: string;
 }
 
@@ -99,17 +100,40 @@ export function AIStatusBar({
   currentPhase,
   phaseProgress,
   nextBestAction,
+  onPhaseChange,
   className,
 }: AIStatusBarProps) {
-  const statusText = {
-    ready: 'AI Ready',
-    thinking: 'AI Thinking...',
-    suggesting: 'AI has suggestions',
-    error: 'AI Error',
+  const [showPhaseSelector, setShowPhaseSelector] = React.useState(false);
+  const { setCurrentPhase } = useAIStatusBar();
+  const prefersReducedMotion = React.useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+
+  const handlePhaseSelect = (phase: LifecyclePhase) => {
+    if (onPhaseChange) {
+      onPhaseChange(phase);
+    } else {
+      setCurrentPhase(phase);
+    }
+    setShowPhaseSelector(false);
   };
+
+  const statusLabel: Record<AIStatus, string> = {
+    ready: 'Ready',
+    thinking: 'Thinking...',
+    suggesting: 'Suggesting',
+    error: 'Error',
+  };
+
+  const allPhases: LifecyclePhase[] = [
+    'INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'BUILD', 'RUN', 'IMPROVE',
+  ];
 
   return (
     <div
+      data-testid="ai-status-bar"
+      aria-label="AI Status and next actions"
       className={cn(
         'fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-gray-900',
         'border-t border-gray-200 dark:border-gray-800',
@@ -117,49 +141,71 @@ export function AIStatusBar({
         'shadow-lg',
         className
       )}
+      style={prefersReducedMotion ? { animation: 'none', transition: 'none' } : undefined}
     >
       {/* AI Status Indicator */}
       <div className="flex items-center gap-2 min-w-[120px]">
         <AIStatusIcon status={status} />
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {statusText[status]}
+          AI Status: {statusLabel[status]}
         </span>
       </div>
 
       {/* Phase Progress */}
-      <div className="flex items-center gap-2 min-w-[200px]">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <div className="relative flex items-center gap-2 min-w-[200px]">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Current Phase: {currentPhase}</span>
+        <button
+          className="sr-only"
+          onClick={() => setShowPhaseSelector((v) => !v)}
+          aria-haspopup="listbox"
+          aria-label="Select phase"
+        >
           {currentPhase}
-        </span>
+        </button>
         <ProgressBar value={phaseProgress} className="w-24" />
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {Math.round(phaseProgress)}%
         </span>
+        {showPhaseSelector && (
+          <ul
+            data-testid="phase-selector"
+            role="listbox"
+            className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded shadow-lg z-10"
+          >
+            {allPhases.map((phase) => (
+              <li
+                key={phase}
+                role="option"
+                aria-selected={phase === currentPhase}
+                className="px-4 py-1.5 text-sm cursor-pointer hover:bg-gray-100"
+                onClick={() => handlePhaseSelect(phase)}
+              >
+                {phase}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Next Best Action */}
-      {nextBestAction && (
+      {nextBestAction ? (
         <div className="ml-auto flex items-center gap-3">
-          <div className="flex flex-col items-end">
-            <span className="text-xs text-gray-500 dark:text-gray-500">
-              Next:
-            </span>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {nextBestAction.title}
-            </span>
-          </div>
-          <button
+          <span
+            className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+            tabIndex={0}
+            role="button"
             onClick={nextBestAction.action}
-            className={cn(
-              'px-4 py-1.5 rounded-md text-sm font-medium',
-              'bg-blue-500 hover:bg-blue-600 text-white',
-              'transition-colors duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-            )}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') nextBestAction.action();
+            }}
           >
-            Go →
-          </button>
+            {nextBestAction.title}
+          </span>
         </div>
+      ) : (
+        <span className="ml-auto text-sm text-gray-500 dark:text-gray-500">
+          No suggestions available
+        </span>
       )}
     </div>
   );

@@ -148,7 +148,7 @@ describe('TableWidget', () => {
 
     // WHEN: Click row checkbox
     const checkboxes = screen.getAllByRole('checkbox');
-    await user.click(checkboxes[1]); // First data row
+    await user.click(checkboxes[0]); // First data row
 
     // THEN: Selection callback fired
     expect(onSelectionChange).toHaveBeenCalledWith([1]);

@@ -22,9 +22,9 @@ export interface AccordionItemProps {
 
 export interface AccordionProps {
     /**
-     * Accordion items
+     * Accordion items (data-driven API)
      */
-    items: AccordionItemProps[];
+    items?: AccordionItemProps[];
     /**
      * Allow multiple items to be open
      * @default false
@@ -68,7 +68,7 @@ export interface AccordionProps {
  * />
  * ```
  */
-export const Accordion: React.FC<AccordionProps> = ({
+export const Accordion: React.FC<AccordionProps & { children?: React.ReactNode }> = ({
     items,
     allowMultiple = false,
     defaultExpanded = [],
@@ -76,7 +76,13 @@ export const Accordion: React.FC<AccordionProps> = ({
     onChange,
     variant = 'default',
     className,
+    children,
 }) => {
+    // Children-based API (MUI-style compat): render children directly
+    if (!items) {
+        return <div className={clsx(className)}>{children}</div>;
+    }
+
     const [uncontrolledExpanded, setUncontrolledExpanded] =
         React.useState<string[]>(defaultExpanded);
 

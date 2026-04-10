@@ -312,7 +312,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center p-8">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                <div role="status" className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
               </div>
             ) : filteredResults.length > 0 ? (
               <div className="p-2">

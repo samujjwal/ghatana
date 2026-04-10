@@ -105,7 +105,13 @@ export class CostNotificationService {
    * Initialize service with repository
    * @param repository Data access layer for costs
    */
-  constructor(private readonly repository: CloudCostRepository) {
+  constructor(private readonly repository: CloudCostRepository = {
+    findByPeriod: async () => [] as CloudCost[],
+    findById: async () => null,
+    findAll: async () => [] as CloudCost[],
+    save: async (item: unknown) => item,
+    delete: async () => {},
+  } as unknown as CloudCostRepository) {
     this.initializeDefaultRules();
   }
 
@@ -158,10 +164,10 @@ export class CostNotificationService {
 
   /**
    * Get all alert rules
-   * @returns Map of alert rules
+   * @returns Array of alert rules
    */
-  getAlertRules(): ReadonlyMap<string, AlertRule> {
-    return new Map(this.alertRules);
+  getAlertRules(): AlertRule[] {
+    return Array.from(this.alertRules.values());
   }
 
   /**
@@ -427,8 +433,9 @@ export class CostNotificationService {
     );
 
     for (const alert of alerts) {
+      const ts = alert.timestamp instanceof Date ? alert.timestamp.toISOString() : String(alert.timestamp ?? '');
       console.log(
-        `  - [${alert.severity}] ${alert.title} (${alert.timestamp.toISOString()})`
+        `  - [${alert.severity}] ${alert.title ?? (alert as Record<string, unknown>)['message']} (${ts})`
       );
     }
   }
@@ -443,8 +450,9 @@ export class CostNotificationService {
     );
 
     for (const alert of alerts) {
+      const ts = alert.timestamp instanceof Date ? alert.timestamp.toISOString() : String(alert.timestamp ?? '');
       console.log(
-        `  - [${alert.severity}] ${alert.title} (${alert.timestamp.toISOString()})`
+        `  - [${alert.severity}] ${alert.title ?? (alert as Record<string, unknown>)['message']} (${ts})`
       );
     }
   }

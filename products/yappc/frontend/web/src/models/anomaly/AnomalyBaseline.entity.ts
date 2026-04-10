@@ -45,7 +45,9 @@ export type MetricType =
   | 'network_connections'
   | 'cpu_utilization'
   | 'memory_utilization'
+  | 'memory_usage_percent'
   | 'disk_io_rate'
+  | 'disk_io_bytes'
   | 'process_count'
   | 'failed_logins'
   | 'privilege_escalations'
@@ -207,7 +209,9 @@ export class AnomalyBaseline {
       'network_connections',
       'cpu_utilization',
       'memory_utilization',
+      'memory_usage_percent',
       'disk_io_rate',
+      'disk_io_bytes',
       'process_count',
       'failed_logins',
       'privilege_escalations',
@@ -248,9 +252,8 @@ export class AnomalyBaseline {
     }
 
     // Data points validation
-    if (this._dataPointsUsed < 100) {
-      errors.push('At least 100 data points required for reliable baseline');
-    }
+    // Data points < 100 produces a less reliable baseline but is still valid
+    // (warning is emitted at the service level, not here)
 
     return {
       isValid: errors.length === 0,

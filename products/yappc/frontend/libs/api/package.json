@@ -24,6 +24,7 @@
         "vitest": "^4.1.2"
     },
     "dependencies": {
+        "@ghatana/api": "workspace:*",
         "@yappc/state": "workspace:*"
     }
 }

@@ -99,6 +99,8 @@ export function InlineCodePanel({
 
   return (
     <div
+      data-testid="inline-code-panel"
+      aria-label="Code editor panel"
       className={cn(
         'fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-gray-900',
         className
@@ -129,6 +131,7 @@ export function InlineCodePanel({
           {onFormat && (
             <button
               onClick={onFormat}
+              tabIndex={0}
               className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
               title="Format Code (⌘⇧F)"
             >
@@ -138,10 +141,11 @@ export function InlineCodePanel({
           {onRun && (
             <button
               onClick={onRun}
+              tabIndex={0}
               className="px-2 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded"
               title="Run Code"
             >
-              ▶ Run
+              Run
             </button>
           )}
           {onAIFix && (
@@ -163,10 +167,11 @@ export function InlineCodePanel({
           {onToggle && (
             <button
               onClick={onToggle}
+              tabIndex={0}
               className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
               title="Close"
             >
-              ✕
+              Hide Code Panel
             </button>
           )}
         </div>
@@ -178,12 +183,15 @@ export function InlineCodePanel({
         className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900"
         style={{ height: `${height - 44}px` }}
       >
-        {/* Monaco Editor would be mounted here */}
-        <div className="p-4 font-mono text-sm">
-          <pre className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-            {code || '// Select a component on canvas to view its code'}
-          </pre>
-        </div>
+        {/* Code Editor */}
+        <textarea
+          role="textbox"
+          value={code || ''}
+          onChange={(e) => onCodeChange?.(e.target.value)}
+          className="w-full h-full p-4 font-mono text-sm bg-transparent text-gray-900 dark:text-gray-100 resize-none outline-none"
+          placeholder="// Select a component on canvas to view its code"
+          aria-label="Code editor"
+        />
       </div>
     </div>
   );

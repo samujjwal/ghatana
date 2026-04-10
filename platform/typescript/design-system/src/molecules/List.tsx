@@ -287,3 +287,21 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
 };
 
 InteractiveList.displayName = 'InteractiveList';
+
+/**
+ * ListItemIcon - Icon container for list items.
+ * MUI-compatible component for displaying icons inside list items.
+ */
+export interface ListItemIconProps extends React.HTMLAttributes<HTMLSpanElement> {}
+export const ListItemIcon: React.FC<ListItemIconProps> = ({ style, children, ...props }) => {
+  return (
+    <span
+      style={{ display: 'inline-flex', alignItems: 'center', minWidth: '40px', ...style }}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};
+ListItemIcon.displayName = 'ListItemIcon';
+

@@ -117,12 +117,15 @@ describe('AIService', () => {
     const service = new AIService();
     const fallbackText = 'Fallback response';
 
+    // Make all generate calls throw to force the fallback text path
+    vi.spyOn(service as unknown as { generate: () => Promise<unknown> }, 'generate').mockRejectedValueOnce(new Error('All providers failed'));
+
     const result = await service.generateWithFallback(
       'Test prompt',
       fallbackText,
     );
 
-    expect(result.text).toBeDefined();
+    expect(result.text).toBe(fallbackText);
     expect(result.metadata.fallbackUsed).toBe(true);
   });
 

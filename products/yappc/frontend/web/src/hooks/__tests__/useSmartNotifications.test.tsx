@@ -3,13 +3,23 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import React from 'react';
 import { renderHook, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSmartNotifications, useNotificationToast } from '../useSmartNotifications';
 import type { Notification } from '../../services/ai/NotificationService';
 
+const createWrapper = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  return Wrapper;
+};
+
 describe('useSmartNotifications', () => {
   it('should return initial state', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     expect(result.current.notifications).toEqual([]);
     expect(result.current.consolidated).toEqual([]);
@@ -18,7 +28,7 @@ describe('useSmartNotifications', () => {
   });
 
   it('should add notification', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addNotification({
@@ -34,7 +44,7 @@ describe('useSmartNotifications', () => {
   });
 
   it('should mark notification as read', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addNotification({
@@ -55,7 +65,7 @@ describe('useSmartNotifications', () => {
   });
 
   it('should mark all notifications as read', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addNotification({
@@ -82,7 +92,7 @@ describe('useSmartNotifications', () => {
   });
 
   it('should remove notification', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addNotification({
@@ -103,7 +113,7 @@ describe('useSmartNotifications', () => {
   });
 
   it('should calculate stats', () => {
-    const { result } = renderHook(() => useSmartNotifications());
+    const { result } = renderHook(() => useSmartNotifications(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.addNotification({
@@ -129,7 +139,7 @@ describe('useSmartNotifications', () => {
 
 describe('useNotificationToast', () => {
   it('should provide toast functions', () => {
-    const { result } = renderHook(() => useNotificationToast());
+    const { result } = renderHook(() => useNotificationToast(), { wrapper: createWrapper() });
 
     expect(result.current.show).toBeDefined();
     expect(result.current.success).toBeDefined();
@@ -139,7 +149,7 @@ describe('useNotificationToast', () => {
   });
 
   it('should show success toast', () => {
-    const { result } = renderHook(() => useNotificationToast());
+    const { result } = renderHook(() => useNotificationToast(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.success('Success message');
@@ -149,7 +159,7 @@ describe('useNotificationToast', () => {
   });
 
   it('should show error toast', () => {
-    const { result } = renderHook(() => useNotificationToast());
+    const { result } = renderHook(() => useNotificationToast(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.error('Error message');
@@ -159,7 +169,7 @@ describe('useNotificationToast', () => {
   });
 
   it('should show warning toast', () => {
-    const { result } = renderHook(() => useNotificationToast());
+    const { result } = renderHook(() => useNotificationToast(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.warning('Warning message');
@@ -169,7 +179,7 @@ describe('useNotificationToast', () => {
   });
 
   it('should show info toast', () => {
-    const { result } = renderHook(() => useNotificationToast());
+    const { result } = renderHook(() => useNotificationToast(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.info('Info message');

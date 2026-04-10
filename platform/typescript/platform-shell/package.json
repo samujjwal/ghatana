@@ -1,7 +1,8 @@
 {
   "name": "@ghatana/platform-shell",
+  "sideEffects": false,
   "version": "0.1.0",
-  "description": "Ghatana platform shell — tenant selector, auth bridge, notification center, product picker",
+  "description": "Ghatana platform shell \u2014 tenant selector, auth bridge, notification center, product picker",
   "author": "Ghatana Platform Team",
   "license": "UNLICENSED",
   "private": true,

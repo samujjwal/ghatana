@@ -66,6 +66,18 @@
       "outputs": ["docs/api/**"],
       "cache": true,
       "outputLogs": "new-only"
+    },
+    "bundle:analyze": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**", ".next/analyze/**"],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "boundary-check": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      "cache": true,
+      "outputLogs": "new-only"
     }
   },
   "remoteCache": {

@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/realtime",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "WebSocket and SSE helpers for Ghatana realtime clients",
   "type": "module",

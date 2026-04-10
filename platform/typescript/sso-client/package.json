@@ -1,7 +1,8 @@
 {
   "name": "@ghatana/sso-client",
+  "sideEffects": false,
   "version": "1.0.0",
-  "description": "Cross-product SSO client for the Ghatana platform — reads platform JWT from OIDC redirect, provides isAuthenticated(), getUser(), login() and logout() helpers.",
+  "description": "Cross-product SSO client for the Ghatana platform \u2014 reads platform JWT from OIDC redirect, provides isAuthenticated(), getUser(), login() and logout() helpers.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -271,9 +271,11 @@ describe('AnomalyBaseline', () => {
       expect(() => AnomalyBaseline.create(params)).toThrow('Validation failed');
     });
 
-    it('throws when dataPointsUsed is too low', () => {
+    it('accepts low dataPointsUsed (warning emitted at service level, not entity)', () => {
+      // Per AnomalyBaseline.entity.ts: data points < 100 produces a less reliable baseline
+      // but is still valid at the entity level — service layer emits the warning.
       const params = { ...validBaselineParams(), dataPointsUsed: 50 };
-      expect(() => AnomalyBaseline.create(params)).toThrow('Validation failed');
+      expect(() => AnomalyBaseline.create(params)).not.toThrow();
     });
 
     it('throws when confidenceInterval is zero', () => {

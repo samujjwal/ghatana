@@ -32,6 +32,7 @@ export function StudioLayout({
   onClose,
   className,
 }: StudioLayoutProps) {
+  const { toggleStudioMode } = useStudioMode();
   const [leftPanelWidth, setLeftPanelWidth] = useState(250);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
@@ -84,10 +85,33 @@ export function StudioLayout({
     handleMouseUp,
   ]);
 
+  const [isCompact, setIsCompact] = React.useState(window.innerWidth <= 768);
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's') {
+        onClose?.();
+      }
+    };
+    const handleResize = () => setIsCompact(window.innerWidth <= 768);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [onClose]);
+
   return (
     <div
-      className={cn('fixed inset-0 bg-white dark:bg-gray-900 z-40', className)}
+      data-testid="studio-layout"
+      aria-label="Studio Mode Layout"
+      className={cn('fixed inset-0 bg-white dark:bg-gray-900 z-40', isCompact && 'studio-layout--compact', className)}
     >
+      {/* Screen reader announcer */}
+      <div data-testid="studio-announcer" aria-live="polite" className="sr-only" />
       {/* Header */}
       <div className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
@@ -99,7 +123,10 @@ export function StudioLayout({
           </span>
         </div>
         <button
-          onClick={onClose}
+          onClick={() => { toggleStudioMode(); onClose?.(); }}
+          aria-label="Close Studio Mode"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') { toggleStudioMode(); onClose?.(); } }}
           className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
         >
           ✕
@@ -110,6 +137,8 @@ export function StudioLayout({
       <div className="flex h-[calc(100vh-3rem)]">
         {/* Left Panel - File Tree */}
         <div
+          data-testid="studio-file-tree"
+          aria-label="File tree panel"
           className="border-r border-gray-200 dark:border-gray-800 overflow-auto"
           style={{ width: `${leftPanelWidth}px` }}
         >
@@ -122,6 +151,7 @@ export function StudioLayout({
             'w-1 cursor-col-resize hover:bg-blue-500 transition-colors',
             isResizingLeft && 'bg-blue-500'
           )}
+          data-testid="resize-handle"
           onMouseDown={() => setIsResizingLeft(true)}
         />
 
@@ -129,6 +159,8 @@ export function StudioLayout({
         <div className="flex-1 flex flex-col">
           {/* Top Panel - Code Editor */}
           <div
+            data-testid="studio-code-editor"
+            aria-label="Code editor panel"
             className="flex-1 overflow-auto"
             style={{ height: `calc(100% - ${bottomPanelHeight}px)` }}
           >
@@ -141,6 +173,7 @@ export function StudioLayout({
               'h-1 cursor-row-resize hover:bg-blue-500 transition-colors',
               isResizingBottom && 'bg-blue-500'
             )}
+            data-testid="resize-handle"
             onMouseDown={() => setIsResizingBottom(true)}
           />
 
@@ -150,12 +183,20 @@ export function StudioLayout({
             style={{ height: `${bottomPanelHeight}px` }}
           >
             {/* Live Preview */}
-            <div className="flex-1 border-r border-gray-200 dark:border-gray-800 overflow-auto">
+            <div
+              data-testid="studio-live-preview"
+              aria-label="Live preview panel"
+              className="flex-1 border-r border-gray-200 dark:border-gray-800 overflow-auto"
+            >
               {livePreview}
             </div>
 
             {/* Validation */}
-            <div className="flex-1 overflow-auto">{validation}</div>
+            <div
+              data-testid="studio-validation"
+              aria-label="Validation panel"
+              className="flex-1 overflow-auto"
+            >{validation}</div>
           </div>
         </div>
       </div>

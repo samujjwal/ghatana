@@ -66,8 +66,7 @@ describe('useFocusTrap', () => {
     const container = document.createElement('div');
     const containerRef = { current: container };
 
-    const { result } = renderHook(() => useFocusTrap(containerRef));
-
-    expect(result.current).toBeDefined();
+    // useFocusTrap is a side-effect hook that returns void; just verify it runs without error
+    expect(() => renderHook(() => useFocusTrap(containerRef))).not.toThrow();
   });
 });

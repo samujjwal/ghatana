@@ -119,7 +119,10 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>((pro
     };
   }, [hasError, surface]);
 
-  const metrics = sizeMetrics[size];
+  // Normalize MUI-compat size aliases ('small' → 'sm', 'medium' → 'md', 'large' → 'lg')
+  const normalizedSize: TextFieldSize =
+    size === 'small' ? 'sm' : size === 'medium' ? 'md' : size === 'large' ? 'lg' : (sizeMetrics[size] ? size : 'md');
+  const metrics = sizeMetrics[normalizedSize];
 
   return (
     <div className={cn('gh-text-field', className)} style={{ width: fullWidth ? '100%' : undefined }}>

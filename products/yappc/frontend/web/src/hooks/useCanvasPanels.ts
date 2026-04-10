@@ -193,15 +193,15 @@ export function useCanvasPanels(options: UseCanvasPanelsOptions = {}): UseCanvas
   }, [open, close]);
 
   const setAiPanelOpen = useCallback((isOpen: boolean) => {
-    isOpen ? open('unified', { tab: 1 }) : close('unified');
+    isOpen ? open('ai') : close('ai');
   }, [open, close]);
 
   const setValidationPanelOpen = useCallback((isOpen: boolean) => {
-    isOpen ? open('unified', { tab: 2 }) : close('unified');
+    isOpen ? open('validation') : close('validation');
   }, [open, close]);
 
   const setCodeGenPanelOpen = useCallback((isOpen: boolean) => {
-    isOpen ? open('unified', { tab: 3 }) : close('unified');
+    isOpen ? open('codeGen') : close('codeGen');
   }, [open, close]);
 
 

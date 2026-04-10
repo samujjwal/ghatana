@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/ui-integration",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "UI Integration layer for Ghatana platform - AI features, collaboration, page builders",
   "type": "module",

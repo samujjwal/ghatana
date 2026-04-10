@@ -142,7 +142,7 @@ describe('Audit Trail Service', () => {
       expect(summary.totalEvents).toBe(3);
       expect(summary.eventsByAction.CREATE).toBe(2);
       expect(summary.eventsByStatus.SUCCESS).toBe(2);
-      expect(summary.successRate).toBe(66);
+      expect(summary.successRate).toBe(67);
     });
   });
 

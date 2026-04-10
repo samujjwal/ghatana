@@ -81,8 +81,8 @@
       "@ghatana/types/*": ["libs/yappc-core/src/types/*"],
       "@ghatana/design-system": ["../../../libs/typescript/ui/src"],
       "@ghatana/design-system/*": ["../../../libs/typescript/ui/src/*"],
-      "@ghatana/canvas": ["libs/yappc-canvas/src"],
-      "@ghatana/canvas/*": ["libs/yappc-canvas/src/*"]
+      "@ghatana/api": ["../../../platform/typescript/api/src"],
+      "@ghatana/api/*": ["../../../platform/typescript/api/src/*"]
     }
   },
   "include": [],

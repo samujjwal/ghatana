@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/i18n",
+  "sideEffects": false,
   "version": "1.0.0",
   "description": "Shared internationalization framework for Ghatana React applications",
   "type": "module",

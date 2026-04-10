@@ -15,6 +15,8 @@ import { useQuery, useMutation, useQueryClient, UseMutationOptions } from '@tans
 import {
   createDashboardClients,
   type DashboardApiConfig,
+  type ApiResponse,
+  type PaginatedResponse,
   type PriorityTask,
   type TaskStatus,
   type TaskPriority,
@@ -143,13 +145,15 @@ export function useDashboardTasks(
       const previousTasks = queryClient.getQueryData(dashboardTaskQueryKeys.list(queryFilters));
 
       // Optimistically update
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           task.id === taskId
             ? { ...task, status: 'completed' as TaskStatus, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       // Return context for rollback
       return { previousTasks };
@@ -175,13 +179,15 @@ export function useDashboardTasks(
       await queryClient.cancelQueries({ queryKey: dashboardTaskQueryKeys.lists() });
       const previousTasks = queryClient.getQueryData(dashboardTaskQueryKeys.list(queryFilters));
 
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           task.id === taskId
             ? { ...task, status: 'skipped' as TaskStatus, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       return { previousTasks };
     },
@@ -203,13 +209,15 @@ export function useDashboardTasks(
       await queryClient.cancelQueries({ queryKey: dashboardTaskQueryKeys.lists() });
       const previousTasks = queryClient.getQueryData(dashboardTaskQueryKeys.list(queryFilters));
 
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           task.id === taskId
             ? { ...task, status: 'completed' as TaskStatus, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       return { previousTasks };
     },
@@ -232,13 +240,15 @@ export function useDashboardTasks(
       await queryClient.cancelQueries({ queryKey: dashboardTaskQueryKeys.lists() });
       const previousTasks = queryClient.getQueryData(dashboardTaskQueryKeys.list(queryFilters));
 
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           task.id === taskId
             ? { ...task, status, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       return { previousTasks };
     },
@@ -261,13 +271,15 @@ export function useDashboardTasks(
       await queryClient.cancelQueries({ queryKey: dashboardTaskQueryKeys.lists() });
       const previousTasks = queryClient.getQueryData(dashboardTaskQueryKeys.list(queryFilters));
 
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           task.id === taskId
             ? { ...task, assignee, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       return { previousTasks };
     },
@@ -291,13 +303,15 @@ export function useDashboardTasks(
 
       const targetStatus = request.action === 'approve' || request.action === 'complete' ? 'completed' : 'skipped';
 
-      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: PriorityTask[] | undefined) =>
-        old?.map((task) =>
+      queryClient.setQueryData(dashboardTaskQueryKeys.list(queryFilters), (old: ApiResponse<PaginatedResponse<PriorityTask>> | undefined) => {
+        if (!old?.data?.items) return old;
+        const updatedItems = old.data.items.map((task) =>
           request.taskIds.includes(task.id)
             ? { ...task, status: targetStatus as TaskStatus, updatedAt: new Date().toISOString() }
             : task
-        )
-      );
+        );
+        return { ...old, data: { ...old.data, items: updatedItems } };
+      });
 
       return { previousTasks };
     },

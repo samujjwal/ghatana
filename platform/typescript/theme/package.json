@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/theme",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Unified theme system for Ghatana platform",
   "type": "module",

@@ -2,7 +2,7 @@
  * useErrorRecovery Hook Tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useErrorRecovery } from '../useErrorRecovery';
 
@@ -25,7 +25,7 @@ describe('useErrorRecovery', () => {
   it('should execute with retry on success', async () => {
     const { result } = renderHook(() => useErrorRecovery());
 
-    const mockFn = jest.fn().mockResolvedValue('success');
+    const mockFn = vi.fn().mockResolvedValue('success');
 
     await act(async () => {
       const response = await result.current.executeWithRetry(mockFn);
@@ -44,7 +44,7 @@ describe('useErrorRecovery', () => {
       },
     }));
 
-    const mockFn = jest.fn()
+    const mockFn = vi.fn()
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValue('success');
 
@@ -59,7 +59,7 @@ describe('useErrorRecovery', () => {
   it('should not retry on non-retryable errors', async () => {
     const { result } = renderHook(() => useErrorRecovery());
 
-    const mockFn = jest.fn().mockRejectedValue(new Error('Unauthorized'));
+    const mockFn = vi.fn().mockRejectedValue(new Error('Unauthorized'));
 
     await act(async () => {
       await expect(result.current.executeWithRetry(mockFn)).rejects.toThrow('Unauthorized');
@@ -71,7 +71,7 @@ describe('useErrorRecovery', () => {
   it('should set error state on failure', async () => {
     const { result } = renderHook(() => useErrorRecovery());
 
-    const mockFn = jest.fn().mockRejectedValue(new Error('Test error'));
+    const mockFn = vi.fn().mockRejectedValue(new Error('Test error'));
 
     await act(async () => {
       await expect(result.current.executeWithRetry(mockFn)).rejects.toThrow();
@@ -85,7 +85,7 @@ describe('useErrorRecovery', () => {
   it('should clear error on clearError call', async () => {
     const { result } = renderHook(() => useErrorRecovery());
 
-    const mockFn = jest.fn().mockRejectedValue(new Error('Test error'));
+    const mockFn = vi.fn().mockRejectedValue(new Error('Test error'));
 
     await act(async () => {
       await expect(result.current.executeWithRetry(mockFn)).rejects.toThrow();
@@ -110,7 +110,7 @@ describe('useErrorRecovery', () => {
       },
     }));
 
-    const mockFn = jest.fn()
+    const mockFn = vi.fn()
       .mockRejectedValueOnce(new Error('Network error'))
       .mockRejectedValueOnce(new Error('Network error'))
       .mockResolvedValue('success');

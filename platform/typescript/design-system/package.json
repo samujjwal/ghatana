@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/design-system",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Design System components for Ghatana platform - WCAG AA compliant, Atomic Design",
   "type": "module",

@@ -2,10 +2,19 @@
  * ResourcePlanner Component Tests
  */
 
+import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResourcePlanner } from '../ResourcePlanner';
 import type { TeamMember, TaskRequirement } from '../../../services/ai/ResourceAllocationService';
+
+function createWrapper() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
 
 describe('ResourcePlanner', () => {
   it('should render capacity overview', () => {
@@ -21,7 +30,7 @@ describe('ResourcePlanner', () => {
       },
     ];
 
-    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />);
+    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Resource Planner')).toBeDefined();
     expect(screen.getByText('Capacity Overview')).toBeDefined();
@@ -40,7 +49,7 @@ describe('ResourcePlanner', () => {
       },
     ];
 
-    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />);
+    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Team Utilization')).toBeDefined();
     expect(screen.getByText('John')).toBeDefined();
@@ -69,7 +78,7 @@ describe('ResourcePlanner', () => {
       },
     ];
 
-    render(<ResourcePlanner tasks={tasks} teamMembers={teamMembers} />);
+    render(<ResourcePlanner tasks={tasks} teamMembers={teamMembers} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Task Allocations')).toBeDefined();
   });
@@ -87,7 +96,7 @@ describe('ResourcePlanner', () => {
       },
     ];
 
-    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />);
+    render(<ResourcePlanner tasks={[]} teamMembers={teamMembers} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Auto-Allocate')).toBeDefined();
   });

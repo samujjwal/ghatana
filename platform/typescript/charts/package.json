@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/charts",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Shared chart primitives built on top of Recharts with Ghatana theming",
   "type": "module",

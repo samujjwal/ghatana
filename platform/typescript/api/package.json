@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/api",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Fetch-based API client with middleware and retries for the Ghatana platform",
   "type": "module",
@@ -19,11 +20,14 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {},
   "devDependencies": {
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "vitest": "^2.0.0"
   },
   "keywords": [
     "ghatana",

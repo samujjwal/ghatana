@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/code-editor",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Monaco-based code editor component with lazy loading for YAPPC",
   "private": false,

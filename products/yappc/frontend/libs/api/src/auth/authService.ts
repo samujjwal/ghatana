@@ -4,11 +4,17 @@
  * Production-ready auth service with TypeScript types,
  * error handling, and request/response interceptors.
  *
+ * Uses @ghatana/api `ApiClient` as the HTTP substrate — auth token injection
+ * and 401/403 handling are wired as middleware, not reimplemented here.
+ *
  * @module api/auth
  * @doc.type service
  * @doc.purpose Backend authentication integration
  * @doc.layer api
  */
+
+import { ApiClient } from '@ghatana/api';
+import type { ApiRequest, ApiResponse as GhatanaApiResponse } from '@ghatana/api';
 
 // ============================================================================
 // Types
@@ -155,115 +161,85 @@ function resolveApiBaseUrl(configuredBaseUrl?: string): string {
  * });
  */
 export class AuthService {
-  private baseUrl: string;
-  private timeout: number;
-  private retryAttempts: number;
-  private onTokenExpired?: () => void;
-  private onUnauthorized?: () => void;
+  private readonly apiClient: ApiClient;
+  private readonly onTokenExpired?: () => void;
+  private readonly onUnauthorized?: () => void;
 
   /**
-   *
+   * @doc.type constructor
+   * @doc.purpose Wire ApiClient with auth middleware for token injection and
+   *               YAPPC-specific 401/403 side-effects (callbacks).
    */
   constructor(config: AuthServiceConfig = {}) {
-    this.baseUrl = resolveApiBaseUrl(config.baseUrl);
-    this.timeout = config.timeout || 30000;
-    this.retryAttempts = config.retryAttempts || 1;
+    const baseUrl = resolveApiBaseUrl(config.baseUrl);
+
     this.onTokenExpired = config.onTokenExpired;
     this.onUnauthorized = config.onUnauthorized;
+
+    this.apiClient = new ApiClient({
+      baseUrl,
+      timeoutMs: config.timeout ?? 30000,
+      retry: { attempts: config.retryAttempts ?? 1 },
+    });
+
+    // Inject Bearer token from localStorage on every request
+    this.apiClient.useRequest((request: ApiRequest): ApiRequest => {
+      const token =
+        typeof localStorage !== 'undefined'
+          ? localStorage.getItem('auth_token')
+          : null;
+      if (token) {
+        return {
+          ...request,
+          headers: { ...request.headers, Authorization: `Bearer ${token}` },
+        };
+      }
+      return request;
+    });
+
+    // Handle 401/403 side-effects via response middleware
+    this.apiClient.useResponse((response: GhatanaApiResponse<unknown>, _request: ApiRequest): GhatanaApiResponse<unknown> => {
+      if (response.status === 401) {
+        this.onUnauthorized?.();
+      } else if (response.status === 403) {
+        this.onTokenExpired?.();
+      }
+      return response;
+    });
   }
 
   /**
-   * Make authenticated request
+   * Internal helper: unwraps ApiResponse<T> to T.
+   * ApiClient already handles status-code classification and retries.
    */
   private async request<T>(
+    method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
     endpoint: string,
-    options: RequestInit = {}
+    body?: unknown,
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-
-    // Add default headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-
-    // Add auth token if available
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const config: RequestInit = {
-      ...options,
-      headers,
-      signal: AbortSignal.timeout(this.timeout),
-    };
-
-    try {
-      const response = await fetch(url, config);
-
-      // Handle different status codes
-      if (response.status === 401) {
-        if (this.onUnauthorized) {
-          this.onUnauthorized();
-        }
-        throw new Error('Unauthorized');
-      }
-
-      if (response.status === 403) {
-        if (this.onTokenExpired) {
-          this.onTokenExpired();
-        }
-        throw new Error('Token expired');
-      }
-
-      if (!response.ok) {
-        const error = (await response.json().catch(
-          (): ApiError => ({
-            message: `HTTP ${response.status}: ${response.statusText}`,
-          })
-        )) as ApiError;
-        throw new Error(error.message);
-      }
-
-      const data: unknown = await response.json();
-      return data as T;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Network error', { cause: error });
-    }
+    const response = await this.apiClient.request<T>({ url: endpoint, method, body });
+    return response.data;
   }
 
   /**
    * Login user
    */
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<LoginResponse>('POST', '/auth/login', payload);
   }
 
   /**
    * Register new user
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    return this.request<RegisterResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<RegisterResponse>('POST', '/auth/register', payload);
   }
 
   /**
    * Logout user
    */
   async logout(payload: LogoutRequest = {}): Promise<void> {
-    return this.request<void>('/auth/logout', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<void>('POST', '/auth/logout', payload);
   }
 
   /**
@@ -272,29 +248,21 @@ export class AuthService {
   async refreshToken(
     payload: RefreshTokenRequest
   ): Promise<RefreshTokenResponse> {
-    return this.request<RefreshTokenResponse>('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<RefreshTokenResponse>('POST', '/auth/refresh', payload);
   }
 
   /**
    * Get current user profile
    */
   async me(): Promise<User> {
-    return this.request<User>('/auth/me', {
-      method: 'GET',
-    });
+    return this.request<User>('GET', '/auth/me');
   }
 
   /**
    * Request password reset
    */
   async requestPasswordReset(payload: PasswordResetRequest): Promise<void> {
-    return this.request<void>('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<void>('POST', '/auth/reset-password', payload);
   }
 
   /**
@@ -303,20 +271,14 @@ export class AuthService {
   async confirmPasswordReset(
     payload: PasswordResetConfirmRequest
   ): Promise<void> {
-    return this.request<void>('/auth/reset-password/confirm', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<void>('POST', '/auth/reset-password/confirm', payload);
   }
 
   /**
    * Update user profile
    */
   async updateProfile(payload: Partial<User>): Promise<User> {
-    return this.request<User>('/auth/profile', {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
+    return this.request<User>('PATCH', '/auth/profile', payload);
   }
 
   /**
@@ -326,10 +288,7 @@ export class AuthService {
     currentPassword: string;
     newPassword: string;
   }): Promise<void> {
-    return this.request<void>('/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<void>('POST', '/auth/change-password', payload);
   }
 }
 

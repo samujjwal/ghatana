@@ -54,13 +54,25 @@ import { ThreatIntelligence } from "../../models/anomaly/ThreatIntelligence.enti
 import { MetricsCollector } from "../../observability/MetricsCollector";
 
 /**
+ * Repository interface for incident persistence.
+ */
+export interface IncidentRepository {
+  save(incident: Incident): Promise<void>;
+  findById(id: string): Promise<Incident | null>;
+  findByStatus(status: string): Promise<Incident[]>;
+  query(): Promise<Incident[]>;
+}
+
+/**
  * Automated response action taken in response to anomaly.
  */
 export interface ResponseAction {
   readonly id: string;
-  readonly type: ResponseActionType;
+  readonly actionType: ResponseActionType;
+  readonly type: ResponseActionType; // alias for actionType
   readonly description: string;
   readonly status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  readonly createdAt: Date;
   readonly result?: string;
   readonly executedAt?: Date;
   readonly error?: string;
@@ -87,12 +99,14 @@ export type ResponseActionType =
 export interface Incident {
   readonly id: string;
   readonly anomalyId: string;
+  readonly resourceId?: string;
   readonly severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   readonly title: string;
   readonly description: string;
   readonly createdAt: Date;
   readonly status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
-  readonly actions: readonly ResponseAction[];
+  readonly responseActions: readonly ResponseAction[];
+  readonly actions: readonly ResponseAction[]; // alias for responseActions
   readonly playbooks: readonly string[];
   readonly relatedThreats: readonly string[];
 }
@@ -110,7 +124,7 @@ interface PlaybookConfig {
  * AutomatedResponseService implementation.
  */
 export class AutomatedResponseService {
-  private readonly _incidents: Map<string, Incident> = new Map();
+  private readonly _repository: IncidentRepository;
   private readonly _metrics: MetricsCollector;
   private readonly _playbookRegistry: Map<
     string,
@@ -120,9 +134,11 @@ export class AutomatedResponseService {
   /**
    * Creates a new AutomatedResponseService.
    *
+   * @param repository IncidentRepository for persistence
    * @param metrics MetricsCollector for observability
    */
-  constructor(metrics: MetricsCollector) {
+  constructor(repository: IncidentRepository, metrics: MetricsCollector) {
+    this._repository = repository;
     this._metrics = metrics;
     this._initializePlaybooks();
   }
@@ -148,24 +164,39 @@ export class AutomatedResponseService {
   ): Promise<Incident> {
     const incidentId = this._generateIncidentId();
 
-    // Determine response severity
-    const severity = this._mapAnomalySeverityToIncidentSeverity(
+    // Determine response severity (escalate if exploitable threats)
+    let severity = this._mapAnomalySeverityToIncidentSeverity(
       anomaly.severity
     );
+
+    // Escalate severity if exploitable critical threats are present
+    if (threats && threats.some(t =>
+      typeof t.isExploitableAndCritical === 'function'
+        ? t.isExploitableAndCritical()
+        : (t.exploitAvailable && (t.severity === 'CRITICAL' || t.severity === 'HIGH'))
+    )) {
+      severity = 'CRITICAL';
+    }
 
     // Select appropriate playbooks
     const playbookNames = this._selectPlaybooks(anomaly.type, threats);
 
-    // Execute response actions
+    // Execute response actions (create as PENDING)
     const actions: ResponseAction[] = [];
 
     for (const playbookName of playbookNames) {
-      const playbookActions = await this._executePlaybook(
-        playbookName,
-        anomaly,
-        threats
-      );
-      actions.push(...playbookActions);
+      const playbookActionTypes = this._getPlaybookActions(playbookName);
+      for (const actionType of playbookActionTypes) {
+        const action: ResponseAction = {
+          id: this._generateActionId(),
+          actionType,
+          type: actionType,
+          description: `${actionType} in response to ${anomaly.type}`,
+          status: "PENDING",
+          createdAt: new Date(),
+        };
+        actions.push(action);
+      }
     }
 
     // Create incident record
@@ -177,16 +208,17 @@ export class AutomatedResponseService {
       description: `Automatically triggered response to ${anomaly.type} anomaly with severity ${anomaly.severity}`,
       createdAt: new Date(),
       status: "OPEN",
+      responseActions: actions as readonly ResponseAction[],
       actions: actions as readonly ResponseAction[],
       playbooks: playbookNames as readonly string[],
       relatedThreats: (threats?.map((t) => t.cveId) || []) as readonly string[],
     };
 
-    // Store incident
-    this._incidents.set(incidentId, incident);
+    // Persist incident
+    await this._repository.save(incident);
 
     // Record metrics
-    this._metrics.incrementCounter("incidents_created", 1, {
+    this._metrics.incrementCounter("automated_response_triggered", 1, {
       severity: severity,
       anomalyType: anomaly.type,
     });
@@ -204,38 +236,47 @@ export class AutomatedResponseService {
   async triggerPlaybook(
     playbookName: string,
     context: Record<string, unknown>
-  ): Promise<ResponseAction[]> {
-    const actions: ResponseAction[] = [];
+  ): Promise<Incident> {
+    // Normalize playbook name (support human-readable names)
+    const normalizedName = this._normalizePlaybookName(playbookName);
+    const actionTypes = this._getPlaybookActions(normalizedName);
 
-    // Determine playbook type from name
-    const actionTypes = this._getPlaybookActions(playbookName);
-
-    for (const actionType of actionTypes) {
-      const action: ResponseAction = {
-        id: this._generateActionId(),
-        type: actionType,
-        description: `Executing ${actionType} for playbook ${playbookName}`,
-        status: "PENDING",
-      };
-
-      // Execute action
-      const result = await this._executeAction(actionType, context);
-
-      actions.push({
-        ...action,
-        status: result.success ? "COMPLETED" : "FAILED",
-        executedAt: new Date(),
-        result: result.message,
-        error: result.error,
-      });
-
-      this._metrics.incrementCounter("response_actions_executed", 1, {
-        actionType: actionType,
-        success: result.success ? "true" : "false",
-      });
+    if (actionTypes.length === 0) {
+      throw new Error(`Unknown playbook: ${playbookName}`);
     }
 
-    return actions;
+    const actions: ResponseAction[] = actionTypes.map((actionType) => ({
+      id: this._generateActionId(),
+      actionType,
+      type: actionType,
+      description: `Executing ${actionType} for playbook ${playbookName}`,
+      status: "PENDING" as const,
+      createdAt: new Date(),
+    }));
+
+    this._metrics.incrementCounter("playbook_executed", 1, {
+      playbookName,
+    });
+
+    const incidentId = this._generateIncidentId();
+    const incident: Incident = {
+      id: incidentId,
+      anomalyId: (context.anomalyId as string) || incidentId,
+      resourceId: context.resourceId as string | undefined,
+      severity: (context.severity as Incident['severity']) || 'HIGH',
+      title: `Playbook Response: ${playbookName}`,
+      description: `Manual playbook execution: ${playbookName}`,
+      createdAt: new Date(),
+      status: "OPEN",
+      responseActions: actions as readonly ResponseAction[],
+      actions: actions as readonly ResponseAction[],
+      playbooks: [playbookName] as readonly string[],
+      relatedThreats: [] as readonly string[],
+    };
+
+    await this._repository.save(incident);
+
+    return incident;
   }
 
   /**
@@ -245,7 +286,7 @@ export class AutomatedResponseService {
    * @returns Incident data or null if not found
    */
   async getIncidentStatus(incidentId: string): Promise<Incident | null> {
-    const incident = this._incidents.get(incidentId);
+    const incident = await this._repository.findById(incidentId);
 
     if (incident) {
       this._metrics.incrementCounter("incident_status_queries", 1);
@@ -263,21 +304,25 @@ export class AutomatedResponseService {
   async updateIncidentStatus(
     incidentId: string,
     status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
-  ): Promise<void> {
-    const incident = this._incidents.get(incidentId);
+  ): Promise<Incident | null> {
+    const incident = await this._repository.findById(incidentId);
 
-    if (incident) {
-      const updated: Incident = {
-        ...incident,
-        status: status,
-      };
-
-      this._incidents.set(incidentId, updated);
-
-      this._metrics.incrementCounter("incidents_status_updated", 1, {
-        status: status,
-      });
+    if (!incident) {
+      return null;
     }
+
+    const updated: Incident = {
+      ...incident,
+      status: status,
+    };
+
+    await this._repository.save(updated);
+
+    this._metrics.incrementCounter("incident_status_updated", 1, {
+      status: status,
+    });
+
+    return updated;
   }
 
   /**
@@ -286,11 +331,12 @@ export class AutomatedResponseService {
    * @returns Array of open incidents
    */
   async getOpenIncidents(): Promise<Incident[]> {
-    const incidents = Array.from(this._incidents.values()).filter(
+    const all = await this._repository.query();
+    const incidents = all.filter(
       (i) => i.status === "OPEN" || i.status === "IN_PROGRESS"
     );
 
-    this._metrics.recordHistogram("open_incidents", incidents.length);
+    this._metrics.incrementCounter("open_incidents_query", 1, {});
 
     return incidents;
   }
@@ -387,7 +433,10 @@ export class AutomatedResponseService {
     // Add threat-based playbooks
     if (threats) {
       for (const threat of threats) {
-        if (threat.isExploitableAndCritical()) {
+        const exploitable = typeof threat.isExploitableAndCritical === 'function'
+          ? threat.isExploitableAndCritical()
+          : (threat.exploitAvailable && (threat.severity === 'CRITICAL' || threat.severity === 'HIGH'));
+        if (exploitable) {
           playbooks.push("SERVICE_COMPROMISE");
         }
       }
@@ -545,11 +594,32 @@ export class AutomatedResponseService {
   }
 
   /**
-   * Maps anomaly severity (0-1) to incident severity category.
+   * Normalizes human-readable playbook names to internal registry keys.
+   */
+  private _normalizePlaybookName(name: string): string {
+    const mapping: Record<string, string> = {
+      'DDoS Mitigation': 'DDoS_MITIGATION',
+      'Exfiltration Response': 'EXFILTRATION_RESPONSE',
+      'Privilege Escalation Response': 'PRIVILEGE_ESCALATION_RESPONSE',
+      'Malware Response': 'MALWARE_RESPONSE',
+      'Service Compromise': 'SERVICE_COMPROMISE',
+    };
+    return mapping[name] || name;
+  }
+
+  /**
+   * Maps anomaly severity (0-1 or string) to incident severity category.
    */
   private _mapAnomalySeverityToIncidentSeverity(
-    severity: number
+    severity: number | string
   ): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" {
+    if (typeof severity === 'string') {
+      const s = severity.toUpperCase();
+      if (s === 'CRITICAL') return 'CRITICAL';
+      if (s === 'HIGH') return 'HIGH';
+      if (s === 'MEDIUM') return 'MEDIUM';
+      return 'LOW';
+    }
     if (severity >= 0.8) return "CRITICAL";
     if (severity >= 0.6) return "HIGH";
     if (severity >= 0.4) return "MEDIUM";

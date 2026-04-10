@@ -2,10 +2,15 @@
  * MobileNavigation Component Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MobileNavigation } from '../MobileNavigation';
 import type { NavItem } from '../MobileNavigation';
+
+// Mock useResponsive so that the mobile navigation actually renders
+vi.mock('../../../hooks/useResponsive', () => ({
+  useResponsive: () => ({ isMobile: true, isTablet: false, isDesktop: false }),
+}));
 
 describe('MobileNavigation', () => {
   it('should render navigation items', () => {
@@ -14,20 +19,20 @@ describe('MobileNavigation', () => {
         id: '1',
         label: 'Home',
         icon: <span>Home</span>,
-        onClick: jest.fn(),
+        onClick: vi.fn(),
       },
       {
         id: '2',
         label: 'Projects',
         icon: <span>Projects</span>,
-        onClick: jest.fn(),
+        onClick: vi.fn(),
       },
     ];
 
     render(<MobileNavigation items={items} />);
 
-    expect(screen.getByText('Home')).toBeDefined();
-    expect(screen.getByText('Projects')).toBeDefined();
+    expect(screen.getAllByText('Home').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Projects').length).toBeGreaterThan(0);
   });
 
   it('should render badge count', () => {
@@ -36,7 +41,7 @@ describe('MobileNavigation', () => {
         id: '1',
         label: 'Projects',
         icon: <span>Projects</span>,
-        onClick: jest.fn(),
+        onClick: vi.fn(),
         badge: 5,
       },
     ];
@@ -47,19 +52,19 @@ describe('MobileNavigation', () => {
   });
 
   it('should handle item click', () => {
-    const onClick = jest.fn();
+    const onClick = vi.fn();
     const items: NavItem[] = [
       {
         id: '1',
         label: 'Home',
-        icon: <span>Home</span>,
+        icon: <span aria-hidden="true">🏠</span>,
         onClick,
       },
     ];
 
     render(<MobileNavigation items={items} />);
 
-    const homeButton = screen.getByText('Home');
+    const homeButton = screen.getAllByText('Home')[0];
     homeButton.click();
 
     expect(onClick).toHaveBeenCalled();
@@ -70,7 +75,7 @@ describe('MobileNavigation', () => {
       id: String(i),
       label: `Item ${i}`,
       icon: <span>Icon {i}</span>,
-      onClick: jest.fn(),
+      onClick: vi.fn(),
     }));
 
     render(<MobileNavigation items={items} />);

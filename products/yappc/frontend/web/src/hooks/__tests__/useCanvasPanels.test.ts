@@ -8,6 +8,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
 import { useCanvasPanels, type PanelId } from '../useCanvasPanels';
 
 describe('useCanvasPanels', () => {
@@ -216,7 +217,9 @@ describe('useCanvasPanels', () => {
         useCanvasPanels({ defaultOpenPanels: [] })
       );
       
-      expect(result.current.openPanelIds).toHaveLength(0);
+      // 'tasks' panel is always considered open unless explicitly collapsed
+      expect(result.current.openPanelIds).toContain('tasks');
+      const initialLength = result.current.openPanelIds.length;
       
       act(() => {
         result.current.open('ai');
@@ -225,12 +228,13 @@ describe('useCanvasPanels', () => {
       
       expect(result.current.openPanelIds).toContain('ai');
       expect(result.current.openPanelIds).toContain('validation');
+      expect(result.current.openPanelIds.length).toBe(initialLength + 2);
     });
   });
 
   describe('onPanelChange Callback', () => {
     it('should call onPanelChange when panel opens', () => {
-      const onPanelChange = jest.fn();
+      const onPanelChange = vi.fn();
       const { result } = renderHook(() => 
         useCanvasPanels({ onPanelChange })
       );
@@ -243,7 +247,7 @@ describe('useCanvasPanels', () => {
     });
 
     it('should call onPanelChange when panel closes', () => {
-      const onPanelChange = jest.fn();
+      const onPanelChange = vi.fn();
       const { result } = renderHook(() => 
         useCanvasPanels({ defaultOpenPanels: ['ai'], onPanelChange })
       );

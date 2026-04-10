@@ -2,11 +2,22 @@
  * useResourcePrediction Hook Tests
  */
 
-import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useResourcePrediction, useResourceUtilization, useTeamAssignment } from '../useResourcePrediction';
 import type { TeamMember, TaskRequirement } from '../../services/ai/ResourceAllocationService';
+
+vi.mock('../../services/ai/ResourceAllocationService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../services/ai/ResourceAllocationService')>();
+  return {
+    ...actual,
+    allocateResources: vi.fn().mockResolvedValue({
+      allocations: [{ taskId: '1', memberId: 'm1', estimatedHours: 4, confidence: 0.9 }],
+      capacityPlan: null,
+    }),
+  };
+});
 
 describe('useResourcePrediction', () => {
   it('should return initial state', () => {
@@ -26,7 +37,7 @@ describe('useResourcePrediction', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('should allocate resources for tasks', () => {
+  it('should allocate resources for tasks', async () => {
     const queryClient = new QueryClient();
 
     const tasks: TaskRequirement[] = [
@@ -60,7 +71,9 @@ describe('useResourcePrediction', () => {
       }
     );
 
-    expect(result.current.allocations.length).toBe(1);
+    await waitFor(() => {
+      expect(result.current.allocations.length).toBe(1);
+    });
   });
 });
 

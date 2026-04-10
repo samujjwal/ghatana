@@ -16,10 +16,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StudioLayout, useStudioMode } from '../StudioLayout';
 
 // Mock the custom hook
-vi.mock('../StudioLayout', () => ({
-  ...vi.importActual('../StudioLayout'),
-  useStudioMode: vi.fn(),
-}));
+vi.mock('../StudioLayout', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useStudioMode: vi.fn(),
+  };
+});
 
 const mockUseStudioMode = useStudioMode as vi.MockedFunction<
   typeof useStudioMode
@@ -109,7 +112,7 @@ describe('StudioLayout Component', () => {
       const closeButton = screen.getByLabelText('Close Studio Mode');
       fireEvent.click(closeButton);
 
-      expect(mockToggleStudioMode).toHaveBeenCalledTimes(1);
+      expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
     });
 
     it('supports keyboard shortcut to close', () => {

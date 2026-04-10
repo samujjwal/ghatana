@@ -7,6 +7,7 @@ import {
   ResponseMiddleware,
   ApiRequestInit,
   ApiErrorCategory,
+  ValidationError,
 } from "./types";
 
 function mergeHeaders(
@@ -95,7 +96,24 @@ export class ApiClient {
           method: input.method ?? "GET",
         });
         const result = await this.executeRequest<T>(processed);
-        return await this.runResponseMiddleware(result, processed);
+        const response = await this.runResponseMiddleware(result, processed);
+
+        // Optional schema validation: if a schema was provided, parse the
+        // response data through it. Throws ValidationError on mismatch so
+        // callers can distinguish validation failures from HTTP/network errors.
+        if (input.schema !== undefined) {
+          try {
+            const validated = input.schema.parse(response.data) as T;
+            return { ...response, data: validated };
+          } catch (err) {
+            throw new ValidationError(
+              `Response validation failed for ${input.method ?? "GET"} ${input.url}`,
+              err,
+            );
+          }
+        }
+
+        return response;
       } catch (error) {
         const apiError = error as ApiError;
         lastError = apiError;

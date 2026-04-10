@@ -365,6 +365,9 @@ export class TaskApiClient extends BaseDashboardApiClient {
 
     let filtered = [...baseTasks];
 
+    if (request.projectId) {
+      filtered = filtered.filter(t => t.projectId === request.projectId);
+    }
     if (request.status) {
       filtered = filtered.filter(t => t.status === request.status);
     }

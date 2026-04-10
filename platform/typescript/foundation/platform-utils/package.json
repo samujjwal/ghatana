@@ -1,5 +1,6 @@
 {
   "name": "@ghatana/platform-utils",
+  "sideEffects": false,
   "version": "0.1.0",
   "description": "Shared utility functions for Ghatana platform",
   "type": "module",
