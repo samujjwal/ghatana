@@ -21,7 +21,7 @@
     "@audio-video/ui": "workspace:*",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
-    "jotai": "^2.19.0",
+    "jotai": "^2.19.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0"

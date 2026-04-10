@@ -25,7 +25,7 @@
     "@tutorputor/ui": "workspace:*",
     "clsx": "^2.1.1",
     "ioredis": "^5.10.1",
-    "jotai": "^2.19.0",
+    "jotai": "^2.19.1",
     "konva": "^10.2.3",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
