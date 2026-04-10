@@ -6,7 +6,7 @@ import com.ghatana.refactorer.codemods.python.PythonCodemods;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.process.ProcessResult;
-import com.ghatana.refactorer.testutils.TestConfig;
+import com.ghatana.refactorer.testutils.ConfigTestUtils;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Integration test for the Python language service using a test fixture.
  *
  * <p>
- * This test requires Python 3.7+ with ruff and black installed in the test
+ * This test requires Python 3.7+ with RUFF and black installed in the test
  * environment. It will
  * be skipped if these prerequisites aren't met.
 
@@ -42,15 +42,25 @@ class PythonIntegrationTest extends EventloopTestBase {
     private Path fixtureDir;
     private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**",
             "**/node_modules/**");
+    
+    // Constants for duplicate literals
+    private static final String SRC = "SRC";
+    private static final String SRC_MAIN_PY = "src/main.py";
+    private static final String INDENT_4_SPACES = "    ";
+    private static final String DEF_PREFIX = "def ";
+    private static final String F821_CODE = "F821";
+    private static final String IMPORT_REQUESTS = "import requests";
+    private static final String IMPORT_PANDAS_AS_PD = "import pandas as pd";
+    private static final String RUFF = "ruff";
 
     @BeforeEach
     void setUp() throws Exception {
         // Copy the test fixture to the temp directory
         fixtureDir = tempDir.resolve("python-missing-import");
-        TestConfig.copyDirectory(
+        ConfigTestUtils.copyDirectory(
                 Path.of("src/test/resources/test-fixtures/python-missing-import"), fixtureDir);
 
-        context = TestConfig.createTestContext(fixtureDir);
+        context = ConfigTestUtils.createTestContext(fixtureDir);
         processRunner = new FakeProcessRunner(context);
         service = new PythonDiagnosticsService(
                 context,
@@ -58,7 +68,7 @@ class PythonIntegrationTest extends EventloopTestBase {
                 new BlackRunner(context, processRunner),
                 new IntegrationCodemods(context),
                 processRunner)
-                .withIncludePatterns(List.of("src"))
+                .withIncludePatterns(List.of(SRC))
                 .withFix(true);
     }
 
@@ -70,17 +80,17 @@ class PythonIntegrationTest extends EventloopTestBase {
         }
         processRunner.when(
                 "black",
-                blackArgs(false, 88, "src"),
+                blackArgs(false, 88, SRC),
                 responses.toArray(new FakeProcessRunner.CommandResponse[0]));
     }
 
     private FakeProcessRunner.CommandEffect formatFixture() {
         return (cwd, cmd) -> {
-            Path file = cwd.resolve("src/main.py");
+            Path file = cwd.resolve(SRC_MAIN_PY);
             try {
                 String content = Files.readString(file, StandardCharsets.UTF_8);
-                content = content.replaceAll("(?m)^ {2}", "    ");
-                content = content.replaceAll("(?m)^def\\s*", "def ");
+                content = content.replaceAll("(?m)^ {2}", INDENT_4_SPACES);
+                content = content.replaceAll("(?m)^def\\s*", DEF_PREFIX);
                 content = content.replace("x=1", "x = 1");
                 content = content.replace("1+2", "1 + 2");
                 Files.writeString(file, content, StandardCharsets.UTF_8);
@@ -123,8 +133,8 @@ class PythonIntegrationTest extends EventloopTestBase {
 
     private static String missingImportDiagnostics() {
         return diagnosticsJson(
-                new RuffFinding("src/main.py", "F821", "undefined name 'requests'", 10, 5, 10, 12),
-                new RuffFinding("src/main.py", "F821", "undefined name 'pd'", 11, 5, 11, 7));
+                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'requests'", 10, 5, 10, 12),
+                new RuffFinding(SRC_MAIN_PY, F821_CODE, "undefined name 'pd'", 11, 5, 11, 7));
     }
 
     private static String diagnosticsJson(RuffFinding... findings) {
@@ -168,11 +178,11 @@ class PythonIntegrationTest extends EventloopTestBase {
         public boolean applyCodemods(Path file, List<UnifiedDiagnostic> diagnostics) {
             try {
                 String content = Files.readString(file, StandardCharsets.UTF_8);
-                if (content.contains("requests.get") && !content.contains("import requests")) {
-                    content = "import requests\n" + content;
+                if (content.contains("requests.get") && !content.contains(IMPORT_REQUESTS)) {
+                    content = IMPORT_REQUESTS + "\n" + content;
                 }
-                if (content.contains("pd.DataFrame") && !content.contains("import pandas as pd")) {
-                    content = "import pandas as pd\n" + content;
+                if (content.contains("pd.DataFrame") && !content.contains(IMPORT_PANDAS_AS_PD)) {
+                    content = IMPORT_PANDAS_AS_PD + "\n" + content;
                 }
                 Files.writeString(file, content, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -184,23 +194,23 @@ class PythonIntegrationTest extends EventloopTestBase {
 
     @Test
     void testFindsAndFixesMissingImports() throws Exception {
-        Path mainPy = fixtureDir.resolve("src/main.py");
+        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY);
         String originalContent = Files.readString(mainPy);
 
         // Should contain missing import errors
         assertTrue(originalContent.contains("requests.get"), "Test file should use requests");
         assertTrue(originalContent.contains("pd.DataFrame"), "Test file should use pandas");
         assertFalse(
-                originalContent.contains("import requests"),
+                originalContent.contains(IMPORT_REQUESTS),
                 "Test file should not import requests yet");
         assertFalse(
-                originalContent.contains("import pandas as pd"),
+                originalContent.contains(IMPORT_PANDAS_AS_PD),
                 "Test file should not import pandas yet");
 
         // Run diagnostics - should find F821 errors for missing imports
         processRunner.when(
-                "ruff",
-                ruffArgs(true, "src"),
+                RUFF,
+                ruffArgs(true, SRC),
                 FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
 
@@ -209,7 +219,7 @@ class PythonIntegrationTest extends EventloopTestBase {
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.runDiagnostics());
         List<UnifiedDiagnostic> missingImportErrors = diagnostics.stream()
                 .filter(
-                        d -> d.getCode().equals("F821")
+                        d -> d.getCode().equals(F821_CODE)
                                 && d.getMessage().contains("undefined name"))
                 .collect(Collectors.toList());
 
@@ -217,8 +227,8 @@ class PythonIntegrationTest extends EventloopTestBase {
 
         // Apply fixes - should add the missing imports
         processRunner.when(
-                "ruff",
-                ruffArgs(true, "src"),
+                RUFF,
+                ruffArgs(true, SRC),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
 
         boolean fixSuccess = runPromise(() -> service.applyFixes(missingImportErrors));
@@ -229,13 +239,13 @@ class PythonIntegrationTest extends EventloopTestBase {
         assertNotEquals(originalContent, fixedContent, "File should be modified after fixes");
 
         // Should now have the imports at the top
-        assertTrue(fixedContent.contains("import requests"), "Should add requests import");
-        assertTrue(fixedContent.contains("import pandas as pd"), "Should add pandas import");
+        assertTrue(fixedContent.contains(IMPORT_REQUESTS), "Should add requests import");
+        assertTrue(fixedContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import");
 
         List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics());
         long remainingMissingImports = remainingDiagnostics.stream()
                 .filter(
-                        d -> d.getCode().equals("F821")
+                        d -> d.getCode().equals(F821_CODE)
                                 && d.getMessage().contains("undefined name"))
                 .count();
 
@@ -244,20 +254,20 @@ class PythonIntegrationTest extends EventloopTestBase {
 
     @Test
     void testFormatsPythonCode() throws Exception {
-        Path mainPy = fixtureDir.resolve("src/main.py");
+        Path mainPy = fixtureDir.resolve(SRC_MAIN_PY);
         String originalContent = Files.readString(mainPy);
 
         // Intentionally mangle the formatting
         String mangledContent = originalContent
-                .replace("    ", "  ") // 2-space indents
-                .replace("def ", "def"); // No space after def
+                .replace(INDENT_4_SPACES, "  ") // 2-space indents
+                .replace(DEF_PREFIX, "def"); // No space after def
 
         Files.writeString(mainPy, mangledContent);
 
         // Format the file
         processRunner.when(
                 "black",
-                blackArgs(false, 88, "src"),
+                blackArgs(false, 88, SRC),
                 FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture()));
         boolean formatSuccess = runPromise(() -> service.formatFiles());
         assertTrue(formatSuccess, "Formatting should succeed");
@@ -267,16 +277,16 @@ class PythonIntegrationTest extends EventloopTestBase {
         assertNotEquals(mangledContent, formattedContent, "File should be reformatted");
 
         // Should have standard Black formatting (4-space indents, space after def)
-        assertTrue(formattedContent.contains("    "), "Should use 4-space indents");
-        assertTrue(formattedContent.contains("def "), "Should have space after def");
+        assertTrue(formattedContent.contains(INDENT_4_SPACES), "Should use 4-space indents");
+        assertTrue(formattedContent.contains(DEF_PREFIX), "Should have space after def");
     }
 
     @Test
     void testFixesAndFormatsInOnePass() throws Exception {
         // First run with fix and format enabled
         processRunner.when(
-                "ruff",
-                ruffArgs(true, "src"),
+                RUFF,
+                ruffArgs(true, SRC),
                 FakeProcessRunner.response(new ProcessResult(1, missingImportDiagnostics(), "")),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
         enqueueBlackResponses(1);
@@ -286,8 +296,8 @@ class PythonIntegrationTest extends EventloopTestBase {
 
         // Apply fixes and format
         processRunner.when(
-                "ruff",
-                ruffArgs(true, "src"),
+                RUFF,
+                ruffArgs(true, SRC),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
 
         boolean fixSuccess = runPromise(() -> service.applyFixes(initialDiagnostics));
@@ -295,7 +305,7 @@ class PythonIntegrationTest extends EventloopTestBase {
 
         processRunner.when(
                 "black",
-                blackArgs(false, 88, "src"),
+                blackArgs(false, 88, SRC),
                 FakeProcessRunner.response(new ProcessResult(0, "", ""), formatFixture()));
         boolean formatSuccess = runPromise(() -> service.formatFiles());
         assertTrue(formatSuccess, "Formatting should succeed");
@@ -303,8 +313,8 @@ class PythonIntegrationTest extends EventloopTestBase {
         // Second run should have fewer or equal diagnostics (some may remain if not
         // auto-fixable)
         processRunner.when(
-                "ruff",
-                ruffArgs(true, "src"),
+                RUFF,
+                ruffArgs(true, SRC),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
         enqueueBlackResponses(1);
         List<UnifiedDiagnostic> remainingDiagnostics = runPromise(() -> service.runDiagnostics());
@@ -313,12 +323,12 @@ class PythonIntegrationTest extends EventloopTestBase {
                 "Should have fewer or equal diagnostics after fixes");
 
         // Check for specific fixes
-        String finalContent = Files.readString(fixtureDir.resolve("src/main.py"));
-        assertTrue(finalContent.contains("import requests"), "Should add requests import");
-        assertTrue(finalContent.contains("import pandas as pd"), "Should add pandas import");
+        String finalContent = Files.readString(fixtureDir.resolve("SRC/main.py"));
+        assertTrue(finalContent.contains(IMPORT_REQUESTS), "Should add requests import");
+        assertTrue(finalContent.contains(IMPORT_PANDAS_AS_PD), "Should add pandas import");
 
         // Check formatting
-        assertTrue(finalContent.contains("    "), "Should use 4-space indents");
-        assertTrue(finalContent.contains("def "), "Should have space after def");
+        assertTrue(finalContent.contains(INDENT_4_SPACES), "Should use 4-space indents");
+        assertTrue(finalContent.contains(DEF_PREFIX), "Should have space after def");
     }
 }

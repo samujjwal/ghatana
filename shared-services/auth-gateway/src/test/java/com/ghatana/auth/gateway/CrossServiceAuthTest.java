@@ -22,7 +22,7 @@ class CrossServiceAuthTest {
     @Test
     @DisplayName("Should propagate authentication tokens between services")
     void shouldPropagateAuthenticationTokensBetweenServices() {
-        String correlationId = "test-correlation-123";
+        String correlationId = java.util.UUID.randomUUID().toString();
 
         assertThat(correlationId).isNotNull();
         assertThat(correlationId).matches("[a-f0-9-]{36}");

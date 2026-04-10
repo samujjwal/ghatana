@@ -6,8 +6,8 @@ package com.ghatana.refactorer.rewriters;
  * @doc.layer core
  * @doc.pattern ValueObject
 */
-final class TestTransforms {
-    private TestTransforms() {}
+final class TransformTestUtils {
+    private TransformTestUtils() {}
 
     /**
      * Rename functions named oldNameN to newNameN (e.g., oldName1 -> newName1). Works for JS/TS

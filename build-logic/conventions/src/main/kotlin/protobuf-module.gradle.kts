@@ -14,14 +14,19 @@ plugins {
     id("com.google.protobuf")
 }
 
+// Property to control Javadoc generation (disabled by default for speed)
+val enableJavadoc = project.findProperty("enableJavadoc")?.toString()?.toBoolean() ?: false
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
-    withJavadocJar()
     withSourcesJar()
+    if (enableJavadoc) {
+        withJavadocJar()
+    }
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -48,7 +53,20 @@ configure<CheckstyleExtension> {
 
 configure<PmdExtension> {
     toolVersion = "7.11.0"
-    isIgnoreFailures = true
+    isIgnoreFailures = false
+}
+
+// Configure PMD task to exclude generated sources
+tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach {
+    source = fileTree("src/main/java") {
+        exclude("**/generated/**")
+        exclude("**/build/generated/**")
+        exclude("**/*Grpc.java")
+        exclude("**/*Proto.java")
+        exclude("**/*_Grpc*.java")
+        exclude("**/grpc/**")
+        exclude("**/proto/**")
+    }
 }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {

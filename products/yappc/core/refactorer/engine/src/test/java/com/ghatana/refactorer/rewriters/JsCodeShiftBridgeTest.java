@@ -42,6 +42,14 @@ class JsCodeShiftBridgeTest {
 
     private JsCodeShiftBridge bridge;
     private Path tempDir;
+    
+    // Constants for duplicate literals
+    private static final String PACKAGE_JSON = "package.json";
+    private static final String VERSION_FLAG = "--version";
+    private static final String NPX = "npx";
+    private static final String NO_INSTALL_FLAG = "--no-install";
+    private static final String JSCODESHIFT = "jscodeshift";
+    private static final String EXPECTED_TRANSFORM_PREFIX = "Expected transform to succeed: ";
 
     /** JUnit 5 extension that ensures jscodeshift is installed before any tests run. */
     public static class JsCodeShiftExtension implements BeforeAllCallback {
@@ -77,7 +85,7 @@ class JsCodeShiftBridgeTest {
         private static Path locateWorkspaceRoot() {
             Path current = Paths.get("").toAbsolutePath();
             while (current != null) {
-                if (Files.exists(current.resolve("package.json"))) {
+                if (Files.exists(current.resolve(PACKAGE_JSON))) {
                     return current;
                 }
                 current = current.getParent();
@@ -163,10 +171,10 @@ class JsCodeShiftBridgeTest {
             if (binary != null) {
                 command.add(binary.toAbsolutePath().toString());
             } else {
-                command.add("npx");
-                command.add("--no-install"); // Prevents network access if not installed
+                command.add(NPX);
+                command.add(NO_INSTALL_FLAG); // Prevents network access if not installed
                 command.add("--quiet");
-                command.add("jscodeshift");
+                command.add(JSCODESHIFT);
             }
             command.addAll(Arrays.asList(args));
             return command;
@@ -213,17 +221,17 @@ class JsCodeShiftBridgeTest {
 
         // Transform file
         Path transform = tempDir.resolve("rename-transform.js");
-        String transformContent = TestTransforms.renameOldNameNToNewNameN();
+        String transformContent = TransformTestUtils.renameOldNameNToNewNameN();
         Files.writeString(transform, transformContent);
 
         // package.json to avoid installs
-        Files.writeString(root.resolve("package.json"), "{ \"name\": \"test\" }\n");
+        Files.writeString(root.resolve(PACKAGE_JSON), "{ \"name\": \"test\" }\n");
 
         // Act: pass explicit files
         ProcessExec.Result result = bridge.transform(root, transform, List.of(f1, f2, f3));
 
         // Assert
-        assertEquals(0, result.exitCode(), "Expected transform to succeed: " + result.err());
+        assertEquals(0, result.exitCode(), EXPECTED_TRANSFORM_PREFIX + result.err());
         boolean c1 = Files.readString(f1).contains("function newName1");
         boolean c2 = Files.readString(f2).contains("function newName2");
         boolean c3 = Files.readString(f3).contains("function newName3");
@@ -270,13 +278,13 @@ class JsCodeShiftBridgeTest {
         Files.writeString(transform, transformContent);
 
         // Create a package.json to avoid dependency installation
-        Files.writeString(tempDir.resolve("package.json"), "{ \"name\": \"test\" }");
+        Files.writeString(tempDir.resolve(PACKAGE_JSON), "{ \"name\": \"test\" }");
 
         // Run the transform
         ProcessExec.Result result = bridge.transform(tempDir, transform, List.of(srcFile));
 
         // Verify the command was successful
-        assertEquals(0, result.exitCode(), "Expected transform to succeed: " + result.err());
+        assertEquals(0, result.exitCode(), EXPECTED_TRANSFORM_PREFIX + result.err());
 
         // Verify the file was modified
         String transformedContent = Files.readString(srcFile);
@@ -355,7 +363,7 @@ class JsCodeShiftBridgeTest {
         ProcessExec.Result result = tsBridge.transform(tempDir, transform, List.of(srcFile));
 
         // Verify the command was successful
-        assertEquals(0, result.exitCode(), "Expected transform to succeed: " + result.err());
+        assertEquals(0, result.exitCode(), EXPECTED_TRANSFORM_PREFIX + result.err());
 
         // Verify the file was modified
         String transformedContent = Files.readString(srcFile);
@@ -372,10 +380,10 @@ class JsCodeShiftBridgeTest {
 
         // Log environment variables that might affect the test
         log.info("Environment PATH: {}", System.getenv("PATH"));
-        log.info("Node version: {}", runCommand("node", "--version"));
-        log.info("npm version: {}", runCommand("npm", "--version"));
-        log.info("npx version: {}", runCommand("npx", "--version"));
-        log.info("jscodeshift version: {}", runCommand("npx", "jscodeshift", "--version"));
+        log.info("Node version: {}", runCommand("node", VERSION_FLAG));
+        log.info("npm version: {}", runCommand("npm", VERSION_FLAG));
+        log.info("npx version: {}", runCommand(NPX, VERSION_FLAG));
+        log.info("jscodeshift version: {}", runCommand(NPX, JSCODESHIFT, VERSION_FLAG));
 
         // Create a directory with multiple JS files
         Path srcDir = tempDir.resolve("src");
@@ -393,7 +401,7 @@ class JsCodeShiftBridgeTest {
 
         // Create a minimal transform that renames functions oldNameN -> newNameN
         Path transform = tempDir.resolve("rename-transform.js");
-        String transformContent = TestTransforms.renameOldNameNToNewNameN();
+        String transformContent = TransformTestUtils.renameOldNameNToNewNameN();
 
         // Write the transform file with executable permissions
         Files.writeString(transform, transformContent);
@@ -422,7 +430,7 @@ class JsCodeShiftBridgeTest {
         Path absSrcDir = srcDir.toAbsolutePath();
 
         // Ensure a local package.json exists to avoid npx attempting network installs
-        Files.writeString(cwd.resolve("package.json"), "{ \"name\": \"test\" }\n");
+        Files.writeString(cwd.resolve(PACKAGE_JSON), "{ \"name\": \"test\" }\n");
 
         log.info("Running transform with cwd: {}", cwd);
         log.info("Transform path: {}", absTransformPath);
@@ -439,7 +447,7 @@ class JsCodeShiftBridgeTest {
 
         // First, verify jscodeshift can be executed directly with a simple command
         log.info("Verifying jscodeshift installation...");
-        String jscodeshiftVersion = runCommand("npx", "--no-install", "jscodeshift", "--version");
+        String jscodeshiftVersion = runCommand(NPX, NO_INSTALL_FLAG, JSCODESHIFT, VERSION_FLAG);
         log.info("jscodeshift version: {}", jscodeshiftVersion);
 
         // Run a simple transform directly to verify jscodeshift works with our transform file
@@ -447,9 +455,9 @@ class JsCodeShiftBridgeTest {
         String testFile = absSrcDir.resolve("test0.js").toString();
         String directTransformOutput =
                 runCommand(
-                        "npx",
-                        "--no-install",
-                        "jscodeshift",
+                        NPX,
+                        NO_INSTALL_FLAG,
+                        JSCODESHIFT,
                         "--verbose=2",
                         "--run-in-band",
                         "--fail-on-error",
@@ -478,7 +486,7 @@ class JsCodeShiftBridgeTest {
         log.info("Transform command output:\nstdout: {}\nstderr: {}", result.out(), result.err());
 
         // Verify the command was successful
-        assertEquals(0, result.exitCode(), "Expected transform to succeed: " + result.err());
+        assertEquals(0, result.exitCode(), EXPECTED_TRANSFORM_PREFIX + result.err());
 
         // Verify all files were modified
         for (int i = 0; i < 3; i++) {
@@ -503,9 +511,9 @@ class JsCodeShiftBridgeTest {
                 log.info("Trying to run transform manually on {}...", file);
                 String manualOutput =
                         runCommand(
-                                "npx",
-                                "--no-install",
-                                "jscodeshift",
+                                NPX,
+                                NO_INSTALL_FLAG,
+                                JSCODESHIFT,
                                 "-t",
                                 transform.toAbsolutePath().toString(),
                                 file.toAbsolutePath().toString());

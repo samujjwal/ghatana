@@ -2,6 +2,7 @@ package com.ghatana.datacloud.application.agent;
 
 import io.activej.promise.Promise;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -121,7 +122,7 @@ public class KnowledgeGraphAgent {
                     for (EnrichedCollection similar : similarCollections) {
                         // Check relationships for structural patterns
                         for (Relationship rel : similar.relationships()) {
-                            String fieldHint = rel.type().toLowerCase();
+                            String fieldHint = rel.type().toLowerCase(Locale.ROOT);
                             fieldFrequency.merge(fieldHint, 1, Integer::sum);
                         }
                     }

@@ -68,7 +68,7 @@ configure<PmdExtension> {
     toolVersion = "7.11.0"
     ruleSetFiles = files(rootProject.file("config/pmd/minimal-ruleset.xml"))
     ruleSets = emptyList()
-    isIgnoreFailures = true
+    isIgnoreFailures = false
     isConsoleOutput = true
 }
 

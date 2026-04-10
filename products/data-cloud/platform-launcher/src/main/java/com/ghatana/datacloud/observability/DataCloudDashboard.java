@@ -48,6 +48,16 @@ import java.util.stream.Collectors;
  */
 public class DataCloudDashboard {
 
+    // Constants for duplicate literals
+    private static final String TYPE = "type";
+    private static final String UNCHECKED = "unchecked";
+    private static final String COUNTERS = "counters";
+    private static final String PLUGINS = "plugins";
+    private static final String TOTAL_COUNT = "total_count";
+    private static final String HEALTHY_COUNT = "healthy_count";
+    private static final String HEALTHY = "healthy";
+    private static final double MIN_ELAPSED_SECONDS = 0.001;
+
     private final DataCloudMetrics metrics;
     private final Map<String, AlertThreshold> thresholds;
     private final List<Alert> activeAlerts;
@@ -124,11 +134,11 @@ public class DataCloudDashboard {
 
         for (Map.Entry<String, List<Map<String, Object>>> entry : byType.entrySet()) {
             data.addSection(entry.getKey() + "_plugins", Map.of(
-                "type", entry.getKey(),
-                "plugins", entry.getValue(),
-                "total_count", entry.getValue().size(),
-                "healthy_count", entry.getValue().stream()
-                    .filter(p -> Boolean.TRUE.equals(p.get("healthy")))
+                TYPE, entry.getKey(),
+                PLUGINS, entry.getValue(),
+                TOTAL_COUNT, entry.getValue().size(),
+                HEALTHY_COUNT, entry.getValue().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.get(HEALTHY)))
                     .count()
             ));
         }
@@ -288,8 +298,8 @@ public class DataCloudDashboard {
     private Map<String, Object> createThroughputSection(Map<String, Object> allMetrics) {
         Map<String, Object> throughput = new LinkedHashMap<>();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Long> counters = (Map<String, Long>) allMetrics.get("counters");
+        @SuppressWarnings(UNCHECKED)
+        Map<String, Long> counters = (Map<String, Long>) allMetrics.get(COUNTERS);
 
         long totalOps = counters != null ? counters.values().stream().mapToLong(Long::longValue).sum() : 0;
         throughput.put("total_operations", totalOps);
@@ -298,7 +308,7 @@ public class DataCloudDashboard {
         long nowNanos = System.nanoTime();
         double elapsedSeconds = (nowNanos - prevSampleTime) / 1_000_000_000.0;
         double opsPerSecond = 0.0;
-        if (elapsedSeconds > 0.001) { // Guard against divide-by-near-zero on first call
+        if (elapsedSeconds > MIN_ELAPSED_SECONDS) { // Guard against divide-by-near-zero on first call
             opsPerSecond = Math.max(0.0, (totalOps - prevSampleOps) / elapsedSeconds);
         }
         prevSampleOps  = totalOps;
@@ -311,8 +321,8 @@ public class DataCloudDashboard {
     private Map<String, Object> createErrorSection(Map<String, Object> allMetrics) {
         Map<String, Object> errors = new LinkedHashMap<>();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Long> counters = (Map<String, Long>) allMetrics.get("counters");
+        @SuppressWarnings(UNCHECKED)
+        Map<String, Long> counters = (Map<String, Long>) allMetrics.get(COUNTERS);
 
         long errorCount = counters != null ?
             counters.entrySet().stream()
@@ -438,7 +448,7 @@ public class DataCloudDashboard {
     private Map<String, Object> createOperationSection(DataCloudMetrics.OperationType op) {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("operation", op.getValue());
-        section.put("category", op.name().split("_")[0].toLowerCase());
+        section.put("category", op.name().split("_")[0].toLowerCase(Locale.ROOT));
         // Would add actual metrics in real implementation
         return section;
     }

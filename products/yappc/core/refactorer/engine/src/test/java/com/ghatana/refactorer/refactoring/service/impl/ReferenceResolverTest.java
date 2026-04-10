@@ -31,6 +31,10 @@ class ReferenceResolverTest {
     private Path javaFile;
     private Path pythonFile;
     private Path typescriptFile;
+    
+    // Constants for duplicate literals
+    private static final String INDENTATION = "        \n";
+    private static final String JAVA = "java";
 
     @BeforeEach
     void setUp() throws Exception {
@@ -149,21 +153,21 @@ class ReferenceResolverTest {
                             + "public class PythonUser {\n"
                             + "    // Create an instance of the Python service\n"
                             + "    private PythonService pythonService = new PythonService();\n"
-                            + "    \n"
+                            + INDENTATION
                             + "    // Method that uses the Python service\n"
                             + "    public String processWithPython(String input) {\n"
                             + "        // Call the Python service\n"
                             + "        String result = pythonService.process(input);\n"
-                            + "        \n"
+                            + INDENTATION
                             + "        // Also test direct reference to PythonService class\n"
                             + "        PythonService service = new PythonService();\n"
-                            + "        \n"
+                            + INDENTATION
                             + "        // Test method call\n"
                             + "        service.process(\"test\");\n"
-                            + "        \n"
+                            + INDENTATION
                             + "        // Test variable declaration\n"
                             + "        PythonService anotherService;\n"
-                            + "        \n"
+                            + INDENTATION
                             + "        return result;\n"
                             + "    }\n"
                             + "}\n";
@@ -218,7 +222,7 @@ class ReferenceResolverTest {
                             .anyMatch(
                                     ref ->
                                             ref.getSourceLanguage() != null
-                                                    && ref.getSourceLanguage().equals("java")
+                                                    && ref.getSourceLanguage().equals(JAVA)
                                                     && ref.getSourceFile() != null
                                                     && ref.getSourceFile().endsWith(".java"));
 
@@ -243,7 +247,7 @@ class ReferenceResolverTest {
         CrossLanguageReference reference =
                 CrossLanguageReference.builder()
                         .sourceFile(javaFile.toString())
-                        .sourceLanguage("java")
+                        .sourceLanguage(JAVA)
                         .sourceElement("pythonService.process")
                         .sourceElementType("method_call")
                         .sourcePosition(10, 30)
@@ -265,13 +269,13 @@ class ReferenceResolverTest {
         // Given
         CrossLanguageReference javaToPython =
                 CrossLanguageReference.builder()
-                        .sourceLanguage("java")
+                        .sourceLanguage(JAVA)
                         .targetLanguage("python")
                         .build();
 
         CrossLanguageReference javaToJava =
                 CrossLanguageReference.builder()
-                        .sourceLanguage("java")
+                        .sourceLanguage(JAVA)
                         .targetLanguage("java")
                         .build();
 

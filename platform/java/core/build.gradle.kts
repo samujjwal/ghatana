@@ -1,10 +1,7 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
-    id("com.ghatana.testing-conventions")
+    id("java-module")
 }
 
-group = "com.ghatana.platform"
 description = "Platform Core - Basic utilities, types, and common patterns"
 
 dependencies {
@@ -12,12 +9,13 @@ dependencies {
     api(libs.micrometer.core)
     api(libs.slf4j.api)
     api(libs.bundles.jackson.json)
-    api("jakarta.validation:jakarta.validation-api:3.0.2")
+    api(libs.jakarta.validation.api)
     api(libs.protobuf.java)
-    api("javax.annotation:javax.annotation-api:1.3.2")
+    api(libs.javax.annotation.api)
     api(libs.nimbus.jose.jwt)
     compileOnly(libs.jetbrains.annotations)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":platform:java:agent-core"))
     testImplementation(libs.archunit.junit5)
 }
 

@@ -45,16 +45,14 @@ private val integrationSystemProperties = mapOf(
 // Test Configuration
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    ignoreFailures = true  // Allow tests to fail but continue
+    ignoreFailures = false  // Tests should fail the build
     
     if (integrationMode) {
         useJUnitPlatform()
         integrationSystemProperties.forEach { (k, v) -> systemProperty(k, v) }
         logger.lifecycle("[$path] Integration test profile ACTIVE - all tags included")
     } else {
-        useJUnitPlatform {
-            excludeTags("integration")
-        }
+        useJUnitPlatform()
     }
 
     testLogging {
@@ -85,19 +83,9 @@ project.tasks.findByName("jacocoTestReport")?.let { task ->
         csv.required.set(false)
     }
     
-    // Exclude generated and test-only classes from coverage
+    // Include all classes in coverage - no exclusions
     task.classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("classes/java/main")) {
-            exclude(
-                "**/*\$Builder.class",
-                "**/*\$*_Factory.class",
-                "**/package-info.class",
-                "**/generated/**",
-                "**/test/**",
-                "**/*Test.class",
-                "**/*Tests.class"
-            )
-        }
+        fileTree(layout.buildDirectory.dir("classes/java/main"))
     )
 }
 
@@ -115,19 +103,9 @@ tasks.withType<org.gradle.testing.jacoco.tasks.JacocoCoverageVerification>().con
         }
     }
     
-    // Apply same exclusions as test report
+    // Apply same inclusions as test report - all classes
     classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("classes/java/main")) {
-            exclude(
-                "**/*\$Builder.class",
-                "**/*\$*_Factory.class",
-                "**/package-info.class",
-                "**/generated/**",
-                "**/test/**",
-                "**/*Test.class",
-                "**/*Tests.class"
-            )
-        }
+        fileTree(layout.buildDirectory.dir("classes/java/main"))
     )
 }
 

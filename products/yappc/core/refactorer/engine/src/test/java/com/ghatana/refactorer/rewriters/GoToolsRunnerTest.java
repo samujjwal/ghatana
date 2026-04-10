@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
-import com.ghatana.refactorer.testutil.TestUtils;
+import com.ghatana.refactorer.testutil.CoreTestUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,20 +26,26 @@ import org.junit.jupiter.api.io.TempDir;
  * @doc.pattern Test
  */
 class GoToolsRunnerTest {
-    private static boolean isGoAvailable = false;
-    private static boolean isStaticcheckAvailable = false;
-    private static boolean isGoimportsAvailable = false;
-    private static boolean isGofmtAvailable = false;
+    private static boolean goAvailable = false;
+    private static boolean staticcheckAvailable = false;
+    private static boolean goimportsAvailable = false;
+    private static boolean gofmtAvailable = false;
 
     private GoToolsRunner runner;
     private Path tempDir;
+    
+    // Constants for duplicate literals
+    private static final String VERSION_FLAG = "-version";
+    private static final String GO_MOD = "go.mod";
+    private static final String GO_MOD_CONTENT = "module example.com/test\n\ngo 1.21\n";
+    private static final String CARGO = "cargo";
 
     @BeforeAll
     static void checkPrerequisites() {
-        isGoAvailable = TestUtils.isCommandAvailable("go", "version");
-        isStaticcheckAvailable = TestUtils.isCommandAvailable("staticcheck", "-version");
-        isGoimportsAvailable = TestUtils.isCommandAvailable("goimports", "-version");
-        isGofmtAvailable = TestUtils.isCommandAvailable("gofmt", "-version");
+        goAvailable = CoreTestUtils.isCommandAvailable("go", "version");
+        staticcheckAvailable = CoreTestUtils.isCommandAvailable("staticcheck", VERSION_FLAG);
+        goimportsAvailable = CoreTestUtils.isCommandAvailable("goimports", VERSION_FLAG);
+        gofmtAvailable = CoreTestUtils.isCommandAvailable("gofmt", VERSION_FLAG);
     }
 
     @BeforeEach
@@ -58,7 +64,7 @@ class GoToolsRunnerTest {
     @EnabledIf("isGoAvailable")
     void testVetOnCleanModule() throws IOException {
         // Initialize a tiny Go module
-        Files.writeString(tempDir.resolve("go.mod"), "module example.com/test\n\ngo 1.21\n");
+        Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT);
         Files.createDirectories(tempDir.resolve("cmd/app"));
         Path mainGo = tempDir.resolve("cmd/app/main.go");
         Files.writeString(
@@ -74,7 +80,7 @@ class GoToolsRunnerTest {
     @EnabledIf("isGoAvailable")
     void testVetWithIssues() throws IOException {
         // Initialize a Go module with potential issues
-        Files.writeString(tempDir.resolve("go.mod"), "module example.com/test\n\ngo 1.21\n");
+        Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT);
         Path mainGo = tempDir.resolve("main.go");
         Files.writeString(
                 mainGo,
@@ -143,7 +149,7 @@ class GoToolsRunnerTest {
 
         // Initialize a Go module with potential staticcheck issues
         System.out.println("Initializing test Go module...");
-        Files.writeString(tempDir.resolve("go.mod"), "module example.com/test\n\ngo 1.21\n");
+        Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT);
 
         // Create a Go file with a staticcheck issue
         Path mainGo = tempDir.resolve("main.go");
@@ -205,12 +211,12 @@ class GoToolsRunnerTest {
     }
 
     @Test
-    @EnabledIf("isGoImportsAvailable")
+    @EnabledIf("isGoimportsAvailable")
     void testGoimportsFormatsFile() throws IOException {
         assumeTrue(isGoAvailable(), "Go must be available for goimports test");
 
         // Initialize module and an improperly formatted file
-        Files.writeString(tempDir.resolve("go.mod"), "module example.com/test\n\ngo 1.21\n");
+        Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT);
         Path file = tempDir.resolve("x.go");
         String ugly = "package main\nimport \"fmt\"\nfunc main(){fmt.Println(\"x\")}\n";
         Files.writeString(file, ugly);
@@ -244,7 +250,7 @@ class GoToolsRunnerTest {
     // Uncomment and implement when gofmt support is added
     /*
     @Test
-    @EnabledIf("isGofmtAvailable")
+    @EnabledIf("gofmtAvailable")
     void testGofmt() throws IOException {
         // Implementation will be added when gofmt support is implemented
         assumeTrue(false, "gofmt test not yet implemented");
@@ -271,7 +277,7 @@ class GoToolsRunnerTest {
         }
     }
 
-    static boolean isGoImportsAvailable() {
+    static boolean isGoimportsAvailable() {
         try {
             Process p = new ProcessBuilder("goimports", "-v").start();
             p.waitFor();

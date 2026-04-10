@@ -29,11 +29,16 @@ import org.junit.jupiter.api.Test;
 
 class LanguageServiceTest extends EventloopTestBase {
 
+    // Constants for duplicate literals
+    private static final String TEST = "test";
+    private static final String TEST_RULE = "test-rule";
+    private static final String TEST_TXT = "test.txt";
+
     // Test implementation of LanguageService
-    private static class TestLanguageService implements LanguageService {
+    private static class LanguageServiceTestImpl implements LanguageService {
         @Override
         public String id() {
-            return "test";
+            return TEST;
         }
 
         @Override
@@ -46,10 +51,10 @@ class LanguageServiceTest extends EventloopTestBase {
             List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
             diagnostics.add(
                     new UnifiedDiagnostic(
-                            "test",
-                            "test-rule",
+                            TEST,
+                            TEST_RULE,
                             "Test diagnostic",
-                            "test.txt",
+                            TEST_TXT,
                             1,
                             1,
                             Severity.ERROR,
@@ -68,20 +73,20 @@ class LanguageServiceTest extends EventloopTestBase {
     @Test
     void id_shouldReturnServiceId() {
         // Given
-        LanguageService service = new TestLanguageService();
+        LanguageService service = new LanguageServiceTestImpl();
 
         // When
         String id = service.id();
 
         // Then
-        assertEquals("test", id);
+        assertEquals(TEST, id);
     }
 
     @Test
     void supports_shouldCheckFileExtension() {
         // Given
-        LanguageService service = new TestLanguageService();
-        Path supportedFile = Path.of("test.txt");
+        LanguageService service = new LanguageServiceTestImpl();
+        Path supportedFile = Path.of(TEST_TXT);
         Path unsupportedFile = Path.of("test.test");
 
         // When / Then
@@ -92,7 +97,7 @@ class LanguageServiceTest extends EventloopTestBase {
     @Test
     void diagnose_shouldReturnDiagnostics() {
         // Given
-        LanguageService service = new TestLanguageService();
+        LanguageService service = new LanguageServiceTestImpl();
         PolyfixProjectContext context =
                 new PolyfixProjectContext(
                         Path.of("."),
@@ -104,16 +109,16 @@ class LanguageServiceTest extends EventloopTestBase {
 
         // When
         List<UnifiedDiagnostic> diagnostics =
-                runPromise(() -> service.diagnose(context, List.of(Path.of("test.txt"))));
+                runPromise(() -> service.diagnose(context, List.of(Path.of(TEST_TXT))));
 
         // Then
         assertNotNull(diagnostics);
         assertFalse(diagnostics.isEmpty());
         UnifiedDiagnostic diagnostic = diagnostics.get(0);
-        assertEquals("test", diagnostic.tool());
-        assertEquals("test-rule", diagnostic.ruleId());
+        assertEquals(TEST, diagnostic.tool());
+        assertEquals(TEST_RULE, diagnostic.ruleId());
         assertEquals("Test diagnostic", diagnostic.message());
-        assertEquals("test.txt", diagnostic.file());
+        assertEquals(TEST_TXT, diagnostic.file());
         assertEquals(1, diagnostic.line());
         assertEquals(1, diagnostic.column());
         assertEquals(Severity.ERROR, diagnostic.severity());
@@ -123,7 +128,7 @@ class LanguageServiceTest extends EventloopTestBase {
     @Test
     void planFixes_shouldReturnEmptyListByDefault() {
         // Given
-        LanguageService service = new TestLanguageService();
+        LanguageService service = new LanguageServiceTestImpl();
         PolyfixProjectContext context =
                 new PolyfixProjectContext(
                         Path.of("."),
@@ -135,14 +140,14 @@ class LanguageServiceTest extends EventloopTestBase {
 
         UnifiedDiagnostic diagnostic =
                 new UnifiedDiagnostic(
-                        "test",
-                        "test-rule",
+                        TEST,
+                        TEST_RULE,
                         "Test message",
-                        "test.txt",
+                        TEST_TXT,
                         1,
                         1,
                         Severity.ERROR,
-                        Map.of("test", "test"));
+                        Map.of(TEST, TEST));
 
         // When
         List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, context));
@@ -155,7 +160,7 @@ class LanguageServiceTest extends EventloopTestBase {
     @Test
     void getSupportedFileExtensions_shouldReturnExtensions() {
         // Given
-        LanguageService service = new TestLanguageService();
+        LanguageService service = new LanguageServiceTestImpl();
 
         // When
         List<String> extensions = service.getSupportedFileExtensions();
@@ -169,17 +174,17 @@ class LanguageServiceTest extends EventloopTestBase {
     @Test
     void planFixes_shouldHandleNullContext() {
         // Given
-        LanguageService service = new TestLanguageService();
+        LanguageService service = new LanguageServiceTestImpl();
         UnifiedDiagnostic diagnostic =
                 new UnifiedDiagnostic(
-                        "test",
-                        "test-rule",
+                        TEST,
+                        TEST_RULE,
                         "Test message",
                         "test.test",
                         1,
                         1,
                         Severity.ERROR,
-                        Map.of("test", "test"));
+                        Map.of(TEST, TEST));
 
         // When
         List<FixAction> fixes = runPromise(() -> service.planFixes(diagnostic, null));

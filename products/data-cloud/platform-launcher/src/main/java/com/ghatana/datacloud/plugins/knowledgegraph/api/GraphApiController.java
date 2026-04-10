@@ -55,6 +55,13 @@ import java.util.Map;
 @Slf4j
 public class GraphApiController {
 
+    // Constants for duplicate literals
+    private static final String COUNT = "count";
+    private static final String NODES = "nodes";
+    private static final String SOURCE_NODE_ID = "sourceNodeId";
+    private static final String TARGET_NODE_ID = "targetNodeId";
+    private static final String TENANT_ID = "tenantId";
+
     private final KnowledgeGraphPlugin graphPlugin;
     private final JsonMapper jsonMapper;
 
@@ -93,11 +100,11 @@ public class GraphApiController {
      */
     public Promise<HttpResponse> getNode(HttpRequest request) {
         String nodeId = request.getPathParameter("id");
-        String tenantId = getTenantId(request);
+        String TENANT_ID = getTenantId(request);
 
         log.debug("GET /api/v1/graph/nodes/{}", nodeId);
 
-        return graphPlugin.getNode(nodeId, tenantId)
+        return graphPlugin.getNode(nodeId, TENANT_ID)
                 .map(node -> {
                     if (node == null) {
                         return HttpResponse.ofCode(404)
@@ -132,11 +139,11 @@ public class GraphApiController {
      */
     public Promise<HttpResponse> deleteNode(HttpRequest request) {
         String nodeId = request.getPathParameter("id");
-        String tenantId = getTenantId(request);
+        String TENANT_ID = getTenantId(request);
 
         log.debug("DELETE /api/v1/graph/nodes/{}", nodeId);
 
-        return graphPlugin.deleteNode(nodeId, tenantId)
+        return graphPlugin.deleteNode(nodeId, TENANT_ID)
                 .map(deleted -> {
                     if (deleted) {
                         return HttpResponse.ok200()
@@ -163,7 +170,7 @@ public class GraphApiController {
                     return graphPlugin.queryNodes(query);
                 })
                 .map(nodes -> HttpResponse.ok200()
-                        .withJson(toJson(Map.of("nodes", nodes, "count", nodes.size())))
+                        .withJson(toJson(Map.of(NODES, nodes, COUNT, nodes.size())))
                         .build())
                 .whenException(e -> log.error("Error querying nodes", e));
     }
@@ -181,7 +188,7 @@ public class GraphApiController {
                     return graphPlugin.batchCreateNodes(nodes);
                 })
                 .map(nodes -> HttpResponse.ok200()
-                        .withJson(toJson(Map.of("nodes", nodes, "count", nodes.size())))
+                        .withJson(toJson(Map.of(NODES, nodes, COUNT, nodes.size())))
                         .build())
                 .whenException(e -> log.error("Error batch creating nodes", e));
     }
@@ -212,11 +219,11 @@ public class GraphApiController {
      */
     public Promise<HttpResponse> getEdge(HttpRequest request) {
         String edgeId = request.getPathParameter("id");
-        String tenantId = getTenantId(request);
+        String TENANT_ID = getTenantId(request);
 
         log.debug("GET /api/v1/graph/edges/{}", edgeId);
 
-        return graphPlugin.getEdge(edgeId, tenantId)
+        return graphPlugin.getEdge(edgeId, TENANT_ID)
                 .map(edge -> {
                     if (edge == null) {
                         return HttpResponse.ofCode(404)
@@ -256,12 +263,12 @@ public class GraphApiController {
      */
     public Promise<HttpResponse> getNeighbors(HttpRequest request) {
         String nodeId = request.getPathParameter("id");
-        String tenantId = getTenantId(request);
+        String TENANT_ID = getTenantId(request);
         int depth = Integer.parseInt(request.getQueryParameter("depth"));
 
         log.debug("GET /api/v1/graph/nodes/{}/neighbors?depth={}", nodeId, depth);
 
-        return graphPlugin.getNeighbors(nodeId, depth, tenantId)
+        return graphPlugin.getNeighbors(nodeId, depth, TENANT_ID)
                 .map(neighbors -> HttpResponse.ok200()
                         .withJson(toJson(Map.of("neighbors", neighbors, "count", neighbors.size())))
                         .build())
@@ -274,11 +281,11 @@ public class GraphApiController {
      */
     public Promise<HttpResponse> getNodeEdges(HttpRequest request) {
         String nodeId = request.getPathParameter("id");
-        String tenantId = getTenantId(request);
+        String TENANT_ID = getTenantId(request);
 
         log.debug("GET /api/v1/graph/nodes/{}/edges", nodeId);
 
-        return graphPlugin.getNodeEdges(nodeId, tenantId)
+        return graphPlugin.getNodeEdges(nodeId, TENANT_ID)
                 .map(edges -> HttpResponse.ok200()
                         .withJson(toJson(Map.of("edges", edges, "count", edges.size())))
                         .build())
@@ -295,11 +302,11 @@ public class GraphApiController {
         return request.loadBody()
                 .then(body -> {
                     Map<String, String> params = parsePathRequest(body.asString(StandardCharsets.UTF_8));
-                    String sourceId = params.get("sourceNodeId");
-                    String targetId = params.get("targetNodeId");
-                    String tenantId = params.get("tenantId");
+                    String sourceId = params.get("SOURCE_NODE_ID");
+                    String targetId = params.get("TARGET_NODE_ID");
+                    String TENANT_ID = params.get("TENANT_ID");
 
-                    return graphPlugin.findShortestPath(sourceId, targetId, tenantId);
+                    return graphPlugin.findShortestPath(sourceId, targetId, TENANT_ID);
                 })
                 .map(path -> HttpResponse.ok200()
                         .withJson(toJson(Map.of("path", path, "length", path.size())))
@@ -317,12 +324,12 @@ public class GraphApiController {
         return request.loadBody()
                 .then(body -> {
                     Map<String, Object> params = parseAllPathsRequest(body.asString(StandardCharsets.UTF_8));
-                    String sourceId = (String) params.get("sourceNodeId");
-                    String targetId = (String) params.get("targetNodeId");
+                    String sourceId = (String) params.get("SOURCE_NODE_ID");
+                    String targetId = (String) params.get("TARGET_NODE_ID");
                     int maxLength = (Integer) params.get("maxLength");
-                    String tenantId = (String) params.get("tenantId");
+                    String TENANT_ID = (String) params.get("TENANT_ID");
 
-                    return graphPlugin.findAllPaths(sourceId, targetId, maxLength, tenantId);
+                    return graphPlugin.findAllPaths(sourceId, targetId, maxLength, TENANT_ID);
                 })
                 .map(paths -> HttpResponse.ok200()
                         .withJson(toJson(Map.of("paths", paths, "count", paths.size())))
@@ -336,14 +343,14 @@ public class GraphApiController {
 
     private String getTenantId(HttpRequest request) {
         // Extract tenant ID from header or query parameter
-        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
-        if (tenantId == null) {
-            tenantId = request.getQueryParameter("tenantId");
+        String TENANT_ID = TenantExtractor.fromHttp(request).orElse(null);
+        if (TENANT_ID == null) {
+            TENANT_ID = request.getQueryParameter("TENANT_ID");
         }
-        if (tenantId == null) {
+        if (TENANT_ID == null) {
             throw new IllegalArgumentException("Tenant ID is required");
         }
-        return tenantId;
+        return TENANT_ID;
     }
 
     private GraphNode parseNodeFromJson(String json) {

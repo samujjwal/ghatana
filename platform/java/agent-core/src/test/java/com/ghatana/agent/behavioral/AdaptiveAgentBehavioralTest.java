@@ -61,6 +61,7 @@ class AdaptiveAgentBehavioralTest {
         void armSelection() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("threshold")
                     .parameterMin(10.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -83,6 +84,7 @@ class AdaptiveAgentBehavioralTest {
 
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("threshold")
                     .parameterMin(min)
                     .parameterMax(max)
                     .armCount(10)
@@ -106,6 +108,7 @@ class AdaptiveAgentBehavioralTest {
         void armStatisticsTracking() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("confidence")
                     .parameterMin(0.1)
                     .parameterMax(0.9)
                     .armCount(5)
@@ -136,6 +139,7 @@ class AdaptiveAgentBehavioralTest {
         void ucb1BalanceExplorationExploitation() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("rate")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -163,6 +167,7 @@ class AdaptiveAgentBehavioralTest {
         void ucb1Convergence() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("success_rate")
                     .parameterMin(50.0)
                     .parameterMax(100.0)
                     .armCount(3)
@@ -198,6 +203,7 @@ class AdaptiveAgentBehavioralTest {
         void thompsonSamplingPosterior() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("probability")
                     .parameterMin(0.0)
                     .parameterMax(1.0)
                     .armCount(4)
@@ -222,6 +228,7 @@ class AdaptiveAgentBehavioralTest {
         void thompsonConvergence() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("confidence")
                     .parameterMin(10.0)
                     .parameterMax(90.0)
                     .armCount(5)
@@ -255,6 +262,7 @@ class AdaptiveAgentBehavioralTest {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY)
                     .explorationRate(epsilon)
+                    .tunedParameter("threshold")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -280,6 +288,7 @@ class AdaptiveAgentBehavioralTest {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY)
                     .explorationRate(0.05)  // 5% exploration
+                    .tunedParameter("success_rate")
                     .parameterMin(50.0)
                     .parameterMax(100.0)
                     .armCount(3)
@@ -310,6 +319,7 @@ class AdaptiveAgentBehavioralTest {
         void learningFromSuccess() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("reward_rate")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -335,6 +345,7 @@ class AdaptiveAgentBehavioralTest {
         void learningFromFailure() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("failure_rate")
                     .parameterMin(1.0)
                     .parameterMax(10.0)
                     .armCount(4)
@@ -360,6 +371,7 @@ class AdaptiveAgentBehavioralTest {
         void strategyAdaptation() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("strategy")
                     .parameterMin(10.0)
                     .parameterMax(50.0)
                     .armCount(3)
@@ -402,6 +414,7 @@ class AdaptiveAgentBehavioralTest {
         void convergenceToOptimal() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("optimal_value")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(10)
@@ -430,6 +443,7 @@ class AdaptiveAgentBehavioralTest {
             AdaptiveAgentConfig tightConfig = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY)
                     .explorationRate(0.1)
+                    .tunedParameter("tight_range")
                     .parameterMin(45.0)
                     .parameterMax(55.0)
                     .armCount(5)
@@ -442,6 +456,7 @@ class AdaptiveAgentBehavioralTest {
             AdaptiveAgentConfig wideConfig = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY)
                     .explorationRate(0.1)
+                    .tunedParameter("wide_range")
                     .parameterMin(0.0)
                     .parameterMax(1000.0)
                     .armCount(20)
@@ -476,6 +491,7 @@ class AdaptiveAgentBehavioralTest {
         void extremeRewardHandling() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("extreme_reward")
                     .parameterMin(1.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -503,6 +519,7 @@ class AdaptiveAgentBehavioralTest {
         void randomRewardVariation() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("random_variation")
                     .parameterMin(10.0)
                     .parameterMax(90.0)
                     .armCount(5)
@@ -537,6 +554,7 @@ class AdaptiveAgentBehavioralTest {
         void confidenceProgress() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING)
+                    .tunedParameter("confidence")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(5)
@@ -570,6 +588,7 @@ class AdaptiveAgentBehavioralTest {
         void armMetricsTracking() {
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder()
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1)
+                    .tunedParameter("metrics")
                     .parameterMin(0.0)
                     .parameterMax(100.0)
                     .armCount(5)

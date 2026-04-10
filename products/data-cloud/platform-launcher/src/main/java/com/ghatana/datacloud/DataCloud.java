@@ -142,29 +142,29 @@ public final class DataCloud {
         }
 
         public static class Builder {
-            private String instanceId;
-            private int maxConnectionsPerTenant = 10;
-            private boolean enableCaching = true;
-            private boolean enableMetrics = true;
+            private String instanceIdValue;
+            private int maxConnectionsPerTenantValue = 10;
+            private boolean enableCachingValue = true;
+            private boolean enableMetricsValue = true;
             private Map<String, Object> customConfig = Map.of();
 
             public Builder instanceId(String instanceId) {
-                this.instanceId = instanceId;
+                this.instanceIdValue = instanceId;
                 return this;
             }
 
             public Builder maxConnectionsPerTenant(int max) {
-                this.maxConnectionsPerTenant = max;
+                this.maxConnectionsPerTenantValue = max;
                 return this;
             }
 
             public Builder enableCaching(boolean enable) {
-                this.enableCaching = enable;
+                this.enableCachingValue = enable;
                 return this;
             }
 
             public Builder enableMetrics(boolean enable) {
-                this.enableMetrics = enable;
+                this.enableMetricsValue = enable;
                 return this;
             }
 
@@ -174,8 +174,8 @@ public final class DataCloud {
             }
 
             public DataCloudConfig build() {
-                return new DataCloudConfig(instanceId, maxConnectionsPerTenant,
-                    enableCaching, enableMetrics, customConfig);
+                return new DataCloudConfig(instanceIdValue, maxConnectionsPerTenantValue,
+                    enableCachingValue, enableMetricsValue, customConfig);
             }
         }
     }

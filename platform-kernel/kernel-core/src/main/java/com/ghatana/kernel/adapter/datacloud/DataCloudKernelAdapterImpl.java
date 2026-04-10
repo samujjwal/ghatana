@@ -36,6 +36,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
+    // Constants for duplicate literals
+    private static final String REQUEST_CANNOT_BE_NULL = "request cannot be null";
+    private static final String DATACLOUD_CLIENT_CANNOT_BE_NULL = "dataCloudClient cannot be null";
+    private static final String DATASET_ID_CANNOT_BE_NULL = "datasetId cannot be null";
+    private static final String STREAM_ID_CANNOT_BE_NULL = "streamId cannot be null";
+    private static final String TRANSACTION_ID_CANNOT_BE_NULL = "transactionId cannot be null";
+    private static final String READ_MODE = "read";
+    private static final String WRITE_MODE = "write";
+    private static final String MODE = "mode";
+
     private final DataCloudClient dataCloudClient;
     private final Map<String, DataStreamImpl> activeStreams = new ConcurrentHashMap<>();
     private final Map<String, TransactionImpl> activeTransactions = new ConcurrentHashMap<>();
@@ -48,12 +58,12 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
      * @param dataCloudClient the Data-Cloud client for storage operations
      */
     public DataCloudKernelAdapterImpl(DataCloudClient dataCloudClient) {
-        this.dataCloudClient = Objects.requireNonNull(dataCloudClient, "dataCloudClient cannot be null");
+        this.dataCloudClient = Objects.requireNonNull(dataCloudClient, DATACLOUD_CLIENT_CANNOT_BE_NULL);
     }
 
     @Override
     public Promise<DataResult> readData(DataReadRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         // Wrap Data-Cloud CompletableFuture with ActiveJ Promise
         CompletableFuture<DataResult> future = dataCloudClient.read(
@@ -67,7 +77,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     @Override
     public Promise<Void> writeData(DataWriteRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         CompletableFuture<Void> future = dataCloudClient.write(
             request.getDatasetId(),
@@ -81,7 +91,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     @Override
     public Promise<Void> deleteData(DataDeleteRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         CompletableFuture<Void> future = dataCloudClient.delete(
             request.getDatasetId(),
@@ -93,7 +103,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     @Override
     public Promise<QueryResult> queryData(DataQueryRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         CompletableFuture<List<DataResult>> future = dataCloudClient.query(
             request.getDatasetId(),
@@ -111,7 +121,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     @Override
     public Promise<Void> createSchema(SchemaCreateRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         CompletableFuture<Void> future = dataCloudClient.createDataset(
             request.getDatasetId(),
@@ -182,15 +192,15 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     @Override
     public Promise<DataStream> openStream(DataStreamRequest request) {
-        String mode = request.getOptions().getOrDefault("mode", "read");
-        if ("write".equalsIgnoreCase(mode)) {
+        String mode = request.getOptions().getOrDefault(MODE, READ_MODE);
+        if (WRITE_MODE.equalsIgnoreCase(mode)) {
             return openWriteStream(request);
         }
         return openReadStream(request);
     }
 
     public Promise<DataStream> openReadStream(DataStreamRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         String streamId = "stream-read-" + streamCounter.incrementAndGet();
 
@@ -207,7 +217,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
     }
 
     public Promise<DataStream> openWriteStream(DataStreamRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
+        Objects.requireNonNull(request, REQUEST_CANNOT_BE_NULL);
 
         String streamId = "stream-write-" + streamCounter.incrementAndGet();
 

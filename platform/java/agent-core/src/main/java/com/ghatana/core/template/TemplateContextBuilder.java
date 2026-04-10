@@ -144,7 +144,7 @@ public final class TemplateContextBuilder {
         }
 
         // Fallback to classpath
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(pathStr)) {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(pathStr)) {
             if (is == null) {
                 log.debug("YAML values file '{}' not found on filesystem or classpath — skipping", pathStr);
                 return Map.of();

@@ -63,6 +63,10 @@ import java.util.stream.Collectors;
  */
 public final class ProtoToJsonSchemaGenerator {
 
+    // Constants for duplicate literals
+    private static final String DESCRIPTION = "description";
+    private static final String ADDITIONAL_PROPERTIES = "additionalProperties";
+
     /** Builder for {@link ProtoToJsonSchemaGenerator} to configure package prefixes. */
     public static final class Builder {
         private List<String> packagePrefixes;
@@ -175,7 +179,7 @@ public final class ProtoToJsonSchemaGenerator {
             schema.put("title", simpleName(fqn));
 
             // attach message doc (if any)
-            reg.messageDoc(fqn).ifPresent(doc -> schema.put("description", doc));
+            reg.messageDoc(fqn).ifPresent(doc -> schema.put(DESCRIPTION, doc));
 
             write(cfg.outDir().resolve(simpleName(fqn) + ".schema.json"), schema);
         }
@@ -234,10 +238,10 @@ public final class ProtoToJsonSchemaGenerator {
 
         ObjectNode def = mapper.createObjectNode();
         def.put("type", "object");
-        def.put("additionalProperties", false);
+        def.put(ADDITIONAL_PROPERTIES, false);
 
         // Add message documentation if available
-        reg.messageDoc(fqn).ifPresent(doc -> def.put("description", doc));
+        reg.messageDoc(fqn).ifPresent(doc -> def.put(DESCRIPTION, doc));
 
         // Add message options if they exist
         if (msg.hasOptions()) {
@@ -308,7 +312,7 @@ public final class ProtoToJsonSchemaGenerator {
             }
 
             // Attach field doc (if any)
-            reg.fieldDoc(fqn, f.getNumber()).ifPresent(doc -> fieldSchema.put("description", doc));
+            reg.fieldDoc(fqn, f.getNumber()).ifPresent(doc -> fieldSchema.put(DESCRIPTION, doc));
 
             props.set(jsonName, fieldSchema);
 
@@ -504,7 +508,7 @@ public final class ProtoToJsonSchemaGenerator {
         if (fieldDocOpt.isPresent()) {
             String fieldDoc = fieldDocOpt.get();
             if (!fieldDoc.isEmpty()) {
-                base.put("description", fieldDoc);
+                base.put(DESCRIPTION, fieldDoc);
             }
         }
 
@@ -718,7 +722,7 @@ public final class ProtoToJsonSchemaGenerator {
         // Add documentation if available
         reg.enumDoc(enumFqn)
                 .filter(desc -> !desc.isEmpty())
-                .ifPresent(desc -> schema.put("description", desc));
+                .ifPresent(desc -> schema.put(DESCRIPTION, desc));
 
         // Add deprecation status if marked as deprecated
         if (enumDescriptor.hasOptions() && enumDescriptor.getOptions().hasDeprecated()) {

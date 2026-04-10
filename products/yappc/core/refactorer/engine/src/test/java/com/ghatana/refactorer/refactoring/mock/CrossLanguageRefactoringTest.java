@@ -49,6 +49,10 @@ public class CrossLanguageRefactoringTest {
 
     private Path pythonFile;
     private Path typescriptFile;
+    
+    // Constants for duplicate literals
+    private static final String FUNCTION = "FUNCTION";
+    private static final String TYPESCRIPT = "typescript";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -127,23 +131,23 @@ public class CrossLanguageRefactoringTest {
                         .sourceElementType("METHOD")
                         .sourcePosition(4, 4)
                         .targetFile(typescriptFile.toString())
-                        .targetLanguage("typescript")
+                        .targetLanguage(TYPESCRIPT)
                         .targetElement("typescript_function")
-                        .targetElementType("FUNCTION")
+                        .targetElementType(FUNCTION)
                         .referenceType(ReferenceType.METHOD_CALL)
                         .build();
 
         CrossLanguageReference tsToPyRef =
                 CrossLanguageReference.builder()
                         .sourceFile(typescriptFile.toString())
-                        .sourceLanguage("typescript")
+                        .sourceLanguage(TYPESCRIPT)
                         .sourceElement("callPythonFunction")
                         .sourceElementType("METHOD")
                         .sourcePosition(6, 4)
                         .targetFile(pythonFile.toString())
                         .targetLanguage("python")
                         .targetElement("old_function")
-                        .targetElementType("FUNCTION")
+                        .targetElementType(FUNCTION)
                         .referenceType(ReferenceType.METHOD_CALL)
                         .build();
 
@@ -154,7 +158,7 @@ public class CrossLanguageRefactoringTest {
 
         // Create context for renaming Python function
         RenameRefactoring.Context context =
-                createContext(pythonFile, "FUNCTION", "old_function", "new_function");
+                createContext(pythonFile, FUNCTION, "old_function", "new_function");
 
         // Perform the refactoring
         RefactoringResult result = orchestrator.performRename(context);
@@ -195,9 +199,9 @@ public class CrossLanguageRefactoringTest {
                             .sourceElementType("FUNCTION")
                             .sourcePosition(3, 4)
                             .targetFile(typescriptFile.toString())
-                            .targetLanguage("typescript")
+                            .targetLanguage(TYPESCRIPT)
                             .targetElement("typescript_function")
-                            .targetElementType("FUNCTION")
+                            .targetElementType(FUNCTION)
                             .referenceType(ReferenceType.METHOD_CALL)
                             .build();
 
@@ -210,7 +214,7 @@ public class CrossLanguageRefactoringTest {
             RenameRefactoring.Context context =
                     createContext(
                             typescriptFile,
-                            "FUNCTION",
+                            FUNCTION,
                             "typescript_function",
                             "renamed_typescript_function");
 

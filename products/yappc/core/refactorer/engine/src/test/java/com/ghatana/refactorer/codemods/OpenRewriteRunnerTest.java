@@ -36,6 +36,9 @@ import org.openrewrite.java.JavaParser;
  */
 
 class OpenRewriteRunnerTest {
+    private static final String SRC_MAIN_JAVA_TEST_JAVA = "src/main/java/Test.java";
+    private static final String CLASS_TEST = "class Test {}";
+
     @TempDir Path tempDir;
     private Path srcDir;
     private PolyfixProjectContext mockContext;
@@ -71,11 +74,11 @@ class OpenRewriteRunnerTest {
         // Setup test file
         Path testFile = srcDir.resolve("Test.java");
         Files.createDirectories(testFile.getParent());
-        Files.writeString(testFile, "class Test {}");
+        Files.writeString(testFile, CLASS_TEST);
 
         // Mock OpenRewrite components
         SourceFile sourceFile = mock(SourceFile.class);
-        when(sourceFile.getSourcePath()).thenReturn(Path.of("src/main/java/Test.java"));
+        when(sourceFile.getSourcePath()).thenReturn(Path.of(SRC_MAIN_JAVA_TEST_JAVA));
 
         when(mockParser.parse(any(), any(), any(ExecutionContext.class)))
                 .thenReturn(java.util.stream.Stream.of(sourceFile));
@@ -87,8 +90,8 @@ class OpenRewriteRunnerTest {
         Result result = mock(Result.class);
         SourceFile before = mock(SourceFile.class);
         SourceFile after = mock(SourceFile.class);
-        when(before.getSourcePath()).thenReturn(Path.of("src/main/java/Test.java"));
-        when(after.printAll()).thenReturn("class Test {}");
+        when(before.getSourcePath()).thenReturn(Path.of(SRC_MAIN_JAVA_TEST_JAVA));
+        when(after.printAll()).thenReturn(CLASS_TEST);
 
         when(result.getBefore()).thenReturn(before);
         when(result.getAfter()).thenReturn(after);
@@ -107,7 +110,7 @@ class OpenRewriteRunnerTest {
 
         // Verify file was written
         assertThat(testFile).exists();
-        assertThat(testFile).content().isEqualTo("class Test {}");
+        assertThat(testFile).content().isEqualTo(CLASS_TEST);
     }
 
     @Test
@@ -130,11 +133,11 @@ class OpenRewriteRunnerTest {
         // Setup test file with content that will be modified
         Path testFile = srcDir.resolve("Test.java");
         Files.createDirectories(testFile.getParent());
-        Files.writeString(testFile, "class Test {}");
+        Files.writeString(testFile, CLASS_TEST);
 
         // Mock OpenRewrite components
         SourceFile sourceFile = mock(SourceFile.class);
-        when(sourceFile.getSourcePath()).thenReturn(Path.of("src/main/java/Test.java"));
+        when(sourceFile.getSourcePath()).thenReturn(Path.of(SRC_MAIN_JAVA_TEST_JAVA));
 
         when(mockParser.parse(any(), any(), any(ExecutionContext.class)))
                 .thenReturn(java.util.stream.Stream.of(sourceFile));
@@ -146,7 +149,7 @@ class OpenRewriteRunnerTest {
         Result result = mock(Result.class);
         SourceFile before = mock(SourceFile.class);
         SourceFile after = mock(SourceFile.class);
-        when(before.getSourcePath()).thenReturn(Path.of("src/main/java/Test.java"));
+        when(before.getSourcePath()).thenReturn(Path.of(SRC_MAIN_JAVA_TEST_JAVA));
         when(after.printAll()).thenReturn("class Test { /* modified */ }");
 
         when(result.getBefore()).thenReturn(before);

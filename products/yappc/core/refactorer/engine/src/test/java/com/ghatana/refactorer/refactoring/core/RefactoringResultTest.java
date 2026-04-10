@@ -21,18 +21,21 @@ import org.junit.jupiter.api.Test;
  */
 
 class RefactoringResultTest {
+    
+    // Constants for duplicate literals
+    private static final String FILE1_JAVA = "file1.java";
 
     @Test
     void testSuccessResult() {
         RefactoringResult result =
                 RefactoringResult.success(
-                        Arrays.asList("file1.java", "file2.java"),
+                        Arrays.asList(FILE1_JAVA, "file2.java"),
                         5,
                         "Refactoring completed successfully");
 
         assertTrue(result.isSuccess());
         assertEquals(2, result.getModifiedFiles().size());
-        assertTrue(result.getModifiedFiles().contains("file1.java"));
+        assertTrue(result.getModifiedFiles().contains(FILE1_JAVA));
         assertEquals(5, result.getChangeCount());
         assertEquals("Refactoring completed successfully", result.getSummary());
         assertNull(result.getErrorMessage());
@@ -52,7 +55,7 @@ class RefactoringResultTest {
     void testPartialResult() {
         RefactoringResult result =
                 RefactoringResult.partial(
-                        Collections.singletonList("file1.java"),
+                        Collections.singletonList(FILE1_JAVA),
                         2,
                         "Some changes were made",
                         "Failed to update some references");
@@ -73,7 +76,7 @@ class RefactoringResultTest {
         RefactoringResult result =
                 RefactoringResult.builder()
                         .success(true)
-                        .addModifiedFile("file1.java")
+                        .addModifiedFile(FILE1_JAVA)
                         .addModifiedFile("file2.java")
                         .changeCount(3)
                         .summary("Refactoring completed")
@@ -95,10 +98,10 @@ class RefactoringResultTest {
     @Test
     void testEqualsAndHashCode() {
         RefactoringResult result1 =
-                RefactoringResult.success(Collections.singletonList("file1.java"), 1, "Test");
+                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test");
 
         RefactoringResult result2 =
-                RefactoringResult.success(Collections.singletonList("file1.java"), 1, "Test");
+                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test");
 
         RefactoringResult result3 = RefactoringResult.failure("Error");
 

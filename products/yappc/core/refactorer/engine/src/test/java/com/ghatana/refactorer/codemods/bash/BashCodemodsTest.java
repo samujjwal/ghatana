@@ -23,6 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 
 class BashCodemodsTest {
+    private static final String SC2086 = "SC2086";
 
     @TempDir Path tempDir;
     private BashCodemods bashCodemods;
@@ -42,8 +43,8 @@ class BashCodemodsTest {
         String expected = "echo \"$VAR\"";
 
         // The diagnostic points to the variable that needs quoting
-        UnifiedDiagnostic diagnostic = createMockDiagnostic("SC2086", 1, 6, 1, 9);
-        String result = bashCodemods.getFix("SC2086", content, diagnostic);
+        UnifiedDiagnostic diagnostic = createMockDiagnostic(SC2086, 1, 6, 1, 9);
+        String result = bashCodemods.getFix(SC2086, content, diagnostic);
 
         assertEquals(expected, result);
 
@@ -52,13 +53,13 @@ class BashCodemodsTest {
         expected = "for f in \"$FILES\"; do echo \"$f\"; done";
 
         // First variable ($FILES)
-        diagnostic = createMockDiagnostic("SC2086", 1, 9, 1, 14);
-        result = bashCodemods.getFix("SC2086", content, diagnostic);
+        diagnostic = createMockDiagnostic(SC2086, 1, 9, 1, 14);
+        result = bashCodemods.getFix(SC2086, content, diagnostic);
         assertEquals("for f in \"$FILES\"; do echo $f; done", result);
 
         // Second variable ($f)
-        diagnostic = createMockDiagnostic("SC2086", 1, 27, 1, 28);
-        result = bashCodemods.getFix("SC2086", content, diagnostic);
+        diagnostic = createMockDiagnostic(SC2086, 1, 27, 1, 28);
+        result = bashCodemods.getFix(SC2086, content, diagnostic);
         assertEquals("for f in $FILES; do echo \"$f\"; done", result);
     }
 

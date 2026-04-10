@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -117,7 +118,7 @@ public class StreamProcessorAgentConfig {
 
         Object subtype = props.get("subtype");
         if (subtype instanceof String s) {
-            builder.subtype(StreamProcessorSubtype.valueOf(s.toUpperCase()));
+            builder.subtype(StreamProcessorSubtype.valueOf(s.toUpperCase(Locale.ROOT)));
         }
 
         Object checkpointMsObj = props.get("checkpointIntervalMs");

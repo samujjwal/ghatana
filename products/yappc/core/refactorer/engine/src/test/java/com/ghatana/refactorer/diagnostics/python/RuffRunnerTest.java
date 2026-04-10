@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.process.ProcessResult;
-import com.ghatana.refactorer.testutils.TestConfig;
+import com.ghatana.refactorer.testutils.ConfigTestUtils;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,10 +37,17 @@ class RuffRunnerTest extends EventloopTestBase {
 
         private static final List<String> DEFAULT_IGNORE_PATTERNS = List.of("**/.venv/**", "**/venv/**",
                         "**/node_modules/**");
+        
+        // Constants for duplicate literals
+        private static final String SYNTAX_ERROR_PY = "syntax_error.py";
+        private static final String UNUSED_IMPORT_PY = "unused_import.py";
+        private static final String FIXABLE_PY = "fixable.py";
+        private static final String INVALID_PY = "invalid.py";
+        private static final String RUFF = "ruff";
 
         @BeforeEach
         void setUp() {
-                context = TestConfig.createTestContext(tempDir);
+                context = ConfigTestUtils.createTestContext(tempDir);
                 processRunner = new FakeProcessRunner(context);
                 ruffRunner = new RuffRunner(context, processRunner);
         }
@@ -48,17 +55,17 @@ class RuffRunnerTest extends EventloopTestBase {
         @Test
         void testRuffFindsSyntaxError() throws Exception {
                 // Create a Python file with a syntax error
-                Path pythonFile = tempDir.resolve("syntax_error.py");
+                Path pythonFile = tempDir.resolve(SYNTAX_ERROR_PY);
                 Files.writeString(pythonFile, "print('Hello world'  # Missing closing parenthesis\n");
 
                 processRunner.when(
-                                "ruff",
-                                ruffArgs(false, "syntax_error.py"),
+                                RUFF,
+                                ruffArgs(false, SYNTAX_ERROR_PY),
                                 FakeProcessRunner.response(
                                                 new ProcessResult(
                                                                 1,
                                                                 diagnosticsJson(
-                                                                                "syntax_error.py",
+                                                                                SYNTAX_ERROR_PY,
                                                                                 "E999",
                                                                                 "SyntaxError: '(' was never closed",
                                                                                 1,
@@ -68,28 +75,28 @@ class RuffRunnerTest extends EventloopTestBase {
                                                                 "")));
 
                 List<UnifiedDiagnostic> diagnostics = runPromise(() ->
-                                ruffRunner.withIncludePatterns(List.of("syntax_error.py")).run());
+                                ruffRunner.withIncludePatterns(List.of(SYNTAX_ERROR_PY)).run());
 
                 assertFalse(diagnostics.isEmpty(), "Should find at least one diagnostic");
                 UnifiedDiagnostic first = diagnostics.get(0);
-                assertEquals("syntax_error.py", first.getFile());
+                assertEquals(SYNTAX_ERROR_PY, first.getFile());
                 assertTrue(first.getMessage().contains("SyntaxError"), "Should be a syntax error");
         }
 
         @Test
         void testRuffFindsStyleIssue() throws Exception {
                 // Create a Python file with a style issue (unused import)
-                Path pythonFile = tempDir.resolve("unused_import.py");
+                Path pythonFile = tempDir.resolve(UNUSED_IMPORT_PY);
                 Files.writeString(pythonFile, "import os\nprint('Hello world')\n");
 
                 processRunner.when(
-                                "ruff",
-                                ruffArgs(false, "unused_import.py"),
+                                RUFF,
+                                ruffArgs(false, UNUSED_IMPORT_PY),
                                 FakeProcessRunner.response(
                                                 new ProcessResult(
                                                                 1,
                                                                 diagnosticsJson(
-                                                                                "unused_import.py",
+                                                                                UNUSED_IMPORT_PY,
                                                                                 "F401",
                                                                                 "unused import 'os'",
                                                                                 1,
@@ -99,48 +106,48 @@ class RuffRunnerTest extends EventloopTestBase {
                                                                 "")));
 
                 List<UnifiedDiagnostic> diagnostics = runPromise(() ->
-                                ruffRunner.withIncludePatterns(List.of("unused_import.py")).run());
+                                ruffRunner.withIncludePatterns(List.of(UNUSED_IMPORT_PY)).run());
 
                 assertFalse(diagnostics.isEmpty(), "Should find at least one diagnostic");
                 UnifiedDiagnostic first = diagnostics.get(0);
-                assertEquals("unused_import.py", first.getFile());
+                assertEquals(UNUSED_IMPORT_PY, first.getFile());
                 assertEquals("F401", first.getCode()); // F401 is unused import
         }
 
         @Test
         void testRuffFixesSimpleIssue() throws Exception {
                 // Create a Python file with a fixable issue (unused import)
-                Path pythonFile = tempDir.resolve("fixable.py");
+                Path pythonFile = tempDir.resolve(FIXABLE_PY);
                 String originalCode = "import os\nprint('Hello world')\n";
                 Files.writeString(pythonFile, originalCode);
 
                 processRunner.when(
-                                "ruff",
-                                ruffArgs(false, "fixable.py"),
+                                RUFF,
+                                ruffArgs(false, FIXABLE_PY),
                                 FakeProcessRunner.response(
                                                 new ProcessResult(
                                                                 1,
                                                                 diagnosticsJson(
-                                                                                "fixable.py", "F401",
+                                                                                FIXABLE_PY, "F401",
                                                                                 "unused import 'os'", 1, 1, 1, 1),
                                                                 "")));
 
                 // First run to get diagnostics
                 List<UnifiedDiagnostic> diagnostics = runPromise(() ->
-                                ruffRunner.withIncludePatterns(List.of("fixable.py")).run());
+                                ruffRunner.withIncludePatterns(List.of(FIXABLE_PY)).run());
 
                 assertFalse(diagnostics.isEmpty(), "Should find at least one diagnostic");
 
                 // Run with fix enabled
                 RuffRunner fixRunner = new RuffRunner(context, processRunner)
-                                .withIncludePatterns(List.of("fixable.py"))
+                                .withIncludePatterns(List.of(FIXABLE_PY))
                                 .withFix(true);
 
                 processRunner.when(
-                                "ruff",
-                                ruffArgs(true, "fixable.py"),
+                                RUFF,
+                                ruffArgs(true, FIXABLE_PY),
                                 FakeProcessRunner.response(
-                                                new ProcessResult(0, "", ""), removeUnusedImport("fixable.py")));
+                                                new ProcessResult(0, "", ""), removeUnusedImport(FIXABLE_PY)));
 
                 // Run the fix operation - we don't need the diagnostics, just want the side
                 // effect
@@ -156,7 +163,7 @@ class RuffRunnerTest extends EventloopTestBase {
         void testRuffWithNonexistentFile() throws Exception {
                 // Should not throw, just return empty diagnostics
                 processRunner.when(
-                                "ruff",
+                                RUFF,
                                 ruffArgs(false, "nonexistent.py"),
                                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
 
@@ -169,17 +176,17 @@ class RuffRunnerTest extends EventloopTestBase {
         @Test
         void testRuffWithInvalidPython() throws Exception {
                 // Create invalid Python file
-                Path pythonFile = tempDir.resolve("invalid.py");
+                Path pythonFile = tempDir.resolve(INVALID_PY);
                 Files.writeString(pythonFile, "def missing_colon()\n    pass\n");
 
                 processRunner.when(
-                                "ruff",
-                                ruffArgs(false, "invalid.py"),
+                                RUFF,
+                                ruffArgs(false, INVALID_PY),
                                 FakeProcessRunner.response(
                                                 new ProcessResult(
                                                                 1,
                                                                 diagnosticsJson(
-                                                                                "invalid.py",
+                                                                                INVALID_PY,
                                                                                 "E999",
                                                                                 "SyntaxError: expected ':'",
                                                                                 1,
@@ -189,7 +196,7 @@ class RuffRunnerTest extends EventloopTestBase {
                                                                 "")));
 
                 List<UnifiedDiagnostic> diagnostics = runPromise(() ->
-                                ruffRunner.withIncludePatterns(List.of("invalid.py")).run());
+                                ruffRunner.withIncludePatterns(List.of(INVALID_PY)).run());
 
                 assertFalse(diagnostics.isEmpty(), "Should find syntax error in invalid Python");
                 assertTrue(

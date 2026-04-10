@@ -20,14 +20,14 @@ import org.junit.jupiter.api.Test;
 
 class JsonUtilsTest {
 
-    static class TestData {
+    static class JsonTestData {
         private String name;
         private int value;
 
         // Default constructor for Jackson
-        public TestData() {}
+        public JsonTestData() {}
 
-        public TestData(String name, int value) {
+        public JsonTestData(String name, int value) {
             this.name = name;
             this.value = value;
         }
@@ -53,7 +53,7 @@ class JsonUtilsTest {
         public boolean equals(Object obj) {
             if (this == obj) return true;
             if (obj == null || getClass() != obj.getClass()) return false;
-            TestData testData = (TestData) obj;
+            JsonTestData testData = (JsonTestData) obj;
             return value == testData.value
                     && (name == null ? testData.name == null : name.equals(testData.name));
         }
@@ -72,7 +72,7 @@ class JsonUtilsTest {
         String json = "{\"name\":\"test\",\"value\":42}";
 
         // Act
-        TestData result = JsonUtils.fromJson(json, TestData.class);
+        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class);
 
         // Assert
         assertThat(result).isNotNull();
@@ -83,7 +83,7 @@ class JsonUtilsTest {
     @Test
     void testToJson() throws JsonProcessingException {
         // Arrange
-        TestData testData = new TestData("test", 42);
+        JsonTestData testData = new JsonTestData("test", 42);
         String expectedJson = "{\"name\":\"test\",\"value\":42}";
 
         // Act
@@ -99,7 +99,7 @@ class JsonUtilsTest {
         String json = "{\"name\":\"test\",\"value\":42,\"extra\":\"should be ignored\"}";
 
         // Act - Should not throw because FAIL_ON_UNKNOWN_PROPERTIES is false
-        TestData result = JsonUtils.fromJson(json, TestData.class);
+        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class);
 
         // Assert
         assertThat(result).isNotNull();
@@ -113,7 +113,7 @@ class JsonUtilsTest {
         String invalidJson = "{invalid-json}";
 
         // Act & Assert
-        assertThatThrownBy(() -> JsonUtils.fromJson(invalidJson, TestData.class))
+        assertThatThrownBy(() -> JsonUtils.fromJson(invalidJson, JsonTestData.class))
                 .isInstanceOf(JsonProcessingException.class);
     }
 }

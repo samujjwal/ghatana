@@ -1,15 +1,10 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
-    id("com.ghatana.protobuf-conventions")
-    id("com.ghatana.testing-conventions")
+    id("protobuf-module")
 }
 
-group = "com.ghatana.contracts"
 description = "Platform Contracts - Shared Protobuf definitions and schemas"
 
 dependencies {
-    api(libs.bundles.grpc.core)
     implementation(libs.bundles.jackson.json)
     implementation(libs.bundles.jackson.yaml)
     implementation("com.sun.codemodel:codemodel:2.6")
@@ -17,6 +12,7 @@ dependencies {
     implementation("com.github.spullara.mustache.java:compiler:0.9.14")
     implementation("org.jsoup:jsoup:1.15.3")
     implementation(libs.bundles.common.utils)
+    implementation("com.google.protobuf:protobuf-java-util:4.34.1")
     testImplementation(libs.bundles.testing.core)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

@@ -6,9 +6,9 @@
  */
 package com.ghatana.shared.auth;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.services.auth.PasswordHasher;
 import com.ghatana.services.auth.mfa.MfaService;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Real JWT validation, token refresh, multi-factor authentication flows.
  */
 @DisplayName("Authentication Flow Tests")
-class AuthenticationFlowTest {
+class AuthenticationFlowTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should validate JWT tokens with real signing")
@@ -38,10 +38,10 @@ class AuthenticationFlowTest {
         MfaService mfaService = new MfaService();
         String userId = "user-123";
 
-        Promise<MfaService.EnrollmentData> enrollment = mfaService.enrollUser(userId, "Ghatana");
+        MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(userId, "Ghatana"));
 
-        assertThat(enrollment.getResult()).isNotNull();
-        assertThat(enrollment.getResult().secret()).isNotNull();
+        assertThat(enrollment).isNotNull();
+        assertThat(enrollment.secret()).isNotNull();
     }
 
     @Test
@@ -50,8 +50,7 @@ class AuthenticationFlowTest {
         MfaService mfaService = new MfaService();
         String userId = "user-456";
 
-        Promise<MfaService.EnrollmentData> enrollment = mfaService.enrollUser(userId, "Ghatana");
-        MfaService.EnrollmentData data = enrollment.getResult();
+        MfaService.EnrollmentData data = runPromise(() -> mfaService.enrollUser(userId, "Ghatana"));
 
         assertThat(data.backupCodes()).hasSize(10);
         assertThat(data.qrCodeUri()).contains("otpauth://totp");
@@ -63,7 +62,7 @@ class AuthenticationFlowTest {
         MfaService mfaService = new MfaService();
         String userId = "user-789";
 
-        mfaService.enrollUser(userId, "Ghatana");
+        runPromise(() -> mfaService.enrollUser(userId, "Ghatana"));
 
         assertThat(mfaService.isMfaEnabled(userId)).isFalse();
     }

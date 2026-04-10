@@ -38,6 +38,11 @@ class MockTypeScriptRenameRefactoringTest {
     private Path testFile;
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
+    
+    // Constants for duplicate literals
+    private static final String FUNCTION = "FUNCTION";
+    private static final String NEW_NAME = "newName";
+    private static final String SOME_NAME = "someName";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -180,7 +185,7 @@ class MockTypeScriptRenameRefactoringTest {
     @Test
     void shouldRenameFunction() {
         // Given
-        var context = createContext(testFile, "FUNCTION", "functionToRename", "renamedFunction");
+        var context = createContext(testFile, FUNCTION, "functionToRename", "renamedFunction");
 
         // When
         var result = refactoring.apply(context);
@@ -230,7 +235,7 @@ class MockTypeScriptRenameRefactoringTest {
     @Test
     void shouldNotRenameIfElementNotFound() {
         // Given
-        var context = createContext(testFile, "FUNCTION", "nonExistentFunction", "newName");
+        var context = createContext(testFile, FUNCTION, "nonExistentFunction", NEW_NAME);
 
         // When
         var result = refactoring.apply(context);
@@ -243,14 +248,14 @@ class MockTypeScriptRenameRefactoringTest {
     @Test
     void shouldCheckIfCanBeApplied() {
         // Valid TypeScript file
-        var validContext = createContext(testFile, "FUNCTION", "someName", "newName");
+        var validContext = createContext(testFile, FUNCTION, SOME_NAME, NEW_NAME);
         assertThat(refactoring.canApply(validContext)).isTrue();
 
         // Valid TSX file
         var tsxFile = tempDir.resolve("component.tsx");
         try {
             Files.writeString(tsxFile, "const Component = () => <div>Hello</div>;");
-            var tsxContext = createContext(tsxFile, "FUNCTION", "someName", "newName");
+            var tsxContext = createContext(tsxFile, FUNCTION, SOME_NAME, NEW_NAME);
             assertThat(refactoring.canApply(tsxContext)).isTrue();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create test file", e);
@@ -258,14 +263,14 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Non-existent file
         var invalidFileContext =
-                createContext(Path.of("non_existent.ts"), "FUNCTION", "someName", "newName");
+                createContext(Path.of("non_existent.ts"), FUNCTION, SOME_NAME, NEW_NAME);
         assertThat(refactoring.canApply(invalidFileContext)).isFalse();
 
         // Non-TypeScript file
         var nonTsFile = tempDir.resolve("not_typescript.txt");
         try {
             Files.writeString(nonTsFile, "Not a TypeScript file");
-            var nonTsContext = createContext(nonTsFile, "FUNCTION", "someName", "newName");
+            var nonTsContext = createContext(nonTsFile, FUNCTION, SOME_NAME, NEW_NAME);
             assertThat(refactoring.canApply(nonTsContext)).isFalse();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create test file", e);
@@ -285,7 +290,7 @@ class MockTypeScriptRenameRefactoringTest {
                     .thenThrow(new IOException("Failed to read file"));
 
             // Create a context with the mock file
-            var context = createContext(mockFile, "FUNCTION", "someFunction", "newFunction");
+            var context = createContext(mockFile, FUNCTION, "someFunction", "newFunction");
 
             // When
             var result = refactoring.apply(context);
@@ -319,7 +324,7 @@ class MockTypeScriptRenameRefactoringTest {
         Files.writeString(emptyFile, "");
 
         // Given
-        var context = createContext(emptyFile, "FUNCTION", "someFunction", "newFunction");
+        var context = createContext(emptyFile, FUNCTION, "someFunction", "newFunction");
 
         // When
         var result = refactoring.apply(context);
@@ -346,7 +351,7 @@ class MockTypeScriptRenameRefactoringTest {
 
                     @Override
                     public String getElementType() {
-                        return "FUNCTION";
+                        return FUNCTION;
                     }
 
                     @Override
@@ -420,7 +425,7 @@ class MockTypeScriptRenameRefactoringTest {
         Files.writeString(specialFile, specialCode);
 
         // Given
-        var context = createContext(specialFile, "FUNCTION", "special$Function", "normalFunction");
+        var context = createContext(specialFile, FUNCTION, "special$Function", "normalFunction");
 
         // When
         var result = refactoring.apply(context);

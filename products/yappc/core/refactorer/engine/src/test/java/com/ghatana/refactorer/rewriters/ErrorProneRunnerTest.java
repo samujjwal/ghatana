@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,6 +28,12 @@ class ErrorProneRunnerTest {
 
     private ErrorProneRunner runner;
     private String javacPath;
+    
+    // Constants for duplicate literals
+    private static final String BRACE_CLOSE = "    } \n";
+    private static final String TEST_JAVA = "Test.java";
+    private static final String CLASS_DECLARATION = "public class Test { \n";
+    private static final String MAIN_METHOD = "    public static void main(String[] args) { \n";
 
     @BeforeEach
     void setUp() {
@@ -46,13 +53,13 @@ class ErrorProneRunnerTest {
     void testRunWithDefaultOptions() throws IOException {
         // Create a simple Java file
         Path tempDir = Files.createTempDirectory("errorprone-test");
-        Path srcFile = tempDir.resolve("Test.java");
+        Path srcFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(
                 srcFile,
-                "public class Test { \n"
-                        + "    public static void main(String[] args) { \n"
+                CLASS_DECLARATION
+                        + MAIN_METHOD
                         + "        System.out.println(\"Hello\"); \n"
-                        + "    } \n"
+                        + BRACE_CLOSE
                         + "}");
 
         List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, List.of(srcFile));
@@ -66,17 +73,17 @@ class ErrorProneRunnerTest {
         // Create a simple Java file
         Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir);
-        Path javaFile = srcDir.resolve("Test.java");
+        Path javaFile = srcDir.resolve(TEST_JAVA);
 
         // Create a very simple Java file that's unlikely to trigger any warnings
         Files.writeString(
                 javaFile,
                 "// Simple test file with no warnings\n"
-                        + "public class Test { \n"
+                        + CLASS_DECLARATION
                         + "    @SuppressWarnings(\"all\") // Suppress all warnings\n"
-                        + "    public static void main(String[] args) { \n"
+                        + MAIN_METHOD
                         + "        System.out.println(\"Hello\"); \n"
-                        + "    } \n"
+                        + BRACE_CLOSE
                         + "}");
 
         // Use minimal arguments to avoid unnecessary warnings
@@ -99,13 +106,13 @@ class ErrorProneRunnerTest {
         // Create a Java file with an error
         Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir);
-        Path javaFile = srcDir.resolve("Test.java");
+        Path javaFile = srcDir.resolve(TEST_JAVA);
         Files.writeString(
                 javaFile,
-                "public class Test { \n"
-                        + "    public static void main(String[] args) { \n"
+                CLASS_DECLARATION
+                        + MAIN_METHOD
                         + "        UndefinedType x; \n"
-                        + "    } \n"
+                        + BRACE_CLOSE
                         + "}");
 
         ErrorProneRunner.Options opts =
@@ -132,15 +139,15 @@ class ErrorProneRunnerTest {
         // Create a Java file with a warning
         Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir);
-        Path javaFile = srcDir.resolve("Test.java");
+        Path javaFile = srcDir.resolve(TEST_JAVA);
         Files.writeString(
                 javaFile,
                 "import java.util.*;\n"
-                        + "public class Test { \n"
-                        + "    public static void main(String[] args) { \n"
+                        + CLASS_DECLARATION
+                        + MAIN_METHOD
                         + "        List<String> list = new ArrayList(); // Raw type warning\n"
                         + "        System.out.println(list); \n"
-                        + "    } \n"
+                        + BRACE_CLOSE
                         + "}");
 
         ErrorProneRunner.Options opts =
@@ -157,8 +164,8 @@ class ErrorProneRunnerTest {
         // Check that the warning message contains relevant information
         String warningMessage = diagnostics.get(0).message();
         assertTrue(
-                warningMessage.toLowerCase().contains("raw type")
-                        || warningMessage.toLowerCase().contains("arraylist"),
+                warningMessage.toLowerCase(Locale.ROOT).contains("raw type")
+                        || warningMessage.toLowerCase(Locale.ROOT).contains("arraylist"),
                 "Unexpected warning message: " + warningMessage);
     }
 
@@ -178,7 +185,7 @@ class ErrorProneRunnerTest {
         assertFalse(diagnostics.isEmpty(), "Expected error for invalid javac command");
 
         // Check that the error message indicates the command wasn't found
-        String errorMessage = diagnostics.get(0).message().toLowerCase();
+        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT);
         assertTrue(
                 errorMessage.contains("cannot run program")
                         || errorMessage.contains("not found")
@@ -192,7 +199,7 @@ class ErrorProneRunnerTest {
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder().javacCmd(javacPath).build();
 
-        Path nonExistentFile = Path.of("nonexistent/Test.java").toAbsolutePath();
+        Path nonExistentFile = Path.of("nonexistent/" + TEST_JAVA).toAbsolutePath();
 
         // Now we expect a diagnostic instead of an exception
         List<UnifiedDiagnostic> diagnostics =
@@ -202,7 +209,7 @@ class ErrorProneRunnerTest {
         assertFalse(diagnostics.isEmpty(), "Expected error for non-existent source file");
 
         // Check that the error message indicates the file wasn't found
-        String errorMessage = diagnostics.get(0).message().toLowerCase();
+        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT);
         assertTrue(
                 errorMessage.contains("source file not readable")
                         || errorMessage.contains("file not found"),

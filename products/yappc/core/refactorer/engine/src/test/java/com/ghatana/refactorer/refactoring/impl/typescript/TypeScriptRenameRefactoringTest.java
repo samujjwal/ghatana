@@ -41,6 +41,11 @@ class TypeScriptRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private boolean isTypeScriptAvailable;
+    
+    // Constants for duplicate literals
+    private static final String NEW_NAME = "newName";
+    private static final String FUNCTION = "function";
+    private static final String TEST_FAILED = "Test failed: ";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -116,7 +121,7 @@ class TypeScriptRenameRefactoringTest {
             assertThat(content).contains("return this.newMethod()");
             assertThat(content).contains("console.log(obj.newMethod())");
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -142,7 +147,7 @@ class TypeScriptRenameRefactoringTest {
             assertThat(content).contains("function renamedFunction(param: string): string");
             assertThat(content).contains("console.log(renamedFunction(\"hello\"));");
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -168,7 +173,7 @@ class TypeScriptRenameRefactoringTest {
             assertThat(content).contains("this.newProperty = value;");
             assertThat(content).contains("return this.newProperty;");
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -180,7 +185,7 @@ class TypeScriptRenameRefactoringTest {
 
         try {
             // Given
-            var context = createContext(testFile, "function", "nonExistentFunction", "newName");
+            var context = createContext(testFile, FUNCTION, "nonExistentFunction", NEW_NAME);
 
             // When
             var result = refactoring.apply(context);
@@ -193,7 +198,7 @@ class TypeScriptRenameRefactoringTest {
                         .containsAnyOf("No changes were made", "not found");
             }
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -217,7 +222,7 @@ class TypeScriptRenameRefactoringTest {
             assertThat(refactoring.isNewNameValid("invalid-name")).isFalse();
             assertThat(refactoring.isNewNameValid("invalid.name")).isFalse();
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -229,26 +234,26 @@ class TypeScriptRenameRefactoringTest {
 
         try {
             // Valid TypeScript file
-            var validContext = createContext(testFile, "function", "someName", "newName");
+            var validContext = createContext(testFile, FUNCTION, "someName", NEW_NAME);
             assertThat(refactoring.canApply(validContext)).isTrue();
 
             // Non-existent file
             var invalidFileContext =
                     createContext(
-                            tempDir.resolve("non_existent.ts"), "function", "someName", "newName");
+                            tempDir.resolve("non_existent.ts"), FUNCTION, "someName", NEW_NAME);
             assertThat(refactoring.canApply(invalidFileContext)).isFalse();
 
             // Non-TypeScript file
             var nonTsFile = tempDir.resolve("not_typescript.txt");
             try {
                 Files.writeString(nonTsFile, "Not a TypeScript file");
-                var nonTsContext = createContext(nonTsFile, "function", "someName", "newName");
+                var nonTsContext = createContext(nonTsFile, FUNCTION, "someName", NEW_NAME);
                 assertThat(refactoring.canApply(nonTsContext)).isFalse();
             } catch (IOException e) {
                 throw new RuntimeException("Failed to create test file", e);
             }
         } catch (Exception e) {
-            throw new AssertionError("Test failed: " + e.getMessage(), e);
+            throw new AssertionError(TEST_FAILED + e.getMessage(), e);
         }
     }
 
@@ -325,14 +330,14 @@ class TypeScriptRenameRefactoringTest {
      * implementation doesn't rely on external dependencies and directly modifies the file content.
      */
     // Custom implementation for testing purposes
-    private static class TestRenameContext implements Context {
+    private static class RenameContextTestImpl implements Context {
         private final String oldName;
         private final String newName;
         private final String elementType;
         private final String sourceFile;
         private final PolyfixProjectContext projectContext;
 
-        public TestRenameContext(
+        public RenameContextTestImpl(
                 String oldName,
                 String newName,
                 String elementType,

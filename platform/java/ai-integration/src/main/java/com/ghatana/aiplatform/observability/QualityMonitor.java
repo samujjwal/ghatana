@@ -57,6 +57,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class QualityMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(QualityMonitor.class);
+    
+    // Constants for duplicate literals
+    private static final String TENANT_ID_MUST_NOT_BE_NULL = "tenantId must not be null";
+    private static final String MODEL_NAME_MUST_NOT_BE_NULL = "modelName must not be null";
+    private static final String SLA_THRESHOLD_MUST_BE_BETWEEN = "SLA threshold must be between 0.0 and 1.0";
+    private static final String TENANT = "tenant";
+    private static final String MODEL = "model";
 
     private final MetricsCollector metrics;
     private final DataDriftDetector driftDetector;
@@ -65,6 +72,7 @@ public class QualityMonitor {
     private final Map<String, Double> qualitySLAs = new ConcurrentHashMap<>();
 
     private static final double DEFAULT_SLA_THRESHOLD = 0.8;
+    private static final double ZERO_DOUBLE = 0.0;
 
     /**
      * Constructs quality monitor.
@@ -85,18 +93,18 @@ public class QualityMonitor {
      * @param threshold minimum acceptable precision (0.0-1.0)
      */
     public void setQualitySLA(String tenantId, String modelName, double threshold) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         if (threshold < 0.0 || threshold > 1.0) {
-            throw new IllegalArgumentException("SLA threshold must be between 0.0 and 1.0");
+            throw new IllegalArgumentException(SLA_THRESHOLD_MUST_BE_BETWEEN);
         }
 
         String key = tenantId + ":" + modelName;
         qualitySLAs.put(key, threshold);
 
         metrics.incrementCounter("ai.quality.sla.set",
-                "tenant", tenantId, "model", modelName);
+                TENANT, tenantId, MODEL, modelName);
 
         logger.info("Set quality SLA: tenant={}, model={}, threshold={:.2f}",
                 tenantId, modelName, threshold);
@@ -111,8 +119,8 @@ public class QualityMonitor {
      * @param actualLabel actual ground truth label
      */
     public void recordPrediction(String tenantId, String modelName, double confidence, boolean actualLabel) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         if (confidence < 0.0 || confidence > 1.0) {
             throw new IllegalArgumentException("Confidence must be between 0.0 and 1.0");
@@ -153,8 +161,8 @@ public class QualityMonitor {
      * @return precision (0.0-1.0) or 0 if no predictions recorded
      */
     public double getPrecision(String tenantId, String modelName) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         String key = tenantId + ":" + modelName;
         ModelQuality quality = qualityMetrics.get(key);
@@ -181,8 +189,8 @@ public class QualityMonitor {
      * @return recall (0.0-1.0) or 0 if no predictions recorded
      */
     public double getRecall(String tenantId, String modelName) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         String key = tenantId + ":" + modelName;
         ModelQuality quality = qualityMetrics.get(key);
@@ -209,14 +217,14 @@ public class QualityMonitor {
      * @return F1 score (0.0-1.0) or 0 if no predictions recorded
      */
     public double getF1Score(String tenantId, String modelName) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         double precision = getPrecision(tenantId, modelName);
         double recall = getRecall(tenantId, modelName);
 
-        if (precision + recall == 0.0) {
-            return 0.0;
+        if (precision + recall == ZERO_DOUBLE) {
+            return ZERO_DOUBLE;
         }
 
         return 2.0 * (precision * recall) / (precision + recall);
@@ -234,8 +242,8 @@ public class QualityMonitor {
      * @return quality alert with status and analysis
      */
     public QualityAlert checkQuality(String tenantId, String modelName) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
-        Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(tenantId, TENANT_ID_MUST_NOT_BE_NULL);
+        Objects.requireNonNull(modelName, MODEL_NAME_MUST_NOT_BE_NULL);
 
         String slaKey = tenantId + ":" + modelName;
         double slaThreshold = qualitySLAs.getOrDefault(slaKey, DEFAULT_SLA_THRESHOLD);

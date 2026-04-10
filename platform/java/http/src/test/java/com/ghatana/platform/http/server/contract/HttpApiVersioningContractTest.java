@@ -183,7 +183,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
         @DisplayName("POST request must have valid JSON body")
         void postMustHaveValidJson() {
             String validJson = "{\"name\": \"Alice\", \"age\": 28}";
-            String invalidJson = "{invalid json}";
+            String invalidJson = "invalid json string";
 
             assertThat(validJson).startsWith("{").endsWith("}");
             assertThat(invalidJson).doesNotMatch("^\\{.*\\}$");

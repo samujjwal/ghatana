@@ -62,6 +62,10 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
+    
+    // Protobuf for JSON formatting
+    implementation(libs.protobuf.java)
+    implementation("com.google.protobuf:protobuf-java-util:4.34.1")
 
     // JSON Schema validation for configuration governance
     implementation(libs.networknt.validator)
@@ -120,7 +124,7 @@ tasks.register("validateConfigSchemas") {
 
 // SpotBugs configuration - exclude JMH generated classes
 spotbugs {
-    ignoreFailures = true
+    ignoreFailures = false
     showStackTraces = true
     showProgress = false
     reportLevel = com.github.spotbugs.snom.Confidence.DEFAULT

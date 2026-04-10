@@ -28,6 +28,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AIModelManager {
 
+    // Constants for duplicate literals
+    private static final String TENANT_ID_REQUIRED = "tenantId is required";
+    private static final String MODEL_REQUIRED = "model is required";
+    private static final String MODEL_NAME_REQUIRED = "model.name is required";
+    private static final String MODEL_VERSION_REQUIRED = "model.version is required";
+    private static final String MODEL_TENANT_ID_REQUIRED = "model.tenantId is required";
+
     private final ModelRegistryService modelRegistry;
     private final AiMetricsEmitter aiMetrics;
     private final Map<String, ModelMetadata> modelCache = new ConcurrentHashMap<>();
@@ -41,16 +48,16 @@ public class AIModelManager {
      * Registers a model for a tenant.
      */
     public Promise<ModelMetadata> registerModel(String tenantId, ModelMetadata model) {
-        Objects.requireNonNull(tenantId, "tenantId is required");
-        Objects.requireNonNull(model, "model is required");
+        Objects.requireNonNull(tenantId, TENANT_ID_REQUIRED);
+        Objects.requireNonNull(model, MODEL_REQUIRED);
         if (model.getName() == null || model.getName().isBlank()) {
-            throw new IllegalArgumentException("model.name is required");
+            throw new IllegalArgumentException(MODEL_NAME_REQUIRED);
         }
         if (model.getVersion() == null || model.getVersion().isBlank()) {
-            throw new IllegalArgumentException("model.version is required");
+            throw new IllegalArgumentException(MODEL_VERSION_REQUIRED);
         }
         if (model.getTenantId() == null || model.getTenantId().isBlank()) {
-            throw new IllegalArgumentException("model.tenantId is required");
+            throw new IllegalArgumentException(MODEL_TENANT_ID_REQUIRED);
         }
 
         try {

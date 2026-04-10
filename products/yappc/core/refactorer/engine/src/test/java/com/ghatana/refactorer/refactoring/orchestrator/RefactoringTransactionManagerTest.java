@@ -42,7 +42,8 @@ class RefactoringTransactionManagerTest {
         try {
             transactionManager.cleanupOldBackups();
         } catch (IOException e) {
-            // Ignore cleanup errors
+            // Ignore cleanup errors in teardown
+            System.err.println("Warning: Error during cleanup in tearDown: " + e.getMessage());
         }
     }
 

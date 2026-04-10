@@ -39,9 +39,41 @@ import java.util.*;
 public class JsonSchemaBundleToPojoGenerator {
 
     private static final ObjectMapper M = new ObjectMapper();
+    
+    // Constants for duplicate literals
+    private static final String ROOT_PREFIX = "--root=";
+    private static final String OVERRIDE_PREFIX = "--override=";
+    private static final String INCLUDE_PREFIX_PREFIX = "--include-prefix=";
+    private static final String CLASS_SUFFIX_PREFIX = "--class-suffix=";
+    private static final String DRY_RUN_FLAG = "--dry-run";
+    private static final String ADDITIONAL_PROPERTIES = "additionalProperties";
+    private static final String TYPE = "type";
+    private static final String DESCRIPTION = "description";
+    private static final String POJO_SUFFIX = "Pojo";
+    private static final String DOT = ".";
+    private static final String EMPTY_STRING = "";
+    private static final String COMMA = ",";
+    private static final String EQUALS = "=";
+    private static final String ARRAY = "array";
+    private static final String OBJECT = "object";
+    private static final String STRING = "string";
+    private static final String INTEGER = "integer";
+    private static final String NUMBER = "number";
+    private static final String BOOLEAN = "boolean";
+    private static final String NULL = "null";
+    private static final String INT64 = "int64";
+    private static final String LONG = "long";
+    private static final String INT32 = "int32";
+    private static final String INT = "int";
+    private static final String DATE_TIME = "date-time";
+    private static final String PROTO = "Proto";
+    private static final int MIN_ARGS = 2;
+    private static final int TWO = 2;
+    private static final int TEN = 10;
+    private static final int TWO_SIZE = 2;
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
+        if (args.length < MIN_ARGS) {
             System.err.println(
                     "Usage: JsonSchemaBundleToPojoGenerator <bundlePath> <outputDir> [--root=com]"
                             + " [--override=a=b,c=d] [--include-prefix=p1,p2] [--dry-run]");
@@ -51,33 +83,33 @@ public class JsonSchemaBundleToPojoGenerator {
         final Path bundlePath = Paths.get(args[0]);
         final File outDir = Paths.get(args[1]).toFile();
 
-        String rootPrefix = "";
+        String rootPrefix = EMPTY_STRING;
         Map<String, String> overrides = new HashMap<>();
         Set<String> includePrefixes = new LinkedHashSet<>();
-        String classSuffix = "Pojo";
+        String classSuffix = POJO_SUFFIX;
         boolean dryRun = false;
 
         for (int i = 2; i < args.length; i++) {
             String a = args[i];
             if (a == null) continue;
-            if (a.startsWith("--root=")) {
-                rootPrefix = a.substring("--root=".length());
-                if (rootPrefix.endsWith("."))
+            if (a.startsWith(ROOT_PREFIX)) {
+                rootPrefix = a.substring(ROOT_PREFIX.length());
+                if (rootPrefix.endsWith(DOT))
                     rootPrefix = rootPrefix.substring(0, rootPrefix.length() - 1);
-            } else if (a.startsWith("--override=")) {
-                String v = a.substring("--override=".length());
-                for (String pair : v.split(",")) {
+            } else if (a.startsWith(OVERRIDE_PREFIX)) {
+                String v = a.substring(OVERRIDE_PREFIX.length());
+                for (String pair : v.split(COMMA)) {
                     if (pair.isEmpty()) continue;
-                    String[] kv = pair.split("=");
-                    if (kv.length == 2) overrides.put(kv[0].trim(), kv[1].trim());
+                    String[] kv = pair.split(EQUALS);
+                    if (kv.length == TWO) overrides.put(kv[0].trim(), kv[1].trim());
                 }
-            } else if (a.startsWith("--include-prefix=")) {
-                String v = a.substring("--include-prefix=".length());
-                for (String p : v.split(",")) if (!p.isBlank()) includePrefixes.add(p.trim());
-            } else if (a.startsWith("--class-suffix=")) {
-                classSuffix = a.substring("--class-suffix=".length());
-                if (classSuffix == null) classSuffix = "";
-            } else if ("--dry-run".equals(a)) {
+            } else if (a.startsWith(INCLUDE_PREFIX_PREFIX)) {
+                String v = a.substring(INCLUDE_PREFIX_PREFIX.length());
+                for (String p : v.split(COMMA)) if (!p.isBlank()) includePrefixes.add(p.trim());
+            } else if (a.startsWith(CLASS_SUFFIX_PREFIX)) {
+                classSuffix = a.substring(CLASS_SUFFIX_PREFIX.length());
+                if (classSuffix == null) classSuffix = EMPTY_STRING;
+            } else if (DRY_RUN_FLAG.equals(a)) {
                 dryRun = true;
             } else {
                 System.out.println("Ignoring unknown arg: " + a);
@@ -191,7 +223,7 @@ public class JsonSchemaBundleToPojoGenerator {
                     .forEach(
                             p -> {
                                 count[0]++;
-                                if (samples.size() < 10) {
+                                if (samples.size() < TEN) {
                                     samples.add(root.relativize(p).toString());
                                 }
                             });
@@ -235,7 +267,7 @@ public class JsonSchemaBundleToPojoGenerator {
         }
 
         // additionalProperties -> Map<String, T>
-        JsonNode addl = schema.get("additionalProperties");
+        JsonNode addl = schema.get(ADDITIONAL_PROPERTIES);
         if (addl != null && !addl.isBoolean()) {
             JType valType =
                     toType(
@@ -250,7 +282,7 @@ public class JsonSchemaBundleToPojoGenerator {
                             classSuffix);
             JClass mapType = model.ref(Map.class).narrow(model.ref(String.class), valType.boxify());
             addFieldWithAccessors(
-                    model, clazz, "additionalProperties", "additionalProperties", mapType, addl);
+                    model, clazz, ADDITIONAL_PROPERTIES, ADDITIONAL_PROPERTIES, mapType, addl);
         }
     }
 
@@ -296,9 +328,9 @@ public class JsonSchemaBundleToPojoGenerator {
         if (node.has("anyOf")) {
             // we only support null or a type
             JsonNode anyOf = node.get("anyOf");
-            if (!"null".equalsIgnoreCase(anyOf.get(0).get("type").asText(""))) {
+            if (!NULL.equalsIgnoreCase(anyOf.get(0).get(TYPE).asText(EMPTY_STRING))) {
                 node = anyOf.get(0);
-            } else if (anyOf.size() == 2) {
+            } else if (anyOf.size() == TWO_SIZE) {
                 node = anyOf.get(1);
             } else {
                 return model.ref(Object.class);
@@ -306,7 +338,7 @@ public class JsonSchemaBundleToPojoGenerator {
         }
 
         // Arrays
-        if ("array".equals(node.path("type").asText(null))) {
+        if (ARRAY.equals(node.path(TYPE).asText(null))) {
             JsonNode items = node.get("items");
             // If missing items, default to Object
             JType itemType =
@@ -326,10 +358,10 @@ public class JsonSchemaBundleToPojoGenerator {
         }
 
         // Objects
-        if ("object".equals(node.path("type").asText(null))) {
+        if (OBJECT.equals(node.path(TYPE).asText(null))) {
             // Map-like object: only additionalProperties present -> Map<String, V>
-            if (!node.has("properties") && node.has("additionalProperties")) {
-                JsonNode addl = node.get("additionalProperties");
+            if (!node.has("properties") && node.has(ADDITIONAL_PROPERTIES)) {
+                JsonNode addl = node.get(ADDITIONAL_PROPERTIES);
                 JType valType =
                         toType(
                                 model,
@@ -344,7 +376,7 @@ public class JsonSchemaBundleToPojoGenerator {
                 return model.ref(Map.class).narrow(model.ref(String.class), valType.boxify());
             }
             // Bare object with neither properties nor additionalProperties -> Map<String,Object>
-            if (!node.has("properties") && !node.has("additionalProperties")) {
+            if (!node.has("properties") && !node.has(ADDITIONAL_PROPERTIES)) {
                 return model.ref(Map.class)
                         .narrow(model.ref(String.class), model.ref(Object.class));
             }
@@ -364,29 +396,29 @@ public class JsonSchemaBundleToPojoGenerator {
 
         // string with enum handled in populateEnum when declared as top-level; here for inline ->
         // simple String
-        if ("string".equals(node.path("type").asText(null))) {
-            String format = node.path("format").asText("");
-            if ("int64".equals(format) || "long".equalsIgnoreCase(format)) {
+        if (STRING.equals(node.path(TYPE).asText(null))) {
+            String format = node.path("format").asText(EMPTY_STRING);
+            if (INT64.equals(format) || LONG.equalsIgnoreCase(format)) {
                 return model.ref(Long.class);
             }
-            if ("int32".equals(format) || "int".equalsIgnoreCase(format)) {
+            if (INT32.equals(format) || INT.equalsIgnoreCase(format)) {
                 return model.ref(Integer.class);
             }
-            if ("date-time".equalsIgnoreCase(format)) return model.ref(Long.class);
+            if (DATE_TIME.equalsIgnoreCase(format)) return model.ref(Long.class);
 
             return model.ref(String.class);
         }
-        if ("integer".equals(node.path("type").asText(null))) {
-            String format = node.path("format").asText("");
-            return ("int64".equals(format) || "long".equalsIgnoreCase(format))
+        if (INTEGER.equals(node.path(TYPE).asText(null))) {
+            String format = node.path("format").asText(EMPTY_STRING);
+            return (INT64.equals(format) || LONG.equalsIgnoreCase(format))
                     ? model.ref(Long.class)
                     : model.ref(Integer.class);
         }
-        if ("number".equals(node.path("type").asText(null))) {
+        if (NUMBER.equals(node.path(TYPE).asText(null))) {
             // Ensure we use java.lang.Number for all number types
             return model.ref(Number.class);
         }
-        if ("boolean".equals(node.path("type").asText(null))) return model.ref(Boolean.class);
+        if (BOOLEAN.equals(node.path(TYPE).asText(null))) return model.ref(Boolean.class);
 
         // Fallback
         return model.ref(Object.class);
@@ -407,8 +439,8 @@ public class JsonSchemaBundleToPojoGenerator {
         f.annotate(jsonProp).param("value", jsonName);
 
         // JavaDoc from description if present
-        if (schema != null && schema.has("description")) {
-            f.javadoc().add(schema.get("description").asText());
+        if (schema != null && schema.has(DESCRIPTION)) {
+            f.javadoc().add(schema.get(DESCRIPTION).asText());
         }
 
         // getter
@@ -429,7 +461,7 @@ public class JsonSchemaBundleToPojoGenerator {
     }
 
     private static boolean isEnum(JsonNode schema) {
-        return "string".equals(schema.path("type").asText(null)) && schema.has("enum");
+        return STRING.equals(schema.path(TYPE).asText(null)) && schema.has("enum");
     }
 
     private static String refKey(String ref) {
@@ -478,8 +510,8 @@ public class JsonSchemaBundleToPojoGenerator {
     }
 
     private static void addJavadoc(JDefinedClass c, JsonNode schema) {
-        if (schema != null && schema.has("description")) {
-            c.javadoc().add(schema.get("description").asText());
+        if (schema != null && schema.has(DESCRIPTION)) {
+            c.javadoc().add(schema.get(DESCRIPTION).asText());
         }
     }
 
@@ -491,7 +523,7 @@ public class JsonSchemaBundleToPojoGenerator {
         // By convention., Proto suffix is added to proto-generated classes; so replace it with
         // suffix
         // TODO: pass source suffix as parameter
-        if (name.endsWith("Proto")) name = name.substring(0, name.length() - "Proto".length());
+        if (name.endsWith(PROTO)) name = name.substring(0, name.length() - PROTO.length());
         return name.endsWith(suffix) ? name : name + suffix;
     }
 

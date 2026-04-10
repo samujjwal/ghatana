@@ -99,10 +99,10 @@ class PlatformExceptionTest {
         }
 
         @Test
-        @DisplayName("is an instance of ServiceException")
-        void isInstanceOfServiceException() {
+        @DisplayName("is an instance of BaseException")
+        void isInstanceOfBaseException() {
             ValidationException ex = new ValidationException("invalid");
-            assertThat(ex).isInstanceOf(ServiceException.class);
+            assertThat(ex).isInstanceOf(BaseException.class);
         }
     }
 

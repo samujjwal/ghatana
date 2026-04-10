@@ -1,10 +1,6 @@
 plugins {
-    application
-    id("com.ghatana.java-conventions")
-    id("com.ghatana.testing-conventions")
+    id("java-application")
 }
-
-group = "com.ghatana.services"
 
 application {
     mainClass.set("com.ghatana.services.auth.AuthGatewayLauncher")
@@ -19,7 +15,7 @@ dependencies {
     implementation(project(":platform:java:database"))
     implementation(libs.bundles.activej.http)
     implementation(libs.bundles.security.core)
-    implementation("org.mindrot:jbcrypt:0.4")
+    implementation(libs.jbcrypt)
     implementation(libs.caffeine)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)

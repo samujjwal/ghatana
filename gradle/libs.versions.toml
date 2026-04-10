@@ -24,7 +24,7 @@ jacoco = "0.8.14"
 postgresql = "42.7.10"
 h2 = "2.3.232"
 hikari = "6.3.0"
-flyway = "11.7.0"
+flyway = "10.20.1"
 jooq = "3.20.3"
 jedis = "5.1.5"
 
@@ -185,6 +185,7 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
 
@@ -388,7 +389,8 @@ testing-containers = [
 database-core = [
     "postgresql",
     "hikaricp",
-    "flyway-core"
+    "flyway-core",
+    "flyway-postgresql"
 ]
 
 # Redis - Caching and session storage

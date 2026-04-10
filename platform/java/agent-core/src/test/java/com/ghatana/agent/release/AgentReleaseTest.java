@@ -200,6 +200,10 @@ class AgentReleaseTest {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("test.purpose")
+                    .capabilityMaturityProfile("L1")
                     .addCompatibleRuntime("aep:2.x")
                     .build();
 
@@ -213,6 +217,10 @@ class AgentReleaseTest {
             AgentRelease release = new AgentReleaseBuilder()
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("test.purpose")
+                    .capabilityMaturityProfile("L1")
                     .addDataClass("PII")
                     .build();
 

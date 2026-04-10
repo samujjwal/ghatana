@@ -36,17 +36,25 @@ class RustToolsRunnerTest {
                     + "\"compact_inline_tables\":false,\"indent_tables\":false,"
                     + "\"indent_entries\":false,\"reorder_keys\":false,"
                     + "\"allowed_blank_lines\":1,\"trailing_newline\":true}}";
+    
+    // Constants for duplicate literals
+    private static final String CARGO = "cargo";
+    private static final String CHECK_FLAG = "--check";
+    private static final String MESSAGE_FORMAT_FLAG = "--message-format=json";
+    private static final String DIAGNOSTICS_MESSAGE = "Diagnostics should not be null";
+    private static final String EQUALS_SIGN = "=";
+    private static final int EXPECTED_PARTS_COUNT = 2;
 
     @Test
     void testCargoCheckWithValidProject(@TempDir Path tempDir) throws Exception {
         FakeCommandRunner commandRunner = new FakeCommandRunner();
-        commandRunner.when(List.of("cargo", "check", "--message-format=json"), result(0, "", ""));
+        commandRunner.when(List.of(CARGO, "check", MESSAGE_FORMAT_FLAG), result(0, "", ""));
         RustToolsRunner runner = new RustToolsRunner(commandRunner);
 
         createMinimalCargoProject(tempDir, "fn main() { println!(\"Hello, world!\"); }\n");
 
         List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000);
-        assertNotNull(diagnostics, "Diagnostics should not be null");
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE);
         // A valid project should have no errors
         assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for valid project");
     }
@@ -55,14 +63,14 @@ class RustToolsRunnerTest {
     void testCargoCheckWithError(@TempDir Path tempDir) throws Exception {
         FakeCommandRunner commandRunner = new FakeCommandRunner();
         commandRunner.when(
-                List.of("cargo", "check", "--message-format=json"),
+                List.of(CARGO, "check", MESSAGE_FORMAT_FLAG),
                 result(1, "error[E0308]: mismatched types", ""));
         RustToolsRunner runner = new RustToolsRunner(commandRunner);
 
         createMinimalCargoProject(tempDir, "fn main() { let x: i32 = \"not a number\"; }\n");
 
         List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000);
-        assertNotNull(diagnostics, "Diagnostics should not be null");
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE);
         assertFalse(diagnostics.isEmpty(), "Expected diagnostics for invalid code");
         assertTrue(
                 diagnostics.stream().anyMatch(d -> d.message().contains("mismatched types")),
@@ -73,7 +81,7 @@ class RustToolsRunnerTest {
     void testClippy(@TempDir Path tempDir) throws Exception {
         FakeCommandRunner commandRunner = new FakeCommandRunner();
         commandRunner.when(
-                List.of("cargo", "clippy", "--message-format=json", "--", "-D", "warnings"),
+                List.of(CARGO, "clippy", MESSAGE_FORMAT_FLAG, "--", "-D", "warnings"),
                 result(0, "warning[clippy::single_match]: consider using if let", ""));
         RustToolsRunner runner = new RustToolsRunner(commandRunner);
 
@@ -87,20 +95,20 @@ class RustToolsRunnerTest {
                         + "}\n");
 
         List<UnifiedDiagnostic> diagnostics = runner.clippy(tempDir, 30_000);
-        assertNotNull(diagnostics, "Diagnostics should not be null");
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE);
         // Clippy might not report warnings on all platforms/versions, so we can't assert on content
     }
 
     @Test
     void testRustfmtWithValidCode(@TempDir Path tempDir) throws Exception {
         FakeCommandRunner commandRunner = new FakeCommandRunner();
-        commandRunner.when(List.of("cargo", "fmt", "--", "--check"), result(0, "", ""));
+        commandRunner.when(List.of(CARGO, "fmt", "--", CHECK_FLAG), result(0, "", ""));
         RustToolsRunner runner = new RustToolsRunner(commandRunner);
 
         createMinimalCargoProject(tempDir, "fn main() {\n    println!(\"Hello, world!\");\n}\n");
 
         List<UnifiedDiagnostic> diagnostics = runner.rustfmt(tempDir, 30_000);
-        assertNotNull(diagnostics, "Diagnostics should not be null");
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE);
         assertTrue(
                 diagnostics.isEmpty(), "Expected no formatting issues for properly formatted code");
     }
@@ -109,13 +117,13 @@ class RustToolsRunnerTest {
     void testRustfmtWithInvalidCode(@TempDir Path tempDir) throws Exception {
         FakeCommandRunner commandRunner = new FakeCommandRunner();
         commandRunner.when(
-                List.of("cargo", "fmt", "--", "--check"), result(1, "", "Diff in src/main.rs"));
+                List.of(CARGO, "fmt", "--", CHECK_FLAG), result(1, "", "Diff in src/main.rs"));
         RustToolsRunner runner = new RustToolsRunner(commandRunner);
 
         createMinimalCargoProject(tempDir, "fn main() {\nprintln!(\"Hello, world!\");\n}\n");
 
         List<UnifiedDiagnostic> checkDiags = runner.rustfmt(tempDir, 30_000);
-        assertNotNull(checkDiags, "Diagnostics should not be null");
+        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE);
 
         // Log the diagnostics we received
         assertFalse(checkDiags.isEmpty(), "Expected formatting diagnostics for unformatted code");
@@ -148,7 +156,7 @@ class RustToolsRunnerTest {
 
         // First check should report formatting issues
         List<UnifiedDiagnostic> checkDiags = runner.taploFormat(tempDir, false, 30_000);
-        assertNotNull(checkDiags, "Diagnostics should not be null");
+        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE);
         assertFalse(checkDiags.isEmpty(), "Expected formatting issues for poorly formatted TOML");
         assertEquals(1, checkDiags.size(), "Expected exactly one diagnostic for formatting issue");
         assertTrue(
@@ -230,9 +238,9 @@ class RustToolsRunnerTest {
                 String original = Files.readString(filePath, StandardCharsets.UTF_8);
                 StringBuilder formatted = new StringBuilder();
                 for (String line : original.split("\\r?\\n")) {
-                    if (line.contains("=")) {
-                        String[] parts = line.split("=", 2);
-                        if (parts.length == 2) {
+                    if (line.contains(EQUALS_SIGN)) {
+                        String[] parts = line.split(EQUALS_SIGN, EXPECTED_PARTS_COUNT);
+                        if (parts.length == EXPECTED_PARTS_COUNT) {
                             String left = parts[0].trim();
                             String right = parts[1].trim();
                             line = left + " = " + right;

@@ -383,13 +383,15 @@ class ArchitectureGuardrailsTest {
         void platformClassesShouldNotDefineReplacementErrorCodeConstants() {
             // Guard: ensure nobody re-defines a parallel error-code registry in a non-core location.
             // Allowed: com.ghatana.platform.core.exception.ErrorCode (canonical registry)
+            // Allowed: generated protobuf contract classes (legacy compatibility)
             // Forbidden: any class named *ErrorCode or *ErrorCodes outside the core.exception package
             ArchRule rule = noClasses()
                     .that().haveSimpleNameEndingWith("ErrorCode")
                     .or().haveSimpleNameEndingWith("ErrorCodes")
                     .and().resideOutsideOfPackages(
                             "com.ghatana.platform.core.exception..",
-                            "com.ghatana.platform.core.common.."
+                            "com.ghatana.platform.core.common..",
+                            "com.ghatana.contracts.."
                     )
                     .should().resideInAPackage("com.ghatana..")
                     .because("Use com.ghatana.platform.core.exception.ErrorCode enum for all error codes; "
@@ -517,8 +519,10 @@ class ArchitectureGuardrailsTest {
         @DisplayName("Canonical AuditEvent must reside in audit module only")
         void auditEventMustOnlyResideInAuditModule() {
             // Prevent re-creation of AuditEvent in domain or other modules.
+            // Allow generated protobuf contract classes for legacy compatibility
             ArchRule rule = classes()
                     .that().haveSimpleName("AuditEvent")
+                    .and().resideOutsideOfPackage("com.ghatana.contracts..")
                     .should().resideInAPackage("com.ghatana.platform.audit..")
                     .because("AuditEvent must have a single canonical home in platform.audit. "
                             + "The domain copy was deleted in V4.1.")

@@ -69,7 +69,6 @@ tasks.withType<Javadoc>().configureEach {
         setSource(
             project.extensions.getByType(JavaPluginExtension::class.java)
                 .sourceSets.getByName("main").allJava
-                .matching { exclude("**/generated/**", "**/build/generated/**") }
         )
     }
 

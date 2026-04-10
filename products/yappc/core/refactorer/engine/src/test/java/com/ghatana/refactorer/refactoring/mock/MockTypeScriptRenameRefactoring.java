@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -29,6 +30,14 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
     private static final String NAME = "Mock TypeScript Rename Refactoring";
     private static final String DESCRIPTION =
             "Mock implementation for testing TypeScript refactoring";
+    
+    // Constants for duplicate literals
+    private static final String WORD_BOUNDARY = "\\b";
+    private static final String WHITESPACE_PARENTHESES = "\\s*\\(";
+    private static final String CLASS_TYPE = "CLASS";
+    private static final String INTERFACE_TYPE = "INTERFACE";
+    private static final String VARIABLE_TYPE = "VARIABLE";
+    private static final String CONST_TYPE = "CONST";
 
     @Override
     public String getId() {
@@ -100,19 +109,19 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
             if ("METHOD".equals(elementType) || "FUNCTION".equals(elementType)) {
                 // Replace method definitions in classes (e.g., method() { ... })
                 Pattern methodDefPattern =
-                        Pattern.compile("\\b" + Pattern.quote(oldName) + "\\s*\\(([^)]*)\\)\\s*:");
+                        Pattern.compile(WORD_BOUNDARY + Pattern.quote(oldName) + WHITESPACE_PARENTHESES + "([^)]*)\\)\\s*:");
                 Matcher methodDefMatcher = methodDefPattern.matcher(modifiedCode);
                 modifiedCode = methodDefMatcher.replaceAll(newName + "($1):");
 
                 // Replace method calls (e.g., obj.method() or method())
                 Pattern callPattern =
-                        Pattern.compile("(\\.|\\s|^)" + Pattern.quote(oldName) + "\\s*\\(");
+                        Pattern.compile("(\\.|\\s|^)" + Pattern.quote(oldName) + WHITESPACE_PARENTHESES);
                 Matcher callMatcher = callPattern.matcher(modifiedCode);
                 modifiedCode = callMatcher.replaceAll("$1" + newName + "(");
 
                 // Replace method definitions in objects (e.g., method() { ... })
                 Pattern objMethodPattern =
-                        Pattern.compile("\\b" + Pattern.quote(oldName) + "\\s*\\([^{]*\\)\\s*\\{");
+                        Pattern.compile(WORD_BOUNDARY + Pattern.quote(oldName) + WHITESPACE_PARENTHESES + "[^{]*\\)\\s*\\{");
                 Matcher objMethodMatcher = objMethodPattern.matcher(modifiedCode);
                 modifiedCode = objMethodMatcher.replaceAll(newName + "() {");
 
@@ -144,13 +153,13 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
                 // Replace function calls (e.g., functionName() or obj.functionName())
                 // First replace method calls (obj.method())
                 Pattern methodCallPattern =
-                        Pattern.compile("(\\.|\\s|^)" + escapedOldName + "\\s*\\(");
+                        Pattern.compile("(\\.|\\s|^)" + escapedOldName + WHITESPACE_PARENTHESES);
                 Matcher methodCallMatcher = methodCallPattern.matcher(modifiedCode);
                 modifiedCode = methodCallMatcher.replaceAll("$1" + newName + "(");
 
                 // Then replace direct function calls (functionName())
                 Pattern funcCallPattern =
-                        Pattern.compile("([^\\w$]|^)" + escapedOldName + "\\s*\\(");
+                        Pattern.compile("([^\\w$]|^)" + escapedOldName + WHITESPACE_PARENTHESES);
                 Matcher funcCallMatcher = funcCallPattern.matcher(modifiedCode);
                 modifiedCode = funcCallMatcher.replaceAll("$1" + newName + "(");
 
@@ -158,7 +167,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
                 changeCount =
                         countOccurrences(sourceCode, oldName)
                                 - countOccurrences(modifiedCode, oldName);
-            } else if ("CLASS".equals(elementType)) {
+            } else if (CLASS_TYPE.equals(elementType)) {
                 // Replace class definition
                 Pattern classPattern =
                         Pattern.compile("class\\s+" + Pattern.quote(oldName) + "\\s*[\\{<]");
@@ -173,7 +182,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
 
                 // Count changes
                 changeCount = countMatches(sourceCode, oldName);
-            } else if ("INTERFACE".equals(elementType)) {
+            } else if (INTERFACE_TYPE.equals(elementType)) {
                 // Replace interface definition
                 Pattern interfacePattern =
                         Pattern.compile("interface\\s+" + Pattern.quote(oldName) + "\\s*[\\{<]");
@@ -182,7 +191,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
 
                 // Count changes
                 changeCount = countMatches(sourceCode, oldName);
-            } else if ("VARIABLE".equals(elementType) || "CONST".equals(elementType)) {
+            } else if (VARIABLE_TYPE.equals(elementType) || CONST_TYPE.equals(elementType)) {
                 // Simple variable replacement (not handling scope properly for testing)
                 Pattern varPattern = Pattern.compile("\\b" + Pattern.quote(oldName) + "\\b");
                 Matcher varMatcher = varPattern.matcher(modifiedCode);
@@ -199,7 +208,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
                         List.of(sourceFile),
                         changeCount,
                         "Renamed "
-                                + elementType.toLowerCase()
+                                + elementType.toLowerCase(Locale.ROOT)
                                 + " from '"
                                 + oldName
                                 + "' to '"

@@ -77,16 +77,23 @@ public class AuthGatewayLauncher extends Launcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthGatewayLauncher.class);
     private static final int DEFAULT_PORT = 8081;
+    
+    // Constants for duplicate literals
+    private static final String AUTH_GATEWAY = "auth-gateway";
+    private static final String EMAIL = "email";
+    private static final String TENANT_ID = "tenantId";
+    private static final String TOKEN_TYPE = "tokenType";
+    private static final String UNAUTHORIZED = "UNAUTHORIZED";
 
     @Provides
     ConfigManager configManager() {
-        return ConfigManager.createDefault("auth-gateway");
+        return ConfigManager.createDefault(AUTH_GATEWAY);
     }
 
     @Provides
     Eventloop eventloop() {
         return Eventloop.builder()
-                .withThreadName("auth-gateway")
+                .withThreadName(AUTH_GATEWAY)
                 .build();
     }
 
@@ -109,7 +116,7 @@ public class AuthGatewayLauncher extends Launcher {
         return TracingConfiguration.initialize(
                 TracingConfiguration.TracingConfig.builder()
                         .enabled(enabled)
-                        .serviceName("auth-gateway")
+                        .serviceName(AUTH_GATEWAY)
                         .serviceVersion("1.0.0")
                         .environment(env)
                         .otlpEndpoint(otlpEndpoint)
@@ -209,7 +216,7 @@ public class AuthGatewayLauncher extends Launcher {
         final JwtTokenProvider platformTokenProvider = JwtTokenProviders.fromSharedSecret(platformSecret, platformTokenTtlMs);
 
         return HealthCheckServlet.addHealthEndpoints(
-                RoutingServlet.builder(eventloop), "auth-gateway", "1.0.0")
+                RoutingServlet.builder(eventloop), AUTH_GATEWAY, "1.0.0")
                 // Login - issue JWT token after credential validation
                 .with(POST, "/auth/login", request -> {
                     metrics.incrementCounter("auth.gateway.login.count");
@@ -267,15 +274,15 @@ public class AuthGatewayLauncher extends Launcher {
                                         String accessToken = tokenProvider.createToken(
                                                 user.username(), user.roles(),
                                                 java.util.Map.of(
-                                                        "email", user.email(),
-                                                        "tenantId", user.tenantId(),
-                                                        "tokenType", "ACCESS"));
+                                                        EMAIL, user.email(),
+                                                        TENANT_ID, user.tenantId(),
+                                                        TOKEN_TYPE, "ACCESS"));
                                         String refreshToken = tokenProvider.createToken(
                                                 user.username(), user.roles(),
                                                 java.util.Map.of(
-                                                        "email", user.email(),
-                                                        "tenantId", user.tenantId(),
-                                                        "tokenType", "REFRESH"));
+                                                        EMAIL, user.email(),
+                                                        TENANT_ID, user.tenantId(),
+                                                        TOKEN_TYPE, "REFRESH"));
                                         String response = String.format(
                                                 "{\"accessToken\":\"%s\",\"refreshToken\":\"%s\",\"expiresIn\":%d}",
                                                 accessToken, refreshToken, 3600);
@@ -306,7 +313,7 @@ public class AuthGatewayLauncher extends Launcher {
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         return ResponseBuilder.status(401)
-                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing or invalid Authorization header"))
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Missing or invalid Authorization header"))
                                 .build()
                                 .toPromise();
                     }
@@ -316,14 +323,14 @@ public class AuthGatewayLauncher extends Launcher {
 
                         if (!tokenProvider.validateToken(token)) {
                             return ResponseBuilder.status(401)
-                                    .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired token"))
+                                    .json(ErrorResponse.of(401, UNAUTHORIZED, "Invalid or expired token"))
                                     .build()
                                     .toPromise();
                         }
 
                         String userId = tokenProvider.getUserIdFromToken(token).orElse("unknown");
                         var claims = tokenProvider.extractClaims(token);
-                        String email = claims.map(c -> String.valueOf(c.getOrDefault("email", ""))).orElse("");
+                        String email = claims.map(c -> String.valueOf(c.getOrDefault(EMAIL, ""))).orElse("");
 
                         String response = String.format(
                                 "{\"valid\":true,\"userId\":\"%s\",\"email\":\"%s\"}",
@@ -339,7 +346,7 @@ public class AuthGatewayLauncher extends Launcher {
                         metrics.incrementCounter("auth.gateway.validate.errors");
 
                         return ResponseBuilder.status(401)
-                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid token"))
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Invalid token"))
                                 .build()
                                 .toPromise();
                     }
@@ -354,7 +361,7 @@ public class AuthGatewayLauncher extends Launcher {
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         return ResponseBuilder.status(401)
-                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing refresh token in Authorization header"))
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Missing refresh token in Authorization header"))
                                 .build()
                                 .toPromise();
                     }
@@ -363,7 +370,7 @@ public class AuthGatewayLauncher extends Launcher {
 
                         if (!tokenProvider.validateToken(refreshToken)) {
                             return ResponseBuilder.status(401)
-                                    .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired refresh token"))
+                                    .json(ErrorResponse.of(401, UNAUTHORIZED, "Invalid or expired refresh token"))
                                     .build()
                                     .toPromise();
                         }
@@ -371,7 +378,7 @@ public class AuthGatewayLauncher extends Launcher {
                         String userId = tokenProvider.getUserIdFromToken(refreshToken).orElse("unknown");
                         java.util.List<String> roles = tokenProvider.getRolesFromToken(refreshToken);
                         String newAccessToken = tokenProvider.createToken(userId, roles,
-                                java.util.Map.of("tokenType", "ACCESS"));
+                                java.util.Map.of(TOKEN_TYPE, "ACCESS"));
                         String response = String.format(
                                 "{\"accessToken\":\"%s\",\"expiresIn\":%d}",
                                 newAccessToken, 3600);
@@ -383,7 +390,7 @@ public class AuthGatewayLauncher extends Launcher {
                         LOGGER.error("Token refresh failed", ex);
                         metrics.incrementCounter("auth.gateway.refresh.errors");
                         return ResponseBuilder.status(401)
-                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Invalid or expired refresh token"))
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Invalid or expired refresh token"))
                                 .build()
                                 .toPromise();
                     }
@@ -420,7 +427,7 @@ public class AuthGatewayLauncher extends Launcher {
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                         return Promise.of(ResponseBuilder.status(401)
-                                .json(ErrorResponse.of(401, "UNAUTHORIZED", "Missing or invalid Authorization header"))
+                                .json(ErrorResponse.of(401, UNAUTHORIZED, "Missing or invalid Authorization header"))
                                 .build());
                     }
                     try {
