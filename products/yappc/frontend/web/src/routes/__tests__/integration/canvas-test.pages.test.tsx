@@ -36,7 +36,7 @@ import {
   type Page,
   type DeepLink,
   type PortalLink,
-} from '@yappc/canvas';
+} from '../../../lib/canvas-legacy/navigation/pageManager';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 

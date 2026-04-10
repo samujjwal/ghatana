@@ -32,6 +32,12 @@ export interface MermaidDiagramProps {
 
     /** Show loading state */
     isLoading?: boolean;
+
+    /** Zoom level (scale transform) */
+    zoom?: number;
+
+    /** Additional CSS class name */
+    className?: string;
 }
 
 /**
@@ -54,6 +60,8 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     width = '100%',
     height = 'auto',
     isLoading = false,
+    zoom = 1,
+    className,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
@@ -100,37 +108,36 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
         renderDiagram();
     }, [content, theme]);
 
-    if (isLoading || isRendering) {
-        return (
-            <Box
-                style={{ width, height: height === 'auto' ? 200 : height }}
-                className="flex items-center justify-center"
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert severity="error" className="m-4">
-                <strong>Diagram Error:</strong> {error}
-            </Alert>
-        );
-    }
-
     return (
-        <Paper
-            variant="flat"
-            style={{ width, height, padding: 16, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow 0.2s' }}
-            className={onClick ? 'hover:shadow-sm' : ''}
+        <div
+            data-testid="mermaid-diagram"
+            style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'auto',
+                cursor: onClick ? 'pointer' : 'default',
+                transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+                transformOrigin: 'center center',
+            }}
+            className={className}
             onClick={onClick}
         >
-            <Box
-                ref={containerRef}
-                className="w-full h-full overflow-auto max-w-full h-auto"
-            />
-        </Paper>
+            {(isLoading || isRendering) ? (
+                <CircularProgress />
+            ) : error ? (
+                <Alert severity="error" className="m-4">
+                    <strong>Diagram Error:</strong> {error}
+                </Alert>
+            ) : (
+                <Box
+                    ref={containerRef}
+                    className="w-full overflow-auto max-w-full"
+                />
+            )}
+        </div>
     );
 };
 

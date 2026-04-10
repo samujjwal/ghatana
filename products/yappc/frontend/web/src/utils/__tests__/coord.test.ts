@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { describe, test, expect } from 'vitest';
 
-import { screenToCanvas, canvasToScreen, testCoordinateAccuracy } from './coord';
+import { screenToCanvas, canvasToScreen, testCoordinateAccuracy } from "../coord";
 
 describe('coordinate transformations', () => {
   test('screenToCanvas conversion', () => {

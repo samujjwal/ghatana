@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import CanvasScene from '../../../src/routes/app/project/canvas/CanvasScene';
 import { LifecyclePhase } from '../../../src/types/lifecycle';
 

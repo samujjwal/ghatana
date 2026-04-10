@@ -29,6 +29,7 @@ describe('UnifiedCanvasToolbar', () => {
         onModeChange: vi.fn(),
         abstractionLevel: 'component' as AbstractionLevel,
         onLevelChange: vi.fn(),
+        nodeCount: 1,
     };
 
     beforeEach(() => {
@@ -45,8 +46,8 @@ describe('UnifiedCanvasToolbar', () => {
         it('renders history controls (undo/redo)', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onUndo={vi.fn()} onRedo={vi.fn()} />);
             
-            expect(screen.getByTitle(/undo/i)).toBeInTheDocument();
-            expect(screen.getByTitle(/redo/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /redo/i })).toBeInTheDocument();
         });
 
         it('renders mode dropdown', () => {
@@ -82,7 +83,7 @@ describe('UnifiedCanvasToolbar', () => {
         it('renders help button', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenOnboarding={vi.fn()} />);
             
-            expect(screen.getByTitle(/tutorial|guidance/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /help/i })).toBeInTheDocument();
         });
     });
 
@@ -92,7 +93,7 @@ describe('UnifiedCanvasToolbar', () => {
             const user = userEvent.setup();
             render(<UnifiedCanvasToolbar {...defaultProps} onUndo={onUndo} />);
             
-            await user.click(screen.getByTitle(/undo/i));
+            await user.click(screen.getByRole('button', { name: /undo/i }));
             
             expect(onUndo).toHaveBeenCalledTimes(1);
         });
@@ -102,7 +103,7 @@ describe('UnifiedCanvasToolbar', () => {
             const user = userEvent.setup();
             render(<UnifiedCanvasToolbar {...defaultProps} onRedo={onRedo} />);
             
-            await user.click(screen.getByTitle(/redo/i));
+            await user.click(screen.getByRole('button', { name: /redo/i }));
             
             expect(onRedo).toHaveBeenCalledTimes(1);
         });
@@ -110,13 +111,13 @@ describe('UnifiedCanvasToolbar', () => {
         it('disables undo when canUndo is false', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onUndo={vi.fn()} canUndo={false} />);
             
-            expect(screen.getByTitle(/undo/i)).toBeDisabled();
+            expect(screen.getByRole('button', { name: /undo/i })).toBeDisabled();
         });
 
         it('disables redo when canRedo is false', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onRedo={vi.fn()} canRedo={false} />);
             
-            expect(screen.getByTitle(/redo/i)).toBeDisabled();
+            expect(screen.getByRole('button', { name: /redo/i })).toBeDisabled();
         });
     });
 
@@ -198,7 +199,7 @@ describe('UnifiedCanvasToolbar', () => {
         it('shows loading state when validating', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} isValidating={true} />);
             
-            expect(screen.getByTitle(/validating/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /quality score/i })).toBeInTheDocument();
         });
 
         it('calls onOpenValidation when clicked', async () => {
@@ -228,7 +229,7 @@ describe('UnifiedCanvasToolbar', () => {
         it('shows loading state when analyzing', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} isAnalyzing={true} />);
             
-            expect(screen.getByTitle(/analyzing/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /ai suggestions/i })).toBeInTheDocument();
         });
 
         it('calls onOpenAI when clicked', async () => {
@@ -237,7 +238,7 @@ describe('UnifiedCanvasToolbar', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenAI={onOpenAI} />);
             
             // Click the AI badge (either count or sparkle)
-            const aiBadge = screen.getByTitle(/ai/i);
+            const aiBadge = screen.getByRole('button', { name: /ai suggestions/i });
             await user.click(aiBadge);
             
             expect(onOpenAI).toHaveBeenCalledTimes(1);
@@ -260,7 +261,7 @@ describe('UnifiedCanvasToolbar', () => {
         it('shows loading state when generating', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} isGenerating={true} canGenerate={true} />);
             
-            expect(screen.getByTitle(/generating/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /generate code/i })).toBeInTheDocument();
         });
 
         it('calls onOpenCodeGen when clicked', async () => {
@@ -317,13 +318,13 @@ describe('UnifiedCanvasToolbar', () => {
         it('renders assistant panel button', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenUnifiedPanel={vi.fn()} />);
             
-            expect(screen.getByTitle(/assistant panel/i)).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /assistant panel/i })).toBeInTheDocument();
         });
 
         it('shows active state when panel is open', () => {
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenUnifiedPanel={vi.fn()} unifiedPanelOpen={true} />);
             
-            const button = screen.getByTitle(/assistant panel/i);
+            const button = screen.getByRole('button', { name: /assistant panel/i });
             expect(button).toHaveClass('bg-grey-100');
         });
 
@@ -332,7 +333,7 @@ describe('UnifiedCanvasToolbar', () => {
             const user = userEvent.setup();
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenUnifiedPanel={onOpenUnifiedPanel} />);
             
-            await user.click(screen.getByTitle(/assistant panel/i));
+            await user.click(screen.getByRole('button', { name: /assistant panel/i }));
             
             expect(onOpenUnifiedPanel).toHaveBeenCalledTimes(1);
         });
@@ -342,7 +343,7 @@ describe('UnifiedCanvasToolbar', () => {
             const user = userEvent.setup();
             render(<UnifiedCanvasToolbar {...defaultProps} onOpenOnboarding={onOpenOnboarding} />);
             
-            await user.click(screen.getByTitle(/tutorial/i));
+            await user.click(screen.getByRole('button', { name: /help/i }));
             
             expect(onOpenOnboarding).toHaveBeenCalledTimes(1);
         });

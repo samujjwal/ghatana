@@ -1,0 +1,16 @@
+flowchart TD
+  Browser["Browser"] --> Gateway["Security gateway / ingress (expected in prod)"]
+  Gateway --> App["Data Cloud HTTP runtime"]
+  Internal["Internal service clients"] --> GRPC["gRPC port"]
+  App --> Secrets["Secrets / env / ConfigMap / Secret"]
+  App --> Data["DB, Kafka, Redis, Search, Blob"]
+  subgraph TrustedProduct["Data Cloud product boundary"]
+    App
+    GRPC
+  end
+  subgraph External["External / upstream"]
+    Browser
+    Gateway
+    Internal
+  end
+

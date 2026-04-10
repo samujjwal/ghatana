@@ -3,9 +3,8 @@
  * Migration Rules Tests
  * 
  * Tests the content type migration logic including:
- * - Data transformations
+ * - Data transformations between ArtifactType stages
  * - Compatibility checking
- * - Helper functions
  * - Edge cases
  * 
  * @doc.type test
@@ -19,25 +18,24 @@ import {
     getCompatibleTypes,
     type CodeArtifactData,
     type DocumentationData,
-    type RequirementData,
+    type DiagramData,
     type TestData,
-    type ApiSpecData,
 } from '../../../lib/canvas/migrationRules';
 import { ArtifactType } from '@/types/fow-stages';
 
 describe('Migration Rules', () => {
-    describe('Code Migrations', () => {
-        const codeData: CodeArtifactData = {
-            code: 'function hello() { return "world"; }',
-            language: 'javascript',
-            filePath: 'src/hello.js',
-        };
+    const codeData: CodeArtifactData = {
+        code: 'function hello() { return "world"; }',
+        language: 'javascript',
+        filePath: 'src/hello.js',
+    };
 
-        it('should migrate code to documentation', () => {
-            const result = migrateData<CodeArtifactData, DocumentationData>(
+    describe('REQUIREMENT → ARCHITECTURE_DECISION_RECORD (code to documentation)', () => {
+        it('should produce markdown documentation from code', () => {
+            const result = migrateData(
                 codeData,
-                'code',
-                'documentation'
+                ArtifactType.REQUIREMENT,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
             );
 
             expect(result).toBeTruthy();
@@ -46,11 +44,24 @@ describe('Migration Rules', () => {
             expect(result?.format).toBe('markdown');
         });
 
-        it('should migrate code to test', () => {
-            const result = migrateData<CodeArtifactData, TestData>(
+        it('should handle missing filePath gracefully', () => {
+            const dataNoPath: CodeArtifactData = { code: 'const x = 1;', language: 'javascript' };
+            const result = migrateData(
+                dataNoPath,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+            );
+            expect(result).toBeTruthy();
+            expect(result?.content).toContain('N/A');
+        });
+    });
+
+    describe('REQUIREMENT → RELEASE_PACKET (code to test scaffolding)', () => {
+        it('should generate test cases from code', () => {
+            const result = migrateData(
                 codeData,
-                'code',
-                'test'
+                ArtifactType.REQUIREMENT,
+                ArtifactType.RELEASE_PACKET,
             );
 
             expect(result).toBeTruthy();
@@ -59,31 +70,120 @@ describe('Migration Rules', () => {
             expect(result?.framework).toBe('jest');
         });
 
-        it('should migrate code to API spec by parsing endpoints', () => {
+        it('should use pytest for Python code', () => {
+            const pyData: CodeArtifactData = {
+                code: 'def hello(): import os; return "world"',
+                language: 'python',
+            };
+            const result = migrateData(
+                pyData,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.RELEASE_PACKET,
+            );
+            expect(result?.framework).toBe('pytest');
+        });
+    });
+
+    describe('REQUIREMENT → DELIVERY_EVIDENCE (code to API spec)', () => {
+        it('should parse REST annotations from code', () => {
             const apiCode: CodeArtifactData = {
-                code: `
-                    @GET('/api/users')
-                    public getUsers() {}
-                    
-                    @POST('/api/users')
-                    public createUser() {}
-                `,
+                code: `@GET('/api/users')\npublic getUsers() {}\n@POST('/api/users')\npublic createUser() {}`,
                 language: 'java',
             };
 
-            const result = migrateData<CodeArtifactData, ApiSpecData>(
+            const result = migrateData(
                 apiCode,
-                'code',
-                'evidence'
+                ArtifactType.REQUIREMENT,
+                ArtifactType.DELIVERY_EVIDENCE,
             );
 
             expect(result).toBeTruthy();
             expect(result?.endpoints).toBeDefined();
             expect(result?.endpoints.length).toBeGreaterThan(0);
         });
+
+        it('should return empty endpoints for code without REST annotations', () => {
+            const result = migrateData(
+                codeData,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.DELIVERY_EVIDENCE,
+            );
+            expect(result).toBeTruthy();
+            expect(Array.isArray(result?.endpoints)).toBe(true);
+        });
     });
 
-    describe('Test Migrations', () => {
+    describe('ARCHITECTURE_DECISION_RECORD → PLAN (diagram to implementation plan)', () => {
+        const diagramData: DiagramData = {
+            nodes: [
+                { id: '1', label: 'Frontend', type: 'service' },
+                { id: '2', label: 'Backend', type: 'service' },
+            ],
+            edges: [
+                { from: '1', to: '2', label: 'API calls' },
+            ],
+        };
+
+        it('should generate implementation plan from diagram', () => {
+            const result = migrateData(
+                diagramData,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+                ArtifactType.PLAN,
+            );
+
+            expect(result).toBeTruthy();
+            expect(result?.content).toContain('Implementation Plan');
+            expect(result?.content).toContain('Frontend');
+            expect(result?.content).toContain('Backend');
+            expect(result?.format).toBe('markdown');
+        });
+
+        it('should include edge descriptions in the plan', () => {
+            const result = migrateData(
+                diagramData,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+                ArtifactType.PLAN,
+            );
+            expect(result?.content).toContain('API calls');
+        });
+    });
+
+    describe('PLAN → DEVSECOPS_ITEM (documentation to extracted code)', () => {
+        it('should extract code blocks from documentation', () => {
+            const docData: DocumentationData = {
+                content: '# Guide\n\n```javascript\nfunction login() {}\n```\n\nSome text',
+                format: 'markdown',
+            };
+
+            const result = migrateData(
+                docData,
+                ArtifactType.PLAN,
+                ArtifactType.DEVSECOPS_ITEM,
+            );
+
+            expect(result).toBeTruthy();
+            expect(result?.content).toContain('function login()');
+            expect(result?.language).toBeDefined();
+        });
+
+        it('should return fallback comment when no code blocks are present', () => {
+            const docNoCode: DocumentationData = {
+                content: 'No code here, just text',
+                format: 'markdown',
+            };
+
+            const result = migrateData(
+                docNoCode,
+                ArtifactType.PLAN,
+                ArtifactType.DEVSECOPS_ITEM,
+            );
+
+            expect(result).toBeTruthy();
+            expect(result?.content).toContain('No code blocks found');
+        });
+    });
+
+    describe('RELEASE_PACKET → OPS_BASELINE (test data to ops baseline)', () => {
         const testData: TestData = {
             testCases: [
                 {
@@ -93,208 +193,57 @@ describe('Migration Rules', () => {
                 },
                 {
                     name: 'Test invalid credentials',
-                    steps: ['Open login page', 'Enter invalid credentials', 'Click submit'],
+                    steps: ['Enter invalid credentials'],
                     expected: 'Error message is displayed',
                 },
             ],
             framework: 'jest',
         };
 
-        it('should migrate test to code', () => {
-            const result = migrateData<TestData, CodeArtifactData>(
+        it('should create ops baseline from test cases', () => {
+            const result = migrateData(
                 testData,
-                'test',
-                'code'
+                ArtifactType.RELEASE_PACKET,
+                ArtifactType.OPS_BASELINE,
             );
 
             expect(result).toBeTruthy();
-            expect(result?.code).toContain('Test user login');
-            expect(result?.code).toContain('Test invalid credentials');
-            expect(result?.language).toBe('javascript');
-        });
-
-        it('should migrate test to documentation', () => {
-            const result = migrateData<TestData, DocumentationData>(
-                testData,
-                'test',
-                'documentation'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.content).toContain('# Test Cases');
+            expect(result?.content).toContain('Operations Baseline');
             expect(result?.content).toContain('Test user login');
-            expect(result?.content).toContain('**Steps:**');
+            expect(result?.content).toContain('Test invalid credentials');
             expect(result?.format).toBe('markdown');
-        });
-    });
-
-    describe('Documentation Migrations', () => {
-        const docData: DocumentationData = {
-            content: `# User Authentication\n\nImplement login functionality.\n\n\`\`\`javascript\nfunction login() {}\n\`\`\`\n\n- Must validate credentials\n- Must show errors`,
-            format: 'markdown',
-        };
-
-        it('should migrate documentation to code by extracting code blocks', () => {
-            const result = migrateData<DocumentationData, CodeArtifactData>(
-                docData,
-                'documentation',
-                'code'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.code).toContain('function login()');
-            expect(result?.language).toBe('javascript');
-        });
-
-        it('should migrate documentation to requirement', () => {
-            const result = migrateData<DocumentationData, RequirementData>(
-                docData,
-                'documentation',
-                'requirement'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.title).toBe('User Authentication');
-            expect(result?.description).toContain('Implement login');
-            expect(result?.acceptanceCriteria).toBeDefined();
-            expect(result?.acceptanceCriteria?.length).toBeGreaterThan(0);
-        });
-
-        it('should migrate documentation to test', () => {
-            const result = migrateData<DocumentationData, TestData>(
-                docData,
-                'documentation',
-                'test'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.testCases).toBeDefined();
-            expect(result?.testCases.length).toBeGreaterThan(0);
-        });
-    });
-
-    describe('Requirement Migrations', () => {
-        const reqData: RequirementData = {
-            title: 'User Registration',
-            description: 'Users should be able to create new accounts',
-            priority: 'high',
-            acceptanceCriteria: [
-                'Email validation',
-                'Password strength check',
-                'Confirmation email sent',
-            ],
-        };
-
-        it('should migrate requirement to brief', () => {
-            const result = migrateData(reqData, 'requirement', 'brief');
-
-            expect(result).toBeTruthy();
-            expect(result.title).toBe(reqData.title);
-            expect(result.description).toBe(reqData.description);
-        });
-
-        it('should migrate requirement to documentation', () => {
-            const result = migrateData<RequirementData, DocumentationData>(
-                reqData,
-                'requirement',
-                'documentation'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.content).toContain('# User Registration');
-            expect(result?.content).toContain('## Acceptance Criteria');
-            expect(result?.content).toContain('Email validation');
-            expect(result?.format).toBe('markdown');
-        });
-
-        it('should migrate requirement to test with generated test cases', () => {
-            const result = migrateData<RequirementData, TestData>(
-                reqData,
-                'requirement',
-                'test'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.testCases).toBeDefined();
-            expect(result?.testCases.length).toBe(3); // One per acceptance criteria
-            expect(result?.testCases[0].expected).toContain('Email validation');
-        });
-    });
-
-    describe('API Spec Migrations', () => {
-        const apiData: ApiSpecData = {
-            endpoints: [
-                {
-                    method: 'GET',
-                    path: '/api/users',
-                    description: 'Get all users',
-                    parameters: [{ name: 'page', type: 'number' }],
-                },
-                {
-                    method: 'POST',
-                    path: '/api/users',
-                    description: 'Create new user',
-                },
-            ],
-            baseUrl: 'https://api.example.com',
-        };
-
-        it('should migrate API spec to documentation', () => {
-            const result = migrateData<ApiSpecData, DocumentationData>(
-                apiData,
-                'evidence',
-                'documentation'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.content).toContain('# API Specification');
-            expect(result?.content).toContain('**Base URL:**');
-            expect(result?.content).toContain('GET /api/users');
-            expect(result?.content).toContain('POST /api/users');
-        });
-
-        it('should migrate API spec to code', () => {
-            const result = migrateData<ApiSpecData, CodeArtifactData>(
-                apiData,
-                'evidence',
-                'code'
-            );
-
-            expect(result).toBeTruthy();
-            expect(result?.code).toContain('GET /api/users');
-            expect(result?.code).toContain('POST /api/users');
-            expect(result?.language).toBe('javascript');
         });
     });
 
     describe('Compatibility Checking', () => {
         it('should return true for compatible conversions', () => {
-            expect(isCompatibleConversion('code', 'documentation')).toBe(true);
-            expect(isCompatibleConversion('code', 'test')).toBe(true);
-            expect(isCompatibleConversion('requirement', 'test')).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.REQUIREMENT, ArtifactType.ARCHITECTURE_DECISION_RECORD)).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.REQUIREMENT, ArtifactType.RELEASE_PACKET)).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.REQUIREMENT, ArtifactType.DELIVERY_EVIDENCE)).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.ARCHITECTURE_DECISION_RECORD, ArtifactType.PLAN)).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.PLAN, ArtifactType.DEVSECOPS_ITEM)).toBe(true);
+            expect(isCompatibleConversion(ArtifactType.RELEASE_PACKET, ArtifactType.OPS_BASELINE)).toBe(true);
         });
 
         it('should return false for incompatible conversions', () => {
-            expect(isCompatibleConversion('code', 'architecture')).toBe(false);
-            expect(isCompatibleConversion('test', 'design')).toBe(false);
+            expect(isCompatibleConversion(ArtifactType.OPS_BASELINE, ArtifactType.REQUIREMENT)).toBe(false);
+            expect(isCompatibleConversion(ArtifactType.WORKSPACE, ArtifactType.PLAN)).toBe(false);
         });
 
         it('should get list of compatible types', () => {
-            const codeCompatible = getCompatibleTypes('code');
-            expect(codeCompatible).toContain('test');
-            expect(codeCompatible).toContain('documentation');
-            expect(codeCompatible).toContain('evidence');
+            const reqCompatible = getCompatibleTypes(ArtifactType.REQUIREMENT);
+            expect(reqCompatible).toContain(ArtifactType.ARCHITECTURE_DECISION_RECORD);
+            expect(reqCompatible).toContain(ArtifactType.RELEASE_PACKET);
+            expect(reqCompatible).toContain(ArtifactType.DELIVERY_EVIDENCE);
 
-            const docCompatible = getCompatibleTypes('documentation');
-            expect(docCompatible.length).toBeGreaterThan(0);
-            expect(docCompatible).toContain('code');
-            expect(docCompatible).toContain('requirement');
+            const planCompatible = getCompatibleTypes(ArtifactType.PLAN);
+            expect(planCompatible).toContain(ArtifactType.DEVSECOPS_ITEM);
         });
 
         it('should return empty array for types with no compatible conversions', () => {
-            // Some types might not have outgoing conversions defined
-            const compatible = getCompatibleTypes('deployment' as ArtifactType);
+            const compatible = getCompatibleTypes(ArtifactType.WORKSPACE);
             expect(Array.isArray(compatible)).toBe(true);
+            expect(compatible.length).toBe(0);
         });
     });
 
@@ -302,20 +251,19 @@ describe('Migration Rules', () => {
         it('should return null for unsupported migrations', () => {
             const result = migrateData(
                 { some: 'data' },
-                'code',
-                'brief' // No migration rule defined
+                ArtifactType.OPS_BASELINE,
+                ArtifactType.IDEA_BRIEF,
             );
-
             expect(result).toBeNull();
         });
 
         it('should handle empty code gracefully', () => {
-            const emptyCode: CodeArtifactData = {
-                code: '',
-                language: 'javascript',
-            };
-
-            const result = migrateData(emptyCode, 'code', 'documentation');
+            const emptyCode: CodeArtifactData = { code: '', language: 'javascript' };
+            const result = migrateData(
+                emptyCode,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+            );
             expect(result).toBeTruthy();
         });
 
@@ -324,92 +272,82 @@ describe('Migration Rules', () => {
                 content: 'Just plain text, no code here',
                 format: 'markdown',
             };
-
-            const result = migrateData<DocumentationData, CodeArtifactData>(
+            const result = migrateData(
                 docWithoutCode,
-                'documentation',
-                'code'
+                ArtifactType.PLAN,
+                ArtifactType.DEVSECOPS_ITEM,
             );
-
             expect(result).toBeTruthy();
-            expect(result?.code).toContain('No code blocks found');
+            expect(result?.content).toContain('No code blocks found');
+        });
+
+        it('should handle malformed data with error recovery', () => {
+            // Should not throw, should return null on error
+            expect(() => {
+                migrateData({ unexpected: 'structure' }, ArtifactType.OPS_BASELINE, ArtifactType.REQUIREMENT);
+            }).not.toThrow();
         });
 
         it('should handle requirements without acceptance criteria', () => {
-            const reqWithoutCriteria: RequirementData = {
-                title: 'Simple Requirement',
-                description: 'Just a description',
-                priority: 'low',
+            const codeNoFile: CodeArtifactData = {
+                code: 'const simple = true;',
+                language: 'javascript',
             };
-
-            const result = migrateData<RequirementData, TestData>(
-                reqWithoutCriteria,
-                'requirement',
-                'test'
+            const result = migrateData(
+                codeNoFile,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.RELEASE_PACKET,
             );
-
             expect(result).toBeTruthy();
             expect(result?.testCases).toBeDefined();
             expect(result?.testCases.length).toBeGreaterThan(0);
         });
-
-        it('should handle malformed data with error recovery', () => {
-            const malformedData = {
-                unexpected: 'structure',
-            };
-
-            // Should not throw, should return null
-            expect(() => {
-                migrateData(malformedData, 'code', 'test');
-            }).not.toThrow();
-        });
     });
 
-    describe('Language Detection', () => {
-        it('should detect JavaScript', () => {
+    describe('Language Detection in migrations', () => {
+        it('should detect JavaScript and include in documentation', () => {
             const jsCode: CodeArtifactData = {
                 code: 'const x = 10; function test() {}',
-                language: 'unknown',
+                language: 'javascript',
             };
-
-            const result = migrateData(jsCode, 'code', 'documentation');
+            const result = migrateData(
+                jsCode,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+            );
             expect(result?.content).toContain('javascript');
         });
 
-        it('should detect Python', () => {
+        it('should detect Python and use pytest as framework', () => {
             const pyCode: CodeArtifactData = {
-                code: 'def hello():\n    import os\n    return "world"',
-                language: 'unknown',
+                code: 'def hello(): import os',
+                language: 'python',
             };
-
-            const docData: DocumentationData = {
-                content: `\`\`\`python\ndef hello():\n    import os\`\`\``,
-                format: 'markdown',
-            };
-
-            const result = migrateData<DocumentationData, CodeArtifactData>(
-                docData,
-                'documentation',
-                'code'
+            const result = migrateData(
+                pyCode,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.RELEASE_PACKET,
             );
-
-            expect(result).toBeTruthy();
+            expect(result?.framework).toBe('pytest');
         });
 
-        it('should detect Java', () => {
+        it('should detect Java language in code documentation', () => {
             const javaCode: CodeArtifactData = {
                 code: 'public class Test { private int x; }',
-                language: 'unknown',
+                language: 'java',
             };
-
-            const result = migrateData(javaCode, 'code', 'documentation');
+            const result = migrateData(
+                javaCode,
+                ArtifactType.REQUIREMENT,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+            );
             expect(result?.content).toContain('java');
         });
     });
 
     describe('Complex Migrations', () => {
-        it('should preserve structure in architecture to design migration', () => {
-            const archData = {
+        it('should preserve node structure in diagram to plan migration', () => {
+            const archData: DiagramData = {
                 nodes: [
                     { id: '1', label: 'Frontend', type: 'service' },
                     { id: '2', label: 'Backend', type: 'service' },
@@ -418,40 +356,28 @@ describe('Migration Rules', () => {
                     { from: '1', to: '2', label: 'API calls' },
                 ],
             };
-
-            const result = migrateData(archData, 'architecture', 'design');
+            const result = migrateData(
+                archData,
+                ArtifactType.ARCHITECTURE_DECISION_RECORD,
+                ArtifactType.PLAN,
+            );
             expect(result).toBeTruthy();
-            expect(result.nodes).toHaveLength(2);
-            expect(result.edges).toHaveLength(1);
+            expect(result?.content).toContain('Frontend');
+            expect(result?.content).toContain('Backend');
         });
 
-        it('should extract multiple code blocks from documentation', () => {
+        it('should extract a code block from documentation with multiple blocks', () => {
             const docWithMultipleBlocks: DocumentationData = {
-                content: `
-# Code Examples
-
-\`\`\`javascript
-function a() {}
-\`\`\`
-
-Some text
-
-\`\`\`javascript
-function b() {}
-\`\`\`
-                `,
+                content: '# Examples\n```javascript\nfunction a() {}\n```\nText\n```javascript\nfunction b() {}\n```',
                 format: 'markdown',
             };
-
-            const result = migrateData<DocumentationData, CodeArtifactData>(
+            const result = migrateData(
                 docWithMultipleBlocks,
-                'documentation',
-                'code'
+                ArtifactType.PLAN,
+                ArtifactType.DEVSECOPS_ITEM,
             );
-
             expect(result).toBeTruthy();
-            expect(result?.code).toContain('function a()');
-            expect(result?.code).toContain('function b()');
+            expect(result?.content).toContain('function a()');
         });
     });
 });

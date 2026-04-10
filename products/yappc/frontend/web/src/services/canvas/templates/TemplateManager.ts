@@ -50,6 +50,7 @@ export interface TemplateListItem {
 
 export class TemplateManager {
     private storageKey = 'canvas-templates';
+    private idCounter = 0;
 
     /**
      * Get all templates
@@ -103,7 +104,7 @@ export class TemplateManager {
 
             const newTemplate: CanvasTemplate = {
                 ...template,
-                id: `template-${Date.now()}`,
+                id: `template-${Date.now()}-${++this.idCounter}`,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 metadata: {

@@ -13,8 +13,13 @@ import type {
   UnifiedEventCapture,
   EventFilter,
   BrowserEvent,
+  BrowserEventSource,
   EventHandler,
-  WebRequestEvent,
+  TabEventData,
+  NavigationEventData,
+  NetworkEventData,
+  WebRequestEventData,
+  HistoryEventData,
 } from "./EventCapture.interface";
 
 /**
@@ -80,6 +85,7 @@ type ContentScriptNetworkEvent =
  * ```
  */
 export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
+  private readonly source: BrowserEventSource = { type: 'browser', id: 'extension' };
   private eventHandlers = new Set<EventHandler<BrowserEvent>>();
   private eventCounts: Record<BrowserEvent["type"], number> = {
     tab: 0,
@@ -158,14 +164,18 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(browserTab.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "tab",
-          action: "created",
-          tabId: browserTab.id!,
-          url: browserTab.url,
-          title: browserTab.title,
-          windowId: browserTab.windowId,
-          active: browserTab.active,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "created",
+            tabId: browserTab.id!,
+            url: browserTab.url,
+            title: browserTab.title,
+            windowId: browserTab.windowId,
+            active: browserTab.active,
+          } satisfies TabEventData,
         });
       }
     };
@@ -189,14 +199,18 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(browserTab.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "tab",
-          action: "updated",
-          tabId,
-          url: browserTab.url,
-          title: browserTab.title,
-          windowId: browserTab.windowId,
-          active: browserTab.active,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "updated",
+            tabId,
+            url: browserTab.url,
+            title: browserTab.title,
+            windowId: browserTab.windowId,
+            active: browserTab.active,
+          } satisfies TabEventData,
         });
       }
     };
@@ -208,10 +222,11 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
     // Tab removed
     const onRemoved = (tabId: number) => {
       this.emitEvent({
+        id: this.generateId(),
         type: "tab",
-        action: "removed",
-        tabId,
         timestamp: Date.now(),
+        source: this.source,
+        data: { action: "removed", tabId } satisfies TabEventData,
       });
     };
     browser.tabs.onRemoved.addListener(onRemoved);
@@ -225,11 +240,11 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
     ) => {
       const info = activeInfo as { tabId: number; windowId: number };
       this.emitEvent({
+        id: this.generateId(),
         type: "tab",
-        action: "activated",
-        tabId: info.tabId,
-        windowId: info.windowId,
         timestamp: Date.now(),
+        source: this.source,
+        data: { action: "activated", tabId: info.tabId, windowId: info.windowId } satisfies TabEventData,
       });
     };
     browser.tabs.onActivated.addListener(onActivated);
@@ -261,13 +276,17 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(navDetails.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "navigation",
-          action: "committed",
-          tabId: navDetails.tabId,
-          url: navDetails.url,
-          frameId: navDetails.frameId,
-          transitionType: navDetails.transitionType,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "committed",
+            tabId: navDetails.tabId,
+            url: navDetails.url,
+            frameId: navDetails.frameId,
+            transitionType: navDetails.transitionType,
+          } satisfies NavigationEventData,
         });
       }
     };
@@ -288,12 +307,16 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(navDetails.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "navigation",
-          action: "completed",
-          tabId: navDetails.tabId,
-          url: navDetails.url,
-          frameId: navDetails.frameId,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "completed",
+            tabId: navDetails.tabId,
+            url: navDetails.url,
+            frameId: navDetails.frameId,
+          } satisfies NavigationEventData,
         });
       }
     };
@@ -351,13 +374,17 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(req.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "network",
-          action: "request",
-          requestId: req.requestId,
-          url: req.url,
-          method: req.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
-          tabId: req.tabId,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "request",
+            requestId: req.requestId,
+            url: req.url,
+            method: req.method,
+            tabId: req.tabId,
+          } satisfies NetworkEventData,
         });
       }
     };
@@ -380,14 +407,18 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
 
       if (this.shouldIncludeEvent(req.url, filter)) {
         this.emitEvent({
+          id: this.generateId(),
           type: "network",
-          action: "response",
-          requestId: req.requestId,
-          url: req.url,
-          method: req.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
-          tabId: req.tabId,
-          statusCode: req.statusCode,
           timestamp: Date.now(),
+          source: this.source,
+          data: {
+            action: "response",
+            requestId: req.requestId,
+            url: req.url,
+            method: req.method,
+            tabId: req.tabId,
+            statusCode: req.statusCode,
+          } satisfies NetworkEventData,
         });
       }
     };
@@ -442,26 +473,21 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
       };
 
       if (this.shouldIncludeEvent(req.url, filter)) {
-        const event: WebRequestEvent = {
-          type: "webrequest",
+        const event: WebRequestEventData = {
           action: "sent",
           requestId: req.requestId,
           url: req.url,
-          method: req.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+          method: req.method,
           tabId: req.tabId,
-          resourceType: req.type as
-            | "main_frame"
-            | "sub_frame"
-            | "script"
-            | "stylesheet"
-            | "image"
-            | "font"
-            | "xhr"
-            | "fetch"
-            | "other",
-          timestamp: Date.now(),
+          resourceType: req.type,
         };
-        this.emitEvent(event);
+        this.emitEvent({
+          id: this.generateId(),
+          type: "webrequest",
+          timestamp: Date.now(),
+          source: this.source,
+          data: event,
+        });
       }
     };
     beforeSendHeaders.addListener(onBeforeSendHeaders, { urls: urlFilter });
@@ -501,12 +527,16 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
       }
 
       this.emitEvent({
+        id: this.generateId(),
         type: "history",
-        action: "visited",
-        url: historyItem.url,
-        title: historyItem.title,
-        visitTime: historyItem.lastVisitTime || Date.now(),
         timestamp: Date.now(),
+        source: this.source,
+        data: {
+          action: "visited",
+          url: historyItem.url,
+          title: historyItem.title,
+          visitTime: historyItem.lastVisitTime ?? Date.now(),
+        } satisfies HistoryEventData,
       });
     };
     historyApi.onVisited.addListener(onVisited);
@@ -561,13 +591,17 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
           eventType: "network-request";
         };
         return {
+          id: this.generateId(),
           type: "network",
-          action,
-          requestId: payload.requestId,
-          url: payload.url,
-          method: payload.method,
-          tabId: effectiveTabId,
           timestamp: payload.timestamp,
+          source: this.source,
+          data: {
+            action,
+            requestId: payload.requestId,
+            url: payload.url,
+            method: payload.method,
+            tabId: effectiveTabId,
+          } satisfies NetworkEventData,
         };
       }
       if (action === "response") {
@@ -580,31 +614,39 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
           headers["Content-Type"] ??
           headers["CONTENT-TYPE"];
         return {
+          id: this.generateId(),
           type: "network",
-          action,
-          requestId: payload.requestId,
-          url: payload.url,
-          method: payload.method,
-          tabId: effectiveTabId,
-          statusCode: payload.status,
-          contentType,
           timestamp: payload.timestamp,
-          duration: payload.duration,
+          source: this.source,
+          data: {
+            action,
+            requestId: payload.requestId,
+            url: payload.url,
+            method: payload.method,
+            tabId: effectiveTabId,
+            statusCode: payload.status,
+            contentType,
+            duration: payload.duration,
+          } satisfies NetworkEventData,
         };
       }
       const payload = event as NetworkErrorData & {
         eventType: "network-error";
       };
       return {
+        id: this.generateId(),
         type: "network",
-        action,
-        requestId: payload.requestId,
-        url: payload.url,
-        method: payload.method,
-        tabId: effectiveTabId,
         timestamp: payload.timestamp,
-        duration: payload.duration,
-        error: payload.error,
+        source: this.source,
+        data: {
+          action,
+          requestId: payload.requestId,
+          url: payload.url,
+          method: payload.method,
+          tabId: effectiveTabId,
+          duration: payload.duration,
+          error: payload.error,
+        } satisfies NetworkEventData,
       };
     };
 
@@ -700,6 +742,16 @@ export class UnifiedBrowserEventCapture implements UnifiedEventCapture {
       history: 0,
       flow: 0,
     };
+  }
+
+  /**
+   * Generate a unique event ID.
+   */
+  private generateId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
   /**

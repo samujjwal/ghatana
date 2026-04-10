@@ -12,8 +12,8 @@
  */
 
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Accordion, AccordionSummary, AccordionDetails, Alert, Box, Chip, Grid } from '@ghatana/design-system';
-import { ChevronDown as ExpandIcon, Code as CodeIcon, FileText as DocIcon, Building2 as ArchitectureIcon, Bug as TestIcon, Plug as ApiIcon, Table as TableIcon, ClipboardList as RequirementIcon, BarChart3 as ChartIcon } from 'lucide-react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, InteractiveList as List, ListItemButton, ListItemText, Alert, Box, Chip, Grid } from '@ghatana/design-system';
+import { Code as CodeIcon, FileText as DocIcon, Building2 as ArchitectureIcon, Bug as TestIcon, Plug as ApiIcon, Table as TableIcon, ClipboardList as RequirementIcon, BarChart3 as ChartIcon } from 'lucide-react';
 import { ArtifactType } from '@/types/fow-stages';
 
 // Content type metadata
@@ -97,9 +97,9 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
             key={typeInfo.type}
             selected={typeInfo.type === selectedType}
             onClick={() => setSelectedType(typeInfo.type)}
-            className="rounded mb-1" style={{ border: typeInfo.type === selectedType ? 2 : 1, borderColor: typeInfo.type === selectedType ? 'primary.main' : 'divider' }}
+            className="rounded mb-1" style={{ borderWidth: typeInfo.type === selectedType ? '2px' : '1px', borderStyle: 'solid', borderColor: typeInfo.type === selectedType ? 'primary.main' : 'divider' }}
         >
-            <ListItemIcon>{typeInfo.icon}</ListItemIcon>
+            <span style={{ display: 'inline-flex', marginRight: '8px', flexShrink: 0 }}>{typeInfo.icon}</span>
             <ListItemText
                 primary={
                     <Box className="flex items-center gap-2">
@@ -155,11 +155,11 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                 )}
 
                 {/* All Types */}
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandIcon />}>
+                <details open>
+                    <summary style={{ cursor: 'pointer', padding: '8px 0', listStyle: 'none', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
                         <Typography as="h6">All Content Types</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
+                    </summary>
+                    <div>
                         <Grid container spacing={2}>
                             {['code', 'design', 'documentation', 'requirements', 'data'].map(category => {
                                 const categoryTypes = CONTENT_TYPES.filter(t => t.category === category);
@@ -177,8 +177,8 @@ export const TypeSelectorModal: React.FC<TypeSelectorModalProps> = ({
                                 );
                             })}
                         </Grid>
-                    </AccordionDetails>
-                </Accordion>
+                    </div>
+                </details>
 
                 {/* Warning for incompatible conversions */}
                 {isDifferent && !isCompatible && (

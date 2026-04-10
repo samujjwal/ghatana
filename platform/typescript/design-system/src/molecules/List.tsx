@@ -127,7 +127,9 @@ export interface InteractiveListItem {
 
 export interface InteractiveListProps {
   /** List items */
-  items: InteractiveListItem[];
+  items?: InteractiveListItem[];
+  /** Children (alternative to items) */
+  children?: React.ReactNode;
   /** List orientation */
   orientation?: 'vertical' | 'horizontal';
   /** Variant */
@@ -146,13 +148,14 @@ export interface InteractiveListProps {
  * InteractiveList component for displaying interactive lists
  */
 export const InteractiveList: React.FC<InteractiveListProps> = ({
-  items,
+  items = [],
   orientation = 'vertical',
   variant = 'default',
   size = 'md',
   selectable = false,
   onItemSelect,
   className,
+  children,
 }) => {
   const sizeConfig = {
     sm: { padding: '0.5rem', gap: '0.5rem', fontSize: 14 }, // TODO: Replace with tokens when available
@@ -278,6 +281,7 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
   return (
     <ul style={containerStyles} className={className} role={selectable ? 'listbox' : 'list'}>
       {items.map((item, index) => renderItem(item, index))}
+      {children}
     </ul>
   );
 };

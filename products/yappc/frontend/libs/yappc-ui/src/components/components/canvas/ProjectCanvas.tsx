@@ -87,7 +87,7 @@ import {
   canvasNodesAtom,
   canvasEdgesAtom,
   selectedCanvasNodeAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   DropdownMenu,
   DropdownMenuContent,

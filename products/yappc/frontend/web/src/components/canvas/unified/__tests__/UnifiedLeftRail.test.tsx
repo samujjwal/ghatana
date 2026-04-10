@@ -7,11 +7,11 @@ import {
 } from '@/test-utils/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedLeftRail } from '../UnifiedLeftRail';
-import { railService } from '../../../services/rail/RailServiceClient';
+import { railService } from '../../../../services/rail/RailServiceClient';
 import type { RailContext } from '../UnifiedLeftRail.types';
 
 // Mock the rail service
-vi.mock('../../../services/rail/RailServiceClient', () => ({
+vi.mock('../../../../services/rail/RailServiceClient', () => ({
   railService: {
     getComponents: vi.fn(),
     getInfrastructure: vi.fn(),

@@ -29,7 +29,7 @@ import {
   securityScoreAtom,
   securityAlertsAtom,
   auditLogsAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   GET_VULNERABILITY,
   GET_VULNERABILITIES,

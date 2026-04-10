@@ -31,6 +31,7 @@ export type { StateProviderProps } from './StateProvider';
 
 // Pre-built atoms
 export * from './atoms';
+export * from './canvasMigrationAtoms';
 export * from './configAtoms';
 export {
   mobilePlatformAtom,

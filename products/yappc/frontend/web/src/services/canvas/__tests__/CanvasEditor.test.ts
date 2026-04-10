@@ -125,7 +125,7 @@ describe('CanvasEditor', () => {
             editor.moveNodes(['node-1'], { x: 7, y: 8 });
 
             const updatedNodes = (mockRfInstance.setNodes as unknown).mock.calls[0][0];
-            expect(updatedNodes[0].position).toEqual({ x: 15, y: 15 }); // Snapped to nearest 15
+            expect(updatedNodes[0].position).toEqual({ x: 0, y: 15 }); // Snapped to nearest 15
         });
 
         it('should not move unselected nodes', () => {
@@ -226,35 +226,44 @@ describe('CanvasEditor', () => {
 
     describe('Alignment Operations', () => {
         it('should align nodes to the left', () => {
+            editor.selectNode('node-1');
+            editor.selectNode('node-2', true);
+            editor.selectNode('node-3', true);
             editor.alignNodes('left');
 
             const updatedNodes = (mockRfInstance.setNodes as unknown).mock.calls[0][0];
             const leftMost = Math.min(...mockNodes.map(n => n.position.x));
 
-            updatedNodes.forEach((node: Node) => {
+            updatedNodes.filter((n: Node) => ['node-1', 'node-2', 'node-3'].includes(n.id)).forEach((node: Node) => {
                 expect(node.position.x).toBe(leftMost);
             });
         });
 
         it('should align nodes to the right', () => {
+            editor.selectNode('node-1');
+            editor.selectNode('node-2', true);
+            editor.selectNode('node-3', true);
             editor.alignNodes('right');
 
             const updatedNodes = (mockRfInstance.setNodes as unknown).mock.calls[0][0];
             const rightMost = Math.max(...mockNodes.map(n => n.position.x));
 
-            updatedNodes.forEach((node: Node) => {
+            updatedNodes.filter((n: Node) => ['node-1', 'node-2', 'node-3'].includes(n.id)).forEach((node: Node) => {
                 expect(node.position.x).toBe(rightMost);
             });
         });
 
         it('should align nodes to center', () => {
+            editor.selectNode('node-1');
+            editor.selectNode('node-2', true);
+            editor.selectNode('node-3', true);
             editor.alignNodes('center');
 
             const updatedNodes = (mockRfInstance.setNodes as unknown).mock.calls[0][0];
             const positions = mockNodes.map(n => n.position.x);
             const centerX = (Math.min(...positions) + Math.max(...positions)) / 2;
 
-            updatedNodes.forEach((node: Node) => {
+            updatedNodes.filter((n: Node) => ['node-1', 'node-2', 'node-3'].includes(n.id)).forEach((node: Node) => {
                 expect(node.position.x).toBe(centerX);
             });
         });

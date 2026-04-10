@@ -1,0 +1,10 @@
+flowchart LR
+  HTTP["HTTP route contract"] --> Launcher["launcher/http"]
+  OpenAPI["machine-readable REST spec"] -. split .-> DocsSpec["docs/openapi.yaml"]
+  OpenAPI -. split .-> ApiSpec["api/data-cloud-api.openapi.yaml"]
+  GRPC["gRPC contract"] --> Runtime["grpc services / generated code"]
+  Domain["domain ports"] --> SPI["spi"]
+  Persistence["metadata/entity models"] --> Entity["platform-entity"]
+  Browser["browser adapters"] --> LibApi["ui/src/lib/api"]
+  Browser -. legacy .-> Legacy["ui/src/api + src/services"]
+

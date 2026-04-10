@@ -151,14 +151,16 @@ describe('MermaidDiagram Error Handling', () => {
 });
 
 describe('MermaidDiagram Accessibility', () => {
+    const accessibilityContent = 'graph TD\nA-->B';
+
     it('has proper test id for testing', () => {
-        render(<MermaidDiagram content={mockContent} zoom={1} />);
+        render(<MermaidDiagram content={accessibilityContent} zoom={1} />);
 
         expect(screen.getByTestId('mermaid-diagram')).toBeInTheDocument();
     });
 
     it('renders SVG content that is accessible', () => {
-        render(<MermaidDiagram content={mockContent} zoom={1} />);
+        render(<MermaidDiagram content={accessibilityContent} zoom={1} />);
 
         const container = screen.getByTestId('mermaid-diagram');
         expect(container).toBeInTheDocument();

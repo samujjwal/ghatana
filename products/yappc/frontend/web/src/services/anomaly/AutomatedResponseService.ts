@@ -49,9 +49,9 @@
  * @doc.pattern Service
  */
 
-import { SecurityAnomaly } from "../models/anomaly/SecurityAnomaly.entity";
-import { ThreatIntelligence } from "../models/anomaly/ThreatIntelligence.entity";
-import { MetricsCollector } from "../observability/MetricsCollector";
+import { SecurityAnomaly } from "../../models/anomaly/SecurityAnomaly.entity";
+import { ThreatIntelligence } from "../../models/anomaly/ThreatIntelligence.entity";
+import { MetricsCollector } from "../../observability/MetricsCollector";
 
 /**
  * Automated response action taken in response to anomaly.

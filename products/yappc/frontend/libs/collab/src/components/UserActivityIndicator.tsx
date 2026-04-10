@@ -16,9 +16,8 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import { cn } from '@ghatana/design-system';
-
 import { type PresenceUser, type PresenceLocation } from '../PresenceManager';
+import { cn } from './cn';
 
 // =============================================================================
 // Types

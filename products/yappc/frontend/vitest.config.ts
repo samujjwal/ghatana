@@ -139,7 +139,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yappc/canvas': resolve(__dirname, './libs/yappc-canvas/src/index.ts'),
       '@yappc/api': resolve(__dirname, './libs/api/src'),
       '@yappc/auth': resolve(__dirname, './libs/auth/src'),
       '@yappc/collab': resolve(__dirname, './libs/collab/src'),

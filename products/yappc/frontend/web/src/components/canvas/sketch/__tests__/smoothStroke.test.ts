@@ -6,7 +6,7 @@ import {
   pointsToInputPoints,
   getSmoothStrokePath,
   simplifyPoints,
-} from '@yappc/canvas/sketch';
+} from '../smoothStroke';
 
 describe('smoothStroke utilities', () => {
   describe('pointsToInputPoints', () => {
@@ -79,8 +79,10 @@ describe('smoothStroke utilities', () => {
     });
 
     test('should preserve all points if tolerance is very small', () => {
-      const points = [0, 0, 10, 10, 20, 20];
-      const simplified = simplifyPoints(points, 0.1);
+      // Use points with significant deviation to ensure they are all preserved
+      // with a very small tolerance
+      const points = [0, 0, 5, 10, 10, 1, 15, 9, 20, 0, 25, 8];
+      const simplified = simplifyPoints(points, 0.01);
 
       expect(simplified.length).toBe(points.length);
     });

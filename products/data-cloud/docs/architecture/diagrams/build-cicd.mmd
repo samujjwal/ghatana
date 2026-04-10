@@ -1,0 +1,11 @@
+flowchart TD
+  Dev["Developer change"] --> Gradle["Gradle multi-module build"]
+  Dev --> UI["Vite / TypeScript build"]
+  Gradle --> Tests["JUnit / ArchUnit / Testcontainers"]
+  UI --> UITests["Vitest / Playwright"]
+  Gradle --> Jar["launcher jar"]
+  Jar --> Docker["Docker image build"]
+  Docker --> Helm["Helm deployment artifact"]
+  Security["security-scanning workflow"] --> Reports["SARIF / reports / audits"]
+  Terraform["Terraform infra apply"] --> Helm
+  Helm --> Cluster["Kubernetes / EKS"]

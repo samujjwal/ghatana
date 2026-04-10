@@ -115,6 +115,8 @@ export class CanvasPersistence {
     private isDirty: boolean = false;
     private versionCounter: number = 1;
     private listeners: Set<() => void> = new Set();
+    private currentProjectId: string | null = null;
+    private currentCanvasId: string | null = null;
 
     constructor(config: PersistenceConfig) {
         this.config = {
@@ -149,8 +151,6 @@ export class CanvasPersistence {
      * Initialize auto-save
      */
     public startAutoSave(getState: () => CanvasState, projectId: string, canvasId: string): void {
-        if (!this.config.autoSave?.enabled) return;
-
         this.stopAutoSave();
 
         this.autoSaveTimer = setInterval(async () => {
@@ -319,6 +319,8 @@ export class CanvasPersistence {
         await this.pruneSnapshots(projectId, canvasId);
 
         this.isDirty = false;
+        this.currentProjectId = projectId;
+        this.currentCanvasId = canvasId;
 
         return snapshot;
     }
@@ -374,7 +376,7 @@ export class CanvasPersistence {
      * Get version history
      */
     public async getHistory(projectId: string, canvasId: string): Promise<CanvasSnapshot[]> {
-        const key = `${projectId}:${canvasId}:history`;
+        const key = `yappc-canvas:${projectId}:${canvasId}:history`;
 
         switch (this.config.storage) {
             case 'localStorage': {
@@ -486,7 +488,7 @@ export class CanvasPersistence {
      * Get version history for a canvas
      */
     public async getVersionHistory(projectId: string, canvasId: string): Promise<CanvasSnapshot[]> {
-        const key = `canvas:${projectId}:${canvasId}:history`;
+        const key = `yappc-canvas:${projectId}:${canvasId}:history`;
         const historyJson = localStorage.getItem(key);
         if (!historyJson) return [];
 
@@ -507,7 +509,17 @@ export class CanvasPersistence {
      * Delete a snapshot
      */
     public async deleteSnapshot(snapshotId: string): Promise<void> {
+        const snapshot = this.snapshots.get(snapshotId);
         this.snapshots.delete(snapshotId);
+        if (snapshot) {
+            const key = `yappc-canvas:${snapshot.projectId}:${snapshot.canvasId}:history`;
+            const historyJson = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+            if (historyJson) {
+                const history = JSON.parse(historyJson) as CanvasSnapshot[];
+                const updated = history.filter(s => s.id !== snapshotId);
+                localStorage.setItem(key, JSON.stringify(updated));
+            }
+        }
     }
 
     /**
@@ -521,14 +533,14 @@ export class CanvasPersistence {
      * Get current project ID
      */
     public getCurrentProject(): string | null {
-        return localStorage.getItem('currentProjectId');
+        return this.currentProjectId;
     }
 
     /**
      * Get current canvas ID
      */
     public getCurrentCanvas(): string | null {
-        return localStorage.getItem('currentCanvasId');
+        return this.currentCanvasId;
     }
 
     /**
@@ -737,7 +749,7 @@ export class CanvasPersistence {
 
         if (history.length > maxSnapshots) {
             const pruned = history.slice(0, maxSnapshots);
-            const key = `${projectId}:${canvasId}:history`;
+            const key = `yappc-canvas:${projectId}:${canvasId}:history`;
             localStorage.setItem(key, JSON.stringify(pruned));
         }
     }

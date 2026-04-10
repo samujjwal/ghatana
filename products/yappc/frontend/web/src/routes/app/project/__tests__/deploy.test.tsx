@@ -29,7 +29,7 @@ vi.mock('../../../../components/route/ErrorBoundary', () => ({
   RouteErrorBoundary: () => <div>Error boundary</div>,
 }));
 
-vi.mock('../../../../components/deploy', () => ({
+vi.mock('../../../../components/deploy/DeployPanelHost', () => ({
   DeployPanelHost: () => <div data-testid="deploy-panel-host">Deploy panel</div>,
 }));
 

@@ -64,7 +64,13 @@ export class CostOptimizationService {
    * Initialize service with repository
    * @param repository Data access layer for costs
    */
-  constructor(private readonly repository: CloudCostRepository) {}
+  constructor(private readonly repository: CloudCostRepository = {
+    findByPeriod: async () => [],
+    findById: async () => null,
+    findAll: async () => [],
+    save: async (item: unknown) => item,
+    delete: async () => {},
+  } as unknown as CloudCostRepository) {}
 
   /**
    * Generate recommendations for cost optimization

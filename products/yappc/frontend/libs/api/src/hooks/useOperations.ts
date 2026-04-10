@@ -29,7 +29,7 @@ import {
   onCallScheduleAtom,
   serviceHealthAtom,
   metricsAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   GET_INCIDENT,
   GET_INCIDENTS,

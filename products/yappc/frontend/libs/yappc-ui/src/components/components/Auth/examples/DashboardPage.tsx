@@ -13,7 +13,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useAuth } from '@yappc/canvas';
+import { useAuth } from '../../../hooks/auth';
 
 import { Page } from '../../Page/Page';
 import { useToast } from '../../Toast';

@@ -19,8 +19,11 @@ function componentToJSX(data: ComponentData, indent: number = 0): string {
       const props: string[] = [];
       
       if (buttonData.variant !== 'contained') props.push(`variant="${buttonData.variant}"`);
-      if (buttonData.color !== 'primary') props.push(`color="${buttonData.color}"`);
-      if (buttonData.size !== 'medium') props.push(`size="${buttonData.size}"`);
+      if (buttonData.color !== 'primary') props.push(`tone="${buttonData.color}"`);
+      if (buttonData.size !== 'medium') {
+        const sizeMap: Record<string, string> = { small: 'sm', medium: 'md', large: 'lg' };
+        props.push(`size="${sizeMap[buttonData.size] ?? buttonData.size}"`);
+      }
       if (buttonData.disabled) props.push('disabled');
       if (buttonData.fullWidth) props.push('fullWidth');
 
@@ -118,7 +121,7 @@ function componentToJSX(data: ComponentData, indent: number = 0): string {
     }
 
     default:
-      return `${indentStr}<!-- Unknown component: ${data.type} -->`;
+      return `${indentStr}<!-- Unknown component -->`;
   }
 }
 

@@ -6,7 +6,89 @@
  */
 
 import { logger } from '../utils/Logger';
-import type { CanvasAPI, CanvasElement, CanvasDocument } from '@yappc/canvas';
+
+interface CanvasPoint {
+  x: number;
+  y: number;
+}
+
+interface CanvasViewport {
+  center: CanvasPoint;
+  zoom: number;
+}
+
+interface CanvasElement {
+  id: string;
+  type: string;
+  transform: {
+    position: CanvasPoint;
+    scale: number;
+    rotation: number;
+  };
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  visible: boolean;
+  locked: boolean;
+  selected: boolean;
+  zIndex: number;
+  metadata: Record<string, unknown>;
+  version: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CanvasDocument {
+  id: string;
+  version: string;
+  title: string;
+  viewport: CanvasViewport;
+  elements: Record<string, CanvasElement>;
+  elementOrder: string[];
+  metadata: Record<string, unknown>;
+  capabilities: {
+    canEdit: boolean;
+    canZoom: boolean;
+    canPan: boolean;
+    canSelect: boolean;
+    canUndo: boolean;
+    canRedo: boolean;
+    canExport: boolean;
+    canImport: boolean;
+    canCollaborate: boolean;
+    canPersist: boolean;
+    allowedElementTypes: string[];
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CanvasAPI {
+  addElement: (element: Partial<CanvasElement>) => string;
+  removeElement: (elementId: string) => void;
+  updateElement: (elementId: string, updates: Partial<CanvasElement>) => void;
+  getElement: (elementId: string) => CanvasElement | undefined;
+  getAllElements: () => readonly CanvasElement[];
+  selectElement: (elementId: string, append?: boolean) => void;
+  selectElements: (elementIds: readonly string[]) => void;
+  clearSelection: () => void;
+  getSelection: () => readonly string[];
+  setViewport: (viewport: Partial<CanvasViewport>) => void;
+  panViewport: (delta: CanvasPoint) => void;
+  zoomViewport: (delta: number, center?: CanvasPoint) => void;
+  fitToScreen: () => void;
+  getViewport: () => CanvasViewport;
+  getDocument: () => CanvasDocument;
+  getUIState: () => { selectedIds: string[] };
+  screenToCanvas: (screenPoint: CanvasPoint) => CanvasPoint;
+  canvasToScreen: (canvasPoint: CanvasPoint) => CanvasPoint;
+  on: (event: string, handler: EventListener) => void;
+  off: (event: string, handler: EventListener) => void;
+  emit: (event: string, payload: unknown) => void;
+}
 
 const STORAGE_KEY = 'page-builder-canvas-state';
 

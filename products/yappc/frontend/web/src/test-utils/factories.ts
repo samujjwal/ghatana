@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { v4 as uuidv4 } from 'uuid';
+/* Use native crypto.randomUUID to avoid uuid dependency in tests */
+const uuidv4 = () => crypto.randomUUID();
 
 import { faker } from '@yappc/testing/mocks/faker-shim';
 

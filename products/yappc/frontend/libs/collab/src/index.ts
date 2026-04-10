@@ -85,6 +85,20 @@ export type {
   CollaborationCursor,
 } from './hooks';
 
+export {
+  ProviderManager,
+} from './providerManager';
+export type {
+  ConnectionState,
+  ProviderConfig,
+  ProviderEvent,
+  ProviderEventType,
+  ProviderStatus,
+  ProviderType,
+  ConnectionStatistics,
+  JWTPayload,
+} from './providerManager';
+
 // Components
 export {
   CollaborationCursors,

@@ -47,14 +47,14 @@
  * @doc.pattern Service
  */
 
-import { SecurityAnomaly, AnomalyType } from "../models/anomaly/SecurityAnomaly.entity";
+import { SecurityAnomaly, AnomalyType } from "../../models/anomaly/SecurityAnomaly.entity";
 import {
   AnomalyBaseline,
   MetricType,
-} from "../models/anomaly/AnomalyBaseline.entity";
-import { SecurityAnomalyRepository } from "../repositories/SecurityAnomalyRepository";
-import { AIServiceClient } from "../clients/ai/AIServiceClient";
-import { MetricsCollector } from "../observability/MetricsCollector";
+} from "../../models/anomaly/AnomalyBaseline.entity";
+import { SecurityAnomalyRepository } from "../../repositories/SecurityAnomalyRepository";
+import { AIServiceClient } from "../../clients/ai/AIServiceClient";
+import { MetricsCollector } from "../../observability/MetricsCollector";
 
 /**
  * Anomaly detection request parameters.

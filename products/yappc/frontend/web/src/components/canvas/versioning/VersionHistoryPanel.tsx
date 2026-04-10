@@ -144,10 +144,22 @@ export const VersionHistoryList: React.FC<{
                                     <IconButton
                                         size="small"
                                         color="primary"
+                                        aria-label="Restore"
                                         onClick={() => onRestore(snapshot.id)}
                                         className="p-1"
                                     >
                                         <Restore className="text-lg" />
+                                    </IconButton>
+                                )}
+                                {onDelete && !isCurrent && (
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        aria-label="Delete"
+                                        onClick={() => onDelete(snapshot.id)}
+                                        className="p-1"
+                                    >
+                                        <Delete className="text-lg" />
                                     </IconButton>
                                 )}
                                 {onViewDiff && index < sortedSnapshots.length - 1 && (

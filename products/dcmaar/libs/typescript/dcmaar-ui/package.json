@@ -9,19 +9,30 @@
     ".": "./src/index.ts",
     "./core": "./src/core.ts",
     "./components": "./src/components.ts",
-    "./charts": "./src/charts.ts"
+    "./charts": "./src/charts.ts",
+    "./agent": "./src/agent/index.ts",
+    "./extension": "./src/extension/index.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "echo 'no unit tests for adapter layer'"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ghatana/charts": "workspace:*",
     "@ghatana/design-system": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.563.0",
+    "tailwind-merge": "^3.4.0",
     "react": "^19.2.4"
   },
   "peerDependencies": {
     "react": "^19.2.4"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   },
   "author": "DCMAAR Team",
   "license": "MIT"

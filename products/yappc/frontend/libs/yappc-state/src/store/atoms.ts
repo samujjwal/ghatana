@@ -12,6 +12,7 @@ import type {
   Project as StoreProject,
   Task as StoreTask,
 } from '@yappc/core/types';
+import { atom } from 'jotai';
 
 import { StateManager } from './StateManager';
 
@@ -496,6 +497,71 @@ export const storeAuthErrorAtom = StateManager.createWritableDerivedAtom<
     set(storeAuthStateAtom, { ...current, error });
   },
   'Legacy store auth error state'
+);
+
+export interface AuthState {
+  user: StoreUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  token: string | null;
+}
+
+export const authStateAtom = atom(
+  (get): AuthState => ({
+    ...get(storeAuthStateAtom),
+    token: get(storeAccessTokenAtom),
+  }),
+  (_get, set, nextState: AuthState) => {
+    set(storeAuthStateAtom, {
+      user: nextState.user,
+      isAuthenticated: nextState.isAuthenticated,
+      isLoading: nextState.isLoading,
+      error: nextState.error,
+    });
+    set(storeAccessTokenAtom, nextState.token);
+  }
+);
+
+export const authUserAtom = atom(
+  (get) => get(storeAuthStateAtom).user,
+  (get, set, user: StoreUser | null) => {
+    const currentState = get(storeAuthStateAtom);
+    const currentToken = get(storeAccessTokenAtom);
+    set(storeAuthStateAtom, {
+      ...currentState,
+      user,
+      isAuthenticated: Boolean(user && currentToken),
+    });
+  }
+);
+
+export const authTokenAtom = atom(
+  (get) => get(storeAccessTokenAtom),
+  (get, set, token: string | null) => {
+    const currentState = get(storeAuthStateAtom);
+    set(storeAccessTokenAtom, token);
+    set(storeAuthStateAtom, {
+      ...currentState,
+      isAuthenticated: Boolean(currentState.user && token),
+    });
+  }
+);
+
+export const authLoadingAtom = atom(
+  (get) => get(storeAuthStateAtom).isLoading,
+  (get, set, isLoading: boolean) => {
+    const currentState = get(storeAuthStateAtom);
+    set(storeAuthStateAtom, { ...currentState, isLoading });
+  }
+);
+
+export const authErrorAtom = atom(
+  (get) => get(storeAuthStateAtom).error,
+  (get, set, error: string | null) => {
+    const currentState = get(storeAuthStateAtom);
+    set(storeAuthStateAtom, { ...currentState, error });
+  }
 );
 
 export const storeLoginAtom = StateManager.createWritableDerivedAtom<

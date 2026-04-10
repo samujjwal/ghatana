@@ -216,7 +216,6 @@ export default defineConfig({
       '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
       '@yappc/api': path.resolve(__dirname, '../libs/api/src'),
       '@yappc/auth': path.resolve(__dirname, '../libs/auth/src'),
-      '@yappc/canvas': path.resolve(__dirname, '../libs/yappc-canvas/src'),
       '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
       '@yappc/code-editor': path.resolve(__dirname, '../libs/code-editor/src'),
       '@yappc/config': path.resolve(__dirname, '../libs/config/src'),

@@ -91,8 +91,8 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [interactionMode, strokeWidth, setTool, setColor, setStrokeWidth, setInteractionMode]);
 
-    const handleToolChange = (_event: React.MouseEvent<HTMLElement>, newTool: typeof tool | null) => {
-        if (newTool !== null) {
+    const handleToolChange = (newTool: typeof tool | null) => {
+        if (newTool !== null && newTool !== undefined) {
             setTool(newTool);
         }
     };

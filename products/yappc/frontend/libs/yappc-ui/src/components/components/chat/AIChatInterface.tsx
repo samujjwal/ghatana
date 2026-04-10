@@ -55,7 +55,7 @@ import {
   conversationHistoryAtom,
   inputModeAtom,
   aiAgentStateAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import { Textarea } from '@yappc/ui';
 import {
   DropdownMenu,

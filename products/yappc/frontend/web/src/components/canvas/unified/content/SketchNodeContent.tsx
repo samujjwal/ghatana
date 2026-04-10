@@ -15,7 +15,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 import { Pencil as Edit, XCircle as Clear, Palette } from 'lucide-react';
 import { Stage, Layer, Line, Rect, Ellipse } from 'react-konva';
-import type { SketchTool } from '@yappc/canvas/sketch';
+import type { SketchTool } from '../../sketch/types';
 
 interface SketchNodeContentProps {
     data?: {

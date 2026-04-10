@@ -87,7 +87,7 @@ export class WebSocketClient {
     this.reconnectAttempts = 0;
   }
 
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
+  send(data: string | ArrayBuffer | Blob | ArrayBufferView<ArrayBuffer>): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       throw new Error('WebSocket is not open');
     }

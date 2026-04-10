@@ -55,7 +55,7 @@ import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 import { Tabs } from '@ghatana/design-system';
 
-import { incidentsAtom, alertsAtom, activeIncidentAtom } from '@yappc/canvas';
+import { incidentsAtom, alertsAtom, activeIncidentAtom } from '@yappc/state';
 import { AvatarFallback, AvatarImage } from '@yappc/ui';
 import {
   DropdownMenu,

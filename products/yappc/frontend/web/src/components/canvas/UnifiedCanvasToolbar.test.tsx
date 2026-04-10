@@ -19,7 +19,7 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: unknown) => <>{children}</>,
 }));
 
-vi.mock('@yappc/ui/utils', () => ({
+vi.mock('../../utils/cn', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
 }));
 

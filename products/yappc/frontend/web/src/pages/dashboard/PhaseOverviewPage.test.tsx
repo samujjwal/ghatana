@@ -22,11 +22,11 @@ vi.mock('framer-motion', () => ({
   },
 }));
 
-vi.mock('@yappc/ui/utils', () => ({
+vi.mock('../../utils/cn', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
 }));
 
-vi.mock('@yappc/ui/components/Button', () => ({
+vi.mock('@ghatana/design-system', () => ({
   Button: ({ children, onClick, ...props }: unknown) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
@@ -273,7 +273,7 @@ describe('PhaseOverviewPage', () => {
       render(<PhaseOverviewPage />);
       
       const taskTitles = screen.getAllByRole('heading', { level: 3 });
-      expect(taskTitles.length).toBe(3);
+      expect(taskTitles.length).toBe(4);
     });
   });
 

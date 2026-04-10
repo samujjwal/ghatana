@@ -129,7 +129,9 @@ export class TaskApiClient extends BaseDashboardApiClient {
       });
     }
 
-    return this.get<PaginatedResponse<PriorityTask>>('/tasks/priority', request);
+    return this.get<PaginatedResponse<PriorityTask>>('/tasks/priority', {
+      ...request,
+    });
   }
 
   /**
@@ -357,8 +359,6 @@ export class TaskApiClient extends BaseDashboardApiClient {
         isBlocked: true,
         createdAt: new Date(Date.now() - 259200000).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        project: 'E-Commerce Platform',
-        projectId: 'proj-1',
         tags: ['deployment', 'ci-cd'],
       },
     ];

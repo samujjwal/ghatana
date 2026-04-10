@@ -8,7 +8,7 @@ import {
   fromReactFlowEdges,
   normalizeNodesForCompare,
   normalizeElementsForCompare,
-} from './transform';
+} from '../transform';
 
 import type {
   CanvasElement,

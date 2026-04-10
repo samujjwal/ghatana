@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant U as User/UI
+  participant W as Workflow UI Adapter
+  participant H as DataCloudHttpServer
+  participant P as PipelineCheckpointHandler
+  participant S as Pipeline Services
+  participant DB as Persistence
+  U->>W: save pipeline/checkpoint
+  W->>H: HTTP /api/v1/pipelines or /checkpoints
+  H->>P: dispatch
+  P->>S: translate workflow to pipeline model
+  S->>DB: persist state
+  DB-->>S: saved record
+  S-->>P: response DTO
+  P-->>H: HTTP payload
+  H-->>W: success response
+  W-->>U: updated workflow UI
+

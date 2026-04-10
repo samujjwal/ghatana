@@ -12,7 +12,7 @@
 
 import { useState, type FormEvent } from 'react';
 
-import { useAuth } from '@yappc/canvas';
+import { useAuth } from '../../hooks/auth';
 
 // ============================================================================
 // Types

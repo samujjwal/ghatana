@@ -24,7 +24,7 @@ import {
   type ConnectionState,
   type ProviderConfig,
   type ProviderEvent,
-} from '@yappc/canvas/collab/providerManager';
+} from '@yappc/collab';
 import type { Presence, User } from '../services/collaboration/types';
 
 export interface UseCollaborationOptions {

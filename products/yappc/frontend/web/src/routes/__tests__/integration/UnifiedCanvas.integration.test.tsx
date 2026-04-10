@@ -41,7 +41,7 @@ import {
   activeToolAtom,
   canvasAtom,
 } from '../../../state/atoms/unifiedCanvasAtom';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 
 // Mock params
 vi.mock('react-router', async () => {

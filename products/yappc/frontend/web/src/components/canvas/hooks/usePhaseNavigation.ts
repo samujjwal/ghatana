@@ -80,7 +80,7 @@ export interface UsePhaseNavigationResult extends PhaseNavigationState {
 /**
  * Determine which phase a given X position falls into
  */
-function getPhaseFromX(x: number): LifecyclePhase {
+export function getPhaseFromX(x: number): LifecyclePhase {
     for (const phase of PHASE_ORDER) {
         const { start, width } = PHASE_ZONE_POSITIONS[phase];
         if (x >= start && x < start + width) {

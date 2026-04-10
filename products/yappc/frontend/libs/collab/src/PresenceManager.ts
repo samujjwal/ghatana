@@ -124,7 +124,7 @@ export class PresenceManager {
     users.forEach((user) => {
       const presenceUser: PresenceUser = {
         ...user,
-        presence: (user as unknown).presence || {
+        presence: (user as CollaborationUser & { presence?: PresenceState }).presence || {
           status: 'online',
           lastSeen: user.lastActive,
         },

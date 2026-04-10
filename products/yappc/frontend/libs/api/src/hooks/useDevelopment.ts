@@ -33,7 +33,7 @@ import {
   updateStoryStatusAction,
   moveStoryToSprintAction,
   toggleFeatureFlagAction,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import {
   GET_SPRINT,
   LIST_SPRINTS,

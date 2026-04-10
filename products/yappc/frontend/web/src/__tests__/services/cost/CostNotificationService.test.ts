@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CostNotificationService } from '../../src/services/cost/CostNotificationService';
+import { CostNotificationService } from '../../../services/cost/CostNotificationService';
 
 /**
  * Unit tests for CostNotificationService

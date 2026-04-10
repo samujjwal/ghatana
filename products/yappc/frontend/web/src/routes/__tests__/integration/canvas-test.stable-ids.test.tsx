@@ -46,7 +46,7 @@ import {
   type DiffResult,
   type DiffOptions,
   type JSONPatchOperation,
-} from '@yappc/canvas';
+} from '../../../lib/canvas-legacy/persistence/idStrategy';
 import React, { useState, useCallback } from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
 

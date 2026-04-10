@@ -246,6 +246,7 @@ export function Offline({
 interface ServerErrorProps {
   message?: string;
   code?: string;
+  details?: string;
   onRetry?: () => void;
   className?: string;
 }
@@ -256,6 +257,7 @@ interface ServerErrorProps {
 export function ServerError({ 
   message = 'An unexpected error occurred on the server.',
   code,
+  details,
   onRetry,
   className = ''
 }: ServerErrorProps) {
@@ -273,6 +275,11 @@ export function ServerError({
       <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         {message}
       </Typography>
+      {details && (
+        <Typography className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+          {details}
+        </Typography>
+      )}
       {onRetry && (
         <Button size="sm" startIcon={<RefreshCw className="w-4 h-4" />} onClick={onRetry}>
           Retry
@@ -285,6 +292,7 @@ export function ServerError({
 interface ValidationErrorProps {
   message?: string;
   field?: string;
+  details?: string;
   onFix?: () => void;
   className?: string;
 }
@@ -295,6 +303,7 @@ interface ValidationErrorProps {
 export function ValidationError({ 
   message = 'The provided data is invalid.',
   field,
+  details,
   onFix,
   className = ''
 }: ValidationErrorProps) {
@@ -312,6 +321,11 @@ export function ValidationError({
       <Typography className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         {message}
       </Typography>
+      {details && (
+        <Typography className="text-sm text-gray-500 dark:text-gray-500 mb-4">
+          {details}
+        </Typography>
+      )}
       {onFix && (
         <Button size="sm" onClick={onFix}>
           Fix Issue

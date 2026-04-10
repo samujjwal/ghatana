@@ -48,10 +48,14 @@ export type CollaborationEventType =
   | 'awareness-change'
   | 'document-change';
 
-export interface CollaborationEvent {
-  type: CollaborationEventType;
-  data: unknown;
+export interface CollaborationEventMap {
+  'connection-change': { connected: boolean };
+  'sync-change': { synced: boolean };
+  'awareness-change': { users: CollaborationUser[] };
+  'document-change': { update: Uint8Array; origin: unknown };
 }
+
+export type CollaborationEvent = CollaborationEventMap[CollaborationEventType];
 
 // =============================================================================
 // Collaboration Manager Class
@@ -67,7 +71,7 @@ export class CollaborationManager {
   private config: CollaborationConfig;
   private listeners: Map<
     CollaborationEventType,
-    Set<(event: CollaborationEvent) => void>
+    Set<(event: CollaborationEventMap[CollaborationEventType]) => void>
   >;
   private state: CollaborationState;
 
@@ -203,9 +207,14 @@ export class CollaborationManager {
     if (!this.provider) return [];
 
     const users: CollaborationUser[] = [];
+    interface AwarenessState {
+      user?: CollaborationUser;
+      cursor?: CollaborationUser['cursor'];
+      selection?: CollaborationUser['selection'];
+    }
     this.provider.awareness
       .getStates()
-      .forEach((state: unknown, clientId: number) => {
+      .forEach((state: AwarenessState, clientId: number) => {
         if (state.user && clientId !== this.doc.clientID) {
           users.push({
             ...state.user,
@@ -255,27 +264,39 @@ export class CollaborationManager {
   /**
    * Subscribe to events
    */
-  on(
-    type: CollaborationEventType,
-    callback: (event: CollaborationEvent) => void
+  on<K extends CollaborationEventType>(
+    type: K,
+    callback: (event: CollaborationEventMap[K]) => void
   ): () => void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
-    this.listeners.get(type)!.add(callback);
+    this.listeners
+      .get(type)!
+      .add(
+        callback as (event: CollaborationEventMap[CollaborationEventType]) => void
+      );
 
     // Return unsubscribe function
     return () => {
-      this.listeners.get(type)?.delete(callback);
+      this.listeners
+        .get(type)
+        ?.delete(
+          callback as (event: CollaborationEventMap[CollaborationEventType]) => void
+        );
     };
   }
 
   /**
    * Emit an event
    */
-  private emit(type: CollaborationEventType, data: unknown): void {
-    const event: CollaborationEvent = { type, data };
-    this.listeners.get(type)?.forEach((callback) => callback(event));
+  private emit<K extends CollaborationEventType>(
+    type: K,
+    data: CollaborationEventMap[K]
+  ): void {
+    this.listeners.get(type)?.forEach((callback) =>
+      callback(data as CollaborationEventMap[CollaborationEventType])
+    );
   }
 
   /**

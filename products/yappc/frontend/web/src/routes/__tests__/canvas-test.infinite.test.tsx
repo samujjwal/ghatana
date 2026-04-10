@@ -16,7 +16,7 @@ import {
   testCoordinateAccuracy,
   validateOriginShiftConfig,
   type Viewport,
-} from '@yappc/canvas';
+} from '../../lib/canvas-legacy/viewport/infinite-canvas';
 
 /**
  * Integration tests for infinite canvas viewport utilities in canvas-test route.

@@ -10,7 +10,7 @@ import {
   getDefaultComponentData,
   validateComponentData,
   getSchemaForType,
-} from './schemas';
+} from '../schemas';
 
 describe('Component Schemas', () => {
   describe('ButtonSchema', () => {

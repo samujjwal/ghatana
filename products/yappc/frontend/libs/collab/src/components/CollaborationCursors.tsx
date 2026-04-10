@@ -8,8 +8,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useMemo } from 'react';
 
-import { type UserCursor } from './CanvasCollaboration';
-import { useCollaborationCursors } from './hooks';
+import { type UserCursor } from '../CanvasCollaboration';
+import { useCollaborationCursors } from '../hooks';
 
 // =============================================================================
 // Types

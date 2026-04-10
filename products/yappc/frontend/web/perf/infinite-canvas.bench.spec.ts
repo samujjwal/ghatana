@@ -34,7 +34,7 @@ import {
   zoomAtPoint,
   type Viewport,
   type Point,
-} from '@yappc/canvas';
+} from '../src/lib/canvas-legacy/viewport/infinite-canvas';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 /**

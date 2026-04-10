@@ -42,9 +42,9 @@
  * @doc.pattern Service
  */
 
-import { ThreatIntelligence } from "../models/anomaly/ThreatIntelligence.entity";
-import { SecurityAnomaly } from "../models/anomaly/SecurityAnomaly.entity";
-import { MetricsCollector } from "../observability/MetricsCollector";
+import { ThreatIntelligence } from "../../models/anomaly/ThreatIntelligence.entity";
+import { SecurityAnomaly } from "../../models/anomaly/SecurityAnomaly.entity";
+import { MetricsCollector } from "../../observability/MetricsCollector";
 
 /**
  * Threat enrichment result combining anomaly with threat context.

@@ -3,16 +3,17 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { AIQualityDashboard } from '../AIQualityDashboard';
+import '@testing-library/jest-dom';
 
-// Mock the useAIQuality hook
-const mockResetMetrics = jest.fn();
-const mockGetProviderHealth = jest.fn();
+const mockFns = vi.hoisted(() => ({
+  resetMetrics: vi.fn(),
+  getProviderHealth: vi.fn().mockReturnValue({ healthy: true, score: 0.95 }),
+}));
 
-jest.mock('../../../hooks/useAIQuality', () => ({
-  useAIQuality: () => ({
+vi.mock('../../../hooks/useAIQuality', () => ({
+  useAIQuality: vi.fn(() => ({
     summary: {
       period: { start: Date.now() - 86400000, end: Date.now() },
       totalRequests: 100,
@@ -23,30 +24,24 @@ jest.mock('../../../hooks/useAIQuality', () => ({
       cacheHitRate: 0.25,
       fallbackUsageRate: 0.05,
       errorBreakdown: {
-        TIMEOUT: 3,
-        RATE_LIMIT: 2,
-        INVALID_REQUEST: 0,
-        AUTHENTICATION: 0,
-        SERVER_ERROR: 0,
-        NETWORK_ERROR: 0,
-        UNKNOWN: 0,
+        TIMEOUT: 3, RATE_LIMIT: 2, INVALID_REQUEST: 0, AUTHENTICATION: 0,
+        SERVER_ERROR: 0, NETWORK_ERROR: 0, UNKNOWN: 0,
       },
-      providerDistribution: {
-        openai: 60,
-        anthropic: 30,
-        azure: 5,
-        local: 5,
-      },
+      providerDistribution: { openai: 60, anthropic: 30, azure: 5, local: 5 },
     },
-    getProviderHealth: mockGetProviderHealth,
-    resetMetrics: mockResetMetrics,
-  }),
+    getProviderHealth: mockFns.getProviderHealth,
+    resetMetrics: mockFns.resetMetrics,
+  })),
 }));
+
+import { AIQualityDashboard } from '../AIQualityDashboard';
+import { useAIQuality } from '../../../hooks/useAIQuality';
 
 describe('AIQualityDashboard', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetProviderHealth.mockReturnValue({ healthy: true, score: 0.95 });
+    mockFns.resetMetrics.mockClear();
+    mockFns.getProviderHealth.mockClear();
+    mockFns.getProviderHealth.mockReturnValue({ healthy: true, score: 0.95 });
   });
 
   it('should render header', () => {
@@ -96,7 +91,7 @@ describe('AIQualityDashboard', () => {
     render(<AIQualityDashboard />);
     const refreshBtn = screen.getAllByRole('button')[0];
     fireEvent.click(refreshBtn);
-    expect(mockResetMetrics).toHaveBeenCalled();
+    expect(mockFns.resetMetrics).toHaveBeenCalled();
   });
 
   it('should accept className prop', () => {
@@ -106,22 +101,13 @@ describe('AIQualityDashboard', () => {
 });
 
 describe('AIQualityDashboard - Empty State', () => {
-  beforeEach(() => {
-    jest.resetModules();
-  });
-
   it('should show empty state when no summary', () => {
-    // Override mock for this test
-    jest.doMock('../../../hooks/useAIQuality', () => ({
-      useAIQuality: () => ({
-        summary: null,
-        getProviderHealth: jest.fn(),
-        resetMetrics: jest.fn(),
-      }),
-    }));
-
-    const { AIQualityDashboard: EmptyDashboard } = require('../AIQualityDashboard');
-    render(<EmptyDashboard />);
+    vi.mocked(useAIQuality).mockReturnValueOnce({
+      summary: null,
+      getProviderHealth: vi.fn(),
+      resetMetrics: vi.fn(),
+    });
+    render(<AIQualityDashboard />);
     expect(screen.getByText(/No AI quality data available/)).toBeDefined();
   });
 });

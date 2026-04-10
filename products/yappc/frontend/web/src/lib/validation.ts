@@ -55,7 +55,7 @@ export function isApiError(value: unknown): value is ApiError {
   const schema = z.object({
     code: z.string(),
     message: z.string(),
-    details: z.record(z.unknown()).optional(),
+    details: z.record(z.string(), z.unknown()).optional(),
   });
 
   try {
@@ -112,7 +112,7 @@ export function validateApiResponse<T>(
     error: z.object({
       code: z.string(),
       message: z.string(),
-      details: z.record(z.unknown()).optional(),
+      details: z.record(z.string(), z.unknown()).optional(),
     }).optional(),
     timestamp: z.string(),
   });
@@ -329,7 +329,7 @@ export function createApiResponseSchema<T extends z.ZodTypeAny>(dataSchema?: T) 
     error: z.object({
       code: z.string(),
       message: z.string(),
-      details: z.record(z.unknown()).optional(),
+      details: z.record(z.string(), z.unknown()).optional(),
     }).optional(),
     timestamp: z.string(),
   });

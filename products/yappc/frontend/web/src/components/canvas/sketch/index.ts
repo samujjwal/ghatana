@@ -10,15 +10,15 @@
  * @example
  * ```tsx
  * // Import from shared library (preferred)
- * import { SketchToolbar, StickyNote } from '@yappc/canvas/sketch';
+ * import { SketchToolbar, StickyNote } from './index';
  *
  * // Import app-specific integration
  * import { EnhancedSketchLayer } from './components/canvas/sketch';
  * ```
  */
 
-// Re-export everything from shared library
-export * from '@yappc/canvas/sketch';
+export * from './types';
+export * from './smoothStroke';
 
 // App-specific components and hooks
 export { EnhancedSketchLayer } from './EnhancedSketchLayer';

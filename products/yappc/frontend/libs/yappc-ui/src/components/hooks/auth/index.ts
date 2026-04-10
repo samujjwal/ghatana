@@ -24,9 +24,11 @@ import {
   authTokenAtom,
   authLoadingAtom,
   authErrorAtom,
-  authStateAtom,
-} from '@yappc/canvas';
+} from '@yappc/state';
 import type { User } from '@yappc/core/types';
+
+export { createDemoUser, useAuth } from './useAuth';
+export type { LoginCredentials, RegisterData } from './useAuth';
 
 type AuthRouteUser = User & {
   permissions?: string[];

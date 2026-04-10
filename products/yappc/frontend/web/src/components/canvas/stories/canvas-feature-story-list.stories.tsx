@@ -1,4 +1,4 @@
-import { FeatureStories } from '@yappc/canvas';
+import * as FeatureStories from './data';
 
 import { CanvasFeatureStoryList } from './CanvasFeatureStoryList';
 

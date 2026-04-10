@@ -198,8 +198,7 @@ export function useToolbarKeyboardShortcuts(
         return;
       }
 
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const cmdKey = isMac ? event.metaKey : event.ctrlKey;
+      const cmdKey = event.metaKey || event.ctrlKey;
 
       // Mode shortcuts (1-7 keys, no modifiers)
       if (enableModeShortcuts && !event.altKey && !cmdKey && !event.shiftKey) {
@@ -253,7 +252,7 @@ export function useToolbarKeyboardShortcuts(
           return;
         }
         // Also support Cmd+Y for redo on Windows
-        if (event.key === 'y' && !isMac) {
+        if (event.key === 'y' && !event.metaKey) {
           event.preventDefault();
           onRedo?.();
           return;

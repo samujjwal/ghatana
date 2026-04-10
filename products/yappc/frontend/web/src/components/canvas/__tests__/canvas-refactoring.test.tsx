@@ -9,19 +9,20 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import '@testing-library/jest-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Import components to test
-import { useCollaboration } from '../src/components/canvas/collaboration/CollaborationEngine';
-import { GenericCanvas } from '../src/components/canvas/core/GenericCanvas';
-import { useGenericCanvas } from '../src/components/canvas/core/useGenericCanvas';
-import { useAdvancedHistory } from '../src/components/canvas/history/AdvancedHistory';
+import { useCollaboration } from '../collaboration/CollaborationEngine';
+import { GenericCanvas } from '../core/GenericCanvas';
+import { useGenericCanvas } from '../core/useGenericCanvas';
+import { useAdvancedHistory } from '../history/AdvancedHistory';
 import {
     usePerformanceMonitor,
     useVirtualScrolling,
     useViewportCulling
-} from '../src/components/canvas/performance/PerformanceOptimization';
-import { RegistryMigration, REGISTRY_NAMESPACES } from '../src/services/registry/RegistryMigration';
-import { UnifiedRegistry } from '../src/services/registry/UnifiedRegistry';
+} from '../performance/PerformanceOptimization';
+import { RegistryMigration, REGISTRY_NAMESPACES } from '@/services/registry/RegistryMigration';
+import { UnifiedRegistry } from '@/services/registry/UnifiedRegistry';
 
 // Mock data
 const mockBaseItem = {
@@ -154,7 +155,7 @@ describe.skip('Phase 1: Generic Canvas Foundation', () => {
             const TestComponent = () => {
                 const canvasResult = useGenericCanvas({
                     items: [mockBaseItem],
-                    onItemsChange: jest.fn(),
+                    onItemsChange: vi.fn(),
                     capabilities: { selection: true },
                     viewModes: mockViewModes
                 });
@@ -599,20 +600,20 @@ describe.skip('Integration Tests', () => {
 });
 
 // Mock implementations for testing
-jest.mock('../src/components/canvas/core/useGenericCanvas', () => ({
-    useGenericCanvas: jest.fn(() => ({
+vi.mock('../src/components/canvas/core/useGenericCanvas', () => ({
+    useGenericCanvas: vi.fn(() => ({
         canvasState: { items: [], selectedItems: [], viewMode: 'canvas' },
         selectedItems: [],
         currentViewMode: 'canvas',
         filteredItems: [],
         canvasAPI: {},
         actions: {
-            createItem: jest.fn(),
-            updateItem: jest.fn(),
-            deleteItem: jest.fn(),
-            selectItem: jest.fn(),
-            clearSelection: jest.fn(),
-            setViewMode: jest.fn()
+            createItem: vi.fn(),
+            updateItem: vi.fn(),
+            deleteItem: vi.fn(),
+            selectItem: vi.fn(),
+            clearSelection: vi.fn(),
+            setViewMode: vi.fn()
         }
     }))
 }));

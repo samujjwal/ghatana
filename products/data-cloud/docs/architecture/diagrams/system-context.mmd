@@ -1,0 +1,18 @@
+flowchart LR
+  User["Data users / operators"] --> UI["`ui` React SPA"]
+  Service["Service clients"] --> HTTP["HTTP API (`launcher/http`)"]
+  Service --> GRPC["gRPC event services"]
+  AEP["AEP runtime (external owner)"] --> Registry["`agent-registry` provider"]
+  UI --> HTTP
+  HTTP --> Core["Data Cloud runtime (`launcher` + `platform-launcher`)"]
+  GRPC --> Core
+  Registry --> Core
+  Core --> PG["PostgreSQL / warm tier"]
+  Core --> Kafka["Kafka / event streaming"]
+  Core --> Search["OpenSearch"]
+  Core --> CH["ClickHouse"]
+  Core --> Blob["S3 / Ceph"]
+  Core --> Redis["Redis cache"]
+  Kafka --> Ingest["`feature-store-ingest` worker"]
+  Ingest --> FS["Feature Store service"]
+
