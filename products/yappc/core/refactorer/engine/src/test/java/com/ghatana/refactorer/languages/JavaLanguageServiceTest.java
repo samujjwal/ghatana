@@ -34,6 +34,9 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
 
     @Mock
     private UnifiedDiagnostic mockDiagnostic;
+    
+    // Constants for duplicate literals
+    private static final String TEST_JAVA = "Test.java";
 
     @BeforeEach
     void setUpService() {
@@ -48,8 +51,8 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
 
     @Test
     void testSupportsJavaFile() {
-        assertTrue(javaService.supports(Path.of("Test.java")));
-        assertTrue(javaService.supports(Path.of("src/main/java/com/example/Test.java")));
+        assertTrue(javaService.supports(Path.of(TEST_JAVA)));
+        assertTrue(javaService.supports(Path.of("src/main/java/com/example/" + TEST_JAVA)));
     }
 
     @Test
@@ -70,7 +73,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
     @Test
     void testDiagnoseValidJavaFile(@TempDir Path tempDir) throws Exception {
         // Create a simple valid Java file
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(
                 javaFile,
                 """
@@ -96,7 +99,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
                         "test-tool", // tool
                         "test-rule", // rule
                         "Test message", // message
-                        "Test.java", // file
+                        TEST_JAVA, // file
                         1, // startLine
                         1, // startColumn
                         Severity.ERROR, // severity
@@ -112,7 +115,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
     @Test
     void isEnabledWhenJavaIsInConfigShouldReturnTrue() {
         // The base class sets up the config with "java" in the languages list
-        assertTrue(javaService.supports(Path.of("Test.java")));
+        assertTrue(javaService.supports(Path.of(TEST_JAVA)));
     }
 
     @Test
@@ -123,7 +126,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
                         "test-tool", // tool
                         "test-rule", // rule
                         "Test message", // message
-                        "Test.java", // file
+                        TEST_JAVA, // file
                         1, // startLine
                         1, // startColumn
                         Severity.ERROR, // severity

@@ -42,6 +42,9 @@ class PythonRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private Logger logger;
+    
+    // Constants for duplicate literals
+    private static final String NEW_NAME = "new_name";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -132,7 +135,7 @@ class PythonRenameRefactoringTest {
                         testFile,
                         PythonElementType.FUNCTION.name(),
                         "non_existent_function",
-                        "new_name",
+                        NEW_NAME,
                         1);
 
         // When
@@ -161,7 +164,7 @@ class PythonRenameRefactoringTest {
         // Valid Python file
         var validContext =
                 createContext(
-                        testFile, PythonElementType.FUNCTION.name(), "some_name", "new_name", 1);
+                        testFile, PythonElementType.FUNCTION.name(), "some_name", NEW_NAME, 1);
 
         assertThat(refactoring.canApply(validContext)).isTrue();
 
@@ -171,7 +174,7 @@ class PythonRenameRefactoringTest {
                         Path.of("non_existent.py"),
                         PythonElementType.FUNCTION.name(),
                         "some_name",
-                        "new_name",
+                        NEW_NAME,
                         1);
 
         assertThat(refactoring.canApply(invalidFileContext)).isFalse();
@@ -186,7 +189,7 @@ class PythonRenameRefactoringTest {
                             nonPythonFile,
                             PythonElementType.FUNCTION.name(),
                             "some_name",
-                            "new_name",
+                            NEW_NAME,
                             1);
 
             assertThat(refactoring.canApply(nonPythonContext)).isFalse();

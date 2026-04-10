@@ -39,7 +39,10 @@ val libs = project.extensions.findByType(VersionCatalogsExtension::class.java)?.
 
 // ── Checkstyle ────────────────────────────────────────────────────────────────
 configure<CheckstyleExtension> {
-    toolVersion = "10.21.4"  // Matches libs.versions.checkstyle in catalog
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
+    toolVersion = "10.21.4"
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
     configProperties = mapOf(
         "suppressionFile" to rootProject.file("config/checkstyle/suppressions.xml").absolutePath,
@@ -59,16 +62,22 @@ tasks.withType<org.gradle.api.plugins.quality.Checkstyle>().configureEach {
 
 // ── PMD ───────────────────────────────────────────────────────────────────────
 configure<PmdExtension> {
-    toolVersion = "7.11.0"  // Matches libs.versions.pmd in catalog
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
+    toolVersion = "7.11.0"
     ruleSetFiles = files(rootProject.file("config/pmd/minimal-ruleset.xml"))
     ruleSets = emptyList()
-    isIgnoreFailures = true
+    isIgnoreFailures = false
     isConsoleOutput = true
 }
 
 // ── JaCoCo ────────────────────────────────────────────────────────────────────
 configure<JacocoPluginExtension> {
-    toolVersion = "0.8.14"  // Matches libs.versions.jacoco in catalog
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
+    toolVersion = "0.8.14"
 }
 
 tasks.named<org.gradle.testing.jacoco.tasks.JacocoReport>("jacocoTestReport") {

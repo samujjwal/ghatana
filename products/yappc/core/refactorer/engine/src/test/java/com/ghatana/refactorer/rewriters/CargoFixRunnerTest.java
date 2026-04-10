@@ -25,6 +25,18 @@ class CargoFixRunnerTest {
 
     private CargoFixRunner cargoFix;
     private Path tempDir;
+    
+    // Constants for duplicate literals
+    private static final String STDOUT_PREFIX = "Stdout: ";
+    private static final String STDERR_PREFIX = "Stderr: ";
+    private static final String GIT = "git";
+    private static final String PRINTLN_HELLO = "    println!(\"Hello, world!\");\n";
+    private static final String BRACE_CLOSE_NEWLINE = "}\n";
+    private static final String EXIT_CODE_PREFIX = "Exit code: ";
+    private static final String TEST_PROJECT = "test_project";
+    private static final String SRC = "src";
+    private static final String MAIN_RS = "main.rs";
+    private static final String FN_MAIN = "fn main() {\n";
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) {
@@ -36,14 +48,14 @@ class CargoFixRunnerTest {
     @EnabledIf("isCargoInstalled")
     void testRunWithCleanCode() throws IOException {
         // Create a simple Rust project
-        createCargoProject(tempDir, "test_project");
+        createCargoProject(tempDir, TEST_PROJECT);
 
         // Create a simple Rust file with clean code
-        Path srcDir = tempDir.resolve("src");
+        Path srcDir = tempDir.resolve(SRC);
         Files.createDirectories(srcDir);
 
-        Path mainRs = srcDir.resolve("main.rs");
-        Files.writeString(mainRs, "fn main() {\n" + "    println!(\"Hello, world!\");\n" + "}\n");
+        Path mainRs = srcDir.resolve(MAIN_RS);
+        Files.writeString(mainRs, FN_MAIN + PRINTLN_HELLO + BRACE_CLOSE_NEWLINE);
 
         // Run cargo fix
         ProcessExec.Result result = cargoFix.run(tempDir, 30000, true);
@@ -56,28 +68,28 @@ class CargoFixRunnerTest {
     @EnabledIf("isCargoInstalled")
     void testRunWithWarnings() throws IOException {
         // Create a simple Rust project
-        createCargoProject(tempDir, "test_project");
+        createCargoProject(tempDir, TEST_PROJECT);
 
         // Create a Rust file with a warning (unused variable)
-        Path srcDir = tempDir.resolve("src");
+        Path srcDir = tempDir.resolve(SRC);
         Files.createDirectories(srcDir);
 
-        Path mainRs = srcDir.resolve("main.rs");
+        Path mainRs = srcDir.resolve(MAIN_RS);
         Files.writeString(
                 mainRs,
-                "fn main() {\n"
+                FN_MAIN
                         + "    let x = 42; // This variable is unused\n"
                         + "    println!(\"Hello, world!\");\n"
-                        + "}\n");
+                        + BRACE_CLOSE_NEWLINE);
 
         // Run cargo fix
         ProcessExec.Result result = cargoFix.run(tempDir, 30000, true);
 
         // Debug output
         System.out.println("=== cargo fix output ===");
-        System.out.println("Exit code: " + result.exitCode());
-        System.out.println("Stdout: " + result.out());
-        System.out.println("Stderr: " + result.err());
+        System.out.println(EXIT_CODE_PREFIX + result.exitCode());
+        System.out.println(STDOUT_PREFIX + result.out());
+        System.out.println(STDERR_PREFIX + result.err());
 
         // Verify the command was successful (cargo fix should fix the warning)
         assertEquals(0, result.exitCode(), "Expected cargo fix to succeed: " + result.err());
@@ -118,29 +130,29 @@ class CargoFixRunnerTest {
     @EnabledIf("isCargoInstalled")
     void testRunWithErrors() throws IOException {
         // Create a simple Rust project
-        createCargoProject(tempDir, "test_project");
+        createCargoProject(tempDir, TEST_PROJECT);
 
         // Create a Rust file with a syntax error
-        Path srcDir = tempDir.resolve("src");
+        Path srcDir = tempDir.resolve(SRC);
         Files.createDirectories(srcDir);
 
-        Path mainRs = srcDir.resolve("main.rs");
+        Path mainRs = srcDir.resolve(MAIN_RS);
         Files.writeString(
                 mainRs,
-                "fn main() {\n"
+                FN_MAIN
                         + "    let x = 42\n"
                         + // Missing semicolon
                         "    println!(\"x = {}\", x);\n"
-                        + "}\n");
+                        + BRACE_CLOSE_NEWLINE);
 
         // Run cargo fix
         ProcessExec.Result result = cargoFix.run(tempDir, 30000, true);
 
         // Debug output
         System.out.println("=== cargo fix output (errors) ===");
-        System.out.println("Exit code: " + result.exitCode());
-        System.out.println("Stdout: " + result.out());
-        System.out.println("Stderr: " + result.err());
+        System.out.println(EXIT_CODE_PREFIX + result.exitCode());
+        System.out.println(STDOUT_PREFIX + result.out());
+        System.out.println(STDERR_PREFIX + result.err());
 
         // Verify the command failed (cargo fix can't fix syntax errors)
         assertNotEquals(0, result.exitCode(), "Expected cargo fix to fail on syntax errors");
@@ -173,7 +185,7 @@ class CargoFixRunnerTest {
     @EnabledIf("areDependenciesInstalled")
     void testRunWithDirtyWorkspace() throws IOException, InterruptedException {
         // Create a Git repository
-        ProcessBuilder gitInit = new ProcessBuilder("git", "init");
+        ProcessBuilder gitInit = new ProcessBuilder(GIT, "init");
         gitInit.directory(tempDir.toFile());
         Process initProcess = gitInit.start();
         int exitCode = initProcess.waitFor();
@@ -185,7 +197,7 @@ class CargoFixRunnerTest {
 
         // Configure Git user for the test
         ProcessBuilder gitConfig =
-                new ProcessBuilder("git", "config", "user.email", "test@example.com");
+                new ProcessBuilder(GIT, "config", "user.email", "test@example.com");
         gitConfig.directory(tempDir.toFile());
         Process configProcess = gitConfig.start();
         exitCode = configProcess.waitFor();
@@ -195,7 +207,7 @@ class CargoFixRunnerTest {
                             + new String(configProcess.getErrorStream().readAllBytes()));
         }
 
-        gitConfig = new ProcessBuilder("git", "config", "user.name", "Test User");
+        gitConfig = new ProcessBuilder(GIT, "config", "user.name", "Test User");
         gitConfig.directory(tempDir.toFile());
         configProcess = gitConfig.start();
         exitCode = configProcess.waitFor();
@@ -206,22 +218,22 @@ class CargoFixRunnerTest {
         }
 
         // Create a simple Rust project
-        createCargoProject(tempDir, "test_project");
+        createCargoProject(tempDir, TEST_PROJECT);
 
         // Create a simple Rust file with an unused variable to ensure there's something to fix
-        Path srcDir = tempDir.resolve("src");
+        Path srcDir = tempDir.resolve(SRC);
         Files.createDirectories(srcDir);
 
-        Path mainRs = srcDir.resolve("main.rs");
+        Path mainRs = srcDir.resolve(MAIN_RS);
         String originalContent =
-                "fn main() {\n"
+                FN_MAIN
                         + "    let x = 42; // This variable is unused\n"
                         + "    println!(\"Hello, world!\");\n"
-                        + "}\n";
+                        + BRACE_CLOSE_NEWLINE;
         Files.writeString(mainRs, originalContent);
 
         // Add and commit the initial files
-        ProcessBuilder gitAdd = new ProcessBuilder("git", "add", ".");
+        ProcessBuilder gitAdd = new ProcessBuilder(GIT, "add", ".");
         gitAdd.directory(tempDir.toFile());
         Process addProcess = gitAdd.start();
         exitCode = addProcess.waitFor();
@@ -231,7 +243,7 @@ class CargoFixRunnerTest {
                             + new String(addProcess.getErrorStream().readAllBytes()));
         }
 
-        ProcessBuilder gitCommit = new ProcessBuilder("git", "commit", "-m", "Initial commit");
+        ProcessBuilder gitCommit = new ProcessBuilder(GIT, "commit", "-m", "Initial commit");
         gitCommit.directory(tempDir.toFile());
         gitCommit.environment().put("GIT_AUTHOR_DATE", "2023-01-01T00:00:00+0000");
         gitCommit.environment().put("GIT_COMMITTER_DATE", "2023-01-01T00:00:00+0000");
@@ -268,7 +280,7 @@ class CargoFixRunnerTest {
 
         // Check if the file is tracked by Git
         ProcessBuilder gitLsFiles =
-                new ProcessBuilder("git", "ls-files", "--error-unmatch", "src/main.rs");
+                new ProcessBuilder(GIT, "ls-files", "--error-unmatch", "src/main.rs");
         gitLsFiles.directory(tempDir.toFile());
         Process lsFilesProcess = gitLsFiles.start();
         int lsFilesExitCode = lsFilesProcess.waitFor();
@@ -276,7 +288,7 @@ class CargoFixRunnerTest {
                 "=== Is src/main.rs tracked? " + (lsFilesExitCode == 0 ? "Yes" : "No") + " ===");
 
         // Get detailed git status
-        ProcessBuilder gitStatus = new ProcessBuilder("git", "status", "--porcelain", "-v");
+        ProcessBuilder gitStatus = new ProcessBuilder(GIT, "status", "--porcelain", "-v");
         gitStatus.directory(tempDir.toFile());
         Process statusProcess = gitStatus.start();
         String gitStatusOutput = new String(statusProcess.getInputStream().readAllBytes());
@@ -298,9 +310,9 @@ class CargoFixRunnerTest {
 
         // Debug output
         System.out.println("=== cargo fix output (dirty workspace) ===");
-        System.out.println("Exit code: " + result.exitCode());
-        System.out.println("Stdout: " + result.out());
-        System.out.println("Stderr: " + result.err());
+        System.out.println(EXIT_CODE_PREFIX + result.exitCode());
+        System.out.println(STDOUT_PREFIX + result.out());
+        System.out.println(STDERR_PREFIX + result.err());
 
         // Check the current content after the first run
         String currentContent = Files.readString(mainRs);
@@ -321,9 +333,9 @@ class CargoFixRunnerTest {
             result = cargoFix.run(tempDir, 10000, true);
 
             System.out.println("=== cargo fix output (with allowDirty=true) ===");
-            System.out.println("Exit code: " + result.exitCode());
-            System.out.println("Stdout: " + result.out());
-            System.out.println("Stderr: " + result.err());
+            System.out.println(EXIT_CODE_PREFIX + result.exitCode());
+            System.out.println(STDOUT_PREFIX + result.out());
+            System.out.println(STDERR_PREFIX + result.err());
 
             // Check the content again
             currentContent = Files.readString(mainRs);
@@ -374,13 +386,13 @@ class CargoFixRunnerTest {
         Files.writeString(dir.resolve("Cargo.toml"), cargoToml);
 
         // Create src directory
-        Path srcDir = dir.resolve("src");
+        Path srcDir = dir.resolve(SRC);
         Files.createDirectories(srcDir);
 
         // Create a simple main.rs
         Files.writeString(
-                srcDir.resolve("main.rs"),
-                "fn main() {\n" + "    println!(\"Hello, world!\");\n" + "}\n");
+                srcDir.resolve(MAIN_RS),
+                FN_MAIN + PRINTLN_HELLO + BRACE_CLOSE_NEWLINE);
     }
 
     // Helper method to check if Cargo is installed
@@ -396,14 +408,14 @@ class CargoFixRunnerTest {
     // Helper method to run a git command and return its output
     private static String runGitCommand(Path repoDir, String command)
             throws IOException, InterruptedException {
-        String[] cmd = ("git " + command).split(" ");
+        String[] cmd = (GIT + " " + command).split(" ");
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(repoDir.toFile());
         pb.redirectErrorStream(true);
         Process p = pb.start();
         String output = new String(p.getInputStream().readAllBytes());
         p.waitFor();
-        System.out.println("$ git " + command);
+        System.out.println("$ " + GIT + " " + command);
         System.out.println(output);
         return output;
     }
@@ -416,7 +428,7 @@ class CargoFixRunnerTest {
             boolean cargoInstalled = cargoProcess.waitFor() == 0;
 
             // Check if git is installed
-            Process gitProcess = new ProcessBuilder("git", "--version").start();
+            Process gitProcess = new ProcessBuilder(GIT, "--version").start();
             boolean gitInstalled = gitProcess.waitFor() == 0;
 
             return cargoInstalled && gitInstalled;

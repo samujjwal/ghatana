@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
@@ -71,8 +72,7 @@ class PyLibCSTBridgeTest {
 
     @AfterAll
     static void tearDownAll() {
-        bridge = null;
-        virtualEnvPath = null;
+        // Clean up handled by garbage collection
     }
 
     @Test
@@ -162,7 +162,7 @@ class PyLibCSTBridgeTest {
 
     // Helper method to create a transform script for testing
     private Path createTransformScript(String transformType) throws IOException {
-        Path script = testTempDir.resolve("transform_" + transformType.toLowerCase() + ".py");
+        Path script = testTempDir.resolve("transform_" + transformType.toLowerCase(Locale.ROOT) + ".py");
         String code =
                 String.join(
                         "\n",
@@ -257,11 +257,13 @@ class PyLibCSTBridgeTest {
     }
 
     // Helper method to get the Python executable path (for testing)
+    @SuppressWarnings("PMD.AvoidAccessibilityAlteration")
     private String getPythonExecutable() {
         try {
             // Use reflection to access the private field for testing
             java.lang.reflect.Field field =
                     PyLibCSTBridge.class.getDeclaredField("pythonExecutable");
+            // PMD: setAccessible required for testing private field
             field.setAccessible(true);
             return (String) field.get(bridge);
         } catch (Exception e) {

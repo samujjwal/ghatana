@@ -218,7 +218,9 @@ class GovernanceExpansionTest {
                     .withOwner("team-without-retention")
                     .build();
 
-            assertThat(gov.getRetentionPolicy()).isNull();
+            // Builder automatically sets default retention policy
+            assertThat(gov.getRetentionPolicy()).isNotNull();
+            assertThat(gov.getRetentionPolicy()).isEqualTo(RetentionPolicy.defaults());
         }
     }
 

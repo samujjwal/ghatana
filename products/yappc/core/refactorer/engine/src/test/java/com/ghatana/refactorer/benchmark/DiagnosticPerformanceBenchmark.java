@@ -55,7 +55,12 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
         // Initialize services
         this.javaService = new JavaLanguageService(reactor);
         this.pythonService = new PythonLanguageService(reactor);
+    }
 
+    /**
+     * Initialize the eventloop runner. Call this after construction.
+     */
+    public void initialize() {
         // Start the eventloop runner so runPromise() works when used as a helper class
         setUpEventloop();
     }
@@ -193,7 +198,7 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
         public final long executionTimeMs;
         public final long memoryUsedBytes;
         public final double throughputFilesPerSec;
-        public final String error;
+        public final String errorMessage;
 
         public BenchmarkResult(String name, int filesProcessed, int diagnosticsFound,
                              long executionTimeMs, long memoryUsedBytes, double throughputFilesPerSec) {
@@ -203,13 +208,13 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
             this.executionTimeMs = executionTimeMs;
             this.memoryUsedBytes = memoryUsedBytes;
             this.throughputFilesPerSec = throughputFilesPerSec;
-            this.error = null;
+            this.errorMessage = null;
         }
 
         private BenchmarkResult(String name, int filesProcessed, String error) {
             this.name = name;
             this.filesProcessed = filesProcessed;
-            this.error = error;
+            this.errorMessage = error;
             this.diagnosticsFound = 0;
             this.executionTimeMs = 0;
             this.memoryUsedBytes = 0;
@@ -221,13 +226,13 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
         }
 
         public boolean isSuccess() {
-            return error == null;
+            return errorMessage == null;
         }
 
         @Override
         public String toString() {
             if (!isSuccess()) {
-                return String.format("%s: ERROR - %s", name, error);
+                return String.format("%s: ERROR - %s", name, errorMessage);
             }
             return String.format(
                 "%s: %d files in %d ms (%.2f files/sec), %d diagnostics, %.2f MB memory",

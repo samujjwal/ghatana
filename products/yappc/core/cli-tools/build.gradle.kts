@@ -34,7 +34,7 @@ dependencies {
     runtimeOnly(libs.logback.classic)
     
     // Testing
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

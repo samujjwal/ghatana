@@ -5,15 +5,10 @@ plugins {
 group = "com.ghatana.virtualorg"
 version = rootProject.version
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // ActiveJ for async support
-    implementation(libs.activej.promise)
+    implementation(libs.bundles.activej.core)
 
     // Platform libraries
     implementation(project(":platform:java:database"))
@@ -24,14 +19,10 @@ dependencies {
     implementation(project(":platform:java:domain"))
 
     // Logging
-    implementation(libs.slf4j.api)
+    implementation(libs.bundles.logging.core)
 
     // Testing
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.engine)
-    testRuntimeOnly(libs.junit.platform.launcher)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
 }
 

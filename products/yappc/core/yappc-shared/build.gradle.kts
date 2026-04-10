@@ -26,11 +26,9 @@ dependencies {
 
     // Utilities
     implementation(libs.commons.lang3)
-    implementation(libs.commons.collections4)
-
+    
     // Configuration
-    implementation(libs.typesafe.config)
-
+    
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

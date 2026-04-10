@@ -36,6 +36,9 @@ class JavaRenameRefactoringTest {
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
     private String originalContent;
+    
+    // Constants for duplicate literals
+    private static final String SHOULD_HAVE_AT_LEAST_ONE_CHANGE = "Should have at least one change";
 
     @BeforeEach
     void setUp() throws Exception {
@@ -71,7 +74,7 @@ class JavaRenameRefactoringTest {
         RefactoringResult result = refactoring.apply(context);
 
         assertTrue(result.isSuccess(), "Class renaming should succeed");
-        assertTrue(result.getChangeCount() > 0, "Should have at least one change");
+        assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE);
 
         String content = readFile();
         assertTrue(content.contains("class RenamedClass"), "Class should be renamed");
@@ -87,7 +90,7 @@ class JavaRenameRefactoringTest {
         RefactoringResult result = refactoring.apply(context);
 
         assertTrue(result.isSuccess(), "Method renaming should succeed");
-        assertTrue(result.getChangeCount() > 0, "Should have at least one change");
+        assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE);
 
         String content = readFile();
         assertTrue(content.contains("void newMethod()"), "Method should be renamed");
@@ -103,7 +106,7 @@ class JavaRenameRefactoringTest {
         RefactoringResult result = refactoring.apply(context);
 
         assertTrue(result.isSuccess(), "Field renaming should succeed");
-        assertTrue(result.getChangeCount() > 0, "Should have at least one change");
+        assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE);
 
         String content = readFile();
         assertTrue(content.contains("String newField;"), "Field should be renamed");
@@ -118,7 +121,7 @@ class JavaRenameRefactoringTest {
         RefactoringResult result = refactoring.apply(context);
 
         assertTrue(result.isSuccess(), "Variable renaming should succeed");
-        assertTrue(result.getChangeCount() > 0, "Should have at least one change");
+        assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE);
 
         String content = readFile();
 

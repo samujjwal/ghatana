@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Locale;
 
 /**
  * Abstract base for index migrations that use {@code CREATE INDEX CONCURRENTLY} on PostgreSQL.
@@ -150,6 +151,6 @@ public abstract class ConcurrentIndexMigration implements ZeroDowntimeMigrationS
     private static boolean isPostgres(Connection conn) throws SQLException {
         DatabaseMetaData meta = conn.getMetaData();
         String product = meta.getDatabaseProductName();
-        return product != null && product.toLowerCase().contains("postgresql");
+        return product != null && product.toLowerCase(Locale.ROOT).contains("postgresql");
     }
 }

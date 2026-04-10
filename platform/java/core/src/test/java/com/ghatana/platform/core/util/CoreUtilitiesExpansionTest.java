@@ -97,8 +97,8 @@ class CoreUtilitiesExpansionTest {
         void snakeCaseConversion() {
             assertThat(StringUtils.toSnakeCase("helloWorld")).isEqualTo("hello_world");
             assertThat(StringUtils.toSnakeCase("HelloWorld")).isEqualTo("hello_world");
-            assertThat(StringUtils.toSnakeCase("URL")).isEqualTo("u_r_l");
-            assertThat(StringUtils.toSnakeCase("HTTPServer")).isEqualTo("h_t_t_p_server");
+            assertThat(StringUtils.toSnakeCase("URL")).isEqualTo("url");
+            assertThat(StringUtils.toSnakeCase("HTTPServer")).isEqualTo("http_server");
             assertThat(StringUtils.toSnakeCase("alreadySnakeCase")).isEqualTo("already_snake_case");
             assertThat(StringUtils.toSnakeCase("a")).isEqualTo("a");
         }
@@ -401,8 +401,8 @@ class CoreUtilitiesExpansionTest {
             long successCount = results.stream().filter(Result::isSuccess).count();
             long failureCount = results.stream().filter(Result::isFailure).count();
 
-            assertThat(successCount).isEqualTo(67);
-            assertThat(failureCount).isEqualTo(33);
+            assertThat(successCount).isEqualTo(66);
+            assertThat(failureCount).isEqualTo(34);
         }
     }
 

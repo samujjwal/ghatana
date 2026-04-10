@@ -3,14 +3,11 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 plugins {
     id("com.ghatana.java-conventions")
     id("application")
-    alias(libs.plugins.protobuf)
+    id("com.ghatana.protobuf-conventions")
 }
 
 val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     implementation(project(":platform:contracts"))
@@ -28,7 +25,7 @@ dependencies {
     implementation(project(":products:audio-video:modules:vision:vision-service"))
 
     // gRPC
-    implementation(libs.grpc.netty)
+    implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     
@@ -39,7 +36,7 @@ dependencies {
     implementation(libs.protobuf.java)
     
     // javax.annotation for gRPC generated code
-    implementation(libs.javax.annotation.api)
+    implementation(libs.javax.inject)
     
     // Logging
     implementation(libs.log4j.core)
@@ -48,8 +45,7 @@ dependencies {
     implementation(libs.log4j.slf4j.impl)
     
     // JSON processing
-    implementation(libs.gson)
-    
+        
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
@@ -68,23 +64,6 @@ java {
     }
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:${libsCatalog.findVersion("protobuf").get().requiredVersion}"
-    }
-    plugins {
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:${libsCatalog.findVersion("grpc").get().requiredVersion}"
-        }
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                create("grpc")
-            }
-        }
-    }
-}
 
 tasks.test {
     useJUnitPlatform()

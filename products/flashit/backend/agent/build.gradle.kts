@@ -11,10 +11,6 @@ java {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     // =========================================================================
     // ActiveJ Framework (core platform — no project deps needed)

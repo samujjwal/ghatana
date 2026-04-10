@@ -41,7 +41,7 @@ dependencies {
     // gRPC (for canvas service)
     implementation(project(":platform:contracts"))
     implementation(libs.grpc.stub)
-    implementation(libs.grpc.netty)
+    implementation(libs.grpc.netty.shaded)
     implementation("com.google.api.grpc:proto-google-common-protos:2.29.0")
 
     // Jackson
@@ -58,11 +58,9 @@ dependencies {
     // GraphQL (from ai-requirements:api)
     api(libs.graphql.java)
     api(libs.graphql.extended.scalars)
-    api(libs.graphql.java.tools)
-
+    
     // Validation (from ai-requirements:api)
-    implementation(libs.hibernate.validator)
-
+    
     // Persistence (from ai-requirements:application)
     implementation(libs.hibernate.core)
     implementation(libs.postgresql)
@@ -79,14 +77,12 @@ dependencies {
     // Testing
     testImplementation(project(":platform:java:runtime"))
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.activej.test)
-    testImplementation(libs.junit.jupiter)
+        testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-    testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(libs.testcontainers.core)
+        testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly(libs.junit.jupiter.engine)

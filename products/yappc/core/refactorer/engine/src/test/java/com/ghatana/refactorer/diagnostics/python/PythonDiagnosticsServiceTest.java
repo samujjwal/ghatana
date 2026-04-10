@@ -6,7 +6,7 @@ import com.ghatana.refactorer.codemods.python.PythonCodemods;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.process.ProcessResult;
-import com.ghatana.refactorer.testutils.TestConfig;
+import com.ghatana.refactorer.testutils.ConfigTestUtils;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +31,11 @@ import org.junit.jupiter.api.io.TempDir;
  */
 
 class PythonDiagnosticsServiceTest extends EventloopTestBase {
+    private static final String FILE1_PY = "file1.py";
+    private static final String FILE2_PY = "file2.py";
+    private static final String TEST_PY = "test.py";
+    private static final String FORMAT_ME_PY = "format_me.py";
+
     @TempDir
     Path tempDir;
     private PolyfixProjectContext context;
@@ -42,28 +47,28 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        context = TestConfig.createTestContext(tempDir);
+        context = ConfigTestUtils.createTestContext(tempDir);
         processRunner = new FakeProcessRunner(context);
         service = new PythonDiagnosticsService(
                 context,
                 new RuffRunner(context, processRunner),
                 new BlackRunner(context, processRunner),
-                new TestCodemods(context),
+                new CodemodsTestImpl(context),
                 processRunner);
     }
 
     @Test
     void testFindsAndFixesPythonIssues() throws Exception {
-        Path pythonFile = tempDir.resolve("test.py");
+        Path pythonFile = tempDir.resolve(TEST_PY);
         Files.writeString(pythonFile, sampleCode(), StandardCharsets.UTF_8);
 
         processRunner.when(
                 "ruff",
-                ruffArgs(false, "test.py"),
-                FakeProcessRunner.response(new ProcessResult(1, sampleDiagnostics("test.py"), "")),
+                ruffArgs(false, TEST_PY),
+                FakeProcessRunner.response(new ProcessResult(1, sampleDiagnostics(TEST_PY), "")),
                 FakeProcessRunner.response(new ProcessResult(0, "[]", "")));
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.withIncludePatterns(List.of("test.py"))
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.withIncludePatterns(List.of(TEST_PY))
                 .withFix(false)
                 .runDiagnostics());
 
@@ -80,16 +85,16 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
     @Test
     void testFormatsPythonCode() throws Exception {
-        Path pythonFile = tempDir.resolve("format_me.py");
+        Path pythonFile = tempDir.resolve(FORMAT_ME_PY);
         Files.writeString(pythonFile, "def foo() :\n    x=1\n", StandardCharsets.UTF_8);
 
         processRunner.when(
                 "black",
-                blackArgs(false, 88, "format_me.py"),
+                blackArgs(false, 88, FORMAT_ME_PY),
                 FakeProcessRunner.response(
-                        new ProcessResult(0, "", ""), formatPython("format_me.py")));
+                        new ProcessResult(0, "", ""), formatPython(FORMAT_ME_PY)));
 
-        assertTrue(runPromise(() -> service.withIncludePatterns(List.of("format_me.py")).formatFiles()));
+        assertTrue(runPromise(() -> service.withIncludePatterns(List.of(FORMAT_ME_PY)).formatFiles()));
         String formatted = Files.readString(pythonFile);
         assertTrue(formatted.contains("x = 1"));
     }
@@ -109,17 +114,17 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
     @Test
     void testHandlesMultipleFiles() throws Exception {
-        Path file1 = tempDir.resolve("file1.py");
-        Path file2 = tempDir.resolve("file2.py");
+        Path file1 = tempDir.resolve(FILE1_PY);
+        Path file2 = tempDir.resolve(FILE2_PY);
         Files.writeString(file1, "import os\nprint(1+2)\n", StandardCharsets.UTF_8);
         Files.writeString(file2, "x=1\n", StandardCharsets.UTF_8);
 
         processRunner.when(
                 "ruff",
-                ruffArgs(false, "file1.py", "file2.py"),
+                ruffArgs(false, FILE1_PY, FILE2_PY),
                 FakeProcessRunner.response(new ProcessResult(1, multiDiagnostics(), "")));
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.withIncludePatterns(List.of("file1.py", "file2.py"))
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.withIncludePatterns(List.of(FILE1_PY, FILE2_PY))
                 .runDiagnostics());
         assertEquals(3, diagnostics.size());
 
@@ -184,9 +189,9 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
     private static String multiDiagnostics() {
         return diagnosticsJson(
-                new RuffFinding("file1.py", "F401", "unused import", 1, 1, 1, 1),
-                new RuffFinding("file1.py", "E226", "operator spacing", 2, 6, 2, 7),
-                new RuffFinding("file2.py", "E225", "missing whitespace", 1, 1, 1, 5));
+                new RuffFinding(FILE1_PY, "F401", "unused import", 1, 1, 1, 1),
+                new RuffFinding(FILE1_PY, "E226", "operator spacing", 2, 6, 2, 7),
+                new RuffFinding(FILE2_PY, "E225", "missing whitespace", 1, 1, 1, 5));
     }
 
     private static String diagnosticsJson(RuffFinding... findings) {
@@ -221,8 +226,8 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
             int endColumn) {
     }
 
-    private static class TestCodemods extends PythonCodemods {
-        TestCodemods(PolyfixProjectContext context) {
+    private static class CodemodsTestImpl extends PythonCodemods {
+        CodemodsTestImpl(PolyfixProjectContext context) {
             super(context);
         }
 

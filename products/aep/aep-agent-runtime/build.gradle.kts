@@ -57,7 +57,7 @@ dependencies {
 
     // ── ActiveJ ────────────────────────────────────────────────────────────────
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
     api(libs.activej.common)
 
     // ── Jackson ────────────────────────────────────────────────────────────────
@@ -76,11 +76,11 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     // ── Testing ────────────────────────────────────────────────────────────────
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.archunit)
+    testImplementation("com.tngtech.archunit:archunit:1.3.0")
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
 

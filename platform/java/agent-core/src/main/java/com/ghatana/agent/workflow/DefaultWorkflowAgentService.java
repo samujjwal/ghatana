@@ -53,6 +53,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultWorkflowAgentService implements WorkflowAgentService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultWorkflowAgentService.class);
+    
+    // Constants for duplicate literals
+    private static final String ROLE = "role";
+    private static final String STATUS = "status";
+    private static final String SUCCESS = "success";
+    private static final String RESULT = "result";
 
     private final WorkflowAgentRegistry registry;
     private final LLMGateway llmGateway;
@@ -158,19 +164,19 @@ public class DefaultWorkflowAgentService implements WorkflowAgentService {
                                 metricsCollector.recordTimer(
                                         "workflow_agent.duration",
                                         durationMs,
-                                        "role", request.role().getCode(),
-                                        "status", "success"
+                                        ROLE, request.role().getCode(),
+                                        STATUS, SUCCESS
                                 );
                                 metricsCollector.incrementCounter(
                                         "workflow_agent.executions",
-                                        "role", request.role().getCode(),
-                                        "status", "success"
+                                        ROLE, request.role().getCode(),
+                                        STATUS, SUCCESS
                                 );
 
                                 @SuppressWarnings("unchecked")
                                 Map<String, Object> output = agentResult.getOutput() instanceof Map<?,?> m
                                         ? (Map<String, Object>) m
-                                        : Map.of("result", agentResult.getOutput());
+                                        : Map.of(RESULT, agentResult.getOutput());
 
                                 double confidence = agentResult.getConfidence();
 

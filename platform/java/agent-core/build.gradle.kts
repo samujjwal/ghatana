@@ -10,9 +10,7 @@ description = "Agent Core - Unified agent contracts, SPI, and coordination frame
 
 dependencies {
     // ActiveJ for async operations
-    api(libs.activej.promise)
-    api(libs.activej.eventloop)
-    api(libs.activej.common)
+    api(libs.bundles.activej.core)
     
     // Core Platform dependencies
     api(project(":platform:java:core"))
@@ -22,18 +20,14 @@ dependencies {
     api(project(":platform:java:agent-memory"))
     
     // Jackson YAML for agent config materialization
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.dataformat.yaml)
-    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.bundles.jackson.json)
+    implementation(libs.bundles.jackson.yaml)
 
     // LangChain4j for LLM integration (optional runtime dependency)
-    implementation(libs.langchain4j.core)
-    implementation(libs.langchain4j)
+    implementation(libs.bundles.ai.integration)
     
     // Logging
-    api(libs.slf4j.api)
-    implementation(libs.log4j.core)
-    implementation(libs.log4j.slf4j.impl)
+    api(libs.bundles.logging.core)
     
     // Annotations
     compileOnly(libs.jetbrains.annotations)
@@ -43,11 +37,7 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
     
     // Testing
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.engine)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
     // JMH Benchmarks
     testImplementation(libs.jmh.core)

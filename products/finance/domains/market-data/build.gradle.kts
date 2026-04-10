@@ -41,7 +41,7 @@ dependencies {
     implementation(libs.activej.http)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
+    
     implementation(libs.hikaricp)
     implementation(libs.jackson.databind)
     implementation(libs.jedis)

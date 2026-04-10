@@ -7,6 +7,9 @@ plugins {
 description = "YAPPC Consolidated Agents Module"
 
 dependencies {
+    // JavaParser for code analysis and migration
+    implementation("com.github.javaparser:javaparser-core:3.25.1")
+
     // Platform agent modules
     implementation(project(":platform:java:agent-core"))
     implementation(project(":products:aep:aep-agent-runtime"))
@@ -37,8 +40,7 @@ dependencies {
     implementation(libs.networknt.validator)
     
     // Migration tooling
-    implementation(libs.javaparser.core)
-    
+        
     // Lombok for data classes
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

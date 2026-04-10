@@ -99,7 +99,7 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
 
         Path target = tempDir.resolve(source.getFileName());
         Files.copy(
-                getClass().getClassLoader().getResourceAsStream(resourcePath),
+                Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath),
                 target,
                 StandardCopyOption.REPLACE_EXISTING);
         return target;

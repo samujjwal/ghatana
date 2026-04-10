@@ -21,15 +21,21 @@ import org.junit.jupiter.api.Test;
 
 class PolyfixConfigLoaderOverridesTest {
 
+    // Constants for duplicate literals
+    private static final String BUDGETS_MAX_PASSES = "budgets.maxPasses";
+    private static final String POLICIES_TS_ALLOW_TEMPORARY_ANY = "policies.tsAllowTemporaryAny";
+    private static final String TOOLS_NODE = "tools.node";
+    private static final String NODE_PATH = "/usr/local/bin/node";
+
     @Test
     void applyOverrides_shouldApplyNestedProperties() {
         // Given
         PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig();
         Map<String, String> overrides =
                 Map.of(
-                        "budgets.maxPasses", "10",
-                        "policies.tsAllowTemporaryAny", "false",
-                        "tools.node", "/custom/path/to/node");
+                        BUDGETS_MAX_PASSES, "10",
+                        POLICIES_TS_ALLOW_TEMPORARY_ANY, "false",
+                        TOOLS_NODE, "/custom/path/to/node");
 
         // When
         PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides);
@@ -46,10 +52,10 @@ class PolyfixConfigLoaderOverridesTest {
         PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig();
         Map<String, String> overrides =
                 Map.of(
-                        "budgets.maxPasses", "5",
-                        "policies.tsAllowTemporaryAny", "true",
+                        BUDGETS_MAX_PASSES, "5",
+                        POLICIES_TS_ALLOW_TEMPORARY_ANY, "true",
                         "policies.pythonAddMissingImports", "false",
-                        "tools.node", "/usr/local/bin/node");
+                        TOOLS_NODE, NODE_PATH);
 
         // When
         PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides);
@@ -67,7 +73,7 @@ class PolyfixConfigLoaderOverridesTest {
         PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig();
         Map<String, String> overrides =
                 Map.of(
-                        "tools.node", "/usr/local/bin/node",
+                        TOOLS_NODE, NODE_PATH,
                         "tools.eslint", "/usr/local/bin/eslint",
                         "tools.tsc", "/usr/local/bin/tsc");
 
@@ -97,7 +103,7 @@ class PolyfixConfigLoaderOverridesTest {
         // Given
         PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig();
         Map<String, String> overrides = new java.util.HashMap<>();
-        overrides.put("budgets.maxPasses", null);
+        overrides.put(BUDGETS_MAX_PASSES, null);
         overrides.put(null, "value");
 
         // When

@@ -38,6 +38,10 @@ class MockPythonRenameRefactoringTest {
     private Path testFile;
     private PolyfixProjectContext projectContext;
     private ExecutorService executor;
+    
+    // Constants for duplicate literals
+    private static final String FUNCTION = "FUNCTION";
+    private static final String NEW_NAME = "new_name";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -108,7 +112,7 @@ class MockPythonRenameRefactoringTest {
     @Test
     void shouldRenameFunction() {
         // Given
-        var context = createContext(testFile, "FUNCTION", "function_to_rename", "renamed_function");
+        var context = createContext(testFile, FUNCTION, "function_to_rename", "renamed_function");
 
         // When
         var result = refactoring.apply(context);
@@ -125,7 +129,7 @@ class MockPythonRenameRefactoringTest {
     @Test
     void shouldNotRenameIfElementNotFound() {
         // Given
-        var context = createContext(testFile, "FUNCTION", "non_existent_function", "new_name");
+        var context = createContext(testFile, FUNCTION, "non_existent_function", NEW_NAME);
 
         // When
         var result = refactoring.apply(context);
@@ -138,13 +142,13 @@ class MockPythonRenameRefactoringTest {
     @Test
     void shouldCheckIfCanBeApplied() {
         // Valid Python file
-        var validContext = createContext(testFile, "FUNCTION", "some_name", "new_name");
+        var validContext = createContext(testFile, FUNCTION, "some_name", NEW_NAME);
 
         assertThat(refactoring.canApply(validContext)).isTrue();
 
         // Non-existent file
         var invalidFileContext =
-                createContext(Path.of("non_existent.py"), "FUNCTION", "some_name", "new_name");
+                createContext(Path.of("non_existent.py"), FUNCTION, "some_name", NEW_NAME);
 
         assertThat(refactoring.canApply(invalidFileContext)).isFalse();
 
@@ -154,7 +158,7 @@ class MockPythonRenameRefactoringTest {
             Files.writeString(nonPythonFile, "Not a Python file");
 
             var nonPythonContext =
-                    createContext(nonPythonFile, "FUNCTION", "some_name", "new_name");
+                    createContext(nonPythonFile, FUNCTION, "some_name", NEW_NAME);
 
             assertThat(refactoring.canApply(nonPythonContext)).isFalse();
         } catch (IOException e) {
@@ -175,7 +179,7 @@ class MockPythonRenameRefactoringTest {
                     .thenThrow(new IOException("Failed to read file"));
 
             // Create a context with the mock file
-            var context = createContext(mockFile, "FUNCTION", "some_function", "new_function");
+            var context = createContext(mockFile, FUNCTION, "some_function", "new_function");
 
             // When
             var result = refactoring.apply(context);
@@ -209,7 +213,7 @@ class MockPythonRenameRefactoringTest {
         Files.writeString(emptyFile, "");
 
         // Given
-        var context = createContext(emptyFile, "FUNCTION", "some_function", "new_function");
+        var context = createContext(emptyFile, FUNCTION, "some_function", "new_function");
 
         // When
         var result = refactoring.apply(context);
@@ -236,7 +240,7 @@ class MockPythonRenameRefactoringTest {
 
                     @Override
                     public String getElementType() {
-                        return "FUNCTION";
+                        return FUNCTION;
                     }
 
                     @Override

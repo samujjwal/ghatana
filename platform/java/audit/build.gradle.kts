@@ -10,11 +10,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Audit - Audit logging and tracking"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 sourceSets {
     main {
@@ -36,7 +31,7 @@ dependencies {
     implementation(libs.activej.inject)
     
     // JPA (compileOnly — callers supply the EntityManager at runtime via platform:java:database)
-    compileOnly(libs.jakarta.persistence.api)
+    compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
 
     // Logging
     implementation(libs.slf4j.api)

@@ -39,17 +39,17 @@ sourceSets {
 
 dependencies {
     // ActiveJ async primitives — exposed as API so callers can chain Promises
-    api(libs.activej.promise)
-    api(libs.activej.http)
+    api(libs.bundles.activej.http)
+    api(libs.bundles.activej.http)
 
     // Platform core — BaseException hierarchy, CircuitBreaker, resilience utilities
     implementation(project(":platform:java:core"))
 
     // ONNX Runtime for embedded model inference
-    api(libs.onnxruntime)
+    api("com.microsoft.onnxruntime:onnxruntime:1.16.0")
 
     // Native library loader (for OpenCV JNI, Whisper.cpp etc.)
-    implementation(libs.native.lib.loader)
+    implementation("org.scijava:native-lib-loader:2.5.0")
 
     // Jackson for JSON serialization within engine adapters
     implementation(libs.jackson.databind)

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
  * @doc.pattern Test
 */
 class TsMorphBridgeTest extends EventloopTestBase {
+    private static final String TEST_TS = "test.ts";
 
     @TempDir static Path tempDir;
     private TsMorphBridge bridge;
@@ -32,10 +33,11 @@ class TsMorphBridgeTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         // Enable debug logging for tests
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-        config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
-        ctx.updateLoggers(config);
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) {
+            Configuration config = ctx.getConfiguration();
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
+            ctx.updateLoggers(config);
+        }
 
         this.context =
                 new PolyfixProjectContext(
@@ -62,7 +64,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
     @Test
     void testApplyEmptyPlan() throws ExecutionException, InterruptedException {
         // Create an empty plan
-        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve("test.ts"));
+        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS));
 
         // Apply the plan (should do nothing)
         runPromise(() -> bridge.apply(plan));
@@ -79,7 +81,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
         }
 
         // Create a test TypeScript file
-        Path testFile = tempDir.resolve("test.ts");
+        Path testFile = tempDir.resolve(TEST_TS);
         Files.writeString(testFile, "// Test file\nconsole.log('Hello, world!');");
 
         // Create a plan to add imports
@@ -108,7 +110,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
                         .tool("typescript")
                         .code("TS2304")
                         .message("Cannot find name 'React'.")
-                        .file(tempDir.resolve("test.ts"))
+                        .file(tempDir.resolve(TEST_TS))
                         .startLine(1)
                         .startColumn(10)
                         .endLine(1)
@@ -116,7 +118,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
                         .build();
 
         // Create a plan that fixes the diagnostic
-        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve("test.ts"));
+        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS));
         plan.addImport("react", null, "React", false, diagnostic);
 
         // Verify the diagnostic is associated with the plan

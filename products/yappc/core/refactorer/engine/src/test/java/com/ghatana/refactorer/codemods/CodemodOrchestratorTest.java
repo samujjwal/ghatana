@@ -27,6 +27,10 @@ import org.openrewrite.Recipe;
  * @doc.pattern Test
  */
 class CodemodOrchestratorTest {
+    private static final String JSON = "json";
+    private static final String UNCHECKED = "unchecked";
+    private static final String JAVA = "java";
+
     @TempDir Path tempDir;
     private Path srcDir;
     private CodemodOrchestrator orchestrator;
@@ -73,27 +77,27 @@ class CodemodOrchestratorTest {
 
         // Mock OpenRewrite response
         when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList()))
-                .thenReturn(List.of(createMockDiagnostic("java")));
+                .thenReturn(List.of(createMockDiagnostic(JAVA)));
 
         // Execute
         List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile));
 
         // Verify
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).getMessage()).contains("java");
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Path>> javaFilesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockOpenRewriteRunner).run(eq(mockRecipe), javaFilesCaptor.capture());
-        assertThat(javaFilesCaptor.getValue()).containsExactly(javaFile);
+        assertThat(results.get(0).getMessage()).contains(JAVA);
+        @SuppressWarnings(UNCHECKED)
+        ArgumentCaptor<List<Path>> JAVAFilesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVAFilesCaptor.capture());
+        assertThat(JAVAFilesCaptor.getValue()).containsExactly(javaFile);
         verifyNoInteractions(mockJsonYamlCodemods);
     }
 
     @Test
     void testJsonYamlFilesOnly() throws Exception {
         // Setup test files
-        Path jsonFile = srcDir.resolve("config.json");
-        Files.createDirectories(jsonFile.getParent());
-        Files.writeString(jsonFile, "{}");
+        Path JSONFile = srcDir.resolve("config." + JSON);
+        Files.createDirectories(JSONFile.getParent());
+        Files.writeString(JSONFile, "{}");
 
         // Create schema directory
         Path schemaDir = tempDir.resolve("config/schemas");
@@ -101,18 +105,18 @@ class CodemodOrchestratorTest {
 
         // Mock JSON/YAML codemods response
         when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir)))
-                .thenReturn(Promise.of(List.of(createMockDiagnostic("json"))));
+                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON))));
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(jsonFile));
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(JSONFile));
 
         // Verify
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).getMessage()).contains("json");
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Path>> jsonFilesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockJsonYamlCodemods).normalizeAndValidate(jsonFilesCaptor.capture(), eq(schemaDir));
-        assertThat(jsonFilesCaptor.getValue()).containsExactly(jsonFile);
+        assertThat(results.get(0).getMessage()).contains(JSON);
+        @SuppressWarnings(UNCHECKED)
+        ArgumentCaptor<List<Path>> JSONFilesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONFilesCaptor.capture(), eq(schemaDir));
+        assertThat(JSONFilesCaptor.getValue()).containsExactly(JSONFile);
         verifyNoInteractions(mockOpenRewriteRunner);
     }
 
@@ -120,11 +124,11 @@ class CodemodOrchestratorTest {
     void testMixedFileTypes() throws Exception {
         // Setup test files
         Path javaFile = srcDir.resolve("Test.java");
-        Path jsonFile = srcDir.resolve("config.json");
+        Path JSONFile = srcDir.resolve("config." + JSON);
 
         Files.createDirectories(javaFile.getParent());
         Files.writeString(javaFile, "class Test {}");
-        Files.writeString(jsonFile, "{}");
+        Files.writeString(JSONFile, "{}");
 
         // Create schema directory
         Path schemaDir = tempDir.resolve("config/schemas");
@@ -132,26 +136,26 @@ class CodemodOrchestratorTest {
 
         // Mock responses
         when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList()))
-                .thenReturn(List.of(createMockDiagnostic("java")));
+                .thenReturn(List.of(createMockDiagnostic(JAVA)));
         when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir)))
-                .thenReturn(Promise.of(List.of(createMockDiagnostic("json"))));
+                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON))));
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile, jsonFile));
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile, JSONFile));
 
         // Verify
         assertThat(results).hasSize(2);
         assertThat(results.stream().map(UnifiedDiagnostic::getMessage))
-                .containsExactlyInAnyOrder("java", "json");
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Path>> javaCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockOpenRewriteRunner).run(eq(mockRecipe), javaCaptor.capture());
-        assertThat(javaCaptor.getValue()).containsExactly(javaFile);
+                .containsExactlyInAnyOrder(JAVA, JSON);
+        @SuppressWarnings(UNCHECKED)
+        ArgumentCaptor<List<Path>> JAVACaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVACaptor.capture());
+        assertThat(JAVACaptor.getValue()).containsExactly(javaFile);
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<Path>> jsonCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockJsonYamlCodemods).normalizeAndValidate(jsonCaptor.capture(), eq(schemaDir));
-        assertThat(jsonCaptor.getValue()).containsExactly(jsonFile);
+        @SuppressWarnings(UNCHECKED)
+        ArgumentCaptor<List<Path>> JSONCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONCaptor.capture(), eq(schemaDir));
+        assertThat(JSONCaptor.getValue()).containsExactly(JSONFile);
     }
 
     @Test

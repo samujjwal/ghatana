@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -27,6 +28,14 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
     private static final String ID = "python.rename.mock";
     private static final String NAME = "Mock Python Rename Refactoring";
     private static final String DESCRIPTION = "Mock implementation for testing Python refactoring";
+    
+    // Constants for duplicate literals
+    private static final String WORD_BOUNDARY = "\\b";
+    private static final String FUNCTION_TYPE = "FUNCTION";
+    private static final String METHOD_TYPE = "METHOD";
+    private static final String CLASS_TYPE = "CLASS";
+    private static final String VARIABLE_TYPE = "VARIABLE";
+    private static final String IMPORT_TYPE = "IMPORT";
 
     @Override
     public String getId() {
@@ -93,7 +102,7 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
             String modifiedCode = sourceCode;
 
             // Handle different element types
-            if ("METHOD".equals(elementType) || "FUNCTION".equals(elementType)) {
+            if (METHOD_TYPE.equals(elementType) || FUNCTION_TYPE.equals(elementType)) {
                 // Replace function/method definition
                 Pattern defPattern =
                         Pattern.compile("def\\s+" + Pattern.quote(oldName) + "\\s*\\(");
@@ -101,13 +110,13 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
                 modifiedCode = defMatcher.replaceAll("def " + newName + "(");
 
                 // Replace function/method calls
-                Pattern callPattern = Pattern.compile("\\b" + Pattern.quote(oldName) + "\\s*\\(");
+                Pattern callPattern = Pattern.compile(WORD_BOUNDARY + Pattern.quote(oldName) + "\\s*\\(");
                 Matcher callMatcher = callPattern.matcher(modifiedCode);
                 modifiedCode = callMatcher.replaceAll(newName + "(");
 
                 // Count changes
                 changeCount = countMatches(sourceCode, oldName);
-            } else if ("CLASS".equals(elementType)) {
+            } else if (CLASS_TYPE.equals(elementType)) {
                 // Replace class definition
                 Pattern classPattern =
                         Pattern.compile("class\\s+" + Pattern.quote(oldName) + "\\s*[:\\(]");
@@ -115,21 +124,21 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
                 modifiedCode = classMatcher.replaceAll("class " + newName + "$1");
 
                 // Replace class instantiations
-                Pattern instPattern = Pattern.compile("\\b" + Pattern.quote(oldName) + "\\s*\\(");
+                Pattern instPattern = Pattern.compile(WORD_BOUNDARY + Pattern.quote(oldName) + "\\s*\\(");
                 Matcher instMatcher = instPattern.matcher(modifiedCode);
                 modifiedCode = instMatcher.replaceAll(newName + "(");
 
                 // Count changes
                 changeCount = countMatches(sourceCode, oldName);
-            } else if ("VARIABLE".equals(elementType)) {
+            } else if (VARIABLE_TYPE.equals(elementType)) {
                 // Simple variable replacement (not handling scope properly for testing)
-                Pattern varPattern = Pattern.compile("\\b" + Pattern.quote(oldName) + "\\b");
+                Pattern varPattern = Pattern.compile(WORD_BOUNDARY + Pattern.quote(oldName) + WORD_BOUNDARY);
                 Matcher varMatcher = varPattern.matcher(modifiedCode);
                 modifiedCode = varMatcher.replaceAll(newName);
 
                 // Count changes
                 changeCount = countMatches(sourceCode, oldName);
-            } else if ("IMPORT".equals(elementType)) {
+            } else if (IMPORT_TYPE.equals(elementType)) {
                 // Handle import statements
                 Pattern importPattern =
                         Pattern.compile(
@@ -159,7 +168,7 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
                         List.of(sourceFile),
                         changeCount,
                         "Renamed "
-                                + elementType.toLowerCase()
+                                + elementType.toLowerCase(Locale.ROOT)
                                 + " from '"
                                 + oldName
                                 + "' to '"
@@ -177,7 +186,11 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
     private int countMatches(String source, String pattern) {
         int count = 0;
         int index = 0;
-        while ((index = source.indexOf(pattern, index)) != -1) {
+        while (true) {
+            index = source.indexOf(pattern, index);
+            if (index == -1) {
+                break;
+            }
             count++;
             index += pattern.length();
         }

@@ -27,8 +27,7 @@ dependencies {
     
     // CLI (from scaffold:cli)
     implementation(libs.picocli)
-    implementation(libs.diffutils)
-    
+        
     // Logging
     implementation(libs.slf4j.api)
     
@@ -42,8 +41,7 @@ dependencies {
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
-    implementation(libs.grpc.services)
-    implementation(libs.protobuf.java)
+        implementation(libs.protobuf.java)
     implementation(libs.protobuf.java.util)
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     
@@ -51,8 +49,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.grpc.testing)
-    testRuntimeOnly("ch.qos.logback:logback-classic:1.4.11")
+        testRuntimeOnly("ch.qos.logback:logback-classic:1.4.11")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

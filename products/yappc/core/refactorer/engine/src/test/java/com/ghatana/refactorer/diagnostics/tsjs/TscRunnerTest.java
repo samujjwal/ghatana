@@ -36,10 +36,11 @@ class TscRunnerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         // Enable debug logging for tests
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-        config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
-        ctx.updateLoggers(config);
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) {
+            Configuration config = ctx.getConfiguration();
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
+            ctx.updateLoggers(config);
+        }
 
         this.context =
                 new PolyfixProjectContext(

@@ -32,6 +32,9 @@ import org.mockito.ArgumentCaptor;
  */
 
 class JsonYamlCodemodsTest extends EventloopTestBase {
+    private static final String TEST_SCHEMA_JSON = "test.schema.json";
+    private static final String TEST_JSON = "test.json";
+
     @TempDir Path tempDir;
     private Path schemaDir;
     private NodeBridge mockNodeBridge;
@@ -82,11 +85,11 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
     @Test
     void testSchemaValidationSuccess() throws Exception {
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve("test.json");
+        Path jsonFile = tempDir.resolve(TEST_JSON);
         Files.writeString(jsonFile, "{\"name\": \"test\"}");
 
         // Create a matching schema
-        Path schemaFile = schemaDir.resolve("test.schema.json");
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
         Files.createDirectories(schemaDir);
         Files.writeString(schemaFile, "{\"type\": \"object\"}");
 
@@ -104,11 +107,11 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
     @Test
     void testSchemaValidationError() throws Exception {
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve("test.json");
+        Path jsonFile = tempDir.resolve(TEST_JSON);
         Files.writeString(jsonFile, "{\"name\": 123}");
 
         // Create a schema that expects a string
-        Path schemaFile = schemaDir.resolve("test.schema.json");
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
         Files.createDirectories(schemaDir);
         Files.writeString(
                 schemaFile,
@@ -134,11 +137,11 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
     @Test
     void testNodeBridgeError() throws Exception {
         // Create a test JSON file
-        Path jsonFile = tempDir.resolve("test.json");
+        Path jsonFile = tempDir.resolve(TEST_JSON);
         Files.writeString(jsonFile, "{}");
 
         // Create a schema file
-        Path schemaFile = schemaDir.resolve("test.schema.json");
+        Path schemaFile = schemaDir.resolve(TEST_SCHEMA_JSON);
         Files.createDirectories(schemaDir);
         Files.writeString(schemaFile, "{\"type\": \"object\"}");
 
@@ -161,11 +164,11 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
         Files.createDirectories(schemaDir);
 
         // Create test files
-        Path jsonFile = tempDir.resolve("test.json");
+        Path jsonFile = tempDir.resolve(TEST_JSON);
         Files.writeString(jsonFile, "{}");
 
         // Create schemas with different extensions
-        Path schemaJson = schemaDir.resolve("test.schema.json");
+        Path schemaJson = schemaDir.resolve("TEST_SCHEMA_JSON");
         Path schemaYaml = schemaDir.resolve("test.schema.yaml");
 
         Files.writeString(schemaJson, "{}");
@@ -177,7 +180,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
         ArgumentCaptor<String> schemaPathCaptor = ArgumentCaptor.forClass(String.class);
         verify(mockNodeBridge).executeScript(anyString(), schemaPathCaptor.capture(), anyString());
 
-        assertThat(schemaPathCaptor.getValue()).endsWith("test.schema.json");
+        assertThat(schemaPathCaptor.getValue()).endsWith("TEST_SCHEMA_JSON");
 
         // Test finding .yaml schema when .json doesn't exist
         Files.delete(schemaJson);

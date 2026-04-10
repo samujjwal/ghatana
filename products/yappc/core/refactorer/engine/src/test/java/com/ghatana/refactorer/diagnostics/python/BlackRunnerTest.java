@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.process.ProcessResult;
-import com.ghatana.refactorer.testutils.TestConfig;
+import com.ghatana.refactorer.testutils.ConfigTestUtils;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 
  * @doc.type class
 
- * @doc.purpose Handles black runner test operations
+ * @doc.purpose Handles BLACK runner test operations
 
  * @doc.layer core
 
@@ -28,6 +28,10 @@ import org.junit.jupiter.api.io.TempDir;
  */
 
 class BlackRunnerTest extends EventloopTestBase {
+    private static final String BLACK = "black";
+    private static final String POORLY_FORMATTED_PY = "poorly_formatted.py";
+    private static final String LONG_LINE_PY = "long_line.py";
+
     @TempDir
     Path tempDir;
     private PolyfixProjectContext context;
@@ -39,7 +43,7 @@ class BlackRunnerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        context = TestConfig.createTestContext(tempDir);
+        context = ConfigTestUtils.createTestContext(tempDir);
         processRunner = new FakeProcessRunner(context);
         blackRunner = new BlackRunner(context, processRunner);
     }
@@ -47,33 +51,33 @@ class BlackRunnerTest extends EventloopTestBase {
     @Test
     void testBlackFormatsPythonFile() throws Exception {
         // Create a Python file with inconsistent formatting
-        Path pythonFile = tempDir.resolve("poorly_formatted.py");
+        Path pythonFile = tempDir.resolve(POORLY_FORMATTED_PY);
         String originalCode = "def foo(  ) :\n    x=1\n    if x<2:print('hello')\n";
         Files.writeString(pythonFile, originalCode);
 
         processRunner.when(
-                "black",
-                blackArgs(true, 88, "poorly_formatted.py"),
+                BLACK,
+                blackArgs(true, 88, POORLY_FORMATTED_PY),
                 FakeProcessRunner.response(
-                        new ProcessResult(1, "", "would reformat poorly_formatted.py")),
+                        new ProcessResult(1, "", "would reformat POORLY_FORMATTED_PY")),
                 FakeProcessRunner.response(new ProcessResult(0, "", "")));
 
         processRunner.when(
-                "black",
-                blackArgs(false, 88, "poorly_formatted.py"),
+                BLACK,
+                blackArgs(false, 88, POORLY_FORMATTED_PY),
                 FakeProcessRunner.response(
-                        new ProcessResult(0, "", ""), formatPython("poorly_formatted.py")));
+                        new ProcessResult(0, "", ""), formatPython(POORLY_FORMATTED_PY)));
 
-        // Run black in check mode first (should fail)
+        // Run BLACK in check mode first (should fail)
         BlackRunner checkRunner = new BlackRunner(context, processRunner)
-                .withIncludePatterns(List.of("poorly_formatted.py"))
+                .withIncludePatterns(List.of(POORLY_FORMATTED_PY))
                 .withCheckOnly(true);
 
         boolean needsFormatting = !runPromise(() -> checkRunner.run());
         assertTrue(needsFormatting, "File should need formatting");
 
         // Now format for real
-        boolean formatSuccess = runPromise(() -> blackRunner.withIncludePatterns(List.of("poorly_formatted.py")).run());
+        boolean formatSuccess = runPromise(() -> blackRunner.withIncludePatterns(List.of(POORLY_FORMATTED_PY)).run());
 
         assertTrue(formatSuccess, "Formatting should succeed");
 
@@ -85,7 +89,7 @@ class BlackRunnerTest extends EventloopTestBase {
 
         // Running check again should pass now
         BlackRunner checkRunner2 = new BlackRunner(context, processRunner)
-                .withIncludePatterns(List.of("poorly_formatted.py"))
+                .withIncludePatterns(List.of(POORLY_FORMATTED_PY))
                 .withCheckOnly(true);
 
         boolean isFormatted = runPromise(() -> checkRunner2.run());
@@ -95,7 +99,7 @@ class BlackRunnerTest extends EventloopTestBase {
     @Test
     void testBlackWithNonexistentFile() throws Exception {
         processRunner.when(
-                "black",
+                BLACK,
                 blackArgs(false, 88, "nonexistent.py"),
                 FakeProcessRunner.response(new ProcessResult(0, "", "")));
 
@@ -108,19 +112,19 @@ class BlackRunnerTest extends EventloopTestBase {
     @Test
     void testBlackRespectsLineLength() throws Exception {
         // Create a long line
-        String longLine = "x = 'This is a very long string that should be wrapped by black if the line length"
+        String longLine = "x = 'This is a very long string that should be wrapped by BLACK if the line length"
                 + " is set appropriately'\n";
-        Path pythonFile = tempDir.resolve("long_line.py");
+        Path pythonFile = tempDir.resolve(LONG_LINE_PY);
         Files.writeString(pythonFile, longLine);
 
         processRunner.when(
-                "black",
-                blackArgs(false, 20, "long_line.py"),
+                BLACK,
+                blackArgs(false, 20, LONG_LINE_PY),
                 FakeProcessRunner.response(
-                        new ProcessResult(0, "", ""), wrapLongLine("long_line.py")));
+                        new ProcessResult(0, "", ""), wrapLongLine(LONG_LINE_PY)));
 
         // Format with very short line length
-        boolean success = runPromise(() -> blackRunner.withIncludePatterns(List.of("long_line.py"))
+        boolean success = runPromise(() -> blackRunner.withIncludePatterns(List.of(LONG_LINE_PY))
                 .withLineLength(20)
                 .run());
 
@@ -195,7 +199,7 @@ class BlackRunnerTest extends EventloopTestBase {
                                 + "    if x < 2:\n"
                                 + "        print('hello')\n");
             } catch (IOException e) {
-                fail("Failed to apply fake black formatting: " + e.getMessage());
+                fail("Failed to apply fake BLACK formatting: " + e.getMessage());
             }
         };
     }
@@ -207,11 +211,11 @@ class BlackRunnerTest extends EventloopTestBase {
                 Files.writeString(
                         file,
                         "x = (\n"
-                                + "    'This is a very long string that should be wrapped by black if"
+                                + "    'This is a very long string that should be wrapped by BLACK if"
                                 + " the line length is set appropriately'\n"
                                 + ")\n");
             } catch (IOException e) {
-                fail("Failed to apply fake black formatting: " + e.getMessage());
+                fail("Failed to apply fake BLACK formatting: " + e.getMessage());
             }
         };
     }

@@ -782,7 +782,7 @@ public class CoolTierStoragePlugin implements StoragePlugin {
 
         try (DataWriter<GenericRecord> writer = Parquet.writeData(outputFile)
                 .schema(IcebergTableManager.EVENT_SCHEMA)
-                .createWriterFunc(GenericParquetWriter::create)
+                .createWriterFunc(GenericParquetWriter::buildWriter)
                 .overwrite()
                 .withSpec(eventsTable.spec())
                 .build()) {

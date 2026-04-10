@@ -32,7 +32,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.kafka)
+    testImplementation("org.testcontainers:kafka:1.21.4")
     testImplementation("org.apache.kafka:kafka-clients:3.6.0")
     testImplementation("software.amazon.awssdk:sqs:2.21.0")
     testImplementation("com.rabbitmq:amqp-client:5.18.0")

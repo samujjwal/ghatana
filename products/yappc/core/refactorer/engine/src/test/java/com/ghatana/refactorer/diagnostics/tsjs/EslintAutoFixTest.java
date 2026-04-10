@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
-import com.ghatana.refactorer.testutils.TestConfig;
+import com.ghatana.refactorer.testutils.ConfigTestUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,6 +37,7 @@ import org.junit.jupiter.api.io.TempDir;
 public class EslintAutoFixTest extends EventloopTestBase {
     private static final Logger logger = LogManager.getLogger(EslintAutoFixTest.class);
     private static final String ESLINT_VERSION = "^8.0.0";
+    private static final String VERSION_FLAG = "--version";
 
     @TempDir Path tempDir;
     private Path testDir;
@@ -54,7 +55,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
 
             // Fall back to npx if local installation not found
             Process process =
-                    new ProcessBuilder("npx", "eslint", "--version")
+                    new ProcessBuilder("npx", "eslint", VERSION_FLAG)
                             .directory(directory.toFile())
                             .redirectErrorStream(true)
                             .start();
@@ -204,7 +205,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         }
 
         // Create a test context
-        this.context = TestConfig.createTestContext(tempDir);
+        this.context = ConfigTestUtils.createTestContext(tempDir);
 
         // Initialize ESLint runner with fix enabled
         this.eslintRunner =
@@ -455,13 +456,14 @@ public class EslintAutoFixTest extends EventloopTestBase {
     private String getNodeVersion() {
         try {
             Process process =
-                    new ProcessBuilder("node", "--version").redirectErrorStream(true).start();
+                    new ProcessBuilder("node", VERSION_FLAG).redirectErrorStream(true).start();
 
             if (process.waitFor(5, TimeUnit.SECONDS)) {
                 return new String(process.getInputStream().readAllBytes()).trim();
             }
         } catch (Exception e) {
-            // Ignore
+            // Ignore errors when getting Node version
+            logger.debug("Error getting Node version: " + e.getMessage());
         }
         return "<unknown>";
     }
@@ -472,7 +474,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
             Path eslintBin = workingDir.resolve("node_modules/.bin/eslint");
             if (Files.exists(eslintBin)) {
                 Process process =
-                        new ProcessBuilder(eslintBin.toString(), "--version")
+                        new ProcessBuilder(eslintBin.toString(), VERSION_FLAG)
                                 .directory(workingDir.toFile())
                                 .redirectErrorStream(true)
                                 .start();
@@ -484,7 +486,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
 
             // Fall back to global eslint
             Process process =
-                    new ProcessBuilder("eslint", "--version")
+                    new ProcessBuilder("eslint", VERSION_FLAG)
                             .directory(workingDir.toFile())
                             .redirectErrorStream(true)
                             .start();
@@ -493,14 +495,15 @@ public class EslintAutoFixTest extends EventloopTestBase {
                 return "global: " + new String(process.getInputStream().readAllBytes()).trim();
             }
         } catch (Exception e) {
-            // Ignore
+            // Ignore errors when getting ESLint version
+            logger.debug("Error getting ESLint version: " + e.getMessage());
         }
         return "<not found>";
     }
 
     private boolean isCommandAvailable(String cmd) {
         try {
-            Process p = new ProcessBuilder(cmd, "--version").redirectErrorStream(true).start();
+            Process p = new ProcessBuilder(cmd, VERSION_FLAG).redirectErrorStream(true).start();
             boolean ok = p.waitFor(5, TimeUnit.SECONDS) && p.exitValue() == 0;
             if (!ok) {
                 try {

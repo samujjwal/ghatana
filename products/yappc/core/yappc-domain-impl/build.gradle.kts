@@ -31,8 +31,6 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
     
     // Validation
-    implementation(libs.hibernate.validator)
-    implementation(libs.jakarta.validation.api)
     
     // YAML parsing (from merged domain:service — YamlTaskDefinitionProvider)
     implementation("org.yaml:snakeyaml:2.0")

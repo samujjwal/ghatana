@@ -1,7 +1,6 @@
 plugins {
     id("java-library")
-    alias(libs.plugins.protobuf)
-    alias(libs.plugins.shadow)
+    id("com.ghatana.protobuf-conventions")
 }
 
 group = "com.ghatana.tutorputor"
@@ -13,29 +12,6 @@ java {
     }
 }
 
-// Protobuf configuration
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.25.3"
-    }
-    plugins {
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.62.2"
-        }
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.plugins {
-                create("grpc")
-            }
-        }
-    }
-}
-
-// Ensure compileJava depends on proto generation
-tasks.named("compileJava") {
-    dependsOn("generateProto")
-}
 
 dependencies {
     // Agent framework for agent implementation
@@ -63,7 +39,7 @@ dependencies {
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     implementation(libs.protobuf.java)
-    compileOnly(libs.javax.annotation.api)
+    compileOnly(libs.javax.inject)
     
     // Jackson for JSON processing
     implementation(platform(libs.jackson.bom))
@@ -83,7 +59,7 @@ dependencies {
     
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
@@ -95,22 +71,4 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// ---------------------------------------------------------------------------
 // Shadow (fat) JAR — runnable image for the content-studio-agents gRPC server
-// ---------------------------------------------------------------------------
-tasks.shadowJar {
-    archiveBaseName.set("content-studio-agents")
-    archiveClassifier.set("all")
-    manifest {
-        attributes(
-            "Main-Class" to "com.ghatana.tutorputor.contentstudio.config.ContentGenerationServerConfig",
-            "Implementation-Title" to "Tutorputor Content Studio Agents gRPC Server",
-            "Implementation-Version" to project.version
-        )
-    }
-    // Merge service loader descriptors from gRPC and protobuf dependencies
-    mergeServiceFiles()
-    // Exclude redundant module-info files from multi-release JARs
-    exclude("META-INF/versions/*/module-info.class")
-    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
-}

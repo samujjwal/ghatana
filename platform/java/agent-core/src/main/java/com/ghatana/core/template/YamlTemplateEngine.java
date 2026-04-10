@@ -309,7 +309,7 @@ public class YamlTemplateEngine {
     @SuppressWarnings("unchecked")
     public Map<String, String> loadClasspathValues(@NotNull String classpathResource) {
         Objects.requireNonNull(classpathResource, "classpathResource must not be null");
-        try (InputStream is = getClass().getClassLoader()
+        try (InputStream is = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(classpathResource)) {
             if (is == null) {
                 log.debug("Classpath resource '{}' not found — skipping", classpathResource);
@@ -343,7 +343,7 @@ public class YamlTemplateEngine {
     public String renderClasspathResource(
             @NotNull String classpathResource, @NotNull TemplateContext ctx) throws IOException {
         Objects.requireNonNull(classpathResource, "classpathResource must not be null");
-        try (InputStream is = getClass().getClassLoader()
+        try (InputStream is = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(classpathResource)) {
             if (is == null) {
                 throw new IOException("Classpath resource not found: " + classpathResource);

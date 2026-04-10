@@ -40,7 +40,9 @@ class NodeIndexerTest {
         ConfigurationBuilder<BuiltConfiguration> builder =
                 ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.add(builder.newRootLogger(Level.INFO));
-        LoggerContext ctx = Configurator.initialize(builder.build());
+        try (LoggerContext ctx = Configurator.initialize(builder.build())) {
+            // Logger context will be automatically closed
+        }
     }
 
     @BeforeEach
@@ -63,10 +65,11 @@ class NodeIndexerTest {
         }
 
         // Enable debug logging for this test
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
-        config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
-        ctx.updateLoggers(config);
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) {
+            org.apache.logging.log4j.core.config.Configuration config = ctx.getConfiguration();
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG);
+            ctx.updateLoggers(config);
+        }
 
         logger.info("Starting test in directory: {}", tempDir);
 

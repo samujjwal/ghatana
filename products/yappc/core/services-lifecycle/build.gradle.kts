@@ -1,6 +1,6 @@
 plugins {
     id("java-library")
-    id("com.github.spotbugs")
+    alias(libs.plugins.spotbugs)
 }
 
 group = "com.ghatana.products.yappc.services"
@@ -62,6 +62,10 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
+    
+    // Protobuf for JSON formatting
+    implementation(libs.protobuf.java)
+    implementation("com.google.protobuf:protobuf-java-util:4.34.1")
 
     // JSON Schema validation for configuration governance
     implementation(libs.networknt.validator)

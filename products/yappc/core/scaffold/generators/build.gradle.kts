@@ -19,12 +19,8 @@ dependencies {
     api(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.slf4j.api)
-    implementation(libs.diffutils)
-
+    
     // Code Transformation
-    implementation(libs.openrewrite.core)
-    implementation(libs.openrewrite.java)
-    implementation(libs.openrewrite.gradle)
 
     // ActiveJ
     api(libs.activej.inject)
@@ -33,21 +29,16 @@ dependencies {
     implementation(libs.activej.promise)
 
     // Validation
-    api(libs.jakarta.validation.api)
-    implementation(libs.hibernate.validator)
 
     // CLI and utility
     implementation(libs.picocli)
-    implementation(libs.jgit)
-    implementation(libs.joda.time)
-    implementation(libs.commons.text)
 
     implementation(project(":platform:java:runtime"))
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.mockito.core)

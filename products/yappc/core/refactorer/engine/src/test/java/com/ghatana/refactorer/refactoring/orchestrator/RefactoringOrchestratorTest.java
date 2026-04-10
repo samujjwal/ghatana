@@ -48,6 +48,9 @@ class RefactoringOrchestratorTest {
     private ExecutorService executor;
     private PolyfixProjectContext projectContext;
     private RefactoringOrchestrator orchestrator;
+    
+    // Constants for duplicate literals
+    private static final String OLD_NAME = "oldName";
 
     @BeforeEach
     void setUp() {
@@ -98,7 +101,7 @@ class RefactoringOrchestratorTest {
 
         // Act
         RefactoringResult result =
-                orchestrator.performRename(createContext("src/main/java/Example.java", "oldName"));
+                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME));
 
         // Assert
         // Don't check isSuccess() as it may be false for cross-language refactorings
@@ -126,7 +129,7 @@ class RefactoringOrchestratorTest {
 
         // Act
         RefactoringResult result =
-                crossLangOrchestrator.performRename(createContext("test.file", "oldName"));
+                crossLangOrchestrator.performRename(createContext("test.file", OLD_NAME));
 
         // Assert
         assertTrue(result.isSuccess(), "Refactoring should succeed");
@@ -142,7 +145,7 @@ class RefactoringOrchestratorTest {
 
         // No refactorings registered, so it should fail with a specific message
         RefactoringResult result =
-                testOrchestrator.performRename(createContext("test.unsupported", "oldName"));
+                testOrchestrator.performRename(createContext("test.unsupported", OLD_NAME));
 
         // Assert
         assertFalse(result.isSuccess());
@@ -159,7 +162,7 @@ class RefactoringOrchestratorTest {
 
         // Act
         RefactoringResult result =
-                orchestrator.performRename(createContext("src/main/java/Example.java", "oldName"));
+                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME));
 
         // Assert
         assertFalse(result.isSuccess());

@@ -11,11 +11,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Config - Configuration management and runtime config"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform dependencies
@@ -26,7 +21,7 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     
     // Typesafe Config (Lightbend/Hocon)
-    api(libs.typesafe.config)
+    api("com.typesafe:config:1.4.3")
     
     // Lombok
     compileOnly(libs.lombok)
@@ -39,7 +34,7 @@ dependencies {
     api(libs.jackson.dataformat.yaml)
     
     // JSON Schema Validation
-    implementation(libs.networknt.validator)
+    implementation("com.networknt:json-schema-validator:1.0.87")
     
     // Logging
     implementation(libs.slf4j.api)

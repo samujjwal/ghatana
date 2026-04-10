@@ -25,7 +25,7 @@ dependencies {
 
     // ActiveJ async primitives
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
 
     // Logging
     api(libs.slf4j.api)
@@ -40,7 +40,7 @@ dependencies {
     // ── Test ─────────────────────────────────────────────────────────────────
     testImplementation(project(":platform:java:testing"))
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

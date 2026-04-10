@@ -32,7 +32,7 @@ dependencies {
     implementation(libs.jackson.datatype.jsr310)
 
     // Kafka client (KafkaConnector)
-    implementation(libs.kafka.clients)
+    implementation("org.apache.kafka:kafka-clients:3.8.0")
 
     // Lombok
     compileOnly(libs.lombok)
@@ -45,14 +45,14 @@ dependencies {
 
     // Testing
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.bundles.testing.core)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.kafka)
+    testImplementation("org.testcontainers:kafka:1.21.4")
 }
 
 tasks.withType<Test> {

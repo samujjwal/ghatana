@@ -15,11 +15,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Observability - Metrics, tracing, and logging utilities"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform Core (includes ActiveJ)
@@ -51,8 +46,8 @@ dependencies {
     
     // Tracing - OpenTelemetry
     api(libs.opentelemetry.api)
-    api(libs.opentelemetry.sdk)
-    api(libs.opentelemetry.exporter.otlp)
+    api("io.opentelemetry:opentelemetry-sdk:1.46.0")
+    api("io.opentelemetry:opentelemetry-exporter-otlp:1.46.0")
     
     // Redis (for health checks)
     implementation(libs.jedis)
@@ -70,7 +65,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.opentelemetry.sdk.testing)
+    testImplementation("io.opentelemetry:opentelemetry-sdk-testing:1.46.0")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.log4j.slf4j.impl)

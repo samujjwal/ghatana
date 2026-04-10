@@ -50,7 +50,6 @@ dependencies {
     implementation(platform(libs.jackson.bom))
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
     implementation(libs.hikaricp)
     implementation(libs.slf4j.api)
 

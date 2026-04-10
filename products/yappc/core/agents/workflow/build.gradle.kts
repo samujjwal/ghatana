@@ -8,11 +8,6 @@ version = rootProject.version
 
 description = "YAPPC Agent Workflow — SDLC phase step implementations (architecture, implementation, leads, requirements, enhancement, ops, testing phases)"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Runtime base (provides base agent types, step contracts, tools, dispatch)

@@ -10,11 +10,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Domain - Shared domain models"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform Core
@@ -36,10 +31,10 @@ dependencies {
 
     // ActiveJ for async schema operations
     api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
 
     // JSON Schema validation (schema-registry merger)
-    implementation(libs.networknt.validator)
+    implementation("com.networknt:json-schema-validator:1.0.87")
 
     // Logging
     implementation(libs.slf4j.api)

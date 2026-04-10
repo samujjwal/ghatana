@@ -20,6 +20,20 @@ import org.junit.jupiter.api.Test;
 
 class PolyfixConfigTest {
 
+    // Constants for duplicate literals
+    private static final String NODE = "node";
+    private static final String ESLINT = "eslint";
+    private static final String TSC = "tsc";
+    private static final String PRETTIER = "prettier";
+    private static final String RUFF = "ruff";
+    private static final String BLACK = "black";
+    private static final String MYPY = "mypy";
+    private static final String SHELLCHECK = "shellcheck";
+    private static final String SHFMT = "shfmt";
+    private static final String CARGO = "cargo";
+    private static final String RUSTFMT = "rustfmt";
+    private static final String SEMGREP = "semgrep";
+
     @Test
     void testBudgetsRecord() {
         PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10);
@@ -69,22 +83,22 @@ class PolyfixConfigTest {
     void testToolsRecord() {
         PolyfixConfig.Tools tools =
                 new PolyfixConfig.Tools(
-                        "node",
-                        "eslint",
-                        "tsc",
-                        "prettier",
-                        "ruff",
-                        "black",
-                        "mypy",
-                        "shellcheck",
-                        "shfmt",
-                        "cargo",
-                        "rustfmt",
-                        "semgrep");
+                        NODE,
+                        ESLINT,
+                        TSC,
+                        PRETTIER,
+                        RUFF,
+                        BLACK,
+                        MYPY,
+                        SHELLCHECK,
+                        SHFMT,
+                        CARGO,
+                        RUSTFMT,
+                        SEMGREP);
 
-        assertEquals("node", tools.node());
-        assertEquals("eslint", tools.eslint());
-        assertEquals("tsc", tools.tsc());
+        assertEquals(NODE, tools.node());
+        assertEquals(ESLINT, tools.eslint());
+        assertEquals(TSC, tools.tsc());
 
         // Test toString()
         assertNotNull(tools.toString());
@@ -94,18 +108,18 @@ class PolyfixConfigTest {
         // Test equals() and hashCode()
         PolyfixConfig.Tools sameTools =
                 new PolyfixConfig.Tools(
-                        "node",
-                        "eslint",
-                        "tsc",
-                        "prettier",
-                        "ruff",
-                        "black",
-                        "mypy",
-                        "shellcheck",
-                        "shfmt",
-                        "cargo",
-                        "rustfmt",
-                        "semgrep");
+                        NODE,
+                        ESLINT,
+                        TSC,
+                        PRETTIER,
+                        RUFF,
+                        BLACK,
+                        MYPY,
+                        SHELLCHECK,
+                        SHFMT,
+                        CARGO,
+                        RUSTFMT,
+                        SEMGREP);
 
         PolyfixConfig.Tools differentTools =
                 new PolyfixConfig.Tools(
@@ -136,18 +150,18 @@ class PolyfixConfigTest {
         PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, true, true, false);
         PolyfixConfig.Tools tools =
                 new PolyfixConfig.Tools(
-                        "node",
-                        "eslint",
-                        "tsc",
-                        "prettier",
-                        "ruff",
-                        "black",
-                        "mypy",
-                        "shellcheck",
-                        "shfmt",
-                        "cargo",
-                        "rustfmt",
-                        "semgrep");
+                        NODE,
+                        ESLINT,
+                        TSC,
+                        PRETTIER,
+                        RUFF,
+                        BLACK,
+                        MYPY,
+                        SHELLCHECK,
+                        SHFMT,
+                        CARGO,
+                        RUSTFMT,
+                        SEMGREP);
 
         PolyfixConfig config = new PolyfixConfig(languages, schemaPaths, budgets, policies, tools);
 
@@ -170,18 +184,18 @@ class PolyfixConfigTest {
                         new PolyfixConfig.Budgets(5, 10),
                         new PolyfixConfig.Policies(true, true, true, false),
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         PolyfixConfig differentConfig =
                 new PolyfixConfig(

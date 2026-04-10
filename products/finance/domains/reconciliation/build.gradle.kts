@@ -45,7 +45,7 @@ dependencies {
     implementation(libs.activej.promise)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    implementation(libs.flyway.database.postgresql)
+    
     implementation(libs.hikaricp)
     implementation(libs.kafka.clients)
 

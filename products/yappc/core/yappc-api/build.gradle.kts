@@ -25,8 +25,7 @@ dependencies {
     implementation(libs.nimbus.jose.jwt)
     
     // Validation
-    implementation(libs.hibernate.validator)
-    
+        
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

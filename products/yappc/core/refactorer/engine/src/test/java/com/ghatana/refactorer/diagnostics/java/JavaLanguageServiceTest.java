@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.pattern Test
  */
 class JavaLanguageServiceTest extends EventloopTestBase {
+    private static final String TEST_JAVA = "Test.java";
 
     @TempDir private Path tempDir;
 
@@ -50,8 +51,8 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
     @Test
     void testSupportsJavaFiles() {
-        assertThat(service.supports(Path.of("Test.java"))).isTrue();
-        assertThat(service.supports(Path.of("path/to/Test.java"))).isTrue();
+        assertThat(service.supports(Path.of(TEST_JAVA))).isTrue();
+        assertThat(service.supports(Path.of("path/to/" + TEST_JAVA))).isTrue();
         assertThat(service.supports(Path.of("Test.JAVA"))).isTrue();
         assertThat(service.supports(Path.of("Test.txt"))).isFalse();
         assertThat(service.supports(null)).isFalse();
@@ -97,7 +98,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, validJava);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -118,7 +119,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, invalidJava);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -130,7 +131,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                             assertThat(d.tool()).isEqualTo("java-compiler");
                             assertThat(d.ruleId()).isEqualTo("compilation-error");
                             assertThat(d.message()).contains("missing ';'");
-                            assertThat(d.file()).endsWith("Test.java");
+                            assertThat(d.file()).endsWith(TEST_JAVA);
                             assertThat(d.line()).isGreaterThan(0);
                             assertThat(d.column()).isGreaterThan(0);
                         });
@@ -185,7 +186,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
     @Test
     void testDiagnoseWithNullContext() {
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(null, List.of(javaFile)));
 
@@ -206,7 +207,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, javaWithTypeError);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -233,7 +234,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, javaWithReturnTypeError);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -263,7 +264,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, validJava);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -289,7 +290,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, javaWithGenerics);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -366,7 +367,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, javaWithArrays);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));
@@ -389,7 +390,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path javaFile = tempDir.resolve("Test.java");
+        Path javaFile = tempDir.resolve(TEST_JAVA);
         Files.writeString(javaFile, javaWithUnresolved);
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile)));

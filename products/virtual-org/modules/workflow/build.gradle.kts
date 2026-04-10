@@ -10,7 +10,7 @@ dependencies {
     implementation(libs.slf4j.api)
 
     // Testing
-    testImplementation(libs.bundles.test.essentials)
+    testImplementation(libs.bundles.testing.core)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(project(":platform:java:testing"))
 }

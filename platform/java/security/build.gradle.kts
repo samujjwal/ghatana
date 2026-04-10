@@ -29,18 +29,18 @@ dependencies {
     
     // JWT / Auth / OAuth2 (canonical: Nimbus JOSE+JWT)
     api(libs.nimbus.jose.jwt)
-    implementation(libs.nimbus.oauth2.sdk)
-    implementation(libs.jbcrypt)
+    implementation("com.nimbusds:oauth2-oidc-sdk:11.20.1")
+    implementation("org.mindrot:jbcrypt:0.4")
     
     // Encryption
     implementation(libs.bouncycastle.provider)
     
     // Caching (for OAuth2 session management)
-    implementation(libs.caffeine)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
     
     // Token store adapters (from former auth module)
     implementation(libs.jedis)
-    compileOnly(libs.jakarta.persistence.api)
+    compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
     
     // JSON processing (for token serialization)
     implementation(libs.jackson.databind)
@@ -64,7 +64,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.wiremock)
+    testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

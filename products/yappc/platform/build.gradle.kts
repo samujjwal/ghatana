@@ -46,7 +46,7 @@ dependencies {
     implementation(libs.jakarta.persistence.api)
 
     // AI/ML
-    implementation(libs.langchain4j)
+    implementation(libs.langchain4j.core)
 
     // Kubernetes
     implementation(libs.fabric8.kubernetes.client)
@@ -67,7 +67,7 @@ dependencies {
     
     // gRPC
     implementation(libs.grpc.stub)
-    implementation(libs.grpc.netty)
+    implementation(libs.grpc.netty.shaded)
 
     // Lombok
     compileOnly(libs.lombok)

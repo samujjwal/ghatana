@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <b>Purpose</b><br>
  * Concrete StorageConnector adapter for time-series data backends.
  * Optimized for time-windowed queries, retention policies, and rollup
- * operations.
+ * OPERATIONs.
  * Supports efficient range queries, aggregations, and gap filling.
  *
  * <p>
@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - StorageConnector adapter in infrastructure layer (hexagonal architecture)
  * - Implements StorageConnector port from domain layer
  * - Optimized for time-series queries (not general-purpose entities)
- * - Multi-tenant safe: all operations filtered by tenant context
+ * - Multi-TENANT safe: all OPERATIONs filtered by TENANT context
  * - Provides time-window based filtering and rollup aggregations
  *
  * <p>
@@ -70,7 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *         .sort("timestamp", QuerySpec.SortDirection.ASC)
  *         .build();
  *
- * connector.query(collectionId, tenantId, query)
+ * connector.query(COLLECTIONId, tenantId, query)
  *         .thenApply(result -> result.entities());
  * }</pre>
  *
@@ -95,8 +95,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * - `connector.timeseries.query` (counter)
  * - `connector.timeseries.rollup` (counter)
  * - `connector.timeseries.retention` (counter)
- * - `connector.timeseries.duration` (timer)
- * - `connector.timeseries.error` (counter, tagged by error type)
+ * - `CONNECTOR_TIMESERIES_DURATION` (timer)
+ * - `CONNECTOR_TIMESERIES_ERROR` (counter, tagged by error type)
  *
  * @see StorageConnector
  * @see Entity
@@ -110,6 +110,18 @@ public class TimeSeriesConnector implements StorageConnector {
 
     private static final Logger log = LoggerFactory.getLogger(TimeSeriesConnector.class);
     private static final long DEFAULT_RETENTION_MILLIS = 30 * 24 * 60 * 60 * 1000L; // 30 days
+    
+    // Constants for duplicate literals
+    private static final String COLLECTION = "collection";
+    private static final String OPERATION = "operation";
+    private static final String CONNECTOR_TIMESERIES_DURATION = "connector.timeseries.duration";
+    private static final String CONNECTOR_TIMESERIES_ERROR = "connector.timeseries.error";
+    private static final String ERROR_TYPE = "error_type";
+    private static final String COLLECTION_ID_CANNOT_BE_NULL = "CollectionId cannot be null";
+    private static final String TENANT_ID_CANNOT_BE_NULL = "TenantId cannot be null";
+    private static final String COUNT_TAG = "count";
+    private static final String TENANT = "tenant";
+    
     private final MetricsCollector metrics;
     private final Map<String, List<Entity>> timeSeriesStore = new ConcurrentHashMap<>();
 
@@ -128,13 +140,13 @@ public class TimeSeriesConnector implements StorageConnector {
     public Promise<Entity> create(Entity entity) {
         Objects.requireNonNull(entity, "Entity cannot be null");
         Objects.requireNonNull(entity.getTenantId(), "Entity tenantId cannot be null");
-        Objects.requireNonNull(entity.getCollectionName(), "Entity collectionName cannot be null");
+        Objects.requireNonNull(entity.getCollectionName(), "Entity COLLECTIONName cannot be null");
 
         long startTime = System.currentTimeMillis();
         try {
             metrics.incrementCounter("connector.timeseries.create",
-                    "tenant", entity.getTenantId(),
-                    "collection", entity.getCollectionName());
+                    "TENANT", entity.getTenantId(),
+                    "COLLECTION", entity.getCollectionName());
 
             // Generate ID if not present
             Entity entityToCreate = entity;
@@ -155,25 +167,25 @@ public class TimeSeriesConnector implements StorageConnector {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "create",
-                    "tenant", entity.getTenantId());
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "create",
+                    "TENANT", entity.getTenantId());
 
             return Promise.of(entityToCreate);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "create",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", entity.getTenantId());
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "create",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", entity.getTenantId());
             log.error("Failed to create entity in time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<Optional<Entity>> read(UUID COLLECTIONId, String tenantId, UUID entityId) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(entityId, "EntityId cannot be null");
 
         long startTime = System.currentTimeMillis();
@@ -186,16 +198,16 @@ public class TimeSeriesConnector implements StorageConnector {
                     .findFirst();
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "read",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "read",
+                    "TENANT", tenantId);
 
             return Promise.of(found);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "read",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "read",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to read entity from time-series store", e);
             return Promise.ofException(e);
         }
@@ -210,8 +222,8 @@ public class TimeSeriesConnector implements StorageConnector {
         long startTime = System.currentTimeMillis();
         try {
             metrics.incrementCounter("connector.timeseries.update",
-                    "tenant", entity.getTenantId(),
-                    "collection", entity.getCollectionName());
+                    "TENANT", entity.getTenantId(),
+                    "COLLECTION", entity.getCollectionName());
 
             String storeKey = entity.getTenantId();
             List<Entity> entities = timeSeriesStore.get(storeKey);
@@ -222,9 +234,9 @@ public class TimeSeriesConnector implements StorageConnector {
                         if (entities.get(i).getId().equals(entity.getId())) {
                             entities.set(i, entity);
                             long duration = System.currentTimeMillis() - startTime;
-                            metrics.recordTimer("connector.timeseries.duration", duration,
-                                    "operation", "update",
-                                    "tenant", entity.getTenantId());
+                            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                                    "OPERATION", "update",
+                                    "TENANT", entity.getTenantId());
                             return Promise.of(entity);
                         }
                     }
@@ -235,19 +247,19 @@ public class TimeSeriesConnector implements StorageConnector {
             return Promise.ofException(
                     new IllegalArgumentException("Entity not found: " + entity.getId()));
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "update",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", entity.getTenantId());
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "update",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", entity.getTenantId());
             log.error("Failed to update entity in time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<Void> delete(UUID COLLECTIONId, String tenantId, UUID entityId) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(entityId, "EntityId cannot be null");
 
         long startTime = System.currentTimeMillis();
@@ -259,38 +271,38 @@ public class TimeSeriesConnector implements StorageConnector {
                 boolean removed = entities.removeIf(e -> entityId.equals(e.getId()));
                 if (removed) {
                     metrics.incrementCounter("connector.timeseries.delete",
-                            "tenant", tenantId,
-                            "collection", collectionId.toString());
+                            "TENANT", tenantId,
+                            "COLLECTION", COLLECTIONId.toString());
                 }
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "delete",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "delete",
+                    "TENANT", tenantId);
 
             return Promise.of(null);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "delete",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "delete",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to delete entity from time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<QueryResult> query(UUID COLLECTIONId, String tenantId, QuerySpec spec) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(spec, "QuerySpec cannot be null");
 
         long startTime = System.currentTimeMillis();
         try {
             metrics.incrementCounter("connector.timeseries.query",
-                    "tenant", tenantId,
-                    "collection", collectionId.toString());
+                    "TENANT", tenantId,
+                    "COLLECTION", COLLECTIONId.toString());
 
             String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.getOrDefault(storeKey, Collections.emptyList());
@@ -311,9 +323,9 @@ public class TimeSeriesConnector implements StorageConnector {
                     .toList();
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "query",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "query",
+                    "TENANT", tenantId);
 
             return Promise.of(new QueryResult(
                     paginated,
@@ -322,20 +334,20 @@ public class TimeSeriesConnector implements StorageConnector {
                     offset,
                     duration));
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "query",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "query",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to query time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<List<Entity>> scan(UUID collectionId, String tenantId, String filterExpression, int limit,
+    public Promise<List<Entity>> scan(UUID COLLECTIONId, String tenantId, String filterExpression, int limit,
             int offset) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
 
         long startTime = System.currentTimeMillis();
         try {
@@ -356,25 +368,25 @@ public class TimeSeriesConnector implements StorageConnector {
                     .toList();
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "scan",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "scan",
+                    "TENANT", tenantId);
 
             return Promise.of(paginated);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "scan",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "scan",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to scan time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<Long> count(UUID COLLECTIONId, String tenantId, String filterExpression) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
 
         long startTime = System.currentTimeMillis();
         try {
@@ -388,33 +400,33 @@ public class TimeSeriesConnector implements StorageConnector {
                     : entities.size();
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "count",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "COUNT_TAG",
+                    "TENANT", tenantId);
 
             return Promise.of(count);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "count",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "COUNT_TAG",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to count entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<List<Entity>> bulkCreate(UUID COLLECTIONId, String tenantId, List<Entity> entities) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(entities, "Entities list cannot be null");
 
         long startTime = System.currentTimeMillis();
         try {
             metrics.incrementCounter("connector.timeseries.bulk_create",
-                    "tenant", tenantId,
-                    "collection", collectionId.toString(),
-                    "count", String.valueOf(entities.size()));
+                    "TENANT", tenantId,
+                    "COLLECTION", COLLECTIONId.toString(),
+                    "COUNT_TAG", String.valueOf(entities.size()));
 
             String storeKey = tenantId;
             List<Entity> created = new ArrayList<>();
@@ -436,25 +448,25 @@ public class TimeSeriesConnector implements StorageConnector {
                     .addAll(created);
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "bulk_create",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "bulk_create",
+                    "TENANT", tenantId);
 
             return Promise.of(created);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "bulk_create",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "bulk_create",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to bulk create entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<List<Entity>> bulkUpdate(UUID collectionId, String tenantId, List<Entity> entities) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<List<Entity>> bulkUpdate(UUID COLLECTIONId, String tenantId, List<Entity> entities) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(entities, "Entities list cannot be null");
 
         long startTime = System.currentTimeMillis();
@@ -464,7 +476,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
             if (store == null) {
                 return Promise.ofException(
-                        new IllegalArgumentException("Collection not found: " + collectionId));
+                        new IllegalArgumentException("Collection not found: " + COLLECTIONId));
             }
 
             List<Entity> updated = new ArrayList<>();
@@ -479,25 +491,25 @@ public class TimeSeriesConnector implements StorageConnector {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "bulk_update",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "bulk_update",
+                    "TENANT", tenantId);
 
             return Promise.of(updated);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "bulk_update",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "bulk_update",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to bulk update entities in time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<Long> bulkDelete(UUID COLLECTIONId, String tenantId, List<UUID> entityIds) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
         Objects.requireNonNull(entityIds, "EntityIds list cannot be null");
 
         long startTime = System.currentTimeMillis();
@@ -517,25 +529,25 @@ public class TimeSeriesConnector implements StorageConnector {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "bulk_delete",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "bulk_delete",
+                    "TENANT", tenantId);
 
             return Promise.of(deleted);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "bulk_delete",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "bulk_delete",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to bulk delete entities from time-series store", e);
             return Promise.ofException(e);
         }
     }
 
     @Override
-    public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        Objects.requireNonNull(collectionId, "CollectionId cannot be null");
-        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+    public Promise<Long> truncate(UUID COLLECTIONId, String tenantId) {
+        Objects.requireNonNull(COLLECTIONId, "COLLECTION_ID_CANNOT_BE_NULL");
+        Objects.requireNonNull(tenantId, "TENANT_ID_CANNOT_BE_NULL");
 
         long startTime = System.currentTimeMillis();
         try {
@@ -546,21 +558,21 @@ public class TimeSeriesConnector implements StorageConnector {
             timeSeriesStore.remove(storeKey);
 
             metrics.incrementCounter("connector.timeseries.truncate",
-                    "tenant", tenantId,
-                    "collection", collectionId.toString(),
-                    "count", String.valueOf(deleted));
+                    "TENANT", tenantId,
+                    "COLLECTION", COLLECTIONId.toString(),
+                    "COUNT_TAG", String.valueOf(deleted));
 
             long duration = System.currentTimeMillis() - startTime;
-            metrics.recordTimer("connector.timeseries.duration", duration,
-                    "operation", "truncate",
-                    "tenant", tenantId);
+            metrics.recordTimer("CONNECTOR_TIMESERIES_DURATION", duration,
+                    "OPERATION", "truncate",
+                    "TENANT", tenantId);
 
             return Promise.of(deleted);
         } catch (Exception e) {
-            metrics.incrementCounter("connector.timeseries.error",
-                    "operation", "truncate",
-                    "error_type", e.getClass().getSimpleName(),
-                    "tenant", tenantId);
+            metrics.incrementCounter("CONNECTOR_TIMESERIES_ERROR",
+                    "OPERATION", "truncate",
+                    "ERROR_TYPE", e.getClass().getSimpleName(),
+                    "TENANT", tenantId);
             log.error("Failed to truncate time-series store", e);
             return Promise.ofException(e);
         }

@@ -1,15 +1,15 @@
 package com.ghatana.platform.domain.event;
 
-import com.ghatana.contracts.common.v1.AdaptationPolicyPojo;
-import com.ghatana.contracts.common.v1.AuditPolicyPojo;
+import com.ghatana.contracts.common.v1.AdaptationPolicyProto;
+import com.ghatana.contracts.common.v1.AuditPolicyProto;
 import com.ghatana.contracts.common.v1.CompatibilityPolicyProto;
-import com.ghatana.contracts.common.v1.ProvenancePolicyPojo;
-import com.ghatana.contracts.common.v1.StatsCollectionPolicyPojo;
+import com.ghatana.contracts.common.v1.ProvenancePolicyProto;
+import com.ghatana.contracts.common.v1.StatsCollectionPolicyProto;
 import com.ghatana.contracts.event.v1.EventContextTypeProto;
-import com.ghatana.contracts.event.v1.EventStorageHintsPojo;
-import com.ghatana.contracts.event.v1.GovernancePojo;
+import com.ghatana.contracts.event.v1.EventStorageHintsProto;
+import com.ghatana.contracts.event.v1.GovernanceProto;
 import com.ghatana.contracts.event.v1.LifecycleStatusProto;
-import com.ghatana.contracts.event.v1.SemanticVersionPojo;
+import com.ghatana.contracts.event.v1.SemanticVersionProto;
 import com.ghatana.platform.domain.exception.SchemaValidationException;
 import lombok.Builder;
 import lombok.NonNull;
@@ -98,7 +98,7 @@ import java.util.UUID;
  * Transition via {@link #transition(LifecycleStatusProto, String)} creating new immutable instance.
  *
  * <h2>Governance Policies</h2>
- * Comprehensive governance through {@link GovernancePojo}:
+ * Comprehensive governance through {@link GovernanceProto}:
  * <ul>
  *   <li><b>Audit Policy</b>: What to audit (creation, modification, access)</li>
  *   <li><b>Retention Policy</b>: How long to retain (default: 30 days)</li>
@@ -109,7 +109,7 @@ import java.util.UUID;
  * </ul>
  *
  * <h2>Storage Optimization</h2>
- * {@link EventStorageHintsPojo} provides storage directives:
+ * {@link EventStorageHintsProto} provides storage directives:
  * <ul>
  *   <li><b>Hot Storage</b>: Keep in fast storage (else cold storage)</li>
  *   <li><b>TTL (Days)</b>: Time to live in storage</li>
@@ -161,9 +161,9 @@ import java.util.UUID;
  *               .name("totalAmount").type(EventParameterType.DOUBLE)
  *               .required(true).indexed(false).build()
  *       ))
- *       .governance(GovernancePojo.builder()
+ *       .governance(GovernanceProto.builder()
  *           .retentionDays(90)
- *           .auditPolicy(new AuditPolicyPojo())
+ *           .auditPolicy(new AuditPolicyProto())
  *           .build())
  *       .status(LifecycleStatusProto.ACTIVE)
  *       .build();
@@ -198,24 +198,25 @@ public class GEventType implements EventType, Serializable {
     public static final String DEFAULT_NAMESPACE = "public";
     public static final EventContextTypeProto DEFAULT_CONTEXT_TYPE = EventContextTypeProto.TEMPORAL;
     public static final long DEFAULT_GRANULARITY = 60000; // 60 seconds
-    public static final SemanticVersionPojo DEFAULT_VERSION = new SemanticVersionPojo();
-    public static final GovernancePojo DEFAULT_GOVERNANCE = new GovernancePojo();
-    public static final EventStorageHintsPojo DEFAULT_STORAGE_HINTS = new EventStorageHintsPojo();
-    static {
-        DEFAULT_VERSION.setMajor(1);
-        DEFAULT_VERSION.setMinor(0);
-        DEFAULT_VERSION.setPatch(0);
+    public static final SemanticVersionProto DEFAULT_VERSION = SemanticVersionProto.newBuilder()
+        .setMajor(1)
+        .setMinor(0)
+        .setPatch(0)
+        .build();
 
-        DEFAULT_GOVERNANCE.setAuditPolicy(new AuditPolicyPojo());
-        DEFAULT_GOVERNANCE.setRetentionDays(30);
-        DEFAULT_GOVERNANCE.setLegalHoldAllowed(false);
-        DEFAULT_GOVERNANCE.setAdaptationPolicy(new AdaptationPolicyPojo());
-        DEFAULT_GOVERNANCE.setProvenancePolicy(new ProvenancePolicyPojo());
-        DEFAULT_GOVERNANCE.setStatsCollectionPolicy(new StatsCollectionPolicyPojo());
+    public static final GovernanceProto DEFAULT_GOVERNANCE = GovernanceProto.newBuilder()
+        .setAuditPolicy(AuditPolicyProto.newBuilder().build())
+        .setRetentionDays(30)
+        .setLegalHoldAllowed(false)
+        .setAdaptationPolicy(AdaptationPolicyProto.newBuilder().build())
+        .setProvenancePolicy(ProvenancePolicyProto.newBuilder().build())
+        .setStatsCollectionPolicy(StatsCollectionPolicyProto.newBuilder().build())
+        .build();
 
-        DEFAULT_STORAGE_HINTS.setHotStorage(false);
-        DEFAULT_STORAGE_HINTS.setTtlDays(30);
-    }
+    public static final EventStorageHintsProto DEFAULT_STORAGE_HINTS = EventStorageHintsProto.newBuilder()
+        .setHotStorage(false)
+        .setTtlDays(30)
+        .build();
 
 
     @NonNull
@@ -223,7 +224,7 @@ public class GEventType implements EventType, Serializable {
     @NonNull private final String name;
     @Builder.Default private final String category = "";
     @Builder.Default private final String namespace = DEFAULT_NAMESPACE;
-    @Builder.Default private final SemanticVersionPojo semanticVersion = DEFAULT_VERSION;
+    @Builder.Default private final SemanticVersionProto semanticVersion = DEFAULT_VERSION;
     @Builder.Default private final EventContextTypeProto contextType = DEFAULT_CONTEXT_TYPE;
     @Builder.Default private final boolean intervalBased = false;
     @Builder.Default private final long granularity = DEFAULT_GRANULARITY;
@@ -234,8 +235,8 @@ public class GEventType implements EventType, Serializable {
     @Builder.Default private final Map<String, EventParameterSpec> payload = Map.of(); // unmodifiable
     @Builder.Default private final Boolean supportsConfidence = true;
     @Builder.Default private final Set<String> aliases = new HashSet<>();
-    @Builder.Default private final GovernancePojo governance = DEFAULT_GOVERNANCE;
-    @Builder.Default private final EventStorageHintsPojo storageHints = DEFAULT_STORAGE_HINTS;
+    @Builder.Default private final GovernanceProto governance = DEFAULT_GOVERNANCE;
+    @Builder.Default private final EventStorageHintsProto storageHints = DEFAULT_STORAGE_HINTS;
     @Builder.Default private final LifecycleStatusProto status = LifecycleStatusProto.DRAFT;
     @Builder.Default private final String statusMessage = LifecycleStatusProto.DRAFT.name();
     @Builder.Default private final CompatibilityPolicyProto compatibilityPolicy = CompatibilityPolicyProto.NONE;

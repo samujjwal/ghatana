@@ -76,7 +76,7 @@ class PatternHasherTest {
             @Override public String getName() { return name; }
             @Override public String getCategory() { return null; }
             @Override public String getNamespace() { return "orders"; }
-            @Override public com.ghatana.contracts.event.v1.SemanticVersionPojo getSemanticVersion() { return null; }
+            @Override public com.ghatana.contracts.event.v1.SemanticVersionProto getSemanticVersion() { return null; }
             @Override public com.ghatana.contracts.event.v1.EventContextTypeProto getContextType() { return null; }
             @Override public boolean isIntervalBased() { return false; }
             @Override public long getGranularity() { return 0; }
@@ -87,8 +87,8 @@ class PatternHasherTest {
             @Override public Map<String, EventParameterSpec> getPayload() { return Map.of(); }
             @Override public Boolean getSupportsConfidence() { return false; }
             @Override public Set<String> getAliases() { return Set.of(); }
-            @Override public com.ghatana.contracts.event.v1.GovernancePojo getGovernance() { return null; }
-            @Override public com.ghatana.contracts.event.v1.EventStorageHintsPojo getStorageHints() { return null; }
+            @Override public com.ghatana.contracts.event.v1.GovernanceProto getGovernance() { return null; }
+            @Override public com.ghatana.contracts.event.v1.EventStorageHintsProto getStorageHints() { return null; }
             @Override public com.ghatana.contracts.event.v1.LifecycleStatusProto getStatus() { return null; }
             @Override public String getStatusMessage() { return null; }
             @Override public com.ghatana.contracts.common.v1.CompatibilityPolicyProto getCompatibilityPolicy() { return null; }

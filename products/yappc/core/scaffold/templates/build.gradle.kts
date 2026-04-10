@@ -18,19 +18,21 @@ dependencies {
     api(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.slf4j.api)
-    implementation(libs.diffutils)
-    implementation(libs.handlebars)
     implementation(libs.networknt.validator)
     implementation("org.yaml:snakeyaml")
-    implementation(libs.openrewrite.core)
-    implementation(libs.openrewrite.java)
 
     implementation(libs.activej.common)
+    
+    // Handlebars template engine
+    implementation("com.github.jknack:handlebars:4.3.1")
+    
+    // Diff library for text comparison
+    implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
-    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.mockito.core)

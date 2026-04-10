@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * - Validation integration (validate suggestions before returning)
  * - Metrics collection (track suggestion quality, errors, latency)
  * - Logging and audit trails
- * - Multi-tenant isolation and context tracking
+ * - Multi-TENANT isolation and context tracking
  *
  * <p>
  * <b>Architecture Role</b><br>
@@ -44,15 +44,15 @@ import java.util.stream.Collectors;
  *
  * // Generate entity with validation
  * Promise<EntitySuggestion> suggestion = appService.generateFromDescription(
- *         "tenant-123",
+ *         "TENANT-123",
  *         "products",
  *         "iPhone 15 Pro with 256GB");
  * }</pre>
  *
  * <p>
  * <b>Caching Strategy</b><br>
- * - Suggestions cached by (tenantId, collectionName, description) hash
- * - Enrichments cached by (tenantId, collectionName, entityId)
+ * - Suggestions cached by (TENANTId, collectionName, description) hash
+ * - Enrichments cached by (TENANTId, collectionName, entityId)
  * - Relations NOT cached (dynamic based on vector similarity)
  * - All caches implement TTL-based eviction with auto-cleanup
  *
@@ -72,6 +72,11 @@ import java.util.stream.Collectors;
 public class EntitySuggestionService {
 
     private static final Logger log = LoggerFactory.getLogger(EntitySuggestionService.class);
+    
+    // Constants for duplicate literals
+    private static final String TENANT = "tenant";
+    private static final String COLLECTION = "collection";
+    private static final int MIN_SUGGESTION_THRESHOLD = 5;
 
     private final com.ghatana.datacloud.entity.EntitySuggestionService aiService;
     private final EntityValidationService validationService;
@@ -154,42 +159,42 @@ public class EntitySuggestionService {
      * 4. Cache result
      * 5. Emit metrics and audit logs
      *
-     * @param tenantId       Tenant identifier (required)
+     * @param TENANTId       Tenant identifier (required)
      * @param collectionName Collection name (required)
      * @param description    Natural language description (required)
      * @return Promise of EntitySuggestion with validated data
      */
     public Promise<EntitySuggestion> generateFromDescription(
-            String tenantId,
+            String TENANTId,
             String collectionName,
             String description) {
 
-        validateParameters(tenantId, collectionName);
+        validateParameters(TENANTId, collectionName);
         Objects.requireNonNull(description, "Description cannot be null");
 
         long startTime = System.currentTimeMillis();
-        String cacheKey = buildSuggestionCacheKey(tenantId, collectionName, description);
+        String cacheKey = buildSuggestionCacheKey(TENANTId, collectionName, description);
 
         // Check cache
         CachedSuggestion cached = suggestionCache.get(cacheKey);
         if (cached != null && !cached.isExpired(cacheTtlMillis)) {
             metrics.incrementCounter("entity.suggestion.generate.cache_hit",
-                    "tenant", tenantId, "collection", collectionName);
+                    TENANT, TENANTId, COLLECTION, collectionName);
             log.debug("Suggestion cache hit for collection={}", collectionName);
             return Promise.of(cached.suggestion);
         }
 
         // Cache miss - delegate to AI service
-        return aiService.generateFromDescription(tenantId, collectionName, description)
+        return aiService.generateFromDescription(TENANTId, collectionName, description)
                 .then(suggestion -> {
                     // Validate generated entity
-                    return validationService.validateEntity(tenantId, collectionName, suggestion.suggestedData())
+                    return validationService.validateEntity(TENANTId, collectionName, suggestion.suggestedData())
                             .map(validationResult -> {
                                 if (!validationResult.isValid()) {
                                     log.warn("Generated suggestion has validation errors for collection={}",
                                             collectionName);
                                     metrics.incrementCounter("entity.suggestion.validation.failed",
-                                            "tenant", tenantId,
+                                            "TENANT", TENANTId,
                                             "collection", collectionName);
                                 }
 
@@ -199,7 +204,7 @@ public class EntitySuggestionService {
                                 long duration = System.currentTimeMillis() - startTime;
                                 metrics.recordTimer("entity.suggestion.generate.duration", duration);
                                 metrics.incrementCounter("entity.suggestion.generate.success",
-                                        "tenant", tenantId,
+                                        "TENANT", TENANTId,
                                         "collection", collectionName,
                                         "confidence", suggestion.isHighConfidence() ? "high"
                                                 : (suggestion.isMediumConfidence() ? "medium" : "low"));
@@ -214,7 +219,7 @@ public class EntitySuggestionService {
                     long duration = System.currentTimeMillis() - startTime;
                     metrics.recordTimer("entity.suggestion.generate.duration", duration);
                     metrics.incrementCounter("entity.suggestion.generate.error",
-                            "tenant", tenantId,
+                            "TENANT", TENANTId,
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
@@ -234,33 +239,33 @@ public class EntitySuggestionService {
      * 5. Cache results
      * 6. Emit metrics
      *
-     * @param tenantId       Tenant identifier (required)
+     * @param TENANTId       Tenant identifier (required)
      * @param collectionName Collection name (required)
      * @param entityId       Entity ID to enrich (required)
      * @return Promise of list of EntityEnrichment suggestions
      */
     public Promise<List<EntityEnrichment>> suggestEnrichments(
-            String tenantId,
+            String TENANTId,
             String collectionName,
             UUID entityId) {
 
-        validateParameters(tenantId, collectionName);
+        validateParameters(TENANTId, collectionName);
         Objects.requireNonNull(entityId, "Entity ID cannot be null");
 
         long startTime = System.currentTimeMillis();
-        String cacheKey = buildEnrichmentCacheKey(tenantId, collectionName, entityId);
+        String cacheKey = buildEnrichmentCacheKey(TENANTId, collectionName, entityId);
 
         // Check cache
         CachedEnrichments cached = enrichmentCache.get(cacheKey);
         if (cached != null && !cached.isExpired(cacheTtlMillis)) {
             metrics.incrementCounter("entity.enrichment.cache_hit",
-                    "tenant", tenantId, "collection", collectionName);
+                    "TENANT", TENANTId, "collection", collectionName);
             log.debug("Enrichment cache hit for entity={}", entityId);
             return Promise.of(cached.enrichments);
         }
 
         // Cache miss - delegate to AI service
-        return aiService.suggestEnrichments(tenantId, collectionName, entityId)
+        return aiService.suggestEnrichments(TENANTId, collectionName, entityId)
                 .then(enrichments -> {
                     // Filter and validate enrichment suggestions
                     List<EntityEnrichment> validated = enrichments.stream()
@@ -281,7 +286,7 @@ public class EntitySuggestionService {
                     long duration = System.currentTimeMillis() - startTime;
                     metrics.recordTimer("entity.enrichment.duration", duration);
                     metrics.incrementCounter("entity.enrichment.success",
-                            "tenant", tenantId,
+                            "TENANT", TENANTId,
                             "collection", collectionName,
                             "count", String.valueOf(validated.size()));
 
@@ -294,7 +299,7 @@ public class EntitySuggestionService {
                     long duration = System.currentTimeMillis() - startTime;
                     metrics.recordTimer("entity.enrichment.duration", duration);
                     metrics.incrementCounter("entity.enrichment.error",
-                            "tenant", tenantId,
+                            "TENANT", TENANTId,
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
@@ -312,19 +317,19 @@ public class EntitySuggestionService {
      * 2. Filter results by minimum similarity threshold
      * 3. Emit metrics
      *
-     * @param tenantId       Tenant identifier (required)
+     * @param TENANTId       Tenant identifier (required)
      * @param collectionName Collection name (required)
      * @param entityId       Entity ID to find relations for (required)
      * @param limit          Maximum number of relations to return (required, > 0)
      * @return Promise of list of EntityRelation objects
      */
     public Promise<List<EntityRelation>> suggestRelations(
-            String tenantId,
+            String TENANTId,
             String collectionName,
             UUID entityId,
             int limit) {
 
-        validateParameters(tenantId, collectionName);
+        validateParameters(TENANTId, collectionName);
         Objects.requireNonNull(entityId, "Entity ID cannot be null");
         if (limit <= 0) {
             throw new IllegalArgumentException("Limit must be positive, got: " + limit);
@@ -333,12 +338,12 @@ public class EntitySuggestionService {
         long startTime = System.currentTimeMillis();
 
         // No caching for relations - always fresh vector search
-        return aiService.suggestRelations(tenantId, collectionName, entityId, limit)
+        return aiService.suggestRelations(TENANTId, collectionName, entityId, limit)
                 .then(relations -> {
                     long duration = System.currentTimeMillis() - startTime;
                     metrics.recordTimer("entity.relation.duration", duration);
                     metrics.incrementCounter("entity.relation.success",
-                            "tenant", tenantId,
+                            "TENANT", TENANTId,
                             "collection", collectionName,
                             "count", String.valueOf(relations.size()));
 
@@ -350,7 +355,7 @@ public class EntitySuggestionService {
                     long duration = System.currentTimeMillis() - startTime;
                     metrics.recordTimer("entity.relation.duration", duration);
                     metrics.incrementCounter("entity.relation.error",
-                            "tenant", tenantId,
+                            "TENANT", TENANTId,
                             "collection", collectionName,
                             "error", error.getClass().getSimpleName());
 
@@ -362,59 +367,59 @@ public class EntitySuggestionService {
     /**
      * Clears suggestion cache (e.g., when schema changes).
      *
-     * @param tenantId Tenant identifier or null to clear all tenants
+     * @param TENANTId Tenant identifier or null to clear all TENANTs
      */
-    public void clearSuggestionCache(String tenantId) {
-        if (tenantId == null) {
+    public void clearSuggestionCache(String TENANTId) {
+        if (TENANTId == null) {
             suggestionCache.clear();
             log.info("Cleared all suggestion caches");
         } else {
             int beforeSize = suggestionCache.size();
-            suggestionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(tenantId + ":"));
-            log.info("Cleared suggestion cache for tenant={} (removed {} entries)",
-                    tenantId, beforeSize - suggestionCache.size());
+            suggestionCache.entrySet().removeIf(entry -> entry.getKey().startsWith(TENANTId + ":"));
+            log.info("Cleared suggestion cache for TENANT={} (removed {} entries)",
+                    TENANTId, beforeSize - suggestionCache.size());
         }
     }
 
     /**
      * Clears enrichment cache (e.g., when entity changes).
      *
-     * @param tenantId Tenant identifier or null to clear all tenants
+     * @param TENANTId Tenant identifier or null to clear all TENANTs
      */
-    public void clearEnrichmentCache(String tenantId) {
-        if (tenantId == null) {
+    public void clearEnrichmentCache(String TENANTId) {
+        if (TENANTId == null) {
             enrichmentCache.clear();
             log.info("Cleared all enrichment caches");
         } else {
             int beforeSize = enrichmentCache.size();
-            enrichmentCache.entrySet().removeIf(entry -> entry.getKey().startsWith(tenantId + ":"));
-            log.info("Cleared enrichment cache for tenant={} (removed {} entries)",
-                    tenantId, beforeSize - enrichmentCache.size());
+            enrichmentCache.entrySet().removeIf(entry -> entry.getKey().startsWith(TENANTId + ":"));
+            log.info("Cleared enrichment cache for TENANT={} (removed {} entries)",
+                    TENANTId, beforeSize - enrichmentCache.size());
         }
     }
 
     // ==================== Private Helper Methods ====================
 
-    private void validateParameters(String tenantId, String collectionName) {
-        if (tenantId == null) {
-            // Tests expect IllegalArgumentException with message containing 'tenantId'
-            throw new IllegalArgumentException("tenantId must not be null");
+    private void validateParameters(String TENANTId, String collectionName) {
+        if (TENANTId == null) {
+            // Tests expect IllegalArgumentException with message containing 'TENANTId'
+            throw new IllegalArgumentException("TENANTId must not be null");
         }
-        if (tenantId.isBlank()) {
-            throw new IllegalArgumentException("tenantId must not be blank");
+        if (TENANTId.isBlank()) {
+            throw new IllegalArgumentException("TENANTId must not be blank");
         }
         if (collectionName == null || collectionName.isBlank()) {
             throw new IllegalArgumentException("Collection name must not be blank");
         }
     }
 
-    private String buildSuggestionCacheKey(String tenantId, String collectionName, String description) {
+    private String buildSuggestionCacheKey(String TENANTId, String collectionName, String description) {
         // Use hash of description to avoid very long cache keys
         int descriptionHash = Objects.hash(description);
-        return tenantId + ":" + collectionName + ":suggestion:" + descriptionHash;
+        return TENANTId + ":" + collectionName + ":suggestion:" + descriptionHash;
     }
 
-    private String buildEnrichmentCacheKey(String tenantId, String collectionName, UUID entityId) {
-        return tenantId + ":" + collectionName + ":enrichment:" + entityId.toString();
+    private String buildEnrichmentCacheKey(String TENANTId, String collectionName, UUID entityId) {
+        return TENANTId + ":" + collectionName + ":enrichment:" + entityId.toString();
     }
 }

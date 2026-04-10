@@ -1,9 +1,5 @@
-import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.tasks.testing.Test
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-
 plugins {
-    id("java-library")
+    id("java-platform")
 }
 
 group = "com.ghatana.services"
@@ -11,36 +7,12 @@ version = rootProject.version
 
 description = "Shared Services - Cross-product microservices"
 
-// Repository configuration is centralized in settings.gradle.kts
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
-
+// Apply standard conventions to all subprojects
 subprojects {
     group = rootProject.group
     version = rootProject.version
-
-    plugins.withId("java") {
-        extensions.configure(JavaPluginExtension::class.java) {
-            toolchain {
-                languageVersion = JavaLanguageVersion.of(21)
-            }
-        }
-    }
-
-    plugins.withId("java-library") {
-        extensions.configure(JavaPluginExtension::class.java) {
-            toolchain {
-                languageVersion = JavaLanguageVersion.of(21)
-            }
-        }
-    }
-
-    tasks.withType(Test::class.java).configureEach {
-        useJUnitPlatform()
-    }
+    
+    // Convention plugins are applied automatically from root build.gradle.kts
+    // No manual configuration needed here
 }
 

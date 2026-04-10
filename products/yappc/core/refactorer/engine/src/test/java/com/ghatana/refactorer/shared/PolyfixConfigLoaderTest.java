@@ -28,6 +28,22 @@ class PolyfixConfigLoaderTest {
 
     @TempDir Path tempDir;
     private Path configFile;
+    
+    // Constants for duplicate literals
+    private static final String ESLINT = "eslint";
+    private static final String RUFF = "ruff";
+    private static final String BLACK = "black";
+    private static final String MYPY = "mypy";
+    private static final String SHELLCHECK = "shellcheck";
+    private static final String SHFMT = "shfmt";
+    private static final String CARGO = "cargo";
+    private static final String RUSTFMT = "rustfmt";
+    private static final String SEMGREP = "semgrep";
+    private static final String NODE = "node";
+    private static final String TSC = "./node_modules/.bin/tsc";
+    private static final String JAVA = "java";
+    private static final String SCHEMAS = "schemas";
+    private static final String PRETTIER = "prettier";
 
     @BeforeEach
     void setUp() throws IOException {
@@ -43,8 +59,8 @@ class PolyfixConfigLoaderTest {
 
         // Then
         assertNotNull(config);
-        assertIterableEquals(List.of("java", "typescript", "python"), config.languages());
-        assertIterableEquals(List.of("schemas", "custom-schemas"), config.schemaPaths());
+        assertIterableEquals(List.of(JAVA, "typescript", "python"), config.languages());
+        assertIterableEquals(List.of(SCHEMAS, "custom-schemas"), config.schemaPaths());
         assertEquals(5, config.budgets().maxPasses());
         assertEquals(10, config.budgets().maxEditsPerFile());
         assertFalse(config.policies().tsAllowTemporaryAny());
@@ -52,17 +68,17 @@ class PolyfixConfigLoaderTest {
         assertTrue(config.policies().bashEnforceStrictMode());
         assertFalse(config.policies().jsonAutofillRequiredDefaults());
         assertEquals("/usr/local/bin/node", config.tools().node());
-        assertEquals("eslint", config.tools().eslint());
-        assertEquals("./node_modules/.bin/tsc", config.tools().tsc());
-        assertEquals("prettier", config.tools().prettier());
-        assertEquals("ruff", config.tools().ruff());
-        assertEquals("black", config.tools().black());
-        assertEquals("mypy", config.tools().mypy());
-        assertEquals("shellcheck", config.tools().shellcheck());
-        assertEquals("shfmt", config.tools().shfmt());
-        assertEquals("cargo", config.tools().cargo());
-        assertEquals("rustfmt", config.tools().rustfmt());
-        assertEquals("semgrep", config.tools().semgrep());
+        assertEquals(ESLINT, config.tools().eslint());
+        assertEquals(TSC, config.tools().tsc());
+        assertEquals(PRETTIER, config.tools().prettier());
+        assertEquals(RUFF, config.tools().ruff());
+        assertEquals(BLACK, config.tools().black());
+        assertEquals(MYPY, config.tools().mypy());
+        assertEquals(SHELLCHECK, config.tools().shellcheck());
+        assertEquals(SHFMT, config.tools().shfmt());
+        assertEquals(CARGO, config.tools().cargo());
+        assertEquals(RUSTFMT, config.tools().rustfmt());
+        assertEquals(SEMGREP, config.tools().semgrep());
     }
 
     @Test
@@ -166,22 +182,22 @@ class PolyfixConfigLoaderTest {
         PolyfixConfig config =
                 new PolyfixConfig(
                         null, // languages is null
-                        List.of("schemas"),
+                        List.of(SCHEMAS),
                         new PolyfixConfig.Budgets(1, 1),
                         new PolyfixConfig.Policies(true, true, true, false),
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         // When / Then
         IllegalArgumentException exception =
@@ -196,23 +212,23 @@ class PolyfixConfigLoaderTest {
         // Given
         PolyfixConfig config =
                 new PolyfixConfig(
-                        List.of("java"),
-                        List.of("schemas"),
+                        List.of(JAVA),
+                        List.of(SCHEMAS),
                         null, // budgets is null
                         new PolyfixConfig.Policies(true, true, true, false),
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         // When / Then
         IllegalArgumentException exception =
@@ -227,23 +243,23 @@ class PolyfixConfigLoaderTest {
         // Given
         PolyfixConfig config =
                 new PolyfixConfig(
-                        List.of("java"),
-                        List.of("schemas"),
+                        List.of(JAVA),
+                        List.of(SCHEMAS),
                         new PolyfixConfig.Budgets(1, 1),
                         null, // policies is null
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         // When / Then
         IllegalArgumentException exception =
@@ -258,8 +274,8 @@ class PolyfixConfigLoaderTest {
         // Given
         PolyfixConfig config =
                 new PolyfixConfig(
-                        List.of("java"),
-                        List.of("schemas"),
+                        List.of(JAVA),
+                        List.of(SCHEMAS),
                         new PolyfixConfig.Budgets(1, 1),
                         new PolyfixConfig.Policies(true, true, true, false),
                         null // tools is null
@@ -278,23 +294,23 @@ class PolyfixConfigLoaderTest {
         // Given
         PolyfixConfig config =
                 new PolyfixConfig(
-                        List.of("java"),
-                        List.of("schemas"),
+                        List.of(JAVA),
+                        List.of(SCHEMAS),
                         new PolyfixConfig.Budgets(0, 1), // maxPasses < 1
                         new PolyfixConfig.Policies(true, true, true, false),
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         // When / Then
         IllegalArgumentException exception =
@@ -309,23 +325,23 @@ class PolyfixConfigLoaderTest {
         // Given
         PolyfixConfig config =
                 new PolyfixConfig(
-                        List.of("java"),
-                        List.of("schemas"),
+                        List.of(JAVA),
+                        List.of(SCHEMAS),
                         new PolyfixConfig.Budgets(1, -1), // maxEditsPerFile < 0
                         new PolyfixConfig.Policies(true, true, true, false),
                         new PolyfixConfig.Tools(
-                                "node",
-                                "eslint",
-                                "tsc",
-                                "prettier",
-                                "ruff",
-                                "black",
-                                "mypy",
-                                "shellcheck",
-                                "shfmt",
-                                "cargo",
-                                "rustfmt",
-                                "semgrep"));
+                                NODE,
+                                ESLINT,
+                                TSC,
+                                PRETTIER,
+                                RUFF,
+                                BLACK,
+                                MYPY,
+                                SHELLCHECK,
+                                SHFMT,
+                                CARGO,
+                                RUSTFMT,
+                                SEMGREP));
 
         // When / Then
         IllegalArgumentException exception =

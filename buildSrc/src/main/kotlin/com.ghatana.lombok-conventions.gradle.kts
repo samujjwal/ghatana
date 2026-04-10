@@ -1,26 +1,10 @@
-import org.gradle.api.artifacts.VersionCatalogsExtension
-
 /**
- * Lombok Convention Plugin
+ * Lombok Convention Plugin - Fixed
  *
  * @doc.type convention-plugin
- * @doc.purpose Configures Lombok annotation processing consistently for main and
- *              test source sets.  Version is sourced from the version catalog;
- *              no fallback to a hardcoded string is permitted.
+ * @doc.purpose Configures Lombok annotation processing consistently
  * @doc.layer build
  * @doc.pattern Convention
- *
- * Apply to any module that uses Lombok annotations (@Data, @Builder, @Slf4j, etc.):
- *
- *   plugins {
- *       id("java-library")
- *       id("com.ghatana.java-conventions")
- *       id("com.ghatana.lombok-conventions")
- *   }
- *
- * Configures:
- *   - compileOnly / annotationProcessor for main sources
- *   - testCompileOnly / testAnnotationProcessor for test sources
  */
 
 plugins {
@@ -28,18 +12,14 @@ plugins {
 }
 
 dependencies {
-    val libs = project.extensions.findByType(VersionCatalogsExtension::class.java)?.named("libs")
-    val lombokCoordinate = libs?.findLibrary("lombok")
-        ?.orElse(null)
-        ?.get()
-        ?: error(
-            "lombok library not found in libs.versions.toml — " +
-                "add 'lombok = { module = \"org.projectlombok:lombok\", version.ref = \"lombok\" }' " +
-                "to gradle/libs.versions.toml"
-        )
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
+    val lombokVersion = "1.18.36"
+    val lombokCoordinate = "org.projectlombok:lombok:$lombokVersion"
 
-    "compileOnly"(lombokCoordinate)
-    "annotationProcessor"(lombokCoordinate)
-    "testCompileOnly"(lombokCoordinate)
-    "testAnnotationProcessor"(lombokCoordinate)
+    compileOnly(lombokCoordinate)
+    annotationProcessor(lombokCoordinate)
+    testCompileOnly(lombokCoordinate)
+    testAnnotationProcessor(lombokCoordinate)
 }

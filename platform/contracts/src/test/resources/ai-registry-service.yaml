@@ -1,0 +1,206 @@
+openapi: 3.1.0
+info:
+  title: Ghatana AI Registry Service API
+  description: |
+    AI model registry service for the Ghatana platform.
+    Provides model discovery, registration, and metadata management
+    for all AI/ML models used across the platform.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8082
+    description: Local development
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Service health check
+      description: Returns the health status of the AI registry service.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/models:
+    get:
+      operationId: listModels
+      summary: List all registered models
+      description: |
+        Returns all AI/ML models registered in the platform.
+        Supports filtering and pagination.
+      tags:
+        - Models
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by model provider (e.g., openai, anthropic)
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [LLM, EMBEDDING, IMAGE, AUDIO]
+          description: Filter by model type
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, deprecated, disabled]
+          description: Filter by model status
+      responses:
+        '200':
+          description: List of registered models
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelListResponse'
+
+  /api/v1/models/{id}:
+    get:
+      operationId: getModelById
+      summary: Get model by ID
+      description: Returns detailed information about a specific registered model.
+      tags:
+        - Models
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Model identifier
+      responses:
+        '200':
+          description: Model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelRecord'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        service:
+          type: string
+          example: ai-registry
+      required:
+        - status
+
+    ModelListResponse:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelRecord'
+        total:
+          type: integer
+          description: Total number of models
+          example: 12
+      required:
+        - models
+        - total
+
+    ModelRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique model identifier
+          example: gpt-4-turbo
+        name:
+          type: string
+          description: Human-readable model name
+          example: GPT-4 Turbo
+        provider:
+          type: string
+          description: Model provider
+          example: openai
+        type:
+          type: string
+          enum: [LLM, EMBEDDING, IMAGE, AUDIO]
+          description: Model type
+          example: LLM
+        version:
+          type: string
+          description: Model version
+          example: 2024-04-09
+        status:
+          type: string
+          enum: [active, deprecated, disabled]
+          description: Model availability status
+          example: active
+        capabilities:
+          type: object
+          properties:
+            maxTokens:
+              type: integer
+              description: Maximum context window size
+              example: 128000
+            supportsFunctionCalling:
+              type: boolean
+              example: true
+            supportsVision:
+              type: boolean
+              example: true
+            supportsStreaming:
+              type: boolean
+              example: true
+        pricing:
+          type: object
+          properties:
+            inputTokensPer1k:
+              type: number
+              format: float
+              description: Cost per 1K input tokens (USD)
+              example: 0.01
+            outputTokensPer1k:
+              type: number
+              format: float
+              description: Cost per 1K output tokens (USD)
+              example: 0.03
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional model metadata
+      required:
+        - id
+        - name
+        - provider
+        - type
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Model not found
+      required:
+        - error

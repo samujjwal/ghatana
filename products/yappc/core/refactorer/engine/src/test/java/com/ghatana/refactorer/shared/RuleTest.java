@@ -21,28 +21,32 @@ import org.junit.jupiter.api.Test;
 
 class RuleTest {
 
+    // Constants for duplicate literals
+    private static final String TEST_RULE_ID = "test-rule";
+    private static final String TEST_RULE_NAME = "Test Rule";
+
     @Test
     void testRuleCreation() {
-        Rule rule = new Rule("test-rule", "Test Rule", "This is a test rule", Severity.WARNING);
+        Rule rule = new Rule(TEST_RULE_ID, TEST_RULE_NAME, "This is a test rule", Severity.WARNING);
 
         assertAll(
                 "Rule properties should match constructor arguments",
-                () -> assertEquals("test-rule", rule.getId()),
-                () -> assertEquals("Test Rule", rule.getName()),
+                () -> assertEquals(TEST_RULE_ID, rule.getId()),
+                () -> assertEquals(TEST_RULE_NAME, rule.getName()),
                 () -> assertEquals("This is a test rule", rule.getDescription()),
                 () -> assertEquals(Severity.WARNING, rule.getSeverity()));
     }
 
     @Test
     void testToString() {
-        Rule rule = new Rule("test-rule", "Test Rule", "Description", Severity.ERROR);
-        assertEquals("Test Rule (ERROR)", rule.toString());
+        Rule rule = new Rule(TEST_RULE_ID, TEST_RULE_NAME, "Description", Severity.ERROR);
+        assertEquals(TEST_RULE_NAME + " (ERROR)", rule.toString());
     }
 
     @Test
     void testEquality() {
-        Rule rule1 = new Rule("test-rule", "Test Rule", "Desc", Severity.INFO);
-        Rule rule2 = new Rule("test-rule", "Different Name", "Different Desc", Severity.WARNING);
+        Rule rule1 = new Rule(TEST_RULE_ID, TEST_RULE_NAME, "Desc", Severity.INFO);
+        Rule rule2 = new Rule(TEST_RULE_ID, "Different Name", "Different Desc", Severity.WARNING);
 
         // Rules with same ID should be considered equal regardless of other fields
         assertEquals(rule1, rule2);

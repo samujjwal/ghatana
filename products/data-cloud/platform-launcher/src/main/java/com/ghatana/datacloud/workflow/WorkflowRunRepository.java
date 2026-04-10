@@ -74,6 +74,11 @@ public class WorkflowRunRepository {
     /** Maximum number of events read per event-type when reconstructing run status. */
     private static final int READ_LIMIT = 10_000;
 
+    // Constants for duplicate literals
+    private static final String TENANT_ID = "tenantId";
+    private static final String RUN_ID = "runId";
+    private static final String STEP_NAME = "stepName";
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final EventLogStore eventLogStore;
@@ -109,13 +114,13 @@ public class WorkflowRunRepository {
             String executionId,
             Map<String, String> metadata) {
 
-        Objects.requireNonNull(tenantId,   "tenantId");
+        Objects.requireNonNull(tenantId,   TENANT_ID);
         Objects.requireNonNull(workflowId, "workflowId");
         Objects.requireNonNull(executionId, "executionId");
 
         String runId = UUID.randomUUID().toString();
         Map<String, Object> payload = new HashMap<>();
-        payload.put("runId",      runId);
+        payload.put(RUN_ID,      runId);
         payload.put("workflowId", workflowId);
         payload.put("executionId", executionId);
         payload.put("startedAt",  Instant.now().toString());
@@ -146,13 +151,13 @@ public class WorkflowRunRepository {
             String stepName,
             Map<String, Object> output) {
 
-        Objects.requireNonNull(tenantId, "tenantId");
-        Objects.requireNonNull(runId,    "runId");
-        Objects.requireNonNull(stepName, "stepName");
+        Objects.requireNonNull(tenantId, TENANT_ID);
+        Objects.requireNonNull(runId,    RUN_ID);
+        Objects.requireNonNull(stepName, STEP_NAME);
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("runId",       runId);
-        payload.put("stepName",    stepName);
+        payload.put(RUN_ID,       runId);
+        payload.put(STEP_NAME,    stepName);
         payload.put("completedAt", Instant.now().toString());
         if (output != null && !output.isEmpty()) {
             payload.put("output", output);
@@ -178,14 +183,14 @@ public class WorkflowRunRepository {
             String stepName,
             String errorMessage) {
 
-        Objects.requireNonNull(tenantId,     "tenantId");
-        Objects.requireNonNull(runId,        "runId");
-        Objects.requireNonNull(stepName,     "stepName");
+        Objects.requireNonNull(tenantId,     TENANT_ID);
+        Objects.requireNonNull(runId,        RUN_ID);
+        Objects.requireNonNull(stepName,     STEP_NAME);
         Objects.requireNonNull(errorMessage, "errorMessage");
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("runId",    runId);
-        payload.put("stepName", stepName);
+        payload.put(RUN_ID,    runId);
+        payload.put(STEP_NAME, stepName);
         payload.put("failedAt", Instant.now().toString());
         payload.put("error",    errorMessage);
 
@@ -214,12 +219,12 @@ public class WorkflowRunRepository {
             String status,
             Map<String, Object> summary) {
 
-        Objects.requireNonNull(tenantId, "tenantId");
-        Objects.requireNonNull(runId,    "runId");
+        Objects.requireNonNull(tenantId, TENANT_ID);
+        Objects.requireNonNull(runId,    RUN_ID);
         Objects.requireNonNull(status,   "status");
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("runId",      runId);
+        payload.put(RUN_ID,      runId);
         payload.put("status",     status);
         payload.put("finishedAt", Instant.now().toString());
         if (summary != null && !summary.isEmpty()) {
@@ -248,8 +253,8 @@ public class WorkflowRunRepository {
      * @return promise of the optional run status
      */
     public Promise<Optional<WorkflowRunStatus>> getRunStatus(String tenantId, String runId) {
-        Objects.requireNonNull(tenantId, "tenantId");
-        Objects.requireNonNull(runId,    "runId");
+        Objects.requireNonNull(tenantId, TENANT_ID);
+        Objects.requireNonNull(runId,    RUN_ID);
 
         TenantContext ctx = TenantContext.of(tenantId);
         Offset zero = Offset.zero();
@@ -292,7 +297,7 @@ public class WorkflowRunRepository {
         // Find the started event for this run
         Map<String, Object> startPayload = startedEvents.stream()
                 .map(this::parsePayload)
-                .filter(m -> runId.equals(m.get("runId")))
+                .filter(m -> runId.equals(m.get(RUN_ID)))
                 .findFirst()
                 .orElse(null);
 
@@ -307,18 +312,18 @@ public class WorkflowRunRepository {
         // Count completed and failed steps for this runId
         long completedSteps = completedEvents.stream()
                 .map(this::parsePayload)
-                .filter(m -> runId.equals(m.get("runId")))
+                .filter(m -> runId.equals(m.get(RUN_ID)))
                 .count();
 
         long failedSteps = failedEvents.stream()
                 .map(this::parsePayload)
-                .filter(m -> runId.equals(m.get("runId")))
+                .filter(m -> runId.equals(m.get(RUN_ID)))
                 .count();
 
         // Determine terminal status
         Map<String, Object> finishPayload = finishedEvents.stream()
                 .map(this::parsePayload)
-                .filter(m -> runId.equals(m.get("runId")))
+                .filter(m -> runId.equals(m.get(RUN_ID)))
                 .findFirst()
                 .orElse(null);
 

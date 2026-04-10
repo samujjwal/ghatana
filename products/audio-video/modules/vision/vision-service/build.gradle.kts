@@ -3,21 +3,18 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 plugins {
     id("com.ghatana.java-conventions")
     id("application")
-    alias(libs.plugins.protobuf)
+    id("com.ghatana.protobuf-conventions")
 }
 
 val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     // Audio-Video common (health/metrics server, gRPC interceptor chain, security)
     implementation(project(":products:audio-video:libs:common"))
 
     // gRPC
-    implementation(libs.grpc.netty)
+    implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     
@@ -31,7 +28,7 @@ dependencies {
     implementation(libs.protobuf.java)
     
     // javax.annotation for gRPC generated code
-    implementation(libs.javax.annotation.api)
+    implementation(libs.javax.inject)
     
     // Logging
     implementation(libs.log4j.core)
@@ -40,17 +37,14 @@ dependencies {
     implementation(libs.log4j.slf4j.impl)
     
     // JSON processing
-    implementation(libs.gson)
-    
+        
     // Jackson annotations
     implementation(libs.jackson.annotations)
     
-    // OpenCV for image processing (used by YoloV8Adapter)
-    implementation(libs.opencv.java)
+    // OpenCV for computer vision
+    implementation("org.openpnp:opencv:4.9.0-0")
+    implementation("org.scijava:native-lib-loader:2.4.0")
     
-    // Native library loader (loads OpenCV JNI library)
-    implementation(libs.native.lib.loader)
-
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
@@ -67,23 +61,6 @@ java {
     }
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:${libsCatalog.findVersion("protobuf").get().requiredVersion}"
-    }
-    plugins {
-        create("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:${libsCatalog.findVersion("grpc").get().requiredVersion}"
-        }
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                create("grpc")
-            }
-        }
-    }
-}
 
 tasks.test {
     useJUnitPlatform()

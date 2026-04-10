@@ -24,30 +24,25 @@ dependencies {
     api(project(":platform:java:database"))
 
     // ActiveJ (for OpenAI async client code)
-    api(libs.activej.promise)
-    api(libs.activej.eventloop)
+    api(libs.bundles.activej.core)
 
     // OpenAI client (from ai-experimental)
     implementation("com.openai:openai-java:0.25.0")
 
     // Database (registry + feature-store)
-    implementation(libs.postgresql)
-    implementation(libs.hikaricp)
+    implementation(libs.bundles.database.core)
 
     // Redis (feature-store)
-    implementation(libs.jedis)
+    implementation(libs.bundles.redis)
 
     // Jackson for JSON
-    implementation(platform(libs.jackson.bom))
-    implementation(libs.jackson.databind)
-    implementation(libs.jackson.datatype.jdk8)
-    implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.bundles.jackson.json)
 
     // Validation (registry)
-    implementation(libs.jakarta.validation.api)
+    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
 
     // Logging
-    api(libs.slf4j.api)
+    api(libs.bundles.logging.core)
     implementation(libs.log4j.core)
     implementation(libs.log4j.slf4j.impl)
 

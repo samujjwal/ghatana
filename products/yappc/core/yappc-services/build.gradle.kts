@@ -32,8 +32,6 @@ dependencies {
     implementation(project(":products:yappc:core:yappc-shared"))
     
     // Validation
-    implementation(libs.hibernate.validator)
-    implementation(libs.jakarta.validation.api)
     
     // JSON processing
     implementation(libs.jackson.databind)

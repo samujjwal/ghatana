@@ -57,7 +57,7 @@ public class FormatterTest {
         }
 
         // Then try to get it from classpath (for Gradle)
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) {
             if (is == null) {
                 throw new IOException("Resource not found: " + resourcePath);
             }
