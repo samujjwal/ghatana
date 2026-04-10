@@ -81,6 +81,7 @@ public final class RunCommand implements Runnable {
             defaultValue = "java")
     String languages;
 
+    @SuppressWarnings("PMD.DoNotTerminateVM")
     public void run() {
         Path root = parent.root;
         PolyfixProjectContext ctx = PolyfixCommand.buildContext(root);

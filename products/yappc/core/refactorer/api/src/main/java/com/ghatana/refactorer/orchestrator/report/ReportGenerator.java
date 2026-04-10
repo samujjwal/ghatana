@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import io.activej.promise.Promise;
@@ -67,7 +68,7 @@ public final class ReportGenerator implements AutoCloseable {
         this.objectMapper =
                 JsonUtils.getDefaultMapper()
                         .enable(SerializationFeature.INDENT_OUTPUT)
-                        .setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+                        .setDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ROOT));
     }
 
     /**

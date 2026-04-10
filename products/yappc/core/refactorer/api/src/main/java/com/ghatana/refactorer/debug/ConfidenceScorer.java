@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.debug;
 
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -90,21 +91,21 @@ public class ConfidenceScorer {
         try {
             if (suggestion.getErrorPattern() != null && !suggestion.getErrorPattern().isEmpty()) {
                 // Pre-process the error message and pattern for better matching
-                String normalizedError = errorMessage.trim().toLowerCase();
+                String normalizedError = errorMessage.trim().toLowerCase(Locale.ROOT);
                 String patternStr = suggestion.getErrorPattern().trim();
 
                 // Check for direct string contains match first (more reliable for simple patterns)
-                if (normalizedError.contains(patternStr.toLowerCase())) {
+                if (normalizedError.contains(patternStr.toLowerCase(Locale.ROOT))) {
                     // Higher score if the pattern is a significant part of the error
                     double baseScore = 0.8;
 
                     // If the pattern is the full error message, give maximum score
-                    if (normalizedError.equals(patternStr.toLowerCase())) {
+                    if (normalizedError.equals(patternStr.toLowerCase(Locale.ROOT))) {
                         baseScore = 1.0;
                     }
 
                     // If the pattern is at the start of the error, give a small bonus
-                    if (normalizedError.startsWith(patternStr.toLowerCase())) {
+                    if (normalizedError.startsWith(patternStr.toLowerCase(Locale.ROOT))) {
                         baseScore = Math.min(1.0, baseScore + 0.1);
                     }
 

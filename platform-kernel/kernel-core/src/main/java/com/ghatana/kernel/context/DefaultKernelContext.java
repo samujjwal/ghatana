@@ -141,7 +141,8 @@ public class DefaultKernelContext implements KernelContext {
                 try {
                     ((EventHandler<E>) handler).handle(event);
                 } catch (Exception e) {
-                    // Log error but continue with other handlers
+                    System.getLogger(DefaultKernelContext.class.getName())
+                            .log(System.Logger.Level.WARNING, "Event handler failed", e);
                 }
             }
         }

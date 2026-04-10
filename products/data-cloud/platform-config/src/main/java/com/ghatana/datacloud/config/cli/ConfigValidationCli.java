@@ -359,6 +359,7 @@ public class ConfigValidationCli {
         }
     }
 
+    @SuppressWarnings("PMD.DoNotTerminateVM")
     private static void runValidate(String[] args) {
         String configPath = null;
         boolean verbose = false;

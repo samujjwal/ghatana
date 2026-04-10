@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link CloudProvider} enum.
@@ -207,18 +208,8 @@ class CloudProviderTest {
         @Test
         @DisplayName("fromShortCode handles null gracefully")
         void fromShortCodeHandlesNull() {
-            // Depending on implementation, this may throw or return OTHER
-            // Based on the current implementation, it will iterate and compare,
-            // which will fail on null.equalsIgnoreCase()
-            // If the implementation doesn't handle null, we should catch NPE
-            try {
-                CloudProvider result = CloudProvider.fromShortCode(null);
-                // If it doesn't throw, it should return OTHER
-                assertThat(result).isEqualTo(CloudProvider.OTHER);
-            } catch (NullPointerException e) {
-                // Also acceptable behavior
-                assertThat(e).isNotNull();
-            }
+            assertThatThrownBy(() -> CloudProvider.fromShortCode(null))
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 

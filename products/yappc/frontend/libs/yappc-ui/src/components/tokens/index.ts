@@ -1,22 +1,19 @@
 /**
- * Design tokens index — exports all tokens from local source files.
+ * Design tokens index — delegates to @ghatana/tokens (platform canonical source).
+ * YAPPC-specific tokens are added on top.
  * Consumers should import from @yappc/ui (or @yappc/ui/components) to access these.
  */
 
-// Core token modules
-export * from './colors';
-export * from './typography';
-export * from './spacing';
-export * from './shadows';
-export * from './shape';
-export * from './breakpoints';
-export * from './transitions';
+// Re-export canonical platform tokens
+export * from '@ghatana/tokens';
+
+// YAPPC-specific local overrides (zIndex, shape, and YAPPC MUI-derived tokens)
 export * from './zIndex';
+export * from './shape';
 
 // Backward-compatible named aliases (previously from @ghatana/yappc-tokens)
 import { borderRadius } from './shape';
-import { spacing } from './spacing';
-import { fontSizes, fontWeights } from './typography';
+import { spacing, fontSize, fontWeight } from '@ghatana/tokens';
 
 // Spacing aliases
 export const spacingXs = spacing[1]; // 4px
@@ -32,15 +29,16 @@ export const borderRadiusLg = borderRadius.lg; // 12px
 export const borderRadiusFull = borderRadius.full; // 9999px
 
 // Font size aliases (rem)
-export const fontSizeXs = fontSizes.xs; // 0.75rem (12px)
-export const fontSizeSm = fontSizes.sm; // 0.875rem (14px)
-export const fontSizeMd = fontSizes.md; // 1rem (16px)
-export const fontSizeLg = fontSizes.lg; // 1.125rem (18px)
-export const fontSizeXl = fontSizes.xl; // 1.25rem (20px)
+export const fontSizeXs = fontSize.xs; // 0.75rem (12px)
+export const fontSizeSm = fontSize.sm; // 0.875rem (14px)
+export const fontSizeMd = fontSize.md; // 1rem (16px)
+export const fontSizeLg = fontSize.lg; // 1.125rem (18px)
+export const fontSizeXl = fontSize.xl; // 1.25rem (20px)
 
 // Font weight aliases
-export const fontWeightLight = fontWeights.light; // 300
-export const fontWeightRegular = fontWeights.regular; // 400
-export const fontWeightMedium = fontWeights.medium; // 500
-export const fontWeightSemibold = fontWeights.semiBold; // 600
-export const fontWeightBold = fontWeights.bold; // 700
+export const fontWeightLight = fontWeight.light; // 300
+export const fontWeightRegular = fontWeight.regular; // 400
+export const fontWeightMedium = fontWeight.medium; // 500
+export const fontWeightSemibold = fontWeight.semibold; // 600
+export const fontWeightBold = fontWeight.bold; // 700
+

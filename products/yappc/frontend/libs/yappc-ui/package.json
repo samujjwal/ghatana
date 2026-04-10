@@ -71,7 +71,10 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/tokens": "workspace:*",
     "@yappc/core": "workspace:*",
     "@yappc/state": "workspace:*",
     "class-variance-authority": "^0.7.1",

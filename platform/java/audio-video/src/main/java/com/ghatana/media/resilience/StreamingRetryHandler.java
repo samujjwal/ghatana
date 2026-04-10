@@ -9,6 +9,7 @@ package com.ghatana.media.resilience;
 import com.ghatana.media.config.TimeoutConfig;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -218,7 +219,7 @@ public class StreamingRetryHandler {
         // Retry on transient errors
         String msg = t.getMessage();
         if (msg != null) {
-            String lowerMsg = msg.toLowerCase();
+            String lowerMsg = msg.toLowerCase(Locale.ROOT);
             if (lowerMsg.contains("temporarily unavailable") ||
                 lowerMsg.contains("try again") ||
                 lowerMsg.contains("rate limit") ||
@@ -228,7 +229,7 @@ public class StreamingRetryHandler {
         }
 
         // Check cause
-        if (t.getCause() != null && t.getCause() != t) {
+        if (t.getCause() != null && !t.getCause().equals(t)) {
             return shouldRetry(t.getCause());
         }
 

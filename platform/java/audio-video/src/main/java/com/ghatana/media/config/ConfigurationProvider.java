@@ -67,6 +67,7 @@ public final class ConfigurationProvider {
     /**
      * Resets the singleton (useful for testing).
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public static void reset() {
         synchronized (lock) {
             instance = null;

@@ -1,0 +1,47 @@
+{
+  "name": "@ghatana/audit-components",
+  "sideEffects": false,
+  "version": "0.1.0",
+  "description": "Audit and accessibility testing components for Ghatana platform",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ghatana/platform-utils": "workspace:*",
+    "@axe-core/react": "^4.11.1",
+    "axe-core": "^4.11.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^26.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "keywords": ["ghatana", "audit", "accessibility", "testing"],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

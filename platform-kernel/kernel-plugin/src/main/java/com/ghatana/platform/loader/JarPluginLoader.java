@@ -54,11 +54,12 @@ public class JarPluginLoader implements PluginLoader {
         try {
             URL[] urls = {jarPath.toUri().toURL()};
             // Use current thread's context classloader as parent to ensure visibility of core classes
-            URLClassLoader classLoader = new URLClassLoader(urls, Thread.currentThread().getContextClassLoader());
-
-            ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
-            for (Plugin plugin : serviceLoader) {
-                loaded.add(plugin);
+            try (URLClassLoader classLoader =
+                         new URLClassLoader(urls, Thread.currentThread().getContextClassLoader())) {
+                ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
+                for (Plugin plugin : serviceLoader) {
+                    loaded.add(plugin);
+                }
             }
         } catch (Exception e) {
             // Log error but continue loading other jars

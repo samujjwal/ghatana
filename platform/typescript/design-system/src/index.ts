@@ -131,20 +131,10 @@ export * from './typography';
 // Tailwind Theme Styles
 export * from './styles/tailwindTheme';
 
-// Audit
-export * from './audit';
-
-// Privacy
-export * from './privacy';
-
-// Security
-export * from './security';
-
-// Voice
-export * from './voice';
-
-// NLP
-export * from './nlp';
-
-// Selection
-export * from './selection';
+// NOTE: The following domain-specific modules have been moved to dedicated packages:
+// - audit        → @ghatana/audit-components
+// - privacy      → @ghatana/domain-components
+// - security     → @ghatana/domain-components
+// - voice        → @ghatana/domain-components
+// - nlp          → @ghatana/domain-components
+// - selection    → @ghatana/domain-components

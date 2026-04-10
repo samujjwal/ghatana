@@ -9,7 +9,7 @@ import {
   markAllReadAtom,
   type Notification,
   type NotificationSeverity,
-} from "../atoms/notificationAtom";
+} from "@ghatana/state";
 
 // ---------------------------------------------------------------------------
 // Helpers

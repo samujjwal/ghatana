@@ -65,9 +65,8 @@ public record Concept(
      * Checks if a term matches this concept (name or synonym).
      */
     public boolean matches(String term) {
-        String lower = term.toLowerCase();
-        return name.toLowerCase().equals(lower) ||
-                synonyms.stream().anyMatch(s -> s.toLowerCase().equals(lower));
+        return name.equalsIgnoreCase(term) ||
+                synonyms.stream().anyMatch(s -> s.equalsIgnoreCase(term));
     }
 
     /**

@@ -39,6 +39,16 @@ import { atom } from 'jotai';
 import type { Atom, WritableAtom, Getter, Setter } from 'jotai';
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 
+// Delegate canonical types to platform — no local duplicate definitions
+import {
+  type AsyncState,
+  AsyncState as AS,
+  type AtomMetadata as PlatformAtomMetadata,
+} from '@ghatana/state';
+
+// Re-export AsyncState so existing consumers of @yappc/state continue to work
+export type { AsyncState };
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -49,30 +59,13 @@ import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 export type AtomKey = string;
 
 /**
- * State for async operations (consolidated from libs/state).
- *
- * @doc.type type
- * @doc.purpose Async operation state
- * @doc.layer product
- * @doc.pattern Value Object
+ * YAPPC-local atom metadata (extends platform's AtomMetadata with yappc-specific fields).
  */
-export type AsyncState<T> =
-  | { status: 'idle'; data: null; error: null }
-  | { status: 'loading'; data: null; error: null }
-  | { status: 'success'; data: T; error: null }
-  | { status: 'error'; data: null; error: Error };
-
-/**
- *
- */
-export interface AtomMetadata {
-  key: AtomKey;
-  description?: string;
+export interface AtomMetadata extends Omit<PlatformAtomMetadata, 'storage' | 'persistent'> {
   persistent?: boolean;
+  /** YAPPC's storage shorthand. 'local' = localStorage, 'session' = sessionStorage. */
   storage?: 'local' | 'session' | 'memory';
   storageKey?: string;
-  defaultValue: unknown;
-  createdAt: Date;
 }
 
 /**
@@ -355,8 +348,8 @@ export class StateManager {
 
     const initialState: AsyncState<T> =
       options.initialData !== undefined
-        ? { status: 'success', data: options.initialData, error: null }
-        : { status: 'idle', data: null, error: null };
+        ? AS.success(options.initialData)
+        : AS.idle();
 
     const newAtom = atom<AsyncState<T>>(initialState);
 

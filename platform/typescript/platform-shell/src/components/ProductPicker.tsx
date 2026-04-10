@@ -12,8 +12,8 @@
  */
 import React from 'react';
 import { useAtomValue } from 'jotai';
-import { isAuthenticatedAtom } from '../atoms/authAtom';
-import { hasRealTenantAtom } from '../atoms/tenantAtom';
+import { isAuthenticatedAtom } from '@ghatana/state';
+import { hasRealTenantAtom } from '@ghatana/state';
 
 /* ─── product catalog ──────────────────────────────────────────────────────── */
 

@@ -2,6 +2,7 @@ package com.ghatana.kernel.policy;
 
 import com.ghatana.kernel.scope.ScopeDescriptor;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -95,7 +96,7 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
         // Check regional restrictions
         String sourceRegion = source.getMetadata("region", "US");
         Set<String> restrictedScopes = regionalRestrictions.getOrDefault(sourceRegion, Set.of());
-        if (restrictedScopes.contains(target.getScopeType().name().toLowerCase())) {
+        if (restrictedScopes.contains(target.getScopeType().name().toLowerCase(Locale.ROOT))) {
             return BoundaryDecision.deny("Regional restriction: " + sourceRegion +
                     " cannot access " + target.getScopeType());
         }
@@ -105,7 +106,7 @@ public class DefaultBoundaryPolicyResolver implements BoundaryPolicyResolver {
                 .compareTo(ClassificationDescriptor.SensitivityLevel.CONFIDENTIAL) >= 0;
 
         Set<String> requiredFeatures = requiresConsent ?
-                Set.of("cross-scope.consent." + target.getScopeType().name().toLowerCase()) :
+                Set.of("cross-scope.consent." + target.getScopeType().name().toLowerCase(Locale.ROOT)) :
                 Set.of();
 
         return new BoundaryDecision(

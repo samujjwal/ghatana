@@ -140,14 +140,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@yappc/api': resolve(__dirname, './libs/api/src'),
-      '@yappc/auth': resolve(__dirname, './libs/auth/src'),
+      '@yappc/auth': resolve(__dirname, './libs/yappc-auth/src'),
+      '@yappc/auth/rbac': resolve(__dirname, './libs/yappc-auth/src/auth/rbac'),
+      '@yappc/chat': resolve(__dirname, './libs/yappc-chat/src'),
       '@yappc/collab': resolve(__dirname, './libs/collab/src'),
-      '@yappc/code-editor': resolve(__dirname, './libs/code-editor/src'),
-      '@yappc/testing/node': resolve(
-        __dirname,
-        './libs/testing/src/mocks/node.ts'
-      ),
-      '@yappc/testing': resolve(__dirname, './libs/testing/src'),
+      '@ghatana/code-editor': resolve(__dirname, '../../../platform/typescript/code-editor/src'),
       '@ghatana/design-system': resolve(
         __dirname,
         '../../../libs/typescript/ui/src'

@@ -1,5 +1,8 @@
 /**
- * Config submodule - Re-export from consolidated @yappc/config
+ * Config submodule — YAPPC configuration, feature flags, and task loaders.
  */
 
-export * from '@yappc/config';
+export * from './tasks/configLoader';
+export * from './patterns/async-patterns';
+export * from './features/feature-flags.tsx';
+export * from './results/result';

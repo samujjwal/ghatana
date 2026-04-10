@@ -82,6 +82,7 @@ public final class DebugCommand implements Runnable {
     List<String> cmd;
 
     @Override
+    @SuppressWarnings("PMD.DoNotTerminateVM")
     public void run() {
         try {
             PolyfixConfig cfg = PolyfixConfigLoader.load(root, java.util.Map.of());

@@ -2,6 +2,7 @@
  * API Client Library
  *
  * Central export for all API clients including GraphQL, DevSecOps, AI, Auth, etc.
+ * HTTP transport uses @ghatana/api ApiClient internally (platform canonical).
  *
  * @doc.type module
  * @doc.purpose API client library exports

@@ -65,20 +65,19 @@ public class PluginLoader {
             System.out.println("Loading plugin from: " + pluginJar);
 
             // Load plugin JAR
-            URLClassLoader classLoader = createPluginClassLoader(pluginJar);
+            try (URLClassLoader classLoader = createPluginClassLoader(pluginJar)) {
+                // Load plugin class using ServiceLoader
+                ServiceLoader<KernelPlugin> loader = ServiceLoader.load(KernelPlugin.class, classLoader);
 
-            // Load plugin class using ServiceLoader
-            ServiceLoader<KernelPlugin> loader = ServiceLoader.load(KernelPlugin.class, classLoader);
+                for (KernelPlugin plugin : loader) {
+                    System.out.println("Found plugin: " + plugin.getModuleId() + " v" + plugin.getVersion());
 
-            for (KernelPlugin plugin : loader) {
-                System.out.println("Found plugin: " + plugin.getModuleId() + " v" + plugin.getVersion());
+                    // Validate and register plugin
+                    pluginRegistry.registerPlugin(plugin);
 
-                // Validate and register plugin
-                pluginRegistry.registerPlugin(plugin);
-
-                System.out.println("Successfully registered plugin: " + plugin.getModuleId());
+                    System.out.println("Successfully registered plugin: " + plugin.getModuleId());
+                }
             }
-
         } catch (Exception e) {
             throw new RuntimeException("Failed to load plugin: " + pluginJar, e);
         }

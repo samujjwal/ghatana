@@ -1,0 +1,54 @@
+{
+  "name": "@yappc/auth",
+  "version": "1.0.0",
+  "description": "YAPPC authentication and security library",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./rbac": {
+      "import": "./dist/auth/rbac/index.mjs",
+      "require": "./dist/auth/rbac/index.js",
+      "types": "./dist/auth/rbac/index.d.ts"
+    },
+    "./oauth": {
+      "import": "./dist/auth/oauth/index.mjs",
+      "require": "./dist/auth/oauth/index.js",
+      "types": "./dist/auth/oauth/index.d.ts"
+    },
+    "./security": {
+      "import": "./dist/security/index.mjs",
+      "require": "./dist/security/index.js",
+      "types": "./dist/security/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "keywords": ["yappc", "auth", "security"],
+  "license": "Apache-2.0"
+}

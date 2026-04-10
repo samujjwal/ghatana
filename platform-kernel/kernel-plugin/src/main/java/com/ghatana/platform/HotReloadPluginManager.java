@@ -110,6 +110,7 @@ public class HotReloadPluginManager {
 
     // ── Internal ─────────────────────────────────────────────────────────
 
+    @SuppressWarnings("PMD.CloseResource")
     protected void loadPlugin(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
         try {

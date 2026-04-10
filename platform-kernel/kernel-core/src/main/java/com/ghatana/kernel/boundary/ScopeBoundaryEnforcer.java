@@ -4,6 +4,7 @@ import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.policy.ClassificationDescriptor;
 import com.ghatana.kernel.scope.ScopeDescriptor;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -77,7 +78,8 @@ public class ScopeBoundaryEnforcer {
 
         // Layer 3: Consent check (if required by policy)
         if (decision.requiresConsent()) {
-            String consentFeature = "cross-scope.consent." + target.getScopeType().name().toLowerCase();
+            String consentFeature =
+                    "cross-scope.consent." + target.getScopeType().name().toLowerCase(Locale.ROOT);
             if (!tenantContext.isFeatureEnabled(consentFeature)) {
                 return false;
             }

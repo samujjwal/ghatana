@@ -17,8 +17,10 @@
     "paths": {
       "@/*": ["./apps/web/src/*"],
       "@/test-utils": ["./test-utils"],
-      "@yappc/testing": ["libs/testing/src/index.ts"],
-      "@yappc/testing/*": ["libs/testing/src/*"]
+      "@yappc/testing": ["libs/yappc-core/src/testing/index.ts"],
+      "@yappc/testing/*": ["libs/yappc-core/src/testing/*"],
+      "@yappc/core/testing": ["libs/yappc-core/src/testing/index.ts"],
+      "@yappc/core/testing/*": ["libs/yappc-core/src/testing/*"]
     }
   },
   "include": [

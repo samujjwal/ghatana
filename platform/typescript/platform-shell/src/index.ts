@@ -23,7 +23,7 @@ export {
   availableTenantsAtom,
   hasRealTenantAtom,
   type Tenant,
-} from './atoms/tenantAtom';
+} from '@ghatana/state';
 
 export {
   authTokenAtom,
@@ -31,7 +31,7 @@ export {
   isTokenExpiredAtom,
   currentUserEmailAtom,
   type AuthToken,
-} from './atoms/authAtom';
+} from '@ghatana/state';
 
 export {
   notificationsAtom,
@@ -42,7 +42,7 @@ export {
   markAllReadAtom,
   type Notification,
   type NotificationSeverity,
-} from './atoms/notificationAtom';
+} from '@ghatana/state';
 
 /* ── Hooks ───────────────────────────────────────────────────────────────────── */
 export { useAuth, type UseAuthReturn } from './hooks/useAuth';

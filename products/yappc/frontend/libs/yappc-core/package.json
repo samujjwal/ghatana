@@ -21,6 +21,11 @@
       "require": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
     },
+    "./types/devsecops": {
+      "import": "./dist/types/devsecops/index.mjs",
+      "require": "./dist/types/devsecops/index.js",
+      "types": "./dist/types/devsecops/index.d.ts"
+    },
     "./constants": {
       "import": "./dist/constants/index.mjs",
       "require": "./dist/constants/index.js",
@@ -39,6 +44,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ghatana/platform-utils": "workspace:*",
+    "@yappc/ai": "workspace:*",
+    "fastify": "^5.4.0",
+    "fastify-plugin": "^5.0.1",
+    "msw": "^2.10.2",
     "tslib": "^2.8.1"
   },
   "devDependencies": {

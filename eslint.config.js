@@ -49,6 +49,8 @@ module.exports = [
       "ghatana/no-deleted-v41-packages": "error",
       "ghatana/no-design-system-internal-reimplementation": "error",
       "ghatana/no-dev-auth-in-prod": "error",
+      "ghatana/no-duplicate-utilities": "warn",
+      "ghatana/no-duplicate-components": "warn",
     },
   },
 ];

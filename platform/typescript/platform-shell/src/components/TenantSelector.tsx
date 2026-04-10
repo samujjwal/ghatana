@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { tenantAtom, availableTenantsAtom, type Tenant } from '../atoms/tenantAtom';
+import { tenantAtom, availableTenantsAtom, type Tenant } from '@ghatana/state';
 
 export interface TenantSelectorProps {
   /** CSS class to apply to the select element. */

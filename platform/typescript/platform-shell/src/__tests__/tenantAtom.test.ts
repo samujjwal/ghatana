@@ -4,7 +4,7 @@ import {
   availableTenantsAtom,
   hasRealTenantAtom,
   type Tenant,
-} from "../atoms/tenantAtom";
+} from "@ghatana/state";
 
 // ---------------------------------------------------------------------------
 // availableTenantsAtom

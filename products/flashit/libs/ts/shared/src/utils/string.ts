@@ -1,31 +1,20 @@
 /**
- * String utility functions shared across Flashit applications
+ * String utility functions specific to Flashit applications.
+ * Generic string utilities (truncate, capitalize) are in @ghatana/platform-utils.
  */
-
-/**
- * Truncate a string to a maximum length with ellipsis
- */
-export function truncate(str: string, maxLength: number): string {
-    if (str.length <= maxLength) return str;
-    return str.slice(0, maxLength - 3) + '...';
-}
-
-/**
- * Capitalize the first letter of a string
- */
-export function capitalize(str: string): string {
-    if (!str) return str;
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 /**
  * Convert a string to title case
  */
 export function toTitleCase(str: string): string {
+    const capitalized = (word: string) => {
+        if (!word) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    };
     return str
         .toLowerCase()
         .split(' ')
-        .map(word => capitalize(word))
+        .map(capitalized)
         .join(' ');
 }
 
@@ -52,3 +41,4 @@ export function slugify(str: string): string {
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, '');
 }
+

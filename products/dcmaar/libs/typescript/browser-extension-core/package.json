@@ -32,7 +32,9 @@
     "@dcmaar/types": "workspace:*",
     "@dcmaar/plugin-abstractions": "workspace:*",
     "@dcmaar/connectors": "workspace:*",
-    "webextension-polyfill": "^0.12.0"
+    "webextension-polyfill": "^0.12.0",
+    "@ghatana/events": "workspace:*",
+    "@ghatana/browser-events": "workspace:*"
   },
   "devDependencies": {
     "@types/jsdom": "^28.0.1",

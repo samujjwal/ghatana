@@ -53,7 +53,34 @@ configure<CheckstyleExtension> {
 
 configure<PmdExtension> {
     toolVersion = "7.11.0"
+    ruleSetFiles = files(rootProject.file("config/pmd/minimal-ruleset.xml"))
+    ruleSets = emptyList()
     isIgnoreFailures = false
+    isConsoleOutput = true
+}
+
+tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach {
+    val rulesetFile = if (name.contains("Test", ignoreCase = true)) {
+        rootProject.file("config/pmd/test-ruleset.xml")
+    } else {
+        rootProject.file("config/pmd/minimal-ruleset.xml")
+    }
+    val sourceDirectory = if (name.contains("Test", ignoreCase = true)) {
+        "src/test/java"
+    } else {
+        "src/main/java"
+    }
+    ruleSetFiles = files(rulesetFile)
+    ruleSets = emptyList()
+    source = fileTree(sourceDirectory) {
+        exclude("**/generated/**")
+        exclude("**/build/generated/**")
+        exclude("**/*Grpc.java")
+        exclude("**/*Proto.java")
+        exclude("**/*_Grpc*.java")
+        exclude("**/grpc/**")
+        exclude("**/proto/**")
+    }
 }
 
 configure<com.diffplug.gradle.spotless.SpotlessExtension> {

@@ -206,7 +206,8 @@ public class HandlebarsTemplateEngine implements TemplateEngine {
         handlebars.registerHelper("eq", (context, options) -> {
             if (context == null) return "";
             String compare = options.hash("to");
-            if (compare != null && context.toString().equals(compare)) {
+            String value = context.toString();
+            if (value.equals(compare)) {
                 return options.fn();
             }
             return "";

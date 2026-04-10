@@ -108,15 +108,9 @@ export { FreeformLayer } from "./hybrid/FreeformLayer";
 export { GraphLayer } from "./hybrid/GraphLayer";
 export { LayerContainer } from "./hybrid/LayerContainer";
 export {
-  // Canonical names (prefer these in new code)
+  // Canonical names only
   screenToWorld,
   worldToScreen,
-  // Legacy names (kept for backwards compatibility; @deprecated)
-  canvasToScreen,
-  screenToCanvas,
-  graphToCanvas,
-  canvasToGraph,
-  normalizeCoordinates,
 } from "./hybrid/coordinates";
 
 // ==================================

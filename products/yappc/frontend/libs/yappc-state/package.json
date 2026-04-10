@@ -34,6 +34,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@ghatana/state": "workspace:*",
     "@yappc/core": "workspace:*",
     "jotai": "^2.19.0",
     "nanostores": "^1.2.0",

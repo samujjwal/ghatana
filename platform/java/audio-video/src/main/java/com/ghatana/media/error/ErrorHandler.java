@@ -89,7 +89,7 @@ public final class ErrorHandler {
 
         // Caused by retryable
         Throwable cause = throwable.getCause();
-        if (cause != null && cause != throwable) {
+        if (cause != null && !cause.equals(throwable)) {
             return isRetryable(cause);
         }
 

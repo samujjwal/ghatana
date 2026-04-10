@@ -215,12 +215,12 @@ export default defineConfig({
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
       '@yappc/api': path.resolve(__dirname, '../libs/api/src'),
-      '@yappc/auth': path.resolve(__dirname, '../libs/auth/src'),
+      '@yappc/auth': path.resolve(__dirname, '../libs/yappc-auth/src'),
+      '@yappc/auth/rbac': path.resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
+      '@yappc/chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
       '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
-      '@yappc/code-editor': path.resolve(__dirname, '../libs/code-editor/src'),
-      '@yappc/config': path.resolve(__dirname, '../libs/config/src'),
+      '@ghatana/code-editor': path.resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       '@yappc/ide': path.resolve(__dirname, '../libs/ide/src'),
-      '@yappc/testing': path.resolve(__dirname, '../libs/testing/src'),
 
       // Platform shared packages used by YAPPC and transitive UI deps
       '@ghatana/design-system': path.resolve(

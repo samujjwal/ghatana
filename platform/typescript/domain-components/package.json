@@ -1,0 +1,61 @@
+{
+  "name": "@ghatana/domain-components",
+  "sideEffects": false,
+  "version": "0.1.0",
+  "description": "Domain-specific components for Ghatana platform - privacy, security, voice, NLP, selection",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./privacy": {
+      "types": "./dist/privacy/index.d.ts",
+      "import": "./dist/privacy/index.js"
+    },
+    "./security": {
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js"
+    },
+    "./voice": {
+      "types": "./dist/voice/index.d.ts",
+      "import": "./dist/voice/index.js"
+    },
+    "./nlp": {
+      "types": "./dist/nlp/index.d.ts",
+      "import": "./dist/nlp/index.js"
+    },
+    "./selection": {
+      "types": "./dist/selection/index.d.ts",
+      "import": "./dist/selection/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ghatana/platform-utils": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "keywords": ["ghatana", "domain-components", "privacy", "security", "voice", "nlp"],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

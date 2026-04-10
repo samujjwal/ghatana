@@ -307,7 +307,7 @@ public final class MediaFormatValidator {
             }
 
         } catch (Exception e) {
-            // Ignore parsing errors
+            return new ImageDimensions(0, 0);
         }
 
         return new ImageDimensions(0, 0);

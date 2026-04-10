@@ -4,52 +4,28 @@
  * Defines the contract for capturing browser events (tabs, navigation, network, etc.)
  * Implementations should use browser extension APIs only.
  *
- * Event shape follows the PlatformEvent<T> contract defined in @ghatana/realtime/events:
+ * Event shape follows the PlatformEvent<T> contract defined in @ghatana/events:
  *   - `id`        — unique event UUID
  *   - `type`      — discriminated event kind
  *   - `timestamp` — Unix millisecond epoch
  *   - `source`    — origin description  ({ type: 'browser', id: ... })
  *   - `data`      — domain-specific payload
  *
- * When @ghatana/realtime is linked into the DCMAAR workspace, replace the local
- * BrowserEventSource/BrowserPlatformEvent definitions below with direct imports from
- * '@ghatana/realtime/events'.
- *
  * @module core/interfaces/EventCapture
  */
 
 // ---------------------------------------------------------------------------
-// Platform event contract (mirrors @ghatana/realtime/events PlatformEvent<T>)
+// Platform event imports — replaces local BrowserEventSource/BrowserPlatformEvent
+// definitions that were duplicated from the platform layer.
 // ---------------------------------------------------------------------------
 
-/**
- * Identifies the browser extension as the event source.
- */
-export interface BrowserEventSource {
-  /** Always 'browser' for extension-captured events. */
-  readonly type: 'browser';
-  /** Extension or tab instance identifier. */
-  readonly id: string;
-}
+// Re-export BrowserEventSource from platform so consumers have one canonical import.
+import type { BrowserEventSource } from "@ghatana/browser-events";
+export type { BrowserEventSource };
 
-/**
- * Base event shape for all DCMAAR browser-extension events.
- * Structurally compatible with PlatformEvent<T> from @ghatana/realtime/events.
- */
-export interface BrowserPlatformEvent<T = unknown> {
-  /** Unique event identifier (UUID v4). */
-  readonly id: string;
-  /** Discriminated event type string (e.g. 'tab.created'). */
-  readonly type: string;
-  /** Unix millisecond timestamp of event creation. */
-  readonly timestamp: number;
-  /** Always browser-sourced in this package. */
-  readonly source: BrowserEventSource;
-  /** Domain-specific payload. */
-  readonly data: T;
-  /** Optional correlation id for distributed tracing. */
-  readonly correlationId?: string;
-}
+// PlatformEvent<T> is the canonical base — alias to preserve existing usages.
+import type { PlatformEvent } from "@ghatana/events";
+export type BrowserPlatformEvent<T = unknown> = PlatformEvent<T>;
 
 // ---------------------------------------------------------------------------
 // Domain payload types

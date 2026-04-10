@@ -238,8 +238,7 @@ public final class HstsHeaderFilter {
                 builder.withBody(originalResponse.getBody());
             }
         } catch (IllegalStateException e) {
-            // Body is missing or already consumed - this is OK for redirects
-            // Just return the response without a body
+            return builder.build();
         }
 
         return builder.build();

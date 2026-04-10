@@ -1,0 +1,23 @@
+{
+  "name": "@ghatana/eslint-plugin",
+  "version": "1.0.0",
+  "description": "ESLint rules enforcing Ghatana platform library usage, architecture boundaries, and duplication prevention",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "import": "./src/index.js",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "files": ["src/"],
+  "keywords": ["eslint", "eslint-plugin", "ghatana", "architecture", "monorepo"],
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

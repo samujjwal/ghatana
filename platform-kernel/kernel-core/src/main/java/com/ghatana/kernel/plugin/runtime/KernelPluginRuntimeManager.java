@@ -140,7 +140,8 @@ public class KernelPluginRuntimeManager {
                 try {
                     entry.getClassLoader().close();
                 } catch (Exception e) {
-                    // Log but continue
+                    System.getLogger(KernelPluginRuntimeManager.class.getName())
+                            .log(System.Logger.Level.WARNING, "Failed to close plugin classloader", e);
                 }
 
                 return Promise.complete();

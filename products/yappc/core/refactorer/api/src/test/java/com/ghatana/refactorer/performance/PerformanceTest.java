@@ -1,7 +1,5 @@
 package com.ghatana.refactorer.performance;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,6 +18,8 @@ public class PerformanceTest {
     @Test
     public void testBasic() {
         // Simple test to verify the test setup
-        assertTrue(true, "Basic test should pass");
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> {
+            // Verifies the test harness is wired correctly.
+        });
     }
 }

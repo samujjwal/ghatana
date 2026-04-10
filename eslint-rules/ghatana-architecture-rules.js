@@ -557,6 +557,150 @@ module.exports = {
     },
 
     /**
+     * Rule: no-duplicate-utilities
+     * Prevents re-implementing utility functions that exist in @ghatana/platform-utils.
+     *
+     * Catches common patterns like reimplementing truncate, capitalize, formatDate etc.
+     */
+    "no-duplicate-utilities": {
+      meta: {
+        type: "suggestion",
+        docs: {
+          description: "Disallow reimplementing utilities already in @ghatana/platform-utils",
+          category: "Duplication",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          duplicateUtil:
+            "⚠️ '{{name}}' reimplements a utility already in @ghatana/platform-utils. " +
+            "Import it instead: import { {{name}} } from '@ghatana/platform-utils'",
+        },
+      },
+
+      create(context) {
+        // Common utility function names that exist in @ghatana/platform-utils
+        const PLATFORM_UTILS = new Set([
+          "truncate", "capitalize", "formatDate", "getCurrentTimestamp",
+          "formatDistanceToNow", "cn", "clsx", "debounce", "throttle",
+          "deepEqual", "deepClone", "omit", "pick", "groupBy", "chunk",
+          "formatBytes", "formatDuration", "slugify",
+        ]);
+
+        // Only flag if the current file is NOT inside platform-utils
+        const currentFilePath = context.getFilename();
+        if (currentFilePath.includes("/platform/typescript/platform-utils/") ||
+            currentFilePath.includes("eslint-rules/")) {
+          return {};
+        }
+
+        return {
+          FunctionDeclaration(node) {
+            if (node.id && PLATFORM_UTILS.has(node.id.name)) {
+              context.report({
+                node,
+                messageId: "duplicateUtil",
+                data: { name: node.id.name },
+              });
+            }
+          },
+          VariableDeclarator(node) {
+            if (
+              node.id &&
+              node.id.type === "Identifier" &&
+              PLATFORM_UTILS.has(node.id.name) &&
+              node.init &&
+              (node.init.type === "ArrowFunctionExpression" ||
+                node.init.type === "FunctionExpression")
+            ) {
+              context.report({
+                node,
+                messageId: "duplicateUtil",
+                data: { name: node.id.name },
+              });
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-duplicate-components
+     * Prevents reimplementing UI primitives that exist in @ghatana/design-system.
+     *
+     * Flags component declarations whose names match canonical design-system exports.
+     */
+    "no-duplicate-components": {
+      meta: {
+        type: "suggestion",
+        docs: {
+          description: "Disallow reimplementing components already in @ghatana/design-system",
+          category: "Duplication",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          duplicateComponent:
+            "⚠️ '{{name}}' reimplements a component already in @ghatana/design-system. " +
+            "Import it instead: import { {{name}} } from '@ghatana/design-system'",
+        },
+      },
+
+      create(context) {
+        // Core primitive components from @ghatana/design-system
+        const DESIGN_SYSTEM_COMPONENTS = new Set([
+          "Button", "Input", "Card", "Modal", "Spinner", "Badge",
+          "Checkbox", "Select", "Tooltip", "Tabs", "Alert",
+          "Avatar", "Dropdown", "Popover", "Progress", "Switch",
+          "Textarea", "Label", "Separator",
+        ]);
+
+        const currentFilePath = context.getFilename();
+        if (currentFilePath.includes("/platform/typescript/design-system/") ||
+            currentFilePath.includes("eslint-rules/")) {
+          return {};
+        }
+
+        function checkExportedComponent(node, name) {
+          if (DESIGN_SYSTEM_COMPONENTS.has(name)) {
+            context.report({
+              node,
+              messageId: "duplicateComponent",
+              data: { name },
+            });
+          }
+        }
+
+        return {
+          ExportNamedDeclaration(node) {
+            if (!node.declaration) return;
+            const decl = node.declaration;
+            if (
+              (decl.type === "FunctionDeclaration" ||
+                decl.type === "ClassDeclaration") &&
+              decl.id
+            ) {
+              checkExportedComponent(node, decl.id.name);
+            }
+            if (decl.type === "VariableDeclaration") {
+              for (const d of decl.declarations) {
+                if (
+                  d.id &&
+                  d.id.type === "Identifier" &&
+                  d.init &&
+                  (d.init.type === "ArrowFunctionExpression" ||
+                    d.init.type === "FunctionExpression")
+                ) {
+                  checkExportedComponent(node, d.id.name);
+                }
+              }
+            }
+          },
+        };
+      },
+    },
+
+    /**
      * Rule: no-dev-auth-in-prod
      *
      * Prevents any file from importing or re-exporting `devAuth.ts` /

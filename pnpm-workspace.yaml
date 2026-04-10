@@ -1,11 +1,11 @@
 packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
-  - "platform/typescript/canvas/flow-canvas"
   - "platform/typescript/foundation/*"
 
   # Product UIs
   - "products/data-cloud/ui"
+  - "products/data-cloud/libs/*"
   - "products/aep/ui"
   - "products/aep/gateway"
   - "products/phr/apps/*"

@@ -6,7 +6,7 @@ import {
   isTokenExpiredAtom,
   currentUserEmailAtom,
   type AuthToken,
-} from "../atoms/authAtom";
+} from "@ghatana/state";
 
 // ---------------------------------------------------------------------------
 // Helpers

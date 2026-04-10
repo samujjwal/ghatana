@@ -1,0 +1,51 @@
+{
+  "name": "@ghatana/browser-events",
+  "version": "1.0.0",
+  "description": "Browser extension event abstractions for Ghatana applications",
+  "keywords": ["ghatana", "browser", "events", "extension", "platform"],
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./capture": {
+      "types": "./dist/capture.d.ts",
+      "import": "./dist/capture.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ghatana/events": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "webextension-polyfill": "^0.12.0"
+  },
+  "peerDependenciesMeta": {
+    "webextension-polyfill": {
+      "optional": true
+    }
+  }
+}

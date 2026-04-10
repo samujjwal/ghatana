@@ -231,7 +231,7 @@ public final class YappcEnvironmentConfig {
     }
 
     private static boolean isRequiredAiMode(Map<String, String> env) {
-        return !"stub".equals(env.getOrDefault(AGENT_LLM_MODE_ENV, "required").trim().toLowerCase());
+        return !"stub".equalsIgnoreCase(env.getOrDefault(AGENT_LLM_MODE_ENV, "required").trim());
     }
 
     private static void validateDatabase(Map<String, String> env, List<String> errors) {

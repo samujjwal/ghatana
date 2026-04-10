@@ -512,10 +512,10 @@ public class AutoDocumentationGenerator {
     }
 
     private double calculateRelevance(String term, String query) {
-        if (term.toLowerCase().equals(query)) {
+        if (term.equalsIgnoreCase(query)) {
             return 1.0;
         }
-        if (term.toLowerCase().startsWith(query)) {
+        if (term.regionMatches(true, 0, query, 0, query.length())) {
             return 0.8;
         }
         return 0.5;

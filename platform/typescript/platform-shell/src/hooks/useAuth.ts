@@ -17,7 +17,7 @@ import {
   isTokenExpiredAtom,
   currentUserEmailAtom,
   type AuthToken,
-} from '../atoms/authAtom';
+} from '@ghatana/state';
 
 export interface UseAuthReturn {
   /** Whether a valid, non-expired token is present */

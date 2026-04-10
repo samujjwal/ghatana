@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import { useAtomValue } from 'jotai';
-import { currentUserEmailAtom, isAuthenticatedAtom } from '../atoms/authAtom';
+import { currentUserEmailAtom, isAuthenticatedAtom } from '@ghatana/state';
 import { TenantSelector } from './TenantSelector';
 import { NotificationCenter } from './NotificationCenter';
 

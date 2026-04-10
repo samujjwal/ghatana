@@ -467,8 +467,10 @@ public class EnginePool<T> implements AutoCloseable {
     @SuppressWarnings("unchecked")
     private void cleanupCollectedBorrowEntries() {
         IdentityWeakReference<T> reference;
-        while ((reference = (IdentityWeakReference<T>) borrowTrackingQueue.poll()) != null) {
+        reference = (IdentityWeakReference<T>) borrowTrackingQueue.poll();
+        while (reference != null) {
             borrowTracking.remove(reference);
+            reference = (IdentityWeakReference<T>) borrowTrackingQueue.poll();
         }
     }
 

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
@@ -170,12 +171,8 @@ class LoggingEventSinkTest extends EventloopTestBase {
         @Test
         @DisplayName("should reject null metrics collector")
         void shouldRejectNullMetrics() {
-            try {
-                new LoggingEventSink(null);
-                org.junit.jupiter.api.Assertions.fail("Expected NullPointerException");
-            } catch (NullPointerException e) {
-                // Expected
-            }
+            assertThatThrownBy(() -> new LoggingEventSink(null))
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 }

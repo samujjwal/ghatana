@@ -89,7 +89,6 @@
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
     "@dcmaar/types": "workspace:*",
-    "@dcmaar/config-presets": "workspace:*",
     "@dcmaar/connectors": "workspace:*",
     "@dcmaar/ui": "workspace:*",
     "@dcmaar/browser-extension-core": "workspace:*",

@@ -24,7 +24,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@yappc/code-editor": "workspace:*",
+    "@ghatana/code-editor": "workspace:*",
     "@yappc/collab": "workspace:*",
     "@yappc/core": "workspace:*",
     "jotai": "^2.19.0",

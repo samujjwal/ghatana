@@ -30,6 +30,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@ghatana/platform-utils": "workspace:*",
     "yjs": "^13.6.30",
     "y-websocket": "^3.0.0",
     "y-indexeddb": "^9.0.12",

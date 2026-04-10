@@ -810,10 +810,9 @@ public final class ProtoToJsonSchemaGenerator {
             }
 
             throw new EnumResolutionException(enumFqn, List.of("<none>"));
+        } catch (EnumResolutionException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof EnumResolutionException) {
-                throw e;
-            }
             throw new SchemaGenerationException("Error resolving enum: " + enumFqn, e);
         }
     }
@@ -868,7 +867,7 @@ public final class ProtoToJsonSchemaGenerator {
         StringBuilder b = new StringBuilder(parts[0]);
         for (int i = 1; i < parts.length; i++) {
             if (parts[i].isEmpty()) continue;
-            b.append(parts[i].substring(0, 1).toUpperCase()).append(parts[i].substring(1));
+            b.append(parts[i].substring(0, 1).toUpperCase(Locale.ROOT)).append(parts[i].substring(1));
         }
         return b.toString();
     }

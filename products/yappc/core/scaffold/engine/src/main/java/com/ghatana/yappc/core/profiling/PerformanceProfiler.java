@@ -134,7 +134,7 @@ public class PerformanceProfiler {
     /**
  * Profile a specific method execution */
     public <T> ProfilingResult<T> profileExecution(
-            String operationName, ProfiledOperation<T> operation) {
+            String operationName, ProfiledOperation<T> operation) throws Exception {
         String sessionId = startProfilingSession("method-" + operationName);
 
         long startTime = System.nanoTime();
@@ -148,21 +148,23 @@ public class PerformanceProfiler {
         } catch (Exception e) {
             exception = e;
             throw e;
+        }
+
+        ProfilingResult<T> profilingResult = new ProfilingResult<>();
+        try {
+            return profilingResult;
         } finally {
             long endTime = System.nanoTime();
             long endCpuTime = getCurrentThreadCpuTime();
 
             ProfileReport report = stopProfilingSession(sessionId);
 
-            ProfilingResult<T> profilingResult = new ProfilingResult<>();
             profilingResult.result = result;
             profilingResult.exception = exception;
             profilingResult.executionTimeNs = endTime - startTime;
             profilingResult.cpuTimeNs = endCpuTime - startCpuTime;
             profilingResult.operationName = operationName;
             profilingResult.report = report;
-
-            return profilingResult;
         }
     }
 
