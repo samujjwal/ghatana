@@ -39,6 +39,7 @@ class CaseManagementTest {
     @DisplayName("Should assign case to investigator")
     void shouldAssignCase() {
         Case case_ = new Case("CASE001", "SAR", "OPEN", null, LocalDateTime.now());
+        service.cases.put(case_.id(), case_);
         service.assignCase(case_.id(), "INVESTIGATOR_A");
         Case updated = service.getCase(case_.id());
         assertThat(updated.assignee()).isEqualTo("INVESTIGATOR_A");
@@ -77,6 +78,7 @@ class CaseManagementTest {
     @DisplayName("Should close case with disposition")
     void shouldCloseCase() {
         Case case_ = new Case("CASE005", "SAR", "OPEN", "INVESTIGATOR_D", LocalDateTime.now());
+        service.cases.put(case_.id(), case_);
         service.closeCase(case_.id(), "SUBSTANTIATED", "SAR filed with FinCEN");
         Case closed = service.getCase(case_.id());
         assertThat(closed.status()).isEqualTo("CLOSED");
@@ -97,7 +99,7 @@ class CaseManagementTest {
     record CaseReport(int totalCases, Map<String, Integer> byStatus, Map<String, Integer> byType) {}
 
     static class CaseManagementService {
-        private final Map<String, Case> cases = new HashMap<>();
+        final Map<String, Case> cases = new HashMap<>();
         private final Map<String, List<String>> stageHistory = new HashMap<>();
 
         Case createCase(Alert alert) {

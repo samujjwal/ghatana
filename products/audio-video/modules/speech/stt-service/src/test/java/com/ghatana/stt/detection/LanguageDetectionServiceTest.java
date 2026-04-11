@@ -9,6 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link LanguageDetectionService} — AV-007.2.
@@ -110,10 +111,9 @@ class LanguageDetectionServiceTest {
         void detect_candidatesUnmodifiable() {
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL);
             LanguageDetectionService.DetectionResult result = service.detect("hello world");
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> result.candidates().add(
-                            LanguageDetectionService.LanguageCandidate.of("de", 0.1)))
-                    .withMessageContaining("add");
+            assertThatThrownBy(() -> result.candidates().add(
+                    LanguageDetectionService.LanguageCandidate.of("de", 0.1)))
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

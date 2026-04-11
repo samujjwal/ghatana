@@ -291,7 +291,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
             assertThat(event.userId()).isEqualTo("user-001");
             assertThat(event.type()).isEqualTo(AuditLogService.EventType.ACCESS);
             assertThat(event.success()).isTrue();
-            assertThat(event.timestamp()).isEqualTo(now);
+            assertThat(java.time.Duration.between(event.timestamp(), now).toMillis()).isLessThan(100);
         }
     }
 

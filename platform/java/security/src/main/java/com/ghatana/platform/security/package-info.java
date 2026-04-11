@@ -13,7 +13,7 @@
  *
  * <h2>Authorization Pattern — RBAC (SEC-003)</h2>
  *
- * <p>Use {@link com.ghatana.platform.security.rbac.RBACFilter} to enforce role-based
+ * <p>Use {@link com.ghatana.platform.http.server.security.RBACFilter} to enforce role-based
  * access control at the HTTP routing layer. Register it once as a filter around
  * the secured routes rather than duplicating role checks inside individual handlers:</p>
  *
@@ -25,6 +25,10 @@
  *     .map(HttpMethod.GET,  "/api/data/*",  rbacFilter.requireRole("READER", dataHandler))
  *     .build();
  * }</pre>
+ *
+ * <p><strong>Note:</strong> HTTP security filters have been moved to {@code platform:java:http}
+ * to avoid HTTP dependency leakage in the security module. The security abstractions
+ * (PolicyService, RolePermissionRegistry) remain in this module.</p>
  *
  * <p>Declarative policy rules should be registered in
  * {@link com.ghatana.platform.security.rbac.RolePermissionRegistry} (or its in-memory

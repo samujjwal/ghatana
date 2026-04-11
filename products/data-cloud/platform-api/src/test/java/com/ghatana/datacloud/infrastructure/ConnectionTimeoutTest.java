@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -78,11 +79,9 @@ class ConnectionTimeoutTest extends EventloopTestBase {
             when(databaseService.connect(anyString()))
                 .thenReturn(Promise.ofException(new java.net.SocketTimeoutException("Connection timeout")));
 
-            try {
-                runPromise(() -> databaseService.connect("slow-db:5432"));
-            } catch (Exception e) {
-                assertThat(e).isInstanceOf(java.net.SocketTimeoutException.class);
-            }
+            assertThatThrownBy(() ->
+                runPromise(() -> databaseService.connect("slow-db:5432"))
+            ).cause().isInstanceOf(java.net.SocketTimeoutException.class);
         }
 
         @Test

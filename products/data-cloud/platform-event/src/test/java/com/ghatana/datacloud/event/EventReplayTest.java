@@ -39,7 +39,7 @@ class EventReplayTest extends EventloopTestBase {
     @Mock
     private EventReplayService replayService;
 
-    @Mock
+    @Mock(lenient = true)
     private EventCheckpointRepository checkpointRepository;
 
     private List<EventReplayService.ReplayedEvent> capturedEvents;

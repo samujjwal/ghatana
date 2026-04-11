@@ -11,6 +11,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link FacialRecognitionService} — AV-009.1.
@@ -87,10 +88,9 @@ class FacialRecognitionServiceTest {
         void detect_unmodifiableList() {
             FacialRecognitionService service = buildService();
             var faces = service.detect(new byte[]{1, 2});
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> faces.add(FacialRecognitionService.FaceDetection.of(
-                            new FacialRecognitionService.BoundingBox(0, 0, 1, 1), 0.5, new float[0])))
-                    .withMessageContaining("add");
+            assertThatThrownBy(() -> faces.add(FacialRecognitionService.FaceDetection.of(
+                    new FacialRecognitionService.BoundingBox(0, 0, 1, 1), 0.5, new float[0])))
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

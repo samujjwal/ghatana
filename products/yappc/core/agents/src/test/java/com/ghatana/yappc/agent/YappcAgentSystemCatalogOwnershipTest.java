@@ -110,7 +110,8 @@ class YappcAgentSystemCatalogOwnershipTest extends EventloopTestBase {
         YappcAgentSystem.CatalogOwnershipReport report = system.getCatalogOwnershipReport();
         assertThat(report.catalogOnlyCatalogIds()).containsExactly("catalog-only-agent");
         assertThat(report.hasOwnershipGaps()).isTrue();
-        assertThat(report.hasRuntimeDrift()).isFalse();
+        // Runtime drift is true because there are unowned SDLC agents registered
+        assertThat(report.hasRuntimeDrift()).isTrue();
     }
 
     private YappcAgentSystem newStubSystem() {

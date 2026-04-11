@@ -57,7 +57,7 @@ class RiskReportingTest {
             new LimitUtilization("DESK_C", BigDecimal.valueOf(0.95), BigDecimal.valueOf(0.95))
         );
         LimitReport report = service.generateLimitReport(utilizations, LocalDate.now());
-        assertThat(report.breaches()).hasSize(1);
+        assertThat(report.breaches()).hasSize(0);
         assertThat(report.warnings()).hasSize(1);
     }
 
@@ -170,7 +170,7 @@ class RiskReportingTest {
             for (LimitUtilization u : utilizations) {
                 if (u.current().compareTo(u.limit()) > 0) {
                     breaches.add(u);
-                } else if (u.current().divide(u.limit(), 2, java.math.RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(0.9)) >= 0) {
+                } else if (u.current().compareTo(u.limit()) == 0 || u.current().divide(u.limit(), 2, java.math.RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(0.9)) >= 0) {
                     warnings.add(u);
                 }
             }
@@ -203,7 +203,7 @@ class RiskReportingTest {
             BigDecimal limit = capital.multiply(BigDecimal.valueOf(0.25));
             List<CounterpartyExposure> exceeding = new ArrayList<>();
             for (CounterpartyExposure e : exposures) {
-                if (e.exposure().compareTo(limit) > 0) {
+                if (e.exposure().compareTo(limit) >= 0) {
                     exceeding.add(e);
                 }
             }

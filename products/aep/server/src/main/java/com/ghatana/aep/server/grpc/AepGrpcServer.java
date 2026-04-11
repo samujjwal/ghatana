@@ -15,7 +15,6 @@
  */
 package com.ghatana.aep.server.grpc;
 
-import com.ghatana.agent.registry.AgentFrameworkRegistry;
 import com.ghatana.orchestrator.grpc.AgentGrpcService;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
@@ -77,7 +76,7 @@ public final class AepGrpcServer implements AutoCloseable {
      * @param agentRegistry registry for agent storage and lookup
      * @param port           TCP port to bind
      */
-    public AepGrpcServer(AgentFrameworkRegistry agentRegistry, int port) {
+    public AepGrpcServer(AgentRegistry agentRegistry, int port) {
         Objects.requireNonNull(agentRegistry, "agentRegistry");
         AgentGrpcService grpcService = new AgentGrpcService(agentRegistry);
         this.server = ServerBuilder.forPort(port)
@@ -92,7 +91,7 @@ public final class AepGrpcServer implements AutoCloseable {
      *
      * @param agentRegistry registry for agent storage and lookup
      */
-    public AepGrpcServer(AgentFrameworkRegistry agentRegistry) {
+    public AepGrpcServer(AgentRegistry agentRegistry) {
         this(agentRegistry, resolvePort());
     }
 

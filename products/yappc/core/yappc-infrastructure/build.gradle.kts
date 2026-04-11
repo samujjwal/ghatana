@@ -17,8 +17,8 @@ dependencies {
     // AEP Agent Registry — for AepAgentRegistryAdapter only
     implementation(project(":products:aep:aep-registry"))
 
-    // AEP Agent Runtime — for AepAgentRuntimeAdapter only
-    implementation(project(":products:aep:aep-agent-runtime"))
+    // AEP Unified Runtime — for AepAgentRuntimeAdapter (Phase 1.6: aep-engine + aep-agent-runtime + aep-central-runtime)
+    implementation(project(":products:aep:aep-engine"))
     
     // Database
     implementation(libs.postgresql)

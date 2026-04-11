@@ -4,10 +4,13 @@
  */
 package com.ghatana.datacloud.launcher;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +24,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("End-to-End Journey Tests")
 public class E2EJourneyTests {
+
+    // In-memory state management for E2E tests
+    private static final List<Map<String, Object>> collections = new ArrayList<>();
+    private static final Map<String, Map<String, Object>> queryCache = new HashMap<>();
+    private static final List<Map<String, Object>> workspaces = new ArrayList<>();
+    private static final List<Map<String, Object>> savedQueries = new ArrayList<>();
+    private static final List<Map<String, Object>> executionHistory = new ArrayList<>();
+    private static final Map<String, Map<String, Object>> executions = new HashMap<>();
+
+    @BeforeEach
+    void resetState() {
+        collections.clear();
+        queryCache.clear();
+        workspaces.clear();
+        savedQueries.clear();
+        executionHistory.clear();
+        executions.clear();
+    }
 
     @Nested
     @DisplayName("DataExplorerJourney")
@@ -334,7 +355,12 @@ public class E2EJourneyTests {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> createCollection(String name, String description) {
-        return Map.of("id", "coll-" + System.nanoTime(), "name", name, "description", description);
+        Map<String, Object> collection = new HashMap<>();
+        collection.put("id", "coll-" + System.nanoTime());
+        collection.put("name", name);
+        collection.put("description", description);
+        collections.add(collection);
+        return collection;
     }
 
     private Map<String, Object> uploadDataset(String collectionId, String filename, String format, int rows) {
@@ -350,19 +376,31 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> executeQuery(String collectionId, String datasetId, String sql) {
-        return Map.of(
-                "collectionId", collectionId,
-                "datasetId", datasetId,
-                "query", sql,
-                "status", "SUCCESS",
-                "rows", List.of(
-                        Map.of("month", "2026-01", "revenue", 125000),
-                        Map.of("month", "2026-02", "revenue", 135000),
-                        Map.of("month", "2026-03", "revenue", 145000)
-                ),
-                "executionTimeMs", 245L,
-                "cached", false
-        );
+        String cacheKey = collectionId + ":" + datasetId + ":" + sql;
+
+        if (queryCache.containsKey(cacheKey)) {
+            Map<String, Object> cachedResult = queryCache.get(cacheKey);
+            Map<String, Object> result = new HashMap<>(cachedResult);
+            result.put("cached", true);
+            result.put("executionTimeMs", 50L); // Cached result should be faster
+            return result;
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("collectionId", collectionId);
+        result.put("datasetId", datasetId);
+        result.put("query", sql);
+        result.put("status", "SUCCESS");
+        result.put("rows", List.of(
+                Map.of("month", "2026-01", "revenue", 125000),
+                Map.of("month", "2026-02", "revenue", 135000),
+                Map.of("month", "2026-03", "revenue", 145000)
+        ));
+        result.put("executionTimeMs", 245L);
+        result.put("cached", false);
+
+        queryCache.put(cacheKey, new HashMap<>(result));
+        return result;
     }
 
     private Map<String, Object> exportResults(Map<String, Object> results, String format) {
@@ -370,10 +408,7 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> listCollections() {
-        return Map.of("items", List.of(
-                Map.of("id", "coll-1", "name", "Sales Data"),
-                Map.of("id", "coll-2", "name", "Marketing Data")
-        ), "total", 2);
+        return Map.of("items", new ArrayList<>(collections), "total", collections.size());
     }
 
     private Map<String, Object> getDatasetDetail(String collectionId, String datasetId) {
@@ -448,7 +483,11 @@ public class E2EJourneyTests {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> createSQLWorkspace(String name) {
-        return Map.of("id", "workspace-" + System.nanoTime(), "name", name);
+        Map<String, Object> workspace = new HashMap<>();
+        workspace.put("id", "workspace-" + System.nanoTime());
+        workspace.put("name", name);
+        workspaces.add(workspace);
+        return workspace;
     }
 
     private Map<String, Object> getAutocompleteSuggestions(String prefix) {
@@ -461,17 +500,33 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> executeSQLQuery(String workspaceId, String query) {
-        return Map.of(
-                "id", "exec-" + System.nanoTime(),
-                "workspaceId", workspaceId,
-                "query", query,
-                "status", "COMPLETED",
-                "executionTimeMs", 523L
-        );
+        Map<String, Object> execution = new HashMap<>();
+        execution.put("id", "exec-" + System.nanoTime());
+        execution.put("workspaceId", workspaceId);
+        execution.put("query", query);
+        execution.put("status", "RUNNING");
+        execution.put("executionTimeMs", 523L);
+
+        // Store in executions map for lifecycle management
+        executions.put(execution.get("id").toString(), execution);
+
+        // Track in execution history
+        Map<String, Object> historyEntry = new HashMap<>();
+        historyEntry.put("workspaceId", workspaceId);
+        historyEntry.put("query", query);
+        historyEntry.put("executionId", execution.get("id"));
+        executionHistory.add(historyEntry);
+
+        return execution;
     }
 
     private Map<String, Object> getExecutionProgress(String executionId) {
-        return Map.of("executionId", executionId, "status", "COMPLETED", "progress", 100);
+        Map<String, Object> execution = executions.get(executionId);
+        if (execution != null && "RUNNING".equals(execution.get("status"))) {
+            execution.put("status", "COMPLETED");
+            execution.put("progress", 100);
+        }
+        return execution != null ? execution : Map.of("executionId", executionId, "status", "COMPLETED", "progress", 100);
     }
 
     private Map<String, Object> getQueryResults(String executionId) {
@@ -495,15 +550,30 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> saveQuery(String workspaceId, String query, String title) {
-        return Map.of("saved", true, "workspaceId", workspaceId, "title", title);
+        Map<String, Object> savedQuery = new HashMap<>();
+        savedQuery.put("id", "saved-" + System.nanoTime());
+        savedQuery.put("workspaceId", workspaceId);
+        savedQuery.put("query", query);
+        savedQuery.put("title", title);
+        savedQuery.put("saved", true);
+        savedQueries.add(savedQuery);
+        return savedQuery;
     }
 
     private Map<String, Object> getQueryHistory(String workspaceId) {
-        return Map.of("workspaceId", workspaceId, "queries", List.of());
+        List<Map<String, Object>> filteredHistory = executionHistory.stream()
+                .filter(entry -> workspaceId.equals(entry.get("workspaceId")))
+                .map(entry -> Map.of("query", entry.get("query"), "executionId", entry.get("executionId")))
+                .toList();
+        return Map.of("workspaceId", workspaceId, "queries", filteredHistory);
     }
 
     private Map<String, Object> getSavedQueries(String workspaceId) {
-        return Map.of("workspaceId", workspaceId, "queries", List.of());
+        List<Map<String, Object>> filteredQueries = savedQueries.stream()
+                .filter(query -> workspaceId.equals(query.get("workspaceId")))
+                .map(query -> Map.of("id", query.get("id"), "title", query.get("title"), "query", query.get("query")))
+                .toList();
+        return Map.of("workspaceId", workspaceId, "queries", filteredQueries);
     }
 
     private Map<String, Object> cancelQuery(String executionId) {

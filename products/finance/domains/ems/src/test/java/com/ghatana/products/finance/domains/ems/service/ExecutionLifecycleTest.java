@@ -265,7 +265,7 @@ class ExecutionLifecycleTest extends EventloopTestBase {
             BigDecimal newFilled = state.filledQuantity().add(fillQuantity);
 
             if (newFilled.compareTo(state.totalQuantity()) > 0) {
-                throw new IllegalStateException("Overfill detected");
+                throw new IllegalStateException("overfill");
             }
 
             ExecutionStatus newStatus;

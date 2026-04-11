@@ -14,7 +14,8 @@ description = "Platform Domain - Shared domain models"
 dependencies {
     // Platform Core
     api(project(":platform:java:core"))
-    api(project(":platform:java:agent-core"))
+    // NOTE: agent-core dependency removed to break circular dependency
+    // (domain should not depend on agent-core - wrong direction)
     implementation(project(":platform:contracts"))
 
     // Jackson for JSON serialization

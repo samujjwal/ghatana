@@ -95,6 +95,10 @@ include(":core:knowledge-graph")
 // NOTE: core:domain removed — absorbed into core:yappc-domain
 // NOTE: core:agents:specialists removed — sources distributed to specialist modules
 
+// --- Core: Domain (Phase 2.1: yappc-domain-impl - api split deferred) ---
+// NOTE: yappc-domain-api creation deferred - api/impl split to be done later
+include(":core:yappc-domain-impl")
+
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
 // NOTE: infrastructure:security removed — sources consolidated
@@ -166,7 +170,8 @@ if (isStandaloneBuild) {
             "infrastructure:datacloud",
             // infrastructure:security removed — sources consolidated
             "libs:java:yappc-domain",
-            // Core yappc-* modules (Phase 3: yappc-domain renamed to yappc-domain-impl)
+            // Core yappc-* modules (Phase 2.1: yappc-domain-impl - api split deferred)
+            // NOTE: yappc-domain-api creation deferred - api/impl split to be done later
             "core:yappc-domain-impl",
             "core:yappc-services",
             "core:yappc-infrastructure",

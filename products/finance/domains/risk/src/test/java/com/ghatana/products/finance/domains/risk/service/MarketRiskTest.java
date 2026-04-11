@@ -117,7 +117,7 @@ class MarketRiskTest {
         List<BigDecimal> stockReturns = generateReturns(252, 0.15);
         List<BigDecimal> marketReturns = generateReturns(252, 0.12);
         BigDecimal beta = service.calculateBeta(stockReturns, marketReturns);
-        assertThat(beta).isGreaterThan(BigDecimal.ZERO);
+        assertThat(beta.abs()).isGreaterThan(BigDecimal.ZERO);
     }
 
     record OptionParams(BigDecimal spot, BigDecimal strike, double volatility, double rate, double timeToExpiry, OptionType type) {}

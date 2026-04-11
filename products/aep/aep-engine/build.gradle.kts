@@ -33,8 +33,10 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
     api(project(":platform:contracts"))
-    implementation(project(":platform:java:security"))
-    implementation(project(":platform:java:config"))
+    api(project(":platform:java:security"))
+    api(project(":platform:java:config"))
+    api(project(":platform:java:agent-core"))  // Agent runtime consolidation
+    api(project(":platform:java:messaging"))   // Unified messaging
 
     // Redis
     implementation(libs.jedis)
@@ -57,6 +59,8 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:aep:aep-security"))
+    testImplementation(project(":products:aep:aep-registry"))
 }
 
 tasks.test {

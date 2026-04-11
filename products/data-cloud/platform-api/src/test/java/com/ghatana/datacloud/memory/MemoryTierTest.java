@@ -233,7 +233,7 @@ class MemoryTierTest extends EventloopTestBase {
             );
 
             assertThat(result.tier()).isEqualTo(MemoryService.MemoryTier.PROCEDURAL);
-            assertThat(result.content()).contains("formula");
+            assertThat(((Map<String, Object>) result.metadata()).get("type")).isEqualTo("formula");
         }
 
         @Test

@@ -92,7 +92,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String collectionId = "coll-users";
             Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Alice", "age", 28));
             Entity expected = new Entity("ent-abc-123", collectionId, tenantId, newEntity.attributes);
-            lenient().when(entityService.create(tenantId, collectionId, any()))
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
                     .thenReturn(Promise.of(expected));
 
             Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
@@ -107,7 +107,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String collectionId = "coll-employees";
             Entity newEntity = new Entity("", collectionId, tenantId, Map.of("name", "Bob"));
             Entity expected = new Entity("ent-1", collectionId, tenantId, newEntity.attributes);
-            lenient().when(entityService.create(tenantId, collectionId, any()))
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
                     .thenReturn(Promise.of(expected));
 
             Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
@@ -123,7 +123,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             // Collection schema requires: name (string), email (string)
             Entity invalidEntity = new Entity("", collectionId, tenantId,
                     Map.of("missing_required_field", "value"));
-            lenient().when(entityService.create(tenantId, collectionId, invalidEntity))
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), eq(invalidEntity)))
                     .thenReturn(Promise.ofException(
                             new IllegalArgumentException("Missing required field: name")));
 
@@ -142,7 +142,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             Entity expected = new Entity("ent-2", collectionId, tenantId, newEntity.attributes);
             expected.createdBy = "user-creator";
             expected.updatedBy = "user-creator";
-            lenient().when(entityService.create(tenantId, collectionId, any()))
+            lenient().when(entityService.create(eq(tenantId), eq(collectionId), any()))
                     .thenReturn(Promise.of(expected));
 
             Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity));
@@ -159,7 +159,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             Entity newEntity = new Entity("", collectionId, owningTenant, Map.of());
-            lenient().when(entityService.create(requestingTenant, collectionId, any()))
+            lenient().when(entityService.create(eq(requestingTenant), eq(collectionId), any()))
                     .thenReturn(Promise.ofException(
                             new SecurityException("Not authorized for this collection")));
 
@@ -185,7 +185,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String collectionId = "coll-users";
             String entityId = "ent-123";
             Entity expected = new Entity(entityId, collectionId, tenantId, Map.of("name", "Dave"));
-            lenient().when(entityService.getById(tenantId, collectionId, entityId))
+            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq(entityId)))
                     .thenReturn(Promise.of(Optional.of(expected)));
 
             Optional<Entity> result = runPromise(() ->
@@ -202,7 +202,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
-            lenient().when(entityService.getById(requestingTenant, collectionId, entityId))
+            lenient().when(entityService.getById(eq(requestingTenant), eq(collectionId), eq(entityId)))
                     .thenReturn(Promise.of(Optional.empty()));
 
             Optional<Entity> result = runPromise(() ->
@@ -218,7 +218,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String collectionId = "coll-users";
             Entity entity = new Entity("ent-1", collectionId, tenantId,
                     Map.of("name", "Eve", "email", "eve@example.com"));
-            lenient().when(entityService.getById(tenantId, collectionId, "ent-1"))
+            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq("ent-1")))
                     .thenReturn(Promise.of(Optional.of(entity)));
 
             Optional<Entity> result = runPromise(() ->
@@ -245,12 +245,12 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             Entity updated = new Entity(entityId, collectionId, tenantId,
                     Map.of("name", "Frank", "age", 35));
             updated.updatedBy = "user-updater";
-            lenient().when(entityService.update(tenantId, collectionId, entityId, any()))
+            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), any()))
                     .thenReturn(Promise.of(null));
 
             runPromise(() -> entityService.update(tenantId, collectionId, entityId, updated));
 
-            verify(entityService, times(1)).update(tenantId, collectionId, entityId, any());
+            verify(entityService, times(1)).update(eq(tenantId), eq(collectionId), eq(entityId), any());
         }
 
         @Test
@@ -262,7 +262,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             // Invalid: email must be email format
             Entity invalidUpdate = new Entity(entityId, collectionId, tenantId,
                     Map.of("email", "not-an-email"));
-            lenient().when(entityService.update(tenantId, collectionId, entityId, invalidUpdate))
+            lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), eq(invalidUpdate)))
                     .thenReturn(Promise.ofException(
                             new IllegalArgumentException("Invalid email format")));
 
@@ -280,7 +280,9 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String entityId = "ent-1";
             long originalCreatedAt = System.currentTimeMillis() - 60_000;
 
-            Entity entity = new Entity(entityId, collectionId, tenantId, Map.of("name", "Grace"));
+            Map<String, Object> attributes = new java.util.HashMap<>();
+            attributes.put("name", "Grace");
+            Entity entity = new Entity(entityId, collectionId, tenantId, attributes);
             entity.createdAt = originalCreatedAt;
 
             // After update:
@@ -300,7 +302,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
             Entity update = new Entity(entityId, collectionId, owningTenant, Map.of());
-            lenient().when(entityService.update(requestingTenant, collectionId, entityId, update))
+            lenient().when(entityService.update(eq(requestingTenant), eq(collectionId), eq(entityId), eq(update)))
                     .thenReturn(Promise.ofException(
                             new SecurityException("Not authorized")));
 
@@ -325,12 +327,12 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String entityId = "ent-temp";
-            lenient().when(entityService.delete(tenantId, collectionId, entityId))
+            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(entityId)))
                     .thenReturn(Promise.of(null));
 
             runPromise(() -> entityService.delete(tenantId, collectionId, entityId));
 
-            verify(entityService, times(1)).delete(tenantId, collectionId, entityId);
+            verify(entityService, times(1)).delete(eq(tenantId), eq(collectionId), eq(entityId));
         }
 
         @Test
@@ -339,7 +341,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             String nonExistentId = "ent-does-not-exist";
-            lenient().when(entityService.delete(tenantId, collectionId, nonExistentId))
+            lenient().when(entityService.delete(eq(tenantId), eq(collectionId), eq(nonExistentId)))
                     .thenReturn(Promise.of(null)); // Success even if not found
 
             runPromise(() -> entityService.delete(tenantId, collectionId, nonExistentId));
@@ -354,7 +356,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             String entityId = "ent-secret";
-            lenient().when(entityService.delete(requestingTenant, collectionId, entityId))
+            lenient().when(entityService.delete(eq(requestingTenant), eq(collectionId), eq(entityId)))
                     .thenReturn(Promise.ofException(
                             new SecurityException("Not authorized")));
 
@@ -378,7 +380,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         void countMustReturnAccurateCount() {
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
-            lenient().when(entityService.count(tenantId, collectionId))
+            lenient().when(entityService.count(eq(tenantId), eq(collectionId)))
                     .thenReturn(Promise.of(42L));
 
             Long count = runPromise(() -> entityService.count(tenantId, collectionId));
@@ -392,9 +394,9 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
             String collectionId = "coll-users";
-            lenient().when(entityService.count(tenant1, collectionId))
+            lenient().when(entityService.count(eq(tenant1), eq(collectionId)))
                     .thenReturn(Promise.of(10L));
-            lenient().when(entityService.count(tenant2, collectionId))
+            lenient().when(entityService.count(eq(tenant2), eq(collectionId)))
                     .thenReturn(Promise.of(20L));
 
             Long tenant1Count = runPromise(() -> entityService.count(tenant1, collectionId));
@@ -410,7 +412,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         void countNonExistentMustReturn0() {
             String tenantId = "tenant-1";
             String nonExistentCollection = "coll-does-not-exist";
-            lenient().when(entityService.count(tenantId, nonExistentCollection))
+            lenient().when(entityService.count(eq(tenantId), eq(nonExistentCollection)))
                     .thenReturn(Promise.of(0L));
 
             Long count = runPromise(() -> entityService.count(tenantId, nonExistentCollection));

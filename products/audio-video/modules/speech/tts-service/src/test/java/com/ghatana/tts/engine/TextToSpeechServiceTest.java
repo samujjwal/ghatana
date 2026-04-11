@@ -532,12 +532,13 @@ class TextToSpeechServiceTest {
         @Test
         @DisplayName("supported voices are immutable")
         void supportedVoicesAreImmutable() {
-            Set<String> voices1 = engine.getSupportedVoiceIds();
-            Set<String> voices2 = engine.getSupportedVoiceIds();
+            Set<String> voices = engine.getSupportedVoiceIds();
 
-            assertThat(voices1).isEqualTo(voices2);
-            // Verify it's a copy, not the same reference
-            assertThat(voices1).isNotSameAs(SUPPORTED_VOICES);
+            assertThat(voices).isNotEmpty();
+            assertThat(voices).containsAll(SUPPORTED_VOICES);
+            // Verify it's unmodifiable
+            assertThatThrownBy(() -> voices.add("new-voice"))
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

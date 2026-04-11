@@ -86,6 +86,7 @@ dependencies {
     testImplementation(libs.hikaricp)
     testImplementation("io.grpc:grpc-testing:1.79.0")
     testImplementation("io.grpc:grpc-inprocess:1.79.0")
+    testImplementation("org.xerial:sqlite-jdbc:3.46.0.0")
     testCompileOnly("jakarta.annotation:jakarta.annotation-api:3.0.0")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

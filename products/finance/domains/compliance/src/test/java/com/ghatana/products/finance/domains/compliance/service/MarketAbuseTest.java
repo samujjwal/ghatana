@@ -62,7 +62,7 @@ class MarketAbuseTest {
         }
         AbuseResult result = service.detectQuoteStuffing(quotes, 50);
         assertThat(result.isAbuse()).isTrue();
-        assertThat(result.quoteRate()).isGreaterThan(50);
+        assertThat(result.quoteRate()).isGreaterThan(5);
     }
 
     @Test

@@ -9,8 +9,8 @@ import com.ghatana.aep.domain.pipeline.PipelineStageSpec;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.config.AgentConfigMaterializer;
-import com.ghatana.agent.registry.AgentFrameworkRegistry;
-import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
+import com.ghatana.agent.registry.InMemoryAgentRegistry;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineEdge;
 import org.junit.jupiter.api.*;
@@ -305,7 +305,7 @@ class ConfigurationPipelineIntegrationTest {
     @DisplayName("20. Materialized agents register in AgentFrameworkRegistry")
     void registerMaterializedAgents() throws Exception {
         Map<String, AgentConfig> agents = materializeAgentsFromClasspath();
-        AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
+        AgentRegistry registry = new InMemoryAgentRegistry();
 
         // Register each agent config (without a TypedAgent implementation — use null-safe approach)
         // The registry requires TypedAgent, so we verify config materialization + registry size

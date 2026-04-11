@@ -9,6 +9,7 @@ import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.spi.AgentRegistry;
 import io.activej.promise.Promise;
 import lombok.Builder;
 import lombok.Value;
@@ -47,7 +48,7 @@ public class AgentOperatorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(AgentOperatorFactory.class);
 
-    private final AgentFrameworkRegistry registry;
+    private final AgentRegistry registry;
     private final Map<AgentType, OperatorMapping> defaultMappings = new EnumMap<>(AgentType.class);
     private final Map<String, OperatorMapping> customMappings = new LinkedHashMap<>();
 
@@ -145,7 +146,7 @@ public class AgentOperatorFactory {
     // Construction
     // ═══════════════════════════════════════════════════════════════════════════
 
-    public AgentOperatorFactory(@NotNull AgentFrameworkRegistry registry) {
+    public AgentOperatorFactory(@NotNull AgentRegistry registry) {
         this.registry = Objects.requireNonNull(registry);
         registerDefaultMappings();
     }
@@ -185,6 +186,8 @@ public class AgentOperatorFactory {
     @NotNull
     public Promise<OperatorTree> createOperatorTree(@NotNull String agentId) {
         return registry.<Map<String, Object>, Map<String, Object>>resolve(agentId)
+                .map(optAgent -> optAgent.orElseThrow(() ->
+                    new IllegalStateException("Agent not found: " + agentId)))
                 .map(agent -> {
                     AgentType type = agent.descriptor().getType();
 

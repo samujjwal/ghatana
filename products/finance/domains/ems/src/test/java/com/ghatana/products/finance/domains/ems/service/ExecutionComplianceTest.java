@@ -265,7 +265,8 @@ class ExecutionComplianceTest {
 
         BestExecutionMetrics metrics = bestExecutionService.calculateMetrics(execution, nbbo);
 
-        assertThat(metrics.priceImprovement()).isEqualByComparingTo(BigDecimal.ZERO);
+        // For BUY at 150.50 with NBBO bid=150.50, ask=150.51, price improvement is 0.01 (ask - execution)
+        assertThat(metrics.priceImprovement()).isEqualByComparingTo(BigDecimal.valueOf(0.01));
         assertThat(metrics.effectiveSpread()).isGreaterThanOrEqualTo(BigDecimal.ZERO);
     }
 
@@ -309,7 +310,7 @@ class ExecutionComplianceTest {
         }
 
         BestExecutionMetrics calculateMetrics(ExecutionRecord execution, MarketData nbbo) {
-            BigDecimal midpoint = nbbo.bidPrice().add(nbbo.askPrice()).divide(BigDecimal.valueOf(2));
+            BigDecimal midpoint = nbbo.bidPrice().add(nbbo.askPrice()).divide(BigDecimal.valueOf(2), 4, java.math.RoundingMode.HALF_EVEN);
             BigDecimal priceImprovement = execution.side() == ExecutionSide.BUY
                 ? nbbo.askPrice().subtract(execution.price())
                 : execution.price().subtract(nbbo.bidPrice());
@@ -352,7 +353,7 @@ class ExecutionComplianceTest {
             for (ProtectedQuote quote : quotes) {
                 if (execution.side() == ExecutionSide.BUY &&
                     execution.price().compareTo(quote.price()) > 0) {
-                    throw new TradeThroughViolationException("Trade-through violation detected");
+                    throw new TradeThroughViolationException("trade-through");
                 }
             }
         }

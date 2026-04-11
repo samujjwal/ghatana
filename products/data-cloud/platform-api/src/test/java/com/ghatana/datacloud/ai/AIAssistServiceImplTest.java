@@ -143,10 +143,13 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             for (int i = 0; i < 1500; i++) {
                 largeResults.add(Map.of("id", i));
             }
+            AIAssistService.QueryContext context = new AIAssistService.QueryContext(
+                "tenant-alpha", "user-1", null, null, null, Map.of(), null
+            );
 
             // When
             AIAssistService.Explanation result = runPromise(() ->
-                service.explainResults("SELECT *", largeResults, null));
+                service.explainResults("SELECT *", largeResults, context));
 
             // Then
             assertThat(result.recommendations()).anyMatch(r -> r.contains("LIMIT"));

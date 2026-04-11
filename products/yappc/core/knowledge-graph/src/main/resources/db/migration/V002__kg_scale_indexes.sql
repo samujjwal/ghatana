@@ -1,6 +1,9 @@
 CREATE INDEX IF NOT EXISTS idx_kg_nodes_tenant_project_updated
     ON kg_nodes(tenant_id, project_id, updated_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_kg_nodes_tenant_type_updated
+    ON kg_nodes(tenant_id, node_type, updated_at DESC);
+
 CREATE INDEX IF NOT EXISTS idx_kg_nodes_tenant_node
     ON kg_nodes(tenant_id, node_id);
 

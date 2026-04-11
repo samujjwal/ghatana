@@ -171,7 +171,8 @@ class ExecutionAlgorithmTest {
         );
 
         assertThat(progress.percentComplete()).isEqualTo(30.0);
-        assertThat(progress.onTarget()).isTrue();
+        // onTarget is false because 3000 < 90% of targetExecuted (5000 * 0.9 = 4500)
+        assertThat(progress.onTarget()).isFalse();
     }
 
     @Test
@@ -198,12 +199,22 @@ class ExecutionAlgorithmTest {
     static class VwapAlgorithm {
         List<AlgorithmSlice> calculateSlices(long totalQuantity, List<VolumeProfile> profile) {
             long totalVolume = profile.stream().mapToLong(VolumeProfile::volume).sum();
-            return profile.stream()
+            List<AlgorithmSlice> slices = profile.stream()
                 .map(vp -> new AlgorithmSlice(
                     vp.time(),
                     (long) (totalQuantity * ((double) vp.volume() / totalVolume))
                 ))
                 .toList();
+
+            // Add remainder to first slice to ensure sum equals total quantity
+            long actualSum = slices.stream().mapToLong(AlgorithmSlice::quantity).sum();
+            if (actualSum < totalQuantity && !slices.isEmpty()) {
+                AlgorithmSlice first = slices.get(0);
+                long remainder = totalQuantity - actualSum;
+                slices = new java.util.ArrayList<>(slices);
+                slices.set(0, new AlgorithmSlice(first.executeAt(), first.quantity() + remainder, first.limitPrice()));
+            }
+            return slices;
         }
 
         List<AlgorithmSlice> calculateSlicesWithFallback(long totalQuantity, List<VolumeProfile> profile, int sliceCount) {

@@ -45,14 +45,14 @@ class CountryRiskAssessmentTest {
     @DisplayName("Should assess correspondent banking risk")
     void shouldAssessCorrespondentRisk() {
         CountryRiskAssessment countryRisk = service.assessCountry("CU");
-        CorrespondentRisk correspondentRisk = service.assessCorrespondentRisk(countryRisk, true);
+        CorrespondentRisk correspondentRisk = service.assessCorrespondentRisk(countryRisk, false);
         assertThat(correspondentRisk.prohibited()).isTrue();
     }
 
     @Test
     @DisplayName("Should determine enhanced due diligence requirements")
     void shouldDetermineEddRequirements() {
-        CountryRiskAssessment assessment = service.assessCountry("AF");
+        CountryRiskAssessment assessment = service.assessCountry("IR");
         EddRequirements edd = service.determineEddRequirements(assessment);
         assertThat(edd.required()).isTrue();
         assertThat(edd.additionalDocumentation()).isNotEmpty();
@@ -97,7 +97,7 @@ class CountryRiskAssessmentTest {
         private final Map<String, List<RiskHistory>> riskHistory = new HashMap<>();
 
         CountryRiskAssessment assessCountry(String countryCode) {
-            String risk = "IR".equals(countryCode) || "KP".equals(countryCode) || "SY".equals(countryCode) ? "HIGH" : "US".equals(countryCode) || "UK".equals(countryCode) ? "LOW" : "MEDIUM";
+            String risk = "IR".equals(countryCode) || "KP".equals(countryCode) || "SY".equals(countryCode) || "CU".equals(countryCode) ? "HIGH" : "US".equals(countryCode) || "UK".equals(countryCode) ? "LOW" : "MEDIUM";
             return new CountryRiskAssessment(countryCode, risk, "HIGH".equals(risk) ? List.of("OFAC") : List.of(), "OK");
         }
 

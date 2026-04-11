@@ -120,7 +120,8 @@ class EntityServiceTest extends EventloopTestBase {
             // When & Then
             assertThatThrownBy(() ->
                 runPromise(() -> service.createEntity(null, COLLECTION_NAME, data, USER_ID))
-            ).isInstanceOf(NullPointerException.class);
+            ).isInstanceOf(IllegalArgumentException.class)
+             .hasMessageContaining("Tenant ID required");
         }
 
         @Test
@@ -161,7 +162,8 @@ class EntityServiceTest extends EventloopTestBase {
 
             verify(metrics).incrementCounter(
                 eq("entity.create.error"),
-                contains("tenant"), contains(TENANT_ID)
+                eq("tenant"), eq(TENANT_ID),
+                contains("error"), anyString()
             );
         }
 
@@ -253,7 +255,11 @@ class EntityServiceTest extends EventloopTestBase {
             assertThat(result.getCreatedAt()).isEqualTo(now);
             assertThat(result.getCreatedBy()).isEqualTo(USER_ID);
 
-            verify(metrics).incrementCounter(contains("entity.update.success"));
+            verify(metrics).incrementCounter(
+                eq("entity.update.success"),
+                eq("tenant"), eq(TENANT_ID),
+                eq("collection"), eq(COLLECTION_NAME)
+            );
         }
 
         @Test
@@ -274,7 +280,11 @@ class EntityServiceTest extends EventloopTestBase {
             ).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("not found");
 
-            verify(metrics).incrementCounter(contains("entity.update.error"));
+            verify(metrics).incrementCounter(
+                eq("entity.update.error"),
+                eq("tenant"), eq(TENANT_ID),
+                contains("error"), anyString()
+            );
         }
 
         @Test
@@ -367,8 +377,12 @@ class EntityServiceTest extends EventloopTestBase {
             when(repository.findById(TENANT_ID, COLLECTION_NAME, entityId))
                 .thenReturn(Promise.of(Optional.of(entity)));
 
-            // When (assuming service has findById method)
-            // This test assumes the service interface supports findById
+            // When
+            Entity result = runPromise(() -> service.getEntity(TENANT_ID, COLLECTION_NAME, entityId));
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(entityId);
         }
 
         @Test
@@ -425,8 +439,11 @@ class EntityServiceTest extends EventloopTestBase {
             when(repository.delete(TENANT_ID, COLLECTION_NAME, entityId))
                 .thenReturn(Promise.of(null));
 
-            // When (assuming service has deleteEntity method)
-            // This test assumes the service interface supports deletion
+            // When
+            runPromise(() -> service.deleteEntity(TENANT_ID, COLLECTION_NAME, entityId, USER_ID));
+
+            // Then
+            verify(repository).delete(TENANT_ID, COLLECTION_NAME, entityId);
         }
 
         @Test
@@ -438,8 +455,15 @@ class EntityServiceTest extends EventloopTestBase {
             when(repository.delete(TENANT_ID, COLLECTION_NAME, entityId))
                 .thenReturn(Promise.of(null));
 
-            // When (assuming service has deleteEntity method)
-            // Verify metrics recorded
+            // When
+            runPromise(() -> service.deleteEntity(TENANT_ID, COLLECTION_NAME, entityId, USER_ID));
+
+            // Then - verify metrics recorded
+            verify(metrics).incrementCounter(
+                eq("entity.delete.success"),
+                eq("tenant"), eq(TENANT_ID),
+                eq("collection"), eq(COLLECTION_NAME)
+            );
         }
     }
 

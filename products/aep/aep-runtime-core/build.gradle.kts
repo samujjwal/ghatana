@@ -1,15 +1,16 @@
 /*
- * AEP Runtime Core Module - Build Configuration (Facade + Tests)
+ * AEP Runtime Core Module - Build Configuration (Facade for Unified Runtime)
  *
- * Thin re-export facade for backward compatibility.
- * All core engine code lives in aep-engine.
- * This module exists so existing consumers need not update their imports,
- * AND hosts the shared test infrastructure (AepTestFixtures) plus cross-module
- * unit and integration tests that exercise the full AEP surface area.
+ * DEPRECATED: This module is now a thin re-export facade for backward compatibility.
+ * The unified AEP runtime is now in aep-engine (Phase 1.6 consolidation).
  *
- * NOTE: platform-* module names were renamed to aep-* (Session 5, 2026-03-23).
- * NOTE: Phase 7 (2026-03-23) — module added back to settings, missing test deps
- *       added, exclusion block replaced with a minimal keep-excluded list.
+ * All runtime code has been merged into aep-engine:
+ * - aep-engine: Core execution engine
+ * - aep-central-runtime: Central registry/catalog (merged)
+ * - aep-agent-runtime: Agent runtime (merged)
+ *
+ * This module exists so existing consumers need not update their imports immediately.
+ * Migration path: Update all dependencies from aep-runtime-core to aep-engine.
  */
 
 plugins {
@@ -37,7 +38,7 @@ dependencies {
 
     // Additional modules unlocked by Phase-7 test restoration
     testImplementation(project(":products:aep:aep-analytics"))    // AnalyticsEngineDefaultsTest
-    testImplementation(project(":products:aep:aep-connectors"))   // ConnectorConfigTest, KafkaDltTest, Ingress tests
+    testImplementation(project(":platform:java:messaging"))      // Unified messaging (merged connectors)
     testImplementation(project(":products:aep:aep-event-cloud"))  // DataCloudEventCloudClientTest
     testImplementation(project(":products:data-cloud:spi"))       // EventView used by analytics + datacloud tests
     testImplementation(project(":products:aep:aep-scaling"))      // Scaling unit tests

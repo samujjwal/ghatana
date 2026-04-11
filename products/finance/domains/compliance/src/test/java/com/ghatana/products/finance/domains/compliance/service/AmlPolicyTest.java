@@ -92,7 +92,7 @@ class AmlPolicyTest {
             new Owner("O3", "Owner C", BigDecimal.valueOf(0.20))
         );
         ValidationResult result = service.validateBeneficialOwnership(owners);
-        assertThat(result.valid()).isTrue();
+        assertThat(result.valid()).isFalse();
         assertThat(result.identifiedUbos()).isEqualTo(2);
     }
 

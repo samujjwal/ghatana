@@ -104,9 +104,9 @@ class PepScreeningTest {
             boolean isPep = request.position().toLowerCase().contains("senator") ||
                            request.position().toLowerCase().contains("ministre") ||
                            request.position().toLowerCase().contains("spouse") ||
-                           request.position().toLowerCase().contains("associate");
+                           request.relatedToPepId() != null && request.relatedToPepId().contains("ASSOCIATE");
             String category = "US".equals(request.country()) ? "DOMESTIC" : "FOREIGN";
-            String relationship = request.relatedToPepId() != null ? (request.position().contains("Spouse") ? "SPOUSE" : "CLOSE_ASSOCIATE") : null;
+            String relationship = request.relatedToPepId() != null ? (request.relatedToPepId().contains("SPOUSE") ? "SPOUSE" : "CLOSE_ASSOCIATE") : null;
             return new PepResult(isPep, category, request.position(), relationship, LocalDate.now().minusYears(5), null);
         }
 

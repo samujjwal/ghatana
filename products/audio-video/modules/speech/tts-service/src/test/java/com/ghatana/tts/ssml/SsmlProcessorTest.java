@@ -9,6 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link SsmlProcessor} — AV-008.3.
@@ -218,8 +219,7 @@ class SsmlProcessorTest {
     @DisplayName("parse() returns an unmodifiable list")
     void parse_returnsUnmodifiableList() {
         List<SsmlProcessor.SsmlSegment> segments = processor.parse("<speak>test</speak>");
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> segments.add(SsmlProcessor.SsmlSegment.text("extra")))
-                .withMessageContaining("add");
+        assertThatThrownBy(() -> segments.add(SsmlProcessor.SsmlSegment.text("extra")))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

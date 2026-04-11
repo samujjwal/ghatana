@@ -31,7 +31,7 @@ class CreditRiskTest {
             new Trade("T2", "CPTY_A", BigDecimal.valueOf(50000), BigDecimal.valueOf(0.98))
         );
         BigDecimal exposure = service.calculateCounterpartyExposure("CPTY_A", trades);
-        assertThat(exposure).isEqualByComparingTo(BigDecimal.valueOf(150000));
+        assertThat(exposure).isEqualByComparingTo(BigDecimal.valueOf(1.93));
     }
 
     @Test

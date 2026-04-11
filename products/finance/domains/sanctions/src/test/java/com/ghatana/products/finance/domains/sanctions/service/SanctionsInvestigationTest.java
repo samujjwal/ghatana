@@ -47,9 +47,10 @@ class SanctionsInvestigationTest {
     @Test
     @DisplayName("Should record investigation decision")
     void shouldRecordDecision() {
-        String caseId = "CASE002";
-        service.recordDecision(caseId, "FALSE_POSITIVE", "Additional identifiers confirmed different entity");
-        InvestigationCase updated = service.getCase(caseId);
+        SanctionsAlert alert = new SanctionsAlert("ALT002", "OFAC_HIT", "HIGH", "Customer match");
+        InvestigationCase case_ = service.createCase(alert);
+        service.recordDecision(case_.id(), "FALSE_POSITIVE", "Additional identifiers confirmed different entity");
+        InvestigationCase updated = service.getCase(case_.id());
         assertThat(updated.decision()).isEqualTo("FALSE_POSITIVE");
     }
 

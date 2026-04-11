@@ -23,10 +23,8 @@ dependencies {
 
     // Agent framework from platform (api — types are part of YAPPCAgentBase public API)
     api(project(":platform:java:agent-core"))
-    // TODO(ADAPTER-SEAM): aep-agent-runtime, data-cloud:spi, and aep-operator-contracts
-    //   bypass the adapter boundary. Future: introduce AgentRuntimePort, DataStorePort,
-    //   and OperatorCatalogPort in core; move AEP/DC impls to infrastructure:aep
-    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-dispatch + agent-memory + agent-learning
+    // Unified AEP runtime (Phase 1.6 consolidation: aep-engine + aep-agent-runtime + aep-central-runtime)
+    implementation(project(":products:aep:aep-engine"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
@@ -38,8 +36,8 @@ dependencies {
     // TODO(ADAPTER-SEAM): aep-operator-contracts should be hidden behind OperatorCatalogPort
     implementation(project(":products:aep:aep-operator-contracts"))
 
-    // AEP central runtime — only for tests (YappcAepIntegrationTest used real service pre-migration)
-    testImplementation(project(":products:aep:aep-central-runtime"))
+    // Unified AEP runtime for tests
+    testImplementation(project(":products:aep:aep-engine"))  // Consolidated runtime
 
     // AI module (api — LLMProvider/LLMRequest/LLMResponse in public agent API)
     api(project(":products:yappc:core:ai"))

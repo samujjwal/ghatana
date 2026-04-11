@@ -5,7 +5,7 @@ plugins {
     id("jacoco")
 }
 
-description = "YAPPC Domain Models Module"
+description = "YAPPC Domain Implementation - Domain logic and persistence (Phase 2.1: api/impl split)"
 
 dependencies {
     // Platform modules
@@ -15,10 +15,10 @@ dependencies {
     api(project(":platform:java:http"))
     api(project(":platform:java:agent-core"))
     api(project(":platform:java:observability"))
-    
+
     // Re-export shared YAPPC domain models (stable contracts and DTOs)
     api(project(":products:yappc:libs:java:yappc-domain"))
-    
+
     // YAPPC shared utilities
     implementation(project(":products:yappc:core:yappc-shared"))
     

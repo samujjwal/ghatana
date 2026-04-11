@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -113,11 +114,9 @@ class ResourceExhaustionTest extends EventloopTestBase {
             when(resourcePool.acquireConnection())
                 .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Connection wait timeout")));
 
-            try {
-                runPromise(() -> resourcePool.acquireConnection());
-            } catch (Exception e) {
-                assertThat(e).isInstanceOf(java.util.concurrent.TimeoutException.class);
-            }
+            assertThatThrownBy(() ->
+                runPromise(() -> resourcePool.acquireConnection())
+            ).cause().isInstanceOf(java.util.concurrent.TimeoutException.class);
         }
     }
 

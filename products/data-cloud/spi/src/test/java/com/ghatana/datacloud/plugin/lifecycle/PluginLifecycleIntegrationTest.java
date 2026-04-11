@@ -205,9 +205,9 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
         }
 
         void install(String pluginId) {
-            PluginState state = requireState(pluginId);
-            if (state.status() != PluginStatus.DISCOVERED) {
-                throw new IllegalStateException("Plugin not discovered: " + pluginId);
+            PluginState state = registry.get(pluginId);
+            if (state == null || state.status() != PluginStatus.DISCOVERED) {
+                throw new IllegalStateException("Plugin not discovered");
             }
             transition(pluginId, PluginStatus.INSTALLED, "INSTALLED");
         }

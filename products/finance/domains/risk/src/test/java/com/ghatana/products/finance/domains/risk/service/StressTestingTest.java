@@ -71,7 +71,7 @@ class StressTestingTest {
         );
         StressSummary summary = service.aggregateResults(results);
         assertThat(summary.worstCaseLoss()).isEqualByComparingTo(BigDecimal.valueOf(8000000));
-        assertThat(summary.averageLoss()).isEqualByComparingTo(BigDecimal.valueOf(5333333));
+        assertThat(summary.averageLoss()).isCloseTo(BigDecimal.valueOf(5333333), within(BigDecimal.valueOf(1)));
     }
 
     @Test

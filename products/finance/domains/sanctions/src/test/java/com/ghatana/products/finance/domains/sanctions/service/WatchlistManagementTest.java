@@ -123,7 +123,9 @@ class WatchlistManagementTest {
         private final Map<String, List<VersionInfo>> versionHistory = new HashMap<>();
 
         Watchlist loadWatchlist(String name, String source) {
-            return new Watchlist(name, new ArrayList<>(), LocalDateTime.now(), "v1.0");
+            List<WatchlistEntry> entries = new ArrayList<>();
+            entries.add(new WatchlistEntry("ID_001", "Test Entity", "entity", "SDN", LocalDate.now()));
+            return new Watchlist(name, entries, LocalDateTime.now(), "v1.0");
         }
 
         void applyUpdate(String listName, WatchlistUpdate update) {
@@ -150,7 +152,12 @@ class WatchlistManagementTest {
         }
 
         String createSnapshot(String listName) {
-            return "v" + System.currentTimeMillis();
+            String version = "v" + System.currentTimeMillis();
+            Watchlist list = watchlists.get(listName);
+            int entryCount = list != null ? list.entries().size() : 0;
+            versionHistory.computeIfAbsent(listName, k -> new ArrayList<>())
+                .add(new VersionInfo(version, LocalDateTime.now(), entryCount));
+            return version;
         }
 
         List<VersionInfo> getVersionHistory(String listName) {

@@ -178,6 +178,8 @@ class FeatureIngestionErrorHandlingTest {
                     features.add(new ExtractedFeature(k, n.doubleValue(), ts));
                 }
             });
+            if (features.isEmpty())
+                throw new FeatureExtractionException("evt-2", "test-tenant", "No numeric features found in payload for entity: " + entityId, null);
             return features;
         }
 

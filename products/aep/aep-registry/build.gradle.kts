@@ -19,9 +19,8 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:security"))
-    implementation(project(":platform:java:connectors"))
+    implementation(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     implementation(project(":platform:java:database"))
-    implementation(project(":products:aep:aep-connectors"))
 
     // Agent registry (absorbed from aep-agent — 2026-03-22; agent-registry merged into agent-core 2026-03-24)
     implementation(project(":platform:java:agent-core"))

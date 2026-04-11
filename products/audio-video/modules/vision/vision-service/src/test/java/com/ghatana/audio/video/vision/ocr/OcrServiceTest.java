@@ -9,6 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link OcrService} — AV-009.3.
@@ -95,10 +96,9 @@ class OcrServiceTest {
         void extract_unmodifiable() {
             OcrService service = OcrService.of(STUB_MODEL);
             var regions = service.extract(new byte[]{1});
-            assertThatIllegalArgumentException()
-                    .isThrownBy(() -> regions.add(
-                            new OcrService.TextRegion("x", BOX, 0.99, 0)))
-                    .withMessageContaining("add");
+            assertThatThrownBy(() -> regions.add(
+                    new OcrService.TextRegion("x", BOX, 0.99, 0)))
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

@@ -19,11 +19,8 @@ dependencies {
     api(project(":platform:java:config"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
-    // governance and http are internal implementation details:
-    // - governance: only used by RBACFilter and PolicyService internals
-    // - http: only used by PermissionEnforcerFilter (an internal servlet filter)
-    // Keeping these as `implementation` prevents downstream consumers from
-    // accidentally taking transitive governance/http dependencies through security.
+    api(project(":platform:java:database"))  // Canonical Repository interface
+    // NOTE: governance and http as implementation to avoid circular dependency
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:http"))
     

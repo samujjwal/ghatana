@@ -33,7 +33,7 @@ dependencies {
     api(project(":products:aep:aep-operator-contracts"))
     implementation(project(":products:aep:aep-engine"))
     // aep-agent merged into aep-registry on 2026-03-22
-    api(project(":products:aep:aep-connectors"))
+    api(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     api(project(":products:aep:aep-registry"))
 
     // Core platform libs
@@ -41,7 +41,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:agent-core"))
     api(project(":platform:java:workflow"))
-    api(project(":products:aep:aep-agent-runtime"))  // Merged: agent-dispatch + agent-resilience
+    api(project(":products:aep:aep-engine"))  // Unified runtime (Phase 1.6 consolidation)
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
     api(project(":platform:java:config"))

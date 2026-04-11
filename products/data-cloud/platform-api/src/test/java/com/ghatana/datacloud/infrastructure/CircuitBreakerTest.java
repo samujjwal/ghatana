@@ -116,7 +116,7 @@ class CircuitBreakerTest extends EventloopTestBase {
         @Test
         @DisplayName("[IE002]: failures_in_half_open_reopen_circuit")
         void failuresInHalfOpenReopenCircuit() {
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ZERO);
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30));
             breaker.transitionTo(CircuitState.HALF_OPEN);
 
             breaker.recordFailure();
@@ -186,7 +186,7 @@ class CircuitBreakerTest extends EventloopTestBase {
         void recordFailure() {
             failureCount++;
             lastFailureTime = Instant.now();
-            if (failureCount >= threshold) {
+            if (state == CircuitState.HALF_OPEN || failureCount >= threshold) {
                 state = CircuitState.OPEN;
             }
         }

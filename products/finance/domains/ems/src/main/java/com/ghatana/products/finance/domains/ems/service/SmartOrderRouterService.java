@@ -36,6 +36,7 @@ public class SmartOrderRouterService {
     private static final Logger log = LoggerFactory.getLogger(SmartOrderRouterService.class);
 
     private final ConcurrentHashMap<String, ExchangeAdapterPort> adapters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, ExchangeAdapterPort> priorityMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, RoutedOrder>         routedOrders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SplitOrder>          splitOrders  = new ConcurrentHashMap<>();
     private final RoutingStore                                    routingStore;
@@ -60,6 +61,7 @@ public class SmartOrderRouterService {
      */
     public void registerAdapter(ExchangeAdapterPort adapter, int priority) {
         adapters.put(adapter.exchangeId(), adapter);
+        priorityMap.put(priority, adapter);
         log.info("SOR: registered adapter exchangeId={} priority={}", adapter.exchangeId(), priority);
     }
 
@@ -225,12 +227,13 @@ public class SmartOrderRouterService {
             if (adapter.isConnected()) return adapter;
         }
 
-        // Fallback: any connected adapter (single-venue NEPSE typically)
-        return adapters.values().stream()
-                .filter(ExchangeAdapterPort::isConnected)
-                .min(Comparator.comparingInt(a -> 0)) // extend with priority when multi-venue
+        // Fallback: select by priority (lower = higher priority)
+        return priorityMap.entrySet().stream()
+                .filter(e -> e.getValue().isConnected())
+                .min(Comparator.comparingInt(Map.Entry::getKey))
+                .map(Map.Entry::getValue)
                 .orElseThrow(() -> new RoutingException(
-                        "No healthy exchange adapter available for instrument: " + instrumentId, null));
+                        "No healthy venue available", null));
     }
 
     private BigDecimal computeWeightedAvg(BigDecimal prevAvg, long prevQty,

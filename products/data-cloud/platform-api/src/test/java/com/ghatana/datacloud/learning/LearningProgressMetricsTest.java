@@ -263,7 +263,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
                 );
 
             assertThat(comparison.currentIsBest(0.18)).isTrue();  // Better than best
-            assertThat(comparison.currentIsBest(0.22)).isTrue();  // Equal to best (isBest uses <=)
+            assertThat(comparison.currentIsBest(0.20)).isTrue();  // Equal to best (isBest uses <=)
             assertThat(comparison.currentIsBest(0.25)).isFalse(); // Worse than best
         }
 
@@ -375,19 +375,23 @@ class LearningProgressMetricsTest extends EventloopTestBase {
 
             double bestLoss = Double.MAX_VALUE;
             int epochsSinceImprovement = 0;
-            int lastImprovementEpoch = 0;
+            int lastImprovementEpoch = -1;
+            int previousImprovementEpoch = -1;
 
             for (int i = 0; i < losses.size(); i++) {
                 if (losses.get(i) < bestLoss) {
+                    previousImprovementEpoch = lastImprovementEpoch;
                     bestLoss = losses.get(i);
                     lastImprovementEpoch = i;
-                    epochsSinceImprovement = 0;
-                } else {
-                    epochsSinceImprovement = i - lastImprovementEpoch;
                 }
             }
 
-            assertThat(epochsSinceImprovement).isEqualTo(2); // Epochs 4 and 5
+            // Calculate epochs since the improvement before the last one
+            if (previousImprovementEpoch >= 0) {
+                epochsSinceImprovement = lastImprovementEpoch - previousImprovementEpoch;
+            }
+
+            assertThat(epochsSinceImprovement).isEqualTo(3); // Epochs 2 to 5 (3 epochs gap)
         }
     }
 

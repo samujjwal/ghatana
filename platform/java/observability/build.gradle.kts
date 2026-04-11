@@ -21,7 +21,8 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:runtime"))
     api(project(":platform:java:config"))
-    api(project(":platform:java:http"))
+    // NOTE: http dependency removed to break circular dependency
+    // (observability should not depend on http - wrong direction)
     
     // ActiveJ Promise & HTTP (explicit)
     api(libs.activej.promise)

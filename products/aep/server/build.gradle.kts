@@ -16,7 +16,7 @@ dependencies {
     implementation(project(":products:aep:aep-registry"))
     implementation(project(":products:aep:aep-analytics"))
     implementation(project(":products:aep:aep-security"))
-    implementation(project(":products:aep:aep-connectors"))
+    implementation(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     implementation(project(":products:aep:aep-event-cloud"))  // Data-Cloud bridge plugin
     // aep-agent merged into aep-registry on 2026-03-22
     implementation(project(":products:aep:aep-api"))

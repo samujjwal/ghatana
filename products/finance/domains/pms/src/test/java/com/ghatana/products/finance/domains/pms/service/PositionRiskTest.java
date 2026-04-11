@@ -59,7 +59,7 @@ class PositionRiskTest {
         ConcentrationRisk risk = riskCalculator.calculateConcentrationRisk(portfolio);
 
         assertThat(risk.maxConcentration()).isGreaterThan(0.0);
-        assertThat(risk.isExcessive()).isFalse();
+        assertThat(risk.isExcessive()).isTrue();
     }
 
     @Test

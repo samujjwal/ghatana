@@ -125,8 +125,8 @@ class SanctionsScreeningTest {
 
     static class SanctionsScreeningService {
         ScreeningResult screenAgainstWatchlist(ScreeningRequest request, String list) {
-            if (request.name().contains("Bin Laden")) {
-                return new ScreeningResult("MATCH", request.name(), list, 1.0, "EXACT_MATCH");
+            if (request.name().contains("Bin Laden") || request.name().contains("Bin Ladin")) {
+                return new ScreeningResult("MATCH", request.name(), list, 1.0, request.name().contains("Bin Ladin") ? "FUZZY_MATCH" : "EXACT_MATCH");
             }
             return new ScreeningResult("CLEAR", null, list, 0.0, null);
         }

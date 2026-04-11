@@ -1,26 +1,21 @@
 package com.ghatana.platform.security.rbac;
 
+import com.ghatana.core.database.repository.Repository;
+
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository for managing policies.
-
+ *
+ * <p>Extends the canonical {@link Repository} from platform:database for standard CRUD
+ * operations while adding policy-specific query methods.</p>
  *
  * @doc.type interface
- * @doc.purpose Policy repository
+ * @doc.purpose Repository for managing policies with canonical Repository base
  * @doc.layer core
  * @doc.pattern Repository
-*/
-public interface PolicyRepository {
-
-    /**
-     * Finds a policy by its ID.
-     *
-     * @param id The policy ID
-     * @return The policy, or empty if not found
-     */
-    Optional<Policy> findById(String id);
+ */
+public interface PolicyRepository extends Repository<Policy, String> {
 
     /**
      * Finds all policies for the specified role.
@@ -37,27 +32,4 @@ public interface PolicyRepository {
      * @return The policies
      */
     List<Policy> findByResource(String resource);
-
-    /**
-     * Finds all policies.
-     *
-     * @return All policies
-     */
-    List<Policy> findAll();
-
-    /**
-     * Saves a policy.
-     *
-     * @param policy The policy to save
-     * @return The saved policy
-     */
-    Policy save(Policy policy);
-
-    /**
-     * Deletes a policy by its ID.
-     *
-     * @param id The policy ID
-     * @return true if the policy was deleted, false otherwise
-     */
-    boolean deleteById(String id);
 }

@@ -36,7 +36,7 @@ public class AgentGrpcService {
      *
      * @param agentRegistry the unified agent registry for agent storage/lookup
      */
-    public AgentGrpcService(AgentFrameworkRegistry agentRegistry) {
+    public AgentGrpcService(AgentRegistry agentRegistry) {
         Objects.requireNonNull(agentRegistry, "agentRegistry cannot be null");
         this.managementService = new ManagementService(agentRegistry);
         this.executionService = new ExecutionService(agentRegistry);

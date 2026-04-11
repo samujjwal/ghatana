@@ -166,6 +166,7 @@ class PluginRegistryImplTest extends EventloopTestBase {
                 Instant.now(), Instant.now(), "user-1"
             );
             runPromise(() -> registry.register(plugin));
+            runPromise(() -> registry.activate("plugin-1"));
 
             // When
             PluginRegistry.HookResult result = runPromise(() ->
@@ -261,10 +262,11 @@ class PluginRegistryImplTest extends EventloopTestBase {
             // Given
             PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata(
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
-                PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.ACTIVE,
+                PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
                 List.of(), List.of(), Map.of(), Instant.now(), Instant.now(), "user-1"
             );
             runPromise(() -> registry.register(plugin));
+            runPromise(() -> registry.activate("plugin-1"));
 
             // When
             PluginRegistry.PluginHealth health = runPromise(() -> registry.getHealth("plugin-1"));

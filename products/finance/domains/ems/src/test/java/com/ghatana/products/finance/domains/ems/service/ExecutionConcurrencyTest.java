@@ -59,6 +59,7 @@ class ExecutionConcurrencyTest {
     @DisplayName("Should prevent race conditions in fill processing")
     void shouldPreventRaceConditionsInFillProcessing() throws InterruptedException {
         String orderId = "order-1";
+        processor.submitOrder(orderId);
         int fillCount = 50;
         CountDownLatch latch = new CountDownLatch(fillCount);
 

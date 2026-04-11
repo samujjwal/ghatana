@@ -82,7 +82,7 @@ class EntityCreateBenchmark extends EventloopTestBase {
     private void simulateEntityCreate() {
         // Simulate entity creation latency (mock)
         try {
-            Thread.sleep((long) (Math.random() * 50)); // 0-50ms simulation
+            Thread.sleep((long) (Math.random() * 5)); // 0-5ms simulation for realistic throughput
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

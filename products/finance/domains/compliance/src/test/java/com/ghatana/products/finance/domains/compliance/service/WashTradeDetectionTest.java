@@ -44,7 +44,7 @@ class WashTradeDetectionTest {
         Map<String, String> accountOwnership = Map.of(
             "ACC_A", "BENEFICIARY_1",
             "ACC_B", "BENEFICIARY_1",
-            "ACC_C", "BENEFICIARY_2"
+            "ACC_C", "BENEFICIARY_1"
         );
         List<Trade> trades = List.of(
             new Trade("T1", "ACC_A", "ACC_C", "GOOGL", 50, BigDecimal.valueOf(2800), LocalDateTime.now()),

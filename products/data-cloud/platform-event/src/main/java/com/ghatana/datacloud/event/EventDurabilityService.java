@@ -37,10 +37,10 @@ public interface EventDurabilityService {
         LEADER_ACK,
         /** Acknowledged when replicated to majority */
         MAJORITY_ACK,
-        /** Acknowledged when fsynced to disk */
-        FSYNC_ACK,
         /** Acknowledged when replicated to all nodes */
-        ALL_ACK
+        ALL_ACK,
+        /** Acknowledged when fsynced to disk */
+        FSYNC_ACK
     }
 
     /**

@@ -399,7 +399,7 @@ products/yappc/libs/java/yappc-domain/src/main/java/com/ghatana/yappc/api/reposi
 **Finding:** Archived modules still referenced by active code  
 **Evidence:** `platform/java/.archived/kernel/src/test/java/com/ghatana/kernel/event/KernelEventBusIntegrationTest.java` duplicates test in `platform-kernel`  
 **Why it matters:** Creates confusion about canonical source, risks divergence  
-**Fix:** Remove after 30-day grace period (migration was 2026-04-05)
+**Fix:** Remove immediately - migration complete, fix forward without deprecation
 
 #### `platform-kernel/kernel-core/src/main/java/com/ghatana/platform/core/util/JsonUtils.java`
 **Finding:** Exact duplicate of `platform/java/core` JsonUtils  
@@ -419,6 +419,12 @@ products/yappc/libs/java/yappc-domain/src/main/java/com/ghatana/yappc/api/reposi
 **Why it matters:** Tight coupling, long build times, circular dependency risk  
 **Fix:** Decompose into bounded context modules (domain, infrastructure, ai, lifecycle, scaffold)
 
+#### `platform:java:connectors` + `aep:aep-connectors` - Connector Fragmentation
+**Finding:** Kafka and messaging connectors duplicated across platform and AEP  
+**Evidence:** Both modules define Kafka consumers, event transport abstractions  
+**Why it matters:** Duplicate code, inconsistent transport patterns, maintenance burden  
+**Fix:** Merge aep:connectors into platform:connectors, rename to platform:messaging
+
 ### 5.2 High Severity
 
 #### `platform:java:agent-core` - Repository Interface Explosion
@@ -437,7 +443,13 @@ products/yappc/libs/java/yappc-domain/src/main/java/com/ghatana/yappc/api/reposi
 **Finding:** Overlapping agent registry concerns  
 **Evidence:** Both define agent catalog/discovery abstractions  
 **Why it matters:** Unclear ownership, potential divergence  
-**Fix:** Consolidate to platform:agent-core as canonical
+**Fix:** Consolidate aep-registry into platform:agent-core as canonical, migrate all consumers
+
+#### `products/aep/aep-orchestrator` - Scope Unclear
+**Finding:** Pipeline orchestration overlaps with aep-engine and platform:workflow  
+**Evidence:** Both handle pipeline execution with similar abstractions  
+**Why it matters:** Unclear ownership, potential duplication, workflow engine confusion  
+**Fix:** Merge orchestrator into consolidated aep-runtime, use platform:workflow as execution engine
 
 #### `products/data-cloud/platform-event` vs `platform:java:domain:event`
 **Finding:** Duplicate event base classes  
@@ -471,6 +483,24 @@ products/yappc/libs/java/yappc-domain/src/main/java/com/ghatana/yappc/api/reposi
 **Why it matters:** Potential for shared domain framework  
 **Fix:** Consider generic domain framework (but keep separate modules)
 
+#### `feature-store-ingest` Duplication
+**Finding:** Feature ingestion duplicated in shared-services and data-cloud  
+**Evidence:** Both `shared-services/feature-store-ingest` and `products/data-cloud/feature-store-ingest` exist  
+**Why it matters:** Unclear ownership, potential divergence, duplicate implementation  
+**Fix:** Consolidate into single module in shared-services, data-cloud depends on shared service
+
+#### `products/yappc/core:agents:*` - Agent Specialization Overlap
+**Finding:** 5 YAPPC agent modules overlap with platform:agent-core and aep-agent-runtime  
+**Evidence:** Duplicate agent execution patterns, memory management, dispatch logic  
+**Why it matters:** Maintenance burden, potential divergence from platform agents  
+**Fix:** Evaluate and consolidate - use platform agents where possible, keep only YAPPC-specific specializations
+
+#### `products/yappc/core:ai` - AI Services Overlap
+**Finding:** YAPPC AI services overlap with platform:ai-integration  
+**Evidence:** Duplicate LLM client patterns, embedding service implementations  
+**Why it matters:** Inconsistent AI integration patterns across products  
+**Fix:** Migrate to platform:ai-integration, keep only YAPPC-specific AI workflows
+
 ### 5.4 Low Severity
 
 #### `platform:java:tool-runtime`
@@ -490,6 +520,18 @@ products/yappc/libs/java/yappc-domain/src/main/java/com/ghatana/yappc/api/reposi
 **Evidence:** AV concerns only relevant to audio-video product  
 **Why it matters:** Platform should be product-agnostic  
 **Fix:** Move to `products/audio-video/libs:java:common`
+
+#### `products/finance/rules-engine` - Governance Overlap
+**Finding:** Rules evaluation overlaps with platform:governance  
+**Evidence:** Both define policy evaluation, rule execution patterns  
+**Why it matters:** Potential divergence, inconsistent governance patterns  
+**Fix:** Migrate to platform:governance policy-as-code, keep finance-specific rules
+
+#### `products/finance/incident-management` - Platform Overlap
+**Finding:** Incident management overlaps with platform:incident-response  
+**Evidence:** Both define incident tracking, response workflows  
+**Why it matters:** Unclear ownership, potential duplication  
+**Fix:** Move platform:incident-response to shared-services, finance depends on shared service
 
 ---
 
@@ -551,10 +593,12 @@ public class CloudEvent { ... }  // Different naming, same concept
 | `platform:java:database` | `platform:java:cache`, `platform:java:distributed-cache` | Cache is persistence concern |
 | `platform:java:security` | `platform:java:identity`, `platform:java:security-analytics` | Security is single concern |
 | `platform:java:governance` | `platform:java:data-governance`, `platform:java:policy-as-code` | Governance is single concern |
-| `platform:java:agent-core` | `platform:java:agent-memory`, `platform:java:tool-runtime` | Agent framework consolidation |
-| `aep-runtime` (new) | `aep-engine`, `aep-runtime-core`, `aep-agent-runtime`, `aep-central-runtime` | Runtime sprawl elimination |
+| `platform:java:agent-core` | `platform:java:agent-memory`, `platform:java:tool-runtime`, `aep:aep-registry` | Agent framework consolidation |
+| `platform:messaging` (new) | `platform:java:connectors`, `aep:aep-connectors` | Single transport abstraction |
+| `aep-runtime` (new) | `aep-engine`, `aep-runtime-core`, `aep-agent-runtime`, `aep-central-runtime`, `aep:aep-orchestrator` | Runtime sprawl elimination |
 | `products:yappc:domain` | `libs:yappc-domain`, `core:yappc-domain-impl` | Single domain module |
 | `data-cloud:launcher` | `data-cloud:platform-launcher`, `data-cloud:launcher` | Duplicate launchers |
+| `shared-services:feature-store` | `shared-services/feature-store-ingest`, `products/data-cloud/feature-store-ingest` | Single feature ingestion service |
 
 ### 7.2 Modules to Split
 
@@ -566,23 +610,31 @@ public class CloudEvent { ... }  // Different naming, same concept
 
 | Module | Replacement | Migration Path |
 |--------|-------------|----------------|
-| `platform/java/.archived/*` | `platform-kernel/*` | Already migrated, delete after grace period |
+| `platform/java/.archived/*` | `platform-kernel/*` | Already migrated, delete immediately |
 | `platform-kernel:kernel-testing` | `platform:java:testing` | Merge test fixtures |
 | `aep:server` | `aep:launcher` | Consolidate server surfaces |
 | `aep:contracts` | `aep:aep-operator-contracts` | Merge contract modules |
 | `aep:aep-security` | `platform:java:security` | Use platform security |
 | `aep:aep-identity` | `platform:java:security` | Use platform identity |
 | `aep:aep-compliance` | `platform-plugins:plugin-compliance` | Use platform plugin |
+| `products/yappc/core:agents:*` (5 modules) | `platform:java:agent-core` | Migrate to platform agents, keep only YAPPC-specific specializations |
+| `products/yappc/core:ai` | `platform:java:ai-integration` | Migrate AI services to platform, keep YAPPC-specific workflows |
+| `platform:java:incident-response` | `shared-services/incident-service` | Move to shared service, finance depends on it |
 
 ### 7.4 Responsibilities to Move
 
 | Responsibility | From | To |
 |----------------|------|-----|
 | HTTP filters | `platform:java:security` | `platform:java:http` |
-| Repository base interface | Multiple modules | `platform:java:database` |
+| Repository base interface | Multiple modules (15+) | `platform:java:database` |
 | JsonUtils | `platform-kernel:kernel-core` | Use `platform:java:core` |
-| AV utilities | `platform:java:audio-video` | `products/audio-video/libs` |
-| Incident response | `platform:java:incident-response` | `shared-services` or product |
+| AV utilities | `platform:java:audio-video` | `products/audio-video/libs:java:common` |
+| Incident response | `platform:java:incident-response` | `shared-services/incident-service` |
+| Rules evaluation | `products/finance/rules-engine` | `platform:java:governance:policy-as-code` |
+| Audit trail SPI | `platform:java:audit` | Repurpose as SPI, plugin-audit-trail as implementation |
+| Agent registry | `aep:aep-registry` | `platform:java:agent-core` |
+| Pipeline orchestration | `aep:aep-orchestrator` | `platform:java:workflow` |
+| Feature ingestion | `products/data-cloud/feature-store-ingest` | `shared-services/feature-store` |
 
 ### 7.5 Common Abstractions to Centralize
 
@@ -592,19 +644,27 @@ public class CloudEvent { ... }  // Different naming, same concept
 | `InMemoryRepository<T>` | Duplicated in 10+ modules | Shared in `platform:testing` |
 | `JsonUtils` | 2 duplicates | Single in `platform:core` |
 | `Event` base class | 3+ definitions | Single in `platform:domain` |
-| `DTOMapper` | Every API module | Shared in `platform:http` |
+| `DTOMapper` | Every API module (20+) | Shared in `platform:http` |
 | `Pagination` model | Multiple variants | Single in `platform:core` |
+| `BulkOperations<T>` | Every repository | Shared in `platform:database` |
+| `SearchFilter<T>` | Every query builder | Shared in `platform:database` |
+| `JdbcRepositoryBase` | Duplicated in 8+ modules | Shared in `platform:database` |
+| `KafkaConsumerBase` | Duplicated in connectors | Shared in `platform:messaging` |
 
 ### 7.6 Source-of-Truth Consolidation
 
 | Concern | Primary Owner | Remove Duplicates From |
 |---------|---------------|------------------------|
-| Repository pattern | `platform:java:database` | agent-core, security, products |
+| Repository pattern | `platform:java:database` | agent-core, security, products (15+ modules) |
 | Event base types | `platform:java:domain` | yappc-domain, data-cloud |
-| Agent contracts | `platform:java:agent-core` | aep-operator-contracts (merge) |
+| Agent contracts | `platform:java:agent-core` | aep-operator-contracts, aep-registry |
 | JSON utilities | `platform:java:core` | kernel-core |
-| Audit trail | `platform-plugins:plugin-audit-trail` | platform:java:audit |
-| Compliance | `platform-plugins:plugin-compliance` | aep:aep-compliance, finance domains |
+| Audit trail | `platform-plugins:plugin-audit-trail` | platform:java:audit (repurpose as SPI) |
+| Compliance | `platform-plugins:plugin-compliance` | aep:aep-compliance, finance:domains:compliance |
+| Messaging/connectors | `platform:java:messaging` (new) | platform:connectors, aep:connectors |
+| Workflow engine | `platform:java:workflow` | aep:orchestrator, virtual-org:workflow |
+| Feature ingestion | `shared-services:feature-store` | data-cloud:feature-store-ingest |
+| Rules evaluation | `platform:java:governance:policy-as-code` | finance:rules-engine |
 
 ---
 
@@ -647,12 +707,9 @@ platform-plugins/          # Cross-cutting plugins
 
 products/
 ├── aep/
-│   ├── contracts/         # AEP-specific contracts
-│   ├── runtime/           # Consolidated runtime (merged from 4 modules)
+│   ├── contracts/         # AEP-specific contracts (merged with operator-contracts)
+│   ├── runtime/           # Consolidated runtime (merged from 5 modules: engine, runtime-core, agent-runtime, central-runtime, orchestrator)
 │   ├── event-cloud/       # Data-Cloud bridge
-│   ├── orchestrator/      # Pipeline orchestration
-│   ├── registry/          # Agent/pipeline registry
-│   ├── connectors/        # Merge with platform:messaging
 │   ├── analytics/         # Product-specific analytics
 │   ├── scaling/           # Auto-scaling
 │   ├── launcher/          # Server/launcher (consolidated)
@@ -669,10 +726,10 @@ products/
 ├── yappc/
 │   ├── domain/            # Single domain module (merged)
 │   ├── api/               # API layer
-│   ├── services/          # Decomposed bounded contexts
-│   ├── agents/            # Agent specializations
+│   ├── services/          # Decomposed bounded contexts (5 modules)
+│   ├── agent-specializations/ # YAPPC-specific agent extensions (migrated from core:agents)
 │   ├── scaffold/          # Scaffolding modules
-│   ├── ai/                # Product-specific AI
+│   ├── ai-workflows/      # YAPPC-specific AI workflows (migrated from core:ai)
 │   └── frontend/          # Web UI
 ├── finance/
 │   ├── sdk/               # Finance SDK
@@ -683,7 +740,8 @@ shared-services/
 ├── auth-gateway/
 ├── ai-inference/
 ├── user-profile/
-└── feature-store/         # Consolidated feature store
+├── feature-store/         # Consolidated feature store (merged from data-cloud)
+└── incident-service/      # Incident management (moved from platform)
 ```
 
 ### 8.2 Ownership Rules
@@ -753,6 +811,36 @@ shared-services → platform-kernel
 4. No service-specific logic in shared
 5. Document extension points
 
+### 8.9 Architecture Validation Mechanisms
+
+To ensure the target-state architecture is maintained, the following validation mechanisms will be implemented:
+
+**Automated Gradle Tasks:**
+- `validateModuleDependencies` - Enforces dependency direction rules (Section 8.4)
+- `validateSourceOfTruth` - Ensures single canonical module per concern (Section 8.3)
+- `validatePublicAPI` - Checks framework types not in public API (Section 8.7)
+- `validateRepositoryPattern` - Enforces Repository interface extends platform:database
+- `validateEventHierarchy` - Ensures events extend platform:domain base class
+- `validateNoCircularDependencies` - Detects circular dependencies across all modules
+
+**ArchUnit Test Suite:**
+- Dependency direction rules enforcement
+- Package structure validation (api, internal, spi packages)
+- Module boundary validation (no cross-boundary leaks)
+- Framework coupling detection (ActiveJ, JPA in wrong layers)
+
+**Build-Time Checks:**
+- Gradle dependency analysis plugin configuration
+- Custom validation tasks in build.gradle.kts
+- Pre-commit hooks for architecture validation
+- CI pipeline architecture gate
+
+**Documentation Requirements:**
+- All new modules must include module ownership doc
+- All public APIs must have @doc tags
+- All shared abstractions must have extension point documentation
+- Migration plans required for all module changes
+
 ---
 
 ## 9. Prioritized Action Plan
@@ -762,15 +850,20 @@ shared-services → platform-kernel
 | # | Issue | Affected Modules | Change | Benefit | Risk if Ignored |
 |---|-------|------------------|--------|---------|-----------------|
 | 1.1 | Dual JsonUtils | kernel-core, platform:core | Delete kernel-core version, use platform:core | Single source of truth | Divergence, maintenance burden |
-| 1.2 | Archived kernel references | .archived/* | Remove after grace period | Clean codebase | Confusion, accidental use |
+| 1.2 | Archived kernel references | .archived/* | Remove immediately | Clean codebase | Confusion, accidental use |
 | 1.3 | HTTP filter leakage | platform:security | Move to platform:http | Clean security boundaries | Forced HTTP deps on consumers |
-| 1.4 | Repository chaos | agent-core, security | Extend platform:database Repository | Consistent persistence | 15+ duplicate interfaces |
-| 1.5 | AEP runtime sprawl | aep-engine, runtime-core, agent-runtime | Merge into aep-runtime | Simpler mental model | Build time, coupling |
+| 1.4 | Repository chaos (15+ modules) | agent-core, security, products | Extend platform:database Repository<T> | Consistent persistence | 15+ duplicate interfaces |
+| 1.5 | Connector fragmentation | platform:connectors, aep:connectors | Merge into platform:messaging | Single transport abstraction | Duplicate code, inconsistency |
+| 1.6 | AEP runtime sprawl | aep-engine, runtime-core, agent-runtime, central-runtime, orchestrator | Merge into aep-runtime | Simpler mental model | Build time, coupling |
+| 1.7 | AEP registry overlap | aep-registry, platform:agent-core | Merge into platform:agent-core | Single agent registry | Unclear ownership |
 
 **Phase 1 Validation:**
 - Build passes: `./gradlew build`
-- No references to `.archived`: `grep -r "platform/java/.archived" --include="*.gradle.kts" .`
+- No references to `.archived`: `grep -r "platform/java/.archived" --include="*.gradle.kts" .` (should be 0)
 - Single JsonUtils: `find . -name "JsonUtils.java" | wc -l` = 1
+- Repository count: `find . -name "*Repository.java" | grep -v platform/database | wc -l` < 5
+- Single messaging module: `find . -path "*/platform/java/connectors" -o -path "*/aep/aep-connectors" | wc -l` = 0
+- AEP runtime modules: `find products/aep -name "aep-*runtime*" -type d | wc -l` = 1
 
 ### Phase 2: Reuse and Shared-Contract Cleanup (Weeks 3-4)
 
@@ -780,10 +873,16 @@ shared-services → platform-kernel
 | 2.3 | Event base duplication | yappc-domain, data-cloud:platform-event | Extend platform:domain | Serialization consistency | Contract drift |
 | 2.4 | Cache module fragmentation | platform:cache, distributed-cache | Merge into platform:database | Simpler persistence | Unnecessary complexity |
 | 2.5 | Identity fragmentation | platform:identity | Merge into platform:security | Simpler security | Unclear boundaries |
+| 2.6 | YAPPC agents overlap | core:agents:* (5 modules) | Migrate to platform:agent-core, keep specializations | Consistent agent patterns | Divergence from platform |
+| 2.7 | YAPPC AI overlap | core:ai | Migrate to platform:ai-integration, keep workflows | Consistent AI patterns | Divergence from platform |
+| 2.8 | Feature-store duplication | shared-services/feature-store-ingest, data-cloud/feature-store-ingest | Consolidate into shared-services:feature-store | Single feature ingestion | Duplicate implementation |
 
 **Phase 2 Validation:**
 - YAPPC services decomposed: `find products/yappc/services -name "*.java" | wc -l` < 20 per module
 - Single event base: `grep -r "extends DomainEvent" --include="*.java" | wc -l` > 50
+- YAPPC agents migrated: `find products/yappc/core/agents -type d | wc -l` = 0 (only specializations remain)
+- YAPPC AI migrated: `find products/yappc/core/ai -type d | wc -l` = 0 (only workflows remain)
+- Single feature-store: `find . -path "*/feature-store-ingest" | wc -l` = 0
 
 ### Phase 3: Simplification and Consolidation (Weeks 5-6)
 
@@ -793,25 +892,33 @@ shared-services → platform-kernel
 | 3.3 | AEP identity duplication | aep-identity | Use platform:security | Consistent identity | Divergence |
 | 3.4 | AEP compliance duplication | aep-compliance | Use plugin-compliance | Consistent compliance | Divergence |
 | 3.5 | Governance fragmentation | data-governance, policy-as-code | Merge into governance | Simpler governance | Unclear boundaries |
-| 3.6 | Connector split | platform:connectors, aep:connectors | Merge | Single connector module | Duplicate code |
+| 3.6 | Finance rules-engine overlap | finance:rules-engine | Migrate to platform:governance:policy-as-code | Consistent rules evaluation | Divergence |
+| 3.7 | Audit trail SPI clarification | platform:java:audit | Repurpose as SPI, plugin-audit-trail as implementation | Clear ownership | Unclear ownership |
 
 **Phase 3 Validation:**
 - Module count reduced: Initial count - Final count > 15
 - No "duplication" warnings in build
+- Finance rules migrated: `find products/finance -name "rules-engine" -type d | wc -l` = 0
+- Audit SPI repurposed: `find platform/java/audit -name "*SPI*" -type f | wc -l` > 0
 
 ### Phase 4: Long-Term Hardening (Weeks 7-8)
 
 | # | Issue | Affected Modules | Change | Benefit | Risk if Ignored |
-| 4.1 | AV utilities relocation | platform:audio-video | Move to product | Product-agnostic platform | Platform bloat |
-| 4.2 | Incident response relocation | platform:incident-response | Move to shared-services or product | Product-agnostic platform | Platform bloat |
-| 4.3 | Audit trail consolidation | platform:audit, plugin-audit-trail | Clarify ownership | Clear audit path | Unclear ownership |
-| 4.4 | Documentation gaps | YAPPC (22 classes) | Add @doc tags | Compliance | Non-compliance |
-| 4.5 | Test isolation | aep-runtime-core | Fix excluded tests | Full test coverage | Regression risk |
+| 4.1 | AV utilities relocation | platform:audio-video | Move to products/audio-video/libs:java:common | Product-agnostic platform | Platform bloat |
+| 4.2 | Incident response relocation | platform:incident-response | Move to shared-services/incident-service | Product-agnostic platform | Platform bloat |
+| 4.3 | Documentation gaps | YAPPC (22 classes) | Add @doc tags | Compliance | Non-compliance |
+| 4.4 | Test migration for merges | All merged modules | Migrate tests to target modules | Full test coverage | Regression risk |
+| 4.5 | Architecture validation implementation | All modules | Implement ArchUnit tests, Gradle validation tasks | Enforce architecture rules | Architecture drift |
+| 4.6 | Common abstractions implementation | platform:database, platform:http, platform:testing | Create shared DTOMapper, Pagination, BulkOperations, JdbcRepositoryBase | Reduce duplication | Continued duplication |
 
 **Phase 4 Validation:**
 - All tests pass: `./gradlew test`
 - No @doc warnings: `./gradlew checkDocTags`
 - Platform module count < 20 (from 28)
+- AV moved: `find platform/java/audio-video -type d | wc -l` = 0
+- Incident moved: `find platform/java/incident-response -type d | wc -l` = 0
+- ArchUnit tests pass: `./gradlew :platform:java:testing:archUnitTest`
+- Validation tasks pass: `./gradlew validateArchitecture`
 
 ---
 
@@ -871,16 +978,17 @@ The Ghatana Java library and module ecosystem requires **major restructuring** b
 
 ## Appendix A: Module Count Summary
 
-| Area | Current | Target | Reduction |
-|------|---------|--------|-----------|
-| platform/java | 28 | 18 | -36% |
-| platform-kernel | 5 | 4 | -20% |
-| platform-plugins | 6 | 6 | 0% |
-| products/aep | 17 | 12 | -29% |
-| products/data-cloud | 13 | 11 | -15% |
-| products/yappc | 32+ | 25 | -22% |
-| products/finance | 20+ | 18 | -10% |
-| **Total Java Modules** | **~320** | **~250** | **-22%** |
+| Area | Current | Target | Reduction | Rationale |
+|------|---------|--------|-----------|-----------|
+| platform/java | 28 | 17 | -39% | Merges: cache(2), identity(1), security-analytics(1), data-governance(1), policy-as-code(1), agent-memory(1), tool-runtime(1), audio-video(1), incident-response(1). Add: messaging(1). Net: -11 |
+| platform-kernel | 5 | 4 | -20% | Merge: kernel-testing → platform:java:testing |
+| platform-plugins | 6 | 6 | 0% | No changes |
+| products/aep | 17 | 6 | -65% | Merges: runtime(5), registry(1), security(1), identity(1), compliance(1), server(1), contracts(1), connectors(1). Net: -11 |
+| products/data-cloud | 13 | 12 | -8% | Merge: launcher(2). Remove: feature-store-ingest(1). Net: -1 |
+| products/yappc | 32+ | 27 | -16% | Merges: domain(2). Splits: services(1→5). Removes: agents(5), ai(1). Net: -5 |
+| products/finance | 20+ | 19 | -5% | Remove: rules-engine(1). Net: -1 |
+| shared-services | 4 | 5 | +25% | Add: incident-service(1). Merge: feature-store(2→1). Net: +1 |
+| **Total Java Modules** | **~320** | **~250** | **-22%** | Overall reduction of 70 modules |
 
 ## Appendix B: Dependency Graph Health
 
@@ -901,6 +1009,79 @@ The Ghatana Java library and module ecosystem requires **major restructuring** b
 | Event base classes | 3 | 1 |
 | DTO mappers | 20+ | 5 (shared) |
 | InMemory* implementations | 30+ | 5 (shared) |
+
+## Appendix D: Current to Target Module Mapping
+
+### Platform Java Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `platform:java:cache` | `platform:java:database` | Merge |
+| `platform:java:distributed-cache` | `platform:java:database` | Merge |
+| `platform:java:identity` | `platform:java:security` | Merge |
+| `platform:java:security-analytics` | `platform:java:security` | Merge |
+| `platform:java:data-governance` | `platform:java:governance` | Merge |
+| `platform:java:policy-as-code` | `platform:java:governance` | Merge |
+| `platform:java:agent-memory` | `platform:java:agent-core` | Merge |
+| `platform:java:tool-runtime` | `platform:java:agent-core` | Merge |
+| `platform:java:audio-video` | `products/audio-video/libs:java:common` | Move |
+| `platform:java:incident-response` | `shared-services/incident-service` | Move |
+| `platform:java:connectors` | `platform:java:messaging` | Rename |
+| `platform:java:audit` | `platform:java:audit` | Repurpose as SPI |
+
+### Platform Kernel Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `platform-kernel:kernel-testing` | `platform:java:testing` | Merge |
+
+### AEP Product Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `aep-engine` | `aep-runtime` | Merge |
+| `aep-runtime-core` | `aep-runtime` | Merge |
+| `aep-agent-runtime` | `aep-runtime` | Merge |
+| `aep-central-runtime` | `aep-runtime` | Merge |
+| `aep-orchestrator` | `aep-runtime` | Merge |
+| `aep-registry` | `platform:java:agent-core` | Merge |
+| `aep-security` | `platform:java:security` | Use platform |
+| `aep-identity` | `platform:java:security` | Use platform |
+| `aep-compliance` | `platform-plugins:plugin-compliance` | Use plugin |
+| `aep-server` | `aep-launcher` | Merge |
+| `aep-contracts` | `aep-operator-contracts` | Merge |
+| `aep-connectors` | `platform:java:messaging` | Merge |
+
+### Data-Cloud Product Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `data-cloud:platform-launcher` | `data-cloud:launcher` | Merge |
+| `data-cloud:feature-store-ingest` | `shared-services:feature-store` | Move |
+
+### YAPPC Product Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `libs:yappc-domain` | `yappc:domain` | Merge |
+| `core:yappc-domain-impl` | `yappc:domain` | Merge |
+| `services` | `services:domain`, `services:infrastructure`, `services:ai`, `services:lifecycle`, `services:scaffold` | Split |
+| `core:agents:*` (5 modules) | `platform:java:agent-core` (migrate), `yappc:agent-specializations` (keep specializations) | Migrate |
+| `core:ai` | `platform:java:ai-integration` (migrate), `yappc:ai-workflows` (keep workflows) | Migrate |
+
+### Finance Product Modules
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `finance:rules-engine` | `platform:java:governance:policy-as-code` | Migrate |
+
+### Shared Services
+
+| Current Module | Target Module | Action |
+|----------------|---------------|--------|
+| `shared-services:feature-store-ingest` | `shared-services:feature-store` | Consolidate |
+| `products/data-cloud:feature-store-ingest` | `shared-services:feature-store` | Move |
+| New | `shared-services/incident-service` | Create |
 
 ---
 

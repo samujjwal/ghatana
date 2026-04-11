@@ -30,8 +30,8 @@ dependencies {
     // AEP orchestrator (TriggerListener, ExecutionQueue)
     implementation(project(":products:aep:orchestrator"))
 
-    // Platform: Agent Runtime — MemoryPlane, MemoryStoreAdapter, Jdbc stores
-    implementation(project(":products:aep:aep-agent-runtime"))  // Migrated from agent-memory
+    // Platform: Unified AEP Runtime — MemoryPlane, MemoryStoreAdapter, Jdbc stores (Phase 1.6)
+    implementation(project(":products:aep:aep-engine"))  // Consolidated runtime
 
     // YAPPC agents runtime — provides AepEventPublisher used by AepEventBridge and HumanApprovalService
     // (yappc-agents uses `implementation` for agents:runtime, so it is not transitively visible here)

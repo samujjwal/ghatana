@@ -22,6 +22,8 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
+    // NOTE: http dependency added for HttpServerBuilder, ResponseBuilder
+    implementation(project(":platform:java:http"))
 
     // ActiveJ (for OpenAI async client code)
     api(libs.bundles.activej.core)
