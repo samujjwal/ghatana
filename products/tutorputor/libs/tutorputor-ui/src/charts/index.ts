@@ -1,48 +1,11 @@
 /**
- * @ghatana/charts - Charting components for Ghatana products
+ * TutorPutor chart components.
  *
- * Re-exports from recharts with consistent styling and theme integration
+ * Canonical themed chart components from `@ghatana/charts`.
+ * For raw recharts primitives, import directly from `recharts`.
+ *
  * @doc.layer ui
- * @doc.dependency recharts (MIT License)
+ * @doc.dependency @ghatana/charts
  */
+export * from '@ghatana/charts';
 
-export {
-  // Core chart types
-  LineChart,
-  BarChart,
-  AreaChart,
-  PieChart,
-  ScatterChart,
-  RadarChart,
-  ComposedChart,
-
-  // Chart components
-  Line,
-  Bar,
-  Area,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Scatter,
-  ReferenceLine,
-  ReferenceDot,
-  ReferenceArea,
-  Brush,
-  LabelList,
-  Label,
-  ErrorBar,
-  ZAxis,
-
-  // Utility types
-} from "recharts";
-
-// Note: Additional recharts types can be imported directly from recharts as needed

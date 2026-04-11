@@ -1,13 +1,7 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
 /**
- * Merges Tailwind CSS class names, resolving conflicts via twMerge
- * and handling conditional classes via clsx.
+ * Re-exports the canonical `cn` utility from `@ghatana/platform-utils`.
  *
- * @param inputs - Class values to merge (strings, arrays, objects, etc.)
- * @returns The merged class name string
+ * @deprecated Import `cn` directly from `@ghatana/platform-utils` or
+ * `@ghatana/design-system` to avoid this wrapper.
  */
-export function cn(...inputs: ClassValue[]): string {
-    return twMerge(clsx(inputs));
-}
+export { cn } from '@ghatana/platform-utils';

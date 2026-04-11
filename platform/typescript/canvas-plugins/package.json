@@ -1,0 +1,42 @@
+{
+  "name": "@ghatana/canvas-plugins",
+  "sideEffects": false,
+  "version": "0.1.0",
+  "description": "Ghatana Canvas Plugins — plugin registry, plugin manager, and extension APIs",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "deprecated": "Use @ghatana/canvas directly. This package is a thin re-export facade.",
+  "dependencies": {
+    "@ghatana/canvas": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "keywords": ["ghatana", "canvas", "plugins"],
+  "license": "MIT"
+}

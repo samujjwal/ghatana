@@ -10,6 +10,22 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./oauth": {
+      "types": "./dist/oauth/index.d.ts",
+      "import": "./dist/oauth/index.js"
+    },
+    "./rbac": {
+      "types": "./dist/rbac/index.d.ts",
+      "import": "./dist/rbac/index.js"
+    },
+    "./security": {
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js"
+    },
+    "./security/fastify": {
+      "types": "./dist/security/csp-fastify.d.ts",
+      "import": "./dist/security/csp-fastify.js"
     }
   },
   "files": [
@@ -32,10 +48,23 @@
     "platform"
   ],
   "license": "UNLICENSED",
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "optionalDependencies": {
+    "fastify": "^4.x",
+    "fastify-plugin": "^5.0.1"
+  },
   "devDependencies": {
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^5.0.1",
     "typescript": "^6.0.2",
     "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.14",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

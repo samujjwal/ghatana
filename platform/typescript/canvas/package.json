@@ -38,6 +38,18 @@
       "types": "./dist/topology/index.d.ts",
       "import": "./dist/topology/index.js"
     },
+    "./core": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "import": "./dist/tools/index.js"
+    },
+    "./chrome": {
+      "types": "./dist/chrome.d.ts",
+      "import": "./dist/chrome.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

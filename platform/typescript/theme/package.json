@@ -38,6 +38,10 @@
     "./themeManager": {
       "types": "./dist/themeManager.d.ts",
       "import": "./dist/themeManager.js"
+    },
+    "./mui": {
+      "types": "./dist/muiTheme.d.ts",
+      "import": "./dist/muiTheme.js"
     }
   },
   "files": [
@@ -51,7 +55,14 @@
     "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": "^19.2.4",
+    "react": "^19.2.4"
+  },
+  "peerDependenciesMeta": {
+    "@mui/material": {
+      "optional": true
+    }
+  },
+  "optionalPeerDependencies": {
     "@mui/material": "^7.0.0"
   },
   "dependencies": {

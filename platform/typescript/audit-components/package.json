@@ -21,10 +21,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "deprecated": "Use @ghatana/accessibility instead. This package is a thin re-export wrapper.",
   "dependencies": {
-    "@ghatana/platform-utils": "workspace:*",
-    "@axe-core/react": "^4.11.1",
-    "axe-core": "^4.11.2"
+    "@ghatana/accessibility": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.4",

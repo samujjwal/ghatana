@@ -33,9 +33,9 @@
     "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'archive/**' --ignore-pattern 'examples/**'",
     "typecheck": "tsc --noEmit"
   },
+  "deprecated": "Use @ghatana/accessibility instead. This package is a thin re-export wrapper.",
   "dependencies": {
-    "@axe-core/react": "^4.11.1",
-    "axe-core": "^4.11.2"
+    "@ghatana/accessibility": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",

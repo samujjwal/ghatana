@@ -10,13 +10,15 @@
     "test:coverage": "npm run test:coverage --workspaces",
     "lint": "npm run lint --workspaces",
     "type-check": "npm run type-check --workspaces",
-    "clean": "npm run clean --workspaces"
+    "clean": "npm run clean --workspaces",
+    "depcruise": "depcruise --config .dependency-cruiser.cjs --output-type text */src"
   },
   "devDependencies": {
     "@testing-library/react": "^13.4.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.10",
+    "dependency-cruiser": "^16.0.0",
     "eslint": "^8.31.0",
     "typescript": "^4.9.4",
     "vitest": "^0.28.1"

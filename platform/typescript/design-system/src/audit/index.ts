@@ -1,8 +1,10 @@
 /**
  * @ghatana/design-system/audit
  *
- * Generic audit logging service for privacy-sensitive operations.
+ * @deprecated This subpath is a compatibility shim. Import from '@ghatana/accessibility' instead.
+ *
+ * Migration:
+ *   Before: import { ... } from '@ghatana/design-system/audit';
+ *   After:  import { auditLogService, useAuditLog } from '@ghatana/accessibility';
  */
-
-export { auditLogService, useAuditLog, AuditLogService, AuditEventSchema } from './audit-log';
-export type { AuditEvent, AuditLogQueryResponse, AuditLogQueryOptions } from './audit-log';
+export * from '@ghatana/accessibility';

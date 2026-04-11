@@ -3,49 +3,50 @@
   "version": "1.0.0",
   "description": "YAPPC Core Utilities - Consolidated core, types, and utilities",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./utils": {
-      "import": "./dist/utils/index.mjs",
-      "require": "./dist/utils/index.js",
+      "import": "./dist/utils/index.js",
       "types": "./dist/utils/index.d.ts"
     },
     "./types": {
-      "import": "./dist/types/index.mjs",
-      "require": "./dist/types/index.js",
+      "import": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
     },
     "./types/devsecops": {
-      "import": "./dist/types/devsecops/index.mjs",
-      "require": "./dist/types/devsecops/index.js",
+      "import": "./dist/types/devsecops/index.js",
       "types": "./dist/types/devsecops/index.d.ts"
     },
     "./constants": {
-      "import": "./dist/constants/index.mjs",
-      "require": "./dist/constants/index.js",
+      "import": "./dist/constants/index.js",
       "types": "./dist/constants/index.d.ts"
+    },
+    "./api": {
+      "import": "./dist/api/index.js",
+      "types": "./dist/api/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@apollo/client": "^4.1.6",
+    "@ghatana/api": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@yappc/ai": "workspace:*",
+    "@yappc/state": "workspace:*",
     "fastify": "^5.4.0",
     "fastify-plugin": "^5.0.1",
     "msw": "^2.10.2",
@@ -53,7 +54,6 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.2",
-    "tsup": "^8.5.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

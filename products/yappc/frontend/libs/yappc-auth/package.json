@@ -32,6 +32,7 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@ghatana/sso-client": "workspace:*",
     "zod": "^4.3.6"
   },
   "devDependencies": {

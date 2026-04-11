@@ -1,8 +1,10 @@
 /**
  * @ghatana/design-system/security
  *
- * Security primitives: RBAC guard component and permission hooks.
+ * @deprecated This subpath is a compatibility shim. Import directly from '@ghatana/domain-components' instead.
+ *
+ * Migration:
+ *   Before: import { ... } from '@ghatana/design-system/security';
+ *   After:  import { ... } from '@ghatana/domain-components';
  */
-
-export { RBACGuard, usePermission } from './RBACGuard';
-export type { RBACGuardProps } from './RBACGuard';
+export * from '@ghatana/domain-components';

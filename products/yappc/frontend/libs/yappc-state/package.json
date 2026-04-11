@@ -3,22 +3,18 @@
   "version": "1.0.0",
   "description": "YAPPC State Management - Store and hooks for app state",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./store": {
-      "import": "./dist/store/index.mjs",
-      "require": "./dist/store/index.js",
+      "import": "./dist/store/index.js",
       "types": "./dist/store/index.d.ts"
     },
     "./config-hooks": {
-      "import": "./dist/store/config-hooks/index.mjs",
-      "require": "./dist/store/config-hooks/index.js",
+      "import": "./dist/store/config-hooks/index.js",
       "types": "./dist/store/config-hooks/index.d.ts"
     }
   },
@@ -26,8 +22,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts,.tsx",
@@ -37,7 +33,6 @@
     "@ghatana/state": "workspace:*",
     "@yappc/core": "workspace:*",
     "jotai": "^2.19.0",
-    "nanostores": "^1.2.0",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
@@ -48,8 +43,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",
-    "vitest": "^4.1.2",
-    "tsup": "^8.5.1"
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": "^19.0.0",

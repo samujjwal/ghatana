@@ -25,6 +25,7 @@
     },
     "dependencies": {
         "@ghatana/api": "workspace:*",
+        "@yappc/core": "workspace:*",
         "@yappc/state": "workspace:*"
     }
 }

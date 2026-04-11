@@ -1,8 +1,10 @@
 /**
  * @ghatana/design-system/voice
  *
- * Voice input components and speech recognition hooks.
+ * @deprecated This subpath is a compatibility shim. Import directly from '@ghatana/domain-components' instead.
+ *
+ * Migration:
+ *   Before: import { ... } from '@ghatana/design-system/voice';
+ *   After:  import { ... } from '@ghatana/domain-components';
  */
-
-export { VoiceInput, useBrowserSpeechRecognition } from './VoiceInput';
-export type { VoiceInputProps } from './VoiceInput';
+export * from '@ghatana/domain-components';

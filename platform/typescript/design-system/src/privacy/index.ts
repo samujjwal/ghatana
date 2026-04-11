@@ -1,8 +1,10 @@
 /**
  * @ghatana/design-system/privacy
  *
- * Privacy-focused UI components and consent management utilities.
+ * @deprecated This subpath is a compatibility shim. Import directly from '@ghatana/domain-components' instead.
+ *
+ * Migration:
+ *   Before: import { ... } from '@ghatana/design-system/privacy';
+ *   After:  import { ... } from '@ghatana/domain-components';
  */
-
-export { ConsentManager, useConsent } from './ConsentManager';
-export type { ConsentRecord, ConsentManagerProps } from './ConsentManager';
+export * from '@ghatana/domain-components';

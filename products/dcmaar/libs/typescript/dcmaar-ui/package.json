@@ -19,6 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@dcmaar/dashboard-core": "workspace:*",
     "@ghatana/charts": "workspace:*",
     "@ghatana/design-system": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",

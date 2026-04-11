@@ -1,5 +1,6 @@
 export * from "./roles";
 export * from "./hooks";
+export * from "./ui";
 
 // Export utils as namespace for backward compatibility
 import {

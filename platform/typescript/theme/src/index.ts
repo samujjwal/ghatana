@@ -44,8 +44,10 @@ export {
 
 export type { Theme, ThemeLayer, ThemeLayerType, ThemeTokens, ThemeComputed, DeepPartial } from './theme';
 
-// Material-UI theme with accessibility enhancements (P0 Critical - Touch Targets)
-export { createAccessibleMuiTheme, accessibleMuiTheme } from './muiTheme';
+// Material-UI theme adapter — import from '@ghatana/theme/mui' instead.
+// Exported here only for backward compatibility until consumers migrate.
+// @deprecated Use import { createAccessibleMuiTheme } from '@ghatana/theme/mui'
+// export { createAccessibleMuiTheme, accessibleMuiTheme } from './muiTheme';
 
 // Schema + validation utilities
 export * from './schema';

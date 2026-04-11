@@ -3,42 +3,34 @@
   "version": "1.0.0",
   "description": "YAPPC AI Components - Consolidated AI and chat functionality",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./components": {
-      "import": "./dist/components/index.mjs",
-      "require": "./dist/components/index.js",
+      "import": "./dist/components/index.js",
       "types": "./dist/components/index.d.ts"
     },
     "./hooks": {
-      "import": "./dist/hooks/index.mjs",
-      "require": "./dist/hooks/index.js",
+      "import": "./dist/hooks/index.js",
       "types": "./dist/hooks/index.d.ts"
     },
     "./utils": {
-      "import": "./dist/utils/index.mjs",
-      "require": "./dist/utils/index.js",
+      "import": "./dist/utils/index.js",
       "types": "./dist/utils/index.d.ts"
     },
     "./chat": {
-      "import": "./dist/chat/index.mjs",
-      "require": "./dist/chat/index.js",
+      "import": "./dist/chat/index.js",
       "types": "./dist/chat/index.d.ts"
     },
     "./messaging": {
-      "import": "./dist/messaging/index.mjs",
-      "require": "./dist/messaging/index.js",
+      "import": "./dist/messaging/index.js",
       "types": "./dist/messaging/index.d.ts"
     },
     "./notifications": {
-      "import": "./dist/notifications/index.mjs",
-      "require": "./dist/notifications/index.js",
+      "import": "./dist/notifications/index.js",
       "types": "./dist/notifications/index.d.ts"
     }
   },
@@ -46,8 +38,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts,.tsx",
@@ -68,7 +60,6 @@
     "@types/react-dom": "^19.2.3",
     "@testing-library/react": "^16.3.2",
     "@testing-library/jest-dom": "^6.9.1",
-    "tsup": "^8.5.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   },

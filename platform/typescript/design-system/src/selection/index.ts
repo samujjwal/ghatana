@@ -1,12 +1,10 @@
 /**
  * @ghatana/design-system/selection
  *
- * Generic selection state management hook for lists and tables.
+ * @deprecated This subpath is a compatibility shim. Import directly from '@ghatana/domain-components' instead.
+ *
+ * Migration:
+ *   Before: import { ... } from '@ghatana/design-system/selection';
+ *   After:  import { ... } from '@ghatana/domain-components';
  */
-
-export { useSelection } from './useSelection';
-export type {
-  SelectionItem,
-  UseSelectionOptions,
-  UseSelectionReturn,
-} from './useSelection';
+export * from '@ghatana/domain-components';

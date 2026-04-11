@@ -244,7 +244,7 @@ export default defineConfig({
       ),
       '@ghatana/accessibility-audit': path.resolve(
         __dirname,
-        '../../../../platform/typescript/accessibility-audit/src/index.ts'
+        '../../../../platform/typescript/accessibility/src/index.ts'
       ),
 
       // Legacy compatibility

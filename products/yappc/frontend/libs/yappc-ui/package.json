@@ -3,56 +3,45 @@
   "version": "1.0.0",
   "description": "YAPPC UI Components - Consolidated UI and base-ui components",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./components": {
-      "import": "./dist/components/index.mjs",
-      "require": "./dist/components/index.js",
+      "import": "./dist/components/index.js",
       "types": "./dist/components/index.d.ts"
     },
     "./base": {
-      "import": "./dist/base/index.mjs",
-      "require": "./dist/base/index.js",
+      "import": "./dist/base/index.js",
       "types": "./dist/base/index.d.ts"
     },
     "./hooks": {
-      "import": "./dist/hooks/index.mjs",
-      "require": "./dist/hooks/index.js",
+      "import": "./dist/hooks/index.js",
       "types": "./dist/hooks/index.d.ts"
     },
     "./styles": {
-      "import": "./dist/styles.css",
-      "require": "./dist/styles.css"
+      "default": "./dist/styles.css"
     },
     "./theme": {
-      "import": "./dist/components/theme/index.mjs",
-      "require": "./dist/components/theme/index.js",
+      "import": "./dist/components/theme/index.js",
       "types": "./dist/components/theme/index.d.ts"
     },
     "./base-ui": {
-      "import": "./dist/components/base-ui/index.mjs",
-      "require": "./dist/components/base-ui/index.js",
+      "import": "./dist/components/base-ui/index.js",
       "types": "./dist/components/base-ui/index.d.ts"
     },
     "./development-ui": {
-      "import": "./dist/components/development-ui/index.mjs",
-      "require": "./dist/components/development-ui/index.js",
+      "import": "./dist/components/development-ui/index.js",
       "types": "./dist/components/development-ui/index.d.ts"
     },
     "./initialization-ui": {
-      "import": "./dist/components/initialization-ui/index.mjs",
-      "require": "./dist/components/initialization-ui/index.js",
+      "import": "./dist/components/initialization-ui/index.js",
       "types": "./dist/components/initialization-ui/index.d.ts"
     },
     "./navigation-ui": {
-      "import": "./dist/components/navigation-ui/index.mjs",
-      "require": "./dist/components/navigation-ui/index.js",
+      "import": "./dist/components/navigation-ui/index.js",
       "types": "./dist/components/navigation-ui/index.d.ts"
     }
   },
@@ -60,8 +49,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsc && pnpm build:styles",
+    "dev": "tsc --watch",
     "build:styles": "tailwindcss -i ./src/styles/index.css -o ./dist/styles.css --minify",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
@@ -104,7 +93,6 @@
     "postcss": "^8.5.8",
     "storybook": "^10.3.4",
     "tailwindcss": "^4.2.2",
-    "tsup": "^8.5.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.3",
     "vitest": "^4.1.2"

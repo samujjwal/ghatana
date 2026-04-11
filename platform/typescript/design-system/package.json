@@ -87,6 +87,8 @@
     "docs:api": "typedoc"
   },
   "dependencies": {
+    "@ghatana/accessibility": "workspace:*",
+    "@ghatana/domain-components": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
