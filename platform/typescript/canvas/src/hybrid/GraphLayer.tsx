@@ -39,6 +39,7 @@ import {
   type Viewport,
   type Connection,
 } from "@xyflow/react";
+// @ts-expect-error — CSS side-effect import has no type declarations
 import "@xyflow/react/dist/style.css";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type { CanvasNode, CanvasEdge, ViewportState } from "./types";

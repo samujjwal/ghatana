@@ -1,14 +1,14 @@
-package com.ghatana.aep.connector.strategy;
+package com.ghatana.platform.messaging.strategy;
 
-import com.ghatana.aep.connector.config.ConnectorConfig;
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.config.TlsConfig;
-import com.ghatana.aep.connector.strategy.http.HttpIngressConfig;
-import com.ghatana.aep.connector.strategy.kafka.KafkaConsumerConfig;
-import com.ghatana.aep.connector.strategy.kafka.KafkaProducerConfig;
-import com.ghatana.aep.connector.strategy.rabbitmq.RabbitMQConfig;
-import com.ghatana.aep.connector.strategy.s3.S3Config;
-import com.ghatana.aep.connector.strategy.sqs.SqsConfig;
+import com.ghatana.platform.messaging.config.ConnectorConfig;
+import com.ghatana.platform.messaging.config.RetryConfig;
+import com.ghatana.platform.messaging.config.TlsConfig;
+import com.ghatana.platform.messaging.strategy.http.HttpIngressConfig;
+import com.ghatana.platform.messaging.strategy.kafka.KafkaConsumerConfig;
+import com.ghatana.platform.messaging.strategy.kafka.KafkaProducerConfig;
+import com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQConfig;
+import com.ghatana.platform.messaging.strategy.s3.S3Config;
+import com.ghatana.platform.messaging.strategy.sqs.SqsConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -2,10 +2,10 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.kafka;
+package com.ghatana.platform.messaging.strategy.kafka;
 
-import com.ghatana.aep.connector.AbstractResilientConnector;
-import com.ghatana.aep.connector.strategy.QueueConsumerStrategy;
+import com.ghatana.platform.messaging.AbstractResilientConnector;
+import com.ghatana.platform.messaging.strategy.QueueConsumerStrategy;
 import io.activej.promise.Promise;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

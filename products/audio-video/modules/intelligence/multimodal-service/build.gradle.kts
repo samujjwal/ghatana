@@ -12,11 +12,8 @@ val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 dependencies {
     implementation(project(":platform:contracts"))
 
-    // Audio-Video common (shared AI inference client, health/metrics, gRPC interceptors)
+    // Audio-Video common library (shared AI inference client, health/metrics, gRPC interceptors)
     implementation(project(":products:audio-video:libs:common"))
-
-    // Canonical platform media processing library
-    implementation(project(":platform:java:audio-video"))
 
     // Agent framework — AbstractTypedAgent, AgentResult, AgentContext
     implementation(project(":platform:java:agent-core"))
@@ -77,4 +74,12 @@ tasks.register<JavaExec>("runMultimodalService") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.ghatana.audio.video.multimodal.grpc.MultimodalGrpcServer")
     environment("MULTIMODAL_GRPC_PORT", multimodalPort)
+}
+
+// Fix duplicate jar entries in distribution
+tasks.named<Tar>("distTar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.named<Zip>("distZip") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

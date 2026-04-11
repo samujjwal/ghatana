@@ -21,9 +21,6 @@ dependencies {
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
     
-    // Platform Audio-Video
-    implementation(project(":platform:java:audio-video"))
-    
     // Protobuf
     implementation(libs.protobuf.java)
     
@@ -74,4 +71,12 @@ tasks.register<JavaExec>("runVisionService") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.ghatana.audio.video.vision.grpc.VisionGrpcServer")
     environment("VISION_GRPC_PORT", visionPort)
+}
+
+// Fix duplicate jar entries in distribution
+tasks.named<Tar>("distTar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.named<Zip>("distZip") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

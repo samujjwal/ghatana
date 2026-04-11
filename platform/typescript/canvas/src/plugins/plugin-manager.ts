@@ -111,6 +111,13 @@ export class PluginManager {
   }
 
   /**
+   * Check if a plugin is already registered
+   */
+  isRegistered(pluginId: string): boolean {
+    return this.plugins.has(pluginId);
+  }
+
+  /**
    * Register a plugin
    */
   async register(

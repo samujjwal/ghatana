@@ -1,6 +1,6 @@
-package com.ghatana.aep.connector.util;
+package com.ghatana.platform.messaging.util;
 
-import com.ghatana.aep.connector.config.RetryConfig;
+import com.ghatana.platform.messaging.config.RetryConfig;
 import org.slf4j.Logger;
 
 import java.util.Objects;

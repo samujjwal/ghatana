@@ -34,7 +34,7 @@ import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
-import com.ghatana.platform.governance.security.RateLimitFilter;
+import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;

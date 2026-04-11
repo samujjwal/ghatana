@@ -75,7 +75,7 @@ export type CanvasElementType =
   | "mindmap"
   | "highlighter"
   | "pipeline-node"
-  // NEW: Rich content types (AFFiNE parity)
+  // Rich content types (AFFiNE parity)
   | "image"
   | "attachment"
   | "embed"
@@ -86,7 +86,23 @@ export type CanvasElementType =
   | "list"
   | "bookmark"
   | "divider"
-  | "latex";
+  | "latex"
+  // Multimedia
+  | "video"
+  | "audio"
+  // Interactive / live content
+  | "live-react"
+  | "code-editor"
+  | "web-component"
+  // Data visualization
+  | "data-chart"
+  | "data-metric"
+  // Drawing / freeform
+  | "whiteboard"
+  // UI design
+  | "ui-component"
+  // Hierarchical navigation
+  | "portal";
 
 /**
  * Connectable interface - elements that can have connectors attached

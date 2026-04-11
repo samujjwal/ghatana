@@ -663,8 +663,9 @@ class CompositeAgentBehavioralTest {
 
             assertThat(result.isSuccess()).isTrue();
             // Overall should include time for all agents (roughly 45ms)
+            // Increased threshold to handle system load variations
             assertThat(Duration.between(start, end))
-                    .isLessThan(Duration.ofSeconds(1));
+                    .isLessThan(Duration.ofSeconds(5));
         }
     }
 

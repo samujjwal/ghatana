@@ -146,9 +146,10 @@ public class ApiKeyService {
      * @throws ResourceNotFoundException If the API key is not found
      */
     public void deleteApiKey(String id) {
-        if (!apiKeyRepository.deleteById(id)) {
+        if (!apiKeyRepository.existsById(id)) {
             throw ResourceNotFoundException.forResource("ApiKey", id);
         }
+        apiKeyRepository.deleteById(id);
     }
 
     /**

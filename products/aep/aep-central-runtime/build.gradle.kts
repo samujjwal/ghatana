@@ -16,6 +16,7 @@ plugins {
 }
 
 dependencies {
+    api(project(":products:aep:aep-engine"))  // Uses AepCentralCatalogService
     api(project(":platform:java:agent-core"))
     api(project(":products:aep:aep-operator-contracts"))
     implementation(project(":products:data-cloud:agent-registry"))

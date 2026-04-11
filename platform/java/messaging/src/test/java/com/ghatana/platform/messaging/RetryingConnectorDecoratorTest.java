@@ -1,8 +1,8 @@
-package com.ghatana.aep.connector;
+package com.ghatana.platform.messaging;
 
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.config.RetryConfig;
+import com.ghatana.platform.messaging.strategy.QueueMessage;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

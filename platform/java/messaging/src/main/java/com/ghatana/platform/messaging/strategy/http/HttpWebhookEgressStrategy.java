@@ -2,11 +2,11 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.http;
+package com.ghatana.platform.messaging.strategy.http;
 
-import com.ghatana.aep.connector.AbstractResilientConnector;
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.AbstractResilientConnector;
+import com.ghatana.platform.messaging.strategy.QueueMessage;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
 import io.activej.promise.Promise;
 
 import java.net.URI;

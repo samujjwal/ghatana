@@ -2,11 +2,11 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.sqs;
+package com.ghatana.platform.messaging.strategy.sqs;
 
-import com.ghatana.aep.connector.AbstractResilientConnector;
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.AbstractResilientConnector;
+import com.ghatana.platform.messaging.strategy.QueueMessage;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
 import io.activej.promise.Promise;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;

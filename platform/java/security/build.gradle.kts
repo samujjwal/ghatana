@@ -20,9 +20,10 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))  // Canonical Repository interface
-    // NOTE: governance and http as implementation to avoid circular dependency
-    implementation(project(":platform:java:governance"))
-    implementation(project(":platform:java:http"))
+    // Governance provides TenantContext, Principal (compileOnly - optional dependency)
+    compileOnly(project(":platform:java:governance"))
+    // HTTP dependency removed - filters migrated to platform:java:http
+    // Security module now provides abstractions only, HTTP module provides filter implementations
     
     // JWT / Auth / OAuth2 (canonical: Nimbus JOSE+JWT)
     api(libs.nimbus.jose.jwt)
@@ -61,6 +62,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":platform:java:governance"))  // For Principal in tests
     testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
     testRuntimeOnly(libs.junit.jupiter.engine)
 }

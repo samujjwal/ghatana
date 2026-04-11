@@ -31,6 +31,9 @@ dependencies {
     implementation(project(":products:aep:aep-identity"))
     implementation(project(":products:aep:aep-compliance"))
 
+    // Agent runtime — learning, review, consolidation, evaluation packages
+    implementation(project(":products:aep:aep-agent-runtime"))
+
     // Core platform dependencies
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
@@ -43,7 +46,7 @@ dependencies {
     implementation(project(":platform:java:tool-runtime"))
     implementation(project(":platform:java:policy-as-code"))
     implementation(project(":platform:java:security-analytics"))
-    implementation(project(":platform:java:incident-response"))
+    implementation(project(":shared-services:incident-service"))
     
     // gRPC transport (for AepGrpcServer)
     implementation(libs.grpc.netty.shaded)

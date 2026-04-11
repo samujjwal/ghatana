@@ -89,7 +89,7 @@ public class EpisodeLearningPipeline {
     public EpisodeLearningPipeline(
             @NotNull DataCloudClient agentDataCloud,
             @NotNull CompositeEvaluationGate evaluationGate,
-            @NotNull HumanReviewQueue reviewQueue) {
+            @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue) {
         this(agentDataCloud, evaluationGate, reviewQueue, 10, 0.70, 0.90);
     }
 
@@ -106,7 +106,7 @@ public class EpisodeLearningPipeline {
     public EpisodeLearningPipeline(
             @NotNull DataCloudClient agentDataCloud,
             @NotNull CompositeEvaluationGate evaluationGate,
-            @NotNull HumanReviewQueue reviewQueue,
+            @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue,
             int minEpisodeCount,
             double reviewThreshold,
             double autoPromoteThreshold) {
@@ -159,16 +159,14 @@ public class EpisodeLearningPipeline {
             return Promise.of(LearningPipelineResult.empty(tenantId));
         }
 
-        // Group episodes by skillId
         Map<String, List<DataCloudClient.Entity>> bySkill = rawEpisodes.stream()
                 .filter(e -> e.data().containsKey("agentId"))
                 .collect(Collectors.groupingBy(
                         e -> (String) e.data().getOrDefault("agentId", "unknown")));
 
-        log.info("[learning-pipeline] tenant={} — {} episodes across {} skills",
+        log.info("[learning-pipeline] tenant={} \u2014 {} episodes across {} skills",
                 tenantId, rawEpisodes.size(), bySkill.size());
 
-        // Evaluate each skill asynchronously, then collect all results
         List<Promise<SkillResult>> skillPromises = bySkill.entrySet().stream()
                 .map(entry -> evaluateSkill(tenantId, entry.getKey(), entry.getValue()))
                 .toList();
@@ -188,18 +186,15 @@ public class EpisodeLearningPipeline {
             return Promise.of(new SkillResult(skillId, SkillOutcome.INSUFFICIENT_EPISODES, 0.0));
         }
 
-        // Compute outcome metrics from episodes
         Map<String, Double> metrics = computeMetrics(episodes);
         double successRate = metrics.getOrDefault("successRate", 0.0);
 
         if (successRate < reviewThreshold * 0.5) {
-            // Not enough signal to propose a policy — skip
-            log.debug("[learning-pipeline] skill={} success-rate={:.2f} too low, skipping",
+            log.debug("[learning-pipeline] skill={} success-rate={} too low, skipping",
                     skillId, successRate);
             return Promise.of(new SkillResult(skillId, SkillOutcome.BELOW_THRESHOLD, successRate));
         }
 
-        // Build UpdateCandidate for the evaluation gate
         String proposedVersion = UUID.randomUUID().toString();
         String changeDescription = buildChangeDescription(metrics, episodes.size());
 
@@ -228,7 +223,7 @@ public class EpisodeLearningPipeline {
                 .then(gateResult -> {
                     double confidence = gateResult.score();
                     if (!gateResult.passed() || confidence < reviewThreshold) {
-                        log.debug("[learning-pipeline] skill={} gate did not pass (score={:.2f})", skillId, confidence);
+                        log.debug("[learning-pipeline] skill={} gate did not pass (score={})", skillId, confidence);
                         return Promise.of(new SkillResult(skillId, SkillOutcome.GATE_FAILED, confidence));
                     }
 
@@ -254,6 +249,19 @@ public class EpisodeLearningPipeline {
             @NotNull PolicyProvenanceRecord provenance,
             boolean autoPromotable) {
 
+        if (reviewQueue == null) {
+            log.debug("[learning-pipeline] no reviewQueue configured, skipping HITL submission for skill={}", skillId);
+            return Promise.of(ReviewItem.builder()
+                    .tenantId(tenantId)
+                    .skillId(skillId)
+                    .proposedVersion(proposedVersion)
+                    .itemType(ReviewItemType.POLICY)
+                    .confidenceScore(confidence)
+                    .evaluationSummary(changeDescription)
+                    .context(Map.of())
+                    .build());
+        }
+
         Map<String, Object> context = new HashMap<>();
         context.put("provenance", Map.of(
                 "policyId", provenance.policyId(),
@@ -277,11 +285,11 @@ public class EpisodeLearningPipeline {
                 .itemType(ReviewItemType.POLICY)
                 .confidenceScore(confidence)
                 .evaluationSummary(changeDescription
-                        + (autoPromotable ? " [auto-promotable: confidence ≥ " + autoPromoteThreshold + "]" : ""))
+                        + (autoPromotable ? " [auto-promotable: confidence \u2265 " + autoPromoteThreshold + "]" : ""))
                 .context(Map.copyOf(context))
                 .build();
 
-        log.info("[learning-pipeline] queuing review for skill={} confidence={:.2f} auto-promotable={}",
+        log.info("[learning-pipeline] queuing review for skill={} confidence={} auto-promotable={}",
                 skillId, confidence, autoPromotable);
 
         return reviewQueue.enqueue(item);

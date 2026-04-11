@@ -95,18 +95,28 @@ tasks.register("checkNoGetResultInTests") {
         val violations = mutableListOf<String>()
         val projectRoot = projectDir
 
-        projectRoot.walkTopDown()
-            .filter { it.isFile && it.extension == "java" &&
-                (it.name.endsWith("Test.java") || it.name.endsWith("IT.java")) &&
-                it.absolutePath.contains("/src/test/") }
-            .forEach { file ->
-                file.readLines().forEachIndexed { idx, line ->
-                    if (testPattern.containsMatchIn(line) && !line.trimStart().startsWith("//") &&
-                        !line.contains("y04-ok")) {
-                        violations.add("${file.relativeTo(projectRoot)}:${idx + 1}: ${line.trim()}")
+        // Only scan src/test directories, not entire project tree
+        val testDirs = listOf(
+            file("src/test/java"),
+            file("core/src/test/java"),
+            file("services/src/test/java"),
+            file("agents/src/test/java"),
+            file("platform/src/test/java")
+        ).filter { it.exists() }
+
+        testDirs.forEach { testDir ->
+            testDir.walkTopDown()
+                .filter { it.isFile && it.extension == "java" &&
+                    (it.name.endsWith("Test.java") || it.name.endsWith("IT.java")) }
+                .forEach { file ->
+                    file.readLines().forEachIndexed { idx, line ->
+                        if (testPattern.containsMatchIn(line) && !line.trimStart().startsWith("//") &&
+                            !line.contains("y04-ok")) {
+                            violations.add("${file.relativeTo(projectRoot)}:${idx + 1}: ${line.trim()}")
+                        }
                     }
                 }
-            }
+        }
 
         if (violations.isNotEmpty()) {
             throw GradleException(

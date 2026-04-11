@@ -318,10 +318,17 @@ export interface HybridCanvasProps {
     targetHandle?: string;
   }) => void;
   onElementClick?: (element: CanvasElement) => void;
+  /** Called on double-click of a freeform element — used to enter drill-down (portal/frame) */
+  onElementDoubleClick?: (element: CanvasElement) => void;
   onNodeClick?: (node: CanvasNode) => void;
   onEdgeClick?: (edge: CanvasEdge) => void;
   onCanvasClick?: (point: Point) => void;
   onDrop?: (event: DragEvent, point: Point) => void;
+  /**
+   * Called when the user activates a portal element (double-click or programmatic).
+   * The host should call `DrillDownManager.enter()` and navigate to the target document.
+   */
+  onPortalEnter?: (elementId: string, targetDocumentId: string) => void;
 }
 
 // =============================================================================

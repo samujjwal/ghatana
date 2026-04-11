@@ -1,5 +1,10 @@
 # Library Spec – @ghatana/design-system
 
+Status note (2026-04-11):
+
+- Treat [DESIGN_SYSTEM_GENERATOR_PLATFORM_ARCHITECTURE_HARDENED.md](/Users/samujjwal/Development/ghatana/docs/architecture/DESIGN_SYSTEM_GENERATOR_PLATFORM_ARCHITECTURE_HARDENED.md) as the canonical source for current package-boundary, public API, and anti-bloat decisions.
+- Treat [LIVE_UI_BUILDER_AND_EXECUTION_PLATFORM_ARCHITECTURE.md](/Users/samujjwal/Development/ghatana/docs/architecture/LIVE_UI_BUILDER_AND_EXECUTION_PLATFORM_ARCHITECTURE.md) as the canonical source for how the design system feeds live page/component builders.
+
 Unified design system **facade** for the Ghatana platform.
 
 ---

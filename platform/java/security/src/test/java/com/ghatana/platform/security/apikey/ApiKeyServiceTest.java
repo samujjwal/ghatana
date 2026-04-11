@@ -193,17 +193,18 @@ class ApiKeyServiceTest {
         @Test
         @DisplayName("should delete when key exists")
         void shouldDeleteExisting() {
-            when(apiKeyRepository.deleteById("id-1")).thenReturn(true);
+            when(apiKeyRepository.existsById("id-1")).thenReturn(true);
 
             service.deleteApiKey("id-1");
 
+            verify(apiKeyRepository).existsById("id-1");
             verify(apiKeyRepository).deleteById("id-1");
         }
 
         @Test
         @DisplayName("should throw ResourceNotFoundException when key not found")
         void shouldThrowWhenNotFound() {
-            when(apiKeyRepository.deleteById("nonexistent")).thenReturn(false);
+            when(apiKeyRepository.existsById("nonexistent")).thenReturn(false);
 
             assertThatThrownBy(() -> service.deleteApiKey("nonexistent"))
                     .isInstanceOf(ResourceNotFoundException.class);

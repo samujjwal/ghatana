@@ -225,7 +225,7 @@ const mockResizeObserver = (): (() => void) => {
   const unobserve = () => {};
   const disconnect = () => {};
 
-  (global as unknown as Record<string, unknown>).ResizeObserver = () => ({
+  (globalThis as unknown as Record<string, unknown>).ResizeObserver = () => ({
     observe,
     unobserve,
     disconnect,
@@ -233,7 +233,7 @@ const mockResizeObserver = (): (() => void) => {
 
   return () => {
     // Cleanup function
-    delete (global as unknown as Record<string, unknown>).ResizeObserver;
+    delete (globalThis as unknown as Record<string, unknown>).ResizeObserver;
   };
 };
 
@@ -245,14 +245,14 @@ const mockIntersectionObserver = (): (() => void) => {
   const unobserve = () => {};
   const disconnect = () => {};
 
-  (global as unknown as Record<string, unknown>).IntersectionObserver = () => ({
+  (globalThis as unknown as Record<string, unknown>).IntersectionObserver = () => ({
     observe,
     unobserve,
     disconnect,
   });
 
   return () => {
-    delete (global as unknown as Record<string, unknown>).IntersectionObserver;
+    delete (globalThis as unknown as Record<string, unknown>).IntersectionObserver;
   };
 };
 
@@ -260,8 +260,8 @@ const mockIntersectionObserver = (): (() => void) => {
  * Mock performance API
  */
 const mockPerformanceAPI = (): void => {
-  (global as unknown as Record<string, unknown>).performance = {
-    ...((global as unknown as Record<string, unknown>).performance as Record<string, unknown> || {}),
+  (globalThis as unknown as Record<string, unknown>).performance = {
+    ...((globalThis as unknown as Record<string, unknown>).performance as Record<string, unknown> || {}),
     now: () => Date.now(),
     mark: () => {},
     measure: () => 0,
@@ -274,7 +274,7 @@ const mockPerformanceAPI = (): void => {
  * Mock matchMedia for theme detection
  */
 const mockMatchMedia = (matches: boolean = false): void => {
-  (global as unknown as Record<string, unknown>).matchMedia = (query: string) => ({
+  (globalThis as unknown as Record<string, unknown>).matchMedia = (query: string) => ({
     matches,
     media: query,
     onchange: null,
@@ -292,7 +292,7 @@ const mockMatchMedia = (matches: boolean = false): void => {
 const mockLocalStorage = (): void => {
   const store: Record<string, string> = {};
 
-  (global as unknown as Record<string, unknown>).localStorage = {
+  (globalThis as unknown as Record<string, unknown>).localStorage = {
     getItem: (key: string) => store[key] || null,
     setItem: (key: string, value: string) => {
       store[key] = value;

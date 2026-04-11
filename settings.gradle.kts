@@ -118,17 +118,17 @@ include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
 include(":platform:java:agent-memory")
-include(":platform:java:connectors")  // DEPRECATED: Merging into platform:java:messaging
 include(":platform:java:messaging")   // Unified messaging module (merged connectors + aep-connectors)
 include(":platform:java:audit")
-include(":platform:java:audio-video")
+// platform:java:audio-video DEPRECATED: Migrated to products:audio-video:libs:java:common per Phase 3.1
+include(":products:audio-video:libs:java:common")
 include(":platform:java:distributed-cache")
 include(":platform:java:identity")
 include(":platform:java:data-governance")
 include(":platform:java:tool-runtime")
 include(":platform:java:policy-as-code")
 include(":platform:java:security-analytics")
-include(":platform:java:incident-response")
+// platform:java:incident-response DEPRECATED: Migrated to shared-services:incident-service per Phase 3.2
 
 // =============================================================================
 // Product: AEP
@@ -141,8 +141,9 @@ include(":products:aep:aep-runtime-core")
 include(":products:aep:aep-registry")
 include(":products:aep:aep-analytics")
 include(":products:aep:aep-security")
-include(":products:aep:aep-connectors")
+// aep-connectors DEPRECATED: Merged into platform:java:messaging
 include(":products:aep:aep-event-cloud")
+// products:audio-video:libs:common DEPRECATED: Migrated to products:audio-video:libs:java:common per Phase 3.1
 include(":products:aep:aep-agent-runtime")
 include(":products:aep:aep-api")
 include(":products:aep:aep-scaling")
@@ -320,6 +321,7 @@ include(":products:finance:client-onboarding")
 // =============================================================================
 include(":shared-services:auth-gateway")
 include(":shared-services:user-profile-service")
+include(":shared-services:incident-service")  // Migrated from platform:java:incident-response per audit
 
 // =============================================================================
 // Integration Tests

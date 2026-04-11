@@ -28,6 +28,7 @@ dependencies {
         api(project(":platform:java:database"))
         api(project(":platform:java:http"))
         api(project(":platform:java:observability"))
+        api(project(":platform:java:testing"))
         api(project(":platform:java:config"))
         api(project(":platform:java:workflow"))
         api(project(":platform:java:audit"))

@@ -19,6 +19,7 @@ dependencies {
 
     // AEP Unified Runtime — for AepAgentRuntimeAdapter (Phase 1.6: aep-engine + aep-agent-runtime + aep-central-runtime)
     implementation(project(":products:aep:aep-engine"))
+    implementation(project(":products:aep:aep-agent-runtime"))
     
     // Database
     implementation(libs.postgresql)

@@ -4,7 +4,7 @@ import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
-import com.ghatana.platform.http.server.security.TenantExtractor;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.security.audit.SecurityAuditLogger;
 import com.ghatana.platform.security.jwt.JwtTokenProvider;
 import com.ghatana.platform.security.rbac.PolicyService;

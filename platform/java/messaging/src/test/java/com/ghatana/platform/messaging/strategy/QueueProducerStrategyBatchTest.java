@@ -1,4 +1,4 @@
-package com.ghatana.aep.connector.strategy;
+package com.ghatana.platform.messaging.strategy;
 
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;

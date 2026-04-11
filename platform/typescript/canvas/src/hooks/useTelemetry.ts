@@ -67,7 +67,7 @@ class TelemetryManager {
   private config: TelemetryConfig;
   private eventQueue: TelemetryEvent[] = [];
   private sessionId: string;
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setTimeout>;
   private performanceObserver?: PerformanceObserver;
 
   private constructor(config: Partial<TelemetryConfig> = {}) {

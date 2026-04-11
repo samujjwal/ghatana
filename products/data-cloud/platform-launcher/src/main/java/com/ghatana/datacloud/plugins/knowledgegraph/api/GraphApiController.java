@@ -4,7 +4,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
-import com.ghatana.platform.http.server.security.TenantExtractor;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

@@ -14,10 +14,8 @@ java {
 dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:contracts"))
-    // Platform HTTP — for FilterChain.Filter integration (TenantExtractionFilter)
-    compileOnly(project(":platform:java:http"))
+    // HTTP dependency removed - TenantExtractionFilter migrated to platform:java:http
     api(libs.activej.promise)
-    api(libs.activej.http)
     // gRPC — optional, only needed for TenantGrpcInterceptor
     compileOnly("io.grpc:grpc-api:1.79.0")
     implementation(libs.jackson.dataformat.yaml)

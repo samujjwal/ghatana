@@ -2,12 +2,12 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector;
+package com.ghatana.platform.messaging;
 
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
-import com.ghatana.aep.connector.util.RetryExecutor;
+import com.ghatana.platform.messaging.config.RetryConfig;
+import com.ghatana.platform.messaging.strategy.QueueMessage;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.util.RetryExecutor;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

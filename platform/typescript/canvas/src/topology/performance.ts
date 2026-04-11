@@ -272,9 +272,9 @@ export function useThrottledState<T>(
     const throttledSetState = useMemo(
         () =>
             throttle(
-                (value: T) => {
-                    setThrottledState(value);
-                },
+                ((value: unknown) => {
+                    setThrottledState(value as T);
+                }) as (...args: unknown[]) => unknown,
                 { interval, leading: true, trailing: true }
             ),
         [interval]
@@ -491,7 +491,9 @@ export function useRenderMetrics(componentName: string): void {
         const timeSinceLastRender = now - lastRenderTime.current;
         lastRenderTime.current = now;
 
-        if (process.env.NODE_ENV === 'development') {
+        const nodeEnv = (globalThis as unknown as Record<string, Record<string, Record<string, string>>>)?.["process"]?.["env"]?.["NODE_ENV"];
+        const isDev = nodeEnv === "development";
+        if (isDev) {
             console.debug(
                 `[Render] ${componentName}: count=${renderCount.current}, interval=${timeSinceLastRender}ms`
             );

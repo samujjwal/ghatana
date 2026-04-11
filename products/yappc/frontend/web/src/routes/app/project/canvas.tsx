@@ -72,14 +72,13 @@ import {
   CanvasChromeLayout,
   useCanvasCommands,
   useCanvasTelemetry,
-} from '@ghatana/canvas';
-import {
+  // Canonical chrome atoms — use these so CanvasChromeLayout stays in sync
   chromeCalmModeAtom,
   chromeInspectorVisibleAtom,
   chromeLeftRailVisibleAtom,
   chromeMinimapVisibleAtom,
   chromeZoomLevelAtom,
-} from '@yappc/state';
+} from '@ghatana/canvas';
 import { headerActionContextAtom, headerCanvasModeAtom, headerContextActionsAtom, headerOnCanvasModeChangeAtom, headerPhaseInfoAtom, headerRoleInfoAtom, headerShowCanvasModeAtom } from '../../../state/atoms/layoutAtom';
 import '@xyflow/react/dist/style.css';
 import { DependencyEdge } from '../../../components/canvas/edges';

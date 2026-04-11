@@ -37,6 +37,7 @@ dependencies {
     api(project(":platform:java:config"))
     api(project(":platform:java:agent-core"))  // Agent runtime consolidation
     api(project(":platform:java:messaging"))   // Unified messaging
+    api(project(":products:data-cloud:agent-registry"))  // DataCloudAgentRegistry for persistence
 
     // Redis
     implementation(libs.jedis)

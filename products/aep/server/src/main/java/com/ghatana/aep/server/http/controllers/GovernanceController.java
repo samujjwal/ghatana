@@ -50,8 +50,8 @@ public final class GovernanceController {
     private final Function<Map<String, Object>, HttpResponse> jsonResponse;
 
     /**
-     * @param killSwitchService    kill-switch control; never {@code null}
-     * @param degradationManager   graceful degradation; never {@code null}
+     * @param killSwitchService    kill-switch service; never {@code null}
+     * @param degradationManager   graceful degradation manager; never {@code null}
      * @param policyEngine         policy evaluation; never {@code null}
      * @param egressMonitor        egress tracking; never {@code null}
      * @param injectionDetector    prompt injection detection; never {@code null}
@@ -74,9 +74,7 @@ public final class GovernanceController {
 
     // ---- Kill-Switch -------------------------------------------------------
 
-    /**
-     * GET /governance/kill-switch — returns kill-switch status for the tenant.
-     */
+    /** GET /governance/kill-switch — returns kill-switch status for the tenant. */
     public Promise<HttpResponse> handleKillSwitchStatus(HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null || tenantId.isBlank()) {
@@ -92,9 +90,7 @@ public final class GovernanceController {
                 ))));
     }
 
-    /**
-     * POST /governance/kill-switch/activate — activates a kill-switch for the given tenant.
-     */
+    /** POST /governance/kill-switch/activate — activates a kill-switch for the given tenant. */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleActivateKillSwitch(HttpRequest request) {
         return request.loadBody().then(buf -> {
@@ -121,9 +117,7 @@ public final class GovernanceController {
         });
     }
 
-    /**
-     * POST /governance/kill-switch/deactivate — deactivates a kill-switch.
-     */
+    /** POST /governance/kill-switch/deactivate — deactivates a kill-switch. */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleDeactivateKillSwitch(HttpRequest request) {
         return request.loadBody().then(buf -> {
@@ -148,9 +142,7 @@ public final class GovernanceController {
 
     // ---- Degradation -------------------------------------------------------
 
-    /**
-     * GET /governance/degradation — returns current degradation mode for the tenant.
-     */
+    /** GET /governance/degradation — returns current degradation mode for the tenant. */
     public Promise<HttpResponse> handleDegradationStatus(HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null || tenantId.isBlank()) {
@@ -164,9 +156,7 @@ public final class GovernanceController {
             )));
     }
 
-    /**
-     * POST /governance/degradation — sets the degradation mode.
-     */
+    /** POST /governance/degradation — sets the degradation mode. */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSetDegradation(HttpRequest request) {
         return request.loadBody().then(buf -> {

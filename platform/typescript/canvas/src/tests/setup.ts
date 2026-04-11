@@ -51,9 +51,9 @@ const mockContext: Partial<CanvasRenderingContext2D> = {
   shadowOffsetY: 0,
 };
 
-HTMLCanvasElement.prototype.getContext = (contextId: string): RenderingContext | null => {
+HTMLCanvasElement.prototype.getContext = function (contextId: string): RenderingContext | null {
   if (contextId === "2d") {
-    return mockContext as CanvasRenderingContext2D;
+    return mockContext as unknown as CanvasRenderingContext2D;
   }
   return null;
-};
+} as typeof HTMLCanvasElement.prototype.getContext;

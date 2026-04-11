@@ -43,9 +43,13 @@ public class LearningController {
     @Nullable
     private final EpisodeLearningPipeline learningPipeline;
 
+    public LearningController(@Nullable DataCloudClient agentDataCloud) {
+        this(agentDataCloud, null, null);
+    }
+
     public LearningController(@Nullable DataCloudClient agentDataCloud,
-                               @Nullable HumanReviewQueue humanReviewQueue) {
-        this(agentDataCloud, humanReviewQueue, null);
+                               @Nullable EpisodeLearningPipeline learningPipeline) {
+        this(agentDataCloud, null, learningPipeline);
     }
 
     public LearningController(@Nullable DataCloudClient agentDataCloud,

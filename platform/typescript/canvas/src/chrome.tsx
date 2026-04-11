@@ -14,6 +14,11 @@ import React, { ReactNode } from "react";
 import { atom, useAtom, useAtomValue } from "jotai";
 import { RoleSwitcher } from "./components/RoleSwitcher";
 import { getCanvasConfig, hasCanvasConfig } from "./core/canvas-config";
+import { OutlinePanel } from "./components/panels/OutlinePanel";
+import { LayersPanel } from "./components/panels/LayersPanel";
+import { PalettePanel } from "./components/panels/PalettePanel";
+import { TasksPanel } from "./components/panels/TasksPanel";
+import { MinimapPanel } from "./components/panels/MinimapPanel";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -332,50 +337,15 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({ type, onClose }) => {
   const renderPanelContent = () => {
     switch (type) {
       case "outline":
-        // OutlinePanel component would be rendered here
-        return (
-          <div style={{ padding: "16px" }}>
-            <p style={{ color: "#757575", fontSize: "14px" }}>
-              Outline panel - Import OutlinePanel component to enable
-            </p>
-          </div>
-        );
+        return <OutlinePanel onClose={onClose} />;
       case "layers":
-        // LayersPanel component would be rendered here
-        return (
-          <div style={{ padding: "16px" }}>
-            <p style={{ color: "#757575", fontSize: "14px" }}>
-              Layers panel - Import LayersPanel component to enable
-            </p>
-          </div>
-        );
+        return <LayersPanel onClose={onClose} />;
       case "palette":
-        // PalettePanel component would be rendered here
-        return (
-          <div style={{ padding: "16px" }}>
-            <p style={{ color: "#757575", fontSize: "14px" }}>
-              Palette panel - Import PalettePanel component to enable
-            </p>
-          </div>
-        );
+        return <PalettePanel onClose={onClose} />;
       case "tasks":
-        // TasksPanel component would be rendered here
-        return (
-          <div style={{ padding: "16px" }}>
-            <p style={{ color: "#757575", fontSize: "14px" }}>
-              Tasks panel - Import TasksPanel component to enable
-            </p>
-          </div>
-        );
+        return <TasksPanel onClose={onClose} />;
       case "minimap":
-        // MinimapPanel component would be rendered here
-        return (
-          <div style={{ padding: "16px" }}>
-            <p style={{ color: "#757575", fontSize: "14px" }}>
-              Minimap panel - Import MinimapPanel component to enable
-            </p>
-          </div>
-        );
+        return <MinimapPanel onClose={onClose} />;
       default:
         return null;
     }

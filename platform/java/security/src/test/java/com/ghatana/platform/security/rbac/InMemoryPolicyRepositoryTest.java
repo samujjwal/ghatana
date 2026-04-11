@@ -130,22 +130,23 @@ class InMemoryPolicyRepositoryTest {
     }
 
     @Test
-    @DisplayName("deleteById removes policy and returns true")
-    void deleteByIdRemovesPolicyAndReturnsTrue() {
+    @DisplayName("deleteById removes policy")
+    void deleteByIdRemovesPolicy() {
         Policy policy = repository.save(buildPolicy("admin", "users", "read"));
+        assertThat(repository.existsById(policy.getId())).isTrue();
 
-        boolean deleted = repository.deleteById(policy.getId());
+        repository.deleteById(policy.getId());
 
-        assertThat(deleted).isTrue();
         assertThat(repository.findById(policy.getId())).isEmpty();
+        assertThat(repository.existsById(policy.getId())).isFalse();
     }
 
     @Test
-    @DisplayName("deleteById returns false when policy not found")
-    void deleteByIdReturnsFalseWhenNotFound() {
-        boolean deleted = repository.deleteById("nonexistent-id");
-
-        assertThat(deleted).isFalse();
+    @DisplayName("deleteById does nothing when policy not found")
+    void deleteByIdDoesNothingWhenNotFound() {
+        assertThat(repository.existsById("nonexistent-id")).isFalse();
+        repository.deleteById("nonexistent-id");
+        assertThat(repository.existsById("nonexistent-id")).isFalse();
     }
 
     @Test

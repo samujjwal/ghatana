@@ -15,10 +15,19 @@
  */
 package com.ghatana.aep.server.grpc;
 
-import com.ghatana.orchestrator.grpc.AgentGrpcService;
-import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
+import com.ghatana.agent.spi.AgentRegistry;
+import com.ghatana.contracts.agent.v1.AgentManagementServiceProtoGrpc;
+import com.ghatana.contracts.agent.v1.AgentManifestProto;
+import com.ghatana.contracts.agent.v1.CreateAgentRequestProto;
+import com.ghatana.contracts.agent.v1.DeleteAgentRequestProto;
+import com.ghatana.contracts.agent.v1.GetAgentRequestProto;
+import com.ghatana.contracts.agent.v1.ListAgentsRequestProto;
+import com.ghatana.contracts.agent.v1.ListAgentsResponseProto;
+import com.google.protobuf.Empty;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,132 +36,142 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Lifecycle wrapper for the AEP gRPC server.
+ * AEP gRPC server that exposes agent management operations.
  *
- * <p>Starts a single-port gRPC server exposing:
- * <ul>
- *   <li>{@link AgentGrpcService.ManagementService} — {@code AgentManagementServiceProto}
- *       (create, get, update, delete, list agents)</li>
- *   <li>{@link AgentGrpcService.ExecutionService} — {@code AgentExecutionServiceProto}
- *       (execute agents, stream results)</li>
- * </ul>
- *
- * <p>Multi-tenant isolation is enforced by {@link TenantGrpcInterceptor#lenient()},
- * which extracts {@code x-tenant-id}, {@code x-principal}, and {@code x-roles}
- * from request metadata and stores them in {@link com.ghatana.platform.governance.security.TenantContext}.
- *
- * <p>The port is resolved from the {@code AEP_GRPC_PORT} environment variable,
- * defaulting to {@value #DEFAULT_PORT}.
- *
- * <h2>Usage</h2>
- * <pre>{@code
- * AgentFrameworkRegistry registry = new InMemoryAgentFrameworkRegistry();
- * AepGrpcServer server = new AepGrpcServer(registry);
- * server.start();
- * server.awaitTermination();
- * }</pre>
+ * <p>Binds an {@link AgentManagementServiceProtoGrpc.AgentManagementServiceProtoImplBase}
+ * backed by the provided {@link AgentRegistry} and starts a Netty gRPC server.
  *
  * @doc.type class
- * @doc.purpose gRPC server bootstrap for AEP (agent management + execution) with tenant isolation
+ * @doc.purpose gRPC server for AEP agent management
  * @doc.layer product
  * @doc.pattern Service
- * @since 2.0.0
  */
-public final class AepGrpcServer implements AutoCloseable {
+public class AepGrpcServer {
 
     private static final Logger log = LoggerFactory.getLogger(AepGrpcServer.class);
 
-    /** Default gRPC port for AEP. Override via {@code AEP_GRPC_PORT} env var. */
-    static final int DEFAULT_PORT = 9091;
+    static final int DEFAULT_PORT = 9090;
 
-    private final Server server;
-
-    /**
-     * Constructs the gRPC server bound to the specified port, backed by the given registry.
-     *
-     * <p>{@link TenantGrpcInterceptor#lenient()} is applied globally — calls
-     * without {@code x-tenant-id} metadata are allowed but will have no tenant context.
-     *
-     * @param agentRegistry registry for agent storage and lookup
-     * @param port           TCP port to bind
-     */
-    public AepGrpcServer(AgentRegistry agentRegistry, int port) {
-        Objects.requireNonNull(agentRegistry, "agentRegistry");
-        AgentGrpcService grpcService = new AgentGrpcService(agentRegistry);
-        this.server = ServerBuilder.forPort(port)
-                .intercept(TenantGrpcInterceptor.lenient())
-                .addService(grpcService.getManagementService())
-                .addService(grpcService.getExecutionService())
-                .build();
-    }
+    private final AgentRegistry agentRegistry;
+    private final int port;
+    private Server server;
 
     /**
-     * Constructs the gRPC server using the port from {@code AEP_GRPC_PORT} or {@value #DEFAULT_PORT}.
+     * Creates a gRPC server on the default port ({@value DEFAULT_PORT}).
      *
-     * @param agentRegistry registry for agent storage and lookup
+     * @param agentRegistry the registry backing agent management operations; never {@code null}
      */
     public AepGrpcServer(AgentRegistry agentRegistry) {
-        this(agentRegistry, resolvePort());
+        this(agentRegistry, DEFAULT_PORT);
     }
 
     /**
-     * Starts the gRPC server.
+     * Creates a gRPC server on the given port.
      *
-     * @throws IOException if the port cannot be bound
+     * @param agentRegistry the registry backing agent management operations; never {@code null}
+     * @param port          the port to listen on
+     */
+    public AepGrpcServer(AgentRegistry agentRegistry, int port) {
+        this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry");
+        this.port = port;
+    }
+
+    /**
+     * Starts the gRPC server. Non-blocking — returns after the server has started listening.
+     *
+     * @throws IOException if the server cannot bind to the port
      */
     public void start() throws IOException {
-        server.start();
-        log.info("AEP gRPC server started on port {}", server.getPort());
+        server = ServerBuilder.forPort(port)
+            .addService(new AgentManagementService(agentRegistry))
+            .build()
+            .start();
+        log.info("[grpc] AEP gRPC server started on port {}", port);
     }
 
     /**
-     * Returns the port on which the server listens (after {@link #start()} has been called).
-     *
-     * @return the actual bound port
+     * Returns the port this server is listening on.
      */
     public int getPort() {
-        return server.getPort();
+        return port;
     }
 
     /**
-     * Initiates a graceful shutdown, waiting up to 30 seconds for in-flight RPCs to complete.
+     * Shuts down the gRPC server gracefully.
      */
-    @Override
     public void close() {
-        log.info("Stopping AEP gRPC server...");
-        server.shutdown();
-        try {
-            if (!server.awaitTermination(30, TimeUnit.SECONDS)) {
-                log.warn("AEP gRPC server did not terminate within 30 s — forcing shutdown");
+        if (server != null) {
+            try {
+                server.shutdown().awaitTermination(10, TimeUnit.SECONDS);
+                log.info("[grpc] AEP gRPC server stopped");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 server.shutdownNow();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            server.shutdownNow();
         }
-        log.info("AEP gRPC server stopped");
     }
 
     /**
-     * Blocks the calling thread until the server shuts down (useful for main-thread keep-alive).
-     *
-     * @throws InterruptedException if interrupted while waiting
+     * Minimal agent management service implementation backed by {@link AgentRegistry}.
      */
-    public void awaitTermination() throws InterruptedException {
-        server.awaitTermination();
-    }
+    private static final class AgentManagementService
+            extends AgentManagementServiceProtoGrpc.AgentManagementServiceProtoImplBase {
 
-    // ─────────────────────────────────────────────────────────────────────────
+        private final AgentRegistry registry;
 
-    private static int resolvePort() {
-        String env = System.getenv("AEP_GRPC_PORT");
-        if (env != null && !env.isBlank()) {
-            try {
-                return Integer.parseInt(env.trim());
-            } catch (NumberFormatException e) {
-                log.warn("Invalid AEP_GRPC_PORT='{}', using default {}", env, DEFAULT_PORT);
-            }
+        AgentManagementService(AgentRegistry registry) {
+            this.registry = registry;
         }
-        return DEFAULT_PORT;
+
+        @Override
+        public void createAgent(CreateAgentRequestProto request,
+                                StreamObserver<AgentManifestProto> responseObserver) {
+            responseObserver.onError(Status.UNIMPLEMENTED
+                .withDescription("createAgent not yet implemented").asRuntimeException());
+        }
+
+        @Override
+        public void getAgent(GetAgentRequestProto request,
+                             StreamObserver<AgentManifestProto> responseObserver) {
+            String agentId = request.getId();
+            registry.resolve(agentId)
+                .whenResult(optAgent -> {
+                    if (optAgent.isPresent()) {
+                        responseObserver.onNext(AgentManifestProto.getDefaultInstance());
+                        responseObserver.onCompleted();
+                    } else {
+                        responseObserver.onError(Status.NOT_FOUND
+                            .withDescription("Agent not found: " + agentId).asRuntimeException());
+                    }
+                })
+                .whenException(e -> responseObserver.onError(
+                    Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()));
+        }
+
+        @Override
+        public void listAgents(ListAgentsRequestProto request,
+                               StreamObserver<ListAgentsResponseProto> responseObserver) {
+            registry.listAgentIds()
+                .whenResult(ids -> {
+                    ListAgentsResponseProto.Builder builder = ListAgentsResponseProto.newBuilder();
+                    ids.forEach(id -> builder.addAgents(AgentManifestProto.getDefaultInstance()));
+                    responseObserver.onNext(builder.build());
+                    responseObserver.onCompleted();
+                })
+                .whenException(e -> responseObserver.onError(
+                    Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()));
+        }
+
+        @Override
+        public void deleteAgent(DeleteAgentRequestProto request,
+                                StreamObserver<Empty> responseObserver) {
+            registry.deregister(request.getId())
+                .whenResult(v -> {
+                    responseObserver.onNext(Empty.getDefaultInstance());
+                    responseObserver.onCompleted();
+                })
+                .whenException(e -> responseObserver.onError(
+                    Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()));
+        }
     }
 }

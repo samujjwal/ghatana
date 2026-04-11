@@ -89,7 +89,7 @@ public class RedisPubSubManager {
     private final AtomicLong errorCount = new AtomicLong(0);
 
     private ExecutorService subscriberExecutor;
-    private JedisPubSubHandler pubSubHandler;
+    private JedisPubSubListener pubSubListener;
 
     /**
      * Creates Redis pub/sub manager
@@ -137,14 +137,14 @@ public class RedisPubSubManager {
                     return t;
                 });
 
-                pubSubHandler = new JedisPubSubHandler();
+                pubSubListener = new JedisPubSubListener();
 
                 // Start subscriber in background thread
                 subscriberExecutor.submit(() -> {
                     while (isRunning.get()) {
                         try (Jedis jedis = jedisPool.getResource()) {
                             logger.info("[RedisPubSub] Subscribing to channel: {}", channelName);
-                            jedis.subscribe(pubSubHandler, channelName);
+                            jedis.subscribe(pubSubListener, channelName);
                         } catch (Exception e) {
                             if (isRunning.get()) {
                                 logger.error("[RedisPubSub] Subscriber error, reconnecting...", e);
@@ -182,9 +182,9 @@ public class RedisPubSubManager {
             if (isRunning.compareAndSet(true, false)) {
                 logger.info("[RedisPubSub] Stopping subscriber for channel: {}", channelName);
 
-                if (pubSubHandler != null) {
+                if (pubSubListener != null) {
                     try {
-                        pubSubHandler.unsubscribe();
+                        pubSubListener.unsubscribe();
                     } catch (RuntimeException ex) {
                         // Idempotent stop: unsubscribe may fail if the pubsub connection is already closed.
                         logger.debug("[RedisPubSub] Ignoring unsubscribe error during stop: {}", ex.getMessage());
@@ -275,10 +275,10 @@ public class RedisPubSubManager {
     }
 
     // ========================================================================
-    // Internal JedisPubSub Handler
+    // Internal JedisPubSub Listener
     // ========================================================================
 
-    private class JedisPubSubHandler extends JedisPubSub {
+    private class JedisPubSubListener extends JedisPubSub {
         @Override
         public void onMessage(String channel, String message) {
             try {

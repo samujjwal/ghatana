@@ -52,6 +52,9 @@ public final class AepAuthFilter implements AsyncServlet {
     private static final String CORRELATION_ID_MDC_KEY = "correlationId";
     public static final String JWT_PAYLOAD_ATTACHMENT = "aep.jwt.payload";
 
+    // Reusable ObjectMapper for JWT payload parsing (thread-safe)
+    private static final com.fasterxml.jackson.databind.ObjectMapper OBJECT_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
+
     // Public endpoints that bypass authentication
     private static final Set<String> PUBLIC_PATHS = Set.of(
         "/health",
@@ -172,8 +175,7 @@ public final class AepAuthFilter implements AsyncServlet {
         String payloadJson = new String(Base64.getUrlDecoder().decode(payloadB64), StandardCharsets.UTF_8);
         Map<String, Object> claims;
         try {
-            claims = new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(payloadJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            claims = OBJECT_MAPPER.readValue(payloadJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
             throw new JwtValidationException("Invalid payload encoding");
         }

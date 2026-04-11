@@ -7,9 +7,9 @@ package com.ghatana.aep.runtime;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
+import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.aep.catalog.AepCentralCatalogService;
 import com.ghatana.aep.registry.AgentRegistryContracts;
-import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,11 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link AgentMaterializer}. Maintains in-process live agent instances.
  *
  * <h2>Persistence Integration (v2.5+)</h2>
- * <p>Optional integration with {@link DataCloudAgentRegistry} for durable agent metadata
+ * <p>Optional integration with {@link AgentRegistry} for durable agent metadata
  * and audit trail. When present, this service:
  * <ul>
- *   <li>Persists agent definitions to DataCloud on registration</li>
- *   <li>Merges DataCloud-persisted agents in discovery queries</li>
+ *   <li>Persists agent definitions to registry on registration</li>
+ *   <li>Merges registry-persisted agents in discovery queries</li>
  *   <li>Records lifecycle events (registered, deregistered) to audit trail</li>
  *   <li>Maintains in-memory write-through cache for zero-latency access</li>
  * </ul>
@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.purpose Unified centralized AEP registry and runtime operations
  * @doc.layer product
  * @doc.pattern Service, Registry, Facade
- * @see DataCloudAgentRegistry for persistence backend
+ * @see AgentRegistry for persistence backend
  * @see AepCentralCatalogService for catalog loading
  * @see AgentMaterializer for agent instantiation
  */
@@ -60,26 +60,26 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
     private final AepCentralCatalogService catalogService;
     private final AgentMaterializer materializer;
     private final Map<String, TypedAgent<?, ?>> liveAgents = new ConcurrentHashMap<>();
-    private final DataCloudAgentRegistry persistenceRegistry;  // Optional; nullable
+    private final AgentRegistry persistenceRegistry;  // Optional; nullable
 
     /**
-     * Creates the central registry service with optional DataCloud persistence.
+     * Creates the central registry service with optional persistence.
      *
      * @param catalogService        loaded catalog service (multi-root)
      * @param materializer          agent materializer (YAML → provider → agent)
-     * @param persistenceRegistry   optional DataCloud registry for durable metadata (v2.5+); nullable
+     * @param persistenceRegistry   optional registry for durable metadata (v2.5+); nullable
      */
     public AepCentralRegistryService(
             @NotNull AepCentralCatalogService catalogService,
             @NotNull AgentMaterializer materializer,
-            @Nullable DataCloudAgentRegistry persistenceRegistry) {
+            @Nullable AgentRegistry persistenceRegistry) {
         this.catalogService = Objects.requireNonNull(catalogService, "catalogService");
         this.materializer = Objects.requireNonNull(materializer, "materializer");
         this.persistenceRegistry = persistenceRegistry;  // May be null; optional feature
     }
 
     /**
-     * Backward-compatible constructor (no DataCloud persistence).
+     * Backward-compatible constructor (no persistence).
      *
      * @param catalogService loaded catalog service (multi-root)
      * @param materializer   agent materializer (YAML → provider → agent)
@@ -145,15 +145,15 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
         liveAgents.put(agentId, agent);
         log.info("Materialized and registered live agent '{}'", agentId);
 
-        // Optionally persist to DataCloud (v2.5+)
+        // Optionally persist to registry (v2.5+)
         if (persistenceRegistry != null) {
             Promise<TypedAgent<?, ?>> persistencePromise = persistenceRegistry.register(agent, config)
                     .map(v -> {
-                        log.debug("Persisted agent '{}' to DataCloud registry", agentId);
+                        log.debug("Persisted agent '{}' to registry", agentId);
                         return agent;
                     });
             persistencePromise.whenException(e -> log.warn(
-                    "Failed to persist agent '{}' to DataCloud (continuing anyway): {}",
+                    "Failed to persist agent '{}' to registry (continuing anyway): {}",
                     agentId, e.getMessage()));
             return persistencePromise;
         }
@@ -170,13 +170,13 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
 
     /**
      * Shuts down a live agent and removes it from the registry.
-     * Also deregisters from DataCloud if persistence is enabled.
+     * Also deregisters from persistence registry if persistence is enabled.
      *
      * <p><strong>Behavior:</strong>
      * <ol>
      *   <li>Removes agent from in-memory live registry</li>
      *   <li>Calls agent shutdown hook to clean up resources</li>
-     *   <li>If {@link #persistenceRegistry} is present, also deregisters from DataCloud</li>
+     *   <li>If {@link #persistenceRegistry} is present, also deregisters from registry</li>
      *   <li>Fires agent.deregistered lifecycle event to audit trail</li>
      * </ol>
      *
@@ -189,7 +189,7 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
             return Promise.of(false);
         }
 
-        // Optionally deregister from DataCloud (v2.5+)
+        // Optionally deregister from registry (v2.5+)
         Promise<Void> deregister = (persistenceRegistry != null)
                 ? persistenceRegistry.deregister(agentId)
                 : Promise.complete();

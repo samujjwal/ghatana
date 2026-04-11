@@ -2,10 +2,10 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector;
+package com.ghatana.platform.messaging;
 
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.util.RetryExecutor;
+import com.ghatana.platform.messaging.config.RetryConfig;
+import com.ghatana.platform.messaging.util.RetryExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

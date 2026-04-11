@@ -1,12 +1,12 @@
 package com.ghatana.yappc.services.security;
 
-import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
+import com.ghatana.platform.http.security.filter.ApiKeyAuthFilter;
+import com.ghatana.platform.http.security.filter.RBACFilter;
+import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
-import com.ghatana.platform.governance.security.RateLimitFilter;
 import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyService;
-import com.ghatana.platform.security.rbac.RBACFilter;
 import io.activej.http.AsyncServlet;
 import java.util.Arrays;
 import java.util.LinkedHashMap;

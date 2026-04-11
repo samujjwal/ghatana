@@ -50,6 +50,18 @@
       "types": "./dist/chrome.d.ts",
       "import": "./dist/chrome.js"
     },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "import": "./dist/ai/index.js"
+    },
+    "./export": {
+      "types": "./dist/export/index.d.ts",
+      "import": "./dist/export/index.js"
+    },
+    "./collaboration": {
+      "types": "./dist/collaboration/index.d.ts",
+      "import": "./dist/collaboration/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

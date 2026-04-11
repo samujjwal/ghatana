@@ -32,6 +32,7 @@ import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
 import com.ghatana.aep.server.http.controllers.PipelineController;
 import com.ghatana.aep.server.http.controllers.SseController;
+import com.ghatana.agent.learning.evaluation.CompositeEvaluationGate;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.orchestrator.deployment.http.DeploymentHttpAdapter;
@@ -88,6 +89,7 @@ public class AepHttpServer {
     private final PipelineValidator pipelineValidator;
     private final CapabilitiesService capabilitiesService;
     /** Optional: wired in when AepLearningModule is active. Null-safe throughout. */
+    @Nullable
     private final HumanReviewQueue humanReviewQueue;
     /**
      * Optional Data-Cloud client for agent registry queries (AEP-P5).
@@ -153,7 +155,7 @@ public class AepHttpServer {
     private final Map<String, List<Object>> sseSubscribers = new java.util.HashMap<>();
 
     /**
-     * Creates a new AEP HTTP server (without learning-loop endpoints or Data-Cloud registry).
+     * Creates a new AEP HTTP server.
      *
      * @param engine the AEP engine instance
      * @param port the port to listen on
@@ -163,29 +165,57 @@ public class AepHttpServer {
     }
 
     /**
-     * Creates a new AEP HTTP server with optional learning-loop (HITL) endpoints.
-     *
-     * @param engine the AEP engine instance
-     * @param port the port to listen on
-     * @param humanReviewQueue HITL queue; may be {@code null} to disable HITL endpoints
-     */
-    public AepHttpServer(AepEngine engine, int port, HumanReviewQueue humanReviewQueue) {
-        this(engine, port, humanReviewQueue, null, MetricsCollectorFactory.createNoop());
-    }
-
-    /**
-     * Creates a new AEP HTTP server with optional learning-loop and Data-Cloud agent registry.
+     * Creates a new AEP HTTP server with Data-Cloud agent registry.
      *
      * @param engine           the AEP engine instance
      * @param port             the port to listen on
-     * @param humanReviewQueue HITL queue; may be {@code null} to disable HITL endpoints
      * @param agentDataCloud   Data-Cloud client for agent registry queries (AEP-P5);
      *                         may be {@code null} if Data-Cloud is not configured
      */
     public AepHttpServer(AepEngine engine, int port,
+                         @Nullable DataCloudClient agentDataCloud) {
+        this(engine, port, agentDataCloud, null, MetricsCollectorFactory.createNoop());
+    }
+
+    /**
+     * Creates a new AEP HTTP server with a HITL review queue (no DataCloud).
+     *
+     * @param engine           the AEP engine instance
+     * @param port             the port to listen on
+     * @param humanReviewQueue human review queue for HITL workflows; may be {@code null}
+     */
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable HumanReviewQueue humanReviewQueue) {
+        this(engine, port, null, humanReviewQueue, MetricsCollectorFactory.createNoop());
+    }
+
+    /**
+     * Creates a new AEP HTTP server with a HITL review queue and a Data-Cloud client.
+     *
+     * @param engine           the AEP engine instance
+     * @param port             the port to listen on
+     * @param humanReviewQueue human review queue for HITL workflows; may be {@code null}
+     * @param agentDataCloud   Data-Cloud client for agent registry queries; may be {@code null}
+     */
+    public AepHttpServer(AepEngine engine, int port,
                          @Nullable HumanReviewQueue humanReviewQueue,
                          @Nullable DataCloudClient agentDataCloud) {
-        this(engine, port, humanReviewQueue, agentDataCloud, MetricsCollectorFactory.createNoop());
+        this(engine, port, agentDataCloud, humanReviewQueue, MetricsCollectorFactory.createNoop());
+    }
+
+    /**
+     * Creates a new AEP HTTP server with observability but no HITL queue.
+     *
+     * @param engine           the AEP engine instance
+     * @param port             the port to listen on
+     * @param agentDataCloud   Data-Cloud client for agent registry queries (AEP-P5);
+     *                         may be {@code null} if Data-Cloud is not configured
+     * @param metricsCollector metrics collector for observability; never {@code null}
+     */
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable DataCloudClient agentDataCloud,
+                         MetricsCollector metricsCollector) {
+        this(engine, port, agentDataCloud, null, metricsCollector);
     }
 
     /**
@@ -193,19 +223,19 @@ public class AepHttpServer {
      *
      * @param engine           the AEP engine instance
      * @param port             the port to listen on
-     * @param humanReviewQueue HITL queue; may be {@code null} to disable HITL endpoints
      * @param agentDataCloud   Data-Cloud client for agent registry queries (AEP-P5);
      *                         may be {@code null} if Data-Cloud is not configured
+     * @param humanReviewQueue human review queue for HITL workflows; may be {@code null}
      * @param metricsCollector metrics collector for observability; never {@code null}
      */
     public AepHttpServer(AepEngine engine, int port,
-                         @Nullable HumanReviewQueue humanReviewQueue,
                          @Nullable DataCloudClient agentDataCloud,
+                         @Nullable HumanReviewQueue humanReviewQueue,
                          MetricsCollector metricsCollector) {
         this.engine = engine;
         this.port = port;
-        this.humanReviewQueue = humanReviewQueue;
         this.agentDataCloud = agentDataCloud;
+        this.humanReviewQueue = humanReviewQueue;
         this.complianceService = agentDataCloud != null ? new AepComplianceService(agentDataCloud) : null;
         this.integrationMeterRegistry = new SimpleMeterRegistry();
         this.patternStore = agentDataCloud != null ? new DataCloudPatternStore(agentDataCloud) : null;
@@ -263,14 +293,11 @@ public class AepHttpServer {
         this.deploymentController = new DeploymentController(this.deploymentAdapter);
         this.hitlController = new HitlController(this.humanReviewQueue,
             (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data));
+        CompositeEvaluationGate evaluationGate = CompositeEvaluationGate.defaultGates();
         EpisodeLearningPipeline learningPipeline = agentDataCloud != null
-            ? new EpisodeLearningPipeline(agentDataCloud,
-                  com.ghatana.agent.learning.evaluation.CompositeEvaluationGate.defaultGates(),
-                  this.humanReviewQueue != null ? this.humanReviewQueue
-                      : new com.ghatana.agent.learning.review.InMemoryHumanReviewQueue())
+            ? new EpisodeLearningPipeline(agentDataCloud, evaluationGate, humanReviewQueue)
             : null;
-        this.learningController = new LearningController(this.agentDataCloud,
-            this.humanReviewQueue, learningPipeline);
+        this.learningController = new LearningController(this.agentDataCloud, this.humanReviewQueue, learningPipeline);
         this.complianceController = new ComplianceController(this.complianceService, this.soc2Framework);
         this.governanceController = new GovernanceController(
             new InMemoryKillSwitchService(),
@@ -389,10 +416,10 @@ public class AepHttpServer {
             .with(HttpMethod.GET,  "/api/v1/compliance/soc2/report", complianceController::handleSoc2Report)
 
             // Governance endpoints (delegated to GovernanceController)
-            .with(HttpMethod.GET,  "/governance/kill-switch", governanceController::handleKillSwitchStatus)
+            .with(HttpMethod.GET, "/governance/kill-switch", governanceController::handleKillSwitchStatus)
             .with(HttpMethod.POST, "/governance/kill-switch/activate", governanceController::handleActivateKillSwitch)
             .with(HttpMethod.POST, "/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
-            .with(HttpMethod.GET,  "/governance/degradation", governanceController::handleDegradationStatus)
+            .with(HttpMethod.GET, "/governance/degradation", governanceController::handleDegradationStatus)
             .with(HttpMethod.POST, "/governance/degradation", governanceController::handleSetDegradation)
             .with(HttpMethod.POST, "/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
             .with(HttpMethod.GET,  "/governance/security/egress", governanceController::handleEgressStats)
@@ -446,7 +473,6 @@ public class AepHttpServer {
      * Stops the HTTP server.
      */
     public void stop() {
-        hitlController.shutdown();
         if (eventloop != null) {
             // server.close() must be called from the reactor thread;
             // schedule it there and then break the eventloop.

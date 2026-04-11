@@ -32,7 +32,8 @@ dependencies {
     // Shared AEP contracts — EventCloud, operator catalog, pipeline contracts
     api(project(":products:aep:aep-operator-contracts"))
     implementation(project(":products:aep:aep-engine"))
-    // aep-agent merged into aep-registry on 2026-03-22
+    // aep-agent-runtime contains agent dispatch classes (AgentDispatcher, LlmProvider, etc.)
+    implementation(project(":products:aep:aep-agent-runtime"))
     api(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     api(project(":products:aep:aep-registry"))
 

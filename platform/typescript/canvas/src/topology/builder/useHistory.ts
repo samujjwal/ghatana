@@ -39,7 +39,7 @@ export function useHistory(options: UseHistoryOptions = {}): UseHistoryReturn {
     future: [],
   });
 
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSnapshot = useRef<DiagramSnapshot | null>(null);
 
   // Flush pending snapshot on unmount

@@ -2,9 +2,9 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.kafka;
+package com.ghatana.platform.messaging.strategy.kafka;
 
-import com.ghatana.aep.connector.config.ConnectorConfig;
+import com.ghatana.platform.messaging.config.ConnectorConfig;
 
 import java.util.Objects;
 

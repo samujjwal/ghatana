@@ -10,10 +10,7 @@ val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 
 dependencies {
-    // Platform audio-video library — TtsEngine, SttEngine, VisionEngine, media types
-    implementation(project(":platform:java:audio-video"))
-
-    // Audio-Video common (security, tracing, rate limiting interceptors)
+    // Audio-Video common library — TtsEngine, SttEngine, VisionEngine, media types, security interceptors
     implementation(project(":products:audio-video:libs:common"))
 
     // gRPC
@@ -75,4 +72,12 @@ tasks.register<JavaExec>("runTtsService") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("com.ghatana.tts.core.grpc.TtsGrpcServer")
     environment("TTS_GRPC_PORT", ttsPort)
+}
+
+// Fix duplicate jar entries in distribution
+tasks.named<Tar>("distTar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+tasks.named<Zip>("distZip") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

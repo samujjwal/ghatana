@@ -73,29 +73,40 @@ public class InMemoryApiKeyRepository implements ApiKeyRepository {
     }
 
     @Override
-    public boolean deleteById(String id) {
+    public void deleteById(String id) {
         ApiKey apiKey = apiKeysById.remove(id);
-
         if (apiKey != null && apiKey.getKey() != null) {
             apiKeysByKey.remove(apiKey.getKey());
-            log.debug("Deleted API key: {}", id);
-            return true;
+            log.debug("Deleted API key with id: {}", id);
         }
-
-        return false;
     }
 
     @Override
     public boolean deleteByKey(String key) {
         ApiKey apiKey = apiKeysByKey.remove(key);
-
         if (apiKey != null && apiKey.getId() != null) {
             apiKeysById.remove(apiKey.getId());
             log.debug("Deleted API key with value: {}", key);
             return true;
         }
-
         return false;
+    }
+
+    @Override
+    public void delete(ApiKey entity) {
+        if (entity != null && entity.getId() != null) {
+            deleteById(entity.getId());
+        }
+    }
+
+    @Override
+    public long count() {
+        return apiKeysById.size();
+    }
+
+    @Override
+    public boolean existsById(String id) {
+        return apiKeysById.containsKey(id);
     }
 
     /**

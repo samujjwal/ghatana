@@ -52,6 +52,7 @@ class GovernanceBoundaryArchTest {
             .should().onlyAccessClassesThat().resideInAnyPackage(
                 GOVERNANCE_PACKAGE,
                 "com.ghatana.platform.core..",
+                "com.ghatana.platform.http..",  // HTTP filters migrated from governance
                 "com.ghatana.platform.testing..",
                 "io.activej..",
                 "io.grpc..",
@@ -392,6 +393,7 @@ class GovernanceBoundaryArchTest {
             .should().onlyAccessClassesThat().resideInAnyPackage(
                 "com.ghatana.platform.core..",
                 "com.ghatana.platform.governance..",
+                "com.ghatana.platform.http..",  // HTTP filters migrated from governance
                 "com.ghatana.platform.policy..",
                 "com.ghatana.platform.data.governance..",
                 "com.ghatana.platform.testing..",

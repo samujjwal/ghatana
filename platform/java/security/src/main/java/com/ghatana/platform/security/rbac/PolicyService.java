@@ -133,9 +133,10 @@ public class PolicyService {
      * @throws ResourceNotFoundException If the policy is not found
      */
     public void deletePolicy(String id) {
-        if (!policyRepository.deleteById(id)) {
+        if (!policyRepository.existsById(id)) {
             throw ResourceNotFoundException.forResource("Policy", id);
         }
+        policyRepository.deleteById(id);
     }
 
     /**

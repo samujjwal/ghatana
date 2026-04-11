@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.config;
+package com.ghatana.platform.messaging.config;
 
 import java.time.Duration;
 import java.util.Objects;

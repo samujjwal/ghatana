@@ -41,7 +41,6 @@ dependencies {
     // Testing
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":products:aep:aep-agent-runtime"))  // For InMemoryAgentRegistry in tests
     // JMH Benchmarks
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)

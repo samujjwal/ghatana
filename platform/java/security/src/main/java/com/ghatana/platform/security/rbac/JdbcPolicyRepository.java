@@ -7,43 +7,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
-/**
- * JDBC-backed implementation of PolicyRepository for production use.
- *
- * <p><b>Purpose</b><br>
- * Provides persistent storage for RBAC policies using a relational database.
- * Replaces {@link InMemoryPolicyRepository} for production deployments.
- *
- * <p><b>Database Schema</b><br>
- * Requires the following tables:
- * <ul>
- *   <li>{@code policies} - Policy metadata (id, name, description, role, resource)</li>
- *   <li>{@code policy_permissions} - Policy permissions (policy_id, permission)</li>
- * </ul>
- *
- * <p><b>Usage</b><br>
- * <pre>{@code
- * DataSource dataSource = // obtain from connection pool
- * PolicyRepository repository = new JdbcPolicyRepository(dataSource);
- *
- * // Save a policy
- * Policy policy = new Policy("admin-all", "Admin policy", "admin", "*", Set.of("read", "write"));
- * repository.save(policy);
- *
- * // Find policies by role
- * List<Policy> adminPolicies = repository.findByRole("admin");
- * }</pre>
- *
- * <p><b>Thread Safety</b><br>
- * Thread-safe when backed by a properly configured connection pool.
- *
- * @see PolicyRepository
- * @see InMemoryPolicyRepository
- * @doc.type class
- * @doc.purpose Database-backed policy repository
- * @doc.layer core
- * @doc.pattern Repository
- */
 public class JdbcPolicyRepository implements PolicyRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcPolicyRepository.class);
@@ -102,12 +65,6 @@ public class JdbcPolicyRepository implements PolicyRepository {
 
     private final DataSource dataSource;
 
-    /**
-     * Creates a new JdbcPolicyRepository with the specified data source.
-     *
-     * @param dataSource the JDBC data source for database connections
-     * @throws NullPointerException if dataSource is null
-     */
     public JdbcPolicyRepository(DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
     }
@@ -189,7 +146,6 @@ public class JdbcPolicyRepository implements PolicyRepository {
             conn.setAutoCommit(false);
 
             try {
-                // Ensure policy has an ID
                 String policyId = policy.getId();
                 if (policyId == null || policyId.isBlank()) {
                     policyId = UUID.randomUUID().toString();
@@ -206,7 +162,6 @@ public class JdbcPolicyRepository implements PolicyRepository {
 
                 Timestamp now = new Timestamp(System.currentTimeMillis());
 
-                // Insert/update policy
                 try (PreparedStatement stmt = conn.prepareStatement(INSERT_POLICY)) {
                     stmt.setString(1, policyId);
                     stmt.setString(2, policy.getName());
@@ -218,13 +173,11 @@ public class JdbcPolicyRepository implements PolicyRepository {
                     stmt.executeUpdate();
                 }
 
-                // Delete existing permissions
                 try (PreparedStatement stmt = conn.prepareStatement(DELETE_PERMISSIONS)) {
                     stmt.setString(1, policyId);
                     stmt.executeUpdate();
                 }
 
-                // Insert new permissions
                 if (policy.getPermissions() != null && !policy.getPermissions().isEmpty()) {
                     try (PreparedStatement stmt = conn.prepareStatement(INSERT_PERMISSION)) {
                         for (String permission : policy.getPermissions()) {
@@ -252,32 +205,26 @@ public class JdbcPolicyRepository implements PolicyRepository {
     }
 
     @Override
-    public boolean deleteById(String id) {
+    public void deleteById(String id) {
         Objects.requireNonNull(id, "id must not be null");
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
             try {
-                // Delete permissions first (foreign key constraint)
                 try (PreparedStatement stmt = conn.prepareStatement(DELETE_PERMISSIONS)) {
                     stmt.setString(1, id);
                     stmt.executeUpdate();
                 }
 
-                // Delete policy
                 try (PreparedStatement stmt = conn.prepareStatement(DELETE_BY_ID)) {
                     stmt.setString(1, id);
                     int deleted = stmt.executeUpdate();
                     conn.commit();
-
                     if (deleted > 0) {
                         LOGGER.debug("Deleted policy: {}", id);
-                        return true;
                     }
-                    return false;
                 }
-
             } catch (SQLException e) {
                 conn.rollback();
                 throw e;
@@ -287,6 +234,33 @@ public class JdbcPolicyRepository implements PolicyRepository {
             LOGGER.error("Failed to delete policy: {}", id, e);
             throw new RuntimeException("Failed to delete policy", e);
         }
+    }
+
+    @Override
+    public void delete(Policy entity) {
+        if (entity != null && entity.getId() != null) {
+            deleteById(entity.getId());
+        }
+    }
+
+    @Override
+    public long count() {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM policies");
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            LOGGER.error("Failed to count policies", e);
+            throw new RuntimeException("Failed to count policies", e);
+        }
+    }
+
+    @Override
+    public boolean existsById(String id) {
+        return findById(id).isPresent();
     }
 
     private List<Policy> executeQueryAndMapPolicies(Connection conn, PreparedStatement stmt)
@@ -311,7 +285,7 @@ public class JdbcPolicyRepository implements PolicyRepository {
                 .description(rs.getString("description"))
                 .role(rs.getString("role"))
                 .resource(rs.getString("resource"))
-                .permissions(new HashSet<>()) // Permissions loaded separately
+                .permissions(new HashSet<>())
                 .build();
     }
 

@@ -2,9 +2,9 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.s3;
+package com.ghatana.platform.messaging.strategy.s3;
 
-import com.ghatana.aep.connector.config.ConnectorConfig;
+import com.ghatana.platform.messaging.config.ConnectorConfig;
 
 import java.util.Objects;
 

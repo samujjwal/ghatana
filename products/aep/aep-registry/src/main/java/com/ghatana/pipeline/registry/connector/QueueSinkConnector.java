@@ -1,6 +1,6 @@
 package com.ghatana.pipeline.registry.connector;
 
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec.ConnectorType;

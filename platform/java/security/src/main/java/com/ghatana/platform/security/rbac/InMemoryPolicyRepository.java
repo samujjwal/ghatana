@@ -63,15 +63,28 @@ public class InMemoryPolicyRepository implements PolicyRepository {
     }
 
     @Override
-    public boolean deleteById(String id) {
+    public void deleteById(String id) {
         Policy policy = policiesById.remove(id);
-
         if (policy != null) {
             log.debug("Deleted policy: {}", id);
-            return true;
         }
+    }
 
-        return false;
+    @Override
+    public void delete(Policy entity) {
+        if (entity != null && entity.getId() != null) {
+            deleteById(entity.getId());
+        }
+    }
+
+    @Override
+    public long count() {
+        return policiesById.size();
+    }
+
+    @Override
+    public boolean existsById(String id) {
+        return policiesById.containsKey(id);
     }
 
     /**

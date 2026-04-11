@@ -1,11 +1,11 @@
 package com.ghatana.yappc.services.lifecycle.auth;
 
-import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
+import com.ghatana.platform.http.security.filter.ApiKeyAuthFilter;
+import com.ghatana.platform.http.security.filter.RBACFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyService;
-import com.ghatana.platform.security.rbac.RBACFilter;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;

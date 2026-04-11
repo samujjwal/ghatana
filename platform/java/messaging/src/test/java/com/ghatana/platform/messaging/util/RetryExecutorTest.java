@@ -1,6 +1,6 @@
-package com.ghatana.aep.connector.util;
+package com.ghatana.platform.messaging.util;
 
-import com.ghatana.aep.connector.config.RetryConfig;
+import com.ghatana.platform.messaging.config.RetryConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;

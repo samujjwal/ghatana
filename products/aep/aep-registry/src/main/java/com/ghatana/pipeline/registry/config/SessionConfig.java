@@ -3,7 +3,8 @@ package com.ghatana.pipeline.registry.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.observability.MetricsRegistry;
 import com.ghatana.platform.security.session.RedisSessionManager;
-import com.ghatana.platform.security.session.SessionFilter;
+// SessionFilter not yet implemented - commented out import
+// import com.ghatana.platform.security.session.SessionFilter;
 import com.ghatana.platform.security.session.SessionManager;
 import io.activej.config.Config;
 import io.activej.inject.annotation.Provides;
@@ -73,13 +74,14 @@ public class SessionConfig extends AbstractModule {
         return new RedisSessionManager(jedisPool, objectMapper, keyPrefix, defaultTtl, metricsRegistry);
     }
 
-    @Provides
-    SessionFilter sessionFilter(SessionManager sessionManager) {
-        return SessionFilter.builder()
-            .sessionManager(sessionManager)
-            .createIfMissing(true)
-            .requireSession(false) // Don't require session for all requests
-            .persistSession(true)
-            .build();
-    }
+    // SessionFilter not yet implemented - commented out provider
+    // @Provides
+    // SessionFilter sessionFilter(SessionManager sessionManager) {
+    //     return SessionFilter.builder()
+    //         .sessionManager(sessionManager)
+    //         .createIfMissing(true)
+    //         .requireSession(false) // Don't require session for all requests
+    //         .persistSession(true)
+    //         .build();
+    // }
 }

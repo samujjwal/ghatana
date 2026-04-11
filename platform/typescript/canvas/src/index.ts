@@ -118,6 +118,7 @@ export {
 // base.js exports CanvasElement class which conflicts with types/index.js and hybrid/types.ts
 // The CanvasElement from elements/base.js is the abstract base class for canvas elements
 export { CanvasElement as CanvasElementBase } from "./elements/base.js";
+export * from "./elements/ui-component.js";
 export * from "./elements/shape.js";
 export * from "./elements/text.js";
 export * from "./elements/brush.js";
@@ -130,7 +131,7 @@ export * from "./elements/frame.js";
 export * from "./elements/mindmap.js";
 export * from "./elements/highlighter.js";
 
-// NEW: Rich content elements (AFFiNE parity)
+// Rich content elements (AFFiNE parity)
 export * from "./elements/image.js";
 export * from "./elements/attachment.js";
 export * from "./elements/embed.js";
@@ -142,6 +143,24 @@ export * from "./elements/list.js";
 export * from "./elements/divider.js";
 export * from "./elements/latex.js";
 export * from "./elements/bookmark.js";
+
+// Multimedia elements
+export * from "./elements/video.js";
+export * from "./elements/audio.js";
+
+// Interactive / live content elements
+export * from "./elements/live-react.js";
+export * from "./elements/code-editor.js";
+
+// Data visualization elements
+export * from "./elements/data-chart.js";
+export * from "./elements/data-metric.js";
+
+// Drawing surface
+export * from "./elements/whiteboard.js";
+
+// Hierarchical navigation
+export * from "./elements/portal.js";
 
 // ==================================
 // UI BUILDER (High-fidelity UI design)
@@ -359,3 +378,74 @@ export { IntegratedCanvasChrome } from "./components/IntegratedCanvasChrome";
 // - AEP: @aep/canvas
 // - Data-Cloud: @datacloud/canvas  
 // - YAPPC: @ghatana/yappc-canvas
+
+// ==================================
+// AI / ML INTEGRATION
+export {
+  AICanvasProvider,
+  useCanvasAI,
+  useCanvasAISuggestions,
+  useCanvasAILoading,
+  type AICanvasProviderProps,
+  type CanvasAIContextValue,
+  type AISuggestionKind,
+  type AISuggestion,
+  type CanvasAIContext,
+  type AIGenerateElementResult,
+  type AILayoutResult,
+  type AISummarizeResult,
+  type AICodeResult,
+  type AIResult,
+  type CanvasAIAdapter,
+  type CanvasAICapabilities,
+  type CanvasAIState,
+} from "./ai/index.js";
+
+// ==================================
+// EXPORT SYSTEM
+export {
+  exportToPng,
+  exportToPdf,
+  dataUrlToBlob,
+  downloadExportResult,
+  type ExportFormat,
+  type ExportRegion,
+  type ExportOptions,
+  type ExportResult,
+} from "./export/index.js";
+
+// ==================================
+// DRILL-DOWN NAVIGATION
+export {
+  DrillDownManager,
+  type DrillDownEntry,
+  type DrillDownEntryType,
+  type DrillDownListener,
+} from "./core/drill-down-manager.js";
+
+// ==================================
+// COLLABORATION
+export {
+  CollaborationProvider,
+  useCollaboration,
+  useCollaborators,
+  useRemoteCollaborators,
+  noopCollaborationAdapter,
+  type CollaborationContextValue,
+  type CollaborationProviderProps,
+  type CollaboratorPresence,
+  type CollaborativeChangeType,
+  type CollaborativeChange,
+  type CollaborationSession,
+  type CanvasCollaborationAdapter,
+} from "./collaboration/index.js";
+
+// ==================================
+// REACT OVERLAYS (for live elements)
+export { LiveReactOverlay, type LiveReactOverlayProps } from "./react/LiveReactOverlay.js";
+export {
+  CodeEditorOverlay,
+  type CodeEditorOverlayProps,
+  type EditorFactory,
+  type EditorFactoryOptions,
+} from "./react/CodeEditorOverlay.js";

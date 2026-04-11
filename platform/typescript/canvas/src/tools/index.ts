@@ -3,6 +3,10 @@ import { CanvasElement } from "../elements/base.js";
 import { ShapeElement, ShapeType } from "../elements/shape.js";
 import { TextElement } from "../elements/text.js";
 import { BrushElement } from "../elements/brush.js";
+import { FrameElement } from "../elements/frame.js";
+import { NoteElement } from "../elements/note.js";
+import { ImageElement } from "../elements/image.js";
+import { HighlighterElement } from "../elements/highlighter.js";
 import { ConnectorTool } from "./connector-tool.js";
 import { BaseTool } from "./base-tool.js";
 import { nanoid } from "nanoid";
@@ -351,9 +355,6 @@ export class HighlighterTool extends BaseTool {
     this.points = [{ ...point, pressure: event.pressure }];
     this.isDrawing = true;
 
-    // Import dynamically to avoid circular deps
-    const { HighlighterElement } = require("../elements/highlighter.js");
-
     this.currentElement = new HighlighterElement({
       id: nanoid(),
       xywh: JSON.stringify([point.x, point.y, 1, 1]),
@@ -441,11 +442,17 @@ export class ToolManager {
       new HighlighterTool({ type: "highlighter", color: "#ffeb3b", strokeWidth: 20 }),
     );
 
-    // Register ConnectorTool
-    this.registerTool(
-      "connector",
-      new ConnectorTool({ type: "connector", color: "#1e40af", strokeWidth: 2 }),
-    );
+    this.registerTool("connector", new ConnectorTool({ type: "connector", color: "#1e40af", strokeWidth: 2 }));
+
+    // Extended tools
+    this.registerTool("pan", new PanTool({ type: "pan" }));
+    this.registerTool("eraser", new EraserTool({ type: "eraser" }));
+    this.registerTool("zoom", new ZoomTool({ type: "zoom" }));
+    this.registerTool("frame", new FrameTool({ type: "frame" }));
+    this.registerTool("lasso", new LassoTool({ type: "lasso" }));
+    this.registerTool("eyedropper", new EyedropperTool({ type: "eyedropper" }));
+    this.registerTool("image", new ImageTool({ type: "image" }));
+    this.registerTool("sticky-note", new StickyNoteTool({ type: "sticky-note" }));
 
     // Default to select tool for pointer interactions
     this.setActiveTool("select");
@@ -514,5 +521,287 @@ export class ToolManager {
 
   getCursor(): string {
     return this.activeTool?.getCursor() || "default";
+  }
+}
+
+// =============================================================================
+// PAN TOOL — scrolls the infinite canvas viewport
+// =============================================================================
+
+export class PanTool extends BaseTool {
+  private isPanning = false;
+  private lastPoint: Point | null = null;
+
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    this.isPanning = true;
+    this.lastPoint = this.getMousePosition(event, canvas);
+    canvas.style.cursor = "grabbing";
+  }
+
+  onPointerMove(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (!this.isPanning || !this.lastPoint) return;
+    const point = this.getMousePosition(event, canvas);
+    const delta = { x: point.x - this.lastPoint.x, y: point.y - this.lastPoint.y };
+    canvas.dispatchEvent(new CustomEvent("canvas-pan", { detail: delta }));
+    this.lastPoint = point;
+  }
+
+  onPointerUp(_event: PointerEvent, canvas: HTMLCanvasElement): void {
+    this.isPanning = false;
+    this.lastPoint = null;
+    canvas.style.cursor = "grab";
+    this.cleanup();
+  }
+
+  getCursor(): string {
+    return "grab";
+  }
+}
+
+// =============================================================================
+// ERASER TOOL — removes elements or whiteboard strokes under the pointer
+// =============================================================================
+
+export class EraserTool extends BaseTool {
+  private isErasing = false;
+
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    this.isErasing = true;
+    const point = this.getMousePosition(event, canvas);
+    canvas.dispatchEvent(new CustomEvent("canvas-erase", { detail: { point } }));
+  }
+
+  onPointerMove(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (!this.isErasing) return;
+    const point = this.getMousePosition(event, canvas);
+    canvas.dispatchEvent(new CustomEvent("canvas-erase", { detail: { point } }));
+  }
+
+  onPointerUp(_event: PointerEvent, _canvas: HTMLCanvasElement): void {
+    this.isErasing = false;
+    this.cleanup();
+  }
+
+  getCursor(): string {
+    return "cell";
+  }
+}
+
+// =============================================================================
+// ZOOM TOOL — clicks to zoom in, alt-click to zoom out
+// =============================================================================
+
+export class ZoomTool extends BaseTool {
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    const point = this.getMousePosition(event, canvas);
+    const zoomIn = !event.altKey;
+    canvas.dispatchEvent(
+      new CustomEvent("canvas-zoom-click", {
+        detail: { point, factor: zoomIn ? 1.5 : 1 / 1.5 },
+      }),
+    );
+  }
+
+  onPointerMove(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+  onPointerUp(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+
+  getCursor(): string {
+    return "zoom-in";
+  }
+}
+
+// =============================================================================
+// FRAME TOOL — draws a frame container on pointer drag
+// =============================================================================
+
+export class FrameTool extends BaseTool {
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    const point = this.getMousePosition(event, canvas);
+    this.startPoint = point;
+
+    this.currentElement = new FrameElement({
+      id: nanoid(),
+      xywh: JSON.stringify([point.x, point.y, 1, 1]),
+      index: Date.now().toString(),
+      title: "Frame",
+    });
+
+    canvas.dispatchEvent(
+      new CustomEvent("element-create", { detail: { element: this.currentElement } }),
+    );
+  }
+
+  onPointerMove(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (!this.currentElement || !this.startPoint) return;
+    const point = this.getMousePosition(event, canvas);
+    const x = Math.min(point.x, this.startPoint.x);
+    const y = Math.min(point.y, this.startPoint.y);
+    const w = Math.abs(point.x - this.startPoint.x);
+    const h = Math.abs(point.y - this.startPoint.y);
+    this.currentElement.xywh = JSON.stringify([x, y, Math.max(w, 8), Math.max(h, 8)]);
+    canvas.dispatchEvent(
+      new CustomEvent("element-update", { detail: { element: this.currentElement } }),
+    );
+  }
+
+  onPointerUp(_event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (this.currentElement) {
+      canvas.dispatchEvent(
+        new CustomEvent("element-finalize", { detail: { element: this.currentElement } }),
+      );
+    }
+    this.startPoint = null;
+    this.cleanup();
+  }
+
+  getCursor(): string {
+    return "crosshair";
+  }
+}
+
+// =============================================================================
+// LASSO TOOL — freehand selection region (rubber band select)
+// =============================================================================
+
+export class LassoTool extends BaseTool {
+  private points: Point[] = [];
+  private isSelecting = false;
+
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    this.isSelecting = true;
+    this.points = [this.getMousePosition(event, canvas)];
+    canvas.dispatchEvent(
+      new CustomEvent("canvas-lasso-start", { detail: { points: this.points } }),
+    );
+  }
+
+  onPointerMove(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (!this.isSelecting) return;
+    this.points.push(this.getMousePosition(event, canvas));
+    canvas.dispatchEvent(
+      new CustomEvent("canvas-lasso-update", { detail: { points: this.points } }),
+    );
+  }
+
+  onPointerUp(_event: PointerEvent, canvas: HTMLCanvasElement): void {
+    if (this.isSelecting) {
+      canvas.dispatchEvent(
+        new CustomEvent("canvas-lasso-end", { detail: { points: this.points } }),
+      );
+    }
+    this.isSelecting = false;
+    this.points = [];
+    this.cleanup();
+  }
+
+  getCursor(): string {
+    return "crosshair";
+  }
+}
+
+// =============================================================================
+// EYEDROPPER TOOL — samples a color from the canvas at the clicked point
+// =============================================================================
+
+export class EyedropperTool extends BaseTool {
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    const point = this.getMousePosition(event, canvas);
+    // Sample the pixel color from the canvas at this point
+    const ctx = canvas.getContext("2d");
+    let color: string | null = null;
+    if (ctx) {
+      const pixel = ctx.getImageData(point.x, point.y, 1, 1).data;
+      color = `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${(pixel[3] ?? 255) / 255})`;
+    }
+    canvas.dispatchEvent(
+      new CustomEvent("canvas-color-pick", { detail: { point, color } }),
+    );
+  }
+
+  onPointerMove(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+  onPointerUp(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+
+  getCursor(): string {
+    return "crosshair";
+  }
+}
+
+// =============================================================================
+// IMAGE TOOL — places an image element at the clicked location
+// =============================================================================
+
+export class ImageTool extends BaseTool {
+  private _src: string;
+
+  constructor(options: ToolOptions, src: string = "") {
+    super(options);
+    this._src = src;
+  }
+
+  /** Update the image source before the next pointer-down. */
+  setSrc(src: string): void {
+    this._src = src;
+  }
+
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    const point = this.getMousePosition(event, canvas);
+    const DEFAULT_SIZE = 320;
+
+    this.currentElement = new ImageElement({
+      id: nanoid(),
+      xywh: JSON.stringify([point.x, point.y, DEFAULT_SIZE, DEFAULT_SIZE]),
+      index: Date.now().toString(),
+      src: this._src,
+      fitMode: "contain",
+    });
+
+    canvas.dispatchEvent(
+      new CustomEvent("element-create", { detail: { element: this.currentElement } }),
+    );
+    canvas.dispatchEvent(
+      new CustomEvent("element-finalize", { detail: { element: this.currentElement } }),
+    );
+    this.cleanup();
+  }
+
+  onPointerMove(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+  onPointerUp(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+
+  getCursor(): string {
+    return "copy";
+  }
+}
+
+// =============================================================================
+// STICKY NOTE TOOL — places a note element at the clicked location
+// =============================================================================
+
+export class StickyNoteTool extends BaseTool {
+  onPointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
+    const point = this.getMousePosition(event, canvas);
+    const DEFAULT_SIZE = 200;
+
+    this.currentElement = new NoteElement({
+      id: nanoid(),
+      xywh: JSON.stringify([point.x, point.y, DEFAULT_SIZE, DEFAULT_SIZE]),
+      index: Date.now().toString(),
+      title: "",
+      backgroundColor: "#fef08a",
+    });
+
+    canvas.dispatchEvent(
+      new CustomEvent("element-create", { detail: { element: this.currentElement } }),
+    );
+    canvas.dispatchEvent(
+      new CustomEvent("element-finalize", { detail: { element: this.currentElement } }),
+    );
+    this.cleanup();
+  }
+
+  onPointerMove(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+  onPointerUp(_event: PointerEvent, _canvas: HTMLCanvasElement): void { /* no-op */ }
+
+  getCursor(): string {
+    return "copy";
   }
 }

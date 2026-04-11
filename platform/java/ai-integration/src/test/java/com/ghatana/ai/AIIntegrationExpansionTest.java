@@ -446,7 +446,7 @@ class AIIntegrationExpansionTest {
         void concurrentEmbeddings() throws Exception {
             int threadCount = 30;
             CountDownLatch latch = new CountDownLatch(threadCount);
-            List<EmbeddingResult> results = new ArrayList<>();
+            AtomicInteger successCount = new AtomicInteger(0);
 
             ExecutorService exec = Executors.newFixedThreadPool(threadCount);
             try {
@@ -460,7 +460,7 @@ class AIIntegrationExpansionTest {
                             }
                             EmbeddingResult result = new EmbeddingResult(
                                 "text-" + idx, vector, "model");
-                            results.add(result);
+                            successCount.incrementAndGet();
                         } finally {
                             latch.countDown();
                         }
@@ -471,7 +471,7 @@ class AIIntegrationExpansionTest {
                 exec.shutdownNow();
             }
 
-            assertThat(results.size()).isEqualTo(threadCount);
+            assertThat(successCount.get()).isEqualTo(threadCount);
         }
 
         @Test

@@ -6,7 +6,7 @@ import com.ghatana.platform.domain.event.EventTime;
 import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.platform.domain.pipeline.ConnectorSpec;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.platform.http.server.security.TenantExtractor;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.pipeline.registry.ingress.IngressConnectorRouter;
 import com.fasterxml.jackson.databind.ObjectMapper;

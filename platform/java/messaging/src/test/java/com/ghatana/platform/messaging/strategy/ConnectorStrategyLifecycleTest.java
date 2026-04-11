@@ -1,11 +1,11 @@
-package com.ghatana.aep.connector.strategy;
+package com.ghatana.platform.messaging.strategy;
 
-import com.ghatana.aep.connector.config.RetryConfig;
-import com.ghatana.aep.connector.strategy.http.HttpIngressConfig;
-import com.ghatana.aep.connector.strategy.http.HttpPollingIngressStrategy;
-import com.ghatana.aep.connector.strategy.http.HttpWebhookEgressStrategy;
-import com.ghatana.aep.connector.strategy.s3.DefaultS3StorageStrategy;
-import com.ghatana.aep.connector.strategy.s3.S3Config;
+import com.ghatana.platform.messaging.config.RetryConfig;
+import com.ghatana.platform.messaging.strategy.http.HttpIngressConfig;
+import com.ghatana.platform.messaging.strategy.http.HttpPollingIngressStrategy;
+import com.ghatana.platform.messaging.strategy.http.HttpWebhookEgressStrategy;
+import com.ghatana.platform.messaging.strategy.s3.DefaultS3StorageStrategy;
+import com.ghatana.platform.messaging.strategy.s3.S3Config;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;

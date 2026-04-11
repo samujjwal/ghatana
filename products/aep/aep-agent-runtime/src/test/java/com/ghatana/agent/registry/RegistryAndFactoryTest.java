@@ -138,15 +138,20 @@ class RegistryAndFactoryTest {
             // assertThat(registry.contains("a3")).isFalse();
         }
 
-        @Test void duplicateRegistrationFails() {
+        @Test void duplicateRegistrationReplaces() {
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry();
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of());
+            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of("v1", true));
+            StubTypedAgent a2 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of("v2", true));
 
             runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC)));
+            runOnEventloop(() -> registry.register(a2, configFor("a1", AgentType.DETERMINISTIC)));
 
-            assertThatThrownBy(() ->
-                runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC)))
-            ).isInstanceOf(RuntimeException.class);
+            // InMemoryAgentRegistry silently replaces duplicate registrations
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> resolved =
+                    runOnEventloop(() -> registry.resolve("a1"));
+            assertThat(resolved).isPresent();
+            // Should be the second agent (replacement)
+            assertThat(resolved.get()).isSameAs(a2);
         }
 
         @Disabled("Lifecycle methods not in AgentRegistry SPI")
@@ -162,10 +167,11 @@ class RegistryAndFactoryTest {
             // assertThat(registry.size()).isEqualTo(0);
         }
 
-        @Test void resolveUnknownFails() {
+        @Test void resolveUnknownReturnsEmpty() {
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry();
-            assertThatThrownBy(() -> runOnEventloop(() -> registry.resolve("unknown")))
-                    .isInstanceOf(RuntimeException.class);
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> resolved =
+                    runOnEventloop(() -> registry.resolve("unknown"));
+            assertThat(resolved).isEmpty();
         }
 
         @Disabled("Query methods not in AgentRegistry SPI")

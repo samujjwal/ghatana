@@ -2,10 +2,10 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.resilience;
+package com.ghatana.platform.messaging.resilience;
 
-import com.ghatana.aep.connector.strategy.QueueMessage;
-import com.ghatana.aep.connector.strategy.QueueProducerStrategy;
+import com.ghatana.platform.messaging.strategy.QueueMessage;
+import com.ghatana.platform.messaging.strategy.QueueProducerStrategy;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import io.activej.promise.Promise;
 

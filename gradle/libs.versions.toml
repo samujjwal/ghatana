@@ -56,6 +56,7 @@ cyclonedx-plugin = "3.2.2"
 # AI/ML
 langchain4j = "1.0.0-beta1"
 openai = "4.7.1"
+onnx-runtime = "1.20.0"
 
 # Security
 nimbus-jose-jwt = "9.47"
@@ -221,6 +222,7 @@ langchain4j-bom = { module = "dev.langchain4j:langchain4j-bom", version.ref = "l
 langchain4j-core = { module = "dev.langchain4j:langchain4j-core", version.ref = "langchain4j" }
 langchain4j-open-ai = { module = "dev.langchain4j:langchain4j-open-ai", version.ref = "langchain4j" }
 openai-client = { module = "com.openai:openai-java", version.ref = "openai" }
+onnx-runtime = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnx-runtime" }
 
 # =============================================================================
 # Security

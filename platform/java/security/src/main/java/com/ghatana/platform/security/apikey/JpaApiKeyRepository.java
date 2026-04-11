@@ -74,14 +74,12 @@ public class JpaApiKeyRepository implements ApiKeyRepository {
     }
 
     @Override
-    public boolean deleteById(String id) {
+    public void deleteById(String id) {
         Objects.requireNonNull(id, "id cannot be null");
         ApiKey existing = entityManager.find(ApiKey.class, id);
-        if (existing == null) {
-            return false;
+        if (existing != null) {
+            entityManager.remove(existing);
         }
-        entityManager.remove(existing);
-        return true;
     }
 
     @Override
@@ -90,5 +88,23 @@ public class JpaApiKeyRepository implements ApiKeyRepository {
         return findByKey(key)
                 .map(k -> { entityManager.remove(k); return true; })
                 .orElse(false);
+    }
+
+    @Override
+    public void delete(ApiKey entity) {
+        if (entity != null && entity.getId() != null) {
+            deleteById(entity.getId());
+        }
+    }
+
+    @Override
+    public long count() {
+        return entityManager.createQuery("SELECT COUNT(k) FROM ApiKey k", Long.class)
+                .getSingleResult();
+    }
+
+    @Override
+    public boolean existsById(String id) {
+        return findById(id).isPresent();
     }
 }

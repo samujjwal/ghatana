@@ -4,6 +4,7 @@
  */
 package com.ghatana.platform.governance.security;
 
+import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpRequest;

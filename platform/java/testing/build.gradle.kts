@@ -6,6 +6,9 @@
  */
 plugins {
     id("java-library")
+    id("com.ghatana.java-conventions")
+    id("com.ghatana.testing-conventions")
+    id("com.ghatana.quality-conventions")
 }
 
 group = "com.ghatana.platform"
@@ -16,6 +19,10 @@ dependencies {
     // Platform Core — exposed as api so consumers get core types transitively
     api(project(":platform:java:core"))
     api(project(":platform:java:runtime"))
+    api(project(":platform:java:database"))
+    
+    // ArchUnit for architecture validation tests
+    testImplementation("com.tngtech.archunit:archunit:1.2.1")
     
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)

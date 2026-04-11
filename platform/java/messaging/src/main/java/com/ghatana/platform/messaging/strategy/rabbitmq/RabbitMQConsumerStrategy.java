@@ -2,10 +2,10 @@
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
-package com.ghatana.aep.connector.strategy.rabbitmq;
+package com.ghatana.platform.messaging.strategy.rabbitmq;
 
-import com.ghatana.aep.connector.AbstractResilientConnector;
-import com.ghatana.aep.connector.strategy.QueueConsumerStrategy;
+import com.ghatana.platform.messaging.AbstractResilientConnector;
+import com.ghatana.platform.messaging.strategy.QueueConsumerStrategy;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;

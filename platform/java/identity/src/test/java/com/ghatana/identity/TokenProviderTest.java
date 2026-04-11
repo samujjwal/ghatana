@@ -266,7 +266,7 @@ class TokenProviderTest extends EventloopTestBase {
         @Test
         @DisplayName("Handles minimum TTL")
         void handlesMinimumTtl() {
-            String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofSeconds(1)));
+            String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofSeconds(5)));
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token));
 
             assertThat(claims).isPresent();

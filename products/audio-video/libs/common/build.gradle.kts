@@ -14,8 +14,9 @@ java {
 }
 
 dependencies {
-    // Platform audio-video library — media error types (ProcessingError hierarchy)
-    api(project(":platform:java:audio-video"))
+    // DEPRECATED: This module now re-exports from products:audio-video:libs:java:common
+    // Migrated per Phase 3.1 of the audit
+    api(project(":products:audio-video:libs:java:common"))
 
     // Tool handler SPI — ToolHandler, ToolExecutionEnvelope, ToolExecutionResult
     api(project(":platform:java:tool-runtime"))

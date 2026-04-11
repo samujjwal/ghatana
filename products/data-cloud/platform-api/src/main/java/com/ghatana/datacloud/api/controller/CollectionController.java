@@ -2,7 +2,7 @@ package com.ghatana.datacloud.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.platform.http.server.security.TenantExtractor;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.datacloud.api.dto.CollectionResponse;
 import com.ghatana.datacloud.api.dto.CreateCollectionRequest;
