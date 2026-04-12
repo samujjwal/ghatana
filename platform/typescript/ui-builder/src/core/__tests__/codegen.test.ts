@@ -503,9 +503,11 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
       expect(content).toContain('<Card');
       expect(content).toContain('</Card>');
       expect(content).toContain('<Button');
-      expect(content).toContain('</Button>');
+      // Button has no slot children — it renders self-closing
+      expect(content).not.toContain('</Button>');
       expect(content).toContain('<Typography');
-      expect(content).toContain('</Typography>');
+      // Typography has no slot children — it renders self-closing
+      expect(content).not.toContain('</Typography>');
       expect(content).toContain('header slot');
       expect(content).toContain('content slot');
     });

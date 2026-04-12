@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { z } from 'zod';
 
 /**
@@ -111,7 +110,7 @@ export type BoxData = z.infer<typeof BoxSchema>;
 /**
  * Get default values for a component type
  */
-export function getDefaultComponentData(type: string): Partial<ComponentData> {
+export function getDefaultComponentData(type: string): ComponentData | { id: string; type: string } {
   const id = `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
   switch (type) {

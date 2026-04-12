@@ -15,7 +15,8 @@ import type {
   NodeId,
   DocumentId,
   DesignSystemModel,
-} from '@ghatana/ui-builder/core';
+} from '@ghatana/ui-builder';
+import { createDocumentId } from '@ghatana/ui-builder';
 
 import type { ComponentData } from './schemas';
 
@@ -29,7 +30,7 @@ export function componentDataToBuilderDocument(
   const nodes = new Map<NodeId, ComponentInstance>();
   const rootNodes: NodeId[] = [];
 
-  components.forEach((comp, index) => {
+  components.forEach((comp) => {
     const nodeId = comp.id as NodeId;
     const componentInstance = componentDataToInstance(comp);
     nodes.set(nodeId, componentInstance);
@@ -46,7 +47,7 @@ export function componentDataToBuilderDocument(
   };
 
   return {
-    id: crypto.randomUUID() as DocumentId,
+    id: createDocumentId(),
     version: '1',
     name: documentName,
     designSystem,
@@ -63,14 +64,17 @@ export function componentDataToBuilderDocument(
  * Convert single ComponentData to ComponentInstance.
  */
 function componentDataToInstance(comp: ComponentData): ComponentInstance {
+  // Separate the structural id/type fields from the props payload to avoid
+  // aliasing the original comp object inside the ComponentInstance.
+  const { id: _id, type: _type, label, ...restProps } = comp as Record<string, unknown>;
   return {
     id: comp.id as NodeId,
-    contractName: comp.type, // Map type to contract name
-    props: comp as Record<string, unknown>, // Pass all props
+    contractName: comp.type,
+    props: { ...restProps },
     slots: {},
     bindings: [],
     metadata: {
-      name: comp.label,
+      name: typeof label === 'string' ? label : undefined,
     },
   };
 }
@@ -85,9 +89,12 @@ export function builderDocumentToComponentData(
   const components: ComponentData[] = [];
 
   document.nodes.forEach((instance) => {
-    const comp = instance.props as ComponentData;
-    comp.id = instance.id;
-    comp.type = instance.contractName;
+    // Spread into a new object — do NOT mutate instance.props
+    const comp = {
+      ...(instance.props as Omit<ComponentData, 'id' | 'type'>),
+      id: instance.id,
+      type: instance.contractName,
+    } as ComponentData;
     components.push(comp);
   });
 

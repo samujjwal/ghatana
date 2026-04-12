@@ -1,6 +1,10 @@
 /**
  * @ghatana/ds-schema test suite
  * Tests for DTCG-aligned token, component, theme, pattern, and compatibility schemas
+ *
+ * @test.type unit
+ * @test.execution <100ms
+ * @test.infra none
  */
 
 import { describe, it, expect } from 'vitest';
@@ -10,6 +14,7 @@ import {
   isValidTokenValue,
   validateComponentContract,
   computeContractHash,
+  ComponentContractSchema,
 } from '../index';
 
 describe('@ghatana/ds-schema', () => {
@@ -118,6 +123,187 @@ describe('@ghatana/ds-schema', () => {
       expect(z).toBeDefined();
       expect(typeof z.object).toBe('function');
       expect(typeof z.string).toBe('function');
+    });
+  });
+
+  describe('V2 Contract Fields - Name Hardening', () => {
+    const baseContract = {
+      version: '1.0.0',
+      props: [],
+      slots: [],
+      events: [],
+      styles: {},
+      metadata: {
+        category: 'input',
+        status: 'stable' as const,
+        platforms: ['web' as const],
+      },
+    };
+
+    it('should reject empty component name', () => {
+      const result = validateComponentContract({ ...baseContract, name: '' });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject empty prop name', () => {
+      const result = validateComponentContract({
+        ...baseContract,
+        name: 'Button',
+        props: [{ name: '', type: 'string', required: false, defaultValue: '' }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject empty slot name', () => {
+      const result = validateComponentContract({
+        ...baseContract,
+        name: 'Button',
+        slots: [{ name: '', description: 'A slot', accepts: [] }],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject empty event name', () => {
+      const result = validateComponentContract({
+        ...baseContract,
+        name: 'Button',
+        events: [{ name: '', description: 'An event', payload: {} }],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('V2 Contract Fields - Extended Schemas', () => {
+    it('should accept telemetry contract on component', () => {
+      const result = ComponentContractSchema.safeParse({
+        name: 'Button',
+        version: '1.0.0',
+        props: [],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'input',
+          status: 'stable',
+          platforms: ['web'],
+        },
+        telemetry: {
+          emittedEvents: [
+            { name: 'button:click', description: 'Fired on click', containsPii: false },
+          ],
+          autoTracksInteractions: true,
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.telemetry?.autoTracksInteractions).toBe(true);
+        expect(result.data.telemetry?.emittedEvents[0]?.name).toBe('button:click');
+      }
+    });
+
+    it('should accept aiPolicy on component', () => {
+      const result = ComponentContractSchema.safeParse({
+        name: 'SecureField',
+        version: '1.0.0',
+        props: [],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'input',
+          status: 'stable',
+          platforms: ['web'],
+        },
+        aiPolicy: {
+          allowAutonomousConfiguration: false,
+          reviewRequiredProps: ['content'],
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.aiPolicy?.allowAutonomousConfiguration).toBe(false);
+        expect(result.data.aiPolicy?.reviewRequiredProps).toContain('content');
+      }
+    });
+
+    it('should accept preview restrictions on component', () => {
+      const result = ComponentContractSchema.safeParse({
+        name: 'InternalWidget',
+        version: '1.0.0',
+        props: [],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'display',
+          status: 'experimental',
+          platforms: ['web'],
+        },
+        preview: {
+          requiresNetwork: false,
+          requiresConsent: true,
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.preview?.requiresConsent).toBe(true);
+      }
+    });
+
+    it('should accept dataClassification on prop', () => {
+      const result = ComponentContractSchema.safeParse({
+        name: 'PasswordField',
+        version: '1.0.0',
+        props: [
+          {
+            name: 'value',
+            type: 'string',
+            required: true,
+            defaultValue: '',
+            dataClassification: 'restricted',
+            secretBearing: true,
+            reviewRequired: true,
+          },
+        ],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'input',
+          status: 'stable',
+          platforms: ['web'],
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.props[0]?.dataClassification).toBe('restricted');
+        expect(result.data.props[0]?.secretBearing).toBe(true);
+      }
+    });
+
+    it('should accept layout semantics on component', () => {
+      const result = ComponentContractSchema.safeParse({
+        name: 'Grid',
+        version: '1.0.0',
+        props: [],
+        slots: [],
+        events: [],
+        styles: {},
+        metadata: {
+          category: 'layout',
+          status: 'stable',
+          platforms: ['web'],
+        },
+        layout: {
+          isContainer: true,
+          acceptsChildren: true,
+          childConstraints: { maxChildren: 12 },
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.layout?.isContainer).toBe(true);
+      }
     });
   });
 });

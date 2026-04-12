@@ -3,13 +3,13 @@
  */
 
 import type { ComponentContract } from '@ghatana/ds-schema';
-import type { CodeOwnership } from '@ghatana/platform-events';
 import type {
   BuilderDocument,
   ComponentInstance,
   NodeId,
   CodeProjection,
   CodeFile,
+  CodeRegionOwnership,
   RoundTripFidelity,
   LossPoint,
 } from './types';
@@ -32,7 +32,7 @@ export function generateReactCode(
 ): CodeProjection {
   const files: CodeFile[] = [];
   const lossPoints: LossPoint[] = [];
-  const ownership: CodeOwnership[] = [];
+  const ownership: CodeRegionOwnership[] = [];
 
   // Generate main component
   const mainFile = generateComponentFile(document, contracts, options);
@@ -141,12 +141,24 @@ function generateNodeJSX(
   document: BuilderDocument,
   contracts: ReadonlyMap<string, ComponentContract>,
   indent: number,
+  visited: Set<NodeId> = new Set(),
 ): string[] {
+  // Cycle guard: if this node is already on the current rendering stack, emit a
+  // placeholder comment and bail out rather than looping infinitely.
+  if (visited.has(instance.id)) {
+    const indentStr = '  '.repeat(indent);
+    return [`${indentStr}{/* [WARN] Circular reference detected for node ${instance.id} - skipped */}`];
+  }
+
   const contract = contracts.get(instance.contractName);
   const componentName = contract?.builder?.codegen?.componentName ?? instance.contractName;
   
   const lines: string[] = [];
   const indentStr = '  '.repeat(indent);
+  
+  // Mark this node as visited before descending into its children.
+  const childVisited = new Set(visited);
+  childVisited.add(instance.id);
   
   // Opening tag with props
   const props = generatePropsString(instance, contract);
@@ -169,7 +181,7 @@ function generateNodeJSX(
       for (const childId of childIds) {
         const child = document.nodes.get(childId);
         if (child) {
-          const childJsx = generateNodeJSX(child, document, contracts, indent + 1);
+          const childJsx = generateNodeJSX(child, document, contracts, indent + 1, childVisited);
           lines.push(...childJsx);
         }
       }

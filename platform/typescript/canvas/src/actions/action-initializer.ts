@@ -15,22 +15,28 @@ import {
     getAllLayerActions,
     UNIVERSAL_LAYER_ACTIONS,
 } from './layer-actions';
-import { getAllRoleActions } from './role-actions';
 
 export interface ActionRegistryOptions {
     /**
      * Product-supplied phase actions keyed by phase name.
-     * Platform canvas no longer bundles phase actions — they are product-specific.
+     * Platform canvas does not bundle phase actions — they are product-specific.
      * Pass these from the product entrypoint (e.g. YAPPC's phase-actions.ts).
      */
     phaseActions?: Record<string, ActionDefinition[]>;
+    /**
+     * Product-supplied role actions keyed by role name.
+     * Platform canvas does not bundle role actions — they are product-specific.
+     * Pass these from the product entrypoint (e.g. YAPPC's role-actions.ts).
+     */
+    roleActions?: Record<string, ActionDefinition[]>;
 }
 
 /**
  * Initialize the global action registry with all actions.
  *
- * Phase actions are intentionally NOT included by default — they are
- * product-specific and must be supplied via `options.phaseActions`.
+ * Phase and role actions are intentionally NOT included by default — they are
+ * product-specific and must be supplied via `options.phaseActions` /
+ * `options.roleActions`.
  */
 export function initializeActionRegistry(options: ActionRegistryOptions = {}): ActionRegistry {
     const registry = getActionRegistry();
@@ -51,16 +57,15 @@ export function initializeActionRegistry(options: ActionRegistryOptions = {}): A
         });
     }
 
-    // Register role-specific actions
-    const roleActions = getAllRoleActions();
-    Object.entries(roleActions).forEach(([role, actions]) => {
-        registry.registerRoleActions(role, actions);
-    });
+    // Register product-supplied role-specific actions (if any)
+    if (options.roleActions) {
+        Object.entries(options.roleActions).forEach(([role, actions]) => {
+            registry.registerRoleActions(role, actions);
+        });
+    }
 
     // Register universal actions
     registry.registerMany(UNIVERSAL_LAYER_ACTIONS);
-
-    console.log('✅ Action registry initialized:', registry.getStats());
 
     return registry;
 }
@@ -81,11 +86,9 @@ export function verifyActionRegistry(): boolean {
     const stats = registry.getStats();
 
     const hasLayerActions = Object.keys(stats.byLayer).length > 0;
-    const hasPhaseActions = Object.keys(stats.byPhase).length > 0;
-    const hasRoleActions = Object.keys(stats.byRole).length > 0;
     const hasTotalActions = stats.total > 0;
 
-    const isValid = hasLayerActions && hasPhaseActions && hasRoleActions && hasTotalActions;
+    const isValid = hasLayerActions && hasTotalActions;
 
     if (!isValid) {
         console.warn('⚠️ Action registry not properly initialized:', stats);

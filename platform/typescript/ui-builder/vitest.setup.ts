@@ -1,6 +1,6 @@
-// Minimal setup for @ghatana/ui-builder tests.
-// No DOM testing-library — these are pure unit tests.
+// Setup for @ghatana/ui-builder tests.
 import { enableMapSet } from 'immer';
+import '@testing-library/jest-dom';
 enableMapSet();
 
 // Mock localStorage for persistence tests

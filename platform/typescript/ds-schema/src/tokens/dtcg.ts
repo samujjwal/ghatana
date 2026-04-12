@@ -226,6 +226,22 @@ export type ExtendedToken = z.infer<typeof ExtendedTokenSchema>;
 // Validation Functions
 // ============================================================================
 
+/** Maps token $type to its type-specific value schema. */
+const TOKEN_TYPE_VALUE_SCHEMAS: Record<string, z.ZodTypeAny> = {
+  color: ColorTokenValueSchema,
+  dimension: DimensionTokenValueSchema,
+  fontFamily: FontFamilyTokenValueSchema,
+  fontWeight: FontWeightTokenValueSchema,
+  duration: DurationTokenValueSchema,
+  cubicBezier: CubicBezierTokenValueSchema,
+  number: NumberTokenValueSchema,
+  strokeStyle: StrokeStyleTokenValueSchema,
+  border: BorderTokenValueSchema,
+  shadow: ShadowTokenValueSchema,
+  gradient: GradientTokenValueSchema,
+  transition: EasingTokenValueSchema,
+};
+
 /**
  * Validates a DTCG token file.
  */
@@ -238,14 +254,25 @@ export function validateDTCGTokenFile(data: unknown): { success: true; data: DTC
 }
 
 /**
- * Validates a single token.
+ * Validates a single token. When $type is present, the $value is validated
+ * against the type-specific schema to catch semantically invalid values.
  */
 export function validateToken(data: unknown): { success: true; data: BaseToken } | { success: false; errors: z.ZodError } {
   const result = BaseTokenSchema.safeParse(data);
-  if (result.success) {
-    return { success: true, data: result.data };
+  if (!result.success) {
+    return { success: false, errors: result.error };
   }
-  return { success: false, errors: result.error };
+  const token = result.data;
+  if (token.$type !== undefined) {
+    const typeSchema = TOKEN_TYPE_VALUE_SCHEMAS[token.$type];
+    if (typeSchema !== undefined) {
+      const valueResult = typeSchema.safeParse(token.$value);
+      if (!valueResult.success) {
+        return { success: false, errors: valueResult.error };
+      }
+    }
+  }
+  return { success: true, data: token };
 }
 
 /**

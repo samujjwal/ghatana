@@ -28,14 +28,14 @@ export interface PlatformEvent<T = Record<string, unknown>> {
   readonly payload: T;
 }
 
-/** Creates a branded correlation ID from a string. */
-export function createCorrelationId(id: string): CorrelationId {
-  return id as CorrelationId;
+/** Creates a branded correlation ID. Auto-generates a UUID v4 when called with no argument. */
+export function createCorrelationId(id?: string): CorrelationId {
+  return (id ?? generateUUID()) as CorrelationId;
 }
 
-/** Creates a branded session ID from a string. */
-export function createSessionId(id: string): SessionId {
-  return id as SessionId;
+/** Creates a branded session ID. Auto-generates a unique session ID when called with no argument. */
+export function createSessionId(id?: string): SessionId {
+  return (id ?? generateSessionId()) as SessionId;
 }
 
 /** Validates that a string is a valid correlation ID format (UUID v4). */

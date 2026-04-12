@@ -35,6 +35,17 @@ export {
   updateNodeProps,
   addBinding,
   removeBinding,
+  noopEventBus,
+} from './operations';
+
+export type {
+  OperationEventBus,
+  NodeInsertedPayload,
+  NodeMovedPayload,
+  NodeDeletedPayload,
+  NodePropsUpdatedPayload,
+  BindingAddedPayload,
+  BindingRemovedPayload,
 } from './operations';
 
 export { validateDocument } from './validation';

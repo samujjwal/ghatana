@@ -87,8 +87,8 @@ describe('Event Types', () => {
   });
 
   describe('Canvas Events', () => {
-    it('should have all 23 required canvas event names', () => {
-      const expectedCount = 23;
+    it('should have all 25 required canvas event names', () => {
+      const expectedCount = 25;
       expect(ALL_CANVAS_EVENT_NAMES.length).toBe(expectedCount);
     });
 
@@ -152,8 +152,8 @@ describe('Event Types', () => {
   });
 
   describe('Builder Events', () => {
-    it('should have all 22 required builder event names', () => {
-      const expectedCount = 22;
+    it('should have all 25 required builder event names', () => {
+      const expectedCount = 25;
       expect(ALL_BUILDER_EVENT_NAMES.length).toBe(expectedCount);
     });
 

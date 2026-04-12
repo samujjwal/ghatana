@@ -31,8 +31,123 @@ export type PropType = z.infer<typeof PropTypeSchema>;
 // Component Prop Schema
 // ============================================================================
 
+// ============================================================================
+// Data Classification (mirrors platform-events DataClassification)
+// ============================================================================
+
+export const DataClassificationSchema = z.enum([
+  'public',
+  'internal',
+  'confidential',
+  'restricted',
+  'pii',
+  'sensitive',
+] as const);
+
+export type DataClassificationValue = z.infer<typeof DataClassificationSchema>;
+
+// ============================================================================
+// Telemetry Contract
+// ============================================================================
+
+/** Declares telemetry this component emits when used in production. */
+export const ComponentTelemetryContractSchema = z.object({
+  emittedEvents: z.array(z.object({
+    name: z.string().min(1),
+    description: z.string().optional(),
+    containsPii: z.boolean().default(false),
+  })).default([]),
+  autoTracksInteractions: z.boolean().default(false),
+  requiresConsentForTracking: z.boolean().default(false),
+});
+
+export type ComponentTelemetryContract = z.infer<typeof ComponentTelemetryContractSchema>;
+
+// ============================================================================
+// Observability Contract
+// ============================================================================
+
+export const ComponentObservabilityContractSchema = z.object({
+  requiresTraceContext: z.boolean().default(false),
+  performanceMarks: z.array(z.string()).default([]),
+  reportsRenderErrors: z.boolean().default(false),
+});
+
+export type ComponentObservabilityContract = z.infer<typeof ComponentObservabilityContractSchema>;
+
+// ============================================================================
+// AI Policy
+// ============================================================================
+
+export const ComponentAIPolicySchema = z.object({
+  allowAutonomousConfiguration: z.boolean().default(true),
+  reviewRequiredProps: z.array(z.string()).default([]),
+  usageGuidance: z.string().optional(),
+  autoApplyConfidenceThreshold: z.number().min(0).max(1).default(0.9),
+});
+
+export type ComponentAIPolicy = z.infer<typeof ComponentAIPolicySchema>;
+
+// ============================================================================
+// Preview Restrictions
+// ============================================================================
+
+export const ComponentPreviewRestrictionsSchema = z.object({
+  minimumTrustLevel: z.enum([
+    'trusted-local',
+    'trusted-controlled',
+    'semi-trusted',
+    'untrusted',
+  ]).default('semi-trusted'),
+  requiresNetwork: z.boolean().default(false),
+  requiresStorage: z.boolean().default(false),
+  requiresConsent: z.boolean().default(false),
+});
+
+export type ComponentPreviewRestrictions = z.infer<typeof ComponentPreviewRestrictionsSchema>;
+
+// ============================================================================
+// Configurator Hints
+// ============================================================================
+
+export const ComponentConfiguratorHintsSchema = z.object({
+  groups: z.array(z.object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    collapsed: z.boolean().default(false),
+    propNames: z.array(z.string()),
+  })).default([]),
+  showAdvancedSection: z.boolean().default(true),
+  showLivePreview: z.boolean().default(true),
+  resettableProps: z.array(z.string()).default([]),
+});
+
+export type ComponentConfiguratorHints = z.infer<typeof ComponentConfiguratorHintsSchema>;
+
+// ============================================================================
+// Layout Semantics
+// ============================================================================
+
+export const ComponentLayoutSemanticsSchema = z.object({
+  isContainer: z.boolean().default(false),
+  defaultDisplay: z.enum(['block', 'inline', 'inline-block', 'flex', 'grid', 'none']).default('block'),
+  draggable: z.boolean().default(true),
+  resizable: z.boolean().default(true),
+  aspectRatioLock: z.number().optional(),
+  minDimensions: z.object({
+    width: z.number().optional(),
+    height: z.number().optional(),
+  }).optional(),
+});
+
+export type ComponentLayoutSemantics = z.infer<typeof ComponentLayoutSemanticsSchema>;
+
+// ============================================================================
+// Component Prop Schema
+// ============================================================================
+
 export const ComponentPropSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, 'Prop name must not be empty'),
   type: PropTypeSchema,
   typeDetails: z.unknown().optional(), // For complex types (enum values, object shape, etc.)
   description: z.string().optional(),
@@ -71,7 +186,7 @@ export const ComponentPropSchema = z.object({
     // Valid component types for component-ref props
     componentTypes: z.array(z.string()).optional(),
   }).optional(),
-  
+
   // Validation rules
   validation: z.object({
     min: z.number().optional(),
@@ -81,6 +196,11 @@ export const ComponentPropSchema = z.object({
     pattern: z.string().optional(), // regex
     enum: z.array(z.unknown()).optional(),
   }).optional(),
+
+  // Privacy / security metadata for this prop
+  dataClassification: DataClassificationSchema.optional(),
+  secretBearing: z.boolean().optional(),
+  reviewRequired: z.boolean().optional(),
 });
 
 export type ComponentProp = z.infer<typeof ComponentPropSchema>;
@@ -90,7 +210,7 @@ export type ComponentProp = z.infer<typeof ComponentPropSchema>;
 // ============================================================================
 
 export const ComponentSlotSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, 'Slot name must not be empty'),
   description: z.string().optional(),
   allowedComponents: z.array(z.string()).optional(), // Whitelist
   disallowedComponents: z.array(z.string()).optional(), // Blacklist
@@ -113,7 +233,7 @@ export type ComponentSlot = z.infer<typeof ComponentSlotSchema>;
 // ============================================================================
 
 export const ComponentEventSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, 'Event name must not be empty'),
   description: z.string().optional(),
   payloadType: z.string().optional(), // TypeScript type string
   
@@ -165,8 +285,8 @@ export type ComponentStyle = z.infer<typeof ComponentStyleSchema>;
 // ============================================================================
 
 export const ComponentContractSchema = z.object({
-  // Identification
-  name: z.string(),
+  // Identification — non-empty name enforced
+  name: z.string().min(1, 'Component name must not be empty'),
   version: z.string().default('1.0.0'),
   description: z.string().optional(),
   
@@ -186,13 +306,20 @@ export const ComponentContractSchema = z.object({
     // Platform support
     platforms: z.array(z.enum(['web', 'ios', 'android', 'figma'])).default(['web']),
     
-    // Accessibility
+    // Accessibility — richer coverage
     a11y: z.object({
       role: z.string().optional(),
+      ariaRequired: z.boolean().default(false),
       ariaSupported: z.boolean().default(true),
       keyboardNavigation: z.boolean().default(false),
       screenReader: z.enum(['supported', 'partial', 'not-tested', 'not-applicable']).default('not-tested'),
+      trapsFocus: z.boolean().default(false),
+      wcagCriteria: z.array(z.string()).default([]),
+      notes: z.string().optional(),
     }).optional(),
+
+    dataClassification: DataClassificationSchema.optional(),
+    reviewRequired: z.boolean().optional(),
   }),
   
   // Interface definition
@@ -248,6 +375,16 @@ export const ComponentContractSchema = z.object({
     props: z.record(z.string(), z.unknown()),
     slots: z.record(z.string(), z.unknown()).optional(),
   })).optional(),
+
+  // ════════════════════════════════════════════════════════════════
+  // First-class platform extensions
+  // ════════════════════════════════════════════════════════════════
+  telemetry: ComponentTelemetryContractSchema.optional(),
+  observability: ComponentObservabilityContractSchema.optional(),
+  aiPolicy: ComponentAIPolicySchema.optional(),
+  preview: ComponentPreviewRestrictionsSchema.optional(),
+  configurator: ComponentConfiguratorHintsSchema.optional(),
+  layout: ComponentLayoutSemanticsSchema.optional(),
 });
 
 export type ComponentContract = z.infer<typeof ComponentContractSchema>;
@@ -265,19 +402,21 @@ export function validateComponentContract(data: unknown): { success: true; data:
 }
 
 /**
- * Compute a hash/fingerprint of the contract for change detection.
+ * Compute a deterministic hash/fingerprint of the contract for change detection.
+ * Only structural fields are included — not documentation or policy fields.
  */
 export function computeContractHash(contract: ComponentContract): string {
-  // Simple hash based on JSON serialization (in production, use proper hashing)
   const canonical = JSON.stringify({
     name: contract.name,
     version: contract.version,
-    props: contract.props.map(p => ({ name: p.name, type: p.type, required: p.required })).sort((a, b) => a.name.localeCompare(b.name)),
-    slots: contract.slots.map(s => s.name).sort(),
-    events: contract.events.map(e => e.name).sort(),
+    props: contract.props
+      .map((p) => ({ name: p.name, type: p.type, required: p.required }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    slots: contract.slots.map((s) => s.name).sort(),
+    events: contract.events.map((e) => e.name).sort(),
   });
-  
-  // Simple DJB2 hash
+
+  // DJB2 hash — deterministic, fast
   let hash = 5381;
   for (let i = 0; i < canonical.length; i++) {
     hash = ((hash << 5) + hash) + canonical.charCodeAt(i);

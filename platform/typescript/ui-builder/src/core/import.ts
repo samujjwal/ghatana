@@ -6,9 +6,8 @@
  * from user edits and flagging conflicts requiring human review.
  */
 
-import type { BuilderDocument, ComponentInstance, NodeId, RoundTripFidelity } from './types.js';
+import type { BuilderDocument, ComponentInstance, NodeId, RoundTripFidelity, LossPoint } from './types.js';
 import { createNodeId } from './types.js';
-import type { CodeOwnership } from '@ghatana/platform-events';
 import { produce } from 'immer';
 
 // ============================================================================
@@ -34,7 +33,7 @@ export interface ImportConflict {
   readonly nodeId: NodeId;
   readonly conflictType: 'ownership' | 'prop-mismatch' | 'unsupported-pattern';
   readonly description: string;
-  readonly existingOwnership?: CodeOwnership;
+  readonly existingOwnership?: 'generated' | 'user-authored' | 'protected' | 'manual-merge-required';
 }
 
 export interface ImportResult {
@@ -130,7 +129,7 @@ export function importFromTsx(
 ): ImportResult {
   const addedIds: NodeId[] = [];
   const conflicts: ImportConflict[] = [];
-  const lossPoints: RoundTripFidelity['lossPoints'] = [];
+  const lossPoints: LossPoint[] = [];
 
   // Heuristic: match self-closing and opening JSX tags for known contract names
   // e.g. <Button variant="primary" /> or <Card>
@@ -165,15 +164,17 @@ export function importFromTsx(
       props,
       slots: {},
       bindings: [],
-      metadata: { ownership: 'user-code' as CodeOwnership },
+      metadata: { ownership: 'user-authored' as const },
     });
     addedIds.push(id);
   }
 
-  if (insertedComponents.length === 0 && source.content.trim().length > 0) {
+  if (insertedComponents.length === 0) {
     lossPoints.push({
       type: 'custom-code',
-      description: 'No design-system components found in TSX source',
+      description: source.content.trim().length === 0
+        ? 'Empty TSX source — nothing to import'
+        : 'No design-system components found in TSX source',
     });
   }
 
@@ -211,7 +212,7 @@ export function importFromHtml(
   existing: BuilderDocument,
 ): ImportResult {
   const addedIds: NodeId[] = [];
-  const lossPoints: RoundTripFidelity['lossPoints'] = [];
+  const lossPoints: LossPoint[] = [];
 
   // Match <ghatana-some-component attrs />
   const ghatanaRe = /<ghatana-([a-z][a-z0-9-]*)(\s[^>]*)?\s*\/?>/gi;
@@ -236,7 +237,7 @@ export function importFromHtml(
       props,
       slots: {},
       bindings: [],
-      metadata: { ownership: 'user-code' as CodeOwnership },
+      metadata: { ownership: 'user-authored' as const },
     });
     addedIds.push(id);
   }

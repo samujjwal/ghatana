@@ -1,15 +1,12 @@
 /**
  * Role-Specific Actions
- * 
- * Comprehensive action definitions for each persona role.
- * Supports 9 different roles with specialized actions for each.
- * 
+ *
  * @doc.type actions
- * @doc.purpose Role-specific action definitions
- * @doc.layer core
+ * @doc.purpose Role-specific action definitions for YAPPC personas
+ * @doc.layer product
  */
 
-import { ActionDefinition, ActionContext } from '../core/action-registry';
+import type { ActionDefinition, ActionContext } from '@ghatana/canvas';
 
 /**
  * Product Owner Actions

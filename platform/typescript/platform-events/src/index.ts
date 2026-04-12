@@ -104,6 +104,7 @@ export type {
   OperationRecord,
   SyncStatus,
   OwnershipRegion,
+  CodeOwnership,
 } from './visibility/types.js';
 
 export {

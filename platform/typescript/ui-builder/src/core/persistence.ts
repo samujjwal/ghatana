@@ -5,7 +5,7 @@
  * implementation, plus autosave orchestration with debouncing and session recovery.
  */
 
-import type { BuilderDocument } from './types.js';
+import type { BuilderDocument, DocumentId, NodeId, ComponentInstance } from './types.js';
 
 // ============================================================================
 // Serialization helpers
@@ -23,7 +23,10 @@ export function serializeDocument(doc: BuilderDocument): SerializedDocument {
 export function deserializeDocument(raw: SerializedDocument): BuilderDocument {
   return {
     ...raw,
-    nodes: new Map(Object.entries(raw.nodes)) as BuilderDocument['nodes'],
+    id: raw.id as DocumentId,
+    nodes: new Map(
+      Object.entries(raw.nodes).map(([k, v]) => [k as NodeId, v as ComponentInstance])
+    ) as unknown as ReadonlyMap<NodeId, ComponentInstance>,
   };
 }
 

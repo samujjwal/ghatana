@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, X as CloseIcon } from 'lucide-react';
 import {
   Box,
@@ -10,7 +9,7 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { Drawer } from '@ghatana/design-system';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 import { ComponentRenderer } from './ComponentRenderer';
 import { PropertyForm } from './PropertyForm';
@@ -22,7 +21,7 @@ import {
 } from './builder-document-adapter';
 
 import type { ComponentData } from './schemas';
-import type { BuilderDocument } from '@ghatana/ui-builder/core';
+import type { BuilderDocument } from '@ghatana/ui-builder';
 
 /**
  *

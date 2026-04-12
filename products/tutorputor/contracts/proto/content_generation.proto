@@ -5,25 +5,41 @@ package tutorputor.content_generation;
 import "google/protobuf/timestamp.proto";
 
 // =============================================================================
-// Content Generation Service Definition
+// AUTHORITATIVE CONTENT GENERATION CONTRACT
+// =============================================================================
+// Source of truth for content generation contracts across Tutorputor.
+// This file is the canonical definition used by:
+// - TypeScript workers (tutorputor-platform)
+// - Java AI agents (tutorputor-ai)
+// - Content Studio orchestration
+//
+// DO NOT modify without updating all consumers and contract tests.
 // =============================================================================
 
 service ContentGenerationService {
-  // Generate claims for a given topic
+  // Generate learning claims for a topic
+  // Returns claims with content_needs populated for downstream fan-out
   rpc GenerateClaims(GenerateClaimsRequest) returns (GenerateClaimsResponse);
-  
-  // Analyze content needs for claims
+
+  // Analyze content needs for a claim
+  // Use this when GenerateClaims does not populate content_needs
   rpc AnalyzeContentNeeds(AnalyzeContentNeedsRequest) returns (AnalyzeContentNeedsResponse);
-  
-  // Generate examples for claims
+
+  // Generate examples for a claim
   rpc GenerateExamples(GenerateExamplesRequest) returns (GenerateExamplesResponse);
-  
-  // Generate simulation content
+
+  // Generate animation manifest for a claim
+  rpc GenerateAnimation(GenerateAnimationRequest) returns (GenerateAnimationResponse);
+
+  // Generate simulation manifest for a claim
   rpc GenerateSimulation(GenerateSimulationRequest) returns (GenerateSimulationResponse);
-  
+
   // Validate generated content
   rpc ValidateContent(ValidateContentRequest) returns (ValidateContentResponse);
-  
+
+  // Enhance content with improvements
+  rpc EnhanceContent(EnhanceContentRequest) returns (EnhanceContentResponse);
+
   // Health check
   rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
 }
@@ -39,46 +55,43 @@ message RequestContext {
   map<string, string> metadata = 4;
 }
 
-message ContentClaim {
-  string claim_id = 1;
-  string claim_text = 2;
-  string claim_ref = 3;
-  repeated string keywords = 4;
-  string difficulty_level = 5;
-  string domain = 6;
-  map<string, string> metadata = 7;
+message LearningClaim {
+  string claim_ref = 1;
+  string text = 2;
+  string bloom_level = 3;
+  int32 order_index = 4;
+  ContentNeeds content_needs = 5;
 }
 
-message ContentExample {
-  string example_id = 1;
-  string claim_ref = 2;
-  string scenario = 3;
-  string question = 4;
-  string answer = 5;
-  string explanation = 6;
-  string difficulty = 7;
-  repeated string concepts = 8;
+// ContentNeeds defines what modalities are needed for a claim
+message ContentNeeds {
+  ExampleNeeds examples = 1;
+  SimulationNeeds simulation = 2;
+  AnimationNeeds animation = 3;
 }
 
-message SimulationContent {
-  string simulation_id = 1;
-  string claim_ref = 2;
-  string title = 3;
-  string description = 4;
-  repeated SimulationStep steps = 5;
-  map<string, string> parameters = 6;
-  string difficulty = 7;
-  int32 estimated_duration_minutes = 8;
+message ExampleNeeds {
+  bool required = 1;
+  repeated string types = 2;
+  int32 count = 3;
+  double necessity = 4;
+  string rationale = 5;
 }
 
-message SimulationStep {
-  string step_id = 1;
-  int32 order_index = 2;
-  string title = 3;
-  string description = 4;
-  string action_type = 5;
-  map<string, string> parameters = 6;
-  repeated string expected_outcomes = 7;
+message SimulationNeeds {
+  bool required = 1;
+  string interaction_type = 2;
+  string complexity = 3;
+  double necessity = 4;
+  string rationale = 5;
+}
+
+message AnimationNeeds {
+  bool required = 1;
+  string animation_type = 2;
+  int32 duration_seconds = 3;
+  double necessity = 4;
+  string rationale = 5;
 }
 
 // =============================================================================
@@ -97,11 +110,9 @@ message GenerateClaimsRequest {
 
 message GenerateClaimsResponse {
   RequestContext context = 1;
-  repeated ContentClaim claims = 2;
-  string generation_model = 3;
-  google.protobuf.Timestamp generated_at = 4;
-  float confidence_score = 5;
-  repeated string warnings = 6;
+  repeated LearningClaim claims = 2;
+  ValidationResult validation = 3;
+  GenerationMetadata metadata = 4;
 }
 
 // =============================================================================
@@ -109,39 +120,35 @@ message GenerateClaimsResponse {
 // =============================================================================
 
 message AnalyzeContentNeedsRequest {
-  RequestContext context = 1;
-  repeated ContentClaim claims = 2;
-  string target_grade_level = 3;
-  string learning_objective = 4;
-  repeated string available_resources = 5;
+  string request_id = 1;
+  string tenant_id = 2;
+  string claim_text = 3;
+  string bloom_level = 4;
+  string domain = 5;
+  string grade_level = 6;
+  map<string, string> context = 7;
 }
 
 message AnalyzeContentNeedsResponse {
-  RequestContext context = 1;
-  ContentNeedsAnalysis analysis = 2;
-  google.protobuf.Timestamp analyzed_at = 3;
+  string request_id = 1;
+  ContentNeeds content_needs = 2;
+  GenerationMetadata metadata = 3;
 }
 
-message ContentNeedsAnalysis {
-  repeated ContentGap gaps = 1;
-  repeated ContentSuggestion suggestions = 2;
-  int32 recommended_examples_count = 3;
-  int32 recommended_simulations_count = 4;
-  float complexity_score = 5;
+message ValidationResult {
+  bool valid = 1;
+  double confidence_score = 2;
+  repeated string issues = 3;
+  repeated string suggestions = 4;
 }
 
-message ContentGap {
-  string gap_type = 1;
-  string description = 2;
-  string severity = 3;
-  repeated string affected_claims = 4;
-}
-
-message ContentSuggestion {
-  string suggestion_type = 1;
-  string description = 2;
-  string priority = 3;
-  repeated string target_claims = 4;
+message GenerationMetadata {
+  string model_name = 1;
+  int32 tokens_used = 2;
+  int64 generation_time_ms = 3;
+  double temperature = 4;
+  string prompt_hash = 5;
+  string timestamp = 6;
 }
 
 // =============================================================================
@@ -149,22 +156,31 @@ message ContentSuggestion {
 // =============================================================================
 
 message GenerateExamplesRequest {
-  RequestContext context = 1;
-  string claim_ref = 2;
-  string claim_text = 3;
-  string grade_level = 4;
-  int32 count = 5;
-  repeated string example_types = 6;
-  map<string, string> context_params = 7;
+  string request_id = 1;
+  string tenant_id = 2;
+  string claim_ref = 3;
+  string claim_text = 4;
+  repeated string example_types = 5;
+  int32 count = 6;
+  string domain = 7;
+  string grade_level = 8;
+  map<string, string> context = 9;
 }
 
 message GenerateExamplesResponse {
-  RequestContext context = 1;
-  repeated ContentExample examples = 2;
-  string generation_model = 3;
-  google.protobuf.Timestamp generated_at = 4;
-  float confidence_score = 5;
-  repeated string warnings = 6;
+  string request_id = 1;
+  repeated Example examples = 2;
+  GenerationMetadata metadata = 3;
+}
+
+message Example {
+  string example_id = 1;
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  string content = 5;
+  repeated string tags = 6;
+  double relevance_score = 7;
 }
 
 // =============================================================================
@@ -172,23 +188,109 @@ message GenerateExamplesResponse {
 // =============================================================================
 
 message GenerateSimulationRequest {
-  RequestContext context = 1;
-  string claim_ref = 2;
-  string claim_text = 3;
-  string grade_level = 4;
-  string simulation_type = 5;
-  int32 max_steps = 6;
-  int32 duration_minutes = 7;
-  map<string, string> context_params = 8;
+  string request_id = 1;
+  string tenant_id = 2;
+  string claim_ref = 3;
+  string claim_text = 4;
+  string interaction_type = 5;
+  string complexity = 6;
+  string domain = 7;
+  string grade_level = 8;
+  map<string, string> context = 9;
 }
 
 message GenerateSimulationResponse {
-  RequestContext context = 1;
-  SimulationContent simulation = 2;
-  string generation_model = 3;
-  google.protobuf.Timestamp generated_at = 4;
-  float confidence_score = 5;
-  repeated string warnings = 6;
+  string request_id = 1;
+  SimulationManifest manifest = 2;
+  GenerationMetadata metadata = 3;
+}
+
+message SimulationManifest {
+  string manifest_id = 1;
+  string version = 2;
+  string domain = 3;
+  string title = 4;
+  string description = 5;
+  repeated Entity entities = 6;
+  repeated Step steps = 7;
+  repeated Keyframe keyframes = 8;
+  string domain_config = 9; // JSON string
+}
+
+message Entity {
+  string id = 1;
+  string label = 2;
+  string entity_type = 3;
+  string visual = 4; // JSON string
+  Position position = 5;
+}
+
+message Position {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+message Step {
+  string id = 1;
+  string description = 2;
+  int32 duration = 3;
+  repeated string actions = 4; // JSON strings
+}
+
+message Keyframe {
+  string id = 1;
+  int32 time_ms = 2;
+  string state = 3; // JSON string
+}
+
+// =============================================================================
+// Generate Animation
+// =============================================================================
+
+message GenerateAnimationRequest {
+  string request_id = 1;
+  string tenant_id = 2;
+  string claim_ref = 3;
+  string claim_text = 4;
+  string animation_type = 5;
+  int32 duration_seconds = 6;
+  string domain = 7;
+  string grade_level = 8;
+  map<string, string> context = 9;
+}
+
+message GenerateAnimationResponse {
+  string request_id = 1;
+  AnimationManifest manifest = 2;
+  GenerationMetadata metadata = 3;
+}
+
+message AnimationManifest {
+  string manifest_id = 1;
+  string version = 2;
+  string title = 3;
+  string description = 4;
+  int32 duration_seconds = 5;
+  repeated AnimationScene scenes = 6;
+  repeated AnimationCue cues = 7;
+  string narration_script = 8;
+}
+
+message AnimationScene {
+  string scene_id = 1;
+  int32 start_time_ms = 2;
+  int32 end_time_ms = 3;
+  string description = 4;
+  repeated string visual_elements = 5;
+}
+
+message AnimationCue {
+  string cue_id = 1;
+  int32 time_ms = 2;
+  string type = 3; // 'highlight', 'focus', 'label', 'fade'
+  string target = 4;
+  string effect = 5;
 }
 
 // =============================================================================
@@ -196,36 +298,68 @@ message GenerateSimulationResponse {
 // =============================================================================
 
 message ValidateContentRequest {
-  RequestContext context = 1;
-  oneof content {
-    ContentClaim claim = 2;
-    ContentExample example = 3;
-    SimulationContent simulation = 4;
-  }
-  string validation_type = 5;
-  repeated string validation_rules = 6;
+  string request_id = 1;
+  string tenant_id = 2;
+  string experience_id = 3;
+  string title = 4;
+  string description = 5;
+  repeated string claim_texts = 6;
+  string domain = 7;
+  map<string, string> metadata = 8;
 }
 
 message ValidateContentResponse {
-  RequestContext context = 1;
-  ValidationResult result = 2;
-  google.protobuf.Timestamp validated_at = 3;
-}
-
-message ValidationResult {
-  bool is_valid = 1;
-  float confidence_score = 2;
-  repeated ValidationIssue issues = 3;
-  repeated string suggestions = 4;
-  string overall_assessment = 5;
+  string request_id = 1;
+  string status = 2; // "valid" | "invalid" | "warning"
+  int32 overall_score = 3;
+  bool can_publish = 4;
+  map<string, int32> dimension_scores = 5; // educational, experiential, safety, technical, accessibility
+  repeated ValidationIssue issues = 6;
+  int32 issue_count = 7;
+  GenerationMetadata metadata = 8;
 }
 
 message ValidationIssue {
-  string issue_type = 1;
-  string severity = 2;
-  string description = 3;
-  string location = 4;
-  repeated string suggested_fixes = 5;
+  string issue_id = 1;
+  string dimension = 2; // educational, experiential, safety, technical, accessibility
+  string severity = 3; // error, warning, info
+  string message = 4;
+  string suggestion = 5;
+}
+
+// =============================================================================
+// Enhance Content
+// =============================================================================
+
+message EnhanceContentRequest {
+  string request_id = 1;
+  string tenant_id = 2;
+  string experience_id = 3;
+  string title = 4;
+  string description = 5;
+  repeated string claim_texts = 6;
+  string domain = 7;
+  string grade_level = 8;
+  repeated string enhancement_types = 9; // engagement, real_world, assessment, scaffolding
+  map<string, string> context = 10;
+}
+
+message EnhanceContentResponse {
+  string request_id = 1;
+  repeated Enhancement enhancements = 2;
+  double overall_confidence = 3;
+  int32 enhancement_count = 4;
+  GenerationMetadata metadata = 5;
+}
+
+message Enhancement {
+  string enhancement_id = 1;
+  string type = 2; // engagement, real_world, assessment, scaffolding
+  string title = 3;
+  string description = 4;
+  string rationale = 5;
+  double confidence = 6;
+  string implementation = 7; // JSON string with implementation details
 }
 
 // =============================================================================

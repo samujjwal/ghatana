@@ -103,11 +103,13 @@ function renderNodeHtml(
   const pad = ' '.repeat(cfg.indent * depth);
   const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
 
-  const attrs: string[] = [];
+  const attrs: string[] = [
+    // Always emit data-builder-contract — it is a semantic attribute, not a debug attribute
+    `${cfg.debugAttributePrefix}-contract="${escapeAttr(node.contractName)}"`,
+  ];
 
   if (cfg.emitDebugAttributes) {
-    attrs.push(`${cfg.debugAttributePrefix}-id="${node.id}"`);
-    attrs.push(`${cfg.debugAttributePrefix}-contract="${node.contractName}"`);
+    attrs.push(`${cfg.debugAttributePrefix}-node-id="${node.id}"`);
   }
 
   for (const [key, value] of Object.entries(node.props)) {
@@ -144,15 +146,23 @@ function renderNodeHtml(
 // ============================================================================
 
 /**
- * Mounts a BuilderDocument into a live DOM container element.
- * Returns a cleanup function that removes all created nodes.
+ * Mounts a BuilderDocument into a live DOM container element or a CSS selector.
+ *
+ * - Clears any existing content in the container before mounting.
+ * - Returns a cleanup function that removes all created nodes.
+ * - Throws a `RangeError` when a selector string resolves to no element.
  */
 export function mountToDOM(
-  container: Element,
   document: BuilderDocument,
+  containerOrSelector: Element | string,
   config: Partial<WebRendererConfig> = {},
 ): () => void {
+  const container = resolveContainer(containerOrSelector);
   const cfg = { ...DEFAULT_CONFIG, ...config };
+
+  // Clear existing content
+  container.innerHTML = '';
+
   const mountedElements: Element[] = [];
 
   for (const rootId of document.rootNodes) {
@@ -166,9 +176,28 @@ export function mountToDOM(
 
   return () => {
     for (const el of mountedElements) {
-      container.removeChild(el);
+      if (el.parentNode === container) {
+        container.removeChild(el);
+      }
     }
   };
+}
+
+/**
+ * Resolves `containerOrSelector` to an `Element`.
+ * Throws a `RangeError` when a string selector finds no element.
+ */
+function resolveContainer(containerOrSelector: Element | string): Element {
+  if (typeof containerOrSelector === 'string') {
+    const el = globalThis.document?.querySelector(containerOrSelector);
+    if (!el) {
+      throw new RangeError(
+        `mountToDOM: no element matching selector "${containerOrSelector}"`,
+      );
+    }
+    return el;
+  }
+  return containerOrSelector;
 }
 
 function renderNodeDOM(
@@ -178,13 +207,18 @@ function renderNodeDOM(
 ): Element {
   const tagName = `ghatana-${node.contractName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
 
-  // Use div as fallback for non-registered custom elements
   const el = globalThis.document?.createElement(tagName) ??
-    { setAttribute: () => {}, appendChild: () => {}, textContent: '' } as unknown as Element;
+    ({
+      setAttribute: () => { /* noop */ },
+      appendChild: () => { /* noop */ },
+      textContent: '',
+    } as unknown as Element);
+
+  // Always emit data-builder-contract
+  el.setAttribute(`${cfg.debugAttributePrefix}-contract`, node.contractName);
 
   if (cfg.emitDebugAttributes) {
-    el.setAttribute(`${cfg.debugAttributePrefix}-id`, node.id);
-    el.setAttribute(`${cfg.debugAttributePrefix}-contract`, node.contractName);
+    el.setAttribute(`${cfg.debugAttributePrefix}-node-id`, node.id);
   }
 
   for (const [key, value] of Object.entries(node.props)) {

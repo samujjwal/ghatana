@@ -5,16 +5,16 @@
  * @doc.purpose Ensure serializeToHtml and mountToDOM produce correct output.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { serializeToHtml, mountToDOM } from '../renderer.js';
-import type { BuilderDocument, ComponentInstance } from '../../core/types.js';
+import type { BuilderDocument, ComponentInstance, NodeId } from '../../core/types.js';
 import { createDocumentId, createNodeId } from '../../core/types.js';
 
 // ----------------------------------------------------------------------------
 // Fixtures
 // ----------------------------------------------------------------------------
 
-function makeDoc(nodes: Map<string, ComponentInstance> = new Map()): BuilderDocument {
+function makeDoc(nodes: Map<NodeId, ComponentInstance> = new Map()): BuilderDocument {
   return {
     id: createDocumentId(),
     version: '1',
@@ -27,7 +27,7 @@ function makeDoc(nodes: Map<string, ComponentInstance> = new Map()): BuilderDocu
       componentContracts: [],
       themeId: 'theme-1',
     },
-    rootNodes: Array.from(nodes.keys()),
+    rootNodes: Array.from(nodes.keys()) as readonly NodeId[],
     nodes,
     metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   };
@@ -38,10 +38,9 @@ function makeButton(id: string, props: Record<string, unknown> = {}): ComponentI
     id: createNodeId(id),
     contractName: 'Button',
     props: { children: 'Click me', variant: 'contained', ...props },
-    slots: new Map(),
-    children: [],
-    parentId: undefined,
-    metadata: { createdAt: new Date().toISOString() },
+    slots: {},
+    bindings: [],
+    metadata: {},
   };
 }
 
@@ -50,10 +49,9 @@ function makeTextField(id: string, props: Record<string, unknown> = {}): Compone
     id: createNodeId(id),
     contractName: 'TextField',
     props: { label: 'Name', placeholder: 'Enter name...', ...props },
-    slots: new Map(),
-    children: [],
-    parentId: undefined,
-    metadata: { createdAt: new Date().toISOString() },
+    slots: {},
+    bindings: [],
+    metadata: {},
   };
 }
 
@@ -71,7 +69,7 @@ describe('serializeToHtml', () => {
   });
 
   it('serializes a single Button component', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
     nodes.set(btn.id, btn);
     const doc = makeDoc(nodes);
@@ -82,7 +80,7 @@ describe('serializeToHtml', () => {
   });
 
   it('serializes multiple components', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
     const input = makeTextField('input-1');
     nodes.set(btn.id, btn);
@@ -95,7 +93,7 @@ describe('serializeToHtml', () => {
   });
 
   it('respects emitDebugAttributes config', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
     nodes.set(btn.id, btn);
     const doc = makeDoc(nodes);
@@ -108,7 +106,7 @@ describe('serializeToHtml', () => {
   });
 
   it('escapes special characters in props', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1', { children: 'Click "here" & <there>' });
     nodes.set(btn.id, btn);
     const doc = makeDoc(nodes);
@@ -122,7 +120,7 @@ describe('serializeToHtml', () => {
   });
 
   it('serializes boolean props correctly', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1', { disabled: true, fullWidth: false });
     nodes.set(btn.id, btn);
     const doc = makeDoc(nodes);
@@ -146,11 +144,17 @@ describe('mountToDOM', () => {
     document.body.appendChild(container);
   });
 
+  afterEach(() => {
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+  });
+
   it('mounts a single Button to the DOM', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
-    nodes.set(btn.id, btn);
-    const doc = makeDoc(nodes);
+    nodes.set(btn.id as NodeId, btn);
+    const doc = makeDoc(nodes as Map<NodeId, ComponentInstance>);
 
     mountToDOM(doc, container);
 
@@ -160,7 +164,7 @@ describe('mountToDOM', () => {
   });
 
   it('mounts multiple components', () => {
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
     const input = makeTextField('input-1');
     nodes.set(btn.id, btn);
@@ -180,7 +184,7 @@ describe('mountToDOM', () => {
     existing.textContent = 'existing';
     container.appendChild(existing);
 
-    const nodes = new Map<string, ComponentInstance>();
+    const nodes = new Map<NodeId, ComponentInstance>();
     const btn = makeButton('btn-1');
     nodes.set(btn.id, btn);
     const doc = makeDoc(nodes);

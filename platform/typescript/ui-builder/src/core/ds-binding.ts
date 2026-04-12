@@ -157,7 +157,8 @@ function checkPropType(value: unknown, propDef: ComponentProp): string | null {
     }
     case 'function':
     case 'node':
-    case 'ref':
+    case 'token-ref':
+    case 'component-ref':
       break;
     default:
       break;

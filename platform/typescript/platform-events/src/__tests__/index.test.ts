@@ -85,9 +85,9 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate autonomy levels', () => {
-      expect(isValidAutonomyLevel('manual')).toBe(true);
-      expect(isValidAutonomyLevel('assisted')).toBe(true);
-      expect(isValidAutonomyLevel('autonomous')).toBe(true);
+      expect(isValidAutonomyLevel('MANUAL')).toBe(true);
+      expect(isValidAutonomyLevel('ASSISTED')).toBe(true);
+      expect(isValidAutonomyLevel('AUTONOMOUS')).toBe(true);
       expect(isValidAutonomyLevel('invalid')).toBe(false);
     });
   });
@@ -100,9 +100,9 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate approval states', () => {
-      expect(isValidApprovalState('pending')).toBe(true);
-      expect(isValidApprovalState('approved')).toBe(true);
-      expect(isValidApprovalState('rejected')).toBe(true);
+      expect(isValidApprovalState('PENDING')).toBe(true);
+      expect(isValidApprovalState('APPROVED')).toBe(true);
+      expect(isValidApprovalState('REJECTED')).toBe(true);
       expect(isValidApprovalState('invalid')).toBe(false);
     });
   });
@@ -115,7 +115,7 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate change kinds', () => {
-      expect(isValidAIChangeKind('create')).toBe(true);
+      expect(isValidAIChangeKind('insert')).toBe(true);
       expect(isValidAIChangeKind('update')).toBe(true);
       expect(isValidAIChangeKind('delete')).toBe(true);
       expect(isValidAIChangeKind('invalid')).toBe(false);
@@ -130,22 +130,35 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate execution modes', () => {
-      expect(isValidAutonomyExecutionMode('immediate')).toBe(true);
-      expect(isValidAutonomyExecutionMode('deferred')).toBe(true);
+      expect(isValidAutonomyExecutionMode('AUTONOMOUS_ASSISTED')).toBe(true);
+      expect(isValidAutonomyExecutionMode('HUMAN_REVIEW_REQUIRED')).toBe(true);
       expect(isValidAutonomyExecutionMode('invalid')).toBe(false);
     });
 
     it('should create autonomy mode changed events', () => {
-      const event = createAutonomyModeChangedEvent('manual', 'assisted', 'test-reason');
+      const event = createAutonomyModeChangedEvent({
+        previousMode: 'HUMAN_ONLY',
+        newMode: 'AUTONOMOUS_ASSISTED',
+        changedBy: 'user',
+        reason: 'test-reason',
+        scope: 'global',
+      });
       expect(event).toBeDefined();
-      expect(event.fromMode).toBe('manual');
-      expect(event.toMode).toBe('assisted');
+      expect(event.payload.previousMode).toBe('HUMAN_ONLY');
+      expect(event.payload.newMode).toBe('AUTONOMOUS_ASSISTED');
     });
 
     it('should create autonomy mode violation events', () => {
-      const event = createAutonomyModeViolationEvent('assisted', 'test-reason');
+      const event = createAutonomyModeViolationEvent({
+        attemptedAction: 'auto-insert',
+        requiredMode: 'HUMAN_ONLY',
+        currentMode: 'AUTONOMOUS_ASSISTED',
+        blockedBy: 'human-only-policy',
+        actor: 'ai',
+        reason: 'test-reason',
+      });
       expect(event).toBeDefined();
-      expect(event.currentMode).toBe('assisted');
+      expect(event.payload.currentMode).toBe('AUTONOMOUS_ASSISTED');
     });
   });
 
@@ -157,15 +170,15 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate trust levels', () => {
-      expect(isValidTrustLevel('trusted')).toBe(true);
-      expect(isValidTrustLevel('untrusted')).toBe(true);
+      expect(isValidTrustLevel('TRUSTED_WORKSPACE')).toBe(true);
+      expect(isValidTrustLevel('UNTRUSTED')).toBe(true);
       expect(isValidTrustLevel('invalid')).toBe(false);
     });
 
     it('should create default security policy', () => {
       const policy = createDefaultSecurityPolicy();
       expect(policy).toBeDefined();
-      expect(policy.trustLevel).toBeDefined();
+      expect(policy.sandboxLevel).toBeDefined();
     });
   });
 
@@ -177,37 +190,39 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should validate data classifications', () => {
-      expect(isValidDataClassification('public')).toBe(true);
-      expect(isValidDataClassification('private')).toBe(true);
-      expect(isValidDataClassification('confidential')).toBe(true);
+      expect(isValidDataClassification('PUBLIC')).toBe(true);
+      expect(isValidDataClassification('INTERNAL')).toBe(true);
+      expect(isValidDataClassification('SENSITIVE')).toBe(true);
       expect(isValidDataClassification('invalid')).toBe(false);
     });
 
     it('should create default privacy policy', () => {
       const policy = createDefaultPrivacyPolicy();
       expect(policy).toBeDefined();
-      expect(policy.dataClassification).toBeDefined();
+      expect(typeof policy.dataMinimization).toBe('boolean');
+      expect(policy.retentionPeriod).toBeGreaterThan(0);
     });
   });
 
   describe('Visibility Contracts', () => {
     it('should create provenance records', () => {
-      const record = createProvenanceRecord('test-source', 'test-operation');
+      const record = createProvenanceRecord('test-source', 'test-author', '1.0.0');
       expect(record).toBeDefined();
       expect(record.source).toBe('test-source');
-      expect(record.operation).toBe('test-operation');
+      expect(record.author).toBe('test-author');
     });
 
     it('should create operation records', () => {
-      const record = createOperationRecord('test-operation', 'test-context');
+      const record = createOperationRecord('test-actor', 'test-trigger', 'low', createCorrelationId());
       expect(record).toBeDefined();
-      expect(record.operation).toBe('test-operation');
+      expect(record.actor).toBe('test-actor');
+      expect(record.trigger).toBe('test-trigger');
     });
 
     it('should create default sync status', () => {
       const status = createDefaultSyncStatus();
       expect(status).toBeDefined();
-      expect(status.state).toBeDefined();
+      expect(typeof status.syncInProgress).toBe('boolean');
     });
   });
 
@@ -220,10 +235,18 @@ describe('@ghatana/platform-events', () => {
     });
 
     it('should create audit records', () => {
-      const record = createAuditRecord('test-action', 'test-actor');
+      const correlationId = createCorrelationId();
+      const sessionId = createSessionId();
+      const record = createAuditRecord(
+        correlationId,
+        sessionId,
+        { type: 'user', id: 'test-actor' },
+        { type: 'test-action', target: 'test-target', targetType: 'document', details: {} },
+        { success: true },
+      );
       expect(record).toBeDefined();
-      expect(record.action).toBe('test-action');
-      expect(record.actor).toBe('test-actor');
+      expect(record.action.type).toBe('test-action');
+      expect(record.actor.id).toBe('test-actor');
     });
   });
 });
