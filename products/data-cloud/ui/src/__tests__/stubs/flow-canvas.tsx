@@ -1,5 +1,5 @@
 /**
- * Stub for @ghatana/flow-canvas used in vitest (jsdom) environments.
+ * Stub for @ghatana/canvas/flow used in vitest (jsdom) environments.
  * ReactFlow requires browser DOM APIs not available in jsdom, so we replace
  * the entire package with lightweight React stubs for unit tests.
  *

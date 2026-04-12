@@ -15,7 +15,6 @@ dependencies {
     // Core Platform dependencies
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
-    api(project(":platform:java:agent-memory"))
 
     // NOTE: ai-integration and governance as implementation to avoid circular dependencies
     implementation(project(":platform:java:ai-integration"))

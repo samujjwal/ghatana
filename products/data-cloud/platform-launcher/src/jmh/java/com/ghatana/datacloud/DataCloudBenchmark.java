@@ -8,8 +8,9 @@ import com.ghatana.datacloud.entity.DataType;
 import com.ghatana.datacloud.entity.MetaField;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import io.activej.eventloop.Eventloop;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -157,14 +158,14 @@ public class DataCloudBenchmark {
     public static class EventLogState {
 
         Eventloop eventloop;
-        InMemoryEventLogStoreProvider eventLogStore;
+        EventLogStore eventLogStore;
         TenantContext tenant;
         EventLogStore.EventEntry singleEvent;
 
         @Setup(Level.Trial)
         public void setup() {
             eventloop = Eventloop.builder().build();
-            eventLogStore = new InMemoryEventLogStoreProvider();
+            eventLogStore = EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider());
             tenant = TenantContext.of("bench-tenant");
             singleEvent = EventLogStore.EventEntry.builder()
                 .eventType("entity.created")
@@ -181,14 +182,14 @@ public class DataCloudBenchmark {
     public static class BatchEventState {
 
         Eventloop eventloop;
-        InMemoryEventLogStoreProvider eventLogStore;
+        EventLogStore eventLogStore;
         TenantContext tenant;
         List<EventLogStore.EventEntry> batch;
 
         @Setup(Level.Trial)
         public void setup() {
             eventloop = Eventloop.builder().build();
-            eventLogStore = new InMemoryEventLogStoreProvider();
+            eventLogStore = EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider());
             tenant = TenantContext.of("bench-tenant-batch");
 
             batch = new ArrayList<>(100);

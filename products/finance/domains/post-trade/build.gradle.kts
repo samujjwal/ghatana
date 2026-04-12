@@ -25,9 +25,6 @@ dependencies {
 
     // Platform Libraries
     api(project(":platform:java:audit"))
-    api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:http"))
 
     // ActiveJ
     api(libs.activej.promise)
@@ -48,6 +45,7 @@ dependencies {
     implementation(libs.activej.promise)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
+    implementation(libs.jedis)
     
     implementation(libs.hikaricp)
     implementation(libs.kafka.clients)

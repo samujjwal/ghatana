@@ -13,7 +13,7 @@ dependencies {
     implementation(project(":platform:contracts"))
 
     // Audio-Video common library (shared AI inference client, health/metrics, gRPC interceptors)
-    implementation(project(":products:audio-video:libs:common"))
+    implementation(project(":products:audio-video:libs:java:common"))
 
     // Agent framework — AbstractTypedAgent, AgentResult, AgentContext
     implementation(project(":platform:java:agent-core"))

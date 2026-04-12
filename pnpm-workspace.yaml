@@ -2,6 +2,10 @@ packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
   - "platform/typescript/foundation/*"
+  - "platform/typescript/canvas/*"
+
+  # Platform maintainer apps
+  - "platform/typescript/ghatana-studio"
 
   # Product UIs
   - "products/data-cloud/ui"

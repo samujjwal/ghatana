@@ -22,7 +22,7 @@
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
-    "@tanstack/react-table": "^8.0.0"
+    "@tanstack/react-table": "^8.21.3"
   },
   "peerDependencies": {
     "react": "^19.2.4",
@@ -32,7 +32,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "keywords": ["ghatana", "data-grid", "table", "pagination"],
   "author": "Ghatana Platform Team",

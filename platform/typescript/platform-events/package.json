@@ -1,0 +1,74 @@
+{
+  "name": "@ghatana/platform-events",
+  "version": "0.1.0",
+  "description": "Ghatana Platform Events - Cross-cutting event taxonomy, AI visibility, security, privacy, and observability types",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./events": {
+      "types": "./dist/events/index.d.ts",
+      "import": "./dist/events/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "import": "./dist/ai/index.js"
+    },
+    "./security": {
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js"
+    },
+    "./privacy": {
+      "types": "./dist/privacy/index.d.ts",
+      "import": "./dist/privacy/index.js"
+    },
+    "./visibility": {
+      "types": "./dist/visibility/index.d.ts",
+      "import": "./dist/visibility/index.js"
+    },
+    "./observability": {
+      "types": "./dist/observability/index.d.ts",
+      "import": "./dist/observability/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "docs:api": "typedoc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4",
+    "typedoc": "^0.28.18"
+  },
+  "keywords": [
+    "ghatana",
+    "platform",
+    "events",
+    "telemetry",
+    "ai",
+    "visibility",
+    "security",
+    "privacy",
+    "observability"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT",
+  "private": false
+}

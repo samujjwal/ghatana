@@ -31,16 +31,16 @@
       "@ghatana/design-system": [
         "../../../platform/typescript/capabilities/design-system"
       ],
-      "@ghatana/flow-canvas": [
-        "../../../platform/typescript/capabilities/canvas-core/flow-canvas"
+      "@ghatana/canvas/flow": [
+        "../../../platform/typescript/canvas/src/flow/index.ts"
       ],
       "@ghatana/theme": ["../../../platform/typescript/theme"],
       "@ghatana/tokens": ["../../../platform/typescript/tokens"],
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils"
       ],
-      "@ghatana/canvas": ["../../../platform/typescript/capabilities/canvas-core"],
-      "@ghatana/canvas/*": ["../../../platform/typescript/capabilities/canvas-core/dist/*"],
+      "@ghatana/canvas": ["../../../platform/typescript/canvas/src/index.ts"],
+      "@ghatana/canvas/*": ["../../../platform/typescript/canvas/src/*/index.ts"],
       "@ghatana/privacy-ui": [
         "../../../platform/typescript/privacy-ui/src"
       ],

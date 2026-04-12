@@ -4,10 +4,11 @@
  */
 package com.ghatana.yappc.agent;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +37,19 @@ public final class EventPublisher {
     private final EventLogStore eventLogStore;
     private final String defaultTenantId;
 
+    /**
+     * Preferred constructor using platform-owned event-store contracts.
+     */
     public EventPublisher(EventLogStore eventLogStore, String defaultTenantId) {
         this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
         this.defaultTenantId = Objects.requireNonNull(defaultTenantId, "defaultTenantId required");
+    }
+
+    /**
+     * Backward-compatible constructor for legacy Data-Cloud SPI callers.
+     */
+    public EventPublisher(com.ghatana.datacloud.spi.EventLogStore legacyEventLogStore, String defaultTenantId) {
+        this(EventLogStoreAdapters.toPlatformStore(legacyEventLogStore), defaultTenantId);
     }
 
     /**

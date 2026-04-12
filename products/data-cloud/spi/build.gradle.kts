@@ -18,6 +18,7 @@ dependencies {
     api(project(":products:data-cloud:platform-entity"))
     api(project(":platform-kernel:kernel-plugin"))
     api(project(":platform:java:core"))       // Offset type
+    api(project(":platform:java:domain"))     // Platform event-store contracts for migration bridge
     api(libs.activej.promise)                  // Promise<T> in EventLogStore
     
     compileOnly(libs.lombok)

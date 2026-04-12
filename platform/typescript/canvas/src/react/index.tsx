@@ -3,6 +3,27 @@
  * Provides React hooks and components for canvas integration
  */
 
+export {
+  MultiModeCanvas,
+  CanvasModeGate,
+  CanvasZoomControls,
+  CanvasModeSwitcher,
+  useMultiModeCanvas,
+  useCanvasMode,
+  useActiveTool,
+  useCanvasZoom,
+  type CanvasMode,
+  type CanvasTool,
+  type ModeViewport,
+  type MultiModeCanvasState,
+  type MultiModeCanvasActions,
+  type MultiModeCanvasContextValue,
+  type MultiModeCanvasProps,
+  type CanvasModeGateProps,
+  type CanvasZoomControlsProps,
+  type CanvasModeSwitcherProps,
+} from './multi-mode.js';
+
 import React from "react";
 import { useEffect, useRef, useState } from "react";
 import { CanvasRenderer } from "../core/canvas-renderer.js";

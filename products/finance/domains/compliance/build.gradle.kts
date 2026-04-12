@@ -26,9 +26,6 @@ dependencies {
     implementation(project(":products:finance:domains:reference-data"))
 
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
-    api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:http"))
     implementation(libs.activej.eventloop)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)

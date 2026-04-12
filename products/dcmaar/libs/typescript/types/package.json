@@ -49,6 +49,6 @@
   },
   "peerDependencies": {},
   "dependencies": {
-    "type-fest": "^5.4.3"
+    "type-fest": "^5.5.0"
   }
 }

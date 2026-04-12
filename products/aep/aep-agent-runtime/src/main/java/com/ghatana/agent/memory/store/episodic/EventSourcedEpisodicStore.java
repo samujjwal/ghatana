@@ -2,8 +2,8 @@ package com.ghatana.agent.memory.store.episodic;
 
 import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
 import com.ghatana.agent.memory.store.MemoryQuery;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;

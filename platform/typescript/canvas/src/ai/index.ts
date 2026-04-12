@@ -29,3 +29,20 @@ export {
   type AICanvasProviderProps,
   type CanvasAIContextValue,
 } from "./ai-canvas-provider.js";
+
+// AI-native capability group
+export type {
+  AICanvasCapability,
+  AICanvasCapabilities,
+  CanvasAISuggestion,
+  CanvasSuggestionPreview,
+  CanvasAIRequest,
+  CanvasAIResponse,
+  CanvasAIService,
+} from './capabilities.js';
+
+export {
+  DEFAULT_AI_CAPABILITIES,
+  hasCapability,
+} from './capabilities.js';
+

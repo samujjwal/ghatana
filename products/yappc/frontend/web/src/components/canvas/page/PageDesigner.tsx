@@ -15,15 +15,22 @@ import React, { useState, useCallback } from 'react';
 import { ComponentRenderer } from './ComponentRenderer';
 import { PropertyForm } from './PropertyForm';
 import { getDefaultComponentData } from './schemas';
+import {
+  componentDataToBuilderDocument,
+  builderDocumentToComponentData,
+  isBuilderDocument,
+} from './builder-document-adapter';
 
-import type { ComponentData} from './schemas';
+import type { ComponentData } from './schemas';
+import type { BuilderDocument } from '@ghatana/ui-builder/core';
 
 /**
  *
  */
 interface PageDesignerProps {
-  initialComponents?: ComponentData[];
+  initialComponents?: ComponentData[] | BuilderDocument;
   onComponentsChange?: (components: ComponentData[]) => void;
+  onDocumentChange?: (document: BuilderDocument) => void;
 }
 
 const AVAILABLE_COMPONENTS = [
@@ -37,11 +44,27 @@ const AVAILABLE_COMPONENTS = [
 export const PageDesigner: React.FC<PageDesignerProps> = ({
   initialComponents = [],
   onComponentsChange,
+  onDocumentChange,
 }) => {
-  const [components, setComponents] = useState<ComponentData[]>(initialComponents);
+  // Initialize components from either ComponentData[] or BuilderDocument
+  const [components, setComponents] = useState<ComponentData[]>(() => {
+    if (isBuilderDocument(initialComponents)) {
+      return builderDocumentToComponentData(initialComponents);
+    }
+    return initialComponents as ComponentData[];
+  });
+  
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Sync BuilderDocument when components change
+  useEffect(() => {
+    if (onDocumentChange) {
+      const document = componentDataToBuilderDocument(components);
+      onDocumentChange(document);
+    }
+  }, [components, onDocumentChange]);
 
   const selectedComponent = components.find((c) => c.id === selectedId);
   const editingComponent = components.find((c) => c.id === editingId);
@@ -99,6 +122,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       );
       setComponents(updated);
       onComponentsChange?.(updated);
+      // BuilderDocument sync is handled by useEffect
       setDrawerOpen(false);
       setEditingId(null);
     },

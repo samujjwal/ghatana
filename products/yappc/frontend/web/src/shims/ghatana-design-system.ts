@@ -93,6 +93,38 @@ export {
 } from '@mui/material/styles';
 
 export { cn } from '@ghatana/platform-utils';
+
+// AI visibility primitives from platform design-system
+export {
+  OperationStatus,
+  createOperationStatusFromContract,
+} from '../../../../../platform/typescript/design-system/src/atoms/OperationStatus';
+export type {
+  OperationState,
+  OperationStatusProps,
+} from '../../../../../platform/typescript/design-system/src/atoms/OperationStatus';
+export {
+  AILabel,
+  AILabelOverlay,
+} from '../../../../../platform/typescript/design-system/src/atoms/AILabel';
+export type {
+  AILabelProps,
+  AILabelOverlayProps,
+} from '../../../../../platform/typescript/design-system/src/atoms/AILabel';
+export {
+  ConfidenceBadge,
+  getConfidenceBand,
+} from '../../../../../platform/typescript/design-system/src/atoms/ConfidenceBadge';
+export type {
+  ConfidenceBadgeProps,
+  ConfidenceBand,
+} from '../../../../../platform/typescript/design-system/src/atoms/ConfidenceBadge';
+export {
+  ReviewRequiredBanner,
+} from '../../../../../platform/typescript/design-system/src/molecules/ReviewRequiredBanner';
+export type {
+  ReviewRequiredBannerProps,
+} from '../../../../../platform/typescript/design-system/src/molecules/ReviewRequiredBanner';
 export {
   ToastProvider,
   useToast,

@@ -29,11 +29,11 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
-    "turbo": "^2.9.3",
+    "prettier": "^3.8.2",
+    "turbo": "^2.9.6",
     "typescript": "^6.0.2"
   },
   "lint-staged": {
@@ -57,7 +57,7 @@
       "vitest": "^4.0.18",
       "tailwindcss": "^4.1.18",
       "eslint": "^9.39.2",
-      "prettier": "^3.8.1",
+      "prettier": "^3.8.2",
       "date-fns": "^4.1.0",
       "axios": "^1.13.1",
       "uuid": "npm:nanoid@5"

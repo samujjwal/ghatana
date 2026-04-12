@@ -70,6 +70,10 @@
     "./selection": {
       "types": "./dist/selection/index.d.ts",
       "import": "./dist/selection/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "import": "./dist/contracts/index.js"
     }
   },
   "files": [
@@ -88,10 +92,12 @@
   },
   "dependencies": {
     "@ghatana/accessibility": "workspace:*",
+    "@ghatana/ds-schema": "workspace:*",
     "@ghatana/domain-components": "workspace:*",
+    "@ghatana/platform-events": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.7.0",
+    "lucide-react": "^1.8.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
@@ -104,18 +110,18 @@
     "react-router": "^7.0.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.96.2",
+    "@tanstack/react-query": "^5.99.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^29.0.1",
+    "jsdom": "^29.0.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3",
+    "vite": "^8.0.8",
     "typedoc": "^0.28.18",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "keywords": [
     "ghatana",

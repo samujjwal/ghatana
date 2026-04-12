@@ -18,8 +18,8 @@
  */
 
 import React, { useCallback, useMemo, memo } from 'react';
-import { FlowCanvas, FlowControls, Panel } from '@ghatana/flow-canvas';
-import type { Node, Edge } from '@ghatana/flow-canvas';
+import { FlowCanvas, FlowControls, Panel } from '@ghatana/canvas/flow';
+import type { Node, Edge } from '@ghatana/canvas/flow';
 
 import {
     BaseTopologyNode,

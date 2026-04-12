@@ -6,7 +6,7 @@ package com.ghatana.services.featurestore;
 
 import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.resilience.CircuitBreaker;

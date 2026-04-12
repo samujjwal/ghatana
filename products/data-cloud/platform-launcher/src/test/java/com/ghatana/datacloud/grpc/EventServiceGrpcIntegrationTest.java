@@ -14,6 +14,7 @@ import com.ghatana.contracts.event.v1.IngestRequestProto;
 import com.ghatana.contracts.event.v1.IngestResponseProto;
 import com.ghatana.contracts.event.v1.QueryEventsRequestProto;
 import com.ghatana.contracts.event.v1.QueryEventsResponseProto;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -86,7 +87,8 @@ class EventServiceGrpcIntegrationTest {
     static void startServer() throws IOException {
         server = InProcessServerBuilder.forName(SERVER_NAME)
                 .directExecutor()
-                .addService(new EventServiceGrpcService(eventLogStore))
+                .addService(new EventServiceGrpcService(
+                    EventLogStoreAdapters.toPlatformStore(eventLogStore)))
                 .build()
                 .start();
 

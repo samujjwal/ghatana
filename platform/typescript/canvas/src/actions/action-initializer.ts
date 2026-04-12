@@ -9,18 +9,30 @@
  * @doc.layer core
  */
 
+import type { ActionDefinition } from '../core/action-registry';
 import { ActionRegistry, getActionRegistry } from '../core/action-registry';
 import {
     getAllLayerActions,
     UNIVERSAL_LAYER_ACTIONS,
 } from './layer-actions';
-import { getAllPhaseActions } from './phase-actions';
 import { getAllRoleActions } from './role-actions';
 
+export interface ActionRegistryOptions {
+    /**
+     * Product-supplied phase actions keyed by phase name.
+     * Platform canvas no longer bundles phase actions — they are product-specific.
+     * Pass these from the product entrypoint (e.g. YAPPC's phase-actions.ts).
+     */
+    phaseActions?: Record<string, ActionDefinition[]>;
+}
+
 /**
- * Initialize the global action registry with all actions
+ * Initialize the global action registry with all actions.
+ *
+ * Phase actions are intentionally NOT included by default — they are
+ * product-specific and must be supplied via `options.phaseActions`.
  */
-export function initializeActionRegistry(): ActionRegistry {
+export function initializeActionRegistry(options: ActionRegistryOptions = {}): ActionRegistry {
     const registry = getActionRegistry();
 
     // Clear existing actions
@@ -32,11 +44,12 @@ export function initializeActionRegistry(): ActionRegistry {
         registry.registerLayerActions(layer, actions);
     });
 
-    // Register phase-specific actions
-    const phaseActions = getAllPhaseActions();
-    Object.entries(phaseActions).forEach(([phase, actions]) => {
-        registry.registerPhaseActions(phase, actions);
-    });
+    // Register product-supplied phase-specific actions (if any)
+    if (options.phaseActions) {
+        Object.entries(options.phaseActions).forEach(([phase, actions]) => {
+            registry.registerPhaseActions(phase, actions);
+        });
+    }
 
     // Register role-specific actions
     const roleActions = getAllRoleActions();

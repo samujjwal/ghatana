@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 
@@ -285,7 +287,8 @@ public final class DataCloud {
                 .headers(event.headers())
                 .build();
 
-            return eventLogStore.append(tenant, entry)
+            return eventLogStore.append(
+                    EventLogStoreAdapters.toPlatformTenantContext(tenant), entry)
                 .map(offset -> DataCloudClient.Offset.of(numericOffsetValue(offset)));
         }
 
@@ -295,14 +298,18 @@ public final class DataCloud {
             TenantContext tenant = TenantContext.of(tenantId);
 
             if (query.startTime() != null && query.endTime() != null) {
-                return eventLogStore.readByTimeRange(tenant, query.startTime(), query.endTime(), query.limit())
+                return eventLogStore.readByTimeRange(
+                    EventLogStoreAdapters.toPlatformTenantContext(tenant),
+                    query.startTime(), query.endTime(), query.limit())
                     .map(entries -> entries.stream()
                         .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
                         .map(this::toEvent)
                         .toList());
             }
 
-            return eventLogStore.read(tenant, com.ghatana.platform.types.identity.Offset.zero(), query.limit())
+            return eventLogStore.read(
+                EventLogStoreAdapters.toPlatformTenantContext(tenant),
+                com.ghatana.platform.types.identity.Offset.zero(), query.limit())
                 .map(entries -> entries.stream()
                     .filter(e -> query.eventTypes().isEmpty() || query.eventTypes().contains(e.eventType()))
                     .map(this::toEvent)
@@ -317,7 +324,9 @@ public final class DataCloud {
 
             final boolean[] cancelled = {false};
 
-            eventLogStore.tail(tenant, fromOffset, entry -> {
+            eventLogStore.tail(
+                EventLogStoreAdapters.toPlatformTenantContext(tenant),
+                fromOffset, entry -> {
                 if (!cancelled[0]) {
                     if (request.eventTypes().isEmpty() || request.eventTypes().contains(entry.eventType())) {
                         handler.accept(toEvent(entry));
@@ -468,7 +477,7 @@ public final class DataCloud {
         private final Map<String, List<Consumer<EventEntry>>> tailListeners = new ConcurrentHashMap<>();
 
         @Override
-        public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
+        public Promise<Offset> append(com.ghatana.platform.domain.eventstore.TenantContext tenant, EventEntry entry) {
             List<EventEntry> entries = store.computeIfAbsent(tenant.tenantId(), k -> new ArrayList<>());
             long offset;
             synchronized (entries) {
@@ -486,7 +495,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
+        public Promise<List<Offset>> appendBatch(com.ghatana.platform.domain.eventstore.TenantContext tenant, List<EventEntry> entries) {
             List<Offset> results = new ArrayList<>();
             for (EventEntry entry : entries) {
                 results.add(append(tenant, entry).getResult());
@@ -495,7 +504,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
+        public Promise<List<EventEntry>> read(com.ghatana.platform.domain.eventstore.TenantContext tenant, Offset from, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             long startOffset = normalizedReadOffset(from);
             List<EventEntry> results = entries.stream()
@@ -506,7 +515,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> readByTimeRange(TenantContext tenant, java.time.Instant startTime, java.time.Instant endTime, int limit) {
+        public Promise<List<EventEntry>> readByTimeRange(com.ghatana.platform.domain.eventstore.TenantContext tenant, java.time.Instant startTime, java.time.Instant endTime, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             List<EventEntry> results = entries.stream()
                 .filter(e -> !e.timestamp().isBefore(startTime) && e.timestamp().isBefore(endTime))
@@ -516,7 +525,7 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<List<EventEntry>> readByType(TenantContext tenant, String eventType, Offset from, int limit) {
+        public Promise<List<EventEntry>> readByType(com.ghatana.platform.domain.eventstore.TenantContext tenant, String eventType, Offset from, int limit) {
             List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
             long startOffset = normalizedReadOffset(from);
             List<EventEntry> results = entries.stream()
@@ -528,18 +537,18 @@ public final class DataCloud {
         }
 
         @Override
-        public Promise<Offset> getLatestOffset(TenantContext tenant) {
+        public Promise<Offset> getLatestOffset(com.ghatana.platform.domain.eventstore.TenantContext tenant) {
             Long offset = offsets.get(tenant.tenantId());
             return Promise.of(offset != null ? Offset.of(offset) : Offset.zero());
         }
 
         @Override
-        public Promise<Offset> getEarliestOffset(TenantContext tenant) {
+        public Promise<Offset> getEarliestOffset(com.ghatana.platform.domain.eventstore.TenantContext tenant) {
             return Promise.of(Offset.zero());
         }
 
         @Override
-        public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
+        public Promise<Subscription> tail(com.ghatana.platform.domain.eventstore.TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
             // Replay any existing entries from the given offset
             List<EventEntry> existing = store.getOrDefault(tenant.tenantId(), List.of());
             int startIndex = tailStartIndex(from, existing.size());

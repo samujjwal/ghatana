@@ -22,11 +22,10 @@ java {
 dependencies {
     // Kernel Platform
     api(project(":platform-kernel:kernel-core"))
+    api(project(":products:finance:domains:market-data-core"))
 
     // Platform Libraries
     api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:http"))
 
     // ActiveJ
     api(libs.activej.promise)

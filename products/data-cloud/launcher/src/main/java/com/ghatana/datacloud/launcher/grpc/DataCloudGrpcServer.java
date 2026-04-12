@@ -3,7 +3,7 @@ package com.ghatana.datacloud.launcher.grpc;
 import com.ghatana.datacloud.grpc.EventLogGrpcService;
 import com.ghatana.datacloud.grpc.EventQueryGrpcService;
 import com.ghatana.datacloud.grpc.EventServiceGrpcService;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;

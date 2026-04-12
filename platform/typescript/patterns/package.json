@@ -1,0 +1,61 @@
+{
+  "name": "@ghatana/patterns",
+  "version": "0.1.0",
+  "description": "Ghatana Patterns - Shared workflow and AI UX compositions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "import": "./dist/workflows/index.js"
+    },
+    "./ai-ux": {
+      "types": "./dist/ai-ux/index.d.ts",
+      "import": "./dist/ai-ux/index.js"
+    },
+    "./forms": {
+      "types": "./dist/forms/index.d.ts",
+      "import": "./dist/forms/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ghatana/platform-events": "workspace:*",
+    "@ghatana/primitives": "workspace:*",
+    "@ghatana/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "keywords": [
+    "ghatana",
+    "patterns",
+    "workflows",
+    "ai-ux"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

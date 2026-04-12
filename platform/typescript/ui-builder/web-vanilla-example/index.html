@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ghatana Web Renderer - Vanilla Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f9fafb;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      margin-bottom: 2rem;
+    }
+    .header h1 {
+      margin: 0 0 0.5rem 0;
+      color: #111827;
+    }
+    .header p {
+      margin: 0;
+      color: #6b7280;
+    }
+    .renderer-output {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 2rem;
+      min-height: 200px;
+    }
+    .code-block {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Ghatana Web Renderer - Vanilla Example</h1>
+      <p>Demonstrates @ghatana/ui-builder/web vanilla DOM/HTML rendering without React</p>
+    </div>
+    
+    <div id="output" class="renderer-output">
+      <p>Rendering BuilderDocument...</p>
+    </div>
+    
+    <div class="code-block">
+      <pre id="source-code"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    // This example demonstrates using the vanilla web renderer in a non-React context
+    // In a real application, you would import from @ghatana/ui-builder/web
+    
+    // Mock BuilderDocument for demonstration
+    const mockDocument = {
+      id: 'doc-1',
+      version: '1',
+      name: 'Example Document',
+      designSystem: {
+        id: 'ds-1',
+        name: 'Ghatana Design System',
+        version: '1.0.0',
+        tokenSetIds: [],
+        componentContracts: [],
+        themeId: 'theme-1',
+      },
+      rootNodes: ['node-1', 'node-2'],
+      nodes: new Map([
+        ['node-1', {
+          id: 'node-1',
+          contractName: 'Button',
+          props: { label: 'Click Me', variant: 'primary' },
+          slots: {},
+          bindings: [],
+          metadata: {},
+        }],
+        ['node-2', {
+          id: 'node-2',
+          contractName: 'TextField',
+          props: { placeholder: 'Enter text' },
+          slots: {},
+          bindings: [],
+          metadata: {},
+        }],
+      ]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    // Display the source document
+    document.getElementById('source-code').textContent = JSON.stringify(mockDocument, null, 2);
+    
+    // In a real implementation, you would use:
+    // import { serializeToHtml, mountToDOM } from '@ghatana/ui-builder/web';
+    // const html = serializeToHtml(mockDocument);
+    // document.getElementById('output').innerHTML = html;
+    
+    // For this vanilla example, we'll show a placeholder
+    document.getElementById('output').innerHTML = `
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button style="padding: 0.5rem 1rem; background: #2563eb; color: white; border: none; border-radius: 4px;">
+          Click Me
+        </button>
+        <input type="text" placeholder="Enter text" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+      </div>
+      <p style="margin-top: 1rem; color: #6b7280; font-size: 14px;">
+        This is a visual representation. In production, use <code>@ghatana/ui-builder/web</code> 
+        with <code>serializeToHtml()</code> or <code>mountToDOM()</code> for actual rendering.
+      </p>
+    `;
+  </script>
+</body>
+</html>

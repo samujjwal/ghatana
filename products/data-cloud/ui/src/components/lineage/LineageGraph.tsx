@@ -17,8 +17,8 @@ import {
   useEdgesState,
   MarkerType,
   Position,
-} from '@ghatana/flow-canvas';
-import type { Node, Edge } from '@ghatana/flow-canvas';
+} from '@ghatana/canvas/flow';
+import type { Node, Edge } from '@ghatana/canvas/flow';
 import { Database, Table, FileText, BarChart3, Workflow } from 'lucide-react';
 import { LineageNode, LineageEdge } from '../../api/lineage.service';
 

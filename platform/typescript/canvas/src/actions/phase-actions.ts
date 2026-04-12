@@ -1,12 +1,19 @@
 /**
  * Phase-Specific Actions
- * 
- * Comprehensive action definitions for each lifecycle phase.
- * Actions support the YAPPC workflow: INTENT → SHAPE → VALIDATE → GENERATE → RUN → OBSERVE → IMPROVE
- * 
+ *
+ * @deprecated These actions encode the YAPPC product lifecycle
+ * (INTENT → SHAPE → VALIDATE → GENERATE → RUN → OBSERVE → IMPROVE)
+ * and do not belong in the platform canvas.
+ *
+ * Canonical location: products/yappc/frontend/web/src/canvas/phase-actions.ts
+ *
+ * Migration:
+ *   Before: import { getAllPhaseActions } from '@ghatana/canvas/actions/phase-actions';
+ *   After:  import { getAllPhaseActions } from '@/canvas/phase-actions';
+ *
  * @doc.type actions
- * @doc.purpose Phase-specific action definitions
- * @doc.layer core
+ * @doc.purpose Phase-specific action definitions (YAPPC product-local — moved here pending cleanup)
+ * @doc.layer product
  */
 
 import { ActionDefinition, ActionContext } from '../core/action-registry';

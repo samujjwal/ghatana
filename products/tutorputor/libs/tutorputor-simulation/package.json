@@ -49,8 +49,8 @@
     "d3": "^7.9.0",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
-    "jotai": "^2.19.0",
-    "konva": "^10.2.3",
+    "jotai": "^2.19.1",
+    "konva": "^10.2.5",
     "pixi.js": "^8.17.1",
     "react-dnd": "^16.0.1",
     "react-konva": "^19.2.3",
@@ -70,12 +70,12 @@
     "@types/d3": "^7.4.3",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-shape": "^3.1.8",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitest/coverage-v8": "^4.1.2",
-    "jsdom": "^29.0.1",
+    "@vitest/coverage-v8": "^4.1.4",
+    "jsdom": "^29.0.2",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   }
 }

@@ -1,8 +1,8 @@
 package com.ghatana.core.connectors.impl;
 
 import com.ghatana.core.connectors.EventSink;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;

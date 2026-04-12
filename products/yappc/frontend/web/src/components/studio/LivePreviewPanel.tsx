@@ -1,46 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  PreviewHostService,
+  createSandboxProfile,
+  PRESET_VIEWPORTS,
+  type SandboxProfile,
+  type HostToPreviewMessage,
+  type PreviewToHostMessage,
+} from '@ghatana/ui-builder/preview';
+import type { BuilderDocument } from '@ghatana/ui-builder/core';
 
 /**
  * Live Preview Panel component.
  *
- * Hot-reloading component preview for Studio Mode.
- * Shows real-time preview of selected component.
+ * Migrated to use platform preview protocol from @ghatana/ui-builder.
+ * Provides typed message protocol between host and preview iframe.
  *
  * @doc.type component
- * @doc.purpose Live preview for Studio Mode
+ * @doc.purpose Live preview for Studio Mode using platform preview protocol
  * @doc.layer ui
  */
 
 export interface LivePreviewPanelProps {
+  document?: BuilderDocument;
   componentPath?: string;
   previewUrl?: string;
   onRefresh?: () => void;
   className?: string;
+  viewportKey?: keyof typeof PRESET_VIEWPORTS;
+  onDocumentChange?: (document: BuilderDocument) => void;
 }
 
 export function LivePreviewPanel({
+  document,
   componentPath,
   previewUrl,
   onRefresh,
   className,
+  viewportKey = 'desktop',
+  onDocumentChange,
 }: LivePreviewPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [currentViewport, setCurrentViewport] = useState(viewportKey);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const previewServiceRef = useRef<PreviewHostService | null>(null);
 
+  // Initialize preview host service
   useEffect(() => {
+    if (!iframeRef.current) return;
+
+    const sandbox: SandboxProfile = createSandboxProfile({
+      id: 'yappc-preview',
+      name: 'YAPPC Preview',
+      viewport: PRESET_VIEWPORTS[currentViewport],
+    });
+
+    const service = new PreviewHostService(iframeRef.current, sandbox, {
+      onMounted: (msg) => {
+        console.log('Preview mounted:', msg);
+        setIsLoading(false);
+      },
+      onError: (msg) => {
+        console.error('Preview error:', msg);
+        setError(msg.error);
+        setIsLoading(false);
+      },
+    });
+
+    previewServiceRef.current = service;
+
+    return () => {
+      service.teardown();
+    };
+  }, [currentViewport]);
+
+  // Mount/update document when it changes
+  useEffect(() => {
+    if (!document || !previewServiceRef.current) return;
+
     setLastUpdate(new Date());
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, [componentPath, previewUrl]);
+    setError(null);
+
+    previewServiceRef.current.mountDocument(document);
+  }, [document]);
 
   const handleRefresh = () => {
     setIsLoading(true);
     setError(null);
+    if (previewServiceRef.current && document) {
+      previewServiceRef.current.mountDocument(document);
+    }
     onRefresh?.();
-    setTimeout(() => setIsLoading(false), 500);
+  };
+
+  const handleViewportChange = (key: keyof typeof PRESET_VIEWPORTS) => {
+    setCurrentViewport(key);
   };
 
   return (
@@ -61,6 +118,17 @@ export function LivePreviewPanel({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Viewport Selector */}
+          <select
+            value={currentViewport}
+            onChange={(e) => handleViewportChange(e.target.value as keyof typeof PRESET_VIEWPORTS)}
+            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="mobile">Mobile (375px)</option>
+            <option value="tablet">Tablet (768px)</option>
+            <option value="desktop">Desktop (1440px)</option>
+            <option value="desktop-xl">Desktop XL (1920px)</option>
+          </select>
           <span className="text-xs text-gray-500">
             {lastUpdate.toLocaleTimeString()}
           </span>
@@ -89,72 +157,25 @@ export function LivePreviewPanel({
               </button>
             </div>
           </div>
-        ) : !componentPath && !previewUrl ? (
+        ) : !document && !componentPath && !previewUrl ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <span className="text-4xl mb-2">👁️</span>
-              <p className="text-sm">Select a component to preview</p>
+              <p className="text-sm">Select a document or component to preview</p>
             </div>
           </div>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-h-[200px]">
-            {previewUrl ? (
-              <iframe
-                src={previewUrl}
-                className="w-full h-full border-0"
-                title="Component Preview"
-                sandbox="allow-scripts allow-same-origin"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="animate-pulse mb-4">
-                    <div className="h-20 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg mx-auto mb-4" />
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-2" />
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mx-auto" />
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Rendering preview...
-                  </p>
-                </div>
-              </div>
-            )}
+            <iframe
+              ref={iframeRef}
+              src={previewUrl || 'about:blank'}
+              title="Live Preview"
+              className="w-full h-full border-0"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+            />
           </div>
         )}
       </div>
-
-      {/* Footer Info */}
-      {componentPath && (
-        <div className="h-8 border-t border-gray-200 dark:border-gray-800 flex items-center px-3">
-          <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-            {componentPath}
-          </span>
-        </div>
-      )}
     </div>
   );
-}
-
-/**
- * Hook for managing live preview state.
- *
- * @doc.type hook
- * @doc.purpose Live preview state management
- */
-export function useLivePreview() {
-  const [componentPath, setComponentPath] = useState<string | undefined>();
-  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
-
-  const handleRefresh = () => {
-    // Trigger preview refresh
-    setPreviewUrl((prev) => (prev ? `${prev}?t=${Date.now()}` : prev));
-  };
-
-  return {
-    componentPath,
-    setComponentPath,
-    previewUrl,
-    setPreviewUrl,
-    handleRefresh,
-  };
 }

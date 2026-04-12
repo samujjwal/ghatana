@@ -62,6 +62,22 @@
       "types": "./dist/collaboration/index.d.ts",
       "import": "./dist/collaboration/index.js"
     },
+    "./telemetry": {
+      "types": "./dist/telemetry/index.d.ts",
+      "import": "./dist/telemetry/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    },
+    "./flow": {
+      "types": "./dist/flow/index.d.ts",
+      "import": "./dist/flow/index.js"
+    },
+    "./public": {
+      "types": "./dist/public/index.d.ts",
+      "import": "./dist/public/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -81,7 +97,7 @@
     "@preact/signals-core": "^1.14.1",
     "@xyflow/react": "^12.10.2",
     "dagre": "^0.8.5",
-    "jotai": "^2.19.0",
+    "jotai": "^2.19.1",
     "lit": "^3.3.2",
     "nanoid": "^5.1.7",
     "rxjs": "^7.8.2",
@@ -94,14 +110,14 @@
   },
   "devDependencies": {
     "@types/dagre": "^0.7.54",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitest/browser": "^4.1.2",
-    "jsdom": "^29.0.1",
+    "@vitest/browser": "^4.1.4",
+    "jsdom": "^29.0.2",
     "typedoc": "^0.28.18",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "keywords": [
     "canvas",

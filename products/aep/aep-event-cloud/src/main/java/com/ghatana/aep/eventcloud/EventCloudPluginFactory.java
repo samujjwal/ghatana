@@ -6,6 +6,7 @@ package com.ghatana.aep.eventcloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -45,7 +46,8 @@ public final class EventCloudPluginFactory {
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore,
             @NotNull EventCloudPluginConfig config) {
-        return new EventCloudPlugin(eventLogStore, entityStore, config);
+        return new EventCloudPlugin(
+            EventLogStoreAdapters.toPlatformStore(eventLogStore), entityStore, config);
     }
 
     /**
@@ -59,7 +61,8 @@ public final class EventCloudPluginFactory {
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore) {
         return new EventCloudPlugin(
-            eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode());
+            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+            entityStore, EventCloudPluginConfig.embeddedMode());
     }
 
     /**
@@ -75,7 +78,8 @@ public final class EventCloudPluginFactory {
             @NotNull EntityStore entityStore,
             @NotNull String serviceUrl) {
         return new EventCloudPlugin(
-            eventLogStore, entityStore, EventCloudPluginConfig.standalone(serviceUrl));
+            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+            entityStore, EventCloudPluginConfig.standalone(serviceUrl));
     }
 
     /**
@@ -89,6 +93,7 @@ public final class EventCloudPluginFactory {
             @NotNull EventLogStore eventLogStore,
             @NotNull EntityStore entityStore) {
         return new EventCloudPlugin(
-            eventLogStore, entityStore, EventCloudPluginConfig.fromEnvironment());
+            EventLogStoreAdapters.toPlatformStore(eventLogStore),
+            entityStore, EventCloudPluginConfig.fromEnvironment());
     }
 }

@@ -4,7 +4,7 @@ import path from 'path'
 
 const workspaceAliases = {
   '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
-  '@ghatana/flow-canvas': path.resolve(__dirname, '../../../platform/typescript/canvas/flow-canvas/src/index.ts'),
+  '@ghatana/canvas/flow': path.resolve(__dirname, '../../../platform/typescript/canvas/src/flow/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),

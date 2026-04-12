@@ -4,9 +4,9 @@
  */
 package com.ghatana.aep.eventcloud.channel;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

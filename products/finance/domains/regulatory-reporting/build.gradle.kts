@@ -24,9 +24,6 @@ dependencies {
     api(project(":platform-kernel:kernel-core"))
 
     // Platform Libraries
-    api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:http"))
 
     // ActiveJ
     api(libs.activej.promise)

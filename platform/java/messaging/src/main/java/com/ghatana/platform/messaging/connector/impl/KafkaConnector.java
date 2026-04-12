@@ -2,7 +2,6 @@ package com.ghatana.core.connectors.impl;
 
 import com.ghatana.core.connectors.BaseConnector;
 import com.ghatana.core.connectors.Connector;
-import com.ghatana.platform.observability.util.PromisesCompat;
 import io.activej.promise.Promise;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -18,6 +17,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -115,6 +116,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class KafkaConnector extends BaseConnector {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConnector.class);
+    private static final Executor BLOCKING_EXECUTOR = Executors.newCachedThreadPool(
+            r -> { Thread t = new Thread(r, "kafka-connector-io"); t.setDaemon(true); return t; });
 
     private final AtomicReference<KafkaProducer<String, String>> producer = new AtomicReference<>();
     private final AtomicReference<KafkaConsumer<String, String>> consumer = new AtomicReference<>();
@@ -126,7 +129,7 @@ public class KafkaConnector extends BaseConnector {
 
     @Override
     protected Promise<Void> doInitialize(ConnectorConfig config) {
-        return PromisesCompat.runBlocking(() -> {
+        return Promise.<Void>ofBlocking(BLOCKING_EXECUTOR, () -> {
             try {
                 topic.set(config.getProperty("topic", String.class, "default-topic"));
 
@@ -154,7 +157,7 @@ public class KafkaConnector extends BaseConnector {
 
     @Override
     protected Promise<Void> doStart() {
-        return PromisesCompat.runBlocking(() -> {
+        return Promise.<Void>ofBlocking(BLOCKING_EXECUTOR, () -> {
             try {
                 // Subscribe consumer if source-capable
                 if (isSourceCapable() && consumer.get() != null) {
@@ -172,7 +175,7 @@ public class KafkaConnector extends BaseConnector {
 
     @Override
     protected Promise<Void> doStop() {
-        return PromisesCompat.runBlocking(() -> {
+        return Promise.<Void>ofBlocking(BLOCKING_EXECUTOR, () -> {
             try {
                 // Close producer if initialized
                 if (producer.get() != null) {
@@ -198,7 +201,7 @@ public class KafkaConnector extends BaseConnector {
 
     @Override
     protected Promise<HealthCheckResult> doHealthCheck() {
-        return PromisesCompat.runBlocking(() -> {
+        return Promise.<HealthCheckResult>ofBlocking(BLOCKING_EXECUTOR, () -> {
             try {
                 boolean producerHealthy = !isSinkCapable() || producer.get() != null;
                 boolean consumerHealthy = !isSourceCapable() || (consumer.get() != null && consumer.get().listTopics().containsKey(topic.get()));

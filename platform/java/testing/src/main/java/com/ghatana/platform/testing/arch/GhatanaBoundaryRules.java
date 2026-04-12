@@ -80,6 +80,23 @@ public final class GhatanaBoundaryRules {
     }
 
     /**
+     * Platform modules must not import Data Cloud SPI contracts directly.
+     *
+     * <p>Event-store and tenant abstractions used by platform modules belong in
+     * platform-owned contracts (for example, {@code com.ghatana.platform.domain.eventstore}).
+     * This prevents silent platform → product dependency inversion through "SPI" imports.
+     *
+     * @return ArchRule that fails on platform imports of {@code com.ghatana.datacloud.spi..}
+     */
+    public static ArchRule platformMustNotImportDataCloudSpiContracts() {
+        return noClasses()
+                .that().resideInAPackage("com.ghatana.platform..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.datacloud.spi..")
+                .because("Platform modules must use platform-owned contracts, not product SPI contracts. "
+                        + "This avoids platform -> product dependency inversion.");
+    }
+
+    /**
      * Product modules must not directly instantiate agent implementation classes.
      * They must use the SPI / factory pattern via agent-core.
      *

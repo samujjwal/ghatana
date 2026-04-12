@@ -117,17 +117,15 @@ include(":platform:java:ai-integration")
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
-include(":platform:java:agent-memory")
 include(":platform:java:messaging")   // Unified messaging module (merged connectors + aep-connectors)
 include(":platform:java:audit")
 // platform:java:audio-video DEPRECATED: Migrated to products:audio-video:libs:java:common per Phase 3.1
 include(":products:audio-video:libs:java:common")
-include(":platform:java:distributed-cache")
 include(":platform:java:identity")
 include(":platform:java:data-governance")
 include(":platform:java:tool-runtime")
 include(":platform:java:policy-as-code")
-include(":platform:java:security-analytics")
+include(":platform:java:ds-cli")              // Design System CLI - DTCG token build, validate, audit
 // platform:java:incident-response DEPRECATED: Migrated to shared-services:incident-service per Phase 3.2
 
 // =============================================================================
@@ -214,7 +212,6 @@ include(":products:flashit")
 // Product: Audio-Video
 // =============================================================================
 include(":products:audio-video")
-include(":products:audio-video:libs:common")
 include(":products:audio-video:modules:intelligence:multimodal-service")
 include(":products:audio-video:modules:speech:stt-service")
 include(":products:audio-video:modules:speech:tts-service")
@@ -304,6 +301,7 @@ include(":products:finance:domains:risk")
 include(":products:finance:domains:compliance")
 include(":products:finance:domains:rules")
 include(":products:finance:domains:corporate-actions")
+include(":products:finance:domains:market-data-core")
 include(":products:finance:domains:market-data")
 include(":products:finance:domains:post-trade")
 include(":products:finance:domains:pricing")

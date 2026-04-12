@@ -69,8 +69,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
-    "jotai": "^2.18.0",
-    "lucide-react": "^1.7.0",
+    "jotai": "^2.19.1",
+    "lucide-react": "^1.8.0",
     "react-aria": "^3.47.0",
     "react-router-dom": "^7.14.0",
     "react-stately": "^3.45.0",
@@ -80,8 +80,8 @@
   },
   "devDependencies": {
     "@storybook/addon-essentials": "^8.6.14",
-    "@storybook/react": "^10.3.4",
-    "@storybook/react-vite": "^10.3.4",
+    "@storybook/react": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
     "@storybook/test": "^8.6.15",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -90,12 +90,12 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
-    "postcss": "^8.5.8",
-    "storybook": "^10.3.4",
+    "postcss": "^8.5.9",
+    "storybook": "^10.3.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2"
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
   },
   "peerDependencies": {
     "react": "^19.0.0",

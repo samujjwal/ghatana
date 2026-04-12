@@ -12,8 +12,8 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":platform:java:http"))
 
-    // EventEntry and EventLogStore abstractions (data-cloud SPI)
-    api(project(":products:data-cloud:spi"))
+    // EventEntry and EventLogStore abstractions are platform-owned
+    // via platform:java:domain to avoid platform -> product dependency inversion.
 
     // ActiveJ Promise support
     api(libs.activej.promise)

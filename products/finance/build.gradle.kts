@@ -43,7 +43,6 @@ dependencies {
     implementation(project(":products:finance:domains:regulatory-reporting"))
     implementation(project(":products:finance:domains:sanctions"))
     implementation(project(":products:finance:domains:surveillance"))
-    implementation(project(":platform:java:distributed-cache"))
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.micrometer.core)

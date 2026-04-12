@@ -46,6 +46,13 @@ class PlatformBoundaryRulesTest {
             GhatanaBoundaryRules.platformMustNotImportProducts();
 
     /**
+     * Platform modules must not import product-owned SPI contracts.
+     */
+    @ArchTest
+    static final ArchRule platform_must_not_import_datacloud_spi_contracts =
+            GhatanaBoundaryRules.platformMustNotImportDataCloudSpiContracts();
+
+    /**
      * Platform agent impl internals must not be referenced from non-platform code.
      * Products must use only the published agent API/SPI.
      */
@@ -232,5 +239,74 @@ class PlatformBoundaryRulesTest {
                     )
                     .as("Repository implementation classes should reside in repository/repositories/persistence/store/dao packages. "
                             + "EVOL-3 (2026-01): allowEmptyShould=true — informational.")
+                    .allowEmptyShould(true);
+
+    // ==================== Module Merge Enforcement Rules ====================
+    // These rules enforce that deprecated standalone module packages are not re-imported
+    // from outside their new canonical home modules.
+
+    /**
+     * agent-memory (merged into agent-core, 2026-04): All agent memory types must
+     * now be accessed transitively via platform:java:agent-core.
+     * No code outside agent-core should declare a direct package dependency on
+     * com.ghatana.agent.memory.* — agent-core re-exports these via its api scope.
+     *
+     * @doc.type method
+     * @doc.purpose Enforce agent-memory merge: all memory types accessible through agent-core
+     * @doc.layer platform
+     * @doc.pattern ArchitecturalTest
+     */
+    @ArchTest
+    static final ArchRule agent_memory_accessible_through_agent_core =
+            noClasses()
+                    .that().resideInAPackage("com.ghatana.platform..")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.agent.memory..")
+                    .as("Platform code should not depend on com.ghatana.agent.memory directly — "
+                            + "agent-memory was merged into agent-core (2026-04). "
+                            + "Use platform:java:agent-core as the dependency.")
+                    .allowEmptyShould(true);
+
+    /**
+     * distributed-cache (merged into database, 2026-04): All cache types must
+     * now be accessed transitively via platform:java:database.
+     * Product code must depend on platform:java:database, not a standalone distributed-cache module.
+     *
+     * @doc.type method
+     * @doc.purpose Enforce distributed-cache merge: cache types accessible through database
+     * @doc.layer platform
+     * @doc.pattern ArchitecturalTest
+     */
+    @ArchTest
+    static final ArchRule distributed_cache_accessible_through_database =
+            noClasses()
+                    .that().resideInAnyPackage("com.ghatana.datacloud..", "com.ghatana.finance..",
+                            "com.ghatana.phr..", "com.ghatana.yappc..")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.cache.DistributedCacheFactory")
+                    .as("Products must not instantiate DistributedCacheFactory directly in production code. "
+                            + "Use platform:java:database for cache access — distributed-cache merged into database (2026-04).")
+                    .allowEmptyShould(true);
+
+    /**
+     * security-analytics (merged into security, 2026-04): All analytics/egress-monitoring
+     * types must now be accessed via platform:java:security.
+     * No code should declare a separate platform:java:security-analytics dependency.
+     *
+     * @doc.type method
+     * @doc.purpose Enforce security-analytics merge: analytics types accessible through security
+     * @doc.layer platform
+     * @doc.pattern ArchitecturalTest
+     */
+    @ArchTest
+    static final ArchRule security_analytics_accessible_through_security =
+            noClasses()
+                    .that().resideInAPackage("com.ghatana.platform.security..")
+                    .should().dependOnClassesThat().resideInAnyPackage(
+                            "com.ghatana.aep..",
+                            "com.ghatana.yappc..",
+                            "com.ghatana.datacloud..",
+                            "com.ghatana.finance.."
+                    )
+                    .as("platform.security (including analytics) must remain product-agnostic. "
+                            + "security-analytics merged into security (2026-04).")
                     .allowEmptyShould(true);
 }

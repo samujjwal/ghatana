@@ -1,0 +1,51 @@
+{
+  "name": "@ghatana/ds-governance",
+  "version": "0.1.0",
+  "description": "Ghatana DS Governance - naming, duplication, compatibility, and contribution gates",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./naming": {
+      "types": "./dist/naming/index.d.ts",
+      "import": "./dist/naming/index.js"
+    },
+    "./duplication": {
+      "types": "./dist/duplication/index.d.ts",
+      "import": "./dist/duplication/index.js"
+    },
+    "./compatibility": {
+      "types": "./dist/compatibility/index.d.ts",
+      "import": "./dist/compatibility/index.js"
+    },
+    "./contribution": {
+      "types": "./dist/contribution/index.d.ts",
+      "import": "./dist/contribution/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ghatana/ds-schema": "workspace:*",
+    "@ghatana/ds-registry": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  },
+  "keywords": ["ghatana", "design-system", "governance"],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

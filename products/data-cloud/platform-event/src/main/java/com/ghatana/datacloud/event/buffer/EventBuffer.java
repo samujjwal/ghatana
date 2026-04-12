@@ -4,9 +4,9 @@
  */
 package com.ghatana.datacloud.event.buffer;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Event buffer providing backpressure management between event intake and processing.
  *
  * <p>Buffers events in memory up to a configurable capacity. When the buffer
- * reaches the high-water mark, it spills events to the Data-Cloud
+ * reaches the high-water mark, it spills events to the platform
  * {@link EventLogStore} for durable persistence. Events are drained in order
  * from the in-memory buffer first, then from the spill store.
  *
@@ -77,7 +77,7 @@ public final class EventBuffer {
     /**
      * Creates a buffer with default settings.
      *
-     * @param spillStore  Data-Cloud EventLogStore for spill persistence
+    * @param spillStore  platform EventLogStore for spill persistence
      * @param bufferName  logical name for this buffer (used in metrics and logging)
      */
     public EventBuffer(EventLogStore spillStore, String bufferName) {
@@ -87,7 +87,7 @@ public final class EventBuffer {
     /**
      * Creates a buffer with custom capacity settings.
      *
-     * @param spillStore    Data-Cloud EventLogStore for spill persistence
+    * @param spillStore    platform EventLogStore for spill persistence
      * @param bufferName    logical name for this buffer
      * @param capacity      maximum in-memory events before rejection
      * @param highWaterMark triggers spill when exceeded
@@ -149,7 +149,7 @@ public final class EventBuffer {
     }
 
     /**
-     * Spills excess events from the in-memory buffer to the Data-Cloud spill store.
+    * Spills excess events from the in-memory buffer to the spill store.
      *
      * @param tenantId tenant context for the spill store
      * @return promise of the number of events spilled

@@ -99,7 +99,9 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("performance")
+    }
     finalizedBy(tasks.jacocoTestReport)
 
     environment("DOCKER_HOST", "unix:///var/run/docker.sock")

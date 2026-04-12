@@ -1,6 +1,6 @@
 package com.ghatana.core.connectors.impl.sink;
 
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.promise.Promise;
 
 /**

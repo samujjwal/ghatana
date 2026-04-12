@@ -63,7 +63,7 @@ vi.mock('../../features/collection/components/CollectionForm', () => ({
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
-vi.mock('@ghatana/flow-canvas', () => ({
+vi.mock('@ghatana/canvas/flow', () => ({
     FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
         React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
     FlowControls: () => React.createElement('div'),

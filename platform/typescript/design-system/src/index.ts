@@ -43,6 +43,10 @@ export * from './atoms/Divider';
 export * from './atoms/Progress';
 export * from './atoms/LinearProgress';
 export * from './atoms/Rating';
+export * from './atoms/AILabel';
+export * from './atoms/ConfidenceBadge';
+export * from './atoms/OperationStatus';
+export * from './atoms/SyncStatusIndicator';
 
 // Molecules
 export * from './molecules/Accordion';
@@ -82,6 +86,7 @@ export * from './molecules/AppListItem';
 export * from './molecules/UsageStatsCard';
 export * from './molecules/PolicyCard';
 export * from './molecules/PermissionBanner';
+export * from './molecules/ReviewRequiredBanner';
 
 // Organisms
 export * from './organisms/DashboardLayout';

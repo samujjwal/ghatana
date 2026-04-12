@@ -45,7 +45,7 @@ dependencies {
     implementation(project(":platform:java:data-governance"))
     implementation(project(":platform:java:tool-runtime"))
     implementation(project(":platform:java:policy-as-code"))
-    implementation(project(":platform:java:security-analytics"))
+    implementation(project(":platform:java:security"))
     implementation(project(":shared-services:incident-service"))
     
     // gRPC transport (for AepGrpcServer)

@@ -11,7 +11,7 @@ val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 dependencies {
     // Audio-Video common library — SttEngine, TtsEngine, media types, security interceptors
-    implementation(project(":products:audio-video:libs:common"))
+    implementation(project(":products:audio-video:libs:java:common"))
 
     // gRPC
     implementation(libs.grpc.netty.shaded)

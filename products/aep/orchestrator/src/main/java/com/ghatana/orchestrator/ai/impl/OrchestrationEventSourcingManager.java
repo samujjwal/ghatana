@@ -2,8 +2,8 @@ package com.ghatana.orchestrator.ai.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.AgentDefinition;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.AgentExecutionStatus;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager.ExecutionState;

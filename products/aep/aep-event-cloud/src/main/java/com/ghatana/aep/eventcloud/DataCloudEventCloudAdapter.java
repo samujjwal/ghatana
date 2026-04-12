@@ -6,7 +6,7 @@ package com.ghatana.aep.eventcloud;
 
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.aep.event.spi.EventCloudConnector;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 
 import java.util.Objects;
 

@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Unified agent system for YAPPC.
@@ -67,6 +69,8 @@ import java.util.TreeSet;
 public class YappcAgentSystem {
 
     private static final Logger log = LoggerFactory.getLogger(YappcAgentSystem.class);
+    private static final Executor BLOCKING_IO_EXECUTOR = Executors.newCachedThreadPool(
+            r -> { Thread t = new Thread(r, "yappc-agent-init"); t.setDaemon(true); return t; });
 
     // --- Planner subsystem fields ---
     private final Eventloop eventloop;
@@ -150,7 +154,7 @@ public class YappcAgentSystem {
 
         log.info("Initializing unified YAPPC agent system...");
 
-        return Promise.ofBlocking(eventloop, () -> {
+        return Promise.ofBlocking(BLOCKING_IO_EXECUTOR, () -> {
             // Step 0: Wire AEP publisher used by defaultEventPublisher() in base agents.
             if (aepEventPublisher != null) {
                 YAPPCAgentBase.setGlobalAepEventPublisher(aepEventPublisher);

@@ -7,46 +7,58 @@
 
 import browser from 'webextension-polyfill';
 import { v4 as uuidv4 } from 'uuid';
+import type { CorrelationId, SessionId } from '@ghatana/platform-events';
+import { createCorrelationId, createSessionId } from '@ghatana/platform-events';
 // Note: crypto is not available in browser extensions, using Web Crypto API instead
 
 // ================================================================================================
 // Core Telemetry Types
 // ================================================================================================
 
+/**
+ * Browser-extension telemetry event.
+ *
+ * Uses platform-standard CorrelationId and SessionId branded types from
+ * @ghatana/platform-events for cross-product trace correlation.
+ * Extension-specific fields (source, severity, context) are defined locally.
+ */
 export interface TelemetryEvent {
   /** Unique event identifier */
   id: string;
-  
+
   /** Event category for filtering and analysis */
   type: 'performance' | 'interaction' | 'system' | 'business' | 'error' | 'security';
-  
+
   /** Event name for specific tracking */
   name: string;
-  
+
   /** Unix timestamp in milliseconds */
   timestamp: number;
-  
+
   /** Source component that generated the event */
   source: 'background' | 'popup' | 'options' | 'content' | 'dashboard';
-  
+
   /** Event-specific data payload */
-  data: Record<string, any>;
-  
-  /** Session identifier for user journey tracking */
-  sessionId: string;
-  
+  data: Record<string, unknown>;
+
+  /** Session identifier — uses platform-standard branded type for cross-product correlation */
+  sessionId: SessionId;
+
   /** Anonymous user identifier (hashed) */
   userId: string;
-  
+
   /** Extension version for compatibility tracking */
   version: string;
-  
+
   /** Event severity level */
   severity: 'info' | 'warn' | 'error' | 'critical';
-  
+
+  /** Platform-standard correlation ID for distributed tracing */
+  correlationId?: CorrelationId;
+
   /** Optional tags for categorization */
   tags?: string[];
-  
+
   /** Context information */
   context?: {
     url?: string;
@@ -114,7 +126,7 @@ export interface TelemetryMetrics {
 
 export class TelemetryManager {
   private config: TelemetryConfig;
-  private sessionId: string;
+  private sessionId: SessionId;
   private userId: string;
   private extensionVersion: string;
   private eventQueue: TelemetryEvent[] = [];
@@ -122,7 +134,7 @@ export class TelemetryManager {
   private initialized = false;
 
   constructor() {
-    this.sessionId = uuidv4();
+    this.sessionId = createSessionId(uuidv4());
     this.userId = '';
     this.extensionVersion = browser.runtime.getManifest().version;
     this.config = this.getDefaultConfig();
@@ -171,7 +183,7 @@ export class TelemetryManager {
   async track(
     type: TelemetryEvent['type'],
     name: string,
-    data: Record<string, any> = {},
+    data: Record<string, unknown> = {},
     severity: TelemetryEvent['severity'] = 'info',
     tags: string[] = []
   ): Promise<void> {
@@ -192,6 +204,7 @@ export class TelemetryManager {
       source: this.detectSource(),
       data: this.sanitizeData(data),
       sessionId: this.sessionId,
+      correlationId: createCorrelationId(uuidv4()),
       userId: this.userId,
       version: this.extensionVersion,
       severity,
@@ -232,7 +245,7 @@ export class TelemetryManager {
   /**
    * Track user interactions
    */
-  async trackInteraction(element: string, action: string, data: Record<string, any> = {}): Promise<void> {
+  async trackInteraction(element: string, action: string, data: Record<string, unknown> = {}): Promise<void> {
     await this.track('interaction', `${element}.${action}`, {
       element,
       action,

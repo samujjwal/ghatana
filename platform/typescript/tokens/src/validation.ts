@@ -1,12 +1,26 @@
 /**
  * Lightweight token validation without Zod to avoid SSR issues.
  * Simply validates that token values are of expected primitive types.
+ *
+ * For DTCG-schema-backed validation (build-time / CLI), see dtcg-bridge.ts.
+ * `tokenRegistrySchema` is re-exported here so tests can import it from one place
+ * without pulling in the full DTCG bridge in the production bundle.
  */
 
 export interface TokenValidationResult {
   success: boolean;
   errors?: string[];
 }
+
+// Re-export the DTCG-backed Zod schema for build-time / test use.
+// NOTE: this re-export is intentionally left out of the main bundle entry
+// (index.ts) to keep the SSR-safe surface clean.
+export {
+  tokenRegistrySchema,
+  validateTokenRegistryDTCG,
+  assertTokenRegistryDTCG,
+  type DTCGValidationResult,
+} from './dtcg-bridge';
 
 /**
  * Recursively validates token values are primitives or objects/arrays.

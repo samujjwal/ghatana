@@ -6,8 +6,8 @@ package com.ghatana.aep.eventcloud;
 
 import com.ghatana.aep.eventcloud.channel.EventChannel;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginState;
@@ -46,7 +46,8 @@ class EventCloudPluginTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        plugin = EventCloudPluginFactory.embedded(eventLogStore, entityStore);
+        // Construct directly with platform types (factory wraps legacy data-cloud SPI; tests use platform mocks)
+        plugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode());
     }
 
     @Test

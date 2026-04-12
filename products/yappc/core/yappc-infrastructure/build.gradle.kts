@@ -8,7 +8,6 @@ description = "YAPPC Consolidated Infrastructure Module"
 dependencies {
     // Platform modules
     implementation(project(":platform:java:database"))
-    implementation(project(":platform:java:distributed-cache"))
     implementation(project(":platform:java:observability"))
 
     // YAPPC shared utilities (includes AgentRegistryPort)

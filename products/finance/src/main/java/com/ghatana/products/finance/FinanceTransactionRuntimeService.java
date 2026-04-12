@@ -15,6 +15,8 @@ import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.promise.Promise;
 import java.time.Clock;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,8 @@ import org.slf4j.LoggerFactory;
 public final class FinanceTransactionRuntimeService implements KernelLifecycleAware {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceTransactionRuntimeService.class);
+    private static final Executor BLOCKING_EXECUTOR = Executors.newCachedThreadPool(
+            r -> { Thread t = new Thread(r, "finance-jdbc-init"); t.setDaemon(true); return t; });
     private final FinanceTransactionRuntimeConfig config;
     private final AgentOrchestrator orchestrator;
     private final AutonomyManager autonomyManager;
@@ -63,34 +67,29 @@ public final class FinanceTransactionRuntimeService implements KernelLifecycleAw
         }
 
         log.info("Starting Finance transaction runtime (persistent={})", config.isPersistenceEnabled());
-        try {
-            TransactionIdempotencyStore idempotencyStore;
-            if (config.isPersistenceEnabled()) {
+        if (!config.isPersistenceEnabled()) {
+            TransactionIdempotencyStore idempotencyStore = new TransactionProcessingIdempotencyStore(config.getIdempotencyTtl(), clock);
+            rateLimiter = createRateLimiter();
+            transactionService = new TransactionService(orchestrator, autonomyManager, clock, rateLimiter, idempotencyStore);
+            return Promise.complete();
+        }
+        return Promise.<Void>ofBlocking(BLOCKING_EXECUTOR, () -> {
+            try {
                 connectionPool = ConnectionPool.create(config.getDataSourceConfig().orElseThrow());
-                idempotencyStore = new JdbcTransactionProcessingIdempotencyStore(
+                TransactionIdempotencyStore idempotencyStore = new JdbcTransactionProcessingIdempotencyStore(
                     connectionPool.getDataSource(),
                     config.getIdempotencyTtl(),
                     clock
                 );
-            } else {
-                idempotencyStore = new TransactionProcessingIdempotencyStore(config.getIdempotencyTtl(), clock);
+                rateLimiter = createRateLimiter();
+                transactionService = new TransactionService(orchestrator, autonomyManager, clock, rateLimiter, idempotencyStore);
+                return null;
+            } catch (RuntimeException exception) {
+                started.set(false);
+                closePool();
+                throw exception;
             }
-
-            rateLimiter = createRateLimiter();
-
-            transactionService = new TransactionService(
-                orchestrator,
-                autonomyManager,
-                clock,
-                rateLimiter,
-                idempotencyStore
-            );
-            return Promise.complete();
-        } catch (RuntimeException exception) {
-            started.set(false);
-            closePool();
-            throw exception;
-        }
+        });
     }
 
     @Override

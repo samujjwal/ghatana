@@ -14,7 +14,7 @@ import com.ghatana.aep.eventcloud.channel.EventChannelRegistry;
 import com.ghatana.aep.eventcloud.store.EventCloudAgentStore;
 import com.ghatana.aep.eventcloud.store.EventCloudRunLedger;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.plugin.PluginCapability;
@@ -191,7 +191,7 @@ public final class EventCloudPlugin implements Plugin {
         }
         // Verify Data-Cloud connectivity via a lightweight offset read
         return eventLogStore.getLatestOffset(
-                com.ghatana.datacloud.spi.TenantContext.of("_health_check"))
+                com.ghatana.platform.domain.eventstore.TenantContext.of("_health_check"))
             .map(offset -> HealthStatus.ok())
             .then(Promise::of,
                 e -> Promise.of(HealthStatus.unhealthy(

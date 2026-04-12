@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Handle, Position } from '@ghatana/flow-canvas';
+import { Handle, Position } from '@ghatana/canvas/flow';
 import type { ApprovalNodeData } from '../../types/workflow.types';
 
 /**

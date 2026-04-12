@@ -54,6 +54,14 @@ public record IngestEvent(
         return new Builder();
     }
 
+    public EventEnvelope toEventEnvelope(String eventId) {
+        return EventEnvelope.fromIngestEvent(eventId, this);
+    }
+
+    public EventEnvelope toEventEnvelope() {
+        return EventEnvelope.fromIngestEvent(this);
+    }
+
     public static class Builder {
         private TenantId tenantId;
         private String eventTypeName;

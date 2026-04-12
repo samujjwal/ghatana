@@ -27,9 +27,6 @@ dependencies {
     implementation(project(":products:finance:domains:oms"))
 
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
-    api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:http"))
     implementation(libs.activej.eventloop)
     implementation(libs.activej.promise)
     implementation(libs.postgresql)

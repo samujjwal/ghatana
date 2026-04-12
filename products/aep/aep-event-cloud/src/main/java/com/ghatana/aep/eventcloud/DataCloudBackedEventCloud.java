@@ -5,9 +5,10 @@
 package com.ghatana.aep.eventcloud;
 
 import com.ghatana.aep.event.EventCloud;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +55,11 @@ public final class DataCloudBackedEventCloud implements EventCloud {
      * @throws IllegalStateException if no EventLogStore SPI provider is available
      */
     public DataCloudBackedEventCloud() {
-        this(ServiceLoader.load(EventLogStore.class).findFirst()
-            .orElseThrow(() -> new IllegalStateException(
-                "No EventLogStore SPI provider on classpath. " +
-                "Add data-cloud:platform or another EventLogStore implementation.")));
+        this(EventLogStoreAdapters.toPlatformStore(
+            ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class).findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                    "No EventLogStore SPI provider on classpath. " +
+                    "Add data-cloud:platform or another EventLogStore implementation."))));
     }
 
     /**

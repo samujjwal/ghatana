@@ -225,13 +225,12 @@ subprojects {
         
         format("misc") {
             target("**/*.gradle", "**/.gitignore")
-            // Exclude ALL .md files to avoid following broken symbolic links
-            // targetExclude '**/*.md' is not needed since we don't target them
+            targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
         }
         
         format("xml") {
             target("**/*.xml", "**/*.xsd")
-            // XML formatting enabled
+            targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
         }
         // Format checks are enforced on CI and when explicitly requested locally.
         // Gate with -PenforceFormatting=true for a pre-commit local check.

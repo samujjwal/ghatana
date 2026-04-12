@@ -11,6 +11,14 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/canvas/src/index.ts",
   ),
+  "@ghatana/canvas": resolve(
+    __dirname,
+    "../../../platform/typescript/canvas/src/index.ts",
+  ),
+  "@ghatana/canvas/flow": resolve(
+    __dirname,
+    "../../../platform/typescript/canvas/src/flow/index.ts",
+  ),
   "@ghatana/theme": resolve(
     __dirname,
     "../../../platform/typescript/theme/src/index.ts",

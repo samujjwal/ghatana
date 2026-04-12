@@ -34,6 +34,14 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         }
     }
 
+    private static void startSync(FinanceTransactionRuntimeService service) {
+        try {
+            service.start().toCompletableFuture().get();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start FinanceTransactionRuntimeService", e);
+        }
+    }
+
     @Test
     void preservesIdempotentReplayAcrossRuntimeRestarts() {
         FinanceTransactionRuntimeConfig config = FinanceAiPersistenceTestSupport.createTransactionRuntimeConfig(
@@ -46,7 +54,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
             aiRuntime,
             aiRuntime
         );
-        firstRuntime.start();
+        startSync(firstRuntime);
 
         TransactionResult firstResult = firstRuntime.getTransactionService().processTransaction(
             FinanceTransactionRuntimeTestSupport.createTransaction("txn-runtime-persist-1")
@@ -58,7 +66,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
             aiRuntime,
             aiRuntime
         );
-        secondRuntime.start();
+        startSync(secondRuntime);
 
         TransactionResult replayResult = secondRuntime.getTransactionService().processTransaction(
             FinanceTransactionRuntimeTestSupport.createTransaction("txn-runtime-persist-1")
@@ -86,7 +94,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         );
         FinanceTransactionRuntimeTestSupport.StubAiRuntime aiRuntime = new FinanceTransactionRuntimeTestSupport.StubAiRuntime();
         FinanceTransactionRuntimeService firstRuntime = new FinanceTransactionRuntimeService(config, aiRuntime, aiRuntime);
-        firstRuntime.start();
+        startSync(firstRuntime);
 
         assertEquals(
             "APPROVED",
@@ -97,7 +105,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         firstRuntime.stop();
 
         FinanceTransactionRuntimeService secondRuntime = new FinanceTransactionRuntimeService(config, aiRuntime, aiRuntime);
-        secondRuntime.start();
+        startSync(secondRuntime);
 
         RateLimitExceededException exception = org.junit.jupiter.api.Assertions.assertThrows(
             RateLimitExceededException.class,

@@ -11,7 +11,8 @@
  */
 
 import React from 'react';
-import { Sparkles, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { AILabel, ConfidenceBadge } from '@ghatana/design-system';
 import { cn, bgStyles, borderStyles, textStyles } from '../../lib/theme';
 
 // =============================================================================
@@ -84,10 +85,7 @@ export function PageHeader({
               <div className="flex items-center gap-2">
                 <h1 className={textStyles.h1}>{title}</h1>
                 {aiPowered && (
-                  <span className="ai-badge">
-                    <Sparkles className="h-3 w-3" />
-                    AI Powered
-                  </span>
+                  <AILabel variant="badge" size="sm" />
                 )}
               </div>
               {subtitle && (
@@ -285,9 +283,7 @@ export function AISuggestion({
               {title}
             </p>
             {confidence !== undefined && (
-              <span className="text-xs text-gray-400">
-                {Math.round(confidence * 100)}%
-              </span>
+              <ConfidenceBadge confidence={confidence} size="sm" showPercentage />
             )}
           </div>
           <p className="text-xs text-gray-500 mt-0.5">{description}</p>

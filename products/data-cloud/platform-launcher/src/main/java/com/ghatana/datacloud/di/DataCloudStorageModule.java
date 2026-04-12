@@ -12,7 +12,7 @@ import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
 import com.ghatana.datacloud.plugins.redis.RedisStorageConfig;
 import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
 import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.ghatana.datacloud.workflow.WorkflowRunRepository;
 import io.activej.inject.annotation.Provides;

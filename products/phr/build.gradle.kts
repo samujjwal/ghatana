@@ -55,8 +55,7 @@ dependencies {
     // Shared billing contracts — MIGRATED: use platform-plugins:plugin-billing-ledger
     // api(project(":platform:java:billing"))
 
-    // Distributed cache (ISSUE-X02 / KRQ-05)
-    implementation(project(":platform:java:distributed-cache"))
+    // Distributed cache provided via platform:java:database
 
     // ActiveJ
     api(libs.bundles.activej.core)

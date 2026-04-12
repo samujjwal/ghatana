@@ -39,7 +39,7 @@ vi.mock('../../api/memory.service', () => ({
     },
 }));
 
-vi.mock('@ghatana/flow-canvas', () => ({
+vi.mock('@ghatana/canvas/flow', () => ({
     FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
         React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
     FlowControls: () => React.createElement('div'),

@@ -281,7 +281,7 @@ export const routes: RouteObject[] = [
         path: 'entities',
         element: withSuspense(EntityBrowserPage),
       },
-      // Data Fabric — four-tier topology canvas using @ghatana/flow-canvas
+      // Data Fabric — four-tier topology canvas using @ghatana/canvas/flow
       {
         path: 'fabric',
         element: withSuspense(DataFabricPage),

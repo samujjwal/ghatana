@@ -4,8 +4,8 @@
  */
 package com.ghatana.datacloud.resilience;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;

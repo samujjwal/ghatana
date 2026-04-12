@@ -6,7 +6,7 @@
  * Provides drag-drop, selection, and connection validation.
  *
  * <p><b>Architecture</b><br>
- * - @ghatana/flow-canvas integration
+ * - @ghatana/canvas/flow integration
  * - Custom node types
  * - Edge validation
  * - Selection management
@@ -25,8 +25,8 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-} from '@ghatana/flow-canvas';
-import type { Node, Edge, Connection, OnNodesChange } from '@ghatana/flow-canvas';
+} from '@ghatana/canvas/flow';
+import type { Node, Edge, Connection, OnNodesChange } from '@ghatana/canvas/flow';
 import {
   workflowAtom,
   selectedNodeIdAtom,

@@ -10,6 +10,7 @@ import com.ghatana.contracts.event.v1.EventProto;
 import com.ghatana.contracts.event.v1.EventRecordProto;
 import com.ghatana.contracts.event.v1.ReadByTypeRequest;
 import com.ghatana.contracts.event.v1.ReadByTypeResponse;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
@@ -79,7 +80,8 @@ class GrpcStreamingTest {
 
     @BeforeAll
     static void startServer() throws IOException {
-        EventLogGrpcService service = new EventLogGrpcService(eventLogStore);
+        EventLogGrpcService service = new EventLogGrpcService(
+            EventLogStoreAdapters.toPlatformStore(eventLogStore));
 
         server = InProcessServerBuilder.forName(SERVER_NAME)
                 .directExecutor()

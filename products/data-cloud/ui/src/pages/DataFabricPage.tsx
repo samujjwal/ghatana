@@ -2,9 +2,9 @@
  * DataFabricPage — Four-tier data fabric topology visualizer.
  *
  * Renders the live HOT→WARM→COOL→COLD event-cloud topology using
- * `@ghatana/flow-canvas` with real-time throughput metrics from DC API.
+ * `@ghatana/canvas/flow` with real-time throughput metrics from DC API.
  *
- * This is the first production consumer of the `@ghatana/flow-canvas` library.
+ * This is the first production consumer of the `@ghatana/canvas/flow` library.
  *
  * @doc.type component
  * @doc.purpose Four-tier data fabric topology visualizer
@@ -24,7 +24,7 @@ import {
   type FlowNode,
   type FlowEdge,
   type OnConnect,
-} from '@ghatana/flow-canvas';
+} from '@ghatana/canvas/flow';
 import { apiClient } from '../lib/api/client';
 
 // =============================================================================
@@ -235,7 +235,7 @@ function TierLegend(): React.ReactElement {
 // =============================================================================
 
 /**
- * DataFabricPage — four-tier topology visualizer using `@ghatana/flow-canvas`.
+ * DataFabricPage — four-tier topology visualizer using `@ghatana/canvas/flow`.
  *
  * @doc.type component
  * @doc.purpose Data fabric topology view with live metrics

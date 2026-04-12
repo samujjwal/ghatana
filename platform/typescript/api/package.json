@@ -27,7 +27,7 @@
   "dependencies": {},
   "devDependencies": {
     "typescript": "^6.0.2",
-    "vitest": "^2.0.0"
+    "vitest": "^4.1.4"
   },
   "keywords": [
     "ghatana",

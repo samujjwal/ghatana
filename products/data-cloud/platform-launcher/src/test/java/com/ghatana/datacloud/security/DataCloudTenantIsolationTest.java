@@ -9,7 +9,7 @@ package com.ghatana.datacloud.security;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.*;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import io.activej.eventloop.Eventloop;
 import org.junit.jupiter.api.*;
 

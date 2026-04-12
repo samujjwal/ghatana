@@ -1,4 +1,6 @@
 import React from 'react';
+import { OperationStatus, AILabel } from '@ghatana/design-system';
+import type { OperationState } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
 
 /**
@@ -6,6 +8,8 @@ import { cn } from '@/lib/utils';
  *
  * Always-visible bar showing AI state and proactive suggestions.
  * Located at bottom of canvas, provides next best action recommendations.
+ *
+ * Uses @ghatana/design-system OperationStatus and AILabel for status rendering.
  *
  * @doc.type component
  * @doc.purpose AI status and next action display
@@ -38,54 +42,31 @@ export interface AIStatusBarProps {
   className?: string;
 }
 
-function AIStatusIcon({ status }: { status: AIStatus }) {
-  const statusConfig = {
-    ready: {
-      icon: '●',
-      color: 'text-green-500',
-      animate: false,
-    },
-    thinking: {
-      icon: '◐',
-      color: 'text-blue-500',
-      animate: true,
-    },
-    suggesting: {
-      icon: '✦',
-      color: 'text-purple-500',
-      animate: true,
-    },
-    error: {
-      icon: '⚠',
-      color: 'text-red-500',
-      animate: false,
-    },
-  };
-
-  const config = statusConfig[status];
-
-  return (
-    <span
-      className={cn('text-lg', config.color, config.animate && 'animate-pulse')}
-    >
-      {config.icon}
-    </span>
-  );
+/** Map product AIStatus values to platform OperationState. */
+function toOperationState(status: AIStatus): OperationState {
+  switch (status) {
+    case 'ready': return 'idle';
+    case 'thinking': return 'running';
+    case 'suggesting': return 'running';
+    case 'error': return 'failed';
+  }
 }
 
-function ProgressBar({
-  value,
-  className,
-}: {
-  value: number;
-  className?: string;
-}) {
+const STATUS_LABEL: Record<AIStatus, string> = {
+  ready: 'Ready',
+  thinking: 'Thinking...',
+  suggesting: 'Suggesting',
+  error: 'Error',
+};
+
+const ALL_PHASES: LifecyclePhase[] = [
+  'INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'BUILD', 'RUN', 'IMPROVE',
+];
+
+function ProgressBar({ value, className }: { value: number; className?: string }) {
   return (
     <div
-      className={cn(
-        'h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden',
-        className
-      )}
+      className={cn('h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden', className)}
     >
       <div
         className="h-full bg-blue-500 transition-all duration-300 ease-out"
@@ -119,17 +100,6 @@ export function AIStatusBar({
     setShowPhaseSelector(false);
   };
 
-  const statusLabel: Record<AIStatus, string> = {
-    ready: 'Ready',
-    thinking: 'Thinking...',
-    suggesting: 'Suggesting',
-    error: 'Error',
-  };
-
-  const allPhases: LifecyclePhase[] = [
-    'INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'BUILD', 'RUN', 'IMPROVE',
-  ];
-
   return (
     <div
       data-testid="ai-status-bar"
@@ -143,12 +113,14 @@ export function AIStatusBar({
       )}
       style={prefersReducedMotion ? { animation: 'none', transition: 'none' } : undefined}
     >
-      {/* AI Status Indicator */}
-      <div className="flex items-center gap-2 min-w-[120px]">
-        <AIStatusIcon status={status} />
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          AI Status: {statusLabel[status]}
-        </span>
+      {/* AI Status Indicator — delegates rendering to platform OperationStatus */}
+      <div className="flex items-center gap-2 min-w-[140px]">
+        <AILabel variant="badge" size="sm" isSuggestion={status === 'suggesting'} />
+        <OperationStatus
+          state={toOperationState(status)}
+          label={`AI Status: ${STATUS_LABEL[status]}`}
+          size="sm"
+        />
       </div>
 
       {/* Phase Progress */}
@@ -172,7 +144,7 @@ export function AIStatusBar({
             role="listbox"
             className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded shadow-lg z-10"
           >
-            {allPhases.map((phase) => (
+            {ALL_PHASES.map((phase) => (
               <li
                 key={phase}
                 role="option"

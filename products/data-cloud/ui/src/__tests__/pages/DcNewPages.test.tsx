@@ -50,8 +50,8 @@ vi.mock('../../lib/api/client', () => ({
   },
 }));
 
-// Mock @ghatana/flow-canvas so tests don't need ReactFlow DOM
-vi.mock('@ghatana/flow-canvas', () => ({
+// Mock @ghatana/canvas/flow so tests don't need ReactFlow DOM
+vi.mock('@ghatana/canvas/flow', () => ({
   FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
     React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
   FlowControls: () => React.createElement('div', { 'data-testid': 'flow-controls' }),

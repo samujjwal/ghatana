@@ -43,6 +43,15 @@ dependencies {
     // Redis
     api(libs.jedis)
     api("io.lettuce:lettuce-core:6.4.0.RELEASE")
+
+    // ActiveJ async (for distributed-cache abstractions)
+    api(libs.activej.promise)
+
+    // Caffeine (in-process cache fallback for distributed-cache)
+    implementation(libs.caffeine)
+
+    // Jackson (cache serialization)
+    implementation(libs.jackson.databind)
     
     // Database Drivers (optional - consumers should include what they need)
     compileOnly(libs.postgresql)

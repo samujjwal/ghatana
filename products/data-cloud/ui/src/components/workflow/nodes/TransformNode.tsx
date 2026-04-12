@@ -7,8 +7,8 @@
  * @doc.pattern Flow Node
  */
 import React from 'react';
-import { Handle, Position, NodeProps } from '@ghatana/flow-canvas';
-import type { Node } from '@ghatana/flow-canvas';
+import { Handle, Position, NodeProps } from '@ghatana/canvas/flow';
+import type { Node } from '@ghatana/canvas/flow';
 
 type TransformNodeData = Record<string, unknown> & {
   label?: string;

@@ -2,7 +2,7 @@ package com.ghatana.agent.memory.store.taskstate;
 
 import com.ghatana.agent.memory.model.taskstate.*;
 import com.ghatana.agent.memory.persistence.TaskStateRepository;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

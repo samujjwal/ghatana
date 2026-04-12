@@ -28,9 +28,6 @@ dependencies {
     // ─── Kernel Modules (Generic Capabilities) ───────────────────────────────────
     
     // ─── Platform Libraries ─────────────────────────────────────────────────────
-    api(project(":platform:java:security"))
-    api(project(":platform:java:database"))
-    api(project(":platform:java:observability"))
     
     // ─── ActiveJ (Mandatory) ─────────────────────────────────────────────────────
     api(libs.activej.promise)

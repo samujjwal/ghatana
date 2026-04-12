@@ -1,7 +1,7 @@
 package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.promise.Promise;
 
 import java.util.List;

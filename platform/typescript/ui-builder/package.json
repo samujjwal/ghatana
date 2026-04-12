@@ -1,0 +1,74 @@
+{
+  "name": "@ghatana/ui-builder",
+  "version": "0.1.0",
+  "description": "Ghatana UI Builder - Document model, bindings, actions, validation, and code generation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview/index.d.ts",
+      "import": "./dist/preview/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ghatana/platform-events": "workspace:*",
+    "@ghatana/ds-schema": "workspace:*",
+    "@ghatana/ds-registry": "workspace:*",
+    "@ghatana/primitives": "workspace:*",
+    "zod": "^4.3.6",
+    "nanoid": "^5.1.7",
+    "immer": "^10.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "keywords": [
+    "ghatana",
+    "ui-builder",
+    "builder",
+    "design-system",
+    "codegen"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

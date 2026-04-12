@@ -3,7 +3,7 @@ package com.ghatana.datacloud.grpc;
 import com.ghatana.contracts.event.v1.EventProto;
 import com.ghatana.contracts.event.v1.EventRecordProto;
 import com.ghatana.contracts.event.v1.UuidProto;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.types.identity.Offset;
 import com.google.protobuf.Timestamp;
 

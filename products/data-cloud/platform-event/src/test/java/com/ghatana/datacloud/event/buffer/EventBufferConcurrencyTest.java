@@ -4,8 +4,8 @@
  */
 package com.ghatana.datacloud.event.buffer;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -128,7 +129,7 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
         CountDownLatch  startGate = new CountDownLatch(1);
         List<List<EventEntry>> drainedBatches = new ArrayList<>();
         for (int i = 0; i < drainThreads; i++) drainedBatches.add(new ArrayList<>());
-        List<List<EventEntry>> captured = java.util.Collections.synchronizedList(drainedBatches);
+        List<List<EventEntry>> captured = Collections.synchronizedList(drainedBatches);
 
         for (int t = 0; t < drainThreads; t++) {
             final int idx = t;

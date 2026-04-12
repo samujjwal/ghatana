@@ -5,7 +5,7 @@
 package com.ghatana.aep.eventcloud.capability;
 
 import com.ghatana.aep.eventcloud.channel.EventChannelRegistry;
-import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.plugin.PluginCapability;
 
 import java.util.Objects;

@@ -5,8 +5,8 @@
 package com.ghatana.datacloud.benchmarks;
 
 import com.ghatana.datacloud.event.buffer.EventBuffer;
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import org.openjdk.jmh.annotations.Benchmark;

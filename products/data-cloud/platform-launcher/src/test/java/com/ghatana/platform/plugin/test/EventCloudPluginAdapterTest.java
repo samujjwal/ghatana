@@ -1,7 +1,7 @@
 package com.ghatana.platform.plugin.test;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.plugin.PluginRegistry;
 import com.ghatana.platform.plugin.adapter.EventCloudPluginAdapter;

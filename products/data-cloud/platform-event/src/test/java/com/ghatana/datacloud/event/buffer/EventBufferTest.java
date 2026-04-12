@@ -4,9 +4,9 @@
  */
 package com.ghatana.datacloud.event.buffer;
 
-import com.ghatana.datacloud.spi.EventLogStore;
-import com.ghatana.datacloud.spi.EventLogStore.EventEntry;
-import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
+import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
@@ -126,7 +126,7 @@ class EventBufferTest extends EventloopTestBase {
         }
 
         when(spillStore.appendBatch(any(TenantContext.class), any()))
-            .thenReturn(Promise.of(List.of(Offset.of("1"), Offset.of("2"))));
+            .thenReturn(Promise.of(List.of(Offset.of(1L), Offset.of(2L))));
 
         Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1"));
 

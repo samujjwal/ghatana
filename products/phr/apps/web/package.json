@@ -18,10 +18,10 @@
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
-    "@mui/material": "^7.3.9",
-    "jotai": "^2.19.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "@mui/material": "^9.0.0",
+    "jotai": "^2.19.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "react-router": "^7.14.0",
     "zod": "^4.3.6"
   },
@@ -29,13 +29,13 @@
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "jsdom": "^26.1.0",
+    "jsdom": "^29.0.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2"
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
   }
 }

@@ -32,7 +32,7 @@
   "dependencies": {
     "@ghatana/state": "workspace:*",
     "@yappc/core": "workspace:*",
-    "jotai": "^2.19.0",
+    "jotai": "^2.19.1",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
@@ -42,8 +42,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2"
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
   },
   "peerDependencies": {
     "react": "^19.0.0",

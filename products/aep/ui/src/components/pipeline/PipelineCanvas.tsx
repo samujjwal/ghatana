@@ -1,14 +1,14 @@
 /**
  * PipelineCanvas — Main canvas for visual pipeline design.
  *
- * Built on `@ghatana/flow-canvas` (platform shared canvas). Orchestrates:
+ * Built on `@ghatana/canvas/flow` (platform shared canvas). Orchestrates:
  * - Drag-and-drop from StagePalette to create stage/connector nodes
  * - Edge connections between stages (sequential pipeline flow)
  * - Selection sync with Jotai store → PipelinePropertyPanel
  * - Keyboard shortcuts (Delete, Backspace)
  *
  * @doc.type component
- * @doc.purpose Main pipeline editor canvas — wraps @ghatana/flow-canvas
+ * @doc.purpose Main pipeline editor canvas — wraps @ghatana/canvas/flow
  * @doc.layer frontend
  */
 import React, { useCallback, useEffect, useRef, type DragEvent } from 'react';
