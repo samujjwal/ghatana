@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -61,8 +60,3 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
 }
-
-tasks.test {
-    useJUnitPlatform()
-}
-

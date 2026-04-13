@@ -8,13 +8,8 @@
  */
 plugins {
     // Standard Java conventions - provides Java 21 toolchain, compilation settings
-    id("com.ghatana.java-conventions")
-    // Testing conventions - provides JUnit 5, JaCoCo, test configuration
-    id("com.ghatana.testing-conventions")
-    // Quality conventions - provides Spotless, SpotBugs, PMD
-    id("com.ghatana.quality-conventions")
-    // Lombok conventions - provides Lombok configuration
-    id("com.ghatana.lombok-conventions")
+    id("java-module")
+    // Add module-specific plugin IDs here when needed (for example protobuf-module)
     ${SPECIALIZED_PLUGINS}
 }
 

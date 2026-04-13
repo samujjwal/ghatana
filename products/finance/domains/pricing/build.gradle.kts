@@ -5,8 +5,7 @@
  * and pricing model management.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"

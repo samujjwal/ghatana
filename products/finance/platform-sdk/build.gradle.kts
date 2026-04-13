@@ -35,31 +35,31 @@ java {
 dependencies {
     // ─── Platform Core ────────────────────────────────────────────────────────
     api(project(":platform:java:core"))
-    
+
     // ─── Platform Kernel (for migrated modules) ───────────────────────────────
     api(project(":platform-kernel:kernel-core"))
-    
+
     // ─── Platform Libraries ───────────────────────────────────────────────────
     api(project(":platform-kernel:kernel-plugin"))
     api(project(":platform:java:workflow"))
-    
+
     // ─── ActiveJ (Mandatory for platform compliance) ───────────────────────────
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)
-    
+
     // ─── Serialization ────────────────────────────────────────────────────────
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // ─── Observability ────────────────────────────────────────────────────────
     implementation(libs.micrometer.core)
     implementation(libs.slf4j.api)
-    
+
     // ─── Database ─────────────────────────────────────────────────────────────
     implementation(libs.postgresql)
     implementation(libs.hikaricp)
-    
+
     // ─── Testing ─────────────────────────────────────────────────────────────
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

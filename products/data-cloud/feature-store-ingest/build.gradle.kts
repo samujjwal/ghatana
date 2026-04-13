@@ -34,21 +34,21 @@ dependencies {
 
     // Connection pool for PostgreSQL (production FeatureStoreService)
     implementation(libs.hikaricp)
-    
+
     // ActiveJ runtime
     implementation(libs.bundles.activej.core)
     implementation(libs.activej.promise)
     implementation(libs.activej.datastream)
     implementation(libs.activej.inject)
-    
+
     // Jackson for JSON
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // Logging (Log4j2 + SLF4J)
     implementation(libs.log4j.core)
     implementation(libs.log4j.slf4j.impl)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.core)

@@ -5,8 +5,7 @@
  * counterparty data, and financial instrument reference data.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"
@@ -34,7 +33,7 @@ dependencies {
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    
+
     implementation(libs.hikaricp)
     implementation(libs.jackson.databind)
     implementation(libs.jedis)

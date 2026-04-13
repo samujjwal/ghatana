@@ -5,7 +5,7 @@ import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
-import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
+import com.ghatana.datacloud.storage.InMemoryEventLogStore;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
@@ -490,8 +490,8 @@ public class FeatureStoreIngestLauncher {
             eventLogStore = new WarmTierEventLogStore(cfg.buildEventLogStoreDataSource());
             LOG.info("[feature-ingest] EventLogStore backed by PostgreSQL: {}", cfg.dbUrl);
         } else {
-            LOG.warn("[feature-ingest] using InMemoryEventLogStoreProvider — set FEATURE_INGEST_MODE=postgres for production");
-            eventLogStore = new InMemoryEventLogStoreProvider();
+            LOG.warn("[feature-ingest] using InMemoryEventLogStore — set FEATURE_INGEST_MODE=postgres for production");
+            eventLogStore = new InMemoryEventLogStore();
         }
 
         // ── FeatureStoreService ──────────────────────────────────────────

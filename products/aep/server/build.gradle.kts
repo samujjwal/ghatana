@@ -1,6 +1,6 @@
 /*
  * AEP Server Module - Build Configuration
- * 
+ *
  * Canonical server surface for the AEP product. Contains HTTP endpoints,
  * gRPC services, and the main application entry point.
  */
@@ -20,13 +20,13 @@ dependencies {
     implementation(project(":products:aep:aep-event-cloud"))  // Data-Cloud bridge plugin
     // aep-agent merged into aep-registry on 2026-03-22
     implementation(project(":products:aep:aep-api"))
-    
+
     // Orchestrator sub-module (pipeline lifecycle, execution queues, DI wiring)
     implementation(project(":products:aep:orchestrator"))
     // Data Cloud SPI plus launcher runtime surface for embedded client creation.
     implementation(project(":products:data-cloud:spi"))
     implementation(project(":products:data-cloud:platform-launcher"))
-    
+
     // AEP product modules — identity and compliance (Phase 8)
     implementation(project(":products:aep:aep-identity"))
     implementation(project(":products:aep:aep-compliance"))
@@ -47,7 +47,7 @@ dependencies {
     implementation(project(":platform:java:policy-as-code"))
     implementation(project(":platform:java:security"))
     implementation(project(":shared-services:incident-service"))
-    
+
     // gRPC transport (for AepGrpcServer)
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.stub)
@@ -60,17 +60,17 @@ dependencies {
     implementation(libs.activej.config)
     implementation(libs.bundles.activej.core)
     implementation(libs.activej.promise)
-    
+
     // Jackson for JSON
     implementation(libs.jackson.core)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // Logging
     implementation(libs.slf4j.api)
     implementation(libs.log4j.slf4j.impl)
     implementation(libs.log4j.core)
-    
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

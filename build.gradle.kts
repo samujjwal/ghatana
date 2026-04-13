@@ -17,7 +17,8 @@ plugins {
 group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
-// MIGRATION STATUS: ~15 modules migrated to build-logic, ~165 remaining.
+// MIGRATION STATUS: legacy module plugin IDs removed; 84 source-bearing root subprojects
+// still rely on fallback because they have not yet declared explicit build-logic plugins.
 //
 // Convention application uses buildFile.readText() to detect which plugins a module
 // declares. While this performs file I/O at configuration time and is not ideal for
@@ -35,7 +36,8 @@ subprojects {
 
     val onBuildLogic = buildContent.contains("id(\"java-module\")") ||
                        buildContent.contains("id(\"java-application\")") ||
-                       buildContent.contains("id(\"protobuf-module\")")
+                       buildContent.contains("id(\"protobuf-module\")") ||
+                       buildContent.contains("id(\"finance-domain-module\")")
 
     if (!onBuildLogic) {
         // Only auto-apply buildSrc conventions when the module has Java/Kotlin sources
@@ -101,6 +103,14 @@ subprojects {
             }
         }
     }
+
+    plugins.withId("com.diffplug.spotless") {
+        tasks.matching { it.name.startsWith("spotless") }.configureEach {
+            notCompatibleWithConfigurationCache(
+                "Spotless task file-tree serialization currently conflicts with symlink-heavy node_modules trees"
+            )
+        }
+    }
 }
 
 // IDE Configuration
@@ -124,11 +134,16 @@ tasks.register("buildHealth") {
     group = "verification"
     description = "Quick build health diagnostics"
 
+    val javaVersion = System.getProperty("java.version")
+    val gradleVersion = gradle.gradleVersion
+    val totalProjects = gradle.rootProject.childProjects.size
+    notCompatibleWithConfigurationCache("Diagnostic task prints static build metadata")
+
     doLast {
         println("=== Build Health Report ===")
-        println("Java Version: ${System.getProperty("java.version")}")
-        println("Gradle Version: ${project.gradle.gradleVersion}")
-        println("Total Projects: ${gradle.rootProject.childProjects.size}")
+        println("Java Version: $javaVersion")
+        println("Gradle Version: $gradleVersion")
+        println("Total Projects: $totalProjects")
         println("===========================")
     }
 }

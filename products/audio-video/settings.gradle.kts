@@ -87,13 +87,14 @@ fileTree("modules") {
     includeProject(projectName, projectDir)
 }
 
-// Include audio-video libs
+// Include audio-video libs (including nested java/ subdirectory)
 fileTree("libs") {
     include("**/build.gradle.kts")
     include("**/build.gradle")
 }.forEach { buildFile ->
     val projectDir = buildFile.parentFile
     val relativePath = projectDir.relativeTo(rootDir).path
+    // Handle both libs/xxx and libs/java/xxx patterns
     val projectName = "$productProjectPrefix:${relativePath.replace("/", ":")}"
     includeProject(projectName, projectDir)
 }

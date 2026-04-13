@@ -1,11 +1,11 @@
 /**
  * Platform Database Module
- * 
+ *
  * Provides database abstractions, connection pooling, and caching utilities.
  * Supports JDBC, JPA, Redis, and common database patterns.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -20,22 +20,22 @@ java {
 dependencies {
     // Platform Core
     api(project(":platform:java:core"))
-    
+
     // Platform Observability (metrics for cache warming, pub/sub, replica lag monitoring)
     api(project(":platform:java:observability"))
-    
+
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
-    
+
     // JDBC & Connection Pooling
     api(libs.hikaricp)
-    
+
     // Jakarta Persistence API
     api("jakarta.persistence:jakarta.persistence-api:3.1.0")
-    
+
     // Hibernate (for JPA implementation)
     api("org.hibernate.orm:hibernate-core:6.6.1.Final")
-    
+
     // Flyway Migration
     api(libs.flyway.core)
     api(libs.flyway.postgresql)
@@ -52,14 +52,14 @@ dependencies {
 
     // Jackson (cache serialization)
     implementation(libs.jackson.databind)
-    
+
     // Database Drivers (optional - consumers should include what they need)
     compileOnly(libs.postgresql)
     compileOnly(libs.h2)
-    
+
     // Logging
     implementation(libs.slf4j.api)
-    
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

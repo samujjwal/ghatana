@@ -12,10 +12,10 @@ description = "YAPPC AI Module - Consolidated AI capabilities (merged: ai + canv
 dependencies {
     // AI Integration (platform)
     api(project(":platform:java:ai-integration"))
-    
+
     // Agent Framework
     api(project(":platform:java:agent-core"))
-    
+
     // Platform libs
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:domain"))
-    
+
     // Domain models
     implementation(project(":products:yappc:libs:java:yappc-domain"))
 
@@ -58,9 +58,9 @@ dependencies {
     // GraphQL (from ai-requirements:api)
     api(libs.graphql.java)
     api(libs.graphql.extended.scalars)
-    
+
     // Validation (from ai-requirements:api)
-    
+
     // Persistence (from ai-requirements:application)
     implementation(libs.hibernate.core)
     implementation(libs.postgresql)

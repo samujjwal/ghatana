@@ -18,6 +18,28 @@ dependencies {
     implementation(libs.jackson.databind)
 }
 
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    format("misc") {
+        target(
+            "build.gradle.kts",
+            "settings.gradle.kts",
+            ".gitignore",
+            "README.md",
+            "OWNER.md"
+        )
+        targetExclude("backend/**", "client/**", "build/**", ".gradle/**")
+    }
+}
+
+tasks.matching { task ->
+    task.name == "spotlessMisc" ||
+        task.name == "spotlessMiscCheck" ||
+        task.name == "spotlessXml" ||
+        task.name == "spotlessXmlCheck"
+}.configureEach {
+    enabled = false
+}
+
 // Aggregate build task for all flashit components
 tasks.register("buildAll") {
     group = "build"

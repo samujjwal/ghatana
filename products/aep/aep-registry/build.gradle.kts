@@ -7,7 +7,7 @@
  */
 
 plugins {
-    id("com.ghatana.java-conventions")
+    id("java-module")
     `java-library`
 }
 
@@ -29,29 +29,29 @@ dependencies {
     implementation(project(":platform:contracts"))
     compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
     compileOnly("org.hibernate.orm:hibernate-core:6.6.1.Final")
-    
+
     // gRPC dependencies
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.protobuf)
-    
+
     // Connection pool and cache
     implementation("com.zaxxer:HikariCP:6.2.1")
     implementation("redis.clients:jedis:5.1.0")
-    
+
     // Lombok for model classes
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    
+
     // Jakarta
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
-    
+
     // ActiveJ
     implementation(libs.activej.promise)
-    
+
     // Jackson
     implementation(libs.jackson.databind)
-    
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

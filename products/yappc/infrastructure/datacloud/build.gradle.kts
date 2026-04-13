@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 group = "com.ghatana.products.yappc"
@@ -10,29 +9,29 @@ description = "YAPPC Infrastructure - Data-Cloud Integration"
 dependencies {
     // Data-Cloud SPI only (no platform dep)
     implementation(project(":products:data-cloud:spi"))
-    
+
     // YAPPC domain models (for mapping)
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:core:yappc-infrastructure"))
-    
+
     // Platform libs
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
     // implementation(project(":libs:types")) - path needs verification
-    
+
     // ActiveJ for async
     implementation(libs.activej.promise)
-    
+
     // Jackson for JSON mapping
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // Logging
     implementation(libs.slf4j.api)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

@@ -49,18 +49,18 @@ dependencies {
     implementation("org.rocksdb:rocksdbjni:8.0.0")
     runtimeOnly("org.postgresql:postgresql")
     implementation(libs.h2)
-    
+
     // AWS SDK for S3 storage connectors
     implementation(platform("software.amazon.awssdk:bom:2.29.46"))
     implementation("software.amazon.awssdk:s3")
-    
+
     // ClickHouse client
     implementation("com.clickhouse:clickhouse-client:0.5.0")
-    
+
     // OpenSearch client
     implementation("org.opensearch.client:opensearch-rest-client:2.18.0")
     implementation("org.opensearch.client:opensearch-java:2.18.0")
-    
+
     // Apache HTTP client for OpenSearch
     implementation("org.apache.httpcomponents:httpclient:4.5.14")
 

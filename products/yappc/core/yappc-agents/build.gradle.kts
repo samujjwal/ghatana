@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
     id("jacoco")
 }
 
@@ -13,38 +12,38 @@ dependencies {
     // Platform agent modules
     implementation(project(":platform:java:agent-core"))
     implementation(project(":products:aep:aep-agent-runtime"))
-    
+
     // AEP registry service
     implementation(project(":products:aep:aep-registry"))
-    
+
     // YAPPC agents aggregator (includes all specialist modules)
     implementation(project(":products:yappc:core:agents"))
-    
+
     // YAPPC domain
     implementation(project(":products:yappc:core:yappc-domain-impl"))
-    
+
     // YAPPC API (for domain classes)
     implementation(project(":products:yappc:core:yappc-api"))
-    
+
     // YAPPC shared utilities
     implementation(project(":products:yappc:core:yappc-shared"))
-    
+
     // YAPPC infrastructure
     implementation(project(":products:yappc:core:yappc-infrastructure"))
-    
+
     // YAML parsing
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.jackson.databind)
-    
+
     // JSON Schema validation
     implementation(libs.networknt.validator)
-    
+
     // Migration tooling
-        
+
     // Lombok for data classes
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -72,7 +71,7 @@ sourceSets {
             srcDirs(
                 "src/main/java",
                 "src/architecture/java",
-                "src/code/java", 
+                "src/code/java",
                 "src/data/java",
                 "src/security/java",
                 "src/testing/java"
@@ -83,7 +82,7 @@ sourceSets {
                 "src/main/resources",
                 "src/architecture/resources",
                 "src/code/resources",
-                "src/data/resources", 
+                "src/data/resources",
                 "src/security/resources",
                 "src/testing/resources"
             )
@@ -96,7 +95,7 @@ sourceSets {
                 "src/architecture/test",
                 "src/code/test",
                 "src/data/test",
-                "src/security/test", 
+                "src/security/test",
                 "src/testing/test"
             )
         }
@@ -107,7 +106,7 @@ sourceSets {
 tasks.register("validateAgentConfigs") {
     group = "verification"
     description = "Validate all YAML agent configurations"
-    
+
     doLast {
         // Validation logic will be implemented
         println("Validating agent configurations...")
@@ -117,7 +116,7 @@ tasks.register("validateAgentConfigs") {
 tasks.register("generateAgentDocs") {
     group = "documentation"
     description = "Generate documentation for all agents"
-    
+
     doLast {
         // Documentation generation logic
         println("Generating agent documentation...")

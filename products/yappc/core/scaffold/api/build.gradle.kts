@@ -19,24 +19,24 @@ application {
 dependencies {
     // Internal dependencies
     implementation(project(":products:yappc:core:scaffold:core"))  // absorbs packs
-    
+
     // JSON serialization
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
-    
+
     // CLI (from scaffold:cli)
     implementation(libs.picocli)
-        
+
     // Logging
     implementation(libs.slf4j.api)
-    
+
     // HTTP — migrated to ActiveJ (ADR-004 compliant)
     implementation(project(":platform:java:http"))
     implementation(libs.activej.http)
     implementation(libs.activej.eventloop)
     implementation(libs.activej.promise)
-    
+
     // gRPC (from api/grpc)
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)
@@ -44,7 +44,7 @@ dependencies {
         implementation(libs.protobuf.java)
     implementation(libs.protobuf.java.util)
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
-    
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

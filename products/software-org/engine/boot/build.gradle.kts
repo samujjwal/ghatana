@@ -28,22 +28,22 @@ dependencies {
     // ConfigurableOrganization, and OrganizationConfigLoader wiring.
     // software-org IS-A virtual-org extension (structural coupling is intentional).
     implementation(project(":products:virtual-org:modules:framework"))
-    
+
     // Domain models and agents
     implementation(project(":products:software-org:engine:modules:domain-model"))
-    
+
     // HTTP server for REST API
     implementation(project(":platform:java:http"))
-    
+
     // Observability and metrics
     implementation(project(":platform:java:observability"))
-    
+
     // Configuration and validation (includes YAML support via Jackson)
     implementation(project(":platform:java:config"))
-    
+
     // Common utilities (includes JsonUtils with Jackson)
     implementation(project(":platform:java:core"))
-    
+
     // ActiveJ runtime (includes DI framework)
     implementation(project(":platform:java:runtime"))
 
@@ -52,7 +52,7 @@ dependencies {
 
     // Integration plugins
     runtimeOnly(project(":products:software-org:engine:modules:integration"))
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -78,11 +78,11 @@ tasks.withType<Zip> {
 tasks.register<Jar>("fatJar") {
     archiveClassifier.set("all")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    
+
     manifest {
         attributes["Main-Class"] = "com.ghatana.softwareorg.launcher.SoftwareOrgLauncher"
     }
-    
+
     // Resolve runtime classpath lazily to avoid configuration-time dependency resolution.
     from({
         configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }

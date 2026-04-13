@@ -2,7 +2,7 @@
 
 > **Purpose**: This file is the repo-specific source of truth for AI-assisted changes in Ghatana.
 > **Rule of precedence**: Follow the conventions already present in the touched workspace. Do not introduce a new stack, architecture, naming scheme, or library pattern when the repo already has an established one.
-> **Last Updated:** 2026-03-27
+> **Last Updated:** 2026-04-12
 
 ## 1. Non-Negotiable Repo Rules
 
@@ -709,7 +709,7 @@ YAPPC core has 18 Gradle submodules in 5 domain clusters:
 ### Gradle Organization
 
 - **Single source of truth**: `gradle/libs.versions.toml`
-- **Convention plugins**: `gradle/conventions/`
+- **Convention plugins**: `build-logic/conventions/`
 - **Utility files**: `gradle/*.gradle` (common-build, observability, etc.)
 
 ### Version Catalog Usage
@@ -722,6 +722,16 @@ dependencies {
     implementation(libs.bundles.platform.security)
 }
 ```
+
+### Build Convention Migration Guardrails (2026-04)
+
+- `build-logic` is the canonical convention source for root monorepo builds.
+- Do not add new convention behavior under root `buildSrc/`.
+- New or migrated Java modules must use `id("java-module")`, `id("java-application")`, or `id("protobuf-module")` as appropriate.
+- Avoid dual-convention application in a module (`com.ghatana.*` with `java-module`/`java-application`/`protobuf-module` together is disallowed).
+- Legacy `com.ghatana.*` convention IDs are migration-only and should be replaced in-place.
+- Standalone product settings should include `build-logic` instead of `buildSrc` whenever standalone compatibility is updated.
+- When migrating plugin IDs, validate with module-scoped `build` + `check` before broader root runs.
 
 ## 23. Security Implementation
 
@@ -1000,4 +1010,4 @@ function withPerformanceTracking<T extends object>(
 
 ---
 
-**Last Updated:** 2026-03-31
+**Last Updated:** 2026-04-12

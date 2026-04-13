@@ -3,7 +3,7 @@ plugins {
     application
     kotlin("jvm") version "1.9.22"
     id("jacoco")
-    id("com.ghatana.protobuf-conventions")
+    id("protobuf-module")
 }
 
 group = "com.ghatana.tutorputor"
@@ -20,42 +20,42 @@ dependencies {
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:contracts"))
-    
+
     // ActiveJ framework
     implementation(libs.activej.boot)
     implementation(libs.activej.promise)
     implementation(libs.activej.http)
     implementation(libs.activej.inject)
-    
+
     // LLM integration (from ai-agents)
     implementation("dev.langchain4j:langchain4j:0.34.0")
     implementation("dev.langchain4j:langchain4j-open-ai:0.34.0")
     implementation("dev.langchain4j:langchain4j-ollama:0.34.0")
-    
+
     // gRPC (from ai-agents)
     implementation("io.grpc:grpc-netty-shaded:1.60.0")
     implementation("io.grpc:grpc-protobuf:1.60.0")
     implementation("io.grpc:grpc-stub:1.60.0")
     implementation("com.google.protobuf:protobuf-java:3.25.1")
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
-    
+
     // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("ch.qos.logback:logback-classic:1.4.14")
-    
+
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
     testCompileOnly("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
-    
+
     // Micrometer for metrics
     implementation("io.micrometer:micrometer-core:1.12.0")
     implementation("io.micrometer:micrometer-registry-prometheus:1.12.0")
-    
+
     // Jackson for JSON processing
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")

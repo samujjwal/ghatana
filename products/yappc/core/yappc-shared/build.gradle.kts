@@ -1,7 +1,6 @@
 plugins {
-    id("java-library")
     id("maven-publish")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 description = "YAPPC Consolidated Shared Utilities Module"
@@ -26,9 +25,9 @@ dependencies {
 
     // Utilities
     implementation(libs.commons.lang3)
-    
+
     // Configuration
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -84,19 +83,19 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            
+
             pom {
                 name.set("YAPPC Shared Utilities")
                 description.set("Shared utilities and common components for YAPPC")
                 url.set("https://github.com/ghatana/ghatana/tree/main/products/yappc")
-                
+
                 licenses {
                     license {
                         name.set("The Apache License, Version 2.0")
                         url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
                     }
                 }
-                
+
                 developers {
                     developer {
                         id.set("ghatana")
@@ -113,7 +112,7 @@ publishing {
 tasks.register("validateSharedUtils") {
     group = "verification"
     description = "Validate shared utilities"
-    
+
     doLast {
         println("Validating shared utilities...")
     }
@@ -122,7 +121,7 @@ tasks.register("validateSharedUtils") {
 tasks.register("benchmarkUtils") {
     group = "performance"
     description = "Benchmark shared utilities performance"
-    
+
     doLast {
         println("Running utility benchmarks...")
     }

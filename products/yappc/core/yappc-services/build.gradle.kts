@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 description = "YAPPC Consolidated Services Module"
@@ -12,34 +11,34 @@ dependencies {
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:security"))
-    
+
     // YAPPC domain (both core and libs versions)
     implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
-    
+
     // YAPPC agents runtime (for AepEventPublisher)
     implementation(project(":products:yappc:core:agents:runtime"))
-    
+
     // Data-Cloud SPI (for DataCloudClient)
     // TODO(ADAPTER-SEAM): data-cloud coupling in a domain services module.
     //   Future: introduce DataCloudPort in core; move impl to infrastructure:datacloud
     implementation(project(":products:data-cloud:spi"))
-    
+
     // YAPPC infrastructure
     implementation(project(":products:yappc:core:yappc-infrastructure"))
-    
+
     // YAPPC shared utilities
     implementation(project(":products:yappc:core:yappc-shared"))
-    
+
     // Validation
-    
+
     // JSON processing
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // Async processing
     implementation(libs.activej.promise)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -92,7 +91,7 @@ sourceSets {
 tasks.register("validateServices") {
     group = "verification"
     description = "Validate service configurations"
-    
+
     doLast {
         println("Validating service configurations...")
     }
@@ -101,7 +100,7 @@ tasks.register("validateServices") {
 tasks.register("serviceHealthCheck") {
     group = "verification"
     description = "Health check for all services"
-    
+
     doLast {
         println("Running service health checks...")
     }

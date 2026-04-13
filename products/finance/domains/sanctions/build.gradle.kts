@@ -5,8 +5,7 @@
  * including watchlist screening, PEP screening, and adverse media monitoring.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"
@@ -34,7 +33,7 @@ dependencies {
     // ─── Infrastructure Dependencies (migrated from app-platform) ──────────
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    
+
     implementation(libs.hikaricp)
     implementation(libs.kafka.clients)
     implementation(libs.micrometer.core)

@@ -43,6 +43,43 @@ fun includePlatformLib(name: String) {
     }
 }
 
+fun includeDirectModules(parentProjectPath: String, rootDir: File) {
+    val normalizedParentProjectPath =
+        if (parentProjectPath.startsWith(":")) parentProjectPath else ":$parentProjectPath"
+
+    rootDir
+        .listFiles()
+        .orEmpty()
+        .filter { child ->
+            child.isDirectory &&
+                (File(child, "build.gradle.kts").exists() || File(child, "build.gradle").exists())
+        }
+        .sortedBy { it.name }
+        .forEach { child ->
+            val projectPath = "$normalizedParentProjectPath:${child.name}"
+            include(projectPath)
+            project(projectPath).projectDir = child
+        }
+}
+
+fun includeNamedModules(parentProjectPath: String, rootDir: File, moduleNames: List<String>) {
+    val normalizedParentProjectPath =
+        if (parentProjectPath.startsWith(":")) parentProjectPath else ":$parentProjectPath"
+
+    moduleNames
+        .distinct()
+        .sorted()
+        .forEach { moduleName ->
+            val moduleDir = File(rootDir, moduleName)
+            if (moduleDir.exists() &&
+                (File(moduleDir, "build.gradle.kts").exists() || File(moduleDir, "build.gradle").exists())) {
+                val projectPath = "$normalizedParentProjectPath:$moduleName"
+                include(projectPath)
+                project(projectPath).projectDir = moduleDir
+            }
+        }
+}
+
 // ============================================================================
 // YAPPC Product Modules
 // ============================================================================
@@ -98,6 +135,11 @@ include(":core:knowledge-graph")
 // --- Core: Domain (Phase 2.1: yappc-domain-impl - api split deferred) ---
 // NOTE: yappc-domain-api creation deferred - api/impl split to be done later
 include(":core:yappc-domain-impl")
+include(":core:yappc-services")
+include(":core:yappc-infrastructure")
+include(":core:yappc-agents")
+include(":core:yappc-api")
+include(":core:yappc-shared")
 
 // --- Infrastructure ---
 include(":infrastructure:datacloud")
@@ -110,7 +152,10 @@ include(":libs:java:yappc-domain")
 include(":examples:sample-build-generator-plugin")
 
 // --- Gradle build tooling & validation tests ---
-include(":tools:validation-tests")
+val validationTestsDir = File(rootDir, "tools/validation-tests")
+if (validationTestsDir.exists()) {
+    include(":tools:validation-tests")
+}
 
 // ============================================================================
 // Monorepo Shared Libraries (Standalone build only)
@@ -128,6 +173,17 @@ if (isStandaloneBuild) {
     if (monorepoPlatformContracts.exists()) {
         include("platform:contracts")
         project(":platform:contracts").projectDir = monorepoPlatformContracts
+    }
+
+    val platformKernelRoot = File(monorepoRoot, "platform-kernel")
+    if (platformKernelRoot.exists()) {
+        include("platform-kernel")
+        project(":platform-kernel").projectDir = platformKernelRoot
+        includeNamedModules(
+            "platform-kernel",
+            platformKernelRoot,
+            listOf("kernel-core", "kernel-plugin")
+        )
     }
 
     include("products:yappc")
@@ -216,43 +272,43 @@ if (isStandaloneBuild) {
     }
 
     val dataCloudRoot = File(monorepoRoot, "products/data-cloud")
-    val dataCloudPlatformLauncher = File(dataCloudRoot, "platform-launcher")
-    val dataCloudSpi = File(dataCloudRoot, "spi")
-    if (dataCloudRoot.exists() && (dataCloudPlatformLauncher.exists() || dataCloudSpi.exists())) {
+    if (dataCloudRoot.exists()) {
         include("products:data-cloud")
         project(":products:data-cloud").projectDir = dataCloudRoot
-        if (dataCloudPlatformLauncher.exists()) {
-            include("products:data-cloud:platform-launcher")
-            project(":products:data-cloud:platform-launcher").projectDir = dataCloudPlatformLauncher
-        }
-        if (dataCloudSpi.exists()) {
-            include("products:data-cloud:spi")
-            project(":products:data-cloud:spi").projectDir = dataCloudSpi
-        }
+        includeNamedModules(
+            "products:data-cloud",
+            dataCloudRoot,
+            listOf(
+                "agent-registry",
+                "platform-analytics",
+                "platform-api",
+                "platform-config",
+                "platform-entity",
+                "platform-event",
+                "platform-launcher",
+                "platform-plugins",
+                "spi"
+            )
+        )
     }
 
     val aepRoot = File(monorepoRoot, "products/aep")
-    val aepContracts = File(aepRoot, "aep-operator-contracts")
-    val aepEngine = File(aepRoot, "aep-engine")
-    val aepCentralRuntime = File(aepRoot, "aep-central-runtime")
-    val aepOrchestrator = File(aepRoot, "orchestrator")
-    if (aepRoot.exists() && aepContracts.exists()) {
+    if (aepRoot.exists()) {
         include("products:aep")
         project(":products:aep").projectDir = aepRoot
-        include("products:aep:aep-operator-contracts")
-        project(":products:aep:aep-operator-contracts").projectDir = aepContracts
-        if (aepEngine.exists()) {
-            include("products:aep:aep-engine")
-            project(":products:aep:aep-engine").projectDir = aepEngine
-        }
-        if (aepCentralRuntime.exists()) {
-            include("products:aep:aep-central-runtime")
-            project(":products:aep:aep-central-runtime").projectDir = aepCentralRuntime
-        }
-        if (aepOrchestrator.exists()) {
-            include("products:aep:orchestrator")
-            project(":products:aep:orchestrator").projectDir = aepOrchestrator
-        }
+        includeNamedModules(
+            "products:aep",
+            aepRoot,
+            listOf(
+                "aep-agent-runtime",
+                "aep-analytics",
+                "aep-engine",
+                "aep-operator-contracts",
+                "aep-registry",
+                "aep-security",
+                "orchestrator"
+            )
+        )
     }
 
     val sharedServicesRoot = File(monorepoRoot, "shared-services")
@@ -273,7 +329,7 @@ if (isStandaloneBuild) {
 pluginManagement {
     if (gradle.parent == null) {
         val standaloneMonorepoRoot = rootDir.parentFile.parentFile
-        includeBuild(File(standaloneMonorepoRoot, "buildSrc")) {
+        includeBuild(File(standaloneMonorepoRoot, "build-logic")) {
             name = "ghatana-build-logic"
         }
     }

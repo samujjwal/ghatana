@@ -13,4 +13,3 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     testImplementation(project(":platform:java:testing"))
 }
-

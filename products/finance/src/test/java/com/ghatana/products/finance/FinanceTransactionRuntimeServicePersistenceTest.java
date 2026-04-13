@@ -3,10 +3,13 @@ package com.ghatana.products.finance;
 import com.ghatana.finance.ai.FinanceAiPersistenceTestSupport;
 import com.ghatana.finance.service.TransactionResult;
 import com.ghatana.platform.core.exception.RateLimitExceededException;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
+
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,9 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.layer product
  * @doc.pattern Test
  */
-class FinanceTransactionRuntimeServicePersistenceTest {
+class FinanceTransactionRuntimeServicePersistenceTest extends EventloopTestBase {
 
     private PostgreSQLContainer<?> postgres;
+
+    /**
+     * Allow extra time for Testcontainers + JDBC initialisation within the event loop.
+     */
+    @Override
+    protected Duration eventloopTimeout() {
+        return Duration.ofSeconds(60);
+    }
 
     @BeforeEach
     void setUp() {
@@ -31,14 +42,6 @@ class FinanceTransactionRuntimeServicePersistenceTest {
     void tearDown() {
         if (postgres != null) {
             postgres.stop();
-        }
-    }
-
-    private static void startSync(FinanceTransactionRuntimeService service) {
-        try {
-            service.start().toCompletableFuture().get();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to start FinanceTransactionRuntimeService", e);
         }
     }
 
@@ -54,19 +57,19 @@ class FinanceTransactionRuntimeServicePersistenceTest {
             aiRuntime,
             aiRuntime
         );
-        startSync(firstRuntime);
+        runPromise(firstRuntime::start);
 
         TransactionResult firstResult = firstRuntime.getTransactionService().processTransaction(
             FinanceTransactionRuntimeTestSupport.createTransaction("txn-runtime-persist-1")
         );
-        firstRuntime.stop();
+        runPromise(firstRuntime::stop);
 
         FinanceTransactionRuntimeService secondRuntime = new FinanceTransactionRuntimeService(
             config,
             aiRuntime,
             aiRuntime
         );
-        startSync(secondRuntime);
+        runPromise(secondRuntime::start);
 
         TransactionResult replayResult = secondRuntime.getTransactionService().processTransaction(
             FinanceTransactionRuntimeTestSupport.createTransaction("txn-runtime-persist-1")
@@ -80,7 +83,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         assertEquals(1, aiRuntime.executions());
         assertTrue(secondRuntime.isPersistenceEnabled());
 
-        secondRuntime.stop();
+        runPromise(secondRuntime::stop);
     }
 
     @Test
@@ -94,7 +97,7 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         );
         FinanceTransactionRuntimeTestSupport.StubAiRuntime aiRuntime = new FinanceTransactionRuntimeTestSupport.StubAiRuntime();
         FinanceTransactionRuntimeService firstRuntime = new FinanceTransactionRuntimeService(config, aiRuntime, aiRuntime);
-        startSync(firstRuntime);
+        runPromise(firstRuntime::start);
 
         assertEquals(
             "APPROVED",
@@ -102,10 +105,10 @@ class FinanceTransactionRuntimeServicePersistenceTest {
                 .processTransaction(FinanceTransactionRuntimeTestSupport.createTransaction("txn-rate-limit-1"))
                 .getStatus()
         );
-        firstRuntime.stop();
+        runPromise(firstRuntime::stop);
 
         FinanceTransactionRuntimeService secondRuntime = new FinanceTransactionRuntimeService(config, aiRuntime, aiRuntime);
-        startSync(secondRuntime);
+        runPromise(secondRuntime::start);
 
         RateLimitExceededException exception = org.junit.jupiter.api.Assertions.assertThrows(
             RateLimitExceededException.class,
@@ -117,6 +120,6 @@ class FinanceTransactionRuntimeServicePersistenceTest {
         assertTrue(exception.getMessage().contains("tenant-1"));
         assertTrue(secondRuntime.isSharedRateLimitingEnabled());
 
-        secondRuntime.stop();
+        runPromise(secondRuntime::stop);
     }
 }

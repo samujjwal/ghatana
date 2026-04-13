@@ -7,8 +7,7 @@
  * @doc.pattern Product
  */
 plugins {
-    id("java-library")
-    id("com.ghatana.testing-conventions")
+    id("java-module")
 }
 
 group = "com.ghatana.products.yappc"
@@ -16,6 +15,15 @@ version = rootProject.version
 description = "YAPPC - AI-Native Product Development Platform"
 
 // Product-specific configuration simplified - extension not available in simplified version
+
+// Skip spotless for this root product module - the frontend/web/node_modules tree
+// contains broken symlinks that cause Spotless file-tree traversal to fail.
+// Formatting is enforced at the individual Java sub-module level instead.
+afterEvaluate {
+    tasks.matching { it.name.startsWith("spotlessMisc") }.configureEach {
+        onlyIf { false }
+    }
+}
 
 // Custom validation for YAPPC architectural decisions
 tasks.register("checkYappcStructuralGovernance") {

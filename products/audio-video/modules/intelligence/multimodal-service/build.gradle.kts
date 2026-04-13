@@ -1,9 +1,8 @@
 import org.gradle.api.artifacts.VersionCatalogsExtension
 
 plugins {
-    id("com.ghatana.java-conventions")
-    id("application")
-    id("com.ghatana.protobuf-conventions")
+        id("application")
+    id("protobuf-module")
 }
 
 val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -13,7 +12,7 @@ dependencies {
     implementation(project(":platform:contracts"))
 
     // Audio-Video common library (shared AI inference client, health/metrics, gRPC interceptors)
-    implementation(project(":products:audio-video:libs:java:common"))
+    implementation(project(":products:audio-video:libs:common"))
 
     // Agent framework — AbstractTypedAgent, AgentResult, AgentContext
     implementation(project(":platform:java:agent-core"))
@@ -25,24 +24,24 @@ dependencies {
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
-    
+
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
-    
+
     // Protobuf
     implementation(libs.protobuf.java)
-    
+
     // javax.annotation for gRPC generated code
     implementation(libs.javax.inject)
-    
+
     // Logging
     implementation(libs.log4j.core)
     implementation(libs.log4j.api)
     implementation(libs.slf4j.api)
     implementation(libs.log4j.slf4j.impl)
-    
+
     // JSON processing
-        
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

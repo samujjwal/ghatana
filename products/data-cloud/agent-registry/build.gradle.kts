@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 group = "com.ghatana.datacloud"

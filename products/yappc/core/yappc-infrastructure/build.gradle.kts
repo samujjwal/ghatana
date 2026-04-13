@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 description = "YAPPC Consolidated Infrastructure Module"
@@ -19,23 +18,23 @@ dependencies {
     // AEP Unified Runtime — for AepAgentRuntimeAdapter (Phase 1.6: aep-engine + aep-agent-runtime + aep-central-runtime)
     implementation(project(":products:aep:aep-engine"))
     implementation(project(":products:aep:aep-agent-runtime"))
-    
+
     // Database
     implementation(libs.postgresql)
     implementation(libs.hikaricp)
-    
+
     // Redis
     implementation(libs.jedis)
-    
+
     // Messaging
     implementation(libs.kafka.clients)
-    
+
     // Monitoring
     implementation(libs.micrometer.core)
     implementation(libs.micrometer.registry.prometheus)
-    
+
     // Configuration
-        
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
@@ -92,7 +91,7 @@ sourceSets {
 tasks.register("setupInfrastructure") {
     group = "infrastructure"
     description = "Setup infrastructure components"
-    
+
     doLast {
         println("Setting up infrastructure components...")
     }
@@ -101,7 +100,7 @@ tasks.register("setupInfrastructure") {
 tasks.register("healthCheck") {
     group = "verification"
     description = "Health check for infrastructure components"
-    
+
     doLast {
         println("Running infrastructure health checks...")
     }

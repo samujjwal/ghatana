@@ -23,7 +23,8 @@ class ContractSerializationTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    @DisplayName("Contract model serializes to JSON") throws Exception {
+    @DisplayName("Contract model serializes to JSON")
+    void contractModelSerializesToJson() throws Exception {
         String json = objectMapper.writeValueAsString(new TestContract("id", "name", "ACTIVE"));
         assertThat(json).contains("\"id\":\"id\"");
         assertThat(json).contains("\"name\":\"name\"");
@@ -31,7 +32,8 @@ class ContractSerializationTest {
     }
 
     @Test
-    @DisplayName("Contract model deserializes from JSON") throws Exception {
+    @DisplayName("Contract model deserializes from JSON")
+    void contractModelDeserializesFromJson() throws Exception {
         String json = "{\"id\":\"id\",\"name\":\"name\",\"status\":\"ACTIVE\"}";
         TestContract contract = objectMapper.readValue(json, TestContract.class);
         assertThat(contract.id()).isEqualTo("id");

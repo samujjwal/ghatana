@@ -20,7 +20,7 @@ dependencies {
     compileOnly("io.grpc:grpc-api:1.79.0")
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.jackson.databind)
-    
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

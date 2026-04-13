@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 description = "YAPPC Consolidated API Module"
@@ -8,24 +7,24 @@ description = "YAPPC Consolidated API Module"
 dependencies {
     // Platform modules
     implementation(project(":platform:java:http"))
-    
+
     // YAPPC modules
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:core:yappc-domain-impl"))
     implementation(project(":products:yappc:core:yappc-shared"))
-    
+
     // REST API
     implementation(libs.activej.http)
     implementation(libs.activej.boot)
-    
+
     // GraphQL
     implementation(libs.graphql.java)
-    
+
     // Security - use Nimbus JWT (canonical)
     implementation(libs.nimbus.jose.jwt)
-    
+
     // Validation
-        
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
@@ -76,7 +75,7 @@ sourceSets {
 tasks.register("generateApiDocs") {
     group = "documentation"
     description = "Generate API documentation"
-    
+
     doLast {
         println("Generating API documentation...")
     }
@@ -85,7 +84,7 @@ tasks.register("generateApiDocs") {
 tasks.register("validateApiSpecs") {
     group = "verification"
     description = "Validate API specifications"
-    
+
     doLast {
         println("Validating API specifications...")
     }

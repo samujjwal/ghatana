@@ -5,8 +5,7 @@
  * including price feeds, market depth, and market data analytics.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"
@@ -40,7 +39,7 @@ dependencies {
     implementation(libs.activej.http)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    
+
     implementation(libs.hikaricp)
     implementation(libs.jackson.databind)
     implementation(libs.jedis)

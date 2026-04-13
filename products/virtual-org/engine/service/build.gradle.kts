@@ -1,7 +1,6 @@
 plugins {
-    id("java-library")
     application
-    id("com.ghatana.protobuf-conventions")
+    id("protobuf-module")
 }
 
 application {
@@ -38,7 +37,7 @@ dependencies {
     implementation(libs.langchain4j.core)
     implementation(libs.langchain4j.open.ai)
     implementation("dev.langchain4j:langchain4j-anthropic:0.36.2")
-    
+
     // Jackson
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
@@ -62,14 +61,14 @@ dependencies {
 
     // Git
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r")
-    
+
     // Config
-    
+
     // Observability
     implementation(libs.micrometer.core)
     implementation("io.micrometer:micrometer-registry-otlp:1.15.0")
         implementation(libs.opentelemetry.api)
-        
+
     // Logging
     implementation(libs.slf4j.api)
     runtimeOnly(libs.log4j.slf4j.impl)

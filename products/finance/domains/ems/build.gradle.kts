@@ -2,8 +2,7 @@
  * EMS Domain Module - Execution Management System
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"
@@ -31,7 +30,7 @@ dependencies {
     implementation(libs.activej.promise)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    
+
     implementation(libs.hikaricp)
     implementation(libs.jedis)
     implementation(libs.kafka.clients)

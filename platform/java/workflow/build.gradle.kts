@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
- * 
+ *
  * PHASE: D (Platform Infrastructure)
  * OWNER: @infra-team
  * MIGRATED: 2026-02-04
@@ -31,22 +31,22 @@ dependencies {
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:agent-core"))
-    
+
     // Metrics (for MetricsWorkflowListener)
     implementation(libs.micrometer.core)
-    
+
     // JDBC backend (for JdbcWorkflow* classes)
     implementation(libs.hikaricp)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    
+
     // Serialization
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // Annotations
     compileOnly(libs.jetbrains.annotations)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.core)

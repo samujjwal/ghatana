@@ -62,19 +62,19 @@ dependencies {
 
     // Observability
     implementation(libs.bundles.observability.core)
-    
+
     // Security
     implementation(libs.bundles.security.core)
-    
+
     // JSON processing
     implementation(libs.bundles.jackson.json)
 
     // Database
     implementation(libs.bundles.database.core)
-    
+
     // Commons utilities
     implementation(libs.bundles.common.utils)
-    
+
     // Logging
     implementation(libs.bundles.logging.core)
 
@@ -83,7 +83,7 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.bundles.testing.containers)
-    
+
     // JMH for benchmarking
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     testAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.37")

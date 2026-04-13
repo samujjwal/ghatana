@@ -31,4 +31,3 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
 }
-

@@ -19,7 +19,7 @@ dependencies {
     api(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
     implementation(libs.slf4j.api)
-    
+
     // Code Transformation
 
     // ActiveJ
@@ -44,4 +44,3 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
 }
-

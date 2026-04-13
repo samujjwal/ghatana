@@ -14,8 +14,8 @@ java {
 }
 
 dependencies {
-    // DEPRECATED: This module now re-exports from products:audio-video:libs:java:common
-    // Migrated per Phase 3.1 of the audit
+
+    // Media processing errors and validation — from libs/java/common
     api(project(":products:audio-video:libs:java:common"))
 
     // Tool handler SPI — ToolHandler, ToolExecutionEnvelope, ToolExecutionResult

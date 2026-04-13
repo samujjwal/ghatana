@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
     alias(libs.plugins.spotbugs)
 }
 
@@ -65,7 +65,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
-    
+
     // Protobuf for JSON formatting
     implementation(libs.protobuf.java)
     implementation("com.google.protobuf:protobuf-java-util:4.34.1")

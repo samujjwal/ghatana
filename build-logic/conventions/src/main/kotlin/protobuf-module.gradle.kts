@@ -17,6 +17,15 @@ plugins {
 // Property to control Javadoc generation (disabled by default for speed)
 val enableJavadoc = project.findProperty("enableJavadoc")?.toString()?.toBoolean() ?: false
 
+val sharedConfigRoot = generateSequence(rootProject.rootDir) { it.parentFile }
+    .firstOrNull { candidate ->
+        File(candidate, "config/checkstyle/checkstyle.xml").exists() &&
+            File(candidate, "config/pmd/minimal-ruleset.xml").exists()
+    }
+    ?: rootProject.rootDir
+
+fun sharedConfigFile(path: String): File = File(sharedConfigRoot, path)
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -47,7 +56,7 @@ configure<JacocoPluginExtension> {
 
 configure<CheckstyleExtension> {
     toolVersion = "10.21.4"
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    configFile = sharedConfigFile("config/checkstyle/checkstyle.xml")
     isIgnoreFailures = false
 }
 
@@ -59,9 +68,9 @@ configure<PmdExtension> {
 // Configure PMD task to exclude generated sources
 tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach {
     val rulesetFile = if (name.contains("Test", ignoreCase = true)) {
-        rootProject.file("config/pmd/test-ruleset.xml")
+        sharedConfigFile("config/pmd/test-ruleset.xml")
     } else {
-        rootProject.file("config/pmd/minimal-ruleset.xml")
+        sharedConfigFile("config/pmd/minimal-ruleset.xml")
     }
     val sourceDirectory = if (name.contains("Test", ignoreCase = true)) {
         "src/test/java"
@@ -85,6 +94,12 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     java {
         target("src/**/*.java")
         removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    format("misc") {
+        target("*.gradle", "*.gradle.kts", ".gitignore")
+        targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
         trimTrailingWhitespace()
         endWithNewline()
     }

@@ -36,7 +36,7 @@ dependencies {
 
     // Validation
 
-    
+
     implementation(project(":platform:java:runtime"))
     // platform:java:testing provides TestStatus and other domain types used by
     // the scaffold engine's failure-injection testing framework
@@ -100,4 +100,3 @@ tasks.jacocoTestCoverageVerification {
         }
     )
 }
-

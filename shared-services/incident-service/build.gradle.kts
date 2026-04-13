@@ -11,8 +11,7 @@
  */
 
 plugins {
-    id("com.ghatana.java-conventions")
-    `java-library`
+    id("java-module")
 }
 
 dependencies {
@@ -39,6 +38,5 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
     maxParallelForks = 4
 }

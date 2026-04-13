@@ -119,8 +119,9 @@ include(":platform:java:security")
 include(":platform:java:agent-core")
 include(":platform:java:messaging")   // Unified messaging module (merged connectors + aep-connectors)
 include(":platform:java:audit")
-// platform:java:audio-video DEPRECATED: Migrated to products:audio-video:libs:java:common per Phase 3.1
+// Audio-Video commons libraries
 include(":products:audio-video:libs:java:common")
+include(":products:audio-video:libs:common")
 include(":platform:java:identity")
 include(":platform:java:data-governance")
 include(":platform:java:tool-runtime")
@@ -141,7 +142,6 @@ include(":products:aep:aep-analytics")
 include(":products:aep:aep-security")
 // aep-connectors DEPRECATED: Merged into platform:java:messaging
 include(":products:aep:aep-event-cloud")
-// products:audio-video:libs:common DEPRECATED: Migrated to products:audio-video:libs:java:common per Phase 3.1
 include(":products:aep:aep-agent-runtime")
 include(":products:aep:aep-api")
 include(":products:aep:aep-scaling")

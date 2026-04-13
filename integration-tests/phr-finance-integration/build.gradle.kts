@@ -1,8 +1,6 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
-    id("com.ghatana.testing-conventions")
-}
+    id("java-module")
+    }
 
 description = "Cross-domain integration tests for PHR and Finance workflows"
 

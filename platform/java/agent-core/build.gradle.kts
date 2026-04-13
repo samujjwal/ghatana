@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 group = "com.ghatana.platform.agent"
@@ -43,20 +42,4 @@ dependencies {
     // JMH Benchmarks
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
-}
-
-tasks.test {
-    useJUnitPlatform()
-    
-    testLogging {
-        events("passed", "skipped", "failed")
-        showStandardStreams = false
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
 }

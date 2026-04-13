@@ -51,7 +51,7 @@ class EventSchemaValidationTest {
                 """;
 
         JsonNode event = objectMapper.readTree(eventJson);
-        
+
         assertThat(event.has("type")).isTrue();
         assertThat(event.get("type").isTextual()).isTrue();
         assertThat(event.has("tenantId")).isTrue();
@@ -166,12 +166,12 @@ class EventSchemaValidationTest {
                 """;
 
         JsonNode batch = objectMapper.readTree(batchJson);
-        
+
         assertThat(batch.has("tenantId")).isTrue();
         assertThat(batch.has("events")).isTrue();
         assertThat(batch.get("events").isArray()).isTrue();
         assertThat(batch.get("events").size()).isEqualTo(2);
-        
+
         for (JsonNode event : batch.get("events")) {
             assertThat(event.has("type")).isTrue();
             assertThat(event.has("payload")).isTrue();
@@ -227,12 +227,12 @@ class EventSchemaValidationTest {
 
         JsonNode pattern = objectMapper.readTree(patternJson);
         JsonNode payload = pattern.get("payload");
-        
+
         assertThat(payload.has("name")).isTrue();
         assertThat(payload.has("description")).isTrue();
         assertThat(payload.has("type")).isTrue();
         assertThat(payload.has("specification")).isTrue();
-        
+
         // Validate enum values
         String type = payload.get("type").asText();
         assertThat(type).isIn("ANOMALY", "SEQUENCE", "AGGREGATION");
@@ -257,7 +257,7 @@ class EventSchemaValidationTest {
 
         JsonNode pattern = objectMapper.readTree(patternJson);
         String type = pattern.get("payload").get("type").asText();
-        
+
         assertThat(type).isNotIn("ANOMALY", "SEQUENCE", "AGGREGATION");
     }
 
@@ -302,7 +302,7 @@ class EventSchemaValidationTest {
                 """;
 
         JsonNode payload = objectMapper.readTree(eventJson).get("payload");
-        
+
         assertThat(payload.has("userId")).isTrue();
         assertThat(payload.has("ip")).isTrue();
         assertThat(payload.has("browser")).isTrue();
@@ -326,7 +326,7 @@ class EventSchemaValidationTest {
                 """;
 
         JsonNode payload = objectMapper.readTree(eventJson).get("payload");
-        
+
         assertThat(payload.has("transactionId")).isTrue();
         assertThat(payload.has("amount")).isTrue();
         assertThat(payload.has("currency")).isTrue();
@@ -393,7 +393,7 @@ class EventSchemaValidationTest {
                 """;
 
         JsonNode metadata = objectMapper.readTree(eventJson).get("metadata");
-        
+
         assertThat(metadata.has("source")).isTrue();
         assertThat(metadata.has("version")).isTrue();
         assertThat(metadata.has("environment")).isTrue();

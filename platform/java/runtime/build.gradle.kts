@@ -1,6 +1,6 @@
 /**
  * Platform Runtime - ActiveJ integration and runtime management
- * 
+ *
  * This module provides runtime infrastructure for async execution,
  * event loop management, and ActiveJ framework integration.
  */
@@ -15,16 +15,16 @@ description = "Platform Runtime - ActiveJ integration and runtime management"
 dependencies {
     // Platform dependencies
     api(project(":platform:java:core"))
-    
+
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
-    
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
-    
+
     // ActiveJ framework
     api(libs.bundles.activej.core)
     api(libs.activej.promise)
@@ -32,13 +32,13 @@ dependencies {
     api(libs.activej.launcher)
     api(libs.activej.http)
     api(libs.activej.servicegraph)
-    
+
     // Logging
     implementation(libs.slf4j.api)
-    
+
     // Testing Utilities (Exposed in API since they are in main source)
     api(libs.bundles.testing.core)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

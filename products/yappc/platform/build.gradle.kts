@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("com.ghatana.java-conventions")
+    id("java-module")
 }
 
 group = "com.ghatana.products.yappc"
@@ -15,7 +14,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:observability"))
-    
+
     // YAPPC framework modules
     implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:ai"))
@@ -56,15 +55,15 @@ dependencies {
 
     // Terminal / readline
     implementation(libs.jline)
-    
+
     // JSON Schema Validation
     implementation(libs.networknt.validator)
-    
+
     // Logging
     implementation(libs.slf4j.api)
     implementation(libs.log4j.core)
     implementation(libs.log4j.slf4j.impl)
-    
+
     // gRPC
     implementation(libs.grpc.stub)
     implementation(libs.grpc.netty.shaded)

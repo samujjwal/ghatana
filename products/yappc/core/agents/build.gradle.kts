@@ -25,20 +25,20 @@ dependencies {
     // DataCloud Agent Registry — DataCloudAgentRegistry implements AgentRegistry SPI for
     // durable, cross-instance agent discovery.  Wired via YappcAgentSystem.Builder#platformRegistry().
     implementation(project(":products:data-cloud:agent-registry"))
-    
+
     // Platform Agent Framework (SECONDARY - for base interfaces)
     implementation(project(":platform:java:agent-core"))
-    
+
     // Platform Shared Utilities
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
-    
+
     // YAPPC Domain (for LearnedPolicy and repositories)
     implementation(project(":products:yappc:core:yappc-domain-impl"))
-    
+
     // Platform Contracts (for AgentManifestProto, etc.)
     implementation(project(":platform:contracts"))
-    
+
     // Sub-modules (transitively provide all platform/framework deps)
     api(project(":products:yappc:core:agents:runtime"))
     api(project(":products:yappc:core:agents:workflow"))
@@ -59,7 +59,7 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
 
-    
+
     // Utilities
     implementation(libs.commons.lang3)
     implementation(libs.guava)

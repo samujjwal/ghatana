@@ -22,10 +22,10 @@ dependencies {
     implementation("org.yaml:snakeyaml")
 
     implementation(libs.activej.common)
-    
+
     // Handlebars template engine
     implementation("com.github.jknack:handlebars:4.3.1")
-    
+
     // Diff library for text comparison
     implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
 

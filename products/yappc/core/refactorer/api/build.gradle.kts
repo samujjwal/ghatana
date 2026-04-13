@@ -1,7 +1,6 @@
 plugins {
-    id("java-library")
     id("jacoco")
-    id("com.ghatana.protobuf-conventions")
+    id("protobuf-module")
 }
 
 group = "com.ghatana.products.yappc.refactorer"
@@ -42,7 +41,7 @@ dependencies {
     implementation(libs.activej.eventloop)
     implementation(libs.activej.promise)
     implementation(libs.activej.http)
-    
+
     // Internal modules (merged: refactorer-core + refactorer-engine → engine)
     implementation(project(":products:yappc:core:refactorer:engine"))
     implementation(project(":platform:java:core"))
@@ -64,12 +63,12 @@ dependencies {
 
     // OpenTelemetry
     implementation(libs.opentelemetry.api)
-    
+
     // Metrics
     implementation(libs.micrometer.core)
     implementation(libs.micrometer.registry.prometheus)
     implementation("io.micrometer:micrometer-registry-otlp:1.11.5")
-    
+
     // CLI dependencies
     implementation(libs.picocli)
     implementation(libs.jline)
@@ -85,7 +84,7 @@ dependencies {
     implementation(libs.postgresql)
 
     // JSON (from infra)
-    
+
     // Logging
     implementation(libs.slf4j.api)
     implementation(libs.log4j.api)

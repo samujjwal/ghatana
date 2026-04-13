@@ -11,4 +11,3 @@ dependencies {
     api(libs.activej.promise)
     api(libs.slf4j.api)
 }
-

@@ -1,9 +1,9 @@
 /**
  * Platform Observability Module
- * 
+ *
  * Provides metrics, tracing, logging, and health check utilities.
  * Built on Micrometer for metrics and OpenTelemetry for tracing.
- * 
+ *
  * NOTE: Some monitoring features using ActiveJ Launcher are disabled
  * as they require ActiveJ DI which is not available in 6.0-beta2.
  */
@@ -23,42 +23,42 @@ dependencies {
     api(project(":platform:java:config"))
     // NOTE: http dependency removed to break circular dependency
     // (observability should not depend on http - wrong direction)
-    
+
     // ActiveJ Promise & HTTP (explicit)
     api(libs.activej.promise)
     api(libs.activej.http)
     api(libs.activej.inject)
-    
+
     // Nullability annotations
     compileOnly(libs.jetbrains.annotations)
-    
+
     // Lombok
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
-    
+
     // AspectJ
     implementation("org.aspectj:aspectjrt:1.9.20")
-    
+
     // Metrics - Micrometer
     api(libs.micrometer.core)
     api(libs.micrometer.registry.prometheus)
-    
+
     // Tracing - OpenTelemetry
     api(libs.opentelemetry.api)
     api("io.opentelemetry:opentelemetry-sdk:1.46.0")
     api("io.opentelemetry:opentelemetry-exporter-otlp:1.46.0")
-    
+
     // Redis (for health checks)
     implementation(libs.jedis)
-    
+
     // ClickHouse trace storage backend
     implementation("com.clickhouse:clickhouse-jdbc:0.6.0:all")
-    
+
     // Logging
     api(libs.slf4j.api)
-    
+
     // Testing
     testFixturesApi(project(":platform:java:core"))
     testFixturesApi(libs.activej.promise)

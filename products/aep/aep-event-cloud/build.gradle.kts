@@ -12,7 +12,7 @@
  */
 
 plugins {
-    id("com.ghatana.java-conventions")
+    id("java-module")
     `java-library`
 }
 

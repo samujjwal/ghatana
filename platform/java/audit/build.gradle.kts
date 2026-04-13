@@ -1,10 +1,10 @@
 /**
  * Platform Audit Module
- * 
+ *
  * Provides audit logging and event tracking capabilities
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -25,11 +25,11 @@ dependencies {
     api(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:observability"))
-    
+
     // ActiveJ (async framework) — api because audit interfaces expose Promise in public API
     api(libs.activej.promise)
     implementation(libs.activej.inject)
-    
+
     // JPA (compileOnly — callers supply the EntityManager at runtime via platform:java:database)
     compileOnly("jakarta.persistence:jakarta.persistence-api:3.1.0")
 
@@ -41,7 +41,7 @@ dependencies {
     annotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
-    
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

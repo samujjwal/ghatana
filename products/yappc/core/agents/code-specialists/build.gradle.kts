@@ -14,14 +14,14 @@ dependencies {
     api(project(":products:yappc:core:yappc-domain-impl"))
     api(project(":platform:java:agent-core"))
     implementation(project(":products:aep:aep-agent-runtime"))
-    
+
     implementation(libs.activej.promise)
     implementation(libs.activej.eventloop)
     implementation(libs.slf4j.api)
-    
+
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
-    
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)

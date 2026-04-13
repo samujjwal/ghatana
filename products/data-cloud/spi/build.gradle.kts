@@ -20,7 +20,7 @@ dependencies {
     api(project(":platform:java:core"))       // Offset type
     api(project(":platform:java:domain"))     // Platform event-store contracts for migration bridge
     api(libs.activej.promise)                  // Promise<T> in EventLogStore
-    
+
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     compileOnly(libs.spotbugs.annotations)

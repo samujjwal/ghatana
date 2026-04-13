@@ -99,15 +99,15 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
     }
 
     format("misc") {
-        target("**/*.gradle", "**/.gitignore")
-        targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
+        target("*.gradle", "*.gradle.kts", ".gitignore")
+        targetExclude("**/node_modules/**", "**/.bin/**", "**/build/**", "**/.gradle/**")
         trimTrailingWhitespace()
         endWithNewline()
     }
 
     format("xml") {
         target("**/*.xml", "**/*.xsd")
-        targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
+        targetExclude("**/node_modules/**", "**/.bin/**", "**/build/**", "**/.gradle/**")
         trimTrailingWhitespace()
         endWithNewline()
     }

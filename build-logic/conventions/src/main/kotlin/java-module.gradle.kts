@@ -35,6 +35,15 @@ val withSourcesJar = project.findProperty("withSourcesJar")?.toString()?.toBoole
 val withCoverage: Boolean = System.getenv("CI") != null ||
     project.hasProperty("coverage")
 
+val sharedConfigRoot = generateSequence(rootProject.rootDir) { it.parentFile }
+    .firstOrNull { candidate ->
+        File(candidate, "config/checkstyle/checkstyle.xml").exists() &&
+            File(candidate, "config/pmd/minimal-ruleset.xml").exists()
+    }
+    ?: rootProject.rootDir
+
+fun sharedConfigFile(path: String): File = File(sharedConfigRoot, path)
+
 // Java 21 Toolchain with IDE compatibility
 java {
     if (!toolchain.languageVersion.isPresent) {
@@ -123,9 +132,9 @@ tasks.named<JacocoReport>("jacocoTestReport") {
 // Checkstyle Configuration - use hardcoded version
 configure<CheckstyleExtension> {
     toolVersion = "10.21.4"
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    configFile = sharedConfigFile("config/checkstyle/checkstyle.xml")
     configProperties = mapOf(
-        "suppressionFile" to rootProject.file("config/checkstyle/suppressions.xml").absolutePath
+        "suppressionFile" to sharedConfigFile("config/checkstyle/suppressions.xml").absolutePath
     )
     isIgnoreFailures = false
 }
@@ -133,7 +142,7 @@ configure<CheckstyleExtension> {
 // PMD Configuration - use hardcoded version
 configure<PmdExtension> {
     toolVersion = "7.11.0"
-    ruleSetFiles = files(rootProject.file("config/pmd/minimal-ruleset.xml"))
+    ruleSetFiles = files(sharedConfigFile("config/pmd/minimal-ruleset.xml"))
     ruleSets = emptyList()
     isIgnoreFailures = false
     isConsoleOutput = true
@@ -141,9 +150,9 @@ configure<PmdExtension> {
 
 tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach {
     val rulesetFile = if (name.contains("Test", ignoreCase = true)) {
-        rootProject.file("config/pmd/test-ruleset.xml")
+        sharedConfigFile("config/pmd/test-ruleset.xml")
     } else {
-        rootProject.file("config/pmd/minimal-ruleset.xml")
+        sharedConfigFile("config/pmd/minimal-ruleset.xml")
     }
     val sourceDirectory = if (name.contains("Test", ignoreCase = true)) {
         "src/test/java"
@@ -172,7 +181,8 @@ configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         endWithNewline()
     }
     format("misc") {
-        target("**/*.gradle", "**/.gitignore")
+        target("*.gradle", "*.gradle.kts", ".gitignore")
+        targetExclude("**/node_modules/**", "**/build/**", "**/.gradle/**")
         trimTrailingWhitespace()
         endWithNewline()
     }

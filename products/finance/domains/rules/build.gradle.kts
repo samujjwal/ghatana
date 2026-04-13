@@ -7,8 +7,7 @@
  * finance-specific business logic.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance"
@@ -24,29 +23,29 @@ java {
 dependencies {
     // ─── Kernel Platform ───────────────────────────────────────────────────────
     api(project(":platform-kernel:kernel-core"))
-    
+
     // ─── Kernel Modules (Generic Capabilities) ───────────────────────────────────
-    
+
     // ─── Platform Libraries ─────────────────────────────────────────────────────
-    
+
     // ─── ActiveJ (Mandatory) ─────────────────────────────────────────────────────
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)
-    
+
     // ─── Rules Engine (Drools or similar) ───────────────────────────────────────────
     implementation(libs.drools.core)
     implementation(libs.drools.compiler)
     implementation(libs.drools.mvel)
-    
+
     // ─── Serialization ────────────────────────────────────────────────────────
     implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
-    
+
     // ─── Observability ────────────────────────────────────────────────────────
     implementation(libs.micrometer.core)
     implementation(libs.slf4j.api)
-    
+
     // ─── Testing ─────────────────────────────────────────────────────────────
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

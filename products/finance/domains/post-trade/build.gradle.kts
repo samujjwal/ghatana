@@ -5,8 +5,7 @@
  * including settlement, clearing, and custody operations.
  */
 plugins {
-    id("com.ghatana.finance-domain-conventions")
-    id("java-library")
+    id("finance-domain-module")
 }
 
 group = "com.ghatana.products.finance.domains"
@@ -46,7 +45,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
     implementation(libs.jedis)
-    
+
     implementation(libs.hikaricp)
     implementation(libs.kafka.clients)
 
