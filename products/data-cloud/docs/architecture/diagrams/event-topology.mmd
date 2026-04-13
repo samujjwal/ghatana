@@ -1,9 +1,0 @@
-flowchart LR
-  HttpEvent["HTTP event routes"] --> Log["EventLogStore"]
-  GrpcEvent["gRPC event services"] --> Log
-  Log --> SSE["SSE /events/stream"]
-  Log --> WS["WebSocket /ws"]
-  Log --> Ingest["feature-store-ingest"]
-  Registry["RegistryEventPublisher"] --> RegStream["registry event stream"]
-  Brain["learning bridge"] --> LearnStream["learning stream"]
-

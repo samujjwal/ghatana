@@ -1,17 +1,51 @@
-# Data-Cloud Engineering Caveats
+# Data Cloud Engineering Caveats
 
 **Document ID:** DC-CAVEATS-001  
-**Version:** 1.0  
-**Date:** 2026-04-03  
-**Evidence Base:** Phase 1 Deep Inspection of products/data-cloud
+**Version:** 2.0  
+**Date:** 2026-04-12  
+**Evidence Base:** Architecture Documentation Suite + Risk Analysis
 
 ---
 
 ## Executive Summary
 
-Data-Cloud demonstrates **strong engineering fundamentals** but has **important operational caveats** that teams must understand. The system is **production-ready** with proper containerization, monitoring, and deployment, but requires **careful operational practices** around performance, security, and scalability. This document captures **evidence-based caveats** derived from actual implementation analysis.
+Data Cloud demonstrates **strong engineering fundamentals** but has **important operational caveats** that teams must understand. This enhanced document provides visual risk diagrams, mitigation flowcharts, and architecture-aware guidance.
 
-**Key Caveat Categories:**
+### Risk Overview
+
+```mermaid
+flowchart TB
+    subgraph Critical["Critical Priority"]
+        C1["Performance<br/>Validation Gap"]
+        C2["Security<br/>Hardening Gap"]
+        C3["Multi-tenant<br/>Isolation Gap"]
+    end
+    
+    subgraph High["High Priority"]
+        H1["Scalability<br/>Validation"]
+        H2["Test Coverage<br/>Gaps"]
+        H3["Contract Drift"]
+        H4["API Layer<br/>Duplication"]
+    end
+    
+    subgraph Medium["Medium Priority"]
+        M1["Plugin Security"]
+        M2["Disaster Recovery"]
+        M3["Developer Experience"]
+        M4["Configuration Mgmt"]
+    end
+    
+    subgraph Low["Low Priority"]
+        L1["Technology Evolution"]
+        L2["Innovation Pipeline"]
+    end
+    
+    Critical --> High
+    High --> Medium
+    Medium --> Low
+```
+
+### Key Caveat Categories:
 - **Performance**: Unknown characteristics under production load
 - **Operational**: Complex deployment and configuration requirements
 - **Security**: Multi-tenant isolation requires careful configuration

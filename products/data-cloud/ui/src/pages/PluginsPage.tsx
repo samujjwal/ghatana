@@ -137,10 +137,6 @@ export function PluginsPage(): React.ReactElement {
   // Upload plugin mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Simulate upload progress
       setUploadProgress(0);
       const interval = setInterval(() => {
         setUploadProgress((prev) => {
@@ -153,12 +149,7 @@ export function PluginsPage(): React.ReactElement {
       }, 200);
 
       try {
-        // TODO: Implement file upload to backend, get pluginId from response
-        // For now, simulate with a dummy pluginId
-        const result = await pluginService.installPlugin({ 
-          pluginId: file.name.replace('.jar', ''),
-          version: '1.0.0' 
-        });
+        const result = await pluginService.uploadPlugin(file);
         clearInterval(interval);
         setUploadProgress(100);
         return result;

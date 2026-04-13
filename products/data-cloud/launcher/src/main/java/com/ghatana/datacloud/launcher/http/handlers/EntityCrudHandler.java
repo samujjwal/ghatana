@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -457,5 +458,116 @@ public class EntityCrudHandler {
                     tenantId, collection, q, e.getMessage(), e);
                 return new HttpException("Search failed: " + e.getMessage(), e);
             });
+    }
+
+    /**
+     * GET /api/v1/entities/:collection/:id?asOf={ISO-8601} — B14 point-in-time query.
+     *
+     * <p>Fetches the current entity from storage, then overlays any event-log entries that were
+     * created before or exactly at the requested timestamp. The reconstruction is additive:
+     * each event whose payload contains a {@code "data"} map is merged in timestamp order so
+     * that the last writer wins on a per-field basis. When no events are found before the
+     * requested time, the current entity state is returned as-is (best-effort; the store may
+     * not have been persisted with full CDC coverage).
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with the reconstructed entity snapshot, 400 on validation error,
+     *         404 when entity not found now or has no events before the timestamp
+     *
+     * @doc.type method
+     * @doc.purpose Return entity state at a specific point-in-time
+     * @doc.layer product
+     * @doc.pattern Handler
+     */
+    public Promise<HttpResponse> handleGetEntityAsOf(HttpRequest request) {
+        String collection = request.getPathParameter("collection");
+        String id = request.getPathParameter("id");
+        String tenantId = http.resolveTenantId(request);
+        String asOfParam = request.getQueryParameter("asOf");
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+        Optional<String> idErr = ApiInputValidator.validateId(id);
+        if (idErr.isPresent()) return Promise.of(http.errorResponse(400, idErr.get()));
+        if (asOfParam == null || asOfParam.isBlank()) {
+            return Promise.of(http.errorResponse(400, "'asOf' query parameter is required (ISO-8601 instant)"));
+        }
+
+        final Instant asOf;
+        try {
+            asOf = Instant.parse(asOfParam);
+        } catch (DateTimeParseException e) {
+            return Promise.of(http.errorResponse(400, "Invalid 'asOf' value — expected ISO-8601 instant, e.g. 2026-01-15T12:00:00Z"));
+        }
+
+        // First fetch the current entity to confirm it exists
+        return client.findById(tenantId, collection, id).then(optEntity -> {
+            if (optEntity.isEmpty()) {
+                return Promise.of(http.errorResponse(404, "Entity not found: " + id));
+            }
+            DataCloudClient.Entity current = optEntity.get();
+
+            // Fetch all events up to asOf and reconstruct entity state at that point in time.
+            // The EventQuery endTime is inclusive of asOf — we replay all CDC mutations up to
+            // and including that instant.
+            DataCloudClient.EventQuery timeQuery = new DataCloudClient.EventQuery(
+                    List.of(),        // all types — let collection + entity-id filtering happen in stream
+                    null,             // no lower bound
+                    asOf,             // upper bound inclusive
+                    1_000             // cap at 1 000 events per request
+            );
+
+            return client.queryEvents(tenantId, timeQuery).map(events -> {
+                // Filter only events that reference this entity and collection
+                List<DataCloudClient.Event> entityEvents = events.stream()
+                        .filter(ev -> id.equals(ev.payload().get("entityId"))
+                                && collection.equals(ev.payload().get("collection")))
+                        .toList();
+
+                // Reconstruct data: start from current state, fold in each event's "data" patch
+                // in ascending timestamp order so earliest mutations come first.
+                Map<String, Object> reconstructed = new LinkedHashMap<>(current.data());
+                List<DataCloudClient.Event> sorted = entityEvents.stream()
+                        .sorted((a, b) -> {
+                            Instant ta = a.timestamp() != null ? a.timestamp() : Instant.EPOCH;
+                            Instant tb = b.timestamp() != null ? b.timestamp() : Instant.EPOCH;
+                            return ta.compareTo(tb);
+                        })
+                        .toList();
+
+                Instant snapshotTime = asOf;
+                long version = current.version();
+                int appliedEvents = 0;
+                for (DataCloudClient.Event ev : sorted) {
+                    Object dataPatch = ev.payload().get("data");
+                    if (dataPatch instanceof Map<?, ?> patch) {
+                        for (Map.Entry<?, ?> entry : patch.entrySet()) {
+                            reconstructed.put(String.valueOf(entry.getKey()), entry.getValue());
+                        }
+                        appliedEvents++;
+                    }
+                    Object evVersion = ev.payload().get("version");
+                    if (evVersion instanceof Number n) {
+                        version = n.longValue();
+                    }
+                }
+
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("id", id);
+                body.put("collection", collection);
+                body.put("data", reconstructed);
+                body.put("version", version);
+                body.put("asOf", asOf.toString());
+                body.put("appliedEvents", appliedEvents);
+                body.put("currentVersionAt", current.updatedAt() != null ? current.updatedAt().toString() : null);
+                return http.jsonResponse(body);
+            }).mapException(e -> {
+                log.error("[asOf] tenant={} collection={} id={} asOf={}: {}",
+                        tenantId, collection, id, asOf, e.getMessage(), e);
+                return new HttpException("Point-in-time query failed: " + e.getMessage(), e);
+            });
+        });
     }
 }

@@ -18,6 +18,10 @@ import { ToastProvider } from './components/common/Toast';
 import { AppErrorBoundary } from './components/common/AppErrorBoundary';
 import { LoadingState } from './components/common/LoadingState';
 import { routes } from './routes';
+import {
+  DataCloudOnboardingWizard,
+  isOnboardingComplete,
+} from './features/onboarding/DataCloudOnboardingWizard';
 import './styles/globals.css';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,6 +85,9 @@ const router = createBrowserRouter(routes);
  * @returns JSX element
  */
 export function App(): React.ReactElement {
+  // B15: Show first-run onboarding wizard when the user has never completed it
+  const [showOnboarding, setShowOnboarding] = React.useState(() => !isOnboardingComplete());
+
   return (
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -98,6 +105,10 @@ export function App(): React.ReactElement {
               <RouterProvider router={router} />
             </React.Suspense>
             <ToastProvider />
+            {/* B15: First-run onboarding wizard — rendered above all other content */}
+            {showOnboarding && (
+              <DataCloudOnboardingWizard onComplete={() => setShowOnboarding(false)} />
+            )}
           </ThemeProvider>
         </Provider>
       </QueryClientProvider>

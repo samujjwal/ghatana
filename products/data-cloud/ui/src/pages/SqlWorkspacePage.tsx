@@ -31,6 +31,7 @@ import {
   Zap,
   Send,
   Wand2,
+  Network,
 } from 'lucide-react';
 import {
   cn,
@@ -43,7 +44,7 @@ import {
 } from '../lib/theme';
 import { SavedQueries, type SavedQuery } from '../components/sql/SavedQueries';
 import { dataCloudApi } from '../lib/api/data-cloud-api';
-import { executeAnalyticsQuery, type QueryResultData } from '../api/analytics.service';
+import { executeAnalyticsQuery, executeFederatedQuery, type QueryResultData } from '../api/analytics.service';
 
 interface QueryHistoryItem {
   id: number;
@@ -260,6 +261,7 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [expandedSchema, setExpandedSchema] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'schema' | 'saved' | 'history'>('schema');
   const [showAIAssist, setShowAIAssist] = useState(false);
+  const [isFederated, setIsFederated] = useState(false); // B13: Federated Trino query toggle
   const [schemas, setSchemas] = useState<SchemaItem[]>([]);
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
 
@@ -282,9 +284,11 @@ export function SqlWorkspacePage(): React.ReactElement {
     if (!query.trim()) return;
     setIsRunning(true);
     setQueryError(null);
-    const startMs = Date.now();
     try {
-      const result = await executeAnalyticsQuery(query.trim());
+      // B13: Route through federated Trino connector when toggle is active
+      const result = isFederated
+          ? await executeFederatedQuery(query.trim())
+          : await executeAnalyticsQuery(query.trim());
       setQueryResult(result);
       setQueryHistory((prev) => [
         {
@@ -301,7 +305,7 @@ export function SqlWorkspacePage(): React.ReactElement {
     } finally {
       setIsRunning(false);
     }
-  }, [query]);
+  }, [query, isFederated]);
 
   const handleApplyAISql = useCallback((sql: string) => {
     setQuery(sql);
@@ -331,6 +335,19 @@ export function SqlWorkspacePage(): React.ReactElement {
               >
                 <Sparkles className="h-4 w-4" />
                 AI Assist
+              </button>
+              {/* B13: Federated Trino query toggle */}
+              <button
+                onClick={() => setIsFederated((f) => !f)}
+                title={isFederated ? 'Using Trino federated query (all tiers)' : 'Using direct analytics engine'}
+                className={cn(
+                  buttonStyles.secondary,
+                  'flex items-center gap-2',
+                  isFederated && 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300'
+                )}
+              >
+                <Network className="h-4 w-4" />
+                {isFederated ? 'Federated' : 'Direct'}
               </button>
               <button className={cn(buttonStyles.secondary, 'flex items-center gap-2')}>
                 <Save className="h-4 w-4" />

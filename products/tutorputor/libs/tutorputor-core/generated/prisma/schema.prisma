@@ -89,6 +89,43 @@ enum KnowledgeGapDetectionMethod {
   AI_PREDICTION
 }
 
+// =============================================================================
+// Evidence Layer Enums (Phase 1)
+// =============================================================================
+
+enum EvidenceSourceType {
+  OPENSTAX
+  KHAN_ACADEMY
+  WIKIPEDIA
+  PEER_REVIEWED_JOURNAL
+  TEXTBOOK
+  CURRICULUM_STANDARD
+  DOMAIN_EXPERT
+  SIMULATION_RESULT
+  CALCULATION
+}
+
+enum SupportKind {
+  SUPPORTS
+  CONTRADICTS
+  NEUTRAL
+  PARTIALLY_SUPPORTS
+}
+
+enum EvidenceFreshnessStatus {
+  CURRENT
+  STALE
+  EXPIRED
+  UNKNOWN
+}
+
+enum EvidenceVerificationState {
+  UNVERIFIED
+  VERIFIED
+  DISPUTED
+  FAILED_VERIFICATION
+}
+
 enum LearnerPathwayStatus {
   DRAFT
   ACTIVE
@@ -2452,9 +2489,11 @@ model LearningClaim {
   updatedAt DateTime @updatedAt
 
   // Relations - NEW
-  examples    ClaimExample[]
-  simulations ClaimSimulation[]
-  animations  ClaimAnimation[]
+  examples       ClaimExample[]
+  simulations    ClaimSimulation[]
+  animations     ClaimAnimation[]
+  evidences      LearningEvidence[] // Phase 1: Evidence bundle relation
+  evidenceBundle EvidenceBundleMetadata? // Phase 1: Bundle metadata (1:1)
 
   @@unique([experienceId, claimRef])
   @@index([experienceId])
@@ -2467,15 +2506,82 @@ model LearningEvidence {
 
   evidenceRef String // e.g., "E1", "E2"
   claimRef    String // Links to which claim
-  type        String // prediction_vs_outcome, parameter_targeting, etc.
-  description String
-  observables Json // Observable[]
+
+  // Source identity (Phase 1 additions)
+  sourceType            EvidenceSourceType
+  sourceUrl             String?
+  sourceTitle           String
+  sourcePublisher       String?
+  sourcePublicationDate DateTime?
+
+  // Content (Phase 1 additions)
+  excerpt        String? // Direct quote or excerpt
+  structuredFact Json? // Machine-parseable fact representation
+
+  // Legacy fields (to be migrated)
+  type        String? // prediction_vs_outcome, parameter_targeting, etc. (legacy)
+  description String? // (legacy - use excerpt instead)
+  observables Json? // Observable[] (legacy)
+
+  // Provenance (Phase 1 additions)
+  supportKind      SupportKind             @default(SUPPORTS)
+  credibilityScore Float?                  @db.Real // 0.0 - 1.0
+  retrievedAt      DateTime                @default(now())
+  freshnessStatus  EvidenceFreshnessStatus @default(UNKNOWN)
+
+  // Verification (Phase 1 additions)
+  verificationState  EvidenceVerificationState @default(UNVERIFIED)
+  contradictionNotes String?
+
+  // Relation to claim (for cascade purposes)
+  claim LearningClaim? @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([experienceId, evidenceRef])
   @@index([experienceId])
+  @@index([claimRef])
+  @@index([sourceType])
+  @@index([freshnessStatus])
+}
+
+// =============================================================================
+// Evidence Bundle Metadata (Phase 1 - Task 1.5)
+// =============================================================================
+
+model EvidenceBundleMetadata {
+  id String @id @default(cuid())
+
+  // Aggregated metrics
+  bundleConfidence      Float
+  coverageScore         Float
+  contradictionDetected Boolean                 @default(false)
+  freshnessOverall      EvidenceFreshnessStatus @default(UNKNOWN)
+  evidenceCount         Int                     @default(0)
+
+  // Source distribution
+  primarySourceTypes String[] // EvidenceSourceType[]
+
+  // Generation metadata
+  generatedAt     DateTime  @default(now())
+  regeneratedAt   DateTime?
+  generationJobId String?
+
+  // Relation to claim (compound key for 1:1 relation)
+  claimRef     String         @unique
+  experienceId String
+  claim        LearningClaim? @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef])
+
+  // JSON cache of full bundle (for quick retrieval)
+  bundleCache Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([experienceId, claimRef])
+  @@index([bundleConfidence])
+  @@index([freshnessOverall])
 }
 
 model ExperienceTask {
@@ -2882,19 +2988,33 @@ model ClaimExample {
   claimRef     String
   claim        LearningClaim      @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef], onDelete: Cascade)
 
-  type        String // "REAL_WORLD" | "PROBLEM_SOLVING" | "ANALOGY" | "CASE_STUDY"
+  // Manifest reference (source of truth) - Phase 2
+  manifestId      String // References ArtifactManifest
+  manifestVersion String
+
+  // Materialized content (derived from manifest)
   title       String
   description String
   content     Json // { problemStatement?, solution, keyPoints: string[], realWorldConnection? }
 
+  // Example family classification - Phase 2
+  exampleFamily String @default("worked-solution") // 'real-world' | 'analogy' | 'worked-solution' | 'counterexample' | 'case-study'
+
+  // Legacy fields (maintained for compatibility)
+  type       String // "REAL_WORLD" | "PROBLEM_SOLVING" | "ANALOGY" | "CASE_STUDY"
   difficulty String @default("INTERMEDIATE") // BEGINNER | INTERMEDIATE | ADVANCED
   orderIndex Int
+
+  // Quality - Phase 2
+  validationStatus String @default("pending") // pending | valid | invalid
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([experienceId, claimRef])
   @@index([type])
+  @@index([exampleFamily])
+  @@index([manifestId])
 }
 
 model ClaimSimulation {
@@ -2926,17 +3046,32 @@ model ClaimAnimation {
   claimRef     String
   claim        LearningClaim      @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef], onDelete: Cascade)
 
+  // Manifest reference (source of truth) - Phase 2
+  manifestId      String // References ArtifactManifest
+  manifestVersion String
+
+  // Variant support - Phase 2 (allow multiple animations per claim)
+  variantKey String  @default("primary") // 'primary', 'simplified', 'advanced', etc.
+  isPrimary  Boolean @default(true)
+
+  // Rendered configuration (derived from manifest)
   title       String
   description String
   type        String // "2d" | "3d" | "timeline"
   duration    Int // seconds
-  config      Json // { keyframes, timeline, controls }
+  config      Json // { keyframes, timeline, controls, sceneGraph }
+
+  // Quality - Phase 2
+  validationStatus String @default("pending") // pending | valid | invalid
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([experienceId, claimRef])
+  // Changed from unique on claim to unique on claim+variant
+  @@unique([experienceId, claimRef, variantKey])
   @@index([experienceId])
+  @@index([isPrimary])
+  @@index([manifestId])
 }
 
 // =============================================================================

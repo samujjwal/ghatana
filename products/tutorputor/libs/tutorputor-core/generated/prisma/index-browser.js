@@ -1496,9 +1496,40 @@ exports.Prisma.LearningEvidenceScalarFieldEnum = {
   experienceId: 'experienceId',
   evidenceRef: 'evidenceRef',
   claimRef: 'claimRef',
+  sourceType: 'sourceType',
+  sourceUrl: 'sourceUrl',
+  sourceTitle: 'sourceTitle',
+  sourcePublisher: 'sourcePublisher',
+  sourcePublicationDate: 'sourcePublicationDate',
+  excerpt: 'excerpt',
+  structuredFact: 'structuredFact',
   type: 'type',
   description: 'description',
   observables: 'observables',
+  supportKind: 'supportKind',
+  credibilityScore: 'credibilityScore',
+  retrievedAt: 'retrievedAt',
+  freshnessStatus: 'freshnessStatus',
+  verificationState: 'verificationState',
+  contradictionNotes: 'contradictionNotes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.EvidenceBundleMetadataScalarFieldEnum = {
+  id: 'id',
+  bundleConfidence: 'bundleConfidence',
+  coverageScore: 'coverageScore',
+  contradictionDetected: 'contradictionDetected',
+  freshnessOverall: 'freshnessOverall',
+  evidenceCount: 'evidenceCount',
+  primarySourceTypes: 'primarySourceTypes',
+  generatedAt: 'generatedAt',
+  regeneratedAt: 'regeneratedAt',
+  generationJobId: 'generationJobId',
+  claimRef: 'claimRef',
+  experienceId: 'experienceId',
+  bundleCache: 'bundleCache',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -1703,12 +1734,16 @@ exports.Prisma.ClaimExampleScalarFieldEnum = {
   id: 'id',
   experienceId: 'experienceId',
   claimRef: 'claimRef',
-  type: 'type',
+  manifestId: 'manifestId',
+  manifestVersion: 'manifestVersion',
   title: 'title',
   description: 'description',
   content: 'content',
+  exampleFamily: 'exampleFamily',
+  type: 'type',
   difficulty: 'difficulty',
   orderIndex: 'orderIndex',
+  validationStatus: 'validationStatus',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -1729,11 +1764,16 @@ exports.Prisma.ClaimAnimationScalarFieldEnum = {
   id: 'id',
   experienceId: 'experienceId',
   claimRef: 'claimRef',
+  manifestId: 'manifestId',
+  manifestVersion: 'manifestVersion',
+  variantKey: 'variantKey',
+  isPrimary: 'isPrimary',
   title: 'title',
   description: 'description',
   type: 'type',
   duration: 'duration',
   config: 'config',
+  validationStatus: 'validationStatus',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -2617,6 +2657,39 @@ exports.ContentStudioBloomLevel = exports.$Enums.ContentStudioBloomLevel = {
   CREATE: 'CREATE'
 };
 
+exports.EvidenceSourceType = exports.$Enums.EvidenceSourceType = {
+  OPENSTAX: 'OPENSTAX',
+  KHAN_ACADEMY: 'KHAN_ACADEMY',
+  WIKIPEDIA: 'WIKIPEDIA',
+  PEER_REVIEWED_JOURNAL: 'PEER_REVIEWED_JOURNAL',
+  TEXTBOOK: 'TEXTBOOK',
+  CURRICULUM_STANDARD: 'CURRICULUM_STANDARD',
+  DOMAIN_EXPERT: 'DOMAIN_EXPERT',
+  SIMULATION_RESULT: 'SIMULATION_RESULT',
+  CALCULATION: 'CALCULATION'
+};
+
+exports.SupportKind = exports.$Enums.SupportKind = {
+  SUPPORTS: 'SUPPORTS',
+  CONTRADICTS: 'CONTRADICTS',
+  NEUTRAL: 'NEUTRAL',
+  PARTIALLY_SUPPORTS: 'PARTIALLY_SUPPORTS'
+};
+
+exports.EvidenceFreshnessStatus = exports.$Enums.EvidenceFreshnessStatus = {
+  CURRENT: 'CURRENT',
+  STALE: 'STALE',
+  EXPIRED: 'EXPIRED',
+  UNKNOWN: 'UNKNOWN'
+};
+
+exports.EvidenceVerificationState = exports.$Enums.EvidenceVerificationState = {
+  UNVERIFIED: 'UNVERIFIED',
+  VERIFIED: 'VERIFIED',
+  DISPUTED: 'DISPUTED',
+  FAILED_VERIFICATION: 'FAILED_VERIFICATION'
+};
+
 exports.ValidationStatus = exports.$Enums.ValidationStatus = {
   PASS: 'PASS',
   WARN: 'WARN',
@@ -2930,6 +3003,7 @@ exports.Prisma.ModelName = {
   LearningExperience: 'LearningExperience',
   LearningClaim: 'LearningClaim',
   LearningEvidence: 'LearningEvidence',
+  EvidenceBundleMetadata: 'EvidenceBundleMetadata',
   ExperienceTask: 'ExperienceTask',
   ValidationRecord: 'ValidationRecord',
   AIGenerationLog: 'AIGenerationLog',

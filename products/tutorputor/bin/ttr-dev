@@ -1,0 +1,493 @@
+#!/usr/bin/env bash
+#
+# ttr-dev: Start TutorPutor development environment
+#
+
+set -euo pipefail
+
+# Find the project root (directory containing pnpm-workspace.yaml)
+find_project_root() {
+  local dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pnpm-workspace.yaml" ]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(find_project_root)"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
+log_success() { echo -e "${GREEN}✓${NC} $1"; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+log_error() { echo -e "${RED}✗${NC} $1"; }
+
+# Default configuration
+export TUTORPUTOR_ENV=development
+export TUTORPUTOR_START_APPS=true
+export TUTORPUTOR_START_SERVICES=true
+export TUTORPUTOR_ENABLE_SEED=true
+export TUTORPUTOR_ENABLE_MONITORING=false
+export TUTORPUTOR_ENABLE_KAFKA=false
+export TUTORPUTOR_ENABLE_OBJECT_STORAGE=true
+export TUTORPUTOR_ENABLE_QUEUE=false
+export TUTORPUTOR_ENABLE_SEARCH=false
+export QUIET_CONSOLE=true
+
+# Ports
+export PORT_API_GATEWAY=3200
+export PORT_WEB=3201
+export PORT_ADMIN=3202
+
+# Database URL (default for Docker setup)
+export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
+export TUTORPUTOR_DATABASE_URL="${TUTORPUTOR_DATABASE_URL:-$DATABASE_URL}"
+
+# Redis URL
+export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --no-seed)
+            TUTORPUTOR_ENABLE_SEED=false
+            shift
+            ;;
+        --no-services)
+            TUTORPUTOR_START_SERVICES=false
+            shift
+            ;;
+        --no-apps)
+            TUTORPUTOR_START_APPS=false
+            shift
+            ;;
+        --with-kafka)
+            TUTORPUTOR_ENABLE_KAFKA=true
+            shift
+            ;;
+        --with-queue)
+            TUTORPUTOR_ENABLE_QUEUE=true
+            shift
+            ;;
+        --with-search)
+            TUTORPUTOR_ENABLE_SEARCH=true
+            shift
+            ;;
+        --monitoring)
+            TUTORPUTOR_ENABLE_MONITORING=true
+            shift
+            ;;
+        --verbose)
+            QUIET_CONSOLE=false
+            shift
+            ;;
+        --help|-h)
+            cat << 'EOF'
+Usage: ttr dev [options]
+
+Start TutorPutor development environment.
+
+Options:
+  --no-seed          Skip database seeding
+  --no-services      Don't start backend services
+  --no-apps          Don't start frontend apps
+  --with-kafka       Enable Kafka messaging
+  --with-queue       Enable job queues
+  --with-search      Enable Elasticsearch
+  --monitoring       Enable Prometheus/Grafana
+  --verbose          Show all output
+  -h, --help         Show this help
+
+Examples:
+  ttr dev                    # Full dev environment
+  ttr dev --no-seed          # Skip seeding
+  ttr dev --with-kafka       # With Kafka enabled
+EOF
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Check prerequisites
+check_prerequisites() {
+    log_info "Checking prerequisites..."
+    
+    local missing=()
+    
+    command -v node >/dev/null 2>&1 || missing+=("Node.js")
+    command -v pnpm >/dev/null 2>&1 || missing+=("pnpm")
+    command -v docker >/dev/null 2>&1 || missing+=("Docker")
+    command -v java >/dev/null 2>&1 || missing+=("Java")
+    
+    if [ ${#missing[@]} -ne 0 ]; then
+        log_error "Missing prerequisites: ${missing[*]}"
+        echo ""
+        echo "Please install:"
+        echo "  - Node.js 18+ (with corepack enabled)"
+        echo "  - pnpm (npm install -g pnpm)"
+        echo "  - Docker Desktop"
+        echo "  - Java 21 (for content generation service)"
+        exit 1
+    fi
+    
+    log_success "Prerequisites OK"
+}
+
+# Setup environment
+setup_env() {
+    log_info "Setting up environment..."
+    
+    # Create necessary directories
+    mkdir -p "${ROOT_DIR}/.logs"
+    mkdir -p "${ROOT_DIR}/.data"
+    
+    # Install dependencies if needed
+    if [ ! -d "${ROOT_DIR}/node_modules" ]; then
+        log_info "Installing dependencies..."
+        cd "${ROOT_DIR}"
+        if ! pnpm install; then
+            log_error "Failed to install dependencies"
+            log_info "Make sure pnpm is installed: npm install -g pnpm"
+            exit 1
+        fi
+    fi
+    
+    log_success "Environment ready"
+}
+
+# Check if infrastructure is already running
+check_infrastructure_running() {
+    local postgres_running=false
+    local redis_running=false
+    
+    # Check PostgreSQL
+    if docker ps --filter "name=tutorputor-postgres" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -q "tutorputor-postgres"; then
+        postgres_running=true
+    fi
+    
+    # Check Redis
+    if docker ps --filter "name=tutorputor-redis" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -q "tutorputor-redis"; then
+        redis_running=true
+    fi
+    
+    if [ "$postgres_running" = "true" ] && [ "$redis_running" = "true" ]; then
+        echo "both"
+    elif [ "$postgres_running" = "true" ]; then
+        echo "postgres"
+    elif [ "$redis_running" = "true" ]; then
+        echo "redis"
+    else
+        echo "none"
+    fi
+}
+
+# Start infrastructure services (databases, etc.)
+start_infrastructure() {
+    log_info "Starting infrastructure services..."
+    
+    cd "${ROOT_DIR}"
+    
+    # Check if already running
+    local existing=$(check_infrastructure_running)
+    
+    if [ "$existing" = "both" ]; then
+        log_info "Using existing PostgreSQL and Redis containers"
+        log_success "Infrastructure ready (existing)"
+        return 0
+    fi
+    
+    # Check if docker compose is available
+    if docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
+        COMPOSE_CMD="docker-compose"
+    fi
+    
+    # Build compose files list
+    COMPOSE_FILES="-f docker-compose.yml"
+    
+    if [ "$TUTORPUTOR_ENABLE_KAFKA" = "true" ]; then
+        COMPOSE_FILES="$COMPOSE_FILES -f docker-compose.kafka.yml"
+    fi
+    
+    if [ "$TUTORPUTOR_ENABLE_SEARCH" = "true" ]; then
+        COMPOSE_FILES="$COMPOSE_FILES -f docker-compose.search.yml"
+    fi
+    
+    if [ "$TUTORPUTOR_ENABLE_MONITORING" = "true" ]; then
+        COMPOSE_FILES="$COMPOSE_FILES -f docker-compose.monitoring.yml"
+    fi
+    
+    # Start only what's needed
+    local services_to_start=""
+    
+    if [ "$existing" = "none" ]; then
+        services_to_start="postgres redis"
+        log_info "Starting PostgreSQL and Redis..."
+    elif [ "$existing" = "postgres" ]; then
+        services_to_start="redis"
+        log_info "PostgreSQL already running, starting Redis..."
+    elif [ "$existing" = "redis" ]; then
+        services_to_start="postgres"
+        log_info "Redis already running, starting PostgreSQL..."
+    fi
+    
+    # Start services (will fail if ports are taken by non-docker processes)
+    if ! $COMPOSE_CMD $COMPOSE_FILES up -d $services_to_start 2>&1; then
+        log_warn "Some services failed to start (ports may be in use by other processes)"
+        log_info "Checking what's running..."
+        
+        # Check if we can at least use what's already running
+        local after_check=$(check_infrastructure_running)
+        
+        if [ "$after_check" = "both" ] || [ "$after_check" = "postgres" ]; then
+            log_success "Using existing containers"
+        else
+            log_error "Failed to start infrastructure"
+            log_info "You may need to stop other services using ports 5432 (PostgreSQL) or 6379 (Redis)"
+            log_info "Or configure different ports in docker-compose.yml"
+            exit 1
+        fi
+    fi
+    
+    # Wait for PostgreSQL if we started it
+    if echo "$services_to_start" | grep -q "postgres"; then
+        log_info "Waiting for PostgreSQL..."
+        for i in {1..30}; do
+            if docker exec tutorputor-postgres pg_isready -U postgres 2>/dev/null; then
+                log_success "PostgreSQL ready"
+                break
+            fi
+            sleep 1
+        done
+    fi
+    
+    # Wait for Redis if we started it
+    if echo "$services_to_start" | grep -q "redis"; then
+        log_info "Waiting for Redis..."
+        for i in {1..30}; do
+            if docker exec tutorputor-redis redis-cli ping 2>/dev/null | grep -q "PONG"; then
+                log_success "Redis ready"
+                break
+            fi
+            sleep 1
+        done
+    fi
+    
+    log_success "Infrastructure ready"
+}
+
+# Run database migrations
+run_migrations() {
+    log_info "Running database migrations..."
+    
+    cd "${ROOT_DIR}/libs/tutorputor-core"
+    
+    # Ensure DATABASE_URL is set for Prisma
+    export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
+    
+    # Check if existing migrations are SQLite (contain PRAGMA) but we're using PostgreSQL
+    if grep -q "PRAGMA" prisma/migrations/*/migration.sql 2>/dev/null; then
+        log_warn "Detected SQLite migrations but using PostgreSQL"
+        log_info "Resetting migration history for PostgreSQL..."
+        
+        # Only remove SQLite migrations (those containing PRAGMA)
+        for mig in prisma/migrations/202*/migration.sql; do
+            if grep -q "PRAGMA" "$mig" 2>/dev/null; then
+                rm -rf "$(dirname "$mig")"
+                log_info "Removed SQLite migration: $(basename "$mig")"
+            fi
+        done
+        
+        # If no migrations left, create a fresh one
+        if [ ! -d "prisma/migrations/" ] || [ -z "$(ls -A prisma/migrations/ 2>/dev/null | grep -v migration_lock.toml)" ]; then
+            log_info "Creating fresh PostgreSQL migration..."
+            echo "y" | DATABASE_URL="$DATABASE_URL" npx prisma migrate dev --name init || true
+        fi
+    else
+        # Run migrations with explicit env var
+        if ! DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy 2>/dev/null; then
+            log_warn "Migration deploy failed, trying migrate dev..."
+            DATABASE_URL="$DATABASE_URL" npx prisma migrate dev
+        fi
+    fi
+    
+    DATABASE_URL="$DATABASE_URL" npx prisma generate
+    
+    log_success "Migrations complete"
+}
+
+# Seed database
+seed_database() {
+    if [ "$TUTORPUTOR_ENABLE_SEED" = "true" ]; then
+        log_info "Seeding database..."
+        
+        cd "${ROOT_DIR}"
+        "${SCRIPT_DIR}/ttr-seed"
+        
+        log_success "Database seeded"
+    fi
+}
+
+# Start backend services
+start_services() {
+    if [ "$TUTORPUTOR_START_SERVICES" = "false" ]; then
+        log_info "Skipping services (use --no-services)"
+        return
+    fi
+    
+    log_info "Starting backend services..."
+    
+    # Start platform service
+    cd "${ROOT_DIR}/services/tutorputor-platform"
+    if [ "$QUIET_CONSOLE" = "true" ]; then
+        pnpm dev > "${ROOT_DIR}/.logs/platform.log" 2>&1 &
+    else
+        pnpm dev &
+    fi
+    echo $! > "${ROOT_DIR}/.logs/platform.pid"
+    
+    # Start content generation service (Java)
+    if [ -d "${ROOT_DIR}/services/tutorputor-content-generation" ]; then
+        log_info "Starting content generation service..."
+        cd "${ROOT_DIR}/services/tutorputor-content-generation"
+        ./gradlew bootRun --quiet > "${ROOT_DIR}/.logs/content-gen.log" 2>&1 &
+        echo $! > "${ROOT_DIR}/.logs/content-gen.pid"
+    fi
+    
+    # Wait for services
+    log_info "Waiting for services..."
+    for i in {1..30}; do
+        if curl -s http://localhost:${PORT_API_GATEWAY}/health >/dev/null 2>&1; then
+            log_success "API Gateway ready"
+            break
+        fi
+        sleep 1
+    done
+    
+    log_success "Services started"
+}
+
+# Start frontend applications
+start_apps() {
+    if [ "$TUTORPUTOR_START_APPS" = "false" ]; then
+        log_info "Skipping apps (use --no-apps)"
+        return
+    fi
+    
+    log_info "Starting frontend applications..."
+    
+    # Clear Vite cache to avoid corrupted dependency issues
+    log_info "Clearing Vite cache..."
+    rm -rf "${ROOT_DIR}/apps/tutorputor-web/node_modules/.vite"
+    rm -rf "${ROOT_DIR}/apps/tutorputor-admin/node_modules/.vite"
+    
+    # Start web app
+    cd "${ROOT_DIR}/apps/tutorputor-web"
+    if [ "$QUIET_CONSOLE" = "true" ]; then
+        pnpm dev --port ${PORT_WEB} > "${ROOT_DIR}/.logs/web.log" 2>&1 &
+    else
+        pnpm dev --port ${PORT_WEB} &
+    fi
+    echo $! > "${ROOT_DIR}/.logs/web.pid"
+    
+    # Start admin app
+    cd "${ROOT_DIR}/apps/tutorputor-admin"
+    if [ "$QUIET_CONSOLE" = "true" ]; then
+        pnpm dev --port ${PORT_ADMIN} > "${ROOT_DIR}/.logs/admin.log" 2>&1 &
+    else
+        pnpm dev --port ${PORT_ADMIN} &
+    fi
+    echo $! > "${ROOT_DIR}/.logs/admin.pid"
+    
+    log_success "Applications started"
+}
+
+# Print status
+print_status() {
+    echo ""
+    echo "=========================================="
+    log_success "TutorPutor Development Environment Ready!"
+    echo "=========================================="
+    echo ""
+    echo "Services:"
+    echo "  API Gateway:  http://localhost:${PORT_API_GATEWAY}"
+    echo "  Web App:      http://localhost:${PORT_WEB}"
+    echo "  Admin App:    http://localhost:${PORT_ADMIN}"
+    echo ""
+    echo "Logs:"
+    echo "  ${ROOT_DIR}/.logs/"
+    echo ""
+    echo "Commands:"
+    echo "  ttr logs <service>    - View service logs"
+    echo "  ttr stop              - Stop all services"
+    echo "  ttr test              - Run tests"
+    echo "  ttr doctor            - Check health"
+    echo ""
+}
+
+# Cleanup on exit
+cleanup() {
+    echo ""
+    log_warn "Shutting down..."
+    
+    # Kill background processes
+    if [ -f "${ROOT_DIR}/.logs/platform.pid" ]; then
+        kill $(cat "${ROOT_DIR}/.logs/platform.pid") 2>/dev/null || true
+    fi
+    if [ -f "${ROOT_DIR}/.logs/web.pid" ]; then
+        kill $(cat "${ROOT_DIR}/.logs/web.pid") 2>/dev/null || true
+    fi
+    if [ -f "${ROOT_DIR}/.logs/admin.pid" ]; then
+        kill $(cat "${ROOT_DIR}/.logs/admin.pid") 2>/dev/null || true
+    fi
+    
+    # Stop docker services
+    cd "${ROOT_DIR}"
+    docker compose down 2>/dev/null || true
+    
+    log_success "Shutdown complete"
+}
+
+trap cleanup EXIT INT TERM
+
+# Main
+main() {
+    echo ""
+    log_info "Starting TutorPutor Development Environment"
+    echo "=========================================="
+    echo ""
+    
+    check_prerequisites
+    setup_env
+    start_infrastructure
+    run_migrations
+    seed_database
+    start_services
+    start_apps
+    
+    print_status
+    
+    # Keep script running
+    log_info "Press Ctrl+C to stop"
+    while true; do
+        sleep 1
+    done
+}
+
+main "$@"

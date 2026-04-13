@@ -121,6 +121,8 @@ export function SavedQueries({
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [newQueryName, setNewQueryName] = useState('');
+    const [renamingId, setRenamingId] = useState<string | null>(null);
+    const [renameValue, setRenameValue] = useState('');
 
     // Filter queries
     const filteredQueries = queries.filter((query) => {
@@ -163,6 +165,29 @@ export function SavedQueries({
         setQueries((prev) => [newQuery, ...prev]);
         setActiveMenu(null);
     }, []);
+
+    // Begin renaming a query (B7)
+    const startRename = useCallback((query: SavedQuery) => {
+        setRenamingId(query.id);
+        setRenameValue(query.name);
+        setActiveMenu(null);
+    }, []);
+
+    // Commit rename (B7)
+    const commitRename = useCallback(() => {
+        if (!renamingId || !renameValue.trim()) {
+            setRenamingId(null);
+            return;
+        }
+        setQueries((prev) =>
+            prev.map((q) =>
+                q.id === renamingId
+                    ? { ...q, name: renameValue.trim(), updatedAt: new Date().toISOString() }
+                    : q
+            )
+        );
+        setRenamingId(null);
+    }, [renamingId, renameValue]);
 
     // Save current query
     const handleSaveCurrentQuery = useCallback(() => {
@@ -311,9 +336,26 @@ export function SavedQueries({
                                                     <StarOff className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100" />
                                                 )}
                                             </button>
-                                            <span className={cn(textStyles.body, 'font-medium truncate')}>
-                                                {query.name}
-                                            </span>
+                                            {renamingId === query.id ? (
+                                                <input
+                                                    type="text"
+                                                    value={renameValue}
+                                                    onChange={(e) => setRenameValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') commitRename();
+                                                        if (e.key === 'Escape') setRenamingId(null);
+                                                    }}
+                                                    onBlur={commitRename}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    autoFocus
+                                                    className={cn(inputStyles.base, 'text-sm py-0.5')}
+                                                    aria-label="Rename query"
+                                                />
+                                            ) : (
+                                                <span className={cn(textStyles.body, 'font-medium truncate')}>
+                                                    {query.name}
+                                                </span>
+                                            )}
                                         </div>
                                         {query.description && (
                                             <p className={cn(textStyles.xs, 'mt-0.5 truncate')}>
@@ -361,8 +403,7 @@ export function SavedQueries({
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        // TODO: Implement edit
-                                                        setActiveMenu(null);
+                                                        startRename(query);
                                                     }}
                                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
                                                 >

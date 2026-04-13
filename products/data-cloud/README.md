@@ -92,7 +92,35 @@ docker-compose -f shared-services/infrastructure/docker-compose.yml up -d kafka 
 ./gradlew :products:data-cloud:test
 ```
 
-## Key Design Decisions
+### Embedded Developer Mode (zero external infrastructure) — B2
+
+Set `DATACLOUD_PROFILE=local` to start a fully self-contained single-process server. In this
+mode the launcher uses an H2 in-process store for entities and an in-memory event log. No
+PostgreSQL, Redis, ClickHouse, Iceberg, or Kafka credentials are required.
+
+```bash
+DATACLOUD_PROFILE=local \
+DATACLOUD_HTTP_ENABLED=true \
+./gradlew :products:data-cloud:launcher:run
+```
+
+The server starts on the default port (`8082`) and is fully functional for:
+- Entity CRUD, batch, search, validation, and anomaly detection
+- SQL workspace queries (in-memory analytics engine fallback)
+- Alert rules, governance, and lifecycle endpoints
+- AI assist endpoints (if `OPENAI_API_KEY` or `OLLAMA_HOST` are also set)
+
+**Caveats in local-dev mode:**
+- Data does not persist across restarts (in-memory H2)
+- Tier migration, ClickHouse tracing, and pgvector search are no-ops
+- Federated Trino queries fall back to the local analytics engine
+
+To use the CLI flag instead of environment variable:
+```bash
+DATACLOUD_HTTP_ENABLED=true ./gradlew :products:data-cloud:launcher:run --args="--http --profile=local"
+```
+
+
 
 - **Event sourcing** — all state changes produce events; consumers build projections
 - **Tenant isolation** — topics and registry entries are namespaced by `tenantId`

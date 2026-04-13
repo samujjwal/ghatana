@@ -11,6 +11,7 @@ description = "Data Cloud Platform Config Module"
 dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
+    api(project(":platform:java:policy-as-code"))
     api(project(":products:data-cloud:platform-entity"))
 
     api(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))

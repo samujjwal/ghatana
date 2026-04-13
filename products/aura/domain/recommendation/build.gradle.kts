@@ -2,7 +2,7 @@
  * Aura -- Domain Cluster: Recommendation
  * Candidate generation, scoring, confidence, and ranking logic.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

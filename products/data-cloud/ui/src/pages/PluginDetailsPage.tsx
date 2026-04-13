@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Package,
@@ -66,6 +66,14 @@ function getMockDependencies(currentPluginId: string): PluginDependency[] {
 export function PluginDetailsPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const upgradeMutation = useMutation({
+    mutationFn: (pluginId: string) => pluginService.updatePlugin(pluginId, {}),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
+    },
+  });
 
   const { data: plugin, isLoading, error } = useQuery({
     queryKey: ['plugins', 'details', id],
@@ -210,8 +218,7 @@ export function PluginDetailsPage(): React.ReactElement {
                 'Enhanced error reporting',
               ]}
               onUpgrade={() => {
-                console.log('Upgrade plugin');
-                // TODO: Implement upgrade logic
+                if (plugin) upgradeMutation.mutate(plugin.id);
               }}
             />
 

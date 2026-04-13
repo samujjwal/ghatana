@@ -2,7 +2,7 @@
  * Aura — Domain Cluster: Catalog
  * Canonical product, ingredient, shade, and source normalization rules.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

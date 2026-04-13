@@ -1,17 +1,61 @@
-# Data-Cloud Technical Overview
+# Data Cloud Technical Overview
 
 **Document ID:** DC-TECH-001  
-**Version:** 1.0  
-**Date:** 2026-04-03  
-**Evidence Base:** Phase 1 Deep Inspection of products/data-cloud
+**Version:** 2.0  
+**Date:** 2026-04-12  
+**Evidence Base:** Architecture Documentation + Build Configuration Analysis
 
 ---
 
 ## Executive Summary
 
-Data-Cloud is built on a **modern, cloud-native technology stack** with **Java 21 + ActiveJ** for the backend and **React 19 + TypeScript** for the frontend. The system demonstrates **strong engineering practices** with **comprehensive testing**, **containerization**, **Kubernetes deployment**, and **observability**. The technology choices reflect **production-grade requirements** with emphasis on **performance**, **scalability**, and **maintainability**.
+Data Cloud is built on a **modern, cloud-native technology stack** with **Java 21 + ActiveJ** for the backend and **React 19 + TypeScript** for the frontend. This enhanced technical overview provides comprehensive stack diagrams, dependency maps, and architecture context.
 
-**Key Technology Characteristics:**
+### Technology Stack at a Glance
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend Stack"]
+        React["React 19"]
+        TS["TypeScript 5.x"]
+        Vite["Vite 7.x"]
+        Tailwind["Tailwind CSS 4.x"]
+        Jotai["Jotai 2.x"]
+        Query["TanStack Query 5.x"]
+    end
+    
+    subgraph Backend["Backend Stack"]
+        Java["Java 21 LTS"]
+        ActiveJ["ActiveJ 6.0"]
+        Jackson["Jackson"]
+        GRPC["gRPC"]
+        JPA["JPA/Hibernate"]
+    end
+    
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL 15+"]
+        CH["ClickHouse 23+"]
+        Kafka["Kafka 3.x"]
+        Redis["Redis 7+"]
+        OS["OpenSearch 2.x"]
+        S3["S3 / Ceph"]
+    end
+    
+    subgraph Infrastructure["Infrastructure"]
+        Docker["Docker"]
+        K8s["Kubernetes"]
+        Helm["Helm"]
+        Terraform["Terraform"]
+        Prometheus["Prometheus"]
+        Grafana["Grafana"]
+    end
+    
+    Frontend --> Backend
+    Backend --> Data
+    Backend --> Infrastructure
+```
+
+### Key Technology Characteristics:
 - **Backend**: Java 21 + ActiveJ 6.0 with async Promise-based programming
 - **Frontend**: React 19 + TypeScript with modern tooling (Vite, Tailwind)
 - **Database**: Multi-backend strategy (PostgreSQL, ClickHouse, Redis, Kafka)

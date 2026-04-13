@@ -2,86 +2,90 @@
 
 **Product Owner:** @ghatana/tutorputor-team  
 **Status:** Active  
-**Stack:** TypeScript / React 19 / Java 21 / ActiveJ
+**Stack:** TypeScript / React 19 / Java 21 / Fastify
 
 ## Purpose
 
-**TutorPutor** is an adaptive AI tutoring platform that delivers personalised learning content to students and provides administrative tools for educators. It uses the ghatana AI integration layer (`libs:ai-integration`) for content generation and adaptive curriculum planning.
+**TutorPutor** is an adaptive AI tutoring platform that delivers personalized learning content to students and provides administrative tools for educators. It uses the ghatana AI integration layer for content generation and adaptive curriculum planning.
+
+## Quick Start
+
+```bash
+# Start development environment
+ttr dev
+
+# Run tests
+ttr test
+
+# Check system health
+ttr doctor
+```
+
+See [bin/README.md](bin/README.md) for full CLI documentation.
 
 ## Architecture
 
 ```
-tutorputor-student (React)  ─┐
-tutorputor-admin   (React)  ─┤→  tutorputor API (Java / ActiveJ)  →  PostgreSQL
-tutorputor-mobile  (RN)     ─┤→  content-explorer service
-api-gateway        (Node)   ─┘→  @ghatana/ai (LLM integration)
+tutorputor-web (React)    ─┐
+tutorputor-admin (React)   ─┤→  API Gateway (Node)  →  Platform (Node/Fastify)  →  PostgreSQL
+tutorputor-mobile (RN)     ─┤                            ↓                        Redis
+                           │                     Content Generation (Java)
+                           │                     Simulation Engine
 ```
 
 ### Module Map
 
 | Path | Type | Purpose |
 |------|------|---------|
-| `apps/tutorputor-student/` | React app | Student-facing learning UI |
+| `apps/tutorputor-web/` | React app | Student-facing learning UI |
 | `apps/tutorputor-admin/` | React app | Educator / admin dashboard |
-| `apps/tutorputor-web/` | React app | Marketing & public-facing site |
 | `apps/tutorputor-mobile/` | React Native | Mobile student app |
 | `apps/api-gateway/` | Node.js | API gateway + BFF layer |
-| `apps/content-explorer/` | React app | Content browsing & curation tool |
-| `contracts/` | Protobuf + OpenAPI | API contracts |
-| `libs/` | Shared TS/Java libs | Domain model, utilities |
-| `content/` | Markdown / structured data | Curriculum content |
-| `tools/tutorputor-domain-loader/` | CLI tool | Batch-loads domain content |
+| `services/tutorputor-platform/` | Node.js | Main platform service |
+| `libs/tutorputor-core/` | Shared lib | Prisma schema & client |
+| `libs/tutorputor-ai/` | Shared lib | AI utilities |
+| `libs/tutorputor-ui/` | Shared lib | UI components |
+| `contracts/` | TypeScript | API contracts |
 
 ## Prerequisites
 
-- Node.js 18+ / pnpm 10+
+- Node.js 18+ (with Corepack)
+- pnpm 10+
 - Java 21
-- PostgreSQL
 - Docker + Docker Compose
 
-## Local Development
+## Development Commands
+
+Use the `ttr` CLI for all operations:
 
 ```bash
-# Start all services
-./run-dev.sh
+# Environment
+ttr dev                 # Start development
+ttr dev --no-seed       # Skip seeding
+ttr dev --with-kafka    # Enable Kafka
+ttr stop                # Stop all services
 
-# Start without seed data
-./run-dev-no-seed.sh
+# Testing
+ttr test                # Run all tests
+ttr test --unit         # Unit tests only
+ttr test --e2e          # End-to-end tests
+ttr test --watch        # Watch mode
 
-# Seed content
-./run-seed.sh
-
-# Build Java backend
-./gradlew build
-
-# Frontend only
-pnpm install
-pnpm --filter tutorputor-student dev
-pnpm --filter tutorputor-admin dev
-```
-
-## Testing
-
-See [`docs/guidelines/TESTING.md`](docs/guidelines/TESTING.md) for full testing conventions.
-
-```bash
-# Backend tests
-./gradlew test
-
-# Frontend tests
-pnpm test
-
-# E2E
-pnpm --filter tutorputor-student test:e2e
+# Maintenance
+ttr doctor              # System health check
+ttr migrate             # Run database migrations
+tr seed                # Seed development data
+tr logs platform       # View platform logs
+tr clean --all         # Deep clean
 ```
 
 ## Key Documentation
 
 | Document | Path |
 |----------|------|
-| Architecture & Design | [`docs/architecture/DESIGN_ARCHITECTURE.md`](docs/architecture/DESIGN_ARCHITECTURE.md) |
-| Module Inventory | [`docs/architecture/TUTORPUTOR_MODULE_INVENTORY.md`](docs/architecture/TUTORPUTOR_MODULE_INVENTORY.md) |
-| Flow Map | [`docs/architecture/TUTORPUTOR_FLOW_MAP.md`](docs/architecture/TUTORPUTOR_FLOW_MAP.md) |
-| User Manual | [`docs/usage/USER_MANUAL.md`](docs/usage/USER_MANUAL.md) |
-| Operations | [`docs/operations/OPERATIONS.md`](docs/operations/OPERATIONS.md) |
-| Coding Guidelines | [`docs/guidelines/CODING.md`](docs/guidelines/CODING.md) |
+| **Getting Started** | [docs/guides/DEVELOPMENT_SETUP.md](docs/guides/DEVELOPMENT_SETUP.md) |
+| **CLI Reference** | [bin/README.md](bin/README.md) |
+| **Architecture** | [docs/architecture/README.md](docs/architecture/README.md) |
+| **Current State** | [docs/architecture/CURRENT_STATE.md](docs/architecture/CURRENT_STATE.md) |
+| **Product Spec** | [docs/architecture/specs/PRODUCT_SPEC.md](docs/architecture/specs/PRODUCT_SPEC.md) |
+| **Coding Standards** | [docs/guidelines/CODING.md](docs/guidelines/CODING.md) |

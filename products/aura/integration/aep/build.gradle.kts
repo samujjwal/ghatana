@@ -6,7 +6,7 @@
  * events to the AEP event bus. Subscribes to cross-product signals (e.g. purchase,
  * review, style actions from other Ghatana products).
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

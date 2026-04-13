@@ -6,7 +6,7 @@
  *
  * Registered in AEP Central Registry as agent type: ADAPTIVE
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

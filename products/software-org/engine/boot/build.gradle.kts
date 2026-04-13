@@ -1,6 +1,5 @@
 plugins {
-    java
-    application
+    id("java-application")
 }
 
 import org.gradle.jvm.toolchain.JavaLanguageVersion

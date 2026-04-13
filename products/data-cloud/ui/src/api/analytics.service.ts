@@ -61,6 +61,36 @@ export async function executeAnalyticsQuery(
   return response.json() as Promise<QueryResultData>;
 }
 
+/**
+ * Submits a federated SQL query routed through the Trino connector (B13).
+ *
+ * POST /api/v1/queries/federated
+ * Body: {"sql": "<sql>", "parameters": {...}}
+ * Federated queries span all storage tiers in a single request via Trino.
+ *
+ * @param sql    the SQL query string
+ * @param parameters optional named query parameters
+ */
+export async function executeFederatedQuery(
+  sql: string,
+  parameters: Record<string, unknown> = {}
+): Promise<QueryResultData> {
+  const tenantId = getTenantId();
+  const response = await fetch(`${API_BASE}/queries/federated`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant-ID': tenantId,
+    },
+    body: JSON.stringify({ sql, parameters }),
+  });
+  if (!response.ok) {
+    const msg = await response.text().catch(() => response.statusText);
+    throw new Error(msg || `HTTP ${response.status}`);
+  }
+  return response.json() as Promise<QueryResultData>;
+}
+
 // =============================================================================
 // TANSACK QUERY HOOKS
 // =============================================================================

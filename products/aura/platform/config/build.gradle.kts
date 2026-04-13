@@ -5,7 +5,7 @@
  * feature flags, model version pinning, A/B test allocation,
  * and per-tenant behavioral overrides.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

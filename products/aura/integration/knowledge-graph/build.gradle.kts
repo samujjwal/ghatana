@@ -6,7 +6,7 @@
  * the Neo4j (or equivalent) graph database, entity relationship management,
  * and graph query execution.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

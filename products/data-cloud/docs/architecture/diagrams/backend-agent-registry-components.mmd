@@ -1,9 +1,0 @@
-flowchart LR
-  AEP["AEP service"] --> Registry["DataCloudAgentRegistry"]
-  Registry --> Cache["in-memory cache"]
-  Registry --> DC["DataCloudClient"]
-  Registry --> Events["RegistryEventPublisher"]
-  DC --> Collection["agent-registry collection"]
-  Events --> Stream["agent-registry-events"]
-  Registry --> Repos["release / rollout / evaluation / memory repos"]
-

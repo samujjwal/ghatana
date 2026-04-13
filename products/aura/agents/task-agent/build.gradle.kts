@@ -7,7 +7,7 @@
  *
  * Registered in AEP Central Registry as agent type: PLANNING
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

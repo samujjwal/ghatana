@@ -97,8 +97,7 @@ fun discoverProductModules(
             dir.isDirectory &&
             dir != baseDir &&
             (dir.resolve("build.gradle.kts").exists() || dir.resolve("build.gradle").exists()) &&
-            allExcludes.none { pattern -> dir.path.contains(pattern) } &&
-            dir.name != "buildSrc"
+            allExcludes.none { pattern -> dir.path.contains(pattern) }
         }
         .forEach { dir ->
             val relativePath = baseDir.toPath().relativize(dir.toPath()).toString()

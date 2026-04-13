@@ -19,7 +19,7 @@
  *   - ActiveJ Promise for async operations
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.finance"

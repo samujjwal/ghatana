@@ -53,6 +53,16 @@ import com.ghatana.datacloud.launcher.http.handlers.SseStreamingHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler;
 import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataLifecycleHandler;
+import com.ghatana.datacloud.launcher.http.handlers.AutonomyHandler;
+import com.ghatana.datacloud.launcher.http.handlers.AgentCatalogHandler;
+import com.ghatana.datacloud.launcher.http.handlers.PluginInstallHandler;
+import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
+import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
+import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
+import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
+import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
+import com.ghatana.datacloud.client.autonomy.AutonomyController;
+import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.launcher.http.voice.HttpWhisperSttAdapter;
 import com.ghatana.datacloud.launcher.http.voice.NopVoiceSttAdapter;
 import com.ghatana.datacloud.launcher.http.voice.NopVoiceTtsAdapter;
@@ -225,6 +235,18 @@ public class DataCloudHttpServer {
      */
     private PolicyEngine policyEngine;
 
+    /**
+     * Optional trace export service for flushing spans to ClickHouse (B4).
+     * When {@code null}, spans are generated but not persisted.
+     */
+    private TraceExportService traceExportService;
+
+    /**
+     * Optional Trino coordinator JDBC URL for federated cross-tier queries (B13).
+     * When {@code null}, federated queries fall back to the local analytics engine.
+     */
+    private String trinoUrl;
+
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
     private EntityCrudHandler entityHandler;
@@ -243,6 +265,12 @@ public class DataCloudHttpServer {
     private AiAssistHandler aiAssistHandler; // DC-E3: pervasive AI assist endpoints
     private VoiceGatewayHandler voiceHandler; // DC-E4: voice intent gateway
     private DataLifecycleHandler dataLifecycleHandler; // DC-E5: data lifecycle and governance
+    private AutonomyHandler autonomyHandler; // B9: emergency autonomy shutoff
+    private AgentCatalogHandler agentCatalogHandler; // B3: agent catalog runtime API
+    private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
+    private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
+    private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
+    private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
     /**
@@ -463,17 +491,67 @@ public class DataCloudHttpServer {
     }
 
     /**
-     * Attaches an {@link AuditService} to enable security event auditing (DC-E1, DC-E4).
+     * Attaches a {@link TraceExportService} so spans produced during request handling
+     * are flushed to ClickHouse (B4).
      *
-     * @param service the audit service; must not be {@code null}
+     * <p>When not set, spans are generated but silently discarded.
+     *
+     * @param service the trace export service; must not be {@code null}
      * @return {@code this} for method chaining
      *
      * @doc.type method
-     * @doc.purpose Attach audit service for security and voice event recording
+     * @doc.purpose Attach trace export service for B4 observability
      * @doc.layer product
      * @doc.pattern Builder
      */
-    public DataCloudHttpServer withAuditService(AuditService service) {
+    public DataCloudHttpServer withTraceExportService(TraceExportService service) {
+        this.traceExportService = service;
+        return this;
+    }
+
+    /**
+     * Configures the Trino coordinator JDBC URL for federated cross-tier queries (B13).
+     *
+     * <p>When set, {@code POST /api/v1/queries/federated} routes queries through the
+     * Trino {@code EventCloudConnector}. When absent, the endpoint falls back to the
+     * local {@link AnalyticsQueryEngine}.
+     *
+     * @param trinoUrl Trino coordinator JDBC URL, e.g. {@code jdbc:trino://host:8080/eventcloud}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Configure Trino URL for federated queries
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withTrinoUrl(String trinoUrl) {
+        this.trinoUrl = trinoUrl;
+        return this;
+    }
+
+    /**
+     * Wires the tier migration schedulers so the B10 manual migration endpoint is available.
+     *
+     * <p>Both parameters are optional: pass {@code null} for any tier that is not configured.
+     * The corresponding migration target tier will return {@code 503} to the caller.
+     *
+     * @param warm scheduler for L1→L2 Iceberg migration; may be {@code null}
+     * @param cold scheduler for L2→L3 S3 archive migration; may be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Wire tier migration schedulers for on-demand migration (B10)
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withTierMigrationSchedulers(TierMigrationScheduler warm,
+                                                           ArchiveMigrationScheduler cold) {
+        this.warmMigrationScheduler = warm;
+        this.coldMigrationScheduler = cold;
+        return this;
+    }
+
+
         this.auditService = service;
         return this;
     }
@@ -513,6 +591,31 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withPolicyEngine(PolicyEngine engine) {
         this.policyEngine = engine;
+        return this;
+    }
+
+    /**
+     * Attaches an {@link AutonomyController} to enable autonomy management routes (B9).
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code PUT  /api/v1/autonomy/level}           — emergency global shutoff</li>
+     *   <li>{@code GET  /api/v1/autonomy/level}           — get current override level</li>
+     *   <li>{@code GET  /api/v1/autonomy/domains}         — list domain states</li>
+     *   <li>{@code GET  /api/v1/autonomy/domains/:domain} — get domain state</li>
+     *   <li>{@code GET  /api/v1/autonomy/logs}            — autonomy audit log</li>
+     * </ul>
+     *
+     * @param controller the autonomy controller; must not be {@code null}
+     * @return {@code this} for chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach autonomy controller for B9 emergency shutoff routes
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withAutonomyController(AutonomyController controller) {
+        this.autonomyController = controller;
         return this;
     }
 
@@ -584,6 +687,31 @@ public class DataCloudHttpServer {
         // DC-E5: Data lifecycle and governance handler
         dataLifecycleHandler = new DataLifecycleHandler(objectMapper, httpSupport, auditService);
 
+        // B9: Autonomy management handler — nullable controller enables graceful 503
+        autonomyHandler = new AutonomyHandler(autonomyController, httpSupport);
+
+        // B3: Agent catalog runtime handler — loads YAML definitions from classpath
+        agentCatalogHandler = new AgentCatalogHandler(httpSupport, metricsCollector);
+
+        // B6: Plugin install/upgrade lifecycle handler
+        pluginInstallHandler = new PluginInstallHandler(
+                httpSupport,
+                com.ghatana.datacloud.spi.StoragePluginRegistry.getInstance(),
+                metricsCollector);
+
+        // B11: Storage cost estimation handler
+        StorageCostHandler storageCostHandler = analyticsEngine != null
+                ? new StorageCostHandler(httpSupport, analyticsEngine, metricsCollector)
+                : null;
+
+        // B13: Federated Trino query handler — routes to Trino when TRINO_URL is set
+        FederatedQueryHandler federatedQueryHandler = analyticsEngine != null
+                ? new FederatedQueryHandler(httpSupport, analyticsEngine, metricsCollector, trinoUrl)
+                : null;
+
+        // B10: Tier migration handler — uses schedulers when they are configured via withTierMigrationSchedulers()
+        tierMigrationHandler = new TierMigrationHandler(httpSupport, warmMigrationScheduler, coldMigrationScheduler);
+
         RoutingServlet router = RoutingServlet.builder(eventloop)
             // Health endpoints — delegated to HealthHandler (P7-2b)
             .with(HttpMethod.GET, "/health", healthHandler::handleHealth)
@@ -601,6 +729,8 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/query/stream", sseHandler::handleStreamingQuerySse)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/:id", entityHandler::handleGetEntity)
+            // Point-in-time entity snapshot — GET /api/v1/entities/:collection/:id/history?asOf= (B14)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/:id/history", entityHandler::handleGetEntityAsOf)
             .with(HttpMethod.GET, "/api/v1/entities/:collection", entityHandler::handleQueryEntities)
             .with(HttpMethod.DELETE, "/api/v1/entities/:collection/:id", entityHandler::handleDeleteEntity)
             // Bulk entity endpoints — upsert/delete multiple entities in a single request
@@ -703,6 +833,42 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/governance/privacy/redact",     dataLifecycleHandler::handleRedact)
             .with(HttpMethod.GET,  "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
             .with(HttpMethod.GET,  "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
+
+            // Autonomy management routes (B9) — emergency global shutoff and domain-level controls
+            .with(HttpMethod.PUT, "/api/v1/autonomy/level",              autonomyHandler::handleSetGlobalLevel)
+            .with(HttpMethod.GET, "/api/v1/autonomy/level",              autonomyHandler::handleGetGlobalLevel)
+            .with(HttpMethod.GET, "/api/v1/autonomy/domains",            autonomyHandler::handleListDomains)
+            .with(HttpMethod.GET, "/api/v1/autonomy/domains/:domain",    autonomyHandler::handleGetDomain)
+            .with(HttpMethod.GET, "/api/v1/autonomy/logs",               autonomyHandler::handleGetLogs)
+
+            // Agent catalog runtime API (B3) — YAML-backed catalog served as JSON
+            .with(HttpMethod.GET, "/api/v1/agents/catalog",              agentCatalogHandler::handleListCatalog)
+            .with(HttpMethod.GET, "/api/v1/agents/catalog/:id",          agentCatalogHandler::handleGetAgent)
+
+            // Plugin lifecycle management API (B6) — install, enable/disable, upgrade
+            .with(HttpMethod.GET,  "/api/v1/plugins",                    pluginInstallHandler::handleListPlugins)
+            .with(HttpMethod.GET,  "/api/v1/plugins/:id",                pluginInstallHandler::handleGetPlugin)
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/enable",         pluginInstallHandler::handleEnablePlugin)
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/disable",        pluginInstallHandler::handleDisablePlugin)
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade",        pluginInstallHandler::handleUpgradePlugin)
+
+            // Storage cost estimate + per-collection cost report (B11)
+            .with(HttpMethod.GET,  "/api/v1/queries/estimate",
+                    storageCostHandler != null ? storageCostHandler::handleEstimateQuery
+                            : req -> http.errorResponse(503, "Analytics engine not available"))
+            .with(HttpMethod.GET,  "/api/v1/collections/:id/cost-report",
+                    storageCostHandler != null ? storageCostHandler::handleCollectionCostReport
+                            : req -> http.errorResponse(503, "Analytics engine not available"))
+
+            // Federated Trino query endpoint (B13)
+            .with(HttpMethod.POST, "/api/v1/queries/federated",
+                    federatedQueryHandler != null ? federatedQueryHandler::handleFederatedQuery
+                            : req -> http.errorResponse(503, "Analytics engine not available"))
+
+            // Manual storage-tier migration (B10)
+            .with(HttpMethod.POST, "/api/v1/collections/:id/migrate",
+                    tierMigrationHandler != null ? tierMigrationHandler::handleMigrateCollection
+                            : req -> http.errorResponse(503, "Tier migration schedulers are not configured"))
 
             .build();
 

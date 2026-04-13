@@ -18,6 +18,7 @@ import { GlobalSearch, useGlobalSearch } from '../common/GlobalSearch';
 import { KeyboardShortcuts, useKeyboardShortcuts } from '../common/KeyboardShortcuts';
 import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../ai/AiAssistant';
 import { useWebSocketAutoConnect, useWebSocketState } from '../../lib/websocket';
+import { AutonomyShutoffBanner } from '../brain/AutonomyShutoffBanner';
 import { cn, badgeStyles } from '../../lib/theme';
 
 interface AppShellProps {
@@ -42,6 +43,9 @@ export function AppShell({ children }: AppShellProps): React.ReactElement {
 
     return (
         <>
+            {/* Emergency autonomy shutoff banner (B9) — always rendered so banner appears immediately */}
+            <AutonomyShutoffBanner />
+
             {/* Main Content */}
             {children}
 

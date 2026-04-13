@@ -2,7 +2,7 @@
  * Aura — Domain Cluster: Profile
  * You Index — declared, inferred, and consent-aware user attribute logic.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

@@ -4,7 +4,7 @@
  */
 
 plugins {
-    id("java-library")
+    id("java-module")
     // alias(libs.plugins.openapi.generator)
 }
 

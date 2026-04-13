@@ -165,3 +165,40 @@ export const costService = new CostService();
 
 export default costService;
 
+// =============================================================================
+// Tier Migration API (B10)
+// =============================================================================
+
+/** Storage tiers eligible as manual migration targets. */
+export type MigrationTargetTier = 'WARM' | 'COLD';
+
+/** Response shape from POST /api/v1/collections/:id/migrate */
+export interface MigrateCollectionResult {
+  collection: string;
+  targetTier: MigrationTargetTier;
+  /** SCHEDULED when migration is queued; COMPLETED when synchronously finished */
+  status: 'SCHEDULED' | 'COMPLETED';
+  eventsMigrated: number;
+}
+
+/**
+ * Triggers a manual storage-tier migration for the specified collection.
+ *
+ * Maps to: `POST /api/v1/collections/:id/migrate?targetTier=WARM|COLD`
+ *
+ * @param collectionId  The collection (stream name) to migrate
+ * @param targetTier    Destination tier — WARM (L1→L2 Iceberg) or COLD (L2→L3 S3 archive)
+ * @returns             Migration result with status and event count
+ */
+export async function migrateCollection(
+  collectionId: string,
+  targetTier: MigrationTargetTier,
+): Promise<MigrateCollectionResult> {
+  return apiClient.post<MigrateCollectionResult>(
+    `/collections/${collectionId}/migrate`,
+    {},
+    { params: { targetTier } },
+  );
+}
+
+

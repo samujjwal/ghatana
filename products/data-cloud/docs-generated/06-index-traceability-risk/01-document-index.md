@@ -1,15 +1,77 @@
-# Data-Cloud Documentation Index
+# Data Cloud Documentation Index
 
 **Document ID:** DC-INDEX-001  
-**Version:** 1.1  
-**Date:** 2026-04-04  
-**Evidence Base**: Comprehensive Documentation Generation Suite + Evidence-Based Refresh
+**Version:** 2.0  
+**Date:** 2026-04-12  
+**Evidence Base:** Architecture Documentation Suite (21 docs, 24 diagrams)
 
 ---
 
 ## Executive Summary
 
-This document serves as the **central index** for the complete Data-Cloud documentation suite generated through comprehensive reverse-engineering, analysis, and evidence-based refresh. The documentation contains **31 documents** organized into **6 logical groups** providing **complete coverage** of vision, architecture, implementation, testing, operations, and risk management.
+This comprehensive index serves as the **central navigation hub** for the complete Data Cloud documentation suite. The documentation has been enhanced with **Mermaid diagrams**, **architecture context**, and **consistent cross-references** from the comprehensive architecture documentation suite.
+
+### Documentation Architecture
+
+```mermaid
+flowchart TB
+    subgraph Vision["Vision & Planning"]
+        PV["01-Product Vision<br/>System context, strategy"]
+        CM["02-Capability Map<br/>32 capabilities"]
+        REQ["03-Requirements<br/>156 requirements"]
+    end
+    
+    subgraph Architecture["Architecture & Design"]
+        SA["01-System Architecture<br/>Hexagonal design"]
+        AD["02-Architecture Decisions<br/>ADR consolidation"]
+        ADRS["07-ADR Registry<br/>All ADRs"]
+    end
+    
+    subgraph Testing["Testing & Quality"]
+        TI["01-Master Test Inventory<br/>47 test files"]
+    end
+    
+    subgraph Technical["Technical Documentation"]
+        TO["01-Technical Overview<br/>Stack diagrams"]
+        SG["02-Scaling Guide<br/>Capacity planning"]
+        EC["03-Engineering Caveats<br/>Risk diagrams"]
+    end
+    
+    subgraph Operations["Operations Manuals"]
+        DR["01-DR Runbook<br/>Recovery procedures"]
+        CANARY["02-Canary Rollout<br/>Progressive delivery"]
+        REM["03-Remediation Summary<br/>Improvement tracking"]
+    end
+    
+    subgraph API["API & Usage"]
+        APIREF["04-API Reference<br/>85 endpoints"]
+    end
+    
+    subgraph Governance["Governance & Risk"]
+        GAP["03-Gap & Risk Summary<br/>Mitigation roadmap"]
+        INDEX["01-Document Index<br/>(This doc)"]
+    end
+    
+    Vision --> Architecture
+    Architecture --> Testing
+    Architecture --> Technical
+    Architecture --> Operations
+    Architecture --> API
+    Testing --> Governance
+    Technical --> Governance
+    Operations --> Governance
+    API --> Governance
+    ADRS --> Architecture
+```
+
+### Documentation Coverage
+
+- **Vision & Strategy**: Documents covering product vision, capabilities, and requirements
+- **Architecture & Design**: Documents covering system architecture and technical decisions
+- **Testing & Quality**: Documents covering test inventory and expectations
+- **Technical Documentation**: Documents covering technical stack and engineering guidance
+- **Usage & API**: Documents covering user manuals and API reference
+- **Governance & Risk**: Documents covering traceability, gaps, and change management
 
 **Documentation Coverage:**
 

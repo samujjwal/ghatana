@@ -1,9 +1,0 @@
-flowchart LR
-  Page["Page component"] --> Hook["TanStack Query hook / Jotai state"]
-  Hook --> Adapter["`ui/src/lib/api/*`"]
-  Hook -. alternate legacy paths .-> Legacy["`src/api` / `src/services`"]
-  Adapter --> Http["HTTP JSON calls"]
-  Http --> Server["DataCloudHttpServer"]
-  Server --> Handler["handler layer"]
-  Handler --> Runtime["DataCloudClient + stores"]
-

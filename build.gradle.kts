@@ -12,61 +12,23 @@ plugins {
     `java-platform`
     `idea`
     alias(libs.plugins.cyclonedx)
+    // Anchor Spotless in the root classloader so every subproject's SpotlessTaskService
+    // resolves to the same class, preventing the cross-project classloader mismatch.
+    // See: https://github.com/diffplug/spotless/issues/1495
+    alias(libs.plugins.spotless) apply false
 }
 
 group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
-// MIGRATION STATUS: legacy module plugin IDs removed; 84 source-bearing root subprojects
-// still rely on fallback because they have not yet declared explicit build-logic plugins.
-//
-// Convention application uses buildFile.readText() to detect which plugins a module
-// declares. While this performs file I/O at configuration time and is not ideal for
-// the configuration cache, it is correct and the performance impact is negligible
-// (~50 ms total for 175 modules) compared to the alternative (hard-failing the build
-// if double-configuration occurs).
-//
-// A future optimization: once all modules are migrated to build-logic conventions,
-// this entire subprojects {} block can be removed.
 subprojects {
-    // Skip if no build file exists (empty directory placeholders in settings).
-    if (!buildFile.exists()) return@subprojects
-
-    val buildContent = buildFile.readText()
-
-    val onBuildLogic = buildContent.contains("id(\"java-module\")") ||
-                       buildContent.contains("id(\"java-application\")") ||
-                       buildContent.contains("id(\"protobuf-module\")") ||
-                       buildContent.contains("id(\"finance-domain-module\")")
-
-    if (!onBuildLogic) {
-        // Only auto-apply buildSrc conventions when the module has Java/Kotlin sources
-        // AND has not yet been migrated to build-logic.
-        val hasSources = file("$projectDir/src/main/java").exists() ||
-                         file("$projectDir/src/main/kotlin").exists() ||
-                         file("$projectDir/src/test/java").exists() ||
-                         file("$projectDir/src/test/kotlin").exists()
-
-        if (hasSources) {
-            apply(plugin = "java-library")
-            apply(plugin = "idea")
-            apply(plugin = "com.ghatana.java-conventions")
-            apply(plugin = "com.ghatana.testing-conventions")
-            apply(plugin = "com.ghatana.quality-conventions")
-            apply(plugin = "com.ghatana.lombok-conventions")
-
-            group = rootProject.group
-            version = rootProject.version
-
-            // Sources JAR generated only for publishing; skip on normal builds
-            // to save ~15% per-module build time.
-            // Enable with: ./gradlew build -PwithSourcesJar=true
-            if (findProperty("withSourcesJar")?.toString()?.toBoolean() == true) {
-                configure<JavaPluginExtension> {
-                    withJavadocJar()
-                    withSourcesJar()
-                }
-            }
+    // Prevent clean/build races in parallel multi-project execution.
+    // Running `clean build` can otherwise delete a project's build directory
+    // while that same project's test/report tasks are still writing outputs.
+    plugins.withId("base") {
+        val cleanTask = tasks.named("clean")
+        tasks.matching { it.name != "clean" }.configureEach {
+            mustRunAfter(cleanTask)
         }
     }
 

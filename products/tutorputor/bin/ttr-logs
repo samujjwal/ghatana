@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+#
+# ttr-logs: View TutorPutor service logs
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
+log_success() { echo -e "${GREEN}✓${NC} $1"; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+log_error() { echo -e "${RED}✗${NC} $1"; }
+
+# Available services
+SERVICES=(
+    "platform:Platform Service"
+    "web:Web App"
+    "admin:Admin App"
+    "content-gen:Content Generation"
+    "postgres:PostgreSQL"
+    "redis:Redis"
+    "api-gateway:API Gateway"
+)
+
+# Show help
+show_help() {
+    cat << 'EOF'
+Usage: ttr logs <service> [options]
+
+View logs from TutorPutor services.
+
+SERVICES:
+  platform        Platform service logs
+  web             Web application logs
+  admin           Admin dashboard logs
+  content-gen     Content generation service logs
+  postgres        PostgreSQL logs
+  redis           Redis logs
+  api-gateway     API Gateway logs
+  all             All services (combined)
+
+OPTIONS:
+  -f, --follow    Follow logs in real-time
+  -n, --lines     Number of lines to show (default: 100)
+  --since         Show logs since time (e.g., "1h", "30m")
+  --grep          Filter by pattern
+  -h, --help      Show this help
+
+EXAMPLES:
+  ttr logs platform              # Show platform logs
+  ttr logs platform -f           # Follow platform logs
+  ttr logs web -n 50             # Last 50 lines of web logs
+  ttr logs all --since 1h        # All logs from last hour
+  ttr logs platform --grep error # Filter for errors
+EOF
+}
+
+# Parse arguments
+SERVICE=""
+FOLLOW=false
+LINES=100
+SINCE=""
+GREP=""
+
+# Check if first arg is a service or option
+if [[ "${1:-}" == -* ]] || [[ "${1:-}" == "help" ]] || [[ -z "${1:-}" ]]; then
+    show_help
+    exit 0
+fi
+
+SERVICE="$1"
+shift
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -f|--follow)
+            FOLLOW=true
+            shift
+            ;;
+        -n|--lines)
+            LINES="$2"
+            shift 2
+            ;;
+        --since)
+            SINCE="$2"
+            shift 2
+            ;;
+        --grep)
+            GREP="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Map service name to log file or docker service
+get_log_source() {
+    local service="$1"
+    
+    case "$service" in
+        platform)
+            echo "file:${ROOT_DIR}/.logs/platform.log"
+            ;;
+        web)
+            echo "file:${ROOT_DIR}/.logs/web.log"
+            ;;
+        admin)
+            echo "file:${ROOT_DIR}/.logs/admin.log"
+            ;;
+        content-gen)
+            echo "file:${ROOT_DIR}/.logs/content-gen.log"
+            ;;
+        postgres)
+            echo "docker:tutorputor-postgres"
+            ;;
+        redis)
+            echo "docker:tutorputor-redis"
+            ;;
+        api-gateway)
+            # API gateway is part of platform
+            echo "file:${ROOT_DIR}/.logs/platform.log"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+# Show logs
+show_logs() {
+    local service="$1"
+    local source=$(get_log_source "$service")
+    
+    if [ -z "$source" ]; then
+        log_error "Unknown service: $service"
+        echo ""
+        echo "Available services:"
+        for s in "${SERVICES[@]}"; do
+            IFS=: read -r name desc <<< "$s"
+            echo "  - $name: $desc"
+        done
+        exit 1
+    fi
+    
+    local type=$(echo "$source" | cut -d: -f1)
+    local path=$(echo "$source" | cut -d: -f2-)
+    
+    # Build command
+    local cmd=""
+    
+    if [ "$type" = "file" ]; then
+        if [ ! -f "$path" ]; then
+            log_warn "Log file not found: $path"
+            log_info "Service may not be running"
+            exit 1
+        fi
+        
+        if [ "$FOLLOW" = "true" ]; then
+            cmd="tail -f"
+        else
+            cmd="tail -n $LINES"
+        fi
+        
+        cmd="$cmd \"$path\""
+        
+        if [ -n "$GREP" ]; then
+            cmd="$cmd | grep '$GREP'"
+        fi
+        
+    elif [ "$type" = "docker" ]; then
+        cmd="docker logs"
+        
+        if [ "$FOLLOW" = "true" ]; then
+            cmd="$cmd -f"
+        else
+            cmd="$cmd --tail $LINES"
+        fi
+        
+        if [ -n "$SINCE" ]; then
+            cmd="$cmd --since $SINCE"
+        fi
+        
+        cmd="$cmd $path"
+        
+        if [ -n "$GREP" ]; then
+            cmd="$cmd 2>&1 | grep '$GREP'"
+        fi
+    fi
+    
+    # Execute
+    eval "$cmd"
+}
+
+# Show all logs
+show_all_logs() {
+    log_info "Showing all services (last $LINES lines each)"
+    echo ""
+    
+    for svc in "${SERVICES[@]}"; do
+        IFS=: read -r name desc <<< "$svc"
+        
+        local source=$(get_log_source "$name")
+        local type=$(echo "$source" | cut -d: -f1)
+        local path=$(echo "$source" | cut -d: -f2-)
+        
+        if [ "$type" = "file" ] && [ -f "$path" ]; then
+            echo -e "${CYAN}=== $name ===${NC}"
+            tail -n "${LINES}" "$path" 2>/dev/null | tail -10
+            echo ""
+        fi
+    done
+}
+
+# Main
+main() {
+    if [ "$SERVICE" = "all" ]; then
+        show_all_logs
+    else
+        show_logs "$SERVICE"
+    fi
+}
+
+main "$@"

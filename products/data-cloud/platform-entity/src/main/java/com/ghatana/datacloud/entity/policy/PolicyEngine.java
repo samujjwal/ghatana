@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * PolicyEngine engine = new OpaPolicyEngine(opaClient);
+ * PolicyEngine engine = new OpaPolicyEngine(platformOpaClient, metrics, "http://opa:8181", executor);
  *
  * Map<String, Object> input = Map.of(
  *     "tenantId", "tenant-123",

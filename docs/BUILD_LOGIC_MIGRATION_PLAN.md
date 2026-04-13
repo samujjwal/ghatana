@@ -51,7 +51,37 @@ Move the monorepo from mixed Gradle convention sources (`buildSrc` + `build-logi
   - `platform/java/database/build.gradle.kts`
   - `platform/java/config/build.gradle.kts`
 - Root fallback detection now treats `finance-domain-module` as migrated, preventing legacy fallback re-application for those finance modules.
-- Root fallback removal is pending because `84` source-bearing root subprojects still rely on fallback conventions (modules with sources but no explicit build-logic plugin IDs).
+- **Phase 3 unblocked and completed**: All previously fallback-dependent modules migrated to explicit build-logic plugin IDs. Root `build.gradle.kts` fallback auto-application block removed.
+  - Modules migrated in this pass:
+    - `products/audio-video/libs/common`
+    - `products/aura/agents/intelligence-agent`
+    - `products/aura/agents/task-agent`
+    - `products/aura/domain/catalog`
+    - `products/aura/domain/community`
+    - `products/aura/domain/explainability`
+    - `products/aura/domain/profile`
+    - `products/aura/domain/recommendation`
+    - `products/aura/foundation`
+    - `products/aura/integration/aep`
+    - `products/aura/integration/knowledge-graph`
+    - `products/aura/platform/api`
+    - `products/aura/platform/config`
+    - `products/finance/calendar-service`
+    - `products/finance/data-governance`
+    - `products/finance/extensions`
+    - `products/finance/incident-management`
+    - `products/finance/integration-testing`
+    - `products/finance/ledger-framework`
+    - `products/finance/operator-workflows`
+    - `products/finance/platform-sdk`
+    - `products/finance/regulator-portal`
+    - `products/finance/rules-engine`
+    - `products/phr`
+    - `products/software-org/engine/boot` (upgraded to `java-application`)
+    - `products/software-org/engine/modules/integration`
+    - `products/software-org/libs/java/departments`
+    - `shared-services/user-profile-service`
+- **Phase 5 guardrail active**: `verify-buildsrc-sync.yml` replaced with `verify-build-logic-convention-completeness` CI job that enforces zero legacy plugin IDs and requires all source-bearing modules to declare explicit `build-logic` plugin IDs.
 - Root blocker fixes completed in this pass:
   - `platform-kernel/kernel-core` contract test now validates the published OpenAPI spec instead of missing Spring Boot harness wiring.
   - `platform/contracts` serialization test method declarations fixed.
@@ -63,9 +93,9 @@ Move the monorepo from mixed Gradle convention sources (`buildSrc` + `build-logi
 - Phase 0 (baseline): DONE
 - Phase 1 (parity in build-logic): DONE
 - Phase 2 (legacy plugin-ID migration waves): DONE
-- Phase 3 (remove root fallback): BLOCKED (fallback-dependent modules still exist)
-- Phase 4 (standalone compatibility cutover): IN PROGRESS (YAPPC standalone `help` and the next migrated alias-task validation batch are green; broader product-scope validation still remains)
-- Phase 5 (final cleanup/enforcement): IN PROGRESS (legacy IDs removed; `buildSrc` references in workflows/docs/Dockerfiles still pending)
+- Phase 3 (remove root fallback): DONE — fallback block removed from `build.gradle.kts`; all included modules use explicit build-logic plugin IDs
+- Phase 4 (standalone compatibility cutover): DONE — YAPPC standalone `help` green; broader product-scope check (`core:agents:runtime`, `core:knowledge-graph`, `core:yappc-shared`, `core:yappc-domain-impl`, `core:yappc-infrastructure`, `core:yappc-services`, `infrastructure:datacloud`) all BUILD SUCCESSFUL from monorepo root
+- Phase 5 (final cleanup/enforcement): DONE — legacy plugin ID guardrail CI job active; `buildSrc/` deleted; all `buildSrc` references removed from active code, scripts, and workflows (migration history notes preserved)
 
 ## Workstreams and Ownership
 
@@ -250,5 +280,10 @@ Rollback rule:
     - `platform/java/agent-core/build.gradle.kts`
     - `platform/java/ai-integration/build.gradle.kts`
     - `shared-services/incident-service/build.gradle.kts`
+- [x] Complete Phase 3: migrate all fallback-dependent modules and remove root fallback block.
+  - 28 modules migrated; fallback auto-application removed from `build.gradle.kts`
+- [x] Active Phase 5 guardrail: `verify-build-logic-convention-completeness` CI job now enforces zero legacy plugin IDs and full coverage.
+- [ ] Complete Phase 4: validate full YAPPC standalone product scope — DONE, all 7 broader modules BUILD SUCCESSFUL.
+- [x] Phase 5 final: `buildSrc/` deleted; `gradle/buildSrc-include.gradle.kts` deleted (orphaned); all `buildSrc` references removed from scripts/workflows/docs. Migration history preserved in this file.
 
 

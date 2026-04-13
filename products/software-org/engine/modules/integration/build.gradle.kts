@@ -1,5 +1,5 @@
 plugins {
-    java
+    id("java-module")
 }
 
 description = "Software-Org Integration - EventCloud publishing and external integrations"

@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+#
+# ttr-seed: Seed TutorPutor development database
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log_info() { echo -e "${BLUE}ℹ${NC} $1"; }
+log_success() { echo -e "${GREEN}✓${NC} $1"; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+log_error() { echo -e "${RED}✗${NC} $1"; }
+
+# Default database URL (matches Docker setup)
+export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
+
+# Parse arguments
+RESET=false
+VERBOSE=false
+SEED_TYPE="dev"
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --reset)
+            RESET=true
+            shift
+            ;;
+        --minimal)
+            SEED_TYPE="minimal"
+            shift
+            ;;
+        --full)
+            SEED_TYPE="full"
+            shift
+            ;;
+        --verbose)
+            VERBOSE=true
+            shift
+            ;;
+        --help|-h)
+            cat << 'EOF'
+Usage: ttr seed [options]
+
+Seed TutorPutor database with development data.
+
+OPTIONS:
+  --reset          Clear existing data before seeding
+  --minimal        Minimal seed (basic data only)
+  --full           Full seed (comprehensive data)
+  --verbose        Show detailed output
+  -h, --help       Show this help
+
+EXAMPLES:
+  ttr seed                   # Standard development seed
+  ttr seed --reset           # Reset and re-seed
+  ttr seed --minimal         # Minimal seed data
+  ttr seed --full            # Comprehensive seed data
+EOF
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Check prerequisites
+check_prerequisites() {
+    if ! docker exec tutorputor-postgres pg_isready -U postgres >/dev/null 2>&1; then
+        log_error "Database is not running"
+        log_info "Start it with: ttr dev --no-seed"
+        exit 1
+    fi
+}
+
+# Clear existing data
+clear_data() {
+    log_warn "Clearing existing data..."
+    
+    cd "${ROOT_DIR}/libs/tutorputor-core"
+    
+    # Ensure DATABASE_URL is set
+    export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
+    
+    # Run truncate script through Prisma
+    DATABASE_URL="$DATABASE_URL" npx prisma db execute --file /dev/stdin << 'SQL'
+TRUNCATE TABLE 
+    "ABExperiment",
+    "ClaimAnimation",
+    "ClaimExample",
+    "ClaimSimulation",
+    "LearningClaim",
+    "LearningEvidence",
+    "EvidenceBundleMetadata",
+    "LearningExperience",
+    "Tenant",
+    "User"
+CASCADE;
+SQL
+    
+    log_success "Data cleared"
+}
+
+# Run seed
+run_seed() {
+    log_info "Seeding database ($SEED_TYPE)..."
+    
+    cd "${ROOT_DIR}/libs/tutorputor-core"
+    
+    # Ensure DATABASE_URL is set
+    export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
+    
+    local seed_script=""
+    
+    case "$SEED_TYPE" in
+        minimal)
+            seed_script="prisma/seed-minimal.ts"
+            ;;
+        dev|development)
+            seed_script="prisma/seed.ts"
+            ;;
+        full)
+            seed_script="prisma/seed-full.ts"
+            ;;
+    esac
+    
+    if [ -f "$seed_script" ]; then
+        if [ "$VERBOSE" = "true" ]; then
+            DATABASE_URL="$DATABASE_URL" npx ts-node "$seed_script"
+        else
+            DATABASE_URL="$DATABASE_URL" npx ts-node "$seed_script" 2>&1 | grep -E "(Created|Seeded|✓)" || true
+        fi
+    else
+        # Fallback to basic seed
+        log_warn "Seed script not found, using basic seed"
+        DATABASE_URL="$DATABASE_URL" npx prisma db seed 2>/dev/null || true
+    fi
+    
+    log_success "Database seeded"
+}
+
+# Print summary
+print_summary() {
+    echo ""
+    log_info "Seed Summary"
+    echo "=========================================="
+    
+    cd "${ROOT_DIR}/libs/tutorputor-core"
+    
+    # Count records
+    local tables=(
+        "LearningExperience:Experiences"
+        "LearningClaim:Claims"
+        "LearningEvidence:Evidence"
+        "ClaimExample:Examples"
+        "ClaimAnimation:Animations"
+        "ClaimSimulation:Simulations"
+    )
+    
+    for table_info in "${tables[@]}"; do
+        IFS=: read -r table label <<< "$table_info"
+        local count=$(DATABASE_URL="$DATABASE_URL" npx prisma db execute --file /dev/stdin 2>/dev/null << SQL | head -1
+SELECT COUNT(*) FROM "$table";
+SQL
+)
+        echo "  $label: ${count:-0}"
+    done
+    
+    echo ""
+    log_success "Ready for development!"
+}
+
+# Main
+main() {
+    echo ""
+    log_info "TutorPutor Database Seeding"
+    echo "=========================================="
+    echo ""
+    
+    check_prerequisites
+    
+    if [ "$RESET" = "true" ]; then
+        clear_data
+    fi
+    
+    run_seed
+    print_summary
+}
+
+main "$@"

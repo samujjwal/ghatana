@@ -5,7 +5,7 @@
  * @doc.pattern Consolidated Module
  */
 plugins {
-    java
+    id("java-module")
 }
 
 group = "com.ghatana.softwareorg"

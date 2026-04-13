@@ -12,8 +12,8 @@
  * @doc.pattern Page
  */
 
-import React, { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useCallback, useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   FlowCanvas,
   FlowControls,
@@ -26,6 +26,7 @@ import {
   type OnConnect,
 } from '@ghatana/canvas/flow';
 import { apiClient } from '../lib/api/client';
+import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 
 // =============================================================================
 // Types
@@ -251,6 +252,21 @@ export function DataFabricPage(): React.ReactElement {
     retry: 1,
   });
 
+  // B10: Manual tier migration state
+  const [migrateCollection, setMigrateCollection] = useState('');
+  const [migrateTargetTier, setMigrateTargetTier] = useState<MigrationTargetTier>('WARM');
+  const [migrateOpen, setMigrateOpen] = useState(false);
+
+  const migrateMutation = useMutation({
+    mutationFn: () => migrateCollection
+      ? migrateCollectionApi(migrateCollection, migrateTargetTier)
+      : Promise.reject(new Error('Collection is required')),
+    onSuccess: () => {
+      setMigrateCollection('');
+      setMigrateOpen(false);
+    },
+  });
+
   const initialNodes = useMemo<FlowNode[]>(
     () => (fabricMetrics ? buildNodes(fabricMetrics.tiers) : []),
     [fabricMetrics],
@@ -287,10 +303,69 @@ export function DataFabricPage(): React.ReactElement {
             Live four-tier event cloud topology — HOT → WARM → COOL → COLD
           </p>
         </div>
-        {isLoading && (
-          <span className="text-sm text-gray-400 animate-pulse">Fetching metrics…</span>
-        )}
+        <div className="flex items-center gap-3">
+          {isLoading && (
+            <span className="text-sm text-gray-400 animate-pulse">Fetching metrics…</span>
+          )}
+          {/* B10: Manual Tier Migration */}
+          <button
+            type="button"
+            onClick={() => setMigrateOpen((v) => !v)}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+          >
+            Migrate Tier
+          </button>
+        </div>
       </div>
+
+      {/* B10: Tier migration inline panel */}
+      {migrateOpen && (
+        <div className="px-6 py-3 border-b border-amber-200 bg-amber-50 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-amber-800">Manual tier migration</span>
+          <input
+            type="text"
+            placeholder="Collection / stream name"
+            value={migrateCollection}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMigrateCollection(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm w-52"
+          />
+          <select
+            value={migrateTargetTier}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setMigrateTargetTier(e.target.value as MigrationTargetTier)
+            }
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          >
+            <option value="WARM">→ WARM (L1→L2 Iceberg)</option>
+            <option value="COLD">→ COLD (L2→L3 S3 Archive)</option>
+          </select>
+          <button
+            type="button"
+            disabled={!migrateCollection || migrateMutation.isPending}
+            onClick={() => migrateMutation.mutate()}
+            className="px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50"
+          >
+            {migrateMutation.isPending ? 'Migrating…' : 'Start Migration'}
+          </button>
+          {migrateMutation.isSuccess && (
+            <span className="text-sm text-green-700">
+              ✓ {migrateMutation.data?.status} — {migrateMutation.data?.eventsMigrated} events
+            </span>
+          )}
+          {migrateMutation.isError && (
+            <span className="text-sm text-red-600">
+              Error: {migrateMutation.error instanceof Error ? migrateMutation.error.message : 'Migration failed'}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => { setMigrateOpen(false); migrateMutation.reset(); }}
+            className="text-sm text-gray-500 hover:text-gray-700 ml-auto"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       <StatBar metrics={fabricMetrics} />
 
@@ -321,7 +396,9 @@ export function DataFabricPage(): React.ReactElement {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           controls={{ showMiniMap: true, showControls: true, controlsPosition: 'top-right' }}
-        />
+        >
+          <FlowControls position="top-right" showZoom showFitView showInteractive />
+        </FlowCanvas>
         <TierLegend />
       </div>
     </div>

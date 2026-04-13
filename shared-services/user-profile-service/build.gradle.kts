@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 description = "User Profile Service - Centralised user preferences and profile management"

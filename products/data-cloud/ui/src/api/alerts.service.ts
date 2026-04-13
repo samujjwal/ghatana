@@ -10,6 +10,7 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import type { AlertRule } from '../components/alerts/AlertRuleForm';
 
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
@@ -94,6 +95,28 @@ export class AlertsService {
     return new EventSource(
       `${import.meta.env.VITE_API_URL ?? '/api/v1'}/events/stream?eventType=alert.triggered`,
     );
+  }
+
+  // ==================== Alert Rules (B5) ====================
+
+  /** List all configured alert rules */
+  async listAlertRules(): Promise<AlertRule[]> {
+    return apiClient.get<AlertRule[]>('/alerts/rules');
+  }
+
+  /** Create a new alert rule */
+  async createAlertRule(rule: Omit<AlertRule, 'id'>): Promise<AlertRule> {
+    return apiClient.post<AlertRule>('/alerts/rules', rule);
+  }
+
+  /** Update an existing alert rule */
+  async updateAlertRule(ruleId: string, rule: Partial<AlertRule>): Promise<AlertRule> {
+    return apiClient.put<AlertRule>(`/alerts/rules/${ruleId}`, rule);
+  }
+
+  /** Delete an alert rule */
+  async deleteAlertRule(ruleId: string): Promise<void> {
+    await apiClient.delete<void>(`/alerts/rules/${ruleId}`);
   }
 }
 

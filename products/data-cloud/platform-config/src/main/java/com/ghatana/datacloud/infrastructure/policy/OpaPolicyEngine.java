@@ -4,26 +4,34 @@ import com.ghatana.datacloud.entity.policy.PolicyDecision;
 import com.ghatana.datacloud.entity.policy.PolicyEngine;
 import com.ghatana.datacloud.entity.policy.PolicyValidationResult;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.pac.PolicyAsCodeEngine;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.Executor;
 
 /**
  * OPA (Open Policy Agent) implementation of PolicyEngine.
  *
  * <p><b>Purpose</b><br>
  * Provides integration with Open Policy Agent for policy evaluation.
- * Evaluates Rego policies against input data via OPA REST API or embedded engine.
+ * Evaluates Rego policies against input data via OPA REST API.
+ * Delegates core evaluate logic to the platform {@link PolicyAsCodeEngine}.
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
  * OpaPolicyEngine engine = new OpaPolicyEngine(
- *     opaClient,
+ *     platformOpaClient,   // platform:java:policy-as-code OpaClient
  *     metrics,
- *     "http://opa:8181/v1/data"
+ *     "http://opa:8181",   // OPA base URL (no path suffix)
+ *     executor             // blocking executor for HTTP
  * );
  *
  * Map<String, Object> input = Map.of(
@@ -39,19 +47,15 @@ import java.util.*;
  * <p><b>Architecture Role</b><br>
  * - Adapter in infrastructure layer
  * - Implements PolicyEngine port (domain)
- * - Wraps OPA client library (e.g., okhttp, activej-http)
+ * - Delegates evaluate() to platform:java:policy-as-code PolicyAsCodeEngine
  * - Emits metrics for policy evaluations
  *
  * <p><b>Thread Safety</b><br>
  * Thread-safe - can be shared across threads.
  *
- * <p><b>Configuration</b><br>
- * - OPA endpoint URL
- * - Connection timeout (default 5s)
- * - Retry policy (default 3 retries with backoff)
- *
  * @see PolicyEngine
  * @see PolicyDecision
+ * @see PolicyAsCodeEngine
  * @doc.type class
  * @doc.purpose OPA adapter for policy evaluation
  * @doc.layer product
@@ -60,26 +64,35 @@ import java.util.*;
 public class OpaPolicyEngine implements PolicyEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(OpaPolicyEngine.class);
+    private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(5);
 
-    private final OpaClient opaClient;
+    private final PolicyAsCodeEngine policyEngine;
     private final MetricsCollector metrics;
-    private final String opaEndpoint;
+    private final String opaBaseUrl;
+    private final Executor executor;
+    private final HttpClient httpClient;
 
     /**
      * Creates an OPA policy engine.
      *
-     * @param opaClient the OPA HTTP client (required)
-     * @param metrics the metrics collector (required)
-     * @param opaEndpoint the OPA API endpoint (required, e.g., "http://opa:8181/v1/data")
-     * @throws NullPointerException if any parameter is null
+     * @param policyEngine platform PolicyAsCodeEngine implementation (required)
+     * @param metrics      the metrics collector (required)
+     * @param opaBaseUrl   OPA server base URL without path (e.g., {@code http://opa:8181}) (required)
+     * @param executor     blocking executor for HTTP calls — must NOT be the event-loop
+     * @throws NullPointerException if policyEngine, metrics, or opaBaseUrl is null
      */
     public OpaPolicyEngine(
-            OpaClient opaClient,
+            PolicyAsCodeEngine policyEngine,
             MetricsCollector metrics,
-            String opaEndpoint) {
-        this.opaClient = Objects.requireNonNull(opaClient, "OpaClient must not be null");
+            String opaBaseUrl,
+            Executor executor) {
+        this.policyEngine = Objects.requireNonNull(policyEngine, "PolicyAsCodeEngine must not be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector must not be null");
-        this.opaEndpoint = Objects.requireNonNull(opaEndpoint, "OPA endpoint must not be null");
+        this.opaBaseUrl = Objects.requireNonNull(opaBaseUrl, "OPA base URL must not be null").stripTrailing();
+        this.executor = Objects.requireNonNull(executor, "Executor must not be null");
+        this.httpClient = HttpClient.newBuilder()
+            .connectTimeout(HTTP_TIMEOUT)
+            .build();
     }
 
     @Override
@@ -88,22 +101,17 @@ public class OpaPolicyEngine implements PolicyEngine {
         Objects.requireNonNull(input, "Input must not be null");
 
         long startTime = System.currentTimeMillis();
+        String tenantId = (String) input.getOrDefault("tenantId", "default");
 
-        // Build OPA request
-        Map<String, Object> opaRequest = Map.of("input", input);
-
-        // Call OPA API — fail-closed: any exception yields DENY rather than propagating
-        return opaClient.evaluate(opaEndpoint, policyName, opaRequest)
+        // Delegate to platform PolicyAsCodeEngine — fail-closed on exception
+        return policyEngine.evaluate(tenantId, policyName, input)
             .then(
-                opaResponse -> {
-                    // Parse OPA response
-                    boolean allowed = (boolean) opaResponse.getOrDefault("allow", false);
-                    String reason = (String) opaResponse.getOrDefault("reason", "No reason provided");
-
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> metadata = (Map<String, Object>) opaResponse.getOrDefault("metadata", Map.of());
-
-                    return Promise.of(allowed
+                evalResult -> {
+                    String reason = evalResult.reasons().isEmpty()
+                        ? "OPA evaluation completed"
+                        : String.join("; ", evalResult.reasons());
+                    Map<String, Object> metadata = Map.of("riskScore", evalResult.riskScore());
+                    return Promise.of(evalResult.allowed()
                         ? PolicyDecision.allow(reason, metadata)
                         : PolicyDecision.deny(reason, metadata));
                 },
@@ -143,9 +151,20 @@ public class OpaPolicyEngine implements PolicyEngine {
 
     @Override
     public Promise<Void> reloadPolicies() {
-        logger.info("Reloading OPA policies from endpoint: {}", opaEndpoint);
+        logger.info("Reloading OPA policies via: {}", opaBaseUrl);
 
-        return opaClient.reloadPolicies(opaEndpoint)
+        return Promise.ofBlocking(executor, () -> {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(opaBaseUrl + "/v1/policies/reload"))
+                .timeout(HTTP_TIMEOUT)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            if (response.statusCode() >= 400) {
+                throw new IllegalStateException("OPA reload failed with HTTP " + response.statusCode());
+            }
+            return (Void) null;
+        })
             .whenComplete((result, ex) -> {
                 if (ex == null) {
                     metrics.incrementCounter("policy.reload.success");
@@ -165,17 +184,32 @@ public class OpaPolicyEngine implements PolicyEngine {
 
         logger.debug("Validating policy: {}", policyName);
 
-        return opaClient.validatePolicy(opaEndpoint, policyName, policyDefinition)
-            .map(validationResponse -> {
-                boolean valid = (boolean) validationResponse.getOrDefault("valid", false);
-
-                @SuppressWarnings("unchecked")
-                List<String> errors = (List<String>) validationResponse.getOrDefault("errors", List.of());
-
-                return valid
-                    ? PolicyValidationResult.success()
-                    : PolicyValidationResult.invalid(errors);
-            })
+        return Promise.ofBlocking(executor, () -> {
+            String body = """
+                {"policy":"%s","definition":"%s"}
+                """.formatted(
+                    policyName.replace("\"", "\\\""),
+                    policyDefinition.replace("\\", "\\\\").replace("\"", "\\\"")
+                );
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(opaBaseUrl + "/v1/validate"))
+                .timeout(HTTP_TIMEOUT)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+            boolean valid = responseBody.contains("\"valid\":true");
+            if (valid) {
+                return PolicyValidationResult.success();
+            }
+            // Extract first error message from response if present
+            List<String> errors = new ArrayList<>();
+            if (responseBody.contains("\"errors\"")) {
+                errors.add("OPA validation failed: check policy syntax");
+            }
+            return PolicyValidationResult.invalid(errors);
+        })
             .whenComplete((result, ex) -> {
                 if (ex == null) {
                     metrics.incrementCounter("policy.validation.completed",

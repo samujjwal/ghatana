@@ -2,7 +2,7 @@
  * Aura — Domain Cluster: Community
  * Review analysis, sentiment, and twin-user signals.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

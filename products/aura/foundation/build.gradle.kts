@@ -2,7 +2,7 @@
  * Aura — Foundation Cluster
  * Core domain types, base interfaces, and platform contracts.
  */
-plugins { id("java-library") }
+plugins { id("java-module") }
 group = "com.ghatana.aura"
 version = rootProject.version
 dependencies {

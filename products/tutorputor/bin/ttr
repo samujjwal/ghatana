@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+#
+# TutorPutor Runner (ttr)
+# Main entry point for all TutorPutor operations
+#
+# Usage: ttr <command> [options]
+#
+# Commands:
+#   dev              Start development environment
+#   test             Run tests (flexible options)
+#   prod             Start production environment
+#   stop             Stop all services
+#   doctor           Check system health and requirements
+#   clean            Clean build artifacts and dependencies
+#   logs             Show service logs
+#   migrate          Run database migrations
+#   seed             Seed development data
+#
+# Examples:
+#   ttr dev                    # Start dev environment
+#   ttr dev --no-seed         # Start without seeding
+#   ttr test                  # Run all tests
+#   ttr test --unit           # Run unit tests only
+#   ttr test --e2e --watch   # Run e2e tests in watch mode
+#   ttr prod                  # Start production
+#   ttr doctor                # Check system health
+#   ttr clean                 # Clean everything
+#   ttr logs api-gateway      # Show API gateway logs
+
+set -euo pipefail
+
+# Find the project root (directory containing pnpm-workspace.yaml)
+find_project_root() {
+  local dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pnpm-workspace.yaml" ]; then
+      echo "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  echo "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+}
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(find_project_root)"
+BIN_DIR="${ROOT_DIR}/bin"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}ℹ${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+# Show help
+show_help() {
+    cat << 'EOF'
+TutorPutor Runner (ttr) - Development Environment Manager
+
+USAGE:
+    ttr <command> [options]
+
+COMMANDS:
+    dev              Start development environment
+    test             Run tests with flexible options
+    prod             Start production environment  
+    stop             Stop all running services
+    doctor           Check system health and requirements
+    clean            Clean build artifacts
+    logs             Show service logs
+    migrate          Run database migrations
+    seed             Seed development data
+    status           Show running service status
+
+DEV OPTIONS:
+    --no-seed        Skip database seeding
+    --no-services    Don't start backend services
+    --no-apps        Don't start frontend apps
+    --with-kafka     Enable Kafka
+    --with-search    Enable Elasticsearch
+    --monitoring     Enable Prometheus/Grafana
+
+TEST OPTIONS:
+    --unit           Run unit tests only
+    --integration    Run integration tests only
+    --e2e            Run end-to-end tests
+    --contract       Run contract tests
+    --watch          Run in watch mode
+    --coverage       Generate coverage report
+    --ci             CI mode (parallel, no watch)
+    -f, --filter     Filter tests by pattern
+
+EXAMPLES:
+    ttr dev                              # Full dev environment
+    ttr dev --no-seed                    # Skip seeding
+    ttr test                             # All tests
+    ttr test --unit --watch              # Unit tests in watch mode
+    ttr test --e2e -f "auth"             # E2E tests matching "auth"
+    ttr test --ci --coverage             # CI mode with coverage
+    ttr prod                             # Production mode
+    ttr doctor                           # Health check
+    ttr logs api-gateway                 # View logs
+    ttr clean --all                      # Deep clean
+
+EOF
+}
+
+# Parse and delegate commands
+case "${1:-help}" in
+    dev)
+        shift
+        exec "${BIN_DIR}/ttr-dev" "$@"
+        ;;
+    test)
+        shift
+        exec "${BIN_DIR}/ttr-test" "$@"
+        ;;
+    prod)
+        shift
+        exec "${BIN_DIR}/ttr-prod" "$@"
+        ;;
+    stop)
+        shift
+        exec "${BIN_DIR}/ttr-stop" "$@"
+        ;;
+    doctor)
+        shift
+        exec "${BIN_DIR}/ttr-doctor" "$@"
+        ;;
+    clean)
+        shift
+        exec "${BIN_DIR}/ttr-clean" "$@"
+        ;;
+    logs)
+        shift
+        exec "${BIN_DIR}/ttr-logs" "$@"
+        ;;
+    migrate)
+        shift
+        exec "${BIN_DIR}/ttr-migrate" "$@"
+        ;;
+    seed)
+        shift
+        exec "${BIN_DIR}/ttr-seed" "$@"
+        ;;
+    status)
+        shift
+        exec "${BIN_DIR}/ttr-status" "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        exit 0
+        ;;
+    *)
+        log_error "Unknown command: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

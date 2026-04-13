@@ -1,17 +1,68 @@
-# Data-Cloud System Architecture Overview
+# Data Cloud System Architecture
 
 **Document ID:** DC-ARCH-001  
-**Version:** 1.0  
-**Date:** 2026-04-03  
-**Evidence Base:** Phase 1 Deep Inspection of products/data-cloud
+**Version:** 2.0  
+**Date:** 2026-04-12  
+**Evidence Base:** Architecture Documentation Suite (21 docs, 24 diagrams)
 
 ---
 
 ## Executive Summary
 
-Data-Cloud employs a **hexagonal (ports and adapters) architecture** with clear separation between domain logic, infrastructure, and presentation layers. The system is designed for **multi-tenant isolation**, **horizontal scalability**, and **AI/ML-native capabilities**. The architecture demonstrates strong **modular design** with **well-defined boundaries** and **production-ready deployment patterns**.
+Data Cloud employs a **hexagonal (ports and adapters) architecture** with clear separation between domain logic, infrastructure, and presentation layers. The system is designed for **multi-tenant isolation**, **horizontal scalability**, and **AI/ML-native capabilities**.
 
-**Key Architectural Characteristics:**
+### Key Architectural Decisions
+
+1. **Hexagonal Architecture** - SPI abstraction layer for clean boundaries
+2. **Multi-tenant by Design** - Tenant isolation at all layers (DB-level in V011)
+3. **Event Sourcing** - Immutable append-only event log with Kafka
+4. **Plugin Extensibility** - ServiceLoader-based plugin framework
+5. **Clear AEP Boundary** - Data Cloud provides persistence, AEP owns orchestration
+
+### System Context
+
+```mermaid
+flowchart LR
+    subgraph External["External Systems"]
+        User["Data users / operators"]
+        Service["Service clients"]
+        AEP["AEP runtime<br/>(external owner)"]
+    end
+    
+    subgraph DataCloud["Data Cloud Platform"]
+        UI["ui React SPA"]
+        HTTP["HTTP API<br/>(launcher/http)"]
+        GRPC["gRPC event services"]
+        Registry["agent-registry<br/>provider"]
+        Core["Core Runtime<br/>(launcher + platform-launcher)"]
+    end
+    
+    subgraph Infrastructure["Infrastructure"]
+        PG["PostgreSQL"]
+        Kafka["Kafka"]
+        Search["OpenSearch"]
+        CH["ClickHouse"]
+        Blob["S3 / Ceph"]
+        Redis["Redis"]
+    end
+    
+    User --> UI
+    Service --> HTTP
+    Service --> GRPC
+    AEP --> Registry
+    UI --> HTTP
+    HTTP --> Core
+    GRPC --> Core
+    Registry --> Core
+    Core --> PG
+    Core --> Kafka
+    Core --> Search
+    Core --> CH
+    Core --> Blob
+    Core --> Redis
+```
+
+### Key Architectural Characteristics:
 - **Hexagonal Architecture**: Clean separation of concerns with ports and adapters
 - **Multi-tenant by Design**: Tenant isolation at all architectural layers
 - **Event-Driven**: Event sourcing with immutable event log
@@ -144,6 +195,65 @@ Command → Service → Event → Event Store → Projections → Read Models
 
 ---
 
+## Module Architecture
+
+### Module Dependency Graph
+
+```mermaid
+flowchart LR
+    subgraph Frontend["Frontend"]
+        UI["ui<br/>React 19 + Vite"]
+    end
+    
+    subgraph Deployable["Deployable Applications"]
+        Launcher["launcher<br/>HTTP/gRPC bootstrap"]
+    end
+    
+    subgraph Runtime["Runtime Core"]
+        PL["platform-launcher<br/>DI, storage, gRPC"]
+    end
+    
+    subgraph APILayer["API Layer"]
+        PA["platform-api<br/>Controllers, DTOs"]
+    end
+    
+    subgraph SharedLibs["Shared Libraries"]
+        SPI["spi<br/>Public contracts"]
+        Entity["platform-entity<br/>Domain models"]
+        Event["platform-event<br/>Event models"]
+        Config["platform-config<br/>Config loading"]
+        Analytics["platform-analytics<br/>Query engine"]
+    end
+    
+    subgraph Plugins["Plugin System"]
+        PPlugins["platform-plugins<br/>Kafka, Redis, S3, etc."]
+    end
+    
+    subgraph Workers["Background Workers"]
+        FSIngest["feature-store-ingest<br/>Event tailing"]
+        ARegistry["agent-registry<br/>Metadata persistence"]
+    end
+    
+    UI --> Launcher
+    Launcher --> PA
+    Launcher --> PL
+    PA --> SPI
+    PA --> Entity
+    PA --> Config
+    PA --> Analytics
+    PL --> SPI
+    PL --> Entity
+    PL --> Event
+    PL --> Config
+    PL --> Analytics
+    PL --> PPlugins
+    FSIngest --> PL
+    FSIngest --> SPI
+    ARegistry --> PL
+```
+
+---
+
 ## Component Architecture
 
 ### 1. Data-Cloud Core Platform
@@ -267,7 +377,33 @@ EventRecord
 
 ### 2. Storage Architecture
 
-**Tiered Storage Strategy**:
+**Storage Tier Model**:
+
+```mermaid
+flowchart TB
+    subgraph Hot["Hot Tier"]
+        Redis["Redis Cache<br/>Recent entities<br/>Active sessions<br/>Real-time analytics"]
+    end
+    
+    subgraph Warm["Warm Tier"]
+        PG["PostgreSQL<br/>Entity storage<br/>Metadata<br/>Relationships"]
+    end
+    
+    subgraph Analytical["Analytical Tier"]
+        CH["ClickHouse<br/>Time-series data<br/>Aggregations<br/>Roll-ups"]
+        OS["OpenSearch<br/>Full-text search<br/>Document indexing"]
+    end
+    
+    subgraph Cold["Cold Tier"]
+        S3["S3/Glacier<br/>Historical data<br/>Archives<br/>Backups"]
+    end
+    
+    Hot -->|promote| Warm
+    Warm -->|archive| Cold
+    Warm -->|analyze| Analytical
+```
+
+**Tiered Storage Strategy (ASCII)**:
 ```
 Hot Tier (Redis)
 ├── Recent entities
@@ -292,7 +428,36 @@ Cold Tier (S3/Glacier)
 
 ### 3. Event Architecture
 
-**Event Streaming Architecture**:
+**Event Topology**:
+
+```mermaid
+flowchart LR
+    subgraph Producers["Event Producers"]
+        EntityCRUD["Entity CRUD Operations"]
+        System["System Events"]
+        User["User Actions"]
+    end
+    
+    subgraph EventStore["Event Store"]
+        Kafka["Kafka Cluster"]
+        Topics["Tenant-scoped Topics"]
+        Partitions["Partitions"]
+    end
+    
+    subgraph Consumers["Event Consumers"]
+        FeatureIngest["Feature Ingest Worker"]
+        Analytics["Analytics Engine"]
+        Realtime["Real-time Notifications"]
+        Registry["Agent Registry Events"]
+    end
+    
+    Producers --> Kafka
+    Kafka --> Topics
+    Topics --> Partitions
+    Kafka --> Consumers
+```
+
+**Event Streaming Architecture (ASCII)**:
 ```
 Event Flow
 ├── Event Producers

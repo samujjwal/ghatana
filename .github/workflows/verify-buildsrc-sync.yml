@@ -1,72 +1,62 @@
-name: Verify buildSrc Version Sync
+name: Verify Build-Logic Convention Completeness
 
 on:
   pull_request:
     paths:
-      - 'buildSrc/gradle.properties'
       - 'gradle/libs.versions.toml'
+      - 'build-logic/**'
+      - '**/build.gradle.kts'
   push:
     paths:
-      - 'buildSrc/gradle.properties'
       - 'gradle/libs.versions.toml'
+      - 'build-logic/**'
+      - '**/build.gradle.kts'
 
 jobs:
-  verify-sync:
+  verify-no-legacy-plugins:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Verify buildSrc and catalog are in sync
+
+      - name: Verify no module uses legacy buildSrc convention plugin IDs
         run: |
-          # Extract versions from buildSrc/gradle.properties (classpath dependencies only)
-          SPOTLESS_BUILD=$(grep "^spotlessVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
-          SPOTBUGS_BUILD=$(grep "^spotbugsPluginVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
-          SAXON_BUILD=$(grep "^saxonHeVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
-          HTTPCLIENT_BUILD=$(grep "^httpclient5Version=" buildSrc/gradle.properties | cut -d'=' -f2)
-          HTTPCORE_BUILD=$(grep "^httpcore5Version=" buildSrc/gradle.properties | cut -d'=' -f2)
-          
-          # Extract versions from gradle/libs.versions.toml
-          SPOTLESS_CATALOG=$(grep "^spotless = \"" gradle/libs.versions.toml | sed 's/spotless = "\([^"]*\)"/\1/')
-          SPOTBUGS_CATALOG=$(grep "^spotbugs-plugin = \"" gradle/libs.versions.toml | sed 's/spotbugs-plugin = "\([^"]*\)"/\1/')
-          SAXON_CATALOG=$(grep "^saxon-he = \"" gradle/libs.versions.toml | sed 's/saxon-he = "\([^"]*\)"/\1/')
-          HTTPCLIENT_CATALOG=$(grep "^httpclient5 = \"" gradle/libs.versions.toml | sed 's/httpclient5 = "\([^"]*\)"/\1/')
-          HTTPCORE_CATALOG=$(grep "^httpcore5 = \"" gradle/libs.versions.toml | sed 's/httpcore5 = "\([^"]*\)"/\1/')
-          
-          # Compare
-          if [ "$SPOTLESS_BUILD" != "$SPOTLESS_CATALOG" ]; then
-            echo "ERROR: spotless version mismatch"
-            echo "  buildSrc/gradle.properties: $SPOTLESS_BUILD"
-            echo "  gradle/libs.versions.toml: $SPOTLESS_CATALOG"
+          LEGACY=$(find . -name 'build.gradle.kts' \
+            -not -path '*/build/*' \
+            -not -path './build-logic/*' \
+            -not -path './buildSrc/*' \
+            -not -path '*/node_modules/*' | \
+            xargs grep -lE 'id\("com\.ghatana\.(java|testing|quality|lombok|protobuf|finance-domain|spotbugs)-conventions"\)' 2>/dev/null || true)
+          if [ -n "$LEGACY" ]; then
+            echo "ERROR: The following modules still use legacy buildSrc convention plugin IDs:"
+            echo "$LEGACY"
             exit 1
           fi
-          
-          if [ "$SPOTBUGS_BUILD" != "$SPOTBUGS_CATALOG" ]; then
-            echo "ERROR: spotbugs-plugin version mismatch"
-            echo "  buildSrc/gradle.properties: $SPOTBUGS_BUILD"
-            echo "  gradle/libs.versions.toml: $SPOTBUGS_CATALOG"
+          echo "All modules use build-logic convention plugin IDs"
+
+      - name: Verify all source-bearing modules declare explicit build-logic plugins
+        run: |
+          FALLBACK_MODULES=""
+          while IFS= read -r f; do
+            dir=$(dirname "$f")
+            has_src=false
+            for d in "$dir/src/main/java" "$dir/src/main/kotlin" "$dir/src/test/java" "$dir/src/test/kotlin"; do
+              [ -d "$d" ] && has_src=true && break
+            done
+            if $has_src; then
+              if ! grep -qE 'id\("(java-module|java-application|protobuf-module|finance-domain-module|integration-test-profile)"\)' "$f"; then
+                FALLBACK_MODULES="$FALLBACK_MODULES\n  $f"
+              fi
+            fi
+          done < <(find . -name 'build.gradle.kts' \
+            -not -path '*/build/*' \
+            -not -path './build-logic/*' \
+            -not -path './buildSrc/*' \
+            -not -path '*/node_modules/*' \
+            -not -path '*/android/*')
+          if [ -n "$FALLBACK_MODULES" ]; then
+            echo "ERROR: The following source-bearing modules have no explicit build-logic plugin declaration:"
+            printf "$FALLBACK_MODULES\n"
             exit 1
           fi
-          
-          if [ "$SAXON_BUILD" != "$SAXON_CATALOG" ]; then
-            echo "ERROR: saxon-he version mismatch"
-            echo "  buildSrc/gradle.properties: $SAXON_BUILD"
-            echo "  gradle/libs.versions.toml: $SAXON_CATALOG"
-            exit 1
-          fi
-          
-          if [ "$HTTPCLIENT_BUILD" != "$HTTPCLIENT_CATALOG" ]; then
-            echo "ERROR: httpclient5 version mismatch"
-            echo "  buildSrc/gradle.properties: $HTTPCLIENT_BUILD"
-            echo "  gradle/libs.versions.toml: $HTTPCLIENT_CATALOG"
-            exit 1
-          fi
-          
-          if [ "$HTTPCORE_BUILD" != "$HTTPCORE_CATALOG" ]; then
-            echo "ERROR: httpcore5 version mismatch"
-            echo "  buildSrc/gradle.properties: $HTTPCORE_BUILD"
-            echo "  gradle/libs.versions.toml: $HTTPCORE_CATALOG"
-            exit 1
-          fi
-          
-          echo "All buildSrc classpath dependencies are in sync"
-          echo "Note: Convention plugin tool versions are hardcoded and require manual sync"
+          echo "All source-bearing modules declare explicit build-logic plugin IDs"
+

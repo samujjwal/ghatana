@@ -1,38 +1,50 @@
 # TutorPutor Documentation
 
+## Quick Start
+
+- **Development**: Run `ttr dev` (see [../bin/README.md](../bin/README.md))
+- **Architecture**: [architecture/README.md](architecture/README.md)
+- **Product Spec**: [architecture/specs/PRODUCT_SPEC.md](architecture/specs/PRODUCT_SPEC.md)
+
 ## Structure
 
 ```
 docs/
 ├── architecture/          # System architecture & design
-│   ├── DESIGN_ARCHITECTURE.md          # High-level architecture overview
-│   ├── TUTORPUTOR_FLOW_MAP.md          # System flow diagrams (Mermaid)
-│   ├── TUTORPUTOR_MODULE_INVENTORY.md  # Module catalog with paths & roles
-│   ├── diagrams/                       # Visual architecture diagrams
+│   ├── README.md                       # Architecture overview & quick links
+│   ├── CURRENT_STATE.md                # Current implementation state
+│   ├── IMPLEMENTATION_PLAN.md          # Autonomous content roadmap
+│   ├── TUTORPUTOR_FLOW_MAP.md          # System flow diagrams
+│   ├── TUTORPUTOR_MODULE_INVENTORY.md  # Module catalog
+│   ├── DESIGN_ARCHITECTURE.md          # High-level design
+│   ├── diagrams/                       # Visual diagrams
 │   └── specs/                          # Detailed specifications
 │       ├── PRODUCT_SPEC.md             # Full product specification
-│       ├── SIMULATION_ENGINE.md        # Simulation Engine + USP
-│       ├── SIMULATION_API.md           # Simulation API reference
-│       ├── SIMULATION_SYSTEM_REVIEW.md # Simulation lifecycle & gaps
-│       ├── SSO_ARCHITECTURE.md         # SSO/OIDC/SAML spec
-│       ├── OFFLINE_MODE.md             # Offline mode specification
-│       └── EVIDENCE_BASED_CONTENT.md   # Evidence-based learning spec
-├── guides/                # Developer & operator guides
-│   ├── admin/             # Admin panel guides
-│   ├── ai/                # AI integration & Ollama setup
-│   ├── content-studio/    # Content Studio authoring guides
-│   └── simulation/        # Simulation authoring & performance
-├── guidelines/            # Coding & testing standards
-├── operations/            # Deployment & operational guides
-├── plans/                 # Implementation roadmaps
-└── usage/                 # User-facing documentation
+│       ├── SIMULATION_ENGINE.md        # Simulation system
+│       ├── SIMULATION_API.md           # Simulation API
+│       ├── SSO_ARCHITECTURE.md         # SSO/OIDC/SAML
+│       ├── OFFLINE_MODE.md             # Offline capabilities
+│       ├── EVIDENCE_BASED_CONTENT.md   # Evidence-based learning
+│       └── AUTONOMOUS_CONTENT_GENERATION_ROADMAP.md  # 30/60/90 day plan
+├── guides/                # Developer guides
+│   ├── DEVELOPMENT_SETUP.md            # Quick setup guide
+│   ├── content-studio/                 # Content authoring
+│   ├── ai/                             # AI integration
+│   └── simulation/                     # Simulation authoring
+├── guidelines/            # Coding standards
+│   └── CODING.md
+├── operations/            # Deployment guides
+└── usage/                 # User documentation
 ```
 
-## Quick Links
+## Essential Links
 
-- **Architecture**: Start with [DESIGN_ARCHITECTURE.md](architecture/DESIGN_ARCHITECTURE.md)
-- **Product Spec**: [PRODUCT_SPEC.md](architecture/specs/PRODUCT_SPEC.md)
-- **Content Studio**: [UNIFIED_CONTENT_STUDIO_DESIGN.md](guides/content-studio/UNIFIED_CONTENT_STUDIO_DESIGN.md)
-- **Simulation**: [SIMULATION_ENGINE.md](architecture/specs/SIMULATION_ENGINE.md)
-- **AI Setup**: [OLLAMA_SETUP_GUIDE.md](guides/ai/OLLAMA_SETUP_GUIDE.md)
-- **Coding Standards**: [CODING.md](guidelines/CODING.md)
+| Topic | Document |
+|-------|----------|
+| **Getting Started** | [guides/DEVELOPMENT_SETUP.md](guides/DEVELOPMENT_SETUP.md) |
+| **Architecture** | [architecture/README.md](architecture/README.md) |
+| **Current State** | [architecture/CURRENT_STATE.md](architecture/CURRENT_STATE.md) |
+| **Implementation** | [architecture/IMPLEMENTATION_PLAN.md](architecture/IMPLEMENTATION_PLAN.md) |
+| **Product Spec** | [architecture/specs/PRODUCT_SPEC.md](architecture/specs/PRODUCT_SPEC.md) |
+| **Commands** | [bin/README.md](../bin/README.md) |
+| **Coding Standards** | [guidelines/CODING.md](guidelines/CODING.md) |

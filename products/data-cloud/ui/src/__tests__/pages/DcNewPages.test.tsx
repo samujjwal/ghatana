@@ -472,8 +472,7 @@ describe('DataFabricPage', () => {
     await waitFor(() => expect(container).toBeTruthy());
   });
 
-  // TODO: FlowControls is imported in DataFabricPage but not yet used in JSX.
-  it.skip('shows flow controls', () => {
+  it('shows flow controls', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
     expect(screen.getByTestId('flow-controls')).toBeDefined();
   });

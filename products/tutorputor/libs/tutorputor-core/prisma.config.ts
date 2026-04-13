@@ -12,11 +12,9 @@ const databaseUrl =
 
 export default defineConfig({
   schema: path.resolve(currentDirPath, "prisma", "schema.prisma"),
-  datasources: {
-    db: {
-      kind: "postgresql",
-      url: databaseUrl,
-    },
+  datasource: {
+    provider: "postgresql",
+    url: databaseUrl,
   },
   migrations: {
     seed: "tsx src/seed.ts",

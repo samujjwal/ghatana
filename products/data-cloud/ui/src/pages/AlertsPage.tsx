@@ -310,8 +310,30 @@ export function AlertsPage(): React.ReactElement {
         total: allAlerts.filter((a) => a.status === 'active').length,
     };
 
-    const handleSaveRule = (_rule: AlertRule) => {
-        // TODO: Integrate with alert rules API
+    const createRuleMutation = useMutation({
+        mutationFn: (rule: Omit<AlertRule, 'id'>) => alertsService.createAlertRule(rule),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['alerts', 'rules'] });
+            setIsRuleFormOpen(false);
+        },
+    });
+
+    const updateRuleMutation = useMutation({
+        mutationFn: ({ ruleId, rule }: { ruleId: string; rule: Partial<AlertRule> }) =>
+            alertsService.updateAlertRule(ruleId, rule),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['alerts', 'rules'] });
+            setIsRuleFormOpen(false);
+        },
+    });
+
+    const handleSaveRule = (rule: AlertRule) => {
+        if (rule.id != null && rule.id !== '') {
+            updateRuleMutation.mutate({ ruleId: rule.id, rule });
+        } else {
+            const { id: _id, ...ruleWithoutId } = rule;
+            createRuleMutation.mutate(ruleWithoutId);
+        }
     };
 
     return (

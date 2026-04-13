@@ -69,7 +69,6 @@ create_backup() {
         cp "$PROJECT_ROOT/settings.gradle.kts" "$BACKUP_DIR/"
         cp "$PROJECT_ROOT/build.gradle.kts" "$BACKUP_DIR/"
         cp "$PROJECT_ROOT/gradle/libs.versions.toml" "$BACKUP_DIR/"
-        cp -r "$PROJECT_ROOT/buildSrc" "$BACKUP_DIR/"
         
         log_success "Backup created successfully"
     fi
@@ -134,51 +133,8 @@ migrate_version_catalog() {
 }
 
 migrate_convention_plugins() {
-    log_info "Migrating convention plugins"
-    
-    local buildSrc_dir="$PROJECT_ROOT/buildSrc/src/main/kotlin"
-    
-    if [ "$DRY_RUN" = true ]; then
-        log_info "[DRY RUN] Would update convention plugins in $buildSrc_dir"
-        return 0
-    fi
-    
-    # Move new convention plugins
-    local new_plugins=(
-        "com.ghatana.testing-conventions-new.gradle.kts:com.ghatana.testing-conventions.gradle.kts"
-        "com.ghatana.protobuf-conventions.gradle.kts"
-        "com.ghatana.product-conventions.gradle.kts"
-        "com.ghatana.database-conventions.gradle.kts"
-    )
-    
-    for plugin in "${new_plugins[@]}"; do
-        IFS=':' read -r source target <<< "$plugin"
-        local source_file="$buildSrc_dir/$source"
-        local target_file="$buildSrc_dir/$target"
-        
-        if [ -f "$source_file" ]; then
-            if [ -n "$target" ]; then
-                mv "$source_file" "$target_file"
-                log_success "Migrated $source to $target"
-            else
-                log_success "Added $source"
-            fi
-        fi
-    done
-    
-    # Remove old testing convention (will be replaced)
-    local old_testing="$buildSrc_dir/com.ghatana.testing-conventions.gradle.kts"
-    local old_testing_simplified="$buildSrc_dir/com.ghatana.testing-conventions-simplified.gradle.kts"
-    
-    if [ -f "$old_testing" ]; then
-        mv "$old_testing" "$old_testing.backup"
-        log_info "Backed up old testing convention plugin"
-    fi
-    
-    if [ -f "$old_testing_simplified" ]; then
-        mv "$old_testing_simplified" "$old_testing_simplified.backup"
-        log_info "Backed up simplified testing convention plugin"
-    fi
+    log_info "Convention plugins are now in build-logic/conventions — no migration needed"
+    log_success "build-logic conventions are the canonical source"
 }
 
 migrate_module_build_files() {

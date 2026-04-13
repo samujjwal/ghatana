@@ -1,9 +1,0 @@
-Data-Cloud Canary Audit Log
-===========================
-
-Use this file to append promotion and rollback approvals referenced by CANARY_ROLLOUT_PLAYBOOK.md.
-
-Format:
-[UTC timestamp] stage=<canary-5|canary-25|canary-50|full|rollback> approver=<name> decision=<approved|rejected|rolled-back> notes=<free text>
-
-Entries:

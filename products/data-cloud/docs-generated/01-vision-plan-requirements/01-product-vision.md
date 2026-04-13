@@ -1,17 +1,47 @@
-# Data-Cloud Product Vision Document
+# Data Cloud Product Vision Document
 
 **Document ID:** DC-VISION-001  
-**Version:** 1.0  
-**Date:** 2026-04-03  
-**Evidence Base:** Phase 1 Deep Inspection of products/data-cloud
+**Version:** 2.0  
+**Date:** 2026-04-12  
+**Evidence Base:** Architecture Documentation Suite + Code Inspection
 
 ---
 
 ## Executive Summary
 
-**Data-Cloud** is an independent, AI/ML-native data management platform that serves as the foundational data infrastructure for the Ghatana ecosystem. It provides unified entity storage, event streaming, analytics, governance, and AI/ML capabilities through a plugin-driven architecture. The product demonstrates production-ready maturity with comprehensive storage backends, real-time features, and strong architectural boundaries.
+**Data Cloud** is an independent, AI/ML-native data management platform serving as the foundational data infrastructure for the Ghatana ecosystem. It provides unified entity storage, event streaming, analytics, governance, and AI/ML capabilities through a plugin-driven, hexagonal architecture.
 
-**Key Evidence-Based Findings:**
+### Key Architectural Strengths
+
+- **Hexagonal Architecture**: Clean ports-and-adapters pattern with SPI abstraction layer
+- **Multi-tenant by Design**: Tenant isolation at all architectural layers (DB-level in V011 migration)
+- **Event-Driven Core**: Immutable append-only event log with Kafka-backed streaming
+- **Plugin Extensibility**: ServiceLoader-based plugin framework for storage/streaming/search
+- **Production-Ready Infrastructure**: Docker, Kubernetes, Helm, Terraform deployment suite
+
+### System Context
+
+```mermaid
+flowchart LR
+    User["Data users / operators"] --> UI["ui React SPA"]
+    Service["Service clients"] --> HTTP["HTTP API (launcher/http)"]
+    Service --> GRPC["gRPC event services"]
+    AEP["AEP runtime (external consumer)"] --> Registry["agent-registry provider"]
+    UI --> HTTP
+    HTTP --> Core["Data Cloud runtime (launcher + platform-launcher)"]
+    GRPC --> Core
+    Registry --> Core
+    Core --> PG["PostgreSQL / warm tier"]
+    Core --> Kafka["Kafka / event streaming"]
+    Core --> Search["OpenSearch"]
+    Core --> CH["ClickHouse"]
+    Core --> Blob["S3 / Ceph"]
+    Core --> Redis["Redis cache"]
+    Kafka --> Ingest["feature-store-ingest worker"]
+    Ingest --> FS["Feature Store service"]
+```
+
+### Key Evidence-Based Findings:
 - **Strong Modular Architecture**: Clean hexagonal architecture with proper SPI abstraction layer
 - **Production-Ready Infrastructure**: Complete containerization, Kubernetes deployment, monitoring stack
 - **Comprehensive Storage Layer**: 9 storage connectors including PostgreSQL, ClickHouse, Redis, Kafka, S3, Ceph, OpenSearch
@@ -23,7 +53,7 @@
 ## Product Identity
 
 ### Product Name
-**Data-Cloud** (stylized as "Data-Cloud")
+**Data Cloud** - stylized as "Data-Cloud" in historical documentation
 
 ### Problem Statement
 
@@ -134,18 +164,80 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 
 ---
 
+## Architecture Overview
+
+### Module Structure
+
+```mermaid
+flowchart LR
+    UI["ui"] --> HTTP["launcher"]
+    Launcher["launcher"] --> API["platform-api"]
+    Launcher --> Runtime["platform-launcher"]
+    API --> SPI["spi"]
+    API --> Entity["platform-entity"]
+    API --> Config["platform-config"]
+    API --> Analytics["platform-analytics"]
+    Runtime --> SPI
+    Runtime --> Entity
+    Runtime --> Event["platform-event"]
+    Runtime --> Config
+    Runtime --> Analytics
+    Runtime --> Plugins["platform-plugins"]
+    Registry["agent-registry"] --> Runtime
+    Ingest["feature-store-ingest"] --> Runtime
+    Ingest --> SPI
+```
+
+### Runtime Topology
+
+```mermaid
+flowchart LR
+    Main["DataCloudLauncher"] --> HttpBoot["HTTP bootstrap"]
+    Main --> GrpcBoot["gRPC bootstrap"]
+    HttpBoot --> HttpServer["DataCloudHttpServer"]
+    HttpServer --> Handlers["HTTP handlers"]
+    Handlers --> Client["DataCloudClient / runtime"]
+    Client --> Stores["Entity/Event/Analytics/Memory stores"]
+    GrpcBoot --> GrpcServer["DataCloudGrpcServer"]
+    GrpcServer --> EventServices["Event gRPC services"]
+    EventServices --> Stores
+    Stores --> DB["PostgreSQL / local stores"]
+    Stores --> Cache["Redis / Caffeine"]
+    Stores --> Search["OpenSearch"]
+    Stores --> Analytics["ClickHouse"]
+    Stores --> Blob["S3 / Ceph"]
+```
+
+### Data Flow Architecture
+
+```mermaid
+flowchart LR
+    UI["UI / clients"] --> HTTP["HTTP or gRPC transport"]
+    HTTP --> Runtime["runtime handlers/services"]
+    Runtime --> Meta["meta_collections"]
+    Runtime --> Entities["entities"]
+    Runtime --> Events["event log"]
+    Runtime --> Analytics["analytics stores"]
+    Events --> Ingest["feature ingest worker"]
+    Ingest --> Features["feature store"]
+    Runtime --> Registry["agent registry records"]
+    Runtime --> Media["media/promotion evidence"]
+```
+
+---
+
 ## Scope Definition
 
 ### In Scope
 
 **Core Capabilities**
-- Entity storage with multi-tenant isolation
-- Event streaming and sourcing
-- Analytics and reporting engine
-- AI/ML feature store and model registry
+- Entity storage with multi-tenant isolation (`platform-entity`, `spi.EntityStore`)
+- Event streaming and sourcing (`platform-event`, `spi.EventLogStore`)
+- Analytics and reporting engine (`platform-analytics`)
+- AI/ML feature store and model registry (`feature-store-ingest`)
 - Data governance and lifecycle management
-- Plugin-driven extensibility
-- Real-time notifications (WebSocket/SSE)
+- Plugin-driven extensibility (`platform-plugins`)
+- Real-time notifications via WebSocket/SSE
 - Multi-modal query (SQL, natural language, visual)
 
 **Storage Backends**

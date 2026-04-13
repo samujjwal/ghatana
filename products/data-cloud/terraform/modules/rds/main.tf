@@ -191,3 +191,54 @@ output "secret_arn" {
   value     = aws_secretsmanager_secret.rds.arn
   sensitive = true
 }
+
+# ---------------------------------------------------------------------------
+# B12: pgvector extension provisioning
+#
+# Installs the `vector` extension in the Data-Cloud database immediately after
+# the RDS instance becomes available. This enables ANN similarity search for
+# entity embeddings stored in the HOT tier.
+#
+# Prerequisites:
+#   - `psql` must be available in the Terraform execution environment
+#   - Network connectivity from the Terraform runner to the RDS instance
+#     (e.g., run from within the same VPC via a bastion or CI runner)
+# ---------------------------------------------------------------------------
+variable "enable_pgvector" {
+  description = "When true, install the pgvector extension in the database after provisioning."
+  type        = bool
+  default     = true
+}
+
+resource "null_resource" "pgvector_extension" {
+  count = var.enable_pgvector ? 1 : 0
+
+  # Re-run if the RDS instance is re-created or the flag changes
+  triggers = {
+    rds_instance_id = aws_db_instance.this.id
+    enable          = tostring(var.enable_pgvector)
+  }
+
+  depends_on = [aws_db_instance.this]
+
+  provisioner "local-exec" {
+    # Use the stored secret to avoid embedding credentials in state.
+    # The shell command reads the secret from Secrets Manager, extracts the
+    # password, and connects to the instance to create the vector extension.
+    command = <<-EOT
+      set -e
+      SECRET=$(aws secretsmanager get-secret-value \
+        --secret-id "${aws_secretsmanager_secret.rds.arn}" \
+        --query SecretString --output text)
+      DB_PASSWORD=$(echo "$SECRET" | python3 -c "import sys,json; print(json.load(sys.stdin)['password'])")
+      PGPASSWORD="$DB_PASSWORD" psql \
+        --host="${aws_db_instance.this.address}" \
+        --port="${aws_db_instance.this.port}" \
+        --username="datacloud_admin" \
+        --dbname="${var.db_name}" \
+        --command="CREATE EXTENSION IF NOT EXISTS vector;"
+      echo "pgvector extension provisioned on ${aws_db_instance.this.identifier}"
+    EOT
+  }
+}
+
