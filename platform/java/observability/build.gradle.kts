@@ -8,7 +8,7 @@
  * as they require ActiveJ DI which is not available in 6.0-beta2.
  */
 plugins {
-    id("java-library")
+    id("java-module")
     id("java-test-fixtures")
 }
 
@@ -71,8 +71,4 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.log4j.slf4j.impl)
     testRuntimeOnly(libs.log4j.core)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

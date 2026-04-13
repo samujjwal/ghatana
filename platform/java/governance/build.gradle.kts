@@ -1,15 +1,10 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
 version = rootProject.version
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     api(project(":platform:java:core"))

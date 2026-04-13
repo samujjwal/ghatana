@@ -13,7 +13,8 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
     withSourcesJar()
-    withJavadocJar()
+    // Skip javadoc jar for this module due to temporary code exclusions and generation complexity
+    // withJavadocJar()
 }
 
 // Temporarily exclude OpenRewrite-dependent files from compilation

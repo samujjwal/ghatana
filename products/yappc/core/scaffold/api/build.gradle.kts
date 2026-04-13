@@ -4,13 +4,12 @@
  */
 
 plugins {
-    id("java-library")
-    id("application")
-    id("jacoco")
+    id("java-application")
 }
 
 description = "YAPPC Scaffold API - Unified API layer (merged: api + http + grpc + cli)"
 
+// Override default mainClass from java-application convention
 application {
     mainClass.set("com.ghatana.yappc.cli.YappcEntryPoint")
 }
@@ -59,9 +58,7 @@ java {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
+// java-module/java-application already calls useJUnitPlatform()
 
 // Handle duplicate JARs in distribution (e.g. core-*.jar from multiple dependency paths)
 tasks.withType<Tar> {
@@ -71,16 +68,7 @@ tasks.withType<Zip> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// Jacoco configuration with lowered coverage thresholds
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
-}
+// java-application already configures jacocoTestReport; keep coverage verification
 
 tasks.jacocoTestCoverageVerification {
     violationRules {

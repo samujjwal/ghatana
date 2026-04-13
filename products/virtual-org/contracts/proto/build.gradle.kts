@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
     // DISABLED: Protobuf plugin causes afterEvaluate conflicts with Gradle 8.10
     // alias(libs.plugins.protobuf)
 }
@@ -13,13 +13,13 @@ dependencies {
     // Core Protobuf
     api(libs.protobuf.java)
     api(libs.protobuf.java.util)
-    
+
     // gRPC dependencies
     api(libs.grpc.protobuf)
     api(libs.grpc.stub)
     api(libs.grpc.netty.shaded)
-    
-            
+
+
     // Common contracts (shared types)
     api(project(":platform:contracts"))
 }

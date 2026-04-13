@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.virtualorg"
@@ -26,9 +26,5 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
 }
 
-tasks.named<Test>("test") {
-    useJUnitPlatform()
-}
 
 description = "Virtual-Org - Virtual Organization Framework"
-

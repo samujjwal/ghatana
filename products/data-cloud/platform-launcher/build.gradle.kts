@@ -1,7 +1,6 @@
 plugins {
-    id("java-library")
+    id("java-module")
     id("java-test-fixtures")
-    id("jacoco")
     alias(libs.plugins.jmh)
     alias(libs.plugins.spotbugs)
     // alias(libs.plugins.owasp)
@@ -12,11 +11,6 @@ version = rootProject.version
 
 description = "Data Cloud Platform Launcher Module"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     implementation(project(":products:data-cloud:platform-api"))
@@ -99,6 +93,7 @@ dependencies {
 }
 
 tasks.test {
+    // useJUnitPlatform() already applied by java-module; preserve custom config
     useJUnitPlatform {
         excludeTags("performance")
     }
@@ -109,7 +104,9 @@ tasks.test {
     environment("TESTCONTAINERS_HOST_OVERRIDE", "host.docker.internal")
 }
 
-// Skip SpotBugs analysis on test bytecode (test code quality is less critical than production code)
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().matching { it.name == "spotbugsTest" }.configureEach {
     enabled = false
 }

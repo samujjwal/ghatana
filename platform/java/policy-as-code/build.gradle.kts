@@ -5,7 +5,7 @@
  * risk scoring, and immutable policy result records.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -23,8 +23,4 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

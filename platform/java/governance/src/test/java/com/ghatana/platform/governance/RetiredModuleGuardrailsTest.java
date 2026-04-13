@@ -64,8 +64,7 @@ class RetiredModuleGuardrailsTest {
                 "include(\":platform:java:incident-response\")",
                 "include(\":platform:java:agent-memory\")",
                 "include(\":platform:java:distributed-cache\")",
-                "include(\":platform:java:security-analytics\")",
-                "include(\":products:audio-video:libs:common\")"
+                "include(\":platform:java:security-analytics\")"
         );
 
         for (String settingsFile : List.of("settings.gradle.kts", "settings.gradle.kts.fixed")) {

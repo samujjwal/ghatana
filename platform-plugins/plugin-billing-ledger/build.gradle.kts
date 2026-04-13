@@ -6,8 +6,7 @@
  * @doc.layer platform
  */
 plugins {
-    `java-library`
-    jacoco
+    id("java-module")
 }
 
 group = "com.ghatana.plugin"
@@ -33,23 +32,4 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
-}
-
-tasks.test {
-    useJUnitPlatform()
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-// JaCoCo configuration for test coverage measurement
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
-}
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test, "compileJava")
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
 }

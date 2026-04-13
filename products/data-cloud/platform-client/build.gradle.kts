@@ -12,8 +12,7 @@
  * Phase 2 will move sources here.
  */
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
     alias(libs.plugins.spotbugs)
 }
 
@@ -22,11 +21,6 @@ version = rootProject.version
 
 description = "Data Cloud Client SDK — extracted from platform-launcher (Phase 1)"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     // Phase 1: thin API wrapper delegating to platform-launcher.
@@ -55,7 +49,7 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module; keep finalizedBy for unconditional JaCoCo
     finalizedBy(tasks.jacocoTestReport)
 }
 

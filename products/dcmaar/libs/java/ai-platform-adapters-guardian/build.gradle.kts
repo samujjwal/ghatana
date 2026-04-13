@@ -1,11 +1,12 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.guardian"
 version = rootProject.version
 
 java {
+    // Keep sources/javadoc jars for this publishable module
     withSourcesJar()
     withJavadocJar()
 }
@@ -20,8 +21,4 @@ dependencies {
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

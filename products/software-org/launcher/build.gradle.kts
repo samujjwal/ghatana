@@ -1,5 +1,5 @@
 plugins {
-    `java-library`
+    id("java-module")
     `maven-publish`
 }
 
@@ -34,8 +34,4 @@ dependencies {
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
 }

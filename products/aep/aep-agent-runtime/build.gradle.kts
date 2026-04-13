@@ -16,7 +16,6 @@
  */
 plugins {
     id("java-module")
-    `java-library`
 }
 
 group = "com.ghatana.aep"

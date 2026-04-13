@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 description = "YAPPC Architecture Specialists - Design patterns and architecture analysis agents"

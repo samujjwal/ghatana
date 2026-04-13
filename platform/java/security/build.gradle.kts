@@ -1,17 +1,11 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
 version = rootProject.version
 
 description = "Platform Security - Authentication, Authorization, Encryption"
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     // Core platform dependencies — exposed as API since consumers need these types
@@ -64,9 +58,4 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":platform:java:governance"))  // For Principal in tests
     testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
-    testRuntimeOnly(libs.junit.jupiter.engine)
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
 }

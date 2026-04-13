@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 group = "com.ghatana.products.yappc.services"
@@ -58,20 +57,11 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module; keep finalizedBy
     finalizedBy(tasks.jacocoTestReport)
 }
 
-// JaCoCo version managed by com.ghatana.jacoco-conventions plugin
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
-}
+// jacoco and jacocoTestReport configured by java-module
 
 // Override coverage thresholds — module has minimal testable production code (pure glue/facade).
 // TODO: Raise thresholds incrementally as test coverage improves.

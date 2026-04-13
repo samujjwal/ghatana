@@ -6,11 +6,7 @@
  * API surface in core:yappc-infrastructure and has no runtime dependencies of its own.
  */
 plugins {
-    id("java-library")
-}
-
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    id("java-module")
 }
 
 description = "YAPPC Example Plugin: Maven POM Generator (demonstrates plugin SDK)"
@@ -27,6 +23,3 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-tasks.test {
-    useJUnitPlatform()
-}

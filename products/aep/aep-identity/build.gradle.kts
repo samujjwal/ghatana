@@ -5,7 +5,7 @@
  * AEP agent lifecycle hooks and provides adapters for external identity providers.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.aep"
@@ -22,8 +22,4 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

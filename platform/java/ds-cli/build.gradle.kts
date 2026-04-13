@@ -4,8 +4,7 @@
  */
 
 plugins {
-    id("java-library")
-    id("application")
+    id("java-application")
     id("jacoco")
 }
 
@@ -16,12 +15,6 @@ version = rootProject.version
 
 application {
     mainClass.set("com.ghatana.platform.dscli.DesignSystemCLI")
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
 }
 
 dependencies {

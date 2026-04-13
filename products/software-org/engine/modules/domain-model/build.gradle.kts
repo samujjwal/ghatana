@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
     // alias(libs.plugins.lombok) // Disabled: Gradle 8.10 afterEvaluate conflict
 }
 
@@ -42,8 +42,4 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(project(":platform:java:testing"))
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

@@ -1,9 +1,13 @@
 plugins {
-    id("java")
-    id("application")
+    id("java-application")
 }
 
 description = "Guardian Threat & Health Scoring Service"
+
+// Override default mainClass from java-application convention
+application {
+    mainClass = "com.ghatana.guardian.threat.GuardianThreatServiceLauncher"
+}
 
 dependencies {
     // Core HTTP server abstractions
@@ -36,11 +40,4 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
-
-application {
-    mainClass = "com.ghatana.guardian.threat.GuardianThreatServiceLauncher"
-}
-
-tasks.test {
-    useJUnitPlatform()
-}
+// useJUnitPlatform() already applied by java-application

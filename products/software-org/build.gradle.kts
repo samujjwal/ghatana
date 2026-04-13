@@ -1,5 +1,5 @@
 plugins {
-    `java-library`
+    id("java-module")
 }
 
 description = "Software-Org Product - Agentic software organization simulation"
@@ -32,7 +32,7 @@ dependencies {
 
     // Make framework and department modules available on the aggregate product classpath
     // Framework used by many tests and by product code
-    
+
     // Consolidated departments module (tests reference department classes directly)
     "testImplementation"(project(":products:software-org:libs:java:departments"))
 
@@ -48,8 +48,4 @@ dependencies {
     // JMH benchmark support for SoftwareOrgPerformanceBenchmark (compiled as part of tests)
     "testImplementation"(libs.jmh.core)
     "testAnnotationProcessor"(libs.jmh.generator.annprocess)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

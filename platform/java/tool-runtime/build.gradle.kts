@@ -5,15 +5,12 @@
  * for agent tool invocations.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
 version = rootProject.version
 
-java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
-}
 
 dependencies {
     api(project(":platform:java:core"))
@@ -31,8 +28,4 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
     testRuntimeOnly(libs.junit.platform.launcher)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

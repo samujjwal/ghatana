@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 dependencies {
@@ -30,8 +30,4 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.micrometer.core)
     testImplementation(project(":platform:java:testing"))
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
 }

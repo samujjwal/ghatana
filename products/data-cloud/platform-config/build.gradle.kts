@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.datacloud"
@@ -7,11 +7,6 @@ version = rootProject.version
 
 description = "Data Cloud Platform Config Module"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     api(project(":platform:java:core"))
@@ -44,8 +39,4 @@ dependencies {
 
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

@@ -5,7 +5,7 @@
  * event loop management, and ActiveJ framework integration.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -48,8 +48,4 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.log4j.slf4j.impl)
     testRuntimeOnly(libs.log4j.core)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

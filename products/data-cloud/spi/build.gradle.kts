@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.datacloud"
@@ -7,11 +7,6 @@ version = rootProject.version
 
 description = "Data-Cloud SPI - Shared interfaces and types for cross-product integration"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     // Minimal dependencies - only what SPI types need
@@ -30,8 +25,4 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

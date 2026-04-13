@@ -1,7 +1,5 @@
 plugins {
-    id("java")
-    id("application")
-    id("jacoco")
+    id("java-application")
 }
 
 description = "EventCloud tailing service for real-time feature ingestion (migrated from shared-services per ADR-013)"
@@ -62,7 +60,7 @@ application {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-application; keep finalizedBy for unconditional JaCoCo
     finalizedBy(tasks.jacocoTestReport)
 }
 

@@ -13,7 +13,6 @@
 
 plugins {
     id("java-module")
-    `java-library`
 }
 
 dependencies {

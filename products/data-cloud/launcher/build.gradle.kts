@@ -1,5 +1,5 @@
 plugins {
-    `java-library`
+    id("java-module")
     `maven-publish`
 }
 
@@ -60,11 +60,7 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
-
-    // Limit parallel execution to 1 fork: DataCloudHttpServer tests (12 total)
-    // consume significant resources (Eventloop, server threads, port binding).
-    // Running >1 test class in parallel causes resource exhaustion and hangs.
+    // useJUnitPlatform() already applied by java-module; keep maxParallelForks override
     maxParallelForks = 1
 }
 

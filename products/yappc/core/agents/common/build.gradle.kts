@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 description = "YAPPC Agent Common - Shared Input/Output classes and interfaces for all agent modules"
@@ -23,17 +22,11 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module
     testLogging {
         events("passed", "skipped", "failed")
     }
     finalizedBy(tasks.jacocoTestReport)
 }
 
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
+// jacoco and jacocoTestReport configured by java-module

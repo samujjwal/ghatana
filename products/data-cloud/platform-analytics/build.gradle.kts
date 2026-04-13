@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.datacloud"
@@ -7,11 +7,6 @@ version = rootProject.version
 
 description = "Data Cloud Platform Analytics Module"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     api(project(":products:data-cloud:spi"))
@@ -33,8 +28,4 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

@@ -1,6 +1,5 @@
 plugins {
-    id("java")
-    id("application")
+    id("java-application")
 }
 
 description = "AI Inference Service - REST/gRPC API for LLM Gateway and Model Serving"
@@ -35,11 +34,9 @@ dependencies {
     testImplementation(libs.mockito.core)
 }
 
+// Override default mainClass from java-application convention
 application {
     mainClass.set("com.ghatana.services.aiinference.AIInferenceServiceLauncher")
 }
-
-tasks.test {
-    useJUnitPlatform()
-}
+// useJUnitPlatform() already applied by java-application
 

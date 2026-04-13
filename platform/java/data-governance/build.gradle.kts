@@ -1,5 +1,5 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.platform"
@@ -7,11 +7,6 @@ version = rootProject.version
 
 description = "Platform Data Governance — Consent, PII classification, purpose-limitation, data minimization"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     api(project(":platform:java:core"))

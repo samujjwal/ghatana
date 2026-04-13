@@ -1,6 +1,5 @@
 plugins {
-    `java-library`
-    id("jacoco")
+    id("java-module")
 }
 
 group = rootProject.group
@@ -28,38 +27,19 @@ dependencies {
     // ActiveJ Promise is required for async repository contracts.
     api(libs.activej.promise)
 
-    // Lombok is used heavily in the product domain sources. The repository-level
-    // build helper normally auto-adds Lombok to projects that contain src/main/java
-    // files, but this libs module compiles sources from a different directory
-    // (products/yappc/domain), so add Lombok explicitly here.
-    compileOnly("org.projectlombok:lombok:1.18.34")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
-    testCompileOnly("org.projectlombok:lombok:1.18.34")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
-
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
 }
 
 tasks.test {
-    useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
     }
-    finalizedBy(tasks.jacocoTestReport)
+    // finalizedBy(jacocoTestReport) is handled by java-module when coverage is enabled
 }
 
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
-}
 
 tasks.jacocoTestCoverageVerification {
     violationRules {

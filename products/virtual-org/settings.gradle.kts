@@ -1,6 +1,6 @@
 /**
  * Virtual-Org Product Settings
- * 
+ *
  * Enables standalone build: cd products/virtual-org && ../../gradlew build
  */
 rootProject.name = "virtual-org"
@@ -39,7 +39,7 @@ fun includeNestedLib(parent: String, children: List<String>, subPath: String = "
     if (parentDir.exists()) {
         include("libs:$parent")
         project(":libs:$parent").projectDir = parentDir
-        
+
         children.forEach { child ->
             val childDir = File(parentDir, child)
             if (childDir.exists()) {
@@ -123,7 +123,7 @@ val contractsDir = File(monorepoRoot, "contracts")
 if (contractsDir.exists()) {
     include("contracts")
     project(":contracts").projectDir = contractsDir
-    
+
     listOf("proto", "pojos", "mappers", "json-schemas").forEach { name ->
         val contractDir = File(contractsDir, name)
         if (contractDir.exists()) {

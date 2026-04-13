@@ -10,8 +10,7 @@
  * Phase 1 of FINDING-DC-H2 (platform-launcher split).
  */
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
     alias(libs.plugins.spotbugs)
 }
 
@@ -20,11 +19,6 @@ version = rootProject.version
 
 description = "Data Cloud REST/gRPC/GraphQL API layer — extracted from platform-launcher (Phase 1)"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     api(project(":products:data-cloud:spi"))
@@ -74,7 +68,7 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module; keep finalizedBy for unconditional JaCoCo
     finalizedBy(tasks.jacocoTestReport)
 }
 

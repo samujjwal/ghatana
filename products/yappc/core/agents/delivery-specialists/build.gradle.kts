@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 description = "YAPPC Delivery Specialists - Release, DevOps, compliance, and security pipeline agents"
@@ -28,20 +27,14 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module
     testLogging {
         events("passed", "skipped", "failed")
     }
     finalizedBy(tasks.jacocoTestReport)
 }
 
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-}
+// jacoco and jacocoTestReport configured by java-module
 
 // Temporarily disable coverage verification for this module
 // TODO: Add more tests to reach minimum coverage thresholds

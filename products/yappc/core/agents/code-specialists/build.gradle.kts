@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 description = "YAPPC Code Specialists - Code analysis, generation, and refactoring agents"
@@ -30,7 +29,7 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
@@ -38,15 +37,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
-}
+// jacoco and jacocoTestReport configured by java-module; keep coverage verification thresholds
 
 tasks.jacocoTestCoverageVerification {
     violationRules {

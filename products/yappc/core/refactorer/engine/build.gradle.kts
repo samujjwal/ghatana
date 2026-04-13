@@ -1,6 +1,5 @@
 plugins {
-    id("java-library")
-    id("jacoco")
+    id("java-module")
 }
 
 group = "com.ghatana.products.yappc.refactorer"
@@ -9,9 +8,7 @@ version = rootProject.version
 description = "Refactorer Engine - Unified core, engine & language support (merged: refactorer-core + refactorer-engine + refactorer-languages)"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    // Keep sources/javadoc jars for this publishable module
     withSourcesJar()
     withJavadocJar()
 }
@@ -84,7 +81,7 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
@@ -92,15 +89,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-        csv.required.set(false)
-    }
-}
+// jacoco and jacocoTestReport configured by java-module; keep coverage verification thresholds
 
 tasks.jacocoTestCoverageVerification {
     violationRules {

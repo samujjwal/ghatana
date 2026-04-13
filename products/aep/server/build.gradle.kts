@@ -6,7 +6,7 @@
  */
 
 plugins {
-    `java-library`
+    id("java-module")
     `maven-publish`
 }
 
@@ -82,8 +82,7 @@ dependencies {
 }
 
 tasks.named<Test>("test") {
-    useJUnitPlatform()
-    // Disable JWT auth for integration tests; auth logic is tested via AepSecurityTest
+    // useJUnitPlatform() already applied by java-module; keep environment override
     environment("AEP_AUTH_DISABLED", "true")
 }
 

@@ -1,12 +1,9 @@
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 description = "YAPPC Scaffold Generators - Language-specific code generators and pipeline builders"
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
-}
 
 dependencies {
     api(project(":products:yappc:core:scaffold:engine"))

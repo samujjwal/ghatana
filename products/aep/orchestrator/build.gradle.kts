@@ -14,7 +14,7 @@
  * from the earlier state where orchestrator code lived inside products:aep:platform-bundle.
  */
 plugins {
-    id("java-library")
+    id("java-module")
 }
 
 group = "com.ghatana.aep"
@@ -22,11 +22,6 @@ version = rootProject.version
 
 description = "AEP Orchestrator — pipeline lifecycle, execution queues, and agent dispatch wiring"
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
 
 dependencies {
     // Shared AEP contracts — EventCloud, operator catalog, pipeline contracts
@@ -109,7 +104,7 @@ sourceSets.test {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // useJUnitPlatform() already applied by java-module
 }
 
 // =============================================================================
