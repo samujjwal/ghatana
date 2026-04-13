@@ -49,7 +49,7 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
 
     // ClickHouse client
-    implementation("com.clickhouse:clickhouse-client:0.5.0")
+    implementation("com.clickhouse:clickhouse-client:0.9.8")
 
     // OpenSearch client
     implementation("org.opensearch.client:opensearch-rest-client:2.18.0")
