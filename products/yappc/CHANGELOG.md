@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: token + canvas + builder [`d801d10`](https://github.com/samujjwal/ghatana/commit/d801d1054dba819e27cb533ec02f3588c2d9aac9)
 - **Changed**: ts refactor 22 [`2cfd0bd`](https://github.com/samujjwal/ghatana/commit/2cfd0bd0c19ad6d9fcee1fbac4c04bd775316475)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`95fd907`](https://github.com/samujjwal/ghatana/commit/95fd907131dae12f8fef531bf0952e9a76da4665)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`9ed32ba`](https://github.com/samujjwal/ghatana/commit/9ed32ba76a98a66b5dae2d3493b94ac7617b30c8)
