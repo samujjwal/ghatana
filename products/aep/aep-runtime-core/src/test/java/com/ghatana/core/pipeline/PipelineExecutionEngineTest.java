@@ -141,7 +141,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Single-stage pipeline executes operator and returns output")
-    void singleStage_executesOperator() {
+    void singleStageExecutesOperator() {
         registerPassThroughOperator("test", "stream", "filter", "1.0.0");
 
         Pipeline pipeline = DefaultPipeline.builder("p1", "1.0.0")
@@ -160,7 +160,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Linear pipeline A → B → C processes events in order")
-    void linearPipeline_processesInOrder() {
+    void linearPipelineProcessesInOrder() {
         registerPassThroughOperator("test", "stream", "filter", "1.0.0");
         registerPassThroughOperator("test", "stream", "enrich", "1.0.0");
         registerPassThroughOperator("test", "stream", "detect", "1.0.0");
@@ -187,7 +187,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DAG with fan-out: A → B, A → C (both receive A's output)")
-    void dagFanOut_bothBranchesReceiveInput() {
+    void dagFanOutBothBranchesReceiveInput() {
         registerPassThroughOperator("test", "stream", "source", "1.0.0");
         TestCountingOperator branchB = registerCountingOperator("test", "stream", "branchB", "1.0.0");
         TestCountingOperator branchC = registerCountingOperator("test", "stream", "branchC", "1.0.0");
@@ -212,7 +212,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DAG with fan-in: A → C, B → C (C receives outputs from both)")
-    void dagFanIn_mergesInputs() {
+    void dagFanInMergesInputs() {
         registerPassThroughOperator("test", "stream", "a", "1.0.0");
         registerPassThroughOperator("test", "stream", "b", "1.0.0");
         TestCountingOperator merge = registerCountingOperator("test", "stream", "merge", "1.0.0");
@@ -237,7 +237,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Diamond DAG: A → B, A → C, B → D, C → D")
-    void diamondDag_executesCorrectly() {
+    void diamondDagExecutesCorrectly() {
         registerPassThroughOperator("test", "stream", "a", "1.0.0");
         registerPassThroughOperator("test", "stream", "b", "1.0.0");
         registerPassThroughOperator("test", "stream", "c", "1.0.0");
@@ -270,7 +270,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator failure routes to error edge handler")
-    void operatorFailure_routesToErrorEdge() {
+    void operatorFailureRoutesToErrorEdge() {
         registerFailingOperator("test", "stream", "risky", "1.0.0", "simulated failure");
         TestCountingOperator errorHandler = registerCountingOperator("test", "stream", "error-handler", "1.0.0");
 
@@ -291,7 +291,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator failure with no error edge and continueOnError=false aborts pipeline")
-    void operatorFailure_noErrorEdge_abortsPipeline() {
+    void operatorFailureNoErrorEdgeAbortsPipeline() {
         registerFailingOperator("test", "stream", "fail", "1.0.0", "boom");
         registerPassThroughOperator("test", "stream", "after", "1.0.0");
 
@@ -311,7 +311,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator failure with continueOnError=true continues to next stages")
-    void operatorFailure_continueOnError_proceeds() {
+    void operatorFailureContinueOnErrorProceeds() {
         registerFailingOperator("test", "stream", "fail", "1.0.0", "non-fatal");
         TestCountingOperator next = registerCountingOperator("test", "stream", "independent", "1.0.0");
 
@@ -331,7 +331,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator not found in catalog produces failure result")
-    void operatorNotFound_producesFailure() {
+    void operatorNotFoundProducesFailure() {
         // Don't register any operator
         Pipeline pipeline = DefaultPipeline.builder("missing-op", "1.0.0")
                 .name("Missing operator")
@@ -351,7 +351,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Empty output activates fallback edge")
-    void emptyOutput_activatesFallbackEdge() {
+    void emptyOutputActivatesFallbackEdge() {
         registerEmptyOutputOperator("test", "stream", "empty", "1.0.0");
         TestCountingOperator fallback = registerCountingOperator("test", "stream", "fallback", "1.0.0");
 
@@ -374,7 +374,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Broadcast edge sends output to all targets")
-    void broadcastEdge_sendsToAllTargets() {
+    void broadcastEdgeSendsToAllTargets() {
         registerPassThroughOperator("test", "stream", "source", "1.0.0");
         TestCountingOperator target1 = registerCountingOperator("test", "stream", "t1", "1.0.0");
         TestCountingOperator target2 = registerCountingOperator("test", "stream", "t2", "1.0.0");
@@ -402,7 +402,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Multi-event output propagates all events to downstream stages")
-    void multiEventOutput_propagatesAll() {
+    void multiEventOutputPropagatesAll() {
         registerMultiOutputOperator("test", "stream", "splitter", "1.0.0", 3);
         TestCountingOperator downstream = registerCountingOperator("test", "stream", "collector", "1.0.0");
 
@@ -427,7 +427,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline with isolated stages (no edges) processes all as sources")
-    void isolatedStages_allProcessed() {
+    void isolatedStagesAllProcessed() {
         TestCountingOperator op1 = registerCountingOperator("test", "stream", "iso1", "1.0.0");
         TestCountingOperator op2 = registerCountingOperator("test", "stream", "iso2", "1.0.0");
 
@@ -447,7 +447,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Null input event throws NullPointerException")
-    void nullInput_throwsNPE() {
+    void nullInputThrowsNPE() {
         Pipeline pipeline = DefaultPipeline.builder("npe-test", "1.0.0")
                 .name("NPE test")
                 .stage("s1", OperatorId.of("test", "stream", "x", "1.0.0"))
@@ -459,14 +459,14 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Null pipeline throws NullPointerException")
-    void nullPipeline_throwsNPE() {
+    void nullPipelineThrowsNPE() {
         assertThatThrownBy(() -> engine.execute(null, testEvent("x"), defaultContext()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("Null context throws NullPointerException")
-    void nullContext_throwsNPE() {
+    void nullContextThrowsNPE() {
         Pipeline pipeline = DefaultPipeline.builder("npe-test", "1.0.0")
                 .name("NPE test")
                 .stage("s1", OperatorId.of("test", "stream", "x", "1.0.0"))
@@ -478,7 +478,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineExecutionResult contains correct pipeline ID and input event")
-    void result_containsCorrectMetadata() {
+    void resultContainsCorrectMetadata() {
         registerPassThroughOperator("test", "stream", "op1", "1.0.0");
 
         Pipeline pipeline = DefaultPipeline.builder("meta-test", "1.0.0")
@@ -500,7 +500,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DefaultPipeline.execute() uses real engine when configured")
-    void defaultPipeline_usesRealEngine() {
+    void defaultPipelineUsesRealEngine() {
         registerPassThroughOperator("test", "stream", "real", "1.0.0");
 
         DefaultPipeline.DefaultPipelineBuilder builder = DefaultPipeline.builder("integrated", "1.0.0");
@@ -520,7 +520,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DefaultPipeline.execute() falls back to simulated when no engine")
-    void defaultPipeline_simulatedFallback() {
+    void defaultPipelineSimulatedFallback() {
         Pipeline pipeline = DefaultPipeline.builder("simulated", "1.0.0")
                 .name("Simulated test")
                 .stage("s1", OperatorId.of("test", "stream", "sim", "1.0.0"))
@@ -540,7 +540,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Context generates unique execution ID when not provided")
-    void context_generatesExecutionId() {
+    void contextGeneratesExecutionId() {
         PipelineExecutionContext ctx = PipelineExecutionContext.builder()
                 .pipelineId("test")
                 .operatorCatalog(catalog)
@@ -551,7 +551,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Context deadline tracking works correctly")
-    void context_deadlineTracking() {
+    void contextDeadlineTracking() {
         PipelineExecutionContext ctx = PipelineExecutionContext.builder()
                 .pipelineId("test")
                 .operatorCatalog(catalog)
@@ -564,7 +564,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Context with zero deadline is immediately exceeded")
-    void context_zeroDeadline_exceeded() throws InterruptedException {
+    void contextZeroDeadlineExceeded() throws InterruptedException {
         PipelineExecutionContext ctx = PipelineExecutionContext.builder()
                 .pipelineId("test")
                 .operatorCatalog(catalog)
@@ -581,7 +581,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Catalog register and lookup")
-    void catalog_registerAndLookup() {
+    void catalogRegisterAndLookup() {
         OperatorId id = OperatorId.of("ns", "stream", "op", "1.0.0");
         TestPassThroughOperator op = new TestPassThroughOperator(id, "test-op");
         runPromise(() -> catalog.register(op));
@@ -592,14 +592,14 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Catalog get returns empty for missing operator")
-    void catalog_getMissing_returnsEmpty() {
+    void catalogGetMissingReturnsEmpty() {
         OperatorId id = OperatorId.of("ns", "stream", "missing", "1.0.0");
         assertThat(runPromise(() -> catalog.get(id))).isEmpty();
     }
 
     @Test
     @DisplayName("Catalog unregister removes operator")
-    void catalog_unregister() {
+    void catalogUnregister() {
         OperatorId id = OperatorId.of("ns", "stream", "op", "1.0.0");
         TestPassThroughOperator op = new TestPassThroughOperator(id, "test-op");
         runPromise(() -> catalog.register(op));
@@ -616,7 +616,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("StageExecutionResult.success factory")
-    void stageResult_successFactory() {
+    void stageResultSuccessFactory() {
         OperatorId opId = OperatorId.of("ns", "stream", "op", "1.0.0");
         Event event = testEvent("test");
         OperatorResult opResult = OperatorResult.of(event);
@@ -632,7 +632,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("StageExecutionResult.failure factory")
-    void stageResult_failureFactory() {
+    void stageResultFailureFactory() {
         OperatorId opId = OperatorId.of("ns", "stream", "op", "1.0.0");
 
         StageExecutionResult result = StageExecutionResult.failure(

@@ -41,13 +41,13 @@ class EnvConfigTest {
 
         @Test
         @DisplayName("returns default when key is absent")
-        void absentKey_returnsDefault() {
+        void absentKeyReturnsDefault() {
             assertThat(empty().get("MISSING_KEY", "default-val")).isEqualTo("default-val");
         }
 
         @Test
         @DisplayName("returns env value when key is present")
-        void presentKey_returnsValue() {
+        void presentKeyReturnsValue() {
             EnvConfig env = with("MY_KEY", "my-value");
             assertThat(env.get("MY_KEY", "default")).isEqualTo("my-value");
         }
@@ -59,20 +59,20 @@ class EnvConfigTest {
 
         @Test
         @DisplayName("returns default when key is absent")
-        void absentKey_returnsDefault() {
+        void absentKeyReturnsDefault() {
             assertThat(empty().getInt("MISSING_INT", 42)).isEqualTo(42);
         }
 
         @Test
         @DisplayName("returns parsed int when key is present and valid")
-        void presentKey_parsedCorrectly() {
+        void presentKeyParsedCorrectly() {
             EnvConfig env = with("MY_INT", "99");
             assertThat(env.getInt("MY_INT", 0)).isEqualTo(99);
         }
 
         @Test
         @DisplayName("throws IllegalStateException when value is not a valid integer")
-        void invalidInt_throwsIse() {
+        void invalidIntThrowsIse() {
             EnvConfig env = with("BAD_INT", "not-a-number");
             assertThatThrownBy(() -> env.getInt("BAD_INT", 7))
                 .isInstanceOf(IllegalStateException.class)
@@ -86,14 +86,14 @@ class EnvConfigTest {
 
         @Test
         @DisplayName("returns value when key is present")
-        void presentKey_returnsValue() {
+        void presentKeyReturnsValue() {
             EnvConfig env = with("REQ_KEY", "req-value");
             assertThat(env.require("REQ_KEY")).isEqualTo("req-value");
         }
 
         @Test
         @DisplayName("throws IllegalStateException when key is absent")
-        void absentKey_throwsIse() {
+        void absentKeyThrowsIse() {
             assertThatThrownBy(() -> empty().require("MISSING_REQ"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("MISSING_REQ");
@@ -112,14 +112,14 @@ class EnvConfigTest {
 
         @Test
         @DisplayName("returns true when APP_ENV=development")
-        void developmentEnv_returnsTrue() {
+        void developmentEnvReturnsTrue() {
             EnvConfig env = with(EnvConfig.APP_ENV, "development");
             assertThat(env.isDevelopment()).isTrue();
         }
 
         @Test
         @DisplayName("returns false when APP_ENV=production")
-        void productionEnv_returnsFalse() {
+        void productionEnvReturnsFalse() {
             EnvConfig env = with(EnvConfig.APP_ENV, "production");
             assertThat(env.isDevelopment()).isFalse();
         }
@@ -132,22 +132,22 @@ class EnvConfigTest {
     class KafkaDefaults {
 
         @Test
-        void bootstrapServers_defaultsToLocalhost() {
+        void bootstrapServersDefaultsToLocalhost() {
             assertThat(empty().kafkaBootstrapServers()).isEqualTo("localhost:9092");
         }
 
         @Test
-        void consumerGroup_defaultsToAepGroup() {
+        void consumerGroupDefaultsToAepGroup() {
             assertThat(empty().kafkaConsumerGroup()).isEqualTo("aep-consumer-group");
         }
 
         @Test
-        void inputTopic_defaultsToEvents() {
+        void inputTopicDefaultsToEvents() {
             assertThat(empty().kafkaInputTopic()).isEqualTo("events");
         }
 
         @Test
-        void outputTopic_defaultsToEventsOut() {
+        void outputTopicDefaultsToEventsOut() {
             assertThat(empty().kafkaOutputTopic()).isEqualTo("events-out");
         }
     }
@@ -157,12 +157,12 @@ class EnvConfigTest {
     class RedisDefaults {
 
         @Test
-        void host_defaultsToLocalhost() {
+        void hostDefaultsToLocalhost() {
             assertThat(empty().redisHost()).isEqualTo("localhost");
         }
 
         @Test
-        void port_defaultsTo6379() {
+        void portDefaultsTo6379() {
             assertThat(empty().redisPort()).isEqualTo(6379);
         }
     }
@@ -172,17 +172,17 @@ class EnvConfigTest {
     class RabbitMqDefaults {
 
         @Test
-        void host_defaultsToLocalhost() {
+        void hostDefaultsToLocalhost() {
             assertThat(empty().rabbitMqHost()).isEqualTo("localhost");
         }
 
         @Test
-        void port_defaultsTo5672() {
+        void portDefaultsTo5672() {
             assertThat(empty().rabbitMqPort()).isEqualTo(5672);
         }
 
         @Test
-        void queue_defaultsToAepEvents() {
+        void queueDefaultsToAepEvents() {
             assertThat(empty().rabbitMqQueue()).isEqualTo("aep-events");
         }
     }
@@ -192,12 +192,12 @@ class EnvConfigTest {
     class S3Defaults {
 
         @Test
-        void region_defaultsToUsEast1() {
+        void regionDefaultsToUsEast1() {
             assertThat(empty().s3Region()).isEqualTo("us-east-1");
         }
 
         @Test
-        void bucket_defaultsToAepStorage() {
+        void bucketDefaultsToAepStorage() {
             assertThat(empty().s3Bucket()).isEqualTo("aep-storage");
         }
     }
@@ -207,19 +207,19 @@ class EnvConfigTest {
     class Overrides {
 
         @Test
-        void kafkaBootstrapServers_override() {
+        void kafkaBootstrapServersOverride() {
             EnvConfig env = with(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker1:9092,broker2:9092");
             assertThat(env.kafkaBootstrapServers()).isEqualTo("broker1:9092,broker2:9092");
         }
 
         @Test
-        void redisHost_override() {
+        void redisHostOverride() {
             EnvConfig env = with(EnvConfig.REDIS_HOST, "redis.prod.example.com");
             assertThat(env.redisHost()).isEqualTo("redis.prod.example.com");
         }
 
         @Test
-        void redisPort_override() {
+        void redisPortOverride() {
             EnvConfig env = with(EnvConfig.REDIS_PORT, "6380");
             assertThat(env.redisPort()).isEqualTo(6380);
         }

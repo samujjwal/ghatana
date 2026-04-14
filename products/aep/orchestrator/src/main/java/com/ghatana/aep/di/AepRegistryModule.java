@@ -14,6 +14,8 @@ import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
 import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.agent.catalog.CatalogRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
+import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
@@ -124,8 +126,8 @@ public class AepRegistryModule extends AbstractModule {
      * @doc.pattern Factory
      */
     @Provides
-    AgentExecutionService agentExecutionService() {
-        return new AgentExecutionService();
+    AgentExecutionService agentExecutionService(AgentRegistry agentRegistry, LLMGateway llmGateway) {
+        return new AgentExecutionService(agentRegistry, llmGateway);
     }
 
     /**

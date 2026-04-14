@@ -65,7 +65,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds X-Content-Type-Options: nosniff")
-        void adds_xContentTypeOptions() {
+        void addsXContentTypeOptions() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -75,7 +75,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds X-Frame-Options: DENY")
-        void adds_xFrameOptions() {
+        void addsXFrameOptions() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -85,7 +85,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds X-XSS-Protection: 0 (disables legacy XSS filter)")
-        void adds_xXssProtectionDisabled() {
+        void addsXXssProtectionDisabled() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -95,7 +95,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Strict-Transport-Security with max-age=31536000 and preload")
-        void adds_strictTransportSecurity() {
+        void addsStrictTransportSecurity() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -108,7 +108,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Content-Security-Policy blocking frame-ancestors and form-action")
-        void adds_contentSecurityPolicy() {
+        void addsContentSecurityPolicy() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -120,7 +120,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Referrer-Policy header")
-        void adds_referrerPolicy() {
+        void addsReferrerPolicy() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -131,7 +131,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Permissions-Policy header disabling camera, mic, geo, payment")
-        void adds_permissionsPolicy() {
+        void addsPermissionsPolicy() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -145,7 +145,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Cache-Control: no-store")
-        void adds_cacheControlNoStore() {
+        void addsCacheControlNoStore() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -155,7 +155,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds X-Request-Id header (unique UUID per request)")
-        void adds_xRequestId() {
+        void addsXRequestId() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse r1 = serve(filter, HttpRequest.get(OK_URL).build());
             HttpResponse r2 = serve(filter, HttpRequest.get(OK_URL).build());
@@ -170,7 +170,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adds Access-Control-Allow-Origin matching configured origin")
-        void adds_accessControlAllowOrigin_matchesConfig() {
+        void addsAccessControlAllowOriginMatchesConfig() {
             String origin = "https://app.ghatana.com";
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet, origin);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
@@ -181,7 +181,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("default constructor allows all origins (*)")
-        void defaultConstructor_allowsAllOrigins() {
+        void defaultConstructorAllowsAllOrigins() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -191,7 +191,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null allowedOrigins arg falls back to wildcard")
-        void nullAllowedOrigins_fallsBackToWildcard() {
+        void nullAllowedOriginsFallsBackToWildcard() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet, null);
             HttpResponse resp = serve(filter, HttpRequest.get(OK_URL).build());
 
@@ -201,7 +201,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("security headers are injected even when downstream returns non-200")
-        void securityHeaders_presentOnErrorResponse() throws Exception {
+        void securityHeadersPresentOnErrorResponse() throws Exception {
             when(nextServlet.serve(any()))
                     .thenReturn(Promise.of(HttpResponse.ofCode(500).build()));
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
@@ -223,7 +223,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("OPTIONS request returns 204 without calling next servlet")
-        void options_returns204() {
+        void optionsReturns204() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.builder(HttpMethod.OPTIONS, OK_URL).build();
             HttpResponse resp = serve(filter, req);
@@ -233,7 +233,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("OPTIONS response includes Access-Control-Allow-Methods")
-        void options_hasAllowMethods() {
+        void optionsHasAllowMethods() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.builder(HttpMethod.OPTIONS, OK_URL).build();
             HttpResponse resp = serve(filter, req);
@@ -247,7 +247,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("OPTIONS response echoes Access-Control-Max-Age")
-        void options_hasMaxAge() {
+        void optionsHasMaxAge() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.builder(HttpMethod.OPTIONS, OK_URL).build();
             HttpResponse resp = serve(filter, req);
@@ -258,7 +258,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("OPTIONS response reflects requested headers if present")
-        void options_reflectsRequestedHeaders() {
+        void optionsReflectsRequestedHeaders() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.builder(HttpMethod.OPTIONS, OK_URL)
                     .withHeader(HttpHeaders.of("Access-Control-Request-Headers"),
@@ -274,7 +274,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("OPTIONS includes configured origin in Allow-Origin")
-        void options_includesConfiguredOrigin() {
+        void optionsIncludesConfiguredOrigin() {
             String origin = "https://dashboard.ghatana.com";
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet, origin);
             HttpRequest req = HttpRequest.builder(HttpMethod.OPTIONS, OK_URL).build();
@@ -298,7 +298,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Content-Length exceeding max → 413 Payload Too Large")
-        void contentLengthOverMax_returns413() {
+        void contentLengthOverMaxReturns413() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.post(OK_URL)
                     .withHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(OVER_LIMIT))
@@ -311,7 +311,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Content-Length exactly at max → passes through")
-        void contentLengthAtMax_passesThroughWith200() {
+        void contentLengthAtMaxPassesThroughWith200() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.post(OK_URL)
                     .withHeader(HttpHeaders.CONTENT_LENGTH,
@@ -325,7 +325,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Malformed Content-Length → accepted (let downstream decide)")
-        void malformedContentLength_doesNotThrow() {
+        void malformedContentLengthDoesNotThrow() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.post(OK_URL)
                     .withHeader(HttpHeaders.CONTENT_LENGTH, "not-a-number")
@@ -339,7 +339,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Request without Content-Length → passes through")
-        void noContentLength_passesThroughWith200() {
+        void noContentLengthPassesThroughWith200() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.get(OK_URL).build();
 
@@ -350,7 +350,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("413 response includes X-Content-Type-Options: nosniff")
-        void payloadTooLarge_hasNoSniff() {
+        void payloadTooLargeHasNoSniff() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
             HttpRequest req = HttpRequest.post(OK_URL)
                     .withHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(OVER_LIMIT))
@@ -385,7 +385,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("first 200 requests from same IP pass through (status 200)")
-        void first200Requests_passThrough() {
+        void first200RequestsPassThrough() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             HttpResponse last200 = null;
@@ -399,7 +399,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("201st request from same IP within window → 429 Too Many Requests")
-        void request201_exceedsRateLimit_returns429() {
+        void request201ExceedsRateLimitReturns429() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             for (int i = 0; i < 200; i++) {
@@ -419,7 +419,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("429 response includes Retry-After header")
-        void rateLimited_response_hasRetryAfterHeader() {
+        void rateLimitedResponseHasRetryAfterHeader() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             // Loop until rate-limited (up to 300) to tolerate token-bucket refill under load
@@ -437,7 +437,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("different IPs have independent rate-limit buckets")
-        void differentIps_haveIndependentBuckets() {
+        void differentIpsHaveIndependentBuckets() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             // Exhaust the limit for IP "10.0.0.1"
@@ -452,7 +452,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("XFF leftmost address is used as client IP")
-        void xff_leftmostAddress_usedAsClientIp() {
+        void xffLeftmostAddressUsedAsClientIp() {
             AepSecurityFilter filter = new AepSecurityFilter(nextServlet);
 
             // Use a comma-chain: real client is "172.16.0.5", proxy is "10.0.0.1"

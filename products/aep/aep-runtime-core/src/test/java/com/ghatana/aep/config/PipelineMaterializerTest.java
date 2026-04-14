@@ -49,7 +49,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(1)
     @DisplayName("Single-stage pipeline with one agent")
-    void singleStage_oneAgent() {
+    void singleStageOneAgent() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(
                         PipelineStageSpec.builder()
@@ -82,7 +82,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(2)
     @DisplayName("Multi-stage sequential auto-chaining")
-    void multiStage_autoChaining() {
+    void multiStageAutoChaining() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(
                         stage("extract", "extractor"),
@@ -107,7 +107,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(3)
     @DisplayName("Stage with no workflow (pass-through)")
-    void stage_noWorkflow_passthrough() {
+    void stageNoWorkflowPassthrough() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(
                         PipelineStageSpec.builder()
@@ -251,7 +251,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(30)
     @DisplayName("Agent config propagated to stage config map")
-    void agentConfig_propagated() {
+    void agentConfigPropagated() {
         AgentSpec agent = AgentSpec.builder()
                 .id("a1")
                 .agent("enricher")
@@ -286,7 +286,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(31)
     @DisplayName("Metadata includes materializedFrom and stageCount")
-    void metadata_present() {
+    void metadataPresent() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(stage("s1", "a1"), stage("s2", "a2")))
                 .build();
@@ -304,7 +304,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(40)
     @DisplayName("Null spec throws NullPointerException")
-    void nullSpec_throws() {
+    void nullSpecThrows() {
         assertThrows(NullPointerException.class,
                 () -> materializer.materialize(null, "x", "1.0"));
     }
@@ -312,7 +312,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(41)
     @DisplayName("Empty stages throws PipelineMaterializationException")
-    void emptyStages_throws() {
+    void emptyStagesThrows() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of())
                 .build();
@@ -324,7 +324,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(42)
     @DisplayName("Stage with no name throws")
-    void noStageName_throws() {
+    void noStageNameThrows() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(
                         PipelineStageSpec.builder()
@@ -340,7 +340,7 @@ class PipelineMaterializerTest {
     @Test
     @Order(43)
     @DisplayName("Agent with no name and no id throws")
-    void noAgentNameOrId_throws() {
+    void noAgentNameOrIdThrows() {
         PipelineSpec spec = PipelineSpec.builder()
                 .stages(List.of(
                         PipelineStageSpec.builder()

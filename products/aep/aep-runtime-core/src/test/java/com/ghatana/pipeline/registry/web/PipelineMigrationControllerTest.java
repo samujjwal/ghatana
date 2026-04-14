@@ -41,7 +41,7 @@ class PipelineMigrationControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("migratePipelines: live run → 200 OK with report")
-    void migratePipelines_liveRun_returns200() {
+    void migratePipelinesLiveRunReturns200() {
         MigrationReport report = MigrationReport.builder().build();
         report.complete();
         when(migrationService.migrateAll(false)).thenReturn(Promise.of(report));
@@ -54,7 +54,7 @@ class PipelineMigrationControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("migratePipelines: ?dryRun=true → 200 OK with dry-run report")
-    void migratePipelines_dryRun_returns200() {
+    void migratePipelinesDryRunReturns200() {
         MigrationReport report = MigrationReport.builder().dryRun(true).build();
         report.complete();
         when(migrationService.migrateAll(true)).thenReturn(Promise.of(report));
@@ -67,7 +67,7 @@ class PipelineMigrationControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("migratePipelines: service failure → 500 Internal Server Error")
-    void migratePipelines_serviceFailure_returns500() {
+    void migratePipelinesServiceFailureReturns500() {
         when(migrationService.migrateAll(false))
                 .thenReturn(Promise.ofException(new RuntimeException("Migration failed")));
 

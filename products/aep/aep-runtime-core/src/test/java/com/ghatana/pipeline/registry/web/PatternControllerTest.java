@@ -52,7 +52,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createPattern: valid body → 201 Created")
-    void createPattern_valid_returns201() {
+    void createPatternValidReturns201() {
         Pattern created = Pattern.builder()
                 .id("pat-1")
                 .tenantId(TENANT)
@@ -74,7 +74,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createPattern: missing name → 400 Bad Request")
-    void createPattern_missingName_returns400() {
+    void createPatternMissingNameReturns400() {
         String json = "{\"specification\":\"IF amount > 1000 THEN ALERT\"}";
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/patterns")
                 .withBody(ByteBuf.wrapForReading(json.getBytes(StandardCharsets.UTF_8)))
@@ -87,7 +87,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createPattern: missing specification → 400 Bad Request")
-    void createPattern_missingSpecification_returns400() {
+    void createPatternMissingSpecificationReturns400() {
         String json = "{\"name\":\"fraud-detect\"}";
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/patterns")
                 .withBody(ByteBuf.wrapForReading(json.getBytes(StandardCharsets.UTF_8)))
@@ -100,7 +100,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createPattern: service failure → 500 Internal Server Error")
-    void createPattern_serviceFailure_returns500() {
+    void createPatternServiceFailureReturns500() {
         when(patternService.register(any(Pattern.class), eq(USER)))
                 .thenReturn(Promise.ofException(new RuntimeException("DB error")));
 
@@ -118,7 +118,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("listPatterns: tenant has patterns → 200 OK")
-    void listPatterns_returns200() {
+    void listPatternsReturns200() {
         Pattern p = Pattern.builder().id("pat-1").tenantId(TENANT).name("p1").specification("spec1").build();
         when(patternService.list(TENANT, null)).thenReturn(Promise.of(List.of(p)));
 
@@ -129,7 +129,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("listPatterns: no patterns → 200 OK with empty list")
-    void listPatterns_empty_returns200() {
+    void listPatternsEmptyReturns200() {
         when(patternService.list(TENANT, "ACTIVE")).thenReturn(Promise.of(List.of()));
 
         HttpResponse response = runPromise(() -> controller.listPatterns(TENANT, "ACTIVE"));
@@ -141,7 +141,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getPattern: found → 200 OK")
-    void getPattern_found_returns200() {
+    void getPatternFoundReturns200() {
         Pattern p = Pattern.builder().id("pat-1").tenantId(TENANT).name("p1").specification("s").build();
         when(patternService.getById("pat-1", TENANT)).thenReturn(Promise.of(Optional.of(p)));
 
@@ -152,7 +152,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getPattern: not found → 404 Not Found")
-    void getPattern_notFound_returns404() {
+    void getPatternNotFoundReturns404() {
         when(patternService.getById("not-exist", TENANT)).thenReturn(Promise.of(Optional.empty()));
 
         HttpResponse response = runPromise(() -> controller.getPattern("not-exist", TENANT));
@@ -164,7 +164,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deletePattern: exists → 204 No Content")
-    void deletePattern_returns204() {
+    void deletePatternReturns204() {
         when(patternService.delete("pat-1", TENANT, USER)).thenReturn(Promise.of(null));
 
         HttpResponse response = runPromise(() -> controller.deletePattern("pat-1", TENANT, USER));
@@ -176,7 +176,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("activatePattern: exists → 200 OK")
-    void activatePattern_returns200() {
+    void activatePatternReturns200() {
         when(patternService.activate("pat-1", TENANT, USER)).thenReturn(Promise.of(null));
 
         HttpResponse response = runPromise(() -> controller.activatePattern("pat-1", TENANT, USER));
@@ -186,7 +186,7 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deactivatePattern: exists → 200 OK")
-    void deactivatePattern_returns200() {
+    void deactivatePatternReturns200() {
         when(patternService.deactivate("pat-1", TENANT, USER)).thenReturn(Promise.of(null));
 
         HttpResponse response = runPromise(() -> controller.deactivatePattern("pat-1", TENANT, USER));

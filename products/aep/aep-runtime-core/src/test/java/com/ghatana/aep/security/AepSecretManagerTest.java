@@ -44,21 +44,21 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("get() returns value from env when key is present")
-        void get_envKeyPresent_returnsValue() {
+        void getEnvKeyPresentReturnsValue() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("MY_SECRET", "env-value"));
             assertThat(sm.get("MY_SECRET")).contains("env-value");
         }
 
         @Test
         @DisplayName("get() returns empty when key not found anywhere")
-        void get_notFound_returnsEmpty() {
+        void getNotFoundReturnsEmpty() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of());
             assertThat(sm.get("MISSING_KEY")).isEmpty();
         }
 
         @Test
         @DisplayName("require() throws when key not found")
-        void require_notFound_throws() {
+        void requireNotFoundThrows() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of());
             assertThatThrownBy(() -> sm.require("REQUIRED_KEY"))
                     .isInstanceOf(IllegalStateException.class)
@@ -67,21 +67,21 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("has() returns true when secret is available")
-        void has_available_returnsTrue() {
+        void hasAvailableReturnsTrue() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("PRESENT", "val"));
             assertThat(sm.has("PRESENT")).isTrue();
         }
 
         @Test
         @DisplayName("has() returns false when secret is not available")
-        void has_absent_returnsFalse() {
+        void hasAbsentReturnsFalse() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of());
             assertThat(sm.has("ABSENT")).isFalse();
         }
 
         @Test
         @DisplayName("env value with blank string returns empty")
-        void get_blankEnvValue_returnsEmpty() {
+        void getBlankEnvValueReturnsEmpty() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("MY_KEY", "   "));
             assertThat(sm.get("MY_KEY")).isEmpty();
         }
@@ -97,7 +97,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("get() reads from file when file exists")
-        void get_fileExists_returnsFileContent(@TempDir Path secretsDir) throws IOException {
+        void getFileExistsReturnsFileContent(@TempDir Path secretsDir) throws IOException {
             Files.writeString(secretsDir.resolve("DB_PASSWORD"), "file-secret", StandardCharsets.UTF_8);
 
             AepSecretManager sm = new AepSecretManager(
@@ -110,7 +110,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("get() strips trailing whitespace from file content")
-        void get_fileWithTrailingNewline_stripsWhitespace(@TempDir Path secretsDir) throws IOException {
+        void getFileWithTrailingNewlineStripsWhitespace(@TempDir Path secretsDir) throws IOException {
             Files.writeString(secretsDir.resolve("API_KEY"), "secret-value\n\n", StandardCharsets.UTF_8);
 
             AepSecretManager sm = new AepSecretManager(Map.of(), secretsDir, null, null, null);
@@ -120,7 +120,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("get() falls back to env when file is missing")
-        void get_fileMissing_fallsBackToEnv(@TempDir Path secretsDir) {
+        void getFileMissingFallsBackToEnv(@TempDir Path secretsDir) {
             AepSecretManager sm = new AepSecretManager(
                     Map.of("ENV_KEY", "env-fallback"),
                     secretsDir,
@@ -131,7 +131,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("file tier takes priority over env var")
-        void get_fileTakesPriorityOverEnv(@TempDir Path secretsDir) throws IOException {
+        void getFileTakesPriorityOverEnv(@TempDir Path secretsDir) throws IOException {
             Files.writeString(secretsDir.resolve("SHARED_KEY"), "file-wins", StandardCharsets.UTF_8);
 
             AepSecretManager sm = new AepSecretManager(
@@ -144,7 +144,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("empty file content returns empty Optional")
-        void get_emptyFile_returnsEmpty(@TempDir Path secretsDir) throws IOException {
+        void getEmptyFileReturnsEmpty(@TempDir Path secretsDir) throws IOException {
             Files.writeString(secretsDir.resolve("EMPTY_KEY"), "  \n  ", StandardCharsets.UTF_8);
 
             AepSecretManager sm = new AepSecretManager(Map.of(), secretsDir, null, null, null);
@@ -163,7 +163,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("invalidate() removes a single key from cache")
-        void invalidate_singleKey() {
+        void invalidateSingleKey() {
             // Vault is disabled (no addr), so this just tests the invalidate path
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("K", "v"));
             sm.invalidate("K");       // should not throw
@@ -172,7 +172,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("invalidateAll() clears all cached entries")
-        void invalidateAll_clearsEverything() {
+        void invalidateAllClearsEverything() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("K1", "v1", "K2", "v2"));
             sm.invalidateAll();       // should not throw
             assertThat(sm.get("K1")).contains("v1"); // still resolvable via env
@@ -190,7 +190,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("parses string value from KV v2 response")
-        void parse_stringValue() {
+        void parseStringValue() {
             String json = "{\"request_id\":\"abc\",\"data\":{\"data\":{\"MY_SECRET\":\"secret-val\"}}}";
             Optional<String> result = AepSecretManager.parseVaultKvV2Response(json, "MY_SECRET");
             assertThat(result).contains("secret-val");
@@ -198,7 +198,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("returns empty when key not in response")
-        void parse_keyAbsent_returnsEmpty() {
+        void parseKeyAbsentReturnsEmpty() {
             String json = "{\"data\":{\"data\":{\"OTHER_KEY\":\"other-val\"}}}";
             Optional<String> result = AepSecretManager.parseVaultKvV2Response(json, "MY_SECRET");
             assertThat(result).isEmpty();
@@ -206,19 +206,19 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("returns empty for null JSON")
-        void parse_nullJson_returnsEmpty() {
+        void parseNullJsonReturnsEmpty() {
             assertThat(AepSecretManager.parseVaultKvV2Response(null, "KEY")).isEmpty();
         }
 
         @Test
         @DisplayName("returns empty for blank JSON")
-        void parse_blankJson_returnsEmpty() {
+        void parseBlankJsonReturnsEmpty() {
             assertThat(AepSecretManager.parseVaultKvV2Response("   ", "KEY")).isEmpty();
         }
 
         @Test
         @DisplayName("parses value when multiple keys exist in response")
-        void parse_multipleKeys_picksCorrectOne() {
+        void parseMultipleKeysPicksCorrectOne() {
             String json = "{\"data\":{\"data\":{\"KEY_A\":\"val-a\",\"KEY_B\":\"val-b\",\"KEY_C\":\"val-c\"}}}";
             assertThat(AepSecretManager.parseVaultKvV2Response(json, "KEY_B")).contains("val-b");
             assertThat(AepSecretManager.parseVaultKvV2Response(json, "KEY_C")).contains("val-c");
@@ -235,14 +235,14 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("require() returns value when present in env")
-        void require_present_returnsValue() {
+        void requirePresentReturnsValue() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of("MY_KEY", "my-val"));
             assertThat(sm.require("MY_KEY")).isEqualTo("my-val");
         }
 
         @Test
         @DisplayName("get() with null key throws NullPointerException")
-        void get_nullKey_throwsNpe() {
+        void getNullKeyThrowsNpe() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of());
             assertThatThrownBy(() -> sm.get(null))
                     .isInstanceOf(NullPointerException.class);
@@ -250,7 +250,7 @@ class AepSecretManagerTest {
 
         @Test
         @DisplayName("require() with null key throws NullPointerException")
-        void require_nullKey_throwsNpe() {
+        void requireNullKeyThrowsNpe() {
             AepSecretManager sm = AepSecretManager.forTesting(Map.of());
             assertThatThrownBy(() -> sm.require(null))
                     .isInstanceOf(NullPointerException.class);

@@ -20,6 +20,10 @@ dependencies {
     api(project(":platform:java:observability"))
     api(libs.activej.promise)
     implementation(libs.slf4j.api)
+    implementation(project(":platform:java:database"))
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
+    implementation(libs.jackson.databind)
 
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
@@ -27,5 +31,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation("com.github.tomakehurst:wiremock-jre8:3.0.1")
+    testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.bundles.testing.containers)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

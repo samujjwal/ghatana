@@ -1,0 +1,39 @@
+plugins {
+    id("java-module")
+}
+
+dependencies {
+    // Platform security
+    implementation(project(":platform:java:security"))
+    
+    // Platform governance for tenant context
+    implementation(project(":platform:java:governance"))
+    
+    // Platform observability for metrics
+    implementation(project(":platform:java:observability"))
+    
+    // gRPC for interceptors
+    implementation(libs.grpc.api)
+    implementation(libs.grpc.stub)
+    
+    // ActiveJ for HTTP security filter (if needed)
+    implementation(libs.activej.http)
+    
+    // JWT
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
+    
+    // Logging
+    implementation(libs.slf4j.api)
+    
+    // Testing
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
+    testImplementation(project(":platform:java:testing"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

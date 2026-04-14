@@ -63,7 +63,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null delegate throws NullPointerException")
-        void nullDelegate_throwsNpe() {
+        void nullDelegateThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepFeatureStoreClient(null, Executors.newSingleThreadExecutor()))
                     .isInstanceOf(NullPointerException.class)
@@ -72,7 +72,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null executor throws NullPointerException")
-        void nullExecutor_throwsNpe() {
+        void nullExecutorThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepFeatureStoreClient(featureStoreService, null))
                     .isInstanceOf(NullPointerException.class)
@@ -89,7 +89,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest(tenantId, Feature) delegates to the underlying service")
-        void ingest_delegatesToService() {
+        void ingestDelegatesToService() {
             Feature feature = Feature.builder()
                     .name("event_count_1h")
                     .entityId("agent-42")
@@ -104,7 +104,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("convenience ingest(tenantId, entityId, name, value) builds Feature and delegates")
-        void ingestConvenience_buildsFeatureAndDelegates() {
+        void ingestConvenienceBuildsFeatureAndDelegates() {
             runPromise(() -> client.ingest("t1", "entity-x", "score_7d", 0.85));
 
             verify(featureStoreService).ingest(eq("t1"), any(Feature.class));
@@ -112,7 +112,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingestAll with empty list completes without calling delegate")
-        void ingestAll_emptyList_noDelegate() {
+        void ingestAllEmptyListNoDelegate() {
             runPromise(() -> client.ingestAll("t1", List.of()));
 
             verify(featureStoreService, times(0)).ingest(anyString(), any(Feature.class));
@@ -120,7 +120,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingestAll ingests each feature independently")
-        void ingestAll_ingestsEachFeature() {
+        void ingestAllIngestsEachFeature() {
             Feature f1 = Feature.builder().name("a").entityId("e1").value(1.0).timestamp(Instant.now()).build();
             Feature f2 = Feature.builder().name("b").entityId("e1").value(2.0).timestamp(Instant.now()).build();
 
@@ -132,7 +132,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingestAll continues after partial failure — no exception propagated")
-        void ingestAll_partialFailure_continues() {
+        void ingestAllPartialFailureContinues() {
             Feature f1 = Feature.builder().name("bad").entityId("e").value(0).timestamp(Instant.now()).build();
             Feature f2 = Feature.builder().name("good").entityId("e").value(1).timestamp(Instant.now()).build();
 
@@ -155,7 +155,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getFeatures returns empty map for empty feature name list")
-        void getFeatures_emptyNames_returnsEmptyMap() {
+        void getFeaturesEmptyNamesReturnsEmptyMap() {
             Map<String, Double> result = runPromise(() ->
                     client.getFeatures("t1", "entity-1", List.of()));
 
@@ -165,7 +165,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getFeatures delegates to service and returns result")
-        void getFeatures_delegatesAndReturnsResult() {
+        void getFeaturesDelegatesAndReturnsResult() {
             when(featureStoreService.getFeatures("t1", "entity-1",
                     List.of("score_7d", "txn_count_24h")))
                     .thenReturn(Map.of("score_7d", 0.92, "txn_count_24h", 7.0));
@@ -180,7 +180,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getFeatures returns empty map when service finds nothing")
-        void getFeatures_noneFound_returnsEmptyMap() {
+        void getFeaturesNoneFoundReturnsEmptyMap() {
             when(featureStoreService.getFeatures(anyString(), anyString(), anyList()))
                     .thenReturn(Map.of());
 
@@ -200,7 +200,7 @@ class AepFeatureStoreClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("clearLocalCache delegates to service.clearCache()")
-        void clearLocalCache_delegatesToService() {
+        void clearLocalCacheDelegatesToService() {
             client.clearLocalCache();
 
             verify(featureStoreService).clearCache();

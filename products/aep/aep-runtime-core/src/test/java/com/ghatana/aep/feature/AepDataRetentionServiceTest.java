@@ -80,7 +80,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null dataSource throws NullPointerException")
-        void nullDataSource_throwsNpe() {
+        void nullDataSourceThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepDataRetentionService(null, eventStore, meterRegistry,
                             Executors.newSingleThreadExecutor()))
@@ -90,7 +90,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null eventStore throws NullPointerException")
-        void nullEventStore_throwsNpe() {
+        void nullEventStoreThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepDataRetentionService(dataSource, null, meterRegistry,
                             Executors.newSingleThreadExecutor()))
@@ -100,7 +100,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null meterRegistry throws NullPointerException")
-        void nullMeterRegistry_throwsNpe() {
+        void nullMeterRegistryThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepDataRetentionService(dataSource, eventStore, null,
                             Executors.newSingleThreadExecutor()))
@@ -110,7 +110,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null executor throws NullPointerException")
-        void nullExecutor_throwsNpe() {
+        void nullExecutorThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepDataRetentionService(dataSource, eventStore, meterRegistry, null))
                     .isInstanceOf(NullPointerException.class)
@@ -128,7 +128,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("upsertPolicy executes INSERT … ON CONFLICT for a standard policy")
-        void upsertPolicy_standardPolicy_executesUpsert() throws SQLException {
+        void upsertPolicyStandardPolicyExecutesUpsert() throws SQLException {
             AepTenantRetentionPolicy policy = AepTenantRetentionPolicy.of(
                     "t1", "audit_event", Duration.ofDays(90), 0L);
 
@@ -143,7 +143,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("upsertPolicy with null policy throws NullPointerException")
-        void upsertPolicy_null_throwsNpe() {
+        void upsertPolicyNullThrowsNpe() {
             // requireNonNull fires synchronously before Promise.ofBlocking; runPromise
             // re-throws the NPE directly (not wrapped), so isInstanceOf is correct.
             assertThatThrownBy(() ->
@@ -153,7 +153,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getPoliciesForTenant returns empty list when no rows exist")
-        void getPoliciesForTenant_noRows_returnsEmpty() throws SQLException {
+        void getPoliciesForTenantNoRowsReturnsEmpty() throws SQLException {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
@@ -165,7 +165,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getPoliciesForTenant returns mapped policies when rows exist")
-        void getPoliciesForTenant_withRows_returnsMappedPolicies() throws SQLException {
+        void getPoliciesForTenantWithRowsReturnsMappedPolicies() throws SQLException {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true, false); // one row
             when(resultSet.getObject("id", java.util.UUID.class))
@@ -190,7 +190,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deletePolicy executes DELETE statement with correct parameters")
-        void deletePolicy_executesDelete() throws SQLException {
+        void deletePolicyExecutesDelete() throws SQLException {
             runPromise(() -> service.deletePolicy("t1", "audit_event"));
 
             verify(preparedStatement).setString(1, "t1");
@@ -209,7 +209,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("runEnforcementCycle invokes purgeOlderThan for each policy")
-        void runEnforcementCycle_callsPurgeOlderThan() throws SQLException {
+        void runEnforcementCycleCallsPurgeOlderThan() throws SQLException {
             // No active policies in DB → loadAllPolicies returns empty
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
@@ -222,7 +222,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("runEnforcementCycle records timing metric")
-        void runEnforcementCycle_recordsTimer() throws SQLException {
+        void runEnforcementCycleRecordsTimer() throws SQLException {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
@@ -244,7 +244,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("enforceErasure calls purgeOlderThan with ZERO maxAge and increments counter")
-        void enforceErasure_callsPurgeWithZeroAge() throws Exception {
+        void enforceErasureCallsPurgeWithZeroAge() throws Exception {
             // DELETE for policy cleanup succeeds silently
             runPromise(() -> service.enforceErasure("gdpr-tenant"));
 
@@ -261,7 +261,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("enforceErasure with null tenantId throws NullPointerException")
-        void enforceErasure_nullTenant_throwsNpe() {
+        void enforceErasureNullTenantThrowsNpe() {
             // requireNonNull fires synchronously before Promise.ofBlocking; runPromise
             // re-throws the NPE directly (not wrapped), so isInstanceOf is correct.
             assertThatThrownBy(() ->
@@ -271,7 +271,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("enforceErasure with eventStore failure records audit and rethrows")
-        void enforceErasure_storeFailure_recordsErrorAndRethrows() throws Exception {
+        void enforceErasureStoreFailureRecordsErrorAndRethrows() throws Exception {
             doThrow(new RuntimeException("purge failed")).when(eventStore).purgeOlderThan(any());
 
             // The RuntimeException propagates through the failed Promise and is
@@ -294,7 +294,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("of() creates standard policy with correct fields")
-        void of_createsCorrectPolicy() {
+        void ofCreatesCorrectPolicy() {
             AepTenantRetentionPolicy p = AepTenantRetentionPolicy.of(
                     "t", "e", Duration.ofDays(7), 1024L);
 
@@ -308,7 +308,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("erasure() creates GDPR policy with ZERO maxAge and DEFAULT bucket")
-        void erasure_createsGdprPolicy() {
+        void erasureCreatesGdprPolicy() {
             AepTenantRetentionPolicy p = AepTenantRetentionPolicy.erasure("gdpr-t");
 
             assertThat(p.gdprErasure()).isTrue();
@@ -318,7 +318,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("compact constructor rejects null tenantId")
-        void compactConstructor_nullTenantId_throwsNpe() {
+        void compactConstructorNullTenantIdThrowsNpe() {
             assertThatThrownBy(() -> new AepTenantRetentionPolicy(
                     java.util.UUID.randomUUID(), null, "DEFAULT",
                     Duration.ofDays(1), 0L, false,
@@ -328,7 +328,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("compact constructor normalises negative maxAge to ZERO")
-        void compactConstructor_negativeMaxAge_normalisedToZero() {
+        void compactConstructorNegativeMaxAgeNormalisedToZero() {
             AepTenantRetentionPolicy p = new AepTenantRetentionPolicy(
                     java.util.UUID.randomUUID(), "t", "DEFAULT",
                     Duration.ofDays(-1), 0L, false,
@@ -339,7 +339,7 @@ class AepDataRetentionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("compact constructor normalises negative maxBytes to zero")
-        void compactConstructor_negativeMaxBytes_normalisedToZero() {
+        void compactConstructorNegativeMaxBytesNormalisedToZero() {
             AepTenantRetentionPolicy p = new AepTenantRetentionPolicy(
                     java.util.UUID.randomUUID(), "t", "DEFAULT",
                     Duration.ofDays(1), -999L, false,

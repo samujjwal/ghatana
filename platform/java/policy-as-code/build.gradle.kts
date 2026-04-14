@@ -18,9 +18,15 @@ dependencies {
     api(project(":platform:java:governance"))
     api(libs.activej.promise)
     implementation(libs.slf4j.api)
+    implementation(project(":platform:java:database"))
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
+    implementation(libs.jackson.databind)
 
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.bundles.testing.containers)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

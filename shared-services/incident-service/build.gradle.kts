@@ -24,6 +24,10 @@ dependencies {
 
     implementation(libs.slf4j.api)
     implementation(libs.activej.promise)
+    implementation(project(":platform:java:database"))
+    implementation(libs.jedis)
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
@@ -35,6 +39,8 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.bundles.testing.containers)
 }
 
 tasks.test {

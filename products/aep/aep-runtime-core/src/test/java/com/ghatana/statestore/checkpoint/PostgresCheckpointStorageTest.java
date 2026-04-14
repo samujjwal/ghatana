@@ -43,7 +43,7 @@ class PostgresCheckpointStorageTest extends EventloopTestBase {
 
     /** Schema from V007__create_aep_checkpoints.sql — applied once per class. */
     private static final String DDL = """
-            CREATE TABLE IF NOT EXISTS aep_checkpoints (
+            CREATE TABLE IF NOT EXISTS aepCheckpoints (
                 id             VARCHAR(255) PRIMARY KEY,
                 type           VARCHAR(30)  NOT NULL CHECK (type IN ('CHECKPOINT','SAVEPOINT')),
                 status         VARCHAR(30)  NOT NULL CHECK (status IN ('IN_PROGRESS','COMPLETED','FAILED','ABORTED')),
@@ -52,8 +52,8 @@ class PostgresCheckpointStorageTest extends EventloopTestBase {
                 failure_reason TEXT,
                 operator_acks  JSONB        NOT NULL DEFAULT '{}'
             );
-            CREATE INDEX IF NOT EXISTS idx_aep_checkpoints_status ON aep_checkpoints (status);
-            CREATE INDEX IF NOT EXISTS idx_aep_checkpoints_type_status ON aep_checkpoints (type, status)
+            CREATE INDEX IF NOT EXISTS idx_aep_checkpoints_status ON aepCheckpoints (status);
+            CREATE INDEX IF NOT EXISTS idx_aep_checkpoints_type_status ON aepCheckpoints (type, status)
                 WHERE type = 'CHECKPOINT';
             """;
 
@@ -86,7 +86,7 @@ class PostgresCheckpointStorageTest extends EventloopTestBase {
         // Truncate between tests for isolation
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
-            stmt.execute("TRUNCATE TABLE aep_checkpoints");
+            stmt.execute("TRUNCATE TABLE aepCheckpoints");
         }
     }
 

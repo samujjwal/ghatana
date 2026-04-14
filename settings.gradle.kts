@@ -212,6 +212,7 @@ include(":products:flashit")
 // Product: Audio-Video
 // =============================================================================
 include(":products:audio-video")
+include(":products:audio-video:modules:infrastructure:persistence")
 include(":products:audio-video:modules:intelligence:multimodal-service")
 include(":products:audio-video:modules:speech:stt-service")
 include(":products:audio-video:modules:speech:tts-service")

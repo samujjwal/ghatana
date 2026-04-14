@@ -118,7 +118,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registerArtifact persists correct SQL parameters")
-        void registerArtifact_persistsCorrectly() throws Exception {
+        void registerArtifactPersistsCorrectly() throws Exception {
             AepCustomModelVersion version = AepCustomModelVersion.of(
                     TENANT, UUID.randomUUID(), MODEL, V2,
                     "s3://models/v2.onnx", SHA256,
@@ -138,7 +138,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registerArtifact rejects malformed SHA-256 before any DB call")
-        void registerArtifact_badSha256_rejectsEarly() {
+        void registerArtifactBadSha256RejectsEarly() {
             AepCustomModelVersion version = new AepCustomModelVersion(
                     UUID.randomUUID(), TENANT, UUID.randomUUID(),
                     MODEL, V2, "s3://models/v2.onnx", "notahex",
@@ -157,7 +157,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("listArtifactVersions returns empty list when no rows")
-        void listArtifactVersions_empty() throws Exception {
+        void listArtifactVersionsEmpty() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
@@ -178,7 +178,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("validate returns true when all live metrics exceed thresholds")
-        void validate_allPass_returnsTrue() throws Exception {
+        void validateAllPassReturnsTrue() throws Exception {
             // Arrange: findVersion returns a version with f1 threshold 0.90
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true, false); // one version row, then empty audit insert
@@ -194,7 +194,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("validate returns false when any live metric is below threshold")
-        void validate_belowThreshold_returnsFalse() throws Exception {
+        void validateBelowThresholdReturnsFalse() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true, false);
             stubVersionRow(UUID.randomUUID(), Map.of("f1_score", 0.90));
@@ -209,7 +209,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("validate throws when version not found")
-        void validate_versionNotFound_throws() throws Exception {
+        void validateVersionNotFoundThrows() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false);
 
@@ -254,7 +254,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("startCanary persists deployment and returns ACTIVE canary")
-        void startCanary_persists() throws Exception {
+        void startCanaryPersists() throws Exception {
             AepCanaryDeployment canary =
                     runPromise(() -> service.startCanary(TENANT, MODEL, V1, V2, 10));
 
@@ -269,7 +269,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("startCanary with invalid traffic pct throws IllegalArgumentException")
-        void startCanary_invalidPct_throws() {
+        void startCanaryInvalidPctThrows() {
             // IAE thrown inside Promise.ofBlocking by AepCanaryDeployment.start();
             // re-thrown directly by runPromise → isInstanceOf.
             assertThatThrownBy(() ->
@@ -281,7 +281,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("adjustCanaryTraffic throws when no active canary")
-        void adjustCanaryTraffic_noCanary_throws() throws Exception {
+        void adjustCanaryTrafficNoCanaryThrows() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false); // no canary found
 
@@ -296,7 +296,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("promoteCanary updates model registry status to PRODUCTION")
-        void promoteCanary_updatesRegistryStatus() throws Exception {
+        void promoteCanaryUpdatesRegistryStatus() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true); // active canary found
             stubCanaryRow();
@@ -321,7 +321,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rollbackCanary sets traffic to 0% and marks ROLLED_BACK")
-        void rollbackCanary_setsTrafficZero() throws Exception {
+        void rollbackCanarySetsTrafficZero() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(true);
             stubCanaryRow();
@@ -337,7 +337,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest returns production version when no canary active")
-        void routeRequest_noCanary_returnsProduction() throws Exception {
+        void routeRequestNoCanaryReturnsProduction() throws Exception {
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
             when(resultSet.next()).thenReturn(false); // no canary
 
@@ -379,7 +379,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("start() creates ACTIVE canary with correct fields")
-        void start_createsActiveCanary() {
+        void startCreatesActiveCanary() {
             AepCanaryDeployment c = AepCanaryDeployment.start(TENANT, MODEL, V1, V2, 10);
 
             assertThat(c.status()).isEqualTo(AepCanaryDeployment.Status.ACTIVE);
@@ -390,7 +390,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("canaryTrafficPct outside [0, 100] throws")
-        void invalidTrafficPct_throws() {
+        void invalidTrafficPctThrows() {
             assertThatThrownBy(() ->
                     AepCanaryDeployment.start(TENANT, MODEL, V1, V2, -1))
                     .isInstanceOf(IllegalArgumentException.class);
@@ -398,7 +398,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("withTrafficPct returns new record with correct pct")
-        void withTrafficPct_returnsNewRecord() {
+        void withTrafficPctReturnsNewRecord() {
             AepCanaryDeployment c = AepCanaryDeployment.start(TENANT, MODEL, V1, V2, 10)
                     .withTrafficPct(50);
 
@@ -407,7 +407,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("withStatus PROMOTED sets concludedAt")
-        void withStatus_promoted_setConcludedAt() {
+        void withStatusPromotedSetConcludedAt() {
             AepCanaryDeployment c = AepCanaryDeployment.start(TENANT, MODEL, V1, V2, 10)
                     .withStatus(AepCanaryDeployment.Status.PROMOTED);
 
@@ -422,7 +422,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("of() creates record with correct fields")
-        void of_createsRecord() {
+        void ofCreatesRecord() {
             UUID modelId = UUID.randomUUID();
             AepCustomModelVersion v = AepCustomModelVersion.of(
                     TENANT, modelId, MODEL, V2,
@@ -436,7 +436,7 @@ class AepCustomModelServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("hyperparameters map is made immutable")
-        void hyperparameters_immutable() {
+        void hyperparametersImmutable() {
             Map<String, String> mutable = new java.util.HashMap<>();
             mutable.put("lr", "0.001");
             AepCustomModelVersion v = AepCustomModelVersion.of(

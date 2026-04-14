@@ -50,7 +50,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest: returns failure when no nodes registered")
-        void routeRequest_noNodes_returnsFailure() {
+        void routeRequestNoNodesReturnsFailure() {
             RoutingResult result = runPromise(() ->
                     lb.routeRequest("req-1", Map.of())
             );
@@ -62,7 +62,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest: succeeds and selects a node when healthy nodes exist")
-        void routeRequest_withHealthyNode_returnsSuccess() {
+        void routeRequestWithHealthyNodeReturnsSuccess() {
             LoadBalancingNode node = healthyNode("node-1", 0.2, 1.0);
             lb.addNode(node);
 
@@ -77,7 +77,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest: fails when only unhealthy nodes are present")
-        void routeRequest_onlyUnhealthyNodes_returnsFailure() {
+        void routeRequestOnlyUnhealthyNodesReturnsFailure() {
             lb.addNode(unhealthyNode("sick-node"));
 
             RoutingResult result = runPromise(() ->
@@ -89,7 +89,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest: round-robin distributes across multiple healthy nodes")
-        void routeRequest_multipleNodes_roundRobinRotates() {
+        void routeRequestMultipleNodesRoundRobinRotates() {
             lb.addNode(healthyNode("node-a", 0.1, 1.0));
             lb.addNode(healthyNode("node-b", 0.1, 1.0));
 
@@ -102,7 +102,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routeRequest: includes algorithm name in result")
-        void routeRequest_includesAlgorithmName() {
+        void routeRequestIncludesAlgorithmName() {
             lb.addNode(healthyNode("n1", 0.0, 1.0));
 
             RoutingResult result = runPromise(() ->
@@ -123,7 +123,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("distributeWorkload: fails when no nodes available")
-        void distributeWorkload_noNodes_returnsFailure() {
+        void distributeWorkloadNoNodesReturnsFailure() {
             WorkloadDistributionResult result = runPromise(() ->
                     lb.distributeWorkload("dist-1", 100.0, Map.of())
             );
@@ -134,7 +134,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("distributeWorkload: distributes across all healthy nodes")
-        void distributeWorkload_withNodes_allocatesWorkload() {
+        void distributeWorkloadWithNodesAllocatesWorkload() {
             lb.addNode(healthyNode("n-alpha", 0.0, 100.0));
             lb.addNode(healthyNode("n-beta",  0.0, 100.0));
 
@@ -153,7 +153,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("distributeWorkload: returns the distribution ID in result")
-        void distributeWorkload_returnsDistributionId() {
+        void distributeWorkloadReturnsDistributionId() {
             lb.addNode(healthyNode("n1", 0.0, 10.0));
 
             WorkloadDistributionResult result = runPromise(() ->
@@ -174,7 +174,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("addNode: node is available for routing after registration")
-        void addNode_nodeUsedInRouting() {
+        void addNodeNodeUsedInRouting() {
             lb.addNode(healthyNode("fresh-node", 0.0, 10.0));
 
             RoutingResult result = runPromise(() ->
@@ -187,7 +187,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("removeNode: removed node is no longer selected for routing")
-        void removeNode_nodeNotUsedAfterRemoval() {
+        void removeNodeNodeNotUsedAfterRemoval() {
             lb.addNode(healthyNode("to-remove", 0.0, 10.0));
             lb.addNode(healthyNode("to-keep",   0.0, 10.0));
 
@@ -208,7 +208,7 @@ class AdvancedLoadBalancerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getMetrics: returns a non-null metrics map")
-    void getMetrics_returnsNonNull() {
+    void getMetricsReturnsNonNull() {
         Map<String, Object> metrics = lb.getMetrics();
         assertThat(metrics).isNotNull();
     }

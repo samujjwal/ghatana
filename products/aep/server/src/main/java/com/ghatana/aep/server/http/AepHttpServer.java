@@ -18,8 +18,13 @@ import com.ghatana.aep.server.http.controllers.ComplianceController;
 import com.ghatana.aep.server.http.controllers.DeploymentController;
 import com.ghatana.aep.server.http.controllers.GovernanceController;
 import com.ghatana.aep.server.http.controllers.LifecycleController;
-import com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow;
-import com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline;
+import com.ghatana.platform.toolruntime.change.ChangeApprovalWorkflow;
+import com.ghatana.platform.toolruntime.recertification.RecertificationPipeline;
+import com.ghatana.platform.incident.GracefulDegradationManager;
+import com.ghatana.platform.incident.KillSwitchService;
+import com.ghatana.platform.pac.PolicyAsCodeEngine;
+import com.ghatana.platform.security.analytics.EgressMonitor;
+import com.ghatana.platform.security.analytics.PromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.HealthController;
 import com.ghatana.aep.server.http.controllers.HitlController;
 import com.ghatana.aep.learning.EpisodeLearningPipeline;
@@ -27,6 +32,7 @@ import com.ghatana.aep.server.http.controllers.LearningController;
 import com.ghatana.platform.incident.InMemoryGracefulDegradationManager;
 import com.ghatana.platform.incident.InMemoryKillSwitchService;
 import com.ghatana.platform.pac.InMemoryPolicyEngine;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import com.ghatana.platform.security.analytics.DefaultEgressMonitor;
 import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
@@ -136,6 +142,12 @@ public class AepHttpServer {
     /** Phase-6: Durable run-ledger service for distributed trace correlation. */
     private final RunLedgerService runLedgerService;
     private final MeterRegistry integrationMeterRegistry;
+    /**
+     * Prometheus meter registry used to serve the {@code /metrics} scrape endpoint.
+     * May be {@code null} for test/embedded deployments; in that case /metrics returns stub JSON.
+     */
+    @Nullable
+    private final PrometheusMeterRegistry prometheusRegistry;
 
     /**
      * Whether pipelines are backed by Data-Cloud durable storage.
@@ -232,6 +244,56 @@ public class AepHttpServer {
                          @Nullable DataCloudClient agentDataCloud,
                          @Nullable HumanReviewQueue humanReviewQueue,
                          MetricsCollector metricsCollector) {
+        this(engine, port, agentDataCloud, humanReviewQueue, metricsCollector,
+            null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Full constructor that accepts injected governance services.
+     *
+     * @param killSwitchService      production kill-switch; if {@code null} falls back to in-memory
+     * @param degradationManager     production degradation manager; if {@code null} falls back to in-memory
+     * @param policyEngine           production policy engine; if {@code null} falls back to in-memory
+     * @param egressMonitor          egress monitor; if {@code null} uses default
+     * @param injectionDetector      prompt injection detector; if {@code null} uses regex default
+     * @param changeApprovalWorkflow change approval workflow; if {@code null} falls back to in-memory
+     * @param recertificationPipeline recertification pipeline; if {@code null} falls back to in-memory
+     * @param prometheusRegistry     Prometheus registry for /metrics scrape; may be {@code null}
+     */
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable DataCloudClient agentDataCloud,
+                         @Nullable HumanReviewQueue humanReviewQueue,
+                         MetricsCollector metricsCollector,
+                         @Nullable KillSwitchService killSwitchService,
+                         @Nullable GracefulDegradationManager degradationManager,
+                         @Nullable PolicyAsCodeEngine policyEngine,
+                         @Nullable EgressMonitor egressMonitor,
+                         @Nullable PromptInjectionDetector injectionDetector,
+                         @Nullable ChangeApprovalWorkflow changeApprovalWorkflow,
+                         @Nullable RecertificationPipeline recertificationPipeline) {
+        this(engine, port, agentDataCloud, humanReviewQueue, metricsCollector,
+            killSwitchService, degradationManager, policyEngine,
+            egressMonitor, injectionDetector, changeApprovalWorkflow,
+            recertificationPipeline, null);
+    }
+
+    /**
+     * Full constructor with Prometheus registry.
+     */
+    @SuppressWarnings("java:S107") // large constructor is intentional for full DI wiring
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable DataCloudClient agentDataCloud,
+                         @Nullable HumanReviewQueue humanReviewQueue,
+                         MetricsCollector metricsCollector,
+                         @Nullable KillSwitchService killSwitchService,
+                         @Nullable GracefulDegradationManager degradationManager,
+                         @Nullable PolicyAsCodeEngine policyEngine,
+                         @Nullable EgressMonitor egressMonitor,
+                         @Nullable PromptInjectionDetector injectionDetector,
+                         @Nullable ChangeApprovalWorkflow changeApprovalWorkflow,
+                         @Nullable RecertificationPipeline recertificationPipeline,
+                         @Nullable PrometheusMeterRegistry prometheusRegistry) {
+        this.prometheusRegistry = prometheusRegistry;
         this.engine = engine;
         this.port = port;
         this.agentDataCloud = agentDataCloud;
@@ -300,15 +362,15 @@ public class AepHttpServer {
         this.learningController = new LearningController(this.agentDataCloud, this.humanReviewQueue, learningPipeline);
         this.complianceController = new ComplianceController(this.complianceService, this.soc2Framework);
         this.governanceController = new GovernanceController(
-            new InMemoryKillSwitchService(),
-            new InMemoryGracefulDegradationManager(),
-            new InMemoryPolicyEngine(),
-            new DefaultEgressMonitor(),
-            new RegexPromptInjectionDetector(),
+            killSwitchService  != null ? killSwitchService  : new InMemoryKillSwitchService(),
+            degradationManager != null ? degradationManager : new InMemoryGracefulDegradationManager(),
+            policyEngine       != null ? policyEngine       : new InMemoryPolicyEngine(),
+            egressMonitor      != null ? egressMonitor      : new DefaultEgressMonitor(),
+            injectionDetector  != null ? injectionDetector  : new RegexPromptInjectionDetector(),
             this::jsonResponse);
         this.lifecycleController = new LifecycleController(
-            new InMemoryChangeApprovalWorkflow(),
-            new InMemoryRecertificationPipeline());
+            changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
+            recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
     }
 
     /**
@@ -501,6 +563,14 @@ public class AepHttpServer {
     }
 
     private Promise<HttpResponse> handleMetrics(HttpRequest request) {
+        if (prometheusRegistry != null) {
+            String scrape = prometheusRegistry.scrape();
+            return Promise.of(HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE,
+                    HttpHeaderValue.of("text/plain; version=0.0.4; charset=utf-8"))
+                .withBody(scrape.getBytes(StandardCharsets.UTF_8)));
+        }
+        // Fallback when no Prometheus registry is configured (e.g. tests / embedded mode)
         return Promise.of(jsonResponse(Map.of(
             "service", "aep",
             "uptime_seconds", System.currentTimeMillis() / 1000,

@@ -59,7 +59,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("full minimal valid config passes with no errors")
-        void validConfig_noErrors() {
+        void validConfigNoErrors() {
             AepConfigurationValidator.ValidationResult result = validatorFor(validBase()).validate();
             assertThat(result.isValid()).isTrue();
             assertThat(result.errors()).isEmpty();
@@ -67,7 +67,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("throwIfInvalid does not throw when valid")
-        void throwIfInvalid_noThrowWhenValid() {
+        void throwIfInvalidNoThrowWhenValid() {
             AepConfigurationValidator.ValidationResult result = validatorFor(validBase()).validate();
             // Should not throw
             result.throwIfInvalid();
@@ -84,7 +84,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("invalid DB URL prefix produces error")
-        void invalidDbUrlScheme_producesError() {
+        void invalidDbUrlSchemeProducesError() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_URL", "mysql://localhost:3306/aep");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -94,7 +94,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("blank DB username produces error")
-        void blankDbUsername_producesError() {
+        void blankDbUsernameProducesError() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_USERNAME", "  ");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -104,7 +104,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("missing DB password produces error")
-        void missingDbPassword_producesError() {
+        void missingDbPasswordProducesError() {
             Map<String, String> env = validBase();
             env.remove("AEP_DB_PASSWORD");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -114,7 +114,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("pool size 0 produces error")
-        void poolSizeZero_producesError() {
+        void poolSizeZeroProducesError() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_POOL_SIZE", "0");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -124,7 +124,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("pool size > 200 produces error")
-        void poolSizeTooLarge_producesError() {
+        void poolSizeTooLargeProducesError() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_POOL_SIZE", "201");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -134,7 +134,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("pool size of 3 in development produces a warning but no error")
-        void poolSizeSmall_producesWarning() {
+        void poolSizeSmallProducesWarning() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_POOL_SIZE", "3");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -153,7 +153,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("invalid transport value produces error")
-        void invalidTransport_producesError() {
+        void invalidTransportProducesError() {
             Map<String, String> env = validBase();
             env.put("EVENT_CLOUD_TRANSPORT", "kafka");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -163,7 +163,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("grpc transport with invalid endpoint produces error")
-        void grpcTransport_invalidEndpoint_producesError() {
+        void grpcTransportInvalidEndpointProducesError() {
             Map<String, String> env = validBase();
             env.put("EVENT_CLOUD_TRANSPORT", "grpc");
             env.put("AEP_GRPC_ENDPOINT", "not-a-valid-host-port");
@@ -174,7 +174,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("grpc transport with valid host:port passes")
-        void grpcTransport_validEndpoint_passes() {
+        void grpcTransportValidEndpointPasses() {
             Map<String, String> env = validBase();
             env.put("EVENT_CLOUD_TRANSPORT", "grpc");
             env.put("AEP_GRPC_ENDPOINT", "event-cloud.internal:50051");
@@ -184,7 +184,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("http transport with invalid URL produces error")
-        void httpTransport_invalidUrl_producesError() {
+        void httpTransportInvalidUrlProducesError() {
             Map<String, String> env = validBase();
             env.put("EVENT_CLOUD_TRANSPORT", "http");
             env.put("HTTP_INGRESS_ENDPOINT", "not-a-url");
@@ -204,7 +204,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("valid kafka broker list produces no error")
-        void validBrokers_noError() {
+        void validBrokersNoError() {
             Map<String, String> env = validBase();
             env.put("KAFKA_BOOTSTRAP_SERVERS", "broker1:9092,broker2:9092");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -213,7 +213,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("invalid broker address produces error")
-        void invalidBrokerAddress_producesError() {
+        void invalidBrokerAddressProducesError() {
             Map<String, String> env = validBase();
             env.put("KAFKA_BOOTSTRAP_SERVERS", "broker-without-port");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -223,7 +223,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("brokers set without consumer group produces warning")
-        void brokersWithoutGroup_producesWarning() {
+        void brokersWithoutGroupProducesWarning() {
             Map<String, String> env = validBase();
             env.put("KAFKA_BOOTSTRAP_SERVERS", "broker1:9092");
             // No KAFKA_CONSUMER_GROUP
@@ -242,7 +242,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("invalid SQS region produces error")
-        void invalidSqsRegion_producesError() {
+        void invalidSqsRegionProducesError() {
             Map<String, String> env = validBase();
             env.put("SQS_QUEUE_NAME", "my-queue");
             env.put("SQS_REGION", "invalid-region-x");
@@ -253,7 +253,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("valid SQS config passes")
-        void validSqsConfig_passes() {
+        void validSqsConfigPasses() {
             Map<String, String> env = validBase();
             env.put("SQS_QUEUE_NAME", "my-queue");
             env.put("SQS_REGION", "us-east-1");
@@ -263,7 +263,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("invalid S3 bucket name produces error")
-        void invalidS3Bucket_producesError() {
+        void invalidS3BucketProducesError() {
             Map<String, String> env = validBase();
             env.put("S3_BUCKET", "INVALID_UPPER_CASE");
             env.put("S3_REGION", "us-east-1");
@@ -274,7 +274,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("valid S3 config passes")
-        void validS3Config_passes() {
+        void validS3ConfigPasses() {
             Map<String, String> env = validBase();
             env.put("S3_BUCKET", "my-aep-bucket");
             env.put("S3_REGION", "eu-central-1");
@@ -293,7 +293,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("unknown APP_ENV value produces error")
-        void unknownAppEnv_producesError() {
+        void unknownAppEnvProducesError() {
             Map<String, String> env = validBase();
             env.put("APP_ENV", "qa");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -303,7 +303,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("production APP_ENV with localhost DC URL produces a security warning")
-        void production_localDcUrl_producesWarning() {
+        void productionLocalDcUrlProducesWarning() {
             Map<String, String> env = validBase();
             env.put("APP_ENV", "production");
             env.put("AEP_DC_BASE_URL", "http://localhost:8085");
@@ -323,7 +323,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("consolidation interval of 0 produces error")
-        void consolidationIntervalZero_producesError() {
+        void consolidationIntervalZeroProducesError() {
             Map<String, String> env = validBase();
             env.put("AEP_CONSOLIDATION_INTERVAL_HOURS", "0");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -333,7 +333,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("consolidation interval of 6 passes")
-        void consolidationInterval6_passes() {
+        void consolidationInterval6Passes() {
             Map<String, String> env = validBase();
             env.put("AEP_CONSOLIDATION_INTERVAL_HOURS", "6");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -351,79 +351,79 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("isValidHttpUrl: valid HTTP URL returns true")
-        void isValidHttpUrl_validHttp() {
+        void isValidHttpUrlValidHttp() {
             assertThat(AepConfigurationValidator.isValidHttpUrl("http://example.com/path")).isTrue();
         }
 
         @Test
         @DisplayName("isValidHttpUrl: valid HTTPS URL returns true")
-        void isValidHttpUrl_validHttps() {
+        void isValidHttpUrlValidHttps() {
             assertThat(AepConfigurationValidator.isValidHttpUrl("https://vault.internal:8200")).isTrue();
         }
 
         @Test
         @DisplayName("isValidHttpUrl: non-URL string returns false")
-        void isValidHttpUrl_notAUrl() {
+        void isValidHttpUrlNotAUrl() {
             assertThat(AepConfigurationValidator.isValidHttpUrl("not-a-url")).isFalse();
         }
 
         @Test
         @DisplayName("isValidHttpUrl: null returns false")
-        void isValidHttpUrl_null() {
+        void isValidHttpUrlNull() {
             assertThat(AepConfigurationValidator.isValidHttpUrl(null)).isFalse();
         }
 
         @Test
         @DisplayName("isValidHostPort: valid host:port returns true")
-        void isValidHostPort_validEntry() {
+        void isValidHostPortValidEntry() {
             assertThat(AepConfigurationValidator.isValidHostPort("broker1:9092")).isTrue();
         }
 
         @Test
         @DisplayName("isValidHostPort: missing port returns false")
-        void isValidHostPort_missingPort() {
+        void isValidHostPortMissingPort() {
             assertThat(AepConfigurationValidator.isValidHostPort("broker1-only")).isFalse();
         }
 
         @Test
         @DisplayName("isValidHostPort: port 0 returns false")
-        void isValidHostPort_portZero() {
+        void isValidHostPortPortZero() {
             assertThat(AepConfigurationValidator.isValidHostPort("host:0")).isFalse();
         }
 
         @Test
         @DisplayName("isValidHostPort: port 65535 returns true")
-        void isValidHostPort_maxPort() {
+        void isValidHostPortMaxPort() {
             assertThat(AepConfigurationValidator.isValidHostPort("host:65535")).isTrue();
         }
 
         @Test
         @DisplayName("isValidHostPort: port 65536 returns false")
-        void isValidHostPort_overMaxPort() {
+        void isValidHostPortOverMaxPort() {
             assertThat(AepConfigurationValidator.isValidHostPort("host:65536")).isFalse();
         }
 
         @Test
         @DisplayName("isValidS3BucketName: valid bucket returns true")
-        void isValidS3BucketName_valid() {
+        void isValidS3BucketNameValid() {
             assertThat(AepConfigurationValidator.isValidS3BucketName("my-valid-bucket")).isTrue();
         }
 
         @Test
         @DisplayName("isValidS3BucketName: uppercase bucket returns false")
-        void isValidS3BucketName_uppercase() {
+        void isValidS3BucketNameUppercase() {
             assertThat(AepConfigurationValidator.isValidS3BucketName("MyBucket")).isFalse();
         }
 
         @Test
         @DisplayName("isValidS3BucketName: bucket shorter than 3 chars returns false")
-        void isValidS3BucketName_tooShort() {
+        void isValidS3BucketNameTooShort() {
             assertThat(AepConfigurationValidator.isValidS3BucketName("ab")).isFalse();
         }
 
         @Test
         @DisplayName("isValidS3BucketName: bucket with consecutive hyphens returns false")
-        void isValidS3BucketName_consecutiveHyphens() {
+        void isValidS3BucketNameConsecutiveHyphens() {
             assertThat(AepConfigurationValidator.isValidS3BucketName("my--bucket")).isFalse();
         }
     }
@@ -438,7 +438,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("throwIfInvalid throws when there are errors")
-        void throwIfInvalid_throwsOnErrors() {
+        void throwIfInvalidThrowsOnErrors() {
             Map<String, String> env = validBase();
             env.put("AEP_DB_URL", "bad-url");
             AepConfigurationValidator.ValidationResult result = validatorFor(env).validate();
@@ -449,7 +449,7 @@ class AepConfigurationValidatorTest {
 
         @Test
         @DisplayName("toString includes error and warning counts")
-        void toString_includesCounts() {
+        void toStringIncludesCounts() {
             AepConfigurationValidator.ValidationResult result = validatorFor(validBase()).validate();
             assertThat(result.toString()).contains("valid=true")
                     .contains("errors=0");

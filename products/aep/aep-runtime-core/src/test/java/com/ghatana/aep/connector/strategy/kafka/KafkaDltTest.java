@@ -72,7 +72,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("first nack within maxRetries does NOT publish to DLT")
-        void firstNack_withinRetryBudget_doesNotPublishToDlt() {
+        void firstNackWithinRetryBudgetDoesNotPublishToDlt() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/3);
             pollOneRecord(strategy);
 
@@ -83,7 +83,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("nack before exhaustion does NOT clear the retry counter")
-        void nack_beforeExhaustion_retryCounterRetained() {
+        void nackBeforeExhaustionRetryCounterRetained() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/3);
             pollOneRecord(strategy);
 
@@ -96,7 +96,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("acknowledge removes retry counter entry")
-        void acknowledge_clearRetryCounter() {
+        void acknowledgeClearRetryCounter() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/3);
             pollOneRecord(strategy);
 
@@ -128,7 +128,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("after maxRetries nacks, message is published to DLT topic")
-        void exhaustedRetries_publishesToDltTopic() {
+        void exhaustedRetriesPublishesToDltTopic() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/2);
             pollOneRecord(strategy);
 
@@ -142,7 +142,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record key matches the original messageId")
-        void dltRecord_keyIsMessageId() {
+        void dltRecordKeyIsMessageId() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -154,7 +154,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-OriginalTopic header")
-        void dltRecord_hasOriginalTopicHeader() {
+        void dltRecordHasOriginalTopicHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -166,7 +166,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-OriginalPartition header")
-        void dltRecord_hasOriginalPartitionHeader() {
+        void dltRecordHasOriginalPartitionHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -178,7 +178,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-OriginalOffset header")
-        void dltRecord_hasOriginalOffsetHeader() {
+        void dltRecordHasOriginalOffsetHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -190,7 +190,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-RetryCount header with exhausted count")
-        void dltRecord_hasRetryCountHeader() {
+        void dltRecordHasRetryCountHeader() {
             int maxRetries = 3;
             KafkaConsumerStrategy strategy = strategy(maxRetries);
             pollOneRecord(strategy);
@@ -205,7 +205,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-ErrorMessage header when errorMessage is set")
-        void dltRecord_hasErrorMessageHeader() {
+        void dltRecordHasErrorMessageHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -217,7 +217,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record omits X-DLT-ErrorMessage when errorMessage is null")
-        void dltRecord_omitsErrorMessageHeader_whenNull() {
+        void dltRecordOmitsErrorMessageHeaderWhenNull() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -237,7 +237,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record carries X-DLT-FailedAt ISO-8601 timestamp header")
-        void dltRecord_hasFailedAtHeader() {
+        void dltRecordHasFailedAtHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -251,7 +251,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("custom dltTopicSuffix is honoured")
-        void customDltTopicSuffix_isUsed() {
+        void customDltTopicSuffixIsUsed() {
             KafkaConsumerStrategy strategy = strategyWithSuffix(/*maxRetries=*/1, "._dead");
             pollOneRecord(strategy);
 
@@ -272,7 +272,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("nack with maxRetries=0 never publishes to DLT")
-        void maxRetriesZero_neverPublishesToDlt() {
+        void maxRetriesZeroNeverPublishesToDlt() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/0);
             pollOneRecord(strategy);
 
@@ -295,7 +295,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("nack(messageId) with exhausted retries publishes to DLT")
-        void singleArgNack_publishesToDlt() {
+        void singleArgNackPublishesToDlt() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 
@@ -306,7 +306,7 @@ class KafkaDltTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DLT record omits error-message header when using no-arg nack")
-        void singleArgNack_omitsErrorMessageHeader() {
+        void singleArgNackOmitsErrorMessageHeader() {
             KafkaConsumerStrategy strategy = strategy(/*maxRetries=*/1);
             pollOneRecord(strategy);
 

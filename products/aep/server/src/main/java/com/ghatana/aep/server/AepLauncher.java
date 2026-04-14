@@ -225,7 +225,8 @@ public class AepLauncher {
             DataCloudClient agentDataCloud = createAgentDataCloudClient();
             PrometheusMeterRegistry promRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             MetricsCollector metricsCollector = MetricsCollectorFactory.create(promRegistry);
-            AepHttpServer httpServer = new AepHttpServer(engine, port, agentDataCloud, humanReviewQueue, metricsCollector);
+            AepHttpServer httpServer = new AepHttpServer(engine, port, agentDataCloud, humanReviewQueue,
+                metricsCollector, null, null, null, null, null, null, null, promRegistry);
             if (httpServerRef != null) {
                 httpServerRef.set(httpServer);
             }

@@ -26,6 +26,9 @@ dependencies {
     // Platform observability (MetricsCollector, TracingManager)
     implementation(project(":platform:java:observability"))
 
+    // Persistence layer
+    implementation(project(":products:audio-video:modules:infrastructure:persistence"))
+
     // Protobuf
     implementation(libs.protobuf.java)
 

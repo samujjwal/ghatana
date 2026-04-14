@@ -71,22 +71,53 @@ public final class AepAuthFilter implements AsyncServlet {
     public AepAuthFilter(AsyncServlet next) {
         this(next,
             System.getenv("AEP_JWT_SECRET"),
-            !"true".equalsIgnoreCase(System.getenv("AEP_AUTH_DISABLED")));
+            !"true".equalsIgnoreCase(System.getenv("AEP_AUTH_DISABLED")),
+            resolveEnvironment());
     }
 
     AepAuthFilter(AsyncServlet next, String jwtSecret, boolean authEnabled) {
+        this(next, jwtSecret, authEnabled, resolveEnvironment());
+    }
+
+    AepAuthFilter(AsyncServlet next, String jwtSecret, boolean authEnabled, String environment) {
         this.next = next;
         this.jwtSecret = jwtSecret;
         this.authEnabled = authEnabled;
 
+        boolean isProduction = !"development".equalsIgnoreCase(environment)
+            && !"test".equalsIgnoreCase(environment);
+
+        if (!authEnabled && isProduction) {
+            throw new IllegalStateException(
+                "AEP_AUTH_DISABLED=true is not permitted when AEP_ENV='" + environment
+                + "'. Authentication must be enabled in non-development environments. "
+                + "Set AEP_ENV=development to allow disabling auth locally.");
+        }
+
+        if (isProduction && (jwtSecret == null || jwtSecret.isBlank())) {
+            throw new IllegalStateException(
+                "AEP_JWT_SECRET must be set in non-development environments (AEP_ENV='"
+                + environment + "'). "
+                + "Set AEP_JWT_SECRET to a secure random secret (>= 32 bytes).");
+        }
+
         if (!authEnabled) {
-            log.warn("JWT authentication DISABLED via AEP_AUTH_DISABLED=true — do NOT use in production");
+            log.warn("JWT authentication DISABLED via AEP_AUTH_DISABLED=true — development mode only");
         } else if (jwtSecret == null || jwtSecret.isBlank()) {
             log.error("AEP_JWT_SECRET is not set — all authenticated requests will be rejected. "
                 + "Set AEP_JWT_SECRET or AEP_AUTH_DISABLED=true for development.");
         } else {
-            log.info("JWT authentication enabled");
+            log.info("JWT authentication enabled (env={})", environment);
         }
+    }
+
+    /**
+     * Resolves the runtime environment from the {@code AEP_ENV} env-var.
+     * Defaults to {@code "production"} when unset to fail-safe.
+     */
+    private static String resolveEnvironment() {
+        String env = System.getenv("AEP_ENV");
+        return (env == null || env.isBlank()) ? "production" : env.trim().toLowerCase();
     }
 
     @Override

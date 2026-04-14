@@ -68,7 +68,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registerNode: succeeds for a valid node request")
-        void registerNode_validRequest_returnsSuccess() {
+        void registerNodeValidRequestReturnsSuccess() {
             NodeRegistrationRequest req = new NodeRegistrationRequest(
                     UUID.randomUUID().toString(), "node-101", "10.0.0.1", 8080,
                     Map.of("cpu", 4, "memory", "8GB"), Map.of()
@@ -83,7 +83,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registerNode: persists node so it appears in cluster status")
-        void registerNode_nodeAppearsInStatus() {
+        void registerNodeNodeAppearsInStatus() {
             String nodeId = "persistent-node";
             NodeRegistrationRequest req = new NodeRegistrationRequest(
                     UUID.randomUUID().toString(), nodeId, "10.0.0.2", 9090,
@@ -110,7 +110,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("unregisterNode: returns success even for unknown node (graceful removal)")
-        void unregisterNode_unknownNode_returnsResult() {
+        void unregisterNodeUnknownNodeReturnsResult() {
             NodeUnregistrationRequest req = new NodeUnregistrationRequest(
                     UUID.randomUUID().toString(), "ghost-node", "decommission", true
             );
@@ -122,7 +122,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("unregisterNode: successfully removes a previously registered node")
-        void unregisterNode_registeredNode_returnsSuccess() {
+        void unregisterNodeRegisteredNodeReturnsSuccess() {
             // Register first
             NodeRegistrationRequest regReq = new NodeRegistrationRequest(
                     UUID.randomUUID().toString(), "temp-node", "10.0.0.5", 8080,
@@ -151,7 +151,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getClusterStatus: returns success with cluster info")
-        void getClusterStatus_returnsClusterInfo() {
+        void getClusterStatusReturnsClusterInfo() {
             ClusterStatusRequest req = new ClusterStatusRequest(
                     UUID.randomUUID().toString(), "my-cluster", true, true
             );
@@ -165,7 +165,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getClusterStatus: reports 0 active nodes when none registered")
-        void getClusterStatus_noNodes_zeroActiveNodes() {
+        void getClusterStatusNoNodesZeroActiveNodes() {
             ClusterStatusRequest req = new ClusterStatusRequest(
                     UUID.randomUUID().toString(), "empty-cluster", true, false
             );
@@ -177,7 +177,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getClusterStatus: state transitions through INITIALIZING after new cluster")
-        void getClusterStatus_stateIsKnown() {
+        void getClusterStatusStateIsKnown() {
             ClusterStatusRequest req = new ClusterStatusRequest(
                     UUID.randomUUID().toString(), "any", false, false
             );
@@ -200,7 +200,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("performMaintenance: completes without error for empty node list")
-        void performMaintenance_emptyNodeList_succeeds() {
+        void performMaintenanceEmptyNodeListSucceeds() {
             ClusterMaintenanceRequest req = new ClusterMaintenanceRequest(
                     UUID.randomUUID().toString(), "cluster-1",
                     ClusterMaintenanceRequest.MaintenanceType.HEALTH_CHECK,
@@ -214,7 +214,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
         @Test
         @DisplayName("performMaintenance: processes listed nodes")
-        void performMaintenance_withTargetNodes_processesAll() {
+        void performMaintenanceWithTargetNodesProcessesAll() {
             // Register nodes first
             List<String> nodeIds = List.of("maint-node-a", "maint-node-b");
             for (String nid : nodeIds) {
@@ -242,7 +242,7 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
     @Test
     @DisplayName("rebalanceCluster: returns a result for a valid rebalancing request")
-    void rebalanceCluster_returnsResult() {
+    void rebalanceClusterReturnsResult() {
         ClusterRebalancingRequest req = new ClusterRebalancingRequest(
                 UUID.randomUUID().toString(), "cluster-main",
                 ClusterRebalancingRequest.RebalancingStrategy.LOAD_BALANCE,
@@ -260,14 +260,14 @@ class ClusterManagementSystemTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getMetrics: returns a non-null metrics map")
-    void getMetrics_returnsNonNull() {
+    void getMetricsReturnsNonNull() {
         Map<String, Object> m = cms.getMetrics();
         assertThat(m).isNotNull();
     }
 
     @Test
     @DisplayName("shutdown: completes without error")
-    void shutdown_completesCleanly() {
+    void shutdownCompletesCleanly() {
         runPromise(() -> cms.shutdown());
         // no assertion needed — just verify it doesn't throw
     }

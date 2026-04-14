@@ -17,9 +17,13 @@ dependencies {
     api(project(":products:aep:aep-engine"))
     api(libs.activej.promise)
     implementation(libs.slf4j.api)
+    implementation(project(":platform:java:database"))
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
 
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.bundles.testing.containers)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

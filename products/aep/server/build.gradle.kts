@@ -71,6 +71,9 @@ dependencies {
     implementation(libs.log4j.slf4j.impl)
     implementation(libs.log4j.core)
 
+    // Micrometer Prometheus registry — for /metrics scrape endpoint
+    implementation(libs.micrometer.registry.prometheus)
+
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)

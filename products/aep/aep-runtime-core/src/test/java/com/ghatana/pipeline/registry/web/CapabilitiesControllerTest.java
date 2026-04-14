@@ -41,7 +41,7 @@ class CapabilitiesControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("GET /admin/capabilities/schemas returns 200 with schema formats")
-    void getSchemaFormats_returns200() {
+    void getSchemaFormatsReturns200() {
         when(capabilitiesService.getSchemaFormats()).thenReturn(
                 Map.of("schemaFormats", List.of(
                         Map.of("id", "json-schema", "display", "JSON Schema", "enabled", true)
@@ -55,7 +55,7 @@ class CapabilitiesControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("GET /admin/capabilities/encodings returns 200 with encodings")
-    void getEncodings_returns200() {
+    void getEncodingsReturns200() {
         when(capabilitiesService.getEncodings()).thenReturn(
                 Map.of("encodings", List.of("JSON", "AVRO_BINARY")));
 
@@ -67,7 +67,7 @@ class CapabilitiesControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("GET /admin/capabilities/connectors returns 200 with connectors")
-    void getConnectors_returns200() {
+    void getConnectorsReturns200() {
         when(capabilitiesService.getConnectors()).thenReturn(
                 Map.of("connectors", List.of(
                         Map.of("type", "KAFKA", "direction", "ingress", "enabled", true)
@@ -81,7 +81,7 @@ class CapabilitiesControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("GET /admin/capabilities/transforms returns 200 with transforms")
-    void getTransforms_returns200() {
+    void getTransformsReturns200() {
         when(capabilitiesService.getTransforms()).thenReturn(
                 Map.of("transforms", List.of(
                         Map.of("id", "FILTER", "description", "Filter transform")

@@ -24,7 +24,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("null spec defaults to NONE — any token accepted")
-        void nullSpec_allowAll() {
+        void nullSpecAllowAll() {
             IngressAuthValidator v = IngressAuthValidator.fromSpec(null);
             assertThat(v.validate(null).isAuthorized()).isTrue();
             assertThat(v.validate("anything").isAuthorized()).isTrue();
@@ -32,7 +32,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("empty properties defaults to NONE")
-        void emptyProperties_allowAll() {
+        void emptyPropertiesAllowAll() {
             ConnectorSpec spec = ConnectorSpec.builder().id("c").build();
             IngressAuthValidator v = IngressAuthValidator.fromSpec(spec);
             assertThat(v.validate(null).isAuthorized()).isTrue();
@@ -40,7 +40,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("explicit auth.type=NONE allows any token")
-        void explicitNone_allowAll() {
+        void explicitNoneAllowAll() {
             ConnectorSpec spec = ConnectorSpec.builder()
                     .id("c")
                     .properties(Map.of("auth.type", "NONE"))
@@ -51,7 +51,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("unknown auth.type falls back to NONE")
-        void unknownType_fallsBackToNone() {
+        void unknownTypeFallsBackToNone() {
             ConnectorSpec spec = ConnectorSpec.builder()
                     .id("c")
                     .properties(Map.of("auth.type", "OAUTH2"))
@@ -77,21 +77,21 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("valid Bearer token is authorized")
-        void validToken_authorized() {
+        void validTokenAuthorized() {
             IngressAuthValidator v = validator("my-secret");
             assertThat(v.validate("Bearer my-secret").isAuthorized()).isTrue();
         }
 
         @Test
         @DisplayName("token with surrounding whitespace is accepted")
-        void tokenWithWhitespace_authorized() {
+        void tokenWithWhitespaceAuthorized() {
             IngressAuthValidator v = validator("my-secret");
             assertThat(v.validate("Bearer  my-secret ").isAuthorized()).isTrue();
         }
 
         @Test
         @DisplayName("wrong token is denied")
-        void wrongToken_denied() {
+        void wrongTokenDenied() {
             IngressAuthValidator v = validator("my-secret");
             IngressAuthValidator.AuthResult result = v.validate("Bearer wrong");
             assertThat(result.isAuthorized()).isFalse();
@@ -101,7 +101,7 @@ class IngressAuthValidatorTest {
         @ParameterizedTest
         @NullAndEmptySource
         @DisplayName("null or empty Authorization header is denied")
-        void missingHeader_denied(String header) {
+        void missingHeaderDenied(String header) {
             IngressAuthValidator v = validator("my-secret");
             IngressAuthValidator.AuthResult result = v.validate(header);
             assertThat(result.isAuthorized()).isFalse();
@@ -110,7 +110,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("non-Bearer prefix is denied")
-        void basicPrefix_denied() {
+        void basicPrefixDenied() {
             IngressAuthValidator v = validator("my-secret");
             IngressAuthValidator.AuthResult result = v.validate("Basic bXktc2VjcmV0");
             assertThat(result.isAuthorized()).isFalse();
@@ -119,7 +119,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("missing auth.token falls back to NONE (logs warning)")
-        void missingToken_fallsBackToNone() {
+        void missingTokenFallsBackToNone() {
             ConnectorSpec spec = ConnectorSpec.builder()
                     .id("c")
                     .properties(Map.of("auth.type", "BEARER"))
@@ -145,21 +145,21 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("valid API key is authorized")
-        void validKey_authorized() {
+        void validKeyAuthorized() {
             IngressAuthValidator v = validator("api-key-xyz");
             assertThat(v.validate("api-key-xyz").isAuthorized()).isTrue();
         }
 
         @Test
         @DisplayName("key with whitespace is stripped and accepted")
-        void keyWithWhitespace_accepted() {
+        void keyWithWhitespaceAccepted() {
             IngressAuthValidator v = validator("api-key-xyz");
             assertThat(v.validate("  api-key-xyz  ").isAuthorized()).isTrue();
         }
 
         @Test
         @DisplayName("wrong API key is denied")
-        void wrongKey_denied() {
+        void wrongKeyDenied() {
             IngressAuthValidator v = validator("api-key-xyz");
             IngressAuthValidator.AuthResult result = v.validate("wrong-key");
             assertThat(result.isAuthorized()).isFalse();
@@ -168,7 +168,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("null API key header is denied")
-        void nullHeader_denied() {
+        void nullHeaderDenied() {
             IngressAuthValidator v = validator("api-key-xyz");
             assertThat(v.validate(null).isAuthorized()).isFalse();
         }
@@ -193,7 +193,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("valid Basic credentials are authorized")
-        void validCredentials_authorized() {
+        void validCredentialsAuthorized() {
             IngressAuthValidator v = validator("admin", "s3cr3t");
             // Base64("admin:s3cr3t") = "YWRtaW46czNjcjN0"
             assertThat(v.validate("Basic YWRtaW46czNjcjN0").isAuthorized()).isTrue();
@@ -201,14 +201,14 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("wrong credentials are denied")
-        void wrongCredentials_denied() {
+        void wrongCredentialsDenied() {
             IngressAuthValidator v = validator("admin", "s3cr3t");
             assertThat(v.validate("Basic d3Jvbmc6Y3JlZA==").isAuthorized()).isFalse();
         }
 
         @Test
         @DisplayName("non-Basic prefix is denied")
-        void bearerPrefix_denied() {
+        void bearerPrefixDenied() {
             IngressAuthValidator v = validator("admin", "s3cr3t");
             IngressAuthValidator.AuthResult result = v.validate("Bearer YWRtaW46czNjcjN0");
             assertThat(result.isAuthorized()).isFalse();
@@ -224,7 +224,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("AuthResult.allow() is authorized with empty reason")
-        void allow_isAuthorized() {
+        void allowIsAuthorized() {
             IngressAuthValidator.AuthResult r = IngressAuthValidator.AuthResult.allow();
             assertThat(r.isAuthorized()).isTrue();
             assertThat(r.reason()).isEmpty();
@@ -232,7 +232,7 @@ class IngressAuthValidatorTest {
 
         @Test
         @DisplayName("AuthResult.deny(reason) is not authorized")
-        void deny_isNotAuthorized() {
+        void denyIsNotAuthorized() {
             IngressAuthValidator.AuthResult r = IngressAuthValidator.AuthResult.deny("bad token");
             assertThat(r.isAuthorized()).isFalse();
             assertThat(r.reason()).isEqualTo("bad token");

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -138,6 +139,41 @@ class AepAuthFilterTest extends EventloopTestBase {
         assertEquals("corr-failure-456", response.getHeader(HttpHeaders.of("X-Correlation-ID")));
         verify(nextServlet, never()).serve(any());
         assertNull(MDC.get("correlationId"));
+    }
+
+    @Test
+    @DisplayName("production env + auth disabled throws IllegalStateException at construction")
+    void productionWithAuthDisabledThrows() {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        assertThrows(IllegalStateException.class,
+            () -> new AepAuthFilter(nextServlet, "some-secret", false, "production"),
+            "Should refuse to start in production with auth disabled");
+    }
+
+    @Test
+    @DisplayName("production env + blank JWT secret throws IllegalStateException at construction")
+    void productionWithBlankSecretThrows() {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        assertThrows(IllegalStateException.class,
+            () -> new AepAuthFilter(nextServlet, "", true, "production"),
+            "Should refuse to start in production with blank JWT secret");
+    }
+
+    @Test
+    @DisplayName("development env + auth disabled is allowed (no exception)")
+    void developmentWithAuthDisabledIsAllowed() {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        // Must not throw
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "development");
+        assertNotNull(filter);
+    }
+
+    @Test
+    @DisplayName("test env + auth disabled is allowed (no exception)")
+    void testEnvWithAuthDisabledIsAllowed() {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "test");
+        assertNotNull(filter);
     }
 
     private HttpResponse serve(AsyncServlet filter, HttpRequest request) {

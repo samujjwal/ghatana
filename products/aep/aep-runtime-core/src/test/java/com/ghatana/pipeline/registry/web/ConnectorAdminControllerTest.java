@@ -47,7 +47,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("listConnectors: returns 200 with connector list")
-    void listConnectors_returns200() {
+    void listConnectorsReturns200() {
         ConnectorInstance conn = ConnectorInstance.builder()
                 .id("conn-1")
                 .name("my-kafka")
@@ -63,7 +63,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getConnector: found → 200 OK")
-    void getConnector_found_returns200() {
+    void getConnectorFoundReturns200() {
         ConnectorInstance conn = ConnectorInstance.builder()
                 .id("conn-1")
                 .name("my-kafka")
@@ -78,7 +78,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getConnector: not found → 404 Not Found")
-    void getConnector_notFound_returns404() {
+    void getConnectorNotFoundReturns404() {
         when(connectorAdminService.get("missing")).thenReturn(Optional.empty());
 
         HttpResponse response = runPromise(() -> controller.getConnector(TENANT, "user-1", "missing"));
@@ -88,7 +88,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createConnector: valid body → 201 Created")
-    void createConnector_valid_returns201() {
+    void createConnectorValidReturns201() {
         ConnectorInstance created = ConnectorInstance.builder()
                 .id("conn-2")
                 .name("new-connector")
@@ -108,7 +108,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deleteConnector: exists → 204 No Content")
-    void deleteConnector_returns204() {
+    void deleteConnectorReturns204() {
         when(connectorAdminService.delete("conn-1")).thenReturn(true);
 
         HttpResponse response = runPromise(() -> controller.deleteConnector(TENANT, "user-1", "conn-1"));
@@ -118,7 +118,7 @@ class ConnectorAdminControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deleteConnector: not found → 404 Not Found")
-    void deleteConnector_notFound_returns404() {
+    void deleteConnectorNotFoundReturns404() {
         when(connectorAdminService.delete("missing")).thenReturn(false);
 
         HttpResponse response = runPromise(() -> controller.deleteConnector(TENANT, "user-1", "missing"));

@@ -97,7 +97,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: returns success result for a valid cluster request")
-        void evaluateScaling_validRequest_returnsSuccess() {
+        void evaluateScalingValidRequestReturnsSuccess() {
             ScalingEvaluationRequest req = new ScalingEvaluationRequest(CLUSTER_ID);
 
             ScalingEvaluationResult result = runPromise(() -> engine.evaluateScaling(req));
@@ -109,7 +109,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: collects cluster metrics and queries applicable policies")
-        void evaluateScaling_invokesMetricsAndPolicyDependencies() {
+        void evaluateScalingInvokesMetricsAndPolicyDependencies() {
             ScalingEvaluationRequest req = new ScalingEvaluationRequest(CLUSTER_ID);
 
             runPromise(() -> engine.evaluateScaling(req));
@@ -120,7 +120,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: queries predictive scaler with current metrics")
-        void evaluateScaling_invokesPredicativeScaler() {
+        void evaluateScalingInvokesPredicativeScaler() {
             runPromise(() -> engine.evaluateScaling(new ScalingEvaluationRequest(CLUSTER_ID)));
 
             verify(predictiveScaler).getRecommendation(eq(CLUSTER_ID), any(ClusterMetrics.class));
@@ -128,7 +128,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: requests cost optimization for the computed action")
-        void evaluateScaling_invokesCostOptimizer() {
+        void evaluateScalingInvokesCostOptimizer() {
             runPromise(() -> engine.evaluateScaling(new ScalingEvaluationRequest(CLUSTER_ID)));
 
             verify(costOptimizer).optimizeScalingDecision(any(), any(), any());
@@ -136,7 +136,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: returns failure result when ClusterMetricsCollector throws")
-        void evaluateScaling_whenMetricsCollectorThrows_returnsFailure() {
+        void evaluateScalingWhenMetricsCollectorThrowsReturnsFailure() {
             when(metricsCollector.collectClusterMetrics(CLUSTER_ID))
                     .thenThrow(new RuntimeException("metrics unavailable"));
 
@@ -150,7 +150,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("evaluateScaling: evaluation time is non-negative")
-        void evaluateScaling_evaluationTimeNonNegative() {
+        void evaluateScalingEvaluationTimeNonNegative() {
             ScalingEvaluationResult result = runPromise(() ->
                     engine.evaluateScaling(new ScalingEvaluationRequest(CLUSTER_ID))
             );
@@ -165,7 +165,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getMetrics: returns a non-null map with expected keys")
-    void getMetrics_returnsExpectedStructure() {
+    void getMetricsReturnsExpectedStructure() {
         Map<String, Object> metrics = engine.getMetrics();
 
         assertThat(metrics).isNotNull().isNotEmpty();
@@ -177,7 +177,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getMetrics: initial state has zero scaling events")
-    void getMetrics_initialState_zeroEvents() {
+    void getMetricsInitialStateZeroEvents() {
         Map<String, Object> metrics = engine.getMetrics();
         assertThat(((Number) metrics.get("totalScalingEvents")).longValue()).isZero();
         assertThat(((Number) metrics.get("successfulScalingEvents")).longValue()).isZero();
@@ -189,7 +189,7 @@ class AutoScalingEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("shutdown: completes without error")
-    void shutdown_completesCleanly() {
+    void shutdownCompletesCleanly() {
         runPromise(() -> engine.shutdown());
         // verify no exception — implicit pass
     }

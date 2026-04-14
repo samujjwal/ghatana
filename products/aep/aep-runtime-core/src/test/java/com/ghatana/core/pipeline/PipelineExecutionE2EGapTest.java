@@ -105,7 +105,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline toEvent() → fromEvents() preserves stages and edges")
-    void pipelineRoundTrip_preservesStructure() {
+    void pipelineRoundTripPreservesStructure() {
         Pipeline original = DefaultPipeline.builder("round-trip", "2.0.0")
                 .name("Round-trip")
                 .description("Test serialization")
@@ -135,7 +135,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline with primary + error + broadcast edges routes correctly")
-    void mixedEdges_routesCorrectly() {
+    void mixedEdgesRoutesCorrectly() {
         // Pipeline: source → filter (primary)
         //           source → [broadcast: monitor]
         //           source on error → error-handler
@@ -168,7 +168,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline with error + broadcast: failing source routes error AND broadcast")
-    void mixedEdges_failingSource_errorAndBroadcastCoexist() {
+    void mixedEdgesFailingSourceErrorAndBroadcastCoexist() {
         // When source fails: error-handler is invoked.
         // broadcast targets do not receive input since source failed (no output to broadcast).
         register(new FailingOperator(opId("bad-source"), "bad-source", "source-failed"));
@@ -199,7 +199,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Error edge cascade: A fails → B handles → B fails → C handles")
-    void errorCascade_routesThroughChain() {
+    void errorCascadeRoutesThroughChain() {
         register(new FailingOperator(opId("a"), "a", "stage-a-failed"));
         register(new FailingOperator(opId("b"), "b", "stage-b-failed"));
         RecordingOperator c = register(new RecordingOperator(opId("c"), "c"));
@@ -225,7 +225,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Fallback cascade: A empty → B handles → B empty → C handles")
-    void fallbackCascade_routesThroughChain() {
+    void fallbackCascadeRoutesThroughChain() {
         register(new EmptyOutputOperator(opId("a"), "a"));
         register(new EmptyOutputOperator(opId("b"), "b"));
         RecordingOperator c = register(new RecordingOperator(opId("c"), "c"));
@@ -251,7 +251,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Error handler produces empty output → activates fallback edge")
-    void errorThenFallback_combinedActivation() {
+    void errorThenFallbackCombinedActivation() {
         register(new FailingOperator(opId("risky"), "risky", "risky-failed"));
         register(new EmptyOutputOperator(opId("err-handler"), "err-handler"));
         RecordingOperator fallbackSink = register(new RecordingOperator(opId("fallback-sink"), "fallback-sink"));
@@ -277,7 +277,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Deep 5-stage linear chain processes events through all stages in order")
-    void deepLinearChain_allStagesExecute() {
+    void deepLinearChainAllStagesExecute() {
         String[] stages = {"s1", "s2", "s3", "s4", "s5"};
         RecordingOperator[] operators = new RecordingOperator[stages.length];
 
@@ -309,7 +309,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Enrichment operators accumulate payload keys through the chain")
-    void payloadEnrichment_accumulatesAcrossStages() {
+    void payloadEnrichmentAccumulatesAcrossStages() {
         register(new EnrichingOperator(opId("add-a"), "add-a", "key_a", "val_a"));
         register(new EnrichingOperator(opId("add-b"), "add-b", "key_b", "val_b"));
         register(new EnrichingOperator(opId("add-c"), "add-c", "key_c", "val_c"));
@@ -340,7 +340,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator returning failed Promise routes to error edge")
-    void asyncExceptionOperator_routesToErrorEdge() {
+    void asyncExceptionOperatorRoutesToErrorEdge() {
         register(new AsyncExceptionOperator(opId("async-fail"), "async-fail", "unexpected error"));
         RecordingOperator errHandler = register(new RecordingOperator(opId("err"), "err"));
 
@@ -360,7 +360,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Async exception with no error edge and continueOnError=false aborts pipeline")
-    void asyncExceptionOperator_noErrorEdge_aborts() {
+    void asyncExceptionOperatorNoErrorEdgeAborts() {
         register(new AsyncExceptionOperator(opId("async-fail"), "async-fail", "kaboom"));
         RecordingOperator next = register(new RecordingOperator(opId("next"), "next"));
 
@@ -380,7 +380,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Synchronous exception from operator.process() propagates as RuntimeException")
-    void throwingOperator_synchronousException_propagates() {
+    void throwingOperatorSynchronousExceptionPropagates() {
         register(new ThrowingOperator(opId("thrower"), "thrower", "sync-boom"));
 
         Pipeline pipeline = DefaultPipeline.builder("sync-throw", "1.0.0")
@@ -401,7 +401,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operator in STOPPED state causes stage failure")
-    void stoppedOperator_causesStageFailure() {
+    void stoppedOperatorCausesStageFailure() {
         AbstractOperator op = new RecordingOperator(opId("stopped"), "stopped");
         runPromise(() -> op.initialize(OperatorConfig.empty()));
         runPromise(() -> op.start());
@@ -425,7 +425,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline.validate() detects cycle and returns invalid")
-    void validate_detectsCycle() {
+    void validateDetectsCycle() {
         // Build a pipeline with a cycle: A → B → C → A
         // We need to bypass the builder's cycle check if it has one,
         // so we test via the validate() method directly
@@ -445,7 +445,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline.validate() passes for valid acyclic DAG")
-    void validate_validDag_passes() {
+    void validateValidDagPasses() {
         Pipeline pipeline = DefaultPipeline.builder("valid-dag", "1.0.0")
                 .name("Valid DAG")
                 .stage("a", opId("a"))
@@ -469,7 +469,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Fallback synthetic event contains _fallback_source_stage and _fallback_reason")
-    void fallbackEvent_containsSyntheticPayload() {
+    void fallbackEventContainsSyntheticPayload() {
         register(new EmptyOutputOperator(opId("producer"), "producer"));
         PayloadCapturingOperator captor = register(
                 new PayloadCapturingOperator(opId("fb-captor"), "fb-captor"));
@@ -498,7 +498,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Splitter with broadcast sends all outputs to all broadcast targets")
-    void broadcastMultiOutput_allTargetsReceiveAllOutputs() {
+    void broadcastMultiOutputAllTargetsReceiveAllOutputs() {
         register(new MultiOutputOperator(opId("splitter"), "splitter", 3));
         RecordingOperator t1 = register(new RecordingOperator(opId("t1"), "t1"));
         RecordingOperator t2 = register(new RecordingOperator(opId("t2"), "t2"));
@@ -526,7 +526,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Pipeline metadata is accessible during and after execution")
-    void pipelineMetadata_survivesExecution() {
+    void pipelineMetadataSurvivesExecution() {
         register(new RecordingOperator(opId("op"), "op"));
 
         Pipeline pipeline = DefaultPipeline.builder("meta-test", "1.0.0")
@@ -556,7 +556,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DefaultPipeline.execute() with engine runs full multi-stage pipeline")
-    void defaultPipelineExecute_multiStage_realEngine() {
+    void defaultPipelineExecuteMultiStageRealEngine() {
         register(new EnrichingOperator(opId("step1"), "step1", "step", "1"));
         register(new EnrichingOperator(opId("step2"), "step2", "step", "2"));
         register(new EnrichingOperator(opId("step3"), "step3", "step", "3"));
@@ -581,7 +581,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DefaultPipeline.execute() with engine handles error edge routing")
-    void defaultPipelineExecute_errorRouting_realEngine() {
+    void defaultPipelineExecuteErrorRoutingRealEngine() {
         register(new FailingOperator(opId("fail"), "fail", "stage-failed"));
         RecordingOperator errOp = register(new RecordingOperator(opId("handler"), "handler"));
 
@@ -608,7 +608,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Fan-out/fan-in: source → [branchA, branchB] → merge receives both outputs")
-    void fanOutFanIn_mergeReceivesBoth() {
+    void fanOutFanInMergeReceivesBoth() {
         register(new EnrichingOperator(opId("source"), "source", "origin", "source"));
         register(new EnrichingOperator(opId("branchA"), "branchA", "branch", "A"));
         register(new EnrichingOperator(opId("branchB"), "branchB", "branch", "B"));
@@ -640,7 +640,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineEdge rejects self-loops")
-    void pipelineEdge_rejectsSelfLoop() {
+    void pipelineEdgeRejectsSelfLoop() {
         assertThatThrownBy(() -> new PipelineEdge("a", "a", PipelineEdge.LABEL_PRIMARY))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Self-loops not allowed");
@@ -648,14 +648,14 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineEdge rejects blank 'from'")
-    void pipelineEdge_rejectsBlankFrom() {
+    void pipelineEdgeRejectsBlankFrom() {
         assertThatThrownBy(() -> new PipelineEdge("", "b", PipelineEdge.LABEL_PRIMARY))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("PipelineEdge factory methods produce correct labels")
-    void pipelineEdge_factoryMethods() {
+    void pipelineEdgeFactoryMethods() {
         PipelineEdge primary = PipelineEdge.primary("a", "b");
         assertThat(primary.isPrimary()).isTrue();
         assertThat(primary.isError()).isFalse();
@@ -674,21 +674,21 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineStage rejects null stageId")
-    void pipelineStage_rejectsNullId() {
+    void pipelineStageRejectsNullId() {
         assertThatThrownBy(() -> new PipelineStage(null, opId("x"), Map.of()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @DisplayName("PipelineStage rejects blank stageId")
-    void pipelineStage_rejectsBlankId() {
+    void pipelineStageRejectsBlankId() {
         assertThatThrownBy(() -> new PipelineStage("  ", opId("x"), Map.of()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("PipelineStage.of() creates stage with empty config")
-    void pipelineStage_ofFactory() {
+    void pipelineStageOfFactory() {
         PipelineStage stage = PipelineStage.of("s1", opId("filter"));
         assertThat(stage.stageId()).isEqualTo("s1");
         assertThat(stage.config()).isEmpty();
@@ -700,7 +700,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineExecutionResult.hasOutput() returns correct value")
-    void executionResult_hasOutput() {
+    void executionResultHasOutput() {
         Event ev = event("test");
         PipelineExecutionResult successWithOutput = PipelineExecutionResult.success(
                 "p1", ev, List.of(ev), 10, 1);
@@ -713,7 +713,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineExecutionResult.getThroughputEventsPerSec() calculates correctly")
-    void executionResult_throughput() {
+    void executionResultThroughput() {
         Event ev = event("test");
         PipelineExecutionResult result = PipelineExecutionResult.success(
                 "p1", ev, List.of(ev), 100, 1);
@@ -726,7 +726,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PipelineValidationResult factories work correctly")
-    void validationResult_factories() {
+    void validationResultFactories() {
         PipelineValidationResult valid = PipelineValidationResult.valid();
         assertThat(valid.isValid()).isTrue();
         assertThat(valid.errors()).isEmpty();
@@ -747,7 +747,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("OperatorResult.Builder.mergeWith combines events and failures")
-    void operatorResult_mergeWith() {
+    void operatorResultMergeWith() {
         Event e1 = event("e1");
         Event e2 = event("e2");
 
@@ -765,7 +765,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("OperatorResult merge propagates failure status")
-    void operatorResult_mergeWithFailure() {
+    void operatorResultMergeWithFailure() {
         OperatorResult success = OperatorResult.of(event("ok"));
         OperatorResult failure = OperatorResult.failed("boom");
 
@@ -785,7 +785,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("OperatorId.parse() succeeds for valid 4-part ID")
-    void operatorId_parse_valid() {
+    void operatorIdParseValid() {
         OperatorId id = OperatorId.parse("ns:stream:filter:1.0.0");
         assertThat(id.getNamespace()).isEqualTo("ns");
         assertThat(id.getType()).isEqualTo("stream");
@@ -796,7 +796,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("OperatorId.parse() throws for invalid format")
-    void operatorId_parse_invalid() {
+    void operatorIdParseInvalid() {
         assertThatThrownBy(() -> OperatorId.parse("only:two"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid operator ID format");
@@ -804,7 +804,7 @@ class PipelineExecutionE2EGapTest extends EventloopTestBase {
 
     @Test
     @DisplayName("OperatorId equality and hashCode by full ID")
-    void operatorId_equalityByFullId() {
+    void operatorIdEqualityByFullId() {
         OperatorId a = OperatorId.of("ns", "t", "n", "1.0");
         OperatorId b = OperatorId.of("ns", "t", "n", "1.0");
         assertThat(a).isEqualTo(b);

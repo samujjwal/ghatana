@@ -41,7 +41,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getCurrentSession: no active session → 404 Not Found")
-    void getCurrentSession_noSession_returns404() {
+    void getCurrentSessionNoSessionReturns404() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/sessions/current").build();
 
         HttpResponse response = runPromise(() -> controller.getCurrentSession(request));
@@ -51,7 +51,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("invalidateSession: no active session → 404 Not Found")
-    void invalidateSession_noSession_returns404() {
+    void invalidateSessionNoSessionReturns404() {
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/sessions/invalidate").build();
 
         HttpResponse response = runPromise(() -> controller.invalidateSession(request));
@@ -61,7 +61,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getUserSessions: missing userId query param → 400 Bad Request")
-    void getUserSessions_missingParam_returns400() {
+    void getUserSessionsMissingParamReturns400() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/sessions").build();
 
         HttpResponse response = runPromise(() -> controller.getUserSessions(request));
@@ -71,7 +71,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getUserSessions: valid userId → 200 OK")
-    void getUserSessions_validParam_returns200() {
+    void getUserSessionsValidParamReturns200() {
         when(sessionManager.findSessionsByUserId("user42"))
                 .thenReturn(Promise.of(Set.of("session-1", "session-2")));
 
@@ -84,7 +84,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getTenantSessions: missing tenantId query param → 400 Bad Request")
-    void getTenantSessions_missingParam_returns400() {
+    void getTenantSessionsMissingParamReturns400() {
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/sessions/tenant").build();
 
         HttpResponse response = runPromise(() -> controller.getTenantSessions(request));
@@ -94,7 +94,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getTenantSessions: valid tenantId → 200 OK")
-    void getTenantSessions_validParam_returns200() {
+    void getTenantSessionsValidParamReturns200() {
         when(sessionManager.findSessionsByTenantId("tenant-1"))
                 .thenReturn(Promise.of(Set.of("session-1")));
 
@@ -107,7 +107,7 @@ class SessionControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("cleanupSessions: returns 200 OK with deleted count")
-    void cleanupSessions_returns200() {
+    void cleanupSessionsReturns200() {
         when(sessionManager.deleteExpiredSessions()).thenReturn(Promise.of(5L));
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/sessions/cleanup").build();

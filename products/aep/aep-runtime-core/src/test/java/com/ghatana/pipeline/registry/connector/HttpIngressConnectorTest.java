@@ -63,7 +63,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("initialize() transitions CREATED → INITIALIZED")
-        void initialize_transitionsState() {
+        void initializeTransitionsState() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             Promise<Void> result = connector.initialize();
             assertThat(result.getException()).isNull();
@@ -71,7 +71,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("initialize() twice returns error on second call")
-        void initialize_twice_returnsError() {
+        void initializeTwiceReturnsError() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             Promise<Void> second = connector.initialize();
@@ -80,7 +80,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("connect() after initialize() sets accepting=true")
-        void connect_afterInitialize_acceptsEvents() {
+        void connectAfterInitializeAcceptsEvents() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -90,7 +90,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("disconnect() pauses ingestion but keeps connector alive")
-        void disconnect_pausesIngestion() {
+        void disconnectPausesIngestion() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -101,7 +101,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("close() on closed connector is idempotent")
-        void close_idempotent() {
+        void closeIdempotent() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -119,7 +119,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest() succeeds when connected and auth=NONE")
-        void ingest_connected_noAuth_succeeds() {
+        void ingestConnectedNoAuthSucceeds() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -133,7 +133,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest() rejected when not connected")
-        void ingest_notConnected_rejected() {
+        void ingestNotConnectedRejected() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize(); // INITIALIZED but not CONNECTED
 
@@ -143,7 +143,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest(null event) throws immediately")
-        void ingest_nullEvent_throws() {
+        void ingestNullEventThrows() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -154,7 +154,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest() rejected after close()")
-        void ingest_afterClose_rejected() {
+        void ingestAfterCloseRejected() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();
@@ -166,7 +166,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("ingest() rejects event with wrong type when expected_event_type set")
-        void ingest_wrongEventType_rejected() {
+        void ingestWrongEventTypeRejected() {
             ConnectorSpec typedSpec = ConnectorSpec.builder()
                     .id("typed-connector")
                     .endpoint("/events/typed")
@@ -197,7 +197,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("BEARER auth: valid token accepted")
-        void bearer_validToken_accepted() {
+        void bearerValidTokenAccepted() {
             ConnectorSpec authSpec = ConnectorSpec.builder()
                     .id("bearer-connector")
                     .endpoint("/events/secure")
@@ -215,7 +215,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("BEARER auth: invalid token rejected with auth_failures metric")
-        void bearer_invalidToken_rejected() {
+        void bearerInvalidTokenRejected() {
             ConnectorSpec authSpec = ConnectorSpec.builder()
                     .id("bearer-connector")
                     .endpoint("/events/secure")
@@ -237,7 +237,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("BEARER auth: missing Authorization header rejected")
-        void bearer_missingHeader_rejected() {
+        void bearerMissingHeaderRejected() {
             ConnectorSpec authSpec = ConnectorSpec.builder()
                     .id("bearer-connector")
                     .endpoint("/events/secure")
@@ -255,7 +255,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("API_KEY auth: valid key accepted")
-        void apiKey_validKey_accepted() {
+        void apiKeyValidKeyAccepted() {
             ConnectorSpec authSpec = ConnectorSpec.builder()
                     .id("apikey-connector")
                     .endpoint("/events/apikey")
@@ -273,7 +273,7 @@ class HttpIngressConnectorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("NONE auth: null token accepted")
-        void noAuth_nullToken_accepted() {
+        void noAuthNullTokenAccepted() {
             HttpIngressConnector connector = HttpIngressConnector.of(spec, metricsCollector);
             connector.initialize();
             connector.connect();

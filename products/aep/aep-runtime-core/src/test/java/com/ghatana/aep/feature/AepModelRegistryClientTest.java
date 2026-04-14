@@ -62,7 +62,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null delegate throws NullPointerException")
-        void nullDelegate_throwsNpe() {
+        void nullDelegateThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepModelRegistryClient(null, Executors.newSingleThreadExecutor()))
                     .isInstanceOf(NullPointerException.class)
@@ -71,7 +71,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null executor throws NullPointerException")
-        void nullExecutor_throwsNpe() {
+        void nullExecutorThrowsNpe() {
             assertThatThrownBy(() ->
                     new AepModelRegistryClient(modelRegistryService, null))
                     .isInstanceOf(NullPointerException.class)
@@ -88,7 +88,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("register(tenantId, model) delegates to the underlying service")
-        void register_delegatesToService() {
+        void registerDelegatesToService() {
             ModelMetadata model = sampleModel(DeploymentStatus.DEVELOPMENT);
 
             runPromise(() -> client.register("tenant-1", model));
@@ -98,7 +98,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registerStaged builds a STAGED model and delegates to service")
-        void registerStaged_buildsStagedModelAndDelegates() {
+        void registerStagedBuildsStagedModelAndDelegates() {
             Map<String, Double> metrics = Map.of("f1_score", 0.91, "auc_roc", 0.96);
 
             runPromise(() -> client.registerStaged(
@@ -117,7 +117,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findByName delegates to service and returns result")
-        void findByName_delegatesAndReturnsResult() {
+        void findByNameDelegatesAndReturnsResult() {
             ModelMetadata model = sampleModel(DeploymentStatus.PRODUCTION);
             when(modelRegistryService.findByName("t1", "event-classifier", "v2.0.0"))
                     .thenReturn(Optional.of(model));
@@ -130,7 +130,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findByName returns empty when model is not found")
-        void findByName_notFound_returnsEmpty() {
+        void findByNameNotFoundReturnsEmpty() {
             when(modelRegistryService.findByName(eq("t1"), eq("missing-model"), any()))
                     .thenReturn(Optional.empty());
 
@@ -142,7 +142,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findActiveModel returns ACTIVE-status model when found")
-        void findActiveModel_activeModelFound_returnsIt() {
+        void findActiveModelActiveModelFoundReturnsIt() {
             ModelMetadata activeModel = sampleModel(DeploymentStatus.ACTIVE);
             when(modelRegistryService.findByStatus("t1", DeploymentStatus.ACTIVE))
                     .thenReturn(List.of(activeModel));
@@ -155,7 +155,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findActiveModel falls back to PRODUCTION status when no ACTIVE model exists")
-        void findActiveModel_noActive_fallsBackToProduction() {
+        void findActiveModelNoActiveFallsBackToProduction() {
             ModelMetadata prodModel = sampleModel(DeploymentStatus.PRODUCTION);
             when(modelRegistryService.findByStatus("t1", DeploymentStatus.ACTIVE))
                     .thenReturn(List.of());
@@ -170,7 +170,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findActiveModel returns empty when neither ACTIVE nor PRODUCTION exists")
-        void findActiveModel_noneFound_returnsEmpty() {
+        void findActiveModelNoneFoundReturnsEmpty() {
             when(modelRegistryService.findByStatus("t1", DeploymentStatus.ACTIVE))
                     .thenReturn(List.of());
             when(modelRegistryService.findByStatus("t1", DeploymentStatus.PRODUCTION))
@@ -184,7 +184,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("listVersions delegates to the service and returns all versions")
-        void listVersions_delegatesAndReturnsVersions() {
+        void listVersionsDelegatesAndReturnsVersions() {
             List<ModelMetadata> versions = List.of(
                     sampleModelVersion("event-classifier", "v1.0.0", DeploymentStatus.DEPRECATED),
                     sampleModelVersion("event-classifier", "v2.0.0", DeploymentStatus.PRODUCTION));
@@ -199,7 +199,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("listVersions returns empty list when no versions exist")
-        void listVersions_none_returnsEmpty() {
+        void listVersionsNoneReturnsEmpty() {
             when(modelRegistryService.listVersions("t1", "unknown")).thenReturn(List.of());
 
             List<ModelMetadata> result = runPromise(() ->
@@ -218,7 +218,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("promoteToProduction calls updateStatus with PRODUCTION")
-        void promoteToProduction_updatesStatusToProduction() {
+        void promoteToProductionUpdatesStatusToProduction() {
             UUID modelId = UUID.randomUUID();
 
             runPromise(() -> client.promoteToProduction("t1", modelId));
@@ -228,7 +228,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deprecate calls updateStatus with DEPRECATED")
-        void deprecate_updatesStatusToDeprecated() {
+        void deprecateUpdatesStatusToDeprecated() {
             UUID modelId = UUID.randomUUID();
 
             runPromise(() -> client.deprecate("t1", modelId));
@@ -238,7 +238,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("promoteToCanary calls updateStatus with CANARY")
-        void promoteToCanary_updatesStatusToCanary() {
+        void promoteToCanaryUpdatesStatusToCanary() {
             UUID modelId = UUID.randomUUID();
 
             runPromise(() -> client.promoteToCanary("t1", modelId));
@@ -256,7 +256,7 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("register with null tenantId throws NullPointerException")
-        void register_nullTenantId_throwsNpe() {
+        void registerNullTenantIdThrowsNpe() {
             ModelMetadata model = sampleModel(DeploymentStatus.STAGED);
             assertThatThrownBy(() -> runPromise(() -> client.register(null, model)))
                     .isInstanceOf(NullPointerException.class);
@@ -264,21 +264,21 @@ class AepModelRegistryClientTest extends EventloopTestBase {
 
         @Test
         @DisplayName("register with null model throws NullPointerException")
-        void register_nullModel_throwsNpe() {
+        void registerNullModelThrowsNpe() {
             assertThatThrownBy(() -> runPromise(() -> client.register("t1", null)))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("findByName with null tenantId throws NullPointerException")
-        void findByName_nullTenantId_throwsNpe() {
+        void findByNameNullTenantIdThrowsNpe() {
             assertThatThrownBy(() -> runPromise(() -> client.findByName(null, "model", "v1")))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("findByName with null name throws NullPointerException")
-        void findByName_nullName_throwsNpe() {
+        void findByNameNullNameThrowsNpe() {
             assertThatThrownBy(() -> runPromise(() -> client.findByName("t1", null, "v1")))
                     .isInstanceOf(NullPointerException.class);
         }

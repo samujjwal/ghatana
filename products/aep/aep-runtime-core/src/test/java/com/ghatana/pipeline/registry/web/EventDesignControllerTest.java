@@ -45,7 +45,7 @@ class EventDesignControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("createSchema: valid body → 201 Created")
-    void createSchema_valid_returns201() {
+    void createSchemaValidReturns201() {
         SchemaDefinition created = SchemaDefinition.builder()
                 .id("schema-1")
                 .tenantId(TENANT)
@@ -66,7 +66,7 @@ class EventDesignControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deleteSchema: existing id → 204 No Content")
-    void deleteSchema_exists_returns204() {
+    void deleteSchemaExistsReturns204() {
         when(eventDesignService.deleteSchema("schema-1")).thenReturn(true);
 
         HttpResponse response = runPromise(() -> controller.deleteSchema(TENANT, "user-1", "order-event", "schema-1"));
@@ -76,7 +76,7 @@ class EventDesignControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deleteSchema: not found → 404 Not Found")
-    void deleteSchema_notFound_returns404() {
+    void deleteSchemaNotFoundReturns404() {
         when(eventDesignService.deleteSchema("missing")).thenReturn(false);
 
         HttpResponse response = runPromise(() -> controller.deleteSchema(TENANT, "user-1", "order-event", "missing"));
