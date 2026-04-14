@@ -7,7 +7,7 @@ import com.ghatana.agent.DeterminismGuarantee;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,7 +51,7 @@ public class TestDelayAgent<T> implements TypedAgent<T, T> {
 
     @Override
     public @NotNull Promise<HealthStatus> healthCheck() {
-        return Promise.of(HealthStatus.HEALTHY);
+        return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     @Override

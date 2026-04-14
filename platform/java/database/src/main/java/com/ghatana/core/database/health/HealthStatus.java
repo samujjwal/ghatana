@@ -13,127 +13,16 @@ import java.util.Map;
  * response time, error details, and timestamp. Used for monitoring, alerting,
  * and health endpoint reporting.
  *
- * <p><b>Architecture Role</b><br>
- * Value object in core/database/health for health monitoring.
- * Used by:
- * - DatabaseHealthCheck - Returns health check results
- * - Health Endpoints - Expose /health API with database status
- * - Monitoring Systems - Track database availability/latency
- * - Alerting - Trigger alerts on unhealthy status
- * - Dashboards - Display real-time health metrics
- *
  * <p><b>Health States</b><br>
  * - <b>HEALTHY</b>: Database responsive, validation query succeeded
  * - <b>UNHEALTHY</b>: Database unreachable, query failed, or timeout
  * - <b>UNKNOWN</b>: Unable to determine status (partial failure)
  *
- * <p><b>Usage</b><br>
- * <pre>{@code
- * // Create healthy status
- * HealthDetails details = HealthDetails.builder()
- *     .addDetail("database", "PostgreSQL")
- *     .addDetail("version", "14.5")
- *     .addDetail("connections_active", 15)
- *     .addDetail("connections_max", 100)
- *     .build();
- *
- * HealthStatus healthy = HealthStatus.healthy(
- *     "Database connection validated",
- *     Duration.ofMillis(25),
- *     details
- * );
- *
- * // Create unhealthy status
- * HealthStatus unhealthy = HealthStatus.unhealthy(
- *     "Connection timeout",
- *     Duration.ofSeconds(5),
- *     new SQLException("Connection refused")
- * );
- *
- * // Create unknown status
- * HealthStatus unknown = HealthStatus.unknown(
- *     "Validation query returned unexpected result",
- *     Duration.ofMillis(100)
- * );
- *
- * // Expose in health endpoint
- * @GetMapping("/health/database")
- * public ResponseEntity<HealthResponse> getDatabaseHealth() {
- *     HealthStatus status = healthCheck.check();
- *
- *     return ResponseEntity
- *         .status(status.isHealthy() ? 200 : 503)
- *         .body(new HealthResponse(
- *             status.getStatus().name(),
- *             status.getMessage(),
- *             status.getResponseTime().toMillis(),
- *             status.getTimestamp()
- *         ));
- * }
- *
- * // Check in monitoring loop
- * HealthStatus status = healthCheck.check();
- * if (!status.isHealthy()) {
- *     alerting.sendAlert(
- *         "Database unhealthy: " + status.getMessage(),
- *         status.getException()
- *     );
- *     metrics.recordUnhealthy(status.getResponseTime());
- * } else {
- *     metrics.recordHealthy(status.getResponseTime());
- * }
- * }</pre>
- *
- * <p><b>Response Time Tracking</b><br>
- * - <b>Healthy</b>: Actual query execution time (baseline: 10-50ms)
- * - <b>Unhealthy</b>: Time until failure/timeout (max: configured timeout)
- * - <b>SLO Tracking</b>: Monitor p50/p95/p99 response times for SLA compliance
- *
- * <p><b>Details Payload</b><br>
- * HealthDetails provides additional diagnostic information:
- * - Database type and version
- * - Connection pool statistics
- * - Active/idle connection counts
- * - Query execution plan (for slow queries)
- * - Lock contention metrics
- *
- * <p><b>Health Endpoint Integration</b><br>
- * <pre>
- * GET /actuator/health/database
- * {
- *   "status": "UP",
- *   "details": {
- *     "message": "Database connection validated",
- *     "responseTime": 25,
- *     "timestamp": "2025-11-06T10:30:00Z",
- *     "database": "PostgreSQL",
- *     "version": "14.5",
- *     "connections": {
- *       "active": 15,
- *       "idle": 5,
- *       "max": 100
- *     }
- *   }
- * }
- * </pre>
- *
- * <p><b>Thread Safety</b><br>
- * Immutable value object - all fields final. Safe to share across threads.
- *
- * @see DatabaseHealthCheck
- * @see HealthDetails
- * @since 1.0.0
  * @doc.type class
  * @doc.purpose Immutable health status value object with diagnostics
  * @doc.layer core
  * @doc.pattern Value Object
- *
- * @deprecated Use {@link com.ghatana.platform.health.HealthStatus} instead.
- *             This class is kept for backward compatibility. New code should use the canonical
- *             platform HealthStatus and add database-specific details (response time, connection info)
- *             to the details map.
  */
-@Deprecated(since = "4.1.0", forRemoval = true)
 public final class HealthStatus {
 
     /**

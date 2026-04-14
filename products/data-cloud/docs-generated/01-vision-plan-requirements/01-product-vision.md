@@ -1,8 +1,8 @@
 # Data Cloud Product Vision Document
 
 **Document ID:** DC-VISION-001  
-**Version:** 2.0  
-**Date:** 2026-04-12  
+**Version:** 2.1  
+**Date:** 2026-04-13  
 **Evidence Base:** Architecture Documentation Suite + Code Inspection
 
 ---
@@ -14,10 +14,10 @@
 ### Key Architectural Strengths
 
 - **Hexagonal Architecture**: Clean ports-and-adapters pattern with SPI abstraction layer
-- **Multi-tenant by Design**: Tenant isolation at all architectural layers (DB-level in V011 migration)
+- **Tenant-Aware by Design**: Tenant isolation is central to the architecture, though current docs still need one reconciled statement on database-level enforcement
 - **Event-Driven Core**: Immutable append-only event log with Kafka-backed streaming
 - **Plugin Extensibility**: ServiceLoader-based plugin framework for storage/streaming/search
-- **Production-Ready Infrastructure**: Docker, Kubernetes, Helm, Terraform deployment suite
+- **Operational Deployment Assets**: Docker, Kubernetes, Helm, and Terraform support are documented
 
 ### System Context
 
@@ -42,8 +42,9 @@ flowchart LR
 ```
 
 ### Key Evidence-Based Findings:
+
 - **Strong Modular Architecture**: Clean hexagonal architecture with proper SPI abstraction layer
-- **Production-Ready Infrastructure**: Complete containerization, Kubernetes deployment, monitoring stack
+- **Operational Infrastructure Coverage**: Containerization, deployment, and monitoring assets are documented
 - **Comprehensive Storage Layer**: 9 storage connectors including PostgreSQL, ClickHouse, Redis, Kafka, S3, Ceph, OpenSearch
 - **AI/ML-Native Design**: Embedded intelligence throughout workflows rather than isolated features
 - **Mature Frontend**: React 19 + TypeScript with 38 pages, comprehensive state management, and E2E testing
@@ -53,11 +54,13 @@ flowchart LR
 ## Product Identity
 
 ### Product Name
+
 **Data Cloud** - stylized as "Data-Cloud" in historical documentation
 
 ### Problem Statement
 
 Organizations struggle with fragmented data infrastructure where:
+
 - Entity storage, event streaming, analytics, and AI/ML capabilities live in separate silos
 - Data governance and lifecycle management are afterthoughts rather than foundational
 - AI/ML features are bolted on rather than natively embedded
@@ -67,9 +70,10 @@ Organizations struggle with fragmented data infrastructure where:
 ### Opportunity
 
 Data-Cloud presents a unified, AI/ML-native data platform that:
+
 - Consolidates entity storage, event streaming, analytics, and AI/ML in one coherent system
 - Embeds intelligence naturally into data workflows
-- Provides production-grade multi-tenant isolation from day one
+- Targets strong tenant-aware isolation as a core property, with final readiness wording dependent on validation and documentation reconciliation
 - Offers plugin-driven extensibility without architectural compromise
 - Enables real-time data synchronization through event sourcing
 
@@ -85,7 +89,7 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 
 1. **Unified Data Management**: Provide single, coherent platform for entity storage, event streaming, analytics, and governance
 2. **AI/ML-Native Experience**: Embed intelligence naturally into all data workflows rather than treating AI as an add-on
-3. **Production-Ready Reliability**: Ensure enterprise-grade reliability, security, and observability out of the box
+3. **Operational Reliability**: Ensure reliability, security, and observability can be validated and communicated credibly
 4. **Developer Experience**: Offer intuitive APIs, comprehensive SDKs, and clear documentation for rapid adoption
 5. **Ecosystem Integration**: Serve as foundational data platform for Ghatana ecosystem while maintaining independence
 
@@ -103,21 +107,25 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 ### Primary Personas
 
 **Data Platform Engineers**
+
 - Responsibilities: Infrastructure, data architecture, reliability
 - Needs: Scalable storage, real-time streaming, observability, multi-tenant security
 - Pain Points: Fragmented systems, operational complexity, inconsistent security
 
 **Data Scientists & ML Engineers**
+
 - Responsibilities: Model development, feature engineering, analytics
 - Needs: Feature store, model registry, experiment tracking, data access
 - Pain Points: Data silos, manual feature engineering, model deployment complexity
 
 **Product Managers & Analysts**
+
 - Responsibilities: Data-driven decisions, reporting, insights
 - Needs: Self-service analytics, real-time dashboards, data exploration
 - Pain Points: IT bottlenecks, stale data, limited query capabilities
 
 **Application Developers**
+
 - Responsibilities: Building data-driven applications
 - Needs: APIs, SDKs, real-time data, authentication
 - Pain Points: Complex integrations, inconsistent APIs, rate limiting
@@ -125,11 +133,13 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 ### Secondary Personas
 
 **Compliance Officers**
+
 - Responsibilities: Data privacy, audit trails, regulatory compliance
 - Needs: Data governance, audit logs, access controls
 - Pain Points: Manual compliance processes, audit preparation
 
 **DevOps Engineers**
+
 - Responsibilities: Deployment, monitoring, scaling
 - Needs: Containerization, health checks, metrics, automation
 - Pain Points: Manual deployment processes, monitoring gaps
@@ -139,24 +149,28 @@ Data-Cloud presents a unified, AI/ML-native data platform that:
 ## Value Proposition
 
 ### For Data Platform Engineers
+
 - **Unified Infrastructure**: Single system replacing multiple specialized tools
 - **Operational Simplicity**: Containerized deployment with comprehensive monitoring
 - **Security by Design**: Multi-tenant isolation built into core architecture
 - **Scalability**: Horizontal scaling with proven storage backends
 
 ### For Data Scientists & ML Engineers
+
 - **Native AI/ML**: Feature store and model registry integrated, not bolted on
 - **Real-time Features**: Streaming feature ingestion for online ML
 - **Experiment Tracking**: Built-in metadata and version management
 - **Self-Service Access**: Direct API access to data and features
 
 ### For Product Managers & Analysts
+
 - **Self-Service Analytics**: Natural language queries and interactive dashboards
 - **Real-time Insights**: Live data streaming and change notifications
 - **Data Exploration**: Unified interface across all data types
 - **Collaboration**: Shared workspaces and curated datasets
 
 ### For Application Developers
+
 - **Comprehensive APIs**: REST, GraphQL, WebSocket, and gRPC support
 - **Multiple SDKs**: Java, TypeScript, Python client libraries
 - **Real-time Updates**: WebSocket and Server-Sent Events
@@ -231,6 +245,7 @@ flowchart LR
 ### In Scope
 
 **Core Capabilities**
+
 - Entity storage with multi-tenant isolation (`platform-entity`, `spi.EntityStore`)
 - Event streaming and sourcing (`platform-event`, `spi.EventLogStore`)
 - Analytics and reporting engine (`platform-analytics`)
@@ -241,6 +256,7 @@ flowchart LR
 - Multi-modal query (SQL, natural language, visual)
 
 **Storage Backends**
+
 - PostgreSQL (JSONB entities)
 - ClickHouse (time-series analytics)
 - Redis (hot-tier caching)
@@ -251,6 +267,7 @@ flowchart LR
 - RocksDB (embedded local store)
 
 **Deployment Modes**
+
 - Standalone product deployment
 - Integrated platform deployment
 - Environment-specific deployment
@@ -259,16 +276,19 @@ flowchart LR
 ### Out of Scope
 
 **Agentic Orchestration**
+
 - Belongs to AEP (Agentic Event Processor)
 - Data-Cloud provides data and execution metadata persistence
 - AEP consumes Data-Cloud through public contracts
 
 **Business Intelligence**
+
 - Focus on data infrastructure, not BI tools
 - Provide data access for external BI systems
 - Basic reporting and analytics included
 
 **Real-time Stream Processing**
+
 - Event streaming and storage provided
 - Complex stream processing belongs to specialized systems
 - Basic event filtering and routing included
@@ -287,41 +307,43 @@ flowchart LR
 
 ## Maturity Assessment
 
-### Production Readiness: **HIGH** ✅
+### Architecture Readiness: **HIGH** ✅
 
 **Evidence:**
-- Complete containerization with multi-stage Dockerfile
-- Full Kubernetes deployment suite (9 manifests)
-- Comprehensive monitoring (Prometheus + Grafana)
-- Health checks and readiness probes
-- CI/CD pipelines with staging and production gates
 
-### Feature Completeness: **HIGH** ✅
+- Clear system architecture and module boundaries
+- ADR-backed runtime, storage, and extensibility decisions
+- Well-documented API and deployment topology
 
-**Evidence:**
-- 38 UI pages covering all major capabilities
-- Complete REST API with OpenAPI specification
-- 9 production storage connectors
-- AI/ML features integrated throughout
-- Real-time capabilities (WebSocket, SSE)
-
-### Test Coverage: **MEDIUM-HIGH** ⚠️
+### Capability Breadth: **HIGH** ✅
 
 **Evidence:**
-- 27 Java test files with integration tests
-- 20 frontend test files with E2E coverage
-- Architecture fitness functions (ArchUnit)
-- Some HTTP endpoint tests were recently re-enabled
-- Missing: comprehensive edge case and performance tests
 
-### Documentation Quality: **HIGH** ✅
+- Broad documented coverage across storage, events, analytics, governance, and ML-support workflows
+- Large requirements and API surface documented in companion artifacts
+
+### Validation Readiness: **MEDIUM** ⚠️
 
 **Evidence:**
-- Comprehensive README and API documentation
-- Architecture Decision Records (ADRs)
-- Implementation plans and audit reports
-- Clear module ownership and boundaries
-- Deployment guides and runbooks
+
+- Test inventory and risk docs are present
+- Performance, security, and tenant-isolation validation remain incomplete or inconsistently described
+- Advanced feature areas are not uniformly validated
+
+### Documentation Quality: **GOOD, BUT STRATEGICALLY INCOMPLETE** ⚠️
+
+**Evidence:**
+
+- Strong implementation-facing documentation
+- New companion strategy documents define ICP, positioning, packaging, and metrics
+- Market proof, validation evidence, and some top-level readiness claims still need reconciliation
+
+## Companion Strategy Documents
+
+- `04-icp-and-jtbd.md`
+- `05-competitive-positioning.md`
+- `06-packaging-and-pricing.md`
+- `07-success-metrics.md`
 
 ---
 
@@ -330,11 +352,13 @@ flowchart LR
 ### High Risk
 
 **Architecture Complexity**
+
 - **Evidence**: Multiple storage backends and plugin system
 - **Impact**: Operational overhead and debugging complexity
 - **Mitigation**: Comprehensive observability and clear documentation
 
 **Performance at Scale**
+
 - **Evidence**: Multiple abstraction layers and storage systems
 - **Impact**: Latency and throughput issues under load
 - **Mitigation**: Performance testing and optimization sprints
@@ -342,11 +366,13 @@ flowchart LR
 ### Medium Risk
 
 **Ecosystem Dependency**
+
 - **Evidence**: Integration with AEP and other Ghatana products
 - **Impact**: Coordination overhead and version compatibility
 - **Mitigation**: Stable public contracts and versioning strategy
 
 **Plugin Ecosystem Growth**
+
 - **Evidence**: Plugin-driven extensibility requires adoption
 - **Impact**: Limited extensibility if ecosystem doesn't develop
 - **Mitigation**: Core plugins and developer experience investment
@@ -354,6 +380,7 @@ flowchart LR
 ### Low Risk
 
 **Technology Stack Evolution**
+
 - **Evidence**: ActiveJ, React 19, Java 21 are modern but evolving
 - **Impact**: Future migration requirements
 - **Mitigation**: Regular technology assessment and migration planning
@@ -363,16 +390,19 @@ flowchart LR
 ## Known Unknowns
 
 ### Market Position
+
 - Competitive differentiation vs. established data platforms
 - Pricing strategy and market positioning
 - Customer acquisition cost and lifetime value
 
 ### Adoption Patterns
+
 - Primary use cases in production environments
 - Typical deployment sizes and configurations
 - Integration patterns with existing systems
 
 ### Performance Characteristics
+
 - Real-world performance under production load
 - Scaling limits and bottlenecks
 - Resource requirements and cost optimization
@@ -384,24 +414,28 @@ flowchart LR
 This vision document is based on comprehensive analysis of:
 
 **Code Evidence**
+
 - 345 Java files in platform-launcher module
 - 38 React UI pages with TypeScript
 - 9 storage backend implementations
 - Complete API surface with OpenAPI spec
 
 **Infrastructure Evidence**
+
 - Docker containerization with health checks
 - Kubernetes deployment manifests
 - Helm charts for production deployment
 - Terraform infrastructure as code
 
 **Testing Evidence**
+
 - Integration tests with Testcontainers
 - E2E tests with Playwright
 - Architecture fitness functions with ArchUnit
 - Contract tests and API validation
 
 **Documentation Evidence**
+
 - Comprehensive README and API docs
 - Architecture Decision Records
 - Implementation plans and audit reports
@@ -412,20 +446,23 @@ This vision document is based on comprehensive analysis of:
 ## Next Steps
 
 ### Immediate Actions (1-2 weeks)
+
 1. Validate performance characteristics under load
 2. Complete missing test coverage for critical paths
 3. Finalize deployment and monitoring setup
 
 ### Short-term Actions (1-3 months)
+
 1. Gather production feedback and usage patterns
 2. Develop plugin ecosystem and developer experience
 3. Optimize performance based on real-world usage
 
 ### Long-term Actions (3-12 months)
+
 1. Expand AI/ML capabilities based on user needs
 2. Enhance real-time processing and streaming
 3. Strengthen ecosystem integration and partnerships
 
 ---
 
-*This document represents the evidence-based understanding of Data-Cloud's product vision as of April 3, 2026. It should be updated as new evidence becomes available through production usage and market feedback.*
+_This document represents the evidence-based understanding of Data-Cloud's product vision as of April 3, 2026. It should be updated as new evidence becomes available through production usage and market feedback._

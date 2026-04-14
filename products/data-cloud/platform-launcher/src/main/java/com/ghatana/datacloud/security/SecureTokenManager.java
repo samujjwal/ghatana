@@ -1,5 +1,8 @@
 package com.ghatana.datacloud.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +52,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SecureTokenManager {
 
     private static final Logger logger = LoggerFactory.getLogger(SecureTokenManager.class);
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // Configuration
     private static final Duration TOKEN_LIFETIME = Duration.ofHours(1);
@@ -130,7 +135,7 @@ public class SecureTokenManager {
         logger.info("Token generated for user: {}, tenant: {}, tokenId: {}",
             userId, tenantId, tokenId);
 
-        return new TokenResult(token, tokenId, expiration, TOKEN_LIFETIME);
+        return new TokenResult(token, tokenId, expiration, TOKEN_LIFETIME, metadata.getSessionBinding());
     }
 
     /**
@@ -189,9 +194,16 @@ public class SecureTokenManager {
      * @return TokenResult with the new token
      */
     public TokenResult rotateToken(String oldToken, String sessionBinding) {
-        Optional<TokenMetadata> validation = validateToken(oldToken, sessionBinding);
+        Optional<TokenMetadata> validation;
+        try {
+            validation = validateToken(oldToken, sessionBinding);
+        } catch (Exception e) {
+            rotationFailures.incrementAndGet();
+            throw new SecurityException("Invalid token for rotation: " + e.getMessage());
+        }
 
         if (validation.isEmpty()) {
+            rotationFailures.incrementAndGet();
             throw new SecurityException("Invalid token for rotation");
         }
 
@@ -458,9 +470,6 @@ public class SecureTokenManager {
     }
 
     private TokenMetadata parseAndVerifyJwt(String token) {
-        // In production: verify signature and parse JWT
-        // For this implementation, simplified parsing
-
         try {
             String[] parts = token.split("\\.");
             if (parts.length < 2) {
@@ -468,29 +477,14 @@ public class SecureTokenManager {
             }
 
             Map<String, Object> payload = base64DecodeToMap(parts[1]);
-
             String tokenId = (String) payload.get("jti");
-            String userId = (String) payload.get("sub");
-            String tenantId = (String) payload.get("tid");
-            long iat = ((Number) payload.get("iat")).longValue();
-            long exp = ((Number) payload.get("exp")).longValue();
+            if (tokenId == null) {
+                return null;
+            }
 
-            payload.remove("sub");
-            payload.remove("tid");
-            payload.remove("jti");
-            payload.remove("iat");
-            payload.remove("exp");
-
-            return new TokenMetadata(
-                tokenId,
-                userId,
-                tenantId,
-                token,
-                Instant.ofEpochSecond(iat),
-                Instant.ofEpochSecond(exp),
-                payload,
-                "session-binding-placeholder" // Would be extracted from secure cookie/header
-            );
+            // Look up the server-side metadata — this is the source of truth,
+            // including the actual session binding generated at token creation.
+            return activeTokens.get(tokenId);
 
         } catch (Exception e) {
             logger.error("JWT parsing failed", e);
@@ -499,18 +493,22 @@ public class SecureTokenManager {
     }
 
     private String base64Encode(Map<String, Object> data) {
-        // Simplified base64 encoding
-        String json = data.toString(); // In production: use proper JSON serialization
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(json.getBytes());
+        try {
+            byte[] json = OBJECT_MAPPER.writeValueAsBytes(data);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(json);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to encode token payload", e);
+        }
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> base64DecodeToMap(String data) {
-        // Simplified base64 decoding
-        byte[] decoded = Base64.getUrlDecoder().decode(data);
-        String json = new String(decoded);
-        // In production: use proper JSON parsing
-        return new HashMap<>(); // Placeholder
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(data);
+            return OBJECT_MAPPER.readValue(decoded, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            logger.error("JWT payload decoding failed", e);
+            return new HashMap<>();
+        }
     }
 
     private void auditLog(String action, String userId, String tenantId, Map<String, Object> details) {
@@ -528,18 +526,21 @@ public class SecureTokenManager {
         private final String tokenId;
         private final Instant expiration;
         private final Duration lifetime;
+        private final String sessionBinding;
 
-        public TokenResult(String token, String tokenId, Instant expiration, Duration lifetime) {
+        public TokenResult(String token, String tokenId, Instant expiration, Duration lifetime, String sessionBinding) {
             this.token = token;
             this.tokenId = tokenId;
             this.expiration = expiration;
             this.lifetime = lifetime;
+            this.sessionBinding = sessionBinding;
         }
 
         public String getToken() { return token; }
         public String getTokenId() { return tokenId; }
         public Instant getExpiration() { return expiration; }
         public Duration getLifetime() { return lifetime; }
+        public String getSessionBinding() { return sessionBinding; }
     }
 
     public static class TokenMetadata {

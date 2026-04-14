@@ -17,6 +17,7 @@
 package com.ghatana.agent;
 
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -106,7 +107,7 @@ import java.util.List;
  *     public Promise<Void> shutdown() { return Promise.complete(); }
  *
  *     @Override
- *     public Promise<HealthStatus> healthCheck() { return Promise.of(HealthStatus.HEALTHY); }
+ *     public Promise<HealthStatus> healthCheck() { return Promise.of(HealthStatus.healthy("Agent is healthy")); }
  * }
  * }</pre>
  *

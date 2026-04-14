@@ -7,7 +7,6 @@ import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 
@@ -81,12 +80,26 @@ public final class DataCloud {
 
     private static EntityStore discoverEntityStore(DataCloudConfig config) {
         ServiceLoader<EntityStore> loader = ServiceLoader.load(EntityStore.class);
-        return loader.findFirst().orElse(new InMemoryEntityStore());
+        return loader.findFirst().orElseGet(() -> {
+            if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
+                throw new IllegalStateException(
+                    "No durable EntityStore provider found. Register an EntityStore implementation via META-INF/services."
+                );
+            }
+            return new InMemoryEntityStore();
+        });
     }
 
     private static EventLogStore discoverEventLogStore(DataCloudConfig config) {
         ServiceLoader<EventLogStore> loader = ServiceLoader.load(EventLogStore.class);
-        return loader.findFirst().orElse(new InMemoryEventLogStore());
+        return loader.findFirst().orElseGet(() -> {
+            if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
+                throw new IllegalStateException(
+                    "No durable EventLogStore provider found. Register an EventLogStore implementation via META-INF/services."
+                );
+            }
+            return new InMemoryEventLogStore();
+        });
     }
 
     private static long numericOffsetValue(Offset offset) {
@@ -110,44 +123,60 @@ public final class DataCloud {
         if (offsetValue < 0) {
             return entryCount;
         }
-        return (int) Math.min(offsetValue, (long) entryCount);
+        return (int) Math.min(offsetValue, entryCount);
     }
 
     // ==================== Configuration ====================
 
     /**
      * Data-Cloud configuration.
+     *
+     * @doc.type record
+     * @doc.purpose Captures factory options and deployment profile for Data-Cloud clients.
+     * @doc.layer api
+     * @doc.pattern ValueObject
      */
     public record DataCloudConfig(
         String instanceId,
         int maxConnectionsPerTenant,
         boolean enableCaching,
         boolean enableMetrics,
+        DataCloudProfile profile,
         Map<String, Object> customConfig
     ) {
         public DataCloudConfig {
             instanceId = instanceId != null ? instanceId : UUID.randomUUID().toString();
             if (maxConnectionsPerTenant <= 0) maxConnectionsPerTenant = 10;
+            profile = profile != null ? profile : DataCloudProfile.LOCAL;
             customConfig = customConfig != null ? Map.copyOf(customConfig) : Map.of();
         }
 
         public static DataCloudConfig defaults() {
-            return new DataCloudConfig(null, 10, true, true, Map.of());
+            return new DataCloudConfig(null, 10, true, true, DataCloudProfile.LOCAL, Map.of());
         }
 
         public static DataCloudConfig forTesting() {
-            return new DataCloudConfig("test-instance", 1, false, false, Map.of());
+            return new DataCloudConfig("test-instance", 1, false, false, DataCloudProfile.LOCAL, Map.of());
         }
 
         public static Builder builder() {
             return new Builder();
         }
 
+        /**
+         * Fluent builder for {@link DataCloudConfig}.
+         *
+         * @doc.type class
+         * @doc.purpose Builds Data-Cloud configuration instances with explicit settings.
+         * @doc.layer api
+         * @doc.pattern Builder
+         */
         public static class Builder {
             private String instanceIdValue;
             private int maxConnectionsPerTenantValue = 10;
             private boolean enableCachingValue = true;
             private boolean enableMetricsValue = true;
+            private DataCloudProfile profileValue = DataCloudProfile.LOCAL;
             private Map<String, Object> customConfig = Map.of();
 
             public Builder instanceId(String instanceId) {
@@ -170,6 +199,11 @@ public final class DataCloud {
                 return this;
             }
 
+            public Builder profile(DataCloudProfile profile) {
+                this.profileValue = profile;
+                return this;
+            }
+
             public Builder customConfig(Map<String, Object> config) {
                 this.customConfig = config;
                 return this;
@@ -177,8 +211,22 @@ public final class DataCloud {
 
             public DataCloudConfig build() {
                 return new DataCloudConfig(instanceIdValue, maxConnectionsPerTenantValue,
-                    enableCachingValue, enableMetricsValue, customConfig);
+                    enableCachingValue, enableMetricsValue, profileValue, customConfig);
             }
+        }
+
+        /**
+         * Data-Cloud deployment profile.
+         *
+         * @doc.type enum
+         * @doc.purpose Declares the deployment profile used to gate durable store requirements.
+         * @doc.layer api
+         * @doc.pattern ValueObject
+         */
+        public enum DataCloudProfile {
+            LOCAL,
+            STAGING,
+            PRODUCTION
         }
     }
 

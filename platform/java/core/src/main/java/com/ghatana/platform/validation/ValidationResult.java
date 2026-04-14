@@ -12,35 +12,13 @@ import java.util.List;
 /**
  * Immutable result of a validation operation.
  *
- * <p><strong>Deprecated.</strong> Use {@link com.ghatana.platform.core.validation.ValidationResult}
- * instead — it is a {@code record}, integrates with
- * {@link com.ghatana.platform.core.exception.ValidationException} via
- * {@code toException()} / {@code throwIfInvalid()}, and supports violation merging
- * via {@code and()}.
- *
- * <p><strong>Migration guide:</strong>
- * <pre>{@code
- * // Old
- * ValidationResult.success();
- * ValidationResult.failure(new ValidationError("CODE", "msg"));
- * result.isValid();
- * result.getErrors();
- *
- * // New (com.ghatana.platform.core.validation.ValidationResult)
- * ValidationResult.valid();
- * ValidationResult.invalid("fieldName", "msg");
- * result.isValid();
- * result.violations();
- * result.throwIfInvalid();   // convenience
- * }</pre>
+ * <p>Encapsulates the outcome of validation with support for multiple errors.
  *
  * @doc.type class
  * @doc.purpose Aggregated result of one or more validation checks
  * @doc.layer platform
  * @doc.pattern ValueObject
- * @deprecated since 2026-03-28 — use {@code com.ghatana.platform.core.validation.ValidationResult}
  */
-@Deprecated(since = "2026-03-28", forRemoval = false)
 public class ValidationResult {
     private final boolean valid;
     private final List<ValidationError> errors;
@@ -73,7 +51,8 @@ public class ValidationResult {
         return new ValidationResult(false, errors);
     }
 
-    /**     * Creates a failed validation result with a single error message.
+    /**
+     * Creates a failed validation result with a single error message.
      *
      * @param message human-readable error description
      */

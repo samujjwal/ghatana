@@ -8,8 +8,8 @@ import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
-import com.ghatana.agent.HealthStatus;
 import com.ghatana.agent.TypedAgent;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -140,7 +140,7 @@ public class HumanInTheLoopCoordinatorAgent implements TypedAgent<ApprovalReques
 
     @Override
     public @NotNull Promise<HealthStatus> healthCheck() {
-        return Promise.of(HealthStatus.HEALTHY);
+        return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     /**

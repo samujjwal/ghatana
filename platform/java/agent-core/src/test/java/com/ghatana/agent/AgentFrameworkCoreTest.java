@@ -7,6 +7,7 @@ package com.ghatana.agent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -41,9 +42,9 @@ class AgentFrameworkCoreTest {
     class AgentTypeTest {
 
         @Test
-        @DisplayName("has all 10 agent types (9 canonical + 1 deprecated LLM)")
-        void shouldHaveAll10Types() {
-            assertThat(AgentType.values()).hasSize(10);
+        @DisplayName("has all 9 canonical agent types")
+        void shouldHaveAll9Types() {
+            assertThat(AgentType.values()).hasSize(9);
             assertThat(AgentType.values()).containsExactly(
                     AgentType.DETERMINISTIC,
                     AgentType.PROBABILISTIC,
@@ -53,7 +54,6 @@ class AgentFrameworkCoreTest {
                     AgentType.ADAPTIVE,
                     AgentType.COMPOSITE,
                     AgentType.REACTIVE,
-                    AgentType.LLM,
                     AgentType.CUSTOM
             );
         }
@@ -134,25 +134,6 @@ class AgentFrameworkCoreTest {
     // ═══════════════════════════════════════════════════════════════════════════
     // HealthStatus Enum
     // ═══════════════════════════════════════════════════════════════════════════
-
-    @Nested
-    @DisplayName("HealthStatus")
-    class HealthStatusTest {
-
-        @Test
-        @DisplayName("has 6 values")
-        void shouldHave6Values() {
-            assertThat(HealthStatus.values()).hasSize(6);
-            assertThat(HealthStatus.values()).containsExactly(
-                    HealthStatus.HEALTHY,
-                    HealthStatus.DEGRADED,
-                    HealthStatus.UNHEALTHY,
-                    HealthStatus.STARTING,
-                    HealthStatus.STOPPING,
-                    HealthStatus.UNKNOWN
-            );
-        }
-    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // AgentResultStatus Enum
@@ -321,24 +302,6 @@ class AgentFrameworkCoreTest {
                     .build();
             assertThat(desc.hasCapability("fraud")).isTrue();
             assertThat(desc.hasCapability("enrichment")).isFalse();
-        }
-
-        @Test
-        @DisplayName("toCapabilities bridges to legacy AgentCapabilities")
-        void shouldBridgeToCapabilities() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("bridge")
-                    .name("Bridge Agent")
-                    .description("A bridged agent")
-                    .type(AgentType.HYBRID)
-                    .capabilities(Set.of("cap1", "cap2"))
-                    .build();
-
-            AgentCapabilities caps = desc.toCapabilities();
-            assertThat(caps.name()).isEqualTo("Bridge Agent");
-            assertThat(caps.role()).isEqualTo("HYBRID");
-            assertThat(caps.description()).isEqualTo("A bridged agent");
-            assertThat(caps.supportedTaskTypes()).containsExactlyInAnyOrder("cap1", "cap2");
         }
 
         @Test
@@ -886,19 +849,19 @@ class AgentFrameworkCoreTest {
 
             // CREATED → UNHEALTHY
             HealthStatus status = runOnEventloop(agent::healthCheck);
-            assertThat(status).isEqualTo(HealthStatus.UNHEALTHY);
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY);
 
             // Initialize → READY → HEALTHY
             AgentConfig config = AgentConfig.builder()
                     .agentId("doubler").type(AgentType.DETERMINISTIC).build();
             runOnEventloop(() -> agent.initialize(config));
             status = runOnEventloop(agent::healthCheck);
-            assertThat(status).isEqualTo(HealthStatus.HEALTHY);
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
 
             // Shutdown → STOPPED → UNHEALTHY
             runOnEventloop(agent::shutdown);
             status = runOnEventloop(agent::healthCheck);
-            assertThat(status).isEqualTo(HealthStatus.UNHEALTHY);
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.UNHEALTHY);
         }
 
         @Test
@@ -1014,45 +977,4 @@ class AgentFrameworkCoreTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Backward Compatibility: Old Agent interface still works
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Nested
-    @DisplayName("Backward Compatibility")
-    class BackwardCompatibilityTest {
-
-        @Test
-        @DisplayName("old Agent interface is still available")
-        void shouldHaveOldAgentInterface() {
-            // Verifies the untyped Agent interface was NOT removed
-            assertThat(Agent.class).isInterface();
-            assertThat(Agent.class.getMethods()).isNotEmpty();
-        }
-
-        @Test
-        @DisplayName("old AgentCapabilities record is still available")
-        void shouldHaveOldAgentCapabilities() {
-            AgentCapabilities caps = new AgentCapabilities(
-                    "TestAgent", "WORKER", "A test agent",
-                    Set.of("task-a"), Set.of("tool-b"));
-            assertThat(caps.name()).isEqualTo("TestAgent");
-            assertThat(caps.role()).isEqualTo("WORKER");
-            assertThat(caps.supportedTaskTypes()).containsExactly("task-a");
-        }
-
-        @Test
-        @DisplayName("AgentDescriptor.toCapabilities bridges new→old")
-        void shouldBridgeNewToOld() {
-            AgentDescriptor desc = AgentDescriptor.builder()
-                    .agentId("bridged")
-                    .name("Bridged")
-                    .type(AgentType.COMPOSITE)
-                    .capabilities(Set.of("cap1"))
-                    .build();
-            AgentCapabilities caps = desc.toCapabilities();
-            assertThat(caps.role()).isEqualTo("COMPOSITE");
-            assertThat(caps.supportedTaskTypes()).containsExactly("cap1");
-        }
-    }
 }

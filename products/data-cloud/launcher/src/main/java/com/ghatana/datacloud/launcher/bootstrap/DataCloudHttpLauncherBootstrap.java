@@ -24,10 +24,14 @@ import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.observability.clickhouse.ClickHouseTraceStorage;
 import com.zaxxer.hikari.HikariDataSource;
+import io.activej.dns.DnsClient;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -46,10 +50,14 @@ public final class DataCloudHttpLauncherBootstrap {
     private DataCloudHttpLauncherBootstrap() {}
 
     public static void start(DataCloudClient client, Logger log) {
-        start(client, log, System.getenv());
+        try {
+            start(client, log, System.getenv());
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Failed to resolve DNS server address", e);
+        }
     }
 
-    static void start(DataCloudClient client, Logger log, Map<String, String> env) {
+    static void start(DataCloudClient client, Logger log, Map<String, String> env) throws UnknownHostException {
         start(client, log, env, DataCloudBrainModule::createStandalone, DataCloudLearningBridge::new);
     }
 
@@ -58,7 +66,7 @@ public final class DataCloudHttpLauncherBootstrap {
             Logger log,
             Map<String, String> env,
             Function<LearningSignalStore, DataCloudBrain> brainFactory,
-            Function<DataCloudBrain, DataCloudLearningBridge> learningBridgeFactory) {
+            Function<DataCloudBrain, DataCloudLearningBridge> learningBridgeFactory) throws UnknownHostException {
         int port = DataCloudLauncherSettings.resolveHttpPort(env);
 
         DataCloudBrain brain = null;
@@ -159,8 +167,8 @@ public final class DataCloudHttpLauncherBootstrap {
      *   <li>Otherwise returns {@code null} — server falls back to stub/no-op mode.</li>
      * </ol>
      */
-    static CompletionService buildCompletionService(Map<String, String> env, Logger log) {
-        MetricsCollector metrics = MetricsCollector.NOOP;
+    static CompletionService buildCompletionService(Map<String, String> env, Logger log) throws UnknownHostException {
+        MetricsCollector metrics = new NoopMetricsCollector();
         String provider = env.getOrDefault("AI_PROVIDER", "").trim().toLowerCase();
 
         if ("ollama".equals(provider)) {
@@ -170,8 +178,9 @@ public final class DataCloudHttpLauncherBootstrap {
                     .baseUrl(host)
                     .modelName(model)
                     .build();
-            Eventloop eventloop = Eventloop.getCurrentThreadEventloop();
-            HttpClient httpClient = HttpClient.create(eventloop);
+            Eventloop eventloop = Eventloop.create();
+            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName("8.8.8.8"));
+            HttpClient httpClient = HttpClient.create(eventloop, dnsClient);
             log.info("LLM backend: Ollama at {} model={}", host, model);
             return new OllamaCompletionService(config, httpClient, metrics);
         }
@@ -183,8 +192,9 @@ public final class DataCloudHttpLauncherBootstrap {
                     .apiKey(openAiKey)
                     .modelName(model)
                     .build();
-            Eventloop eventloop = Eventloop.getCurrentThreadEventloop();
-            HttpClient httpClient = HttpClient.create(eventloop);
+            Eventloop eventloop = Eventloop.create();
+            DnsClient dnsClient = DnsClient.create(eventloop, InetAddress.getByName("8.8.8.8"));
+            HttpClient httpClient = HttpClient.create(eventloop, dnsClient);
             log.info("LLM backend: OpenAI model={}", model);
             return new OpenAICompletionService(config, httpClient, metrics);
         }
@@ -211,7 +221,7 @@ public final class DataCloudHttpLauncherBootstrap {
         int port = Integer.parseInt(env.getOrDefault("CLICKHOUSE_PORT", "8123"));
         String database = env.getOrDefault("CLICKHOUSE_DATABASE", "observability");
 
-        MetricsCollector metrics = MetricsCollector.NOOP;
+        MetricsCollector metrics = new NoopMetricsCollector();
         ClickHouseTraceStorage traceStorage = ClickHouseTraceStorage.builder()
                 .withHost(host)
                 .withPort(port)

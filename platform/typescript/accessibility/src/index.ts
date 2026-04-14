@@ -1,14 +1,14 @@
 // Core
-import { AccessibilityAuditor } from './AccessibilityAuditor';
+import { AccessibilityAuditor } from "./AccessibilityAuditor";
 
-import type { AccessibilityReport, WCAGLevel, OutputFormat } from './types';
+import type { AccessibilityReport, WCAGLevel, OutputFormat } from "./types";
 
 // React Components
-export { AccessibilityAuditTool } from './AccessibilityAuditTool';
-export { AccessibilityReportViewer } from './AccessibilityReportViewer';
+export { AccessibilityAuditTool } from "./AccessibilityAuditTool";
+export { AccessibilityReportViewer } from "./AccessibilityReportViewer";
 
 // Hooks
-export { useAccessibilityAudit } from './useAccessibilityAudit';
+export { useAccessibilityAudit } from "./useAccessibilityAudit";
 
 // Types - export all comprehensive types
 export type {
@@ -31,13 +31,10 @@ export type {
   Recommendation,
   ComparisonResult,
   SARIFOutput,
-} from './types';
-
-// Deprecated types for backward compatibility
-export type { AccessibilityViolation } from './AccessibilityAuditor';
+} from "./types";
 
 // Scoring
-export { AccessibilityScorer } from './scoring/AccessibilityScorer';
+export { AccessibilityScorer } from "./scoring/AccessibilityScorer";
 
 // Formatters
 export {
@@ -49,23 +46,35 @@ export {
   SARIFFormatter,
   XMLFormatter,
   MarkdownFormatter,
-} from './formatters';
+} from "./formatters";
 
 // Main export
 export default AccessibilityAuditor;
 
 // Version and constants
-export const VERSION = '0.1.0';
+export const VERSION = "0.1.0";
 
-export const WCAG_LEVELS = ['A', 'AA', 'AAA'] as const;
+export const WCAG_LEVELS = ["A", "AA", "AAA"] as const;
 
-export const SEVERITY_LEVELS = ['critical', 'serious', 'moderate', 'minor'] as const;
+export const SEVERITY_LEVELS = [
+  "critical",
+  "serious",
+  "moderate",
+  "minor",
+] as const;
 
-export const OUTPUT_FORMATS = ['json', 'html', 'csv', 'sarif', 'xml', 'markdown'] as const;
+export const OUTPUT_FORMATS = [
+  "json",
+  "html",
+  "csv",
+  "sarif",
+  "xml",
+  "markdown",
+] as const;
 
 /**
  * Helper function to run a quick audit
- * 
+ *
  * @example
  * ```typescript
  * const report = await runQuickAudit();
@@ -74,7 +83,7 @@ export const OUTPUT_FORMATS = ['json', 'html', 'csv', 'sarif', 'xml', 'markdown'
  */
 export async function runQuickAudit(
   element?: Element | Document | string,
-  wcagLevel: WCAGLevel = 'AA'
+  wcagLevel: WCAGLevel = "AA",
 ): Promise<AccessibilityReport> {
   const auditor = new AccessibilityAuditor({ wcagLevel });
   await auditor.initialize();
@@ -83,16 +92,16 @@ export async function runQuickAudit(
 
 /**
  * Helper function to run audit and export in specific format
- * 
+ *
  * @example
  * ```typescript
  * const html = await runAuditWithFormat('html');
  * ```
  */
 export async function runAuditWithFormat(
-  format: OutputFormat = 'json',
+  format: OutputFormat = "json",
   element?: Element | Document | string,
-  wcagLevel: WCAGLevel = 'AA'
+  wcagLevel: WCAGLevel = "AA",
 ): Promise<string> {
   const report = await runQuickAudit(element, wcagLevel);
   const auditor = new AccessibilityAuditor({ wcagLevel });
@@ -100,9 +109,18 @@ export async function runAuditWithFormat(
 }
 
 // API helpers
-export { auditTarget, auditTargetToFormat } from './api/runAuditOn';
+export { auditTarget, auditTargetToFormat } from "./api/runAuditOn";
 
 // Audit logging (privacy-sensitive operation logging)
 // Previously only available in @ghatana/audit-components
-export { auditLogService, useAuditLog, AuditLogService, AuditEventSchema } from './audit/audit-log';
-export type { AuditEvent, AuditLogQueryResponse, AuditLogQueryOptions } from './audit/audit-log';
+export {
+  auditLogService,
+  useAuditLog,
+  AuditLogService,
+  AuditEventSchema,
+} from "./audit/audit-log";
+export type {
+  AuditEvent,
+  AuditLogQueryResponse,
+  AuditLogQueryOptions,
+} from "./audit/audit-log";

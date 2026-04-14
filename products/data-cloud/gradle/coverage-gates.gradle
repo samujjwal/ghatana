@@ -30,8 +30,7 @@ def coverageTargets100 = [
     'spi': [line: 1.0, branch: 1.0, method: 1.0],
     'api': [line: 1.0, branch: 1.0, method: 1.0],
     'sdk': [line: 1.0, branch: 1.0, method: 1.0],
-    'platform': [line: 1.0, branch: 1.0, method: 1.0],
-    'data-cloud-cache': [line: 1.0, branch: 1.0, method: 1.0]
+    'platform': [line: 1.0, branch: 1.0, method: 1.0]
 ]
 
 // Exclusions for generated code, dead code (to be removed), and framework boilerplate

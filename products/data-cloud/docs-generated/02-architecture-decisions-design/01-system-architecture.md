@@ -1,9 +1,9 @@
 # Data Cloud System Architecture
 
 **Document ID:** DC-ARCH-001  
-**Version:** 2.0  
-**Date:** 2026-04-12  
-**Evidence Base:** Architecture Documentation Suite (21 docs, 24 diagrams)
+**Version:** 2.1  
+**Date:** 2026-04-13  
+**Evidence Base:** Current generated Data Cloud documentation set with readiness reconciliation
 
 ---
 
@@ -14,7 +14,7 @@ Data Cloud employs a **hexagonal (ports and adapters) architecture** with clear 
 ### Key Architectural Decisions
 
 1. **Hexagonal Architecture** - SPI abstraction layer for clean boundaries
-2. **Multi-tenant by Design** - Tenant isolation at all layers (DB-level in V011)
+2. **Tenant-Aware by Design** - Tenant isolation is a core architectural concern, though the exact enforcement model still requires one reconciled statement across the docs
 3. **Event Sourcing** - Immutable append-only event log with Kafka
 4. **Plugin Extensibility** - ServiceLoader-based plugin framework
 5. **Clear AEP Boundary** - Data Cloud provides persistence, AEP owns orchestration
@@ -28,7 +28,7 @@ flowchart LR
         Service["Service clients"]
         AEP["AEP runtime<br/>(external owner)"]
     end
-    
+
     subgraph DataCloud["Data Cloud Platform"]
         UI["ui React SPA"]
         HTTP["HTTP API<br/>(launcher/http)"]
@@ -36,7 +36,7 @@ flowchart LR
         Registry["agent-registry<br/>provider"]
         Core["Core Runtime<br/>(launcher + platform-launcher)"]
     end
-    
+
     subgraph Infrastructure["Infrastructure"]
         PG["PostgreSQL"]
         Kafka["Kafka"]
@@ -45,7 +45,7 @@ flowchart LR
         Blob["S3 / Ceph"]
         Redis["Redis"]
     end
-    
+
     User --> UI
     Service --> HTTP
     Service --> GRPC
@@ -63,8 +63,9 @@ flowchart LR
 ```
 
 ### Key Architectural Characteristics:
+
 - **Hexagonal Architecture**: Clean separation of concerns with ports and adapters
-- **Multi-tenant by Design**: Tenant isolation at all architectural layers
+- **Tenant-Aware by Design**: Tenant context and isolation are central to the architecture, with readiness proof varying by layer
 - **Event-Driven**: Event sourcing with immutable event log
 - **Plugin-Driven Extensibility**: Core system enhanced through plugins
 - **AI/ML-Native**: Intelligence embedded throughout, not bolted on
@@ -126,13 +127,15 @@ flowchart LR
 
 **Purpose**: Isolate domain logic from external concerns
 
-**Evidence**: 
+**Evidence**:
+
 - SPI interfaces in `spi/` module define ports
 - Multiple storage adapters implement ports
 - HTTP controllers act as inbound adapters
 - Event streaming acts as outbound adapter
 
 **Structure**:
+
 ```
 Domain Layer (Core)
 ├── Entities
@@ -157,28 +160,32 @@ Infrastructure Layer
 **Purpose**: Isolate tenant data and operations
 
 **Evidence**:
+
 - `TenantContext` throughout codebase
-- `tenant_id` columns in all tables
+- `tenant_id` columns in documented persistence paths
 - Tenant-scoped Kafka topics
-- Resource quotas per tenant
+- Tenant-aware resource control intentions in the architecture
 
 **Isolation Levels**:
-- **Data Isolation**: Row-level security with tenant_id
-- **Compute Isolation**: Resource quotas and limits
-- **Network Isolation**: Tenant-scoped connections
-- **Event Isolation**: Tenant-specific event streams
+
+- **Data Isolation**: Tenant-aware filtering and schema design are documented; database-level enforcement claims should be read together with the caveat and readiness docs
+- **Compute Isolation**: Resource quotas and limits are part of the intended model
+- **Network Isolation**: Tenant-scoped connections and policies are part of the architecture narrative
+- **Event Isolation**: Tenant-specific event streams are documented
 
 ### 3. Event-Driven Architecture
 
 **Purpose**: Decouple services through event communication
 
 **Evidence**:
+
 - EventLogStore SPI with Kafka implementation
 - Immutable event log design
 - Event sourcing patterns
 - CQRS-like read/write separation
 
 **Event Flow**:
+
 ```
 Command → Service → Event → Event Store → Projections → Read Models
 ```
@@ -188,6 +195,7 @@ Command → Service → Event → Event Store → Projections → Read Models
 **Purpose**: Extensible system without core modifications
 
 **Evidence**:
+
 - Plugin framework with ServiceLoader discovery
 - Plugin lifecycle management
 - Plugin isolation and communication
@@ -204,19 +212,19 @@ flowchart LR
     subgraph Frontend["Frontend"]
         UI["ui<br/>React 19 + Vite"]
     end
-    
+
     subgraph Deployable["Deployable Applications"]
         Launcher["launcher<br/>HTTP/gRPC bootstrap"]
     end
-    
+
     subgraph Runtime["Runtime Core"]
         PL["platform-launcher<br/>DI, storage, gRPC"]
     end
-    
+
     subgraph APILayer["API Layer"]
         PA["platform-api<br/>Controllers, DTOs"]
     end
-    
+
     subgraph SharedLibs["Shared Libraries"]
         SPI["spi<br/>Public contracts"]
         Entity["platform-entity<br/>Domain models"]
@@ -224,16 +232,16 @@ flowchart LR
         Config["platform-config<br/>Config loading"]
         Analytics["platform-analytics<br/>Query engine"]
     end
-    
+
     subgraph Plugins["Plugin System"]
         PPlugins["platform-plugins<br/>Kafka, Redis, S3, etc."]
     end
-    
+
     subgraph Workers["Background Workers"]
         FSIngest["feature-store-ingest<br/>Event tailing"]
         ARegistry["agent-registry<br/>Metadata persistence"]
     end
-    
+
     UI --> Launcher
     Launcher --> PA
     Launcher --> PL
@@ -336,6 +344,7 @@ AI/ML Platform
 ### 1. Data Model Architecture
 
 **Entity Model**:
+
 ```
 EntityRecord
 ├── id (UUID)
@@ -353,6 +362,7 @@ EntityRecord
 ```
 
 **Event Model**:
+
 ```
 EventRecord
 ├── id (UUID)
@@ -384,26 +394,27 @@ flowchart TB
     subgraph Hot["Hot Tier"]
         Redis["Redis Cache<br/>Recent entities<br/>Active sessions<br/>Real-time analytics"]
     end
-    
+
     subgraph Warm["Warm Tier"]
         PG["PostgreSQL<br/>Entity storage<br/>Metadata<br/>Relationships"]
     end
-    
+
     subgraph Analytical["Analytical Tier"]
         CH["ClickHouse<br/>Time-series data<br/>Aggregations<br/>Roll-ups"]
         OS["OpenSearch<br/>Full-text search<br/>Document indexing"]
     end
-    
+
     subgraph Cold["Cold Tier"]
         S3["S3/Glacier<br/>Historical data<br/>Archives<br/>Backups"]
     end
-    
+
     Hot -->|promote| Warm
     Warm -->|archive| Cold
     Warm -->|analyze| Analytical
 ```
 
 **Tiered Storage Strategy (ASCII)**:
+
 ```
 Hot Tier (Redis)
 ├── Recent entities
@@ -437,20 +448,20 @@ flowchart LR
         System["System Events"]
         User["User Actions"]
     end
-    
+
     subgraph EventStore["Event Store"]
         Kafka["Kafka Cluster"]
         Topics["Tenant-scoped Topics"]
         Partitions["Partitions"]
     end
-    
+
     subgraph Consumers["Event Consumers"]
         FeatureIngest["Feature Ingest Worker"]
         Analytics["Analytics Engine"]
         Realtime["Real-time Notifications"]
         Registry["Agent Registry Events"]
     end
-    
+
     Producers --> Kafka
     Kafka --> Topics
     Topics --> Partitions
@@ -458,6 +469,7 @@ flowchart LR
 ```
 
 **Event Streaming Architecture (ASCII)**:
+
 ```
 Event Flow
 ├── Event Producers
@@ -486,6 +498,7 @@ Event Flow
 ### 1. Multi-Tenant Security
 
 **Tenant Isolation Strategy**:
+
 ```
 Security Layers
 ├── Network Layer
@@ -497,20 +510,21 @@ Security Layers
 │   ├── Resource quotas
 │   └── Access controls
 ├── Data Layer
-│   ├── Row-level security
-│   ├── Tenant-scoped schemas
-│   └── Data encryption
+│   ├── Tenant-aware filtering and access patterns
+│   ├── Tenant-scoped data organization
+│   └── Data protection controls
 └── Event Layer
 │   ├── Tenant-scoped topics
 │   ├── Event isolation
 │   └── Stream separation
 ```
 
-**Evidence**: TenantContext implementation and security policies
+**Evidence**: TenantContext implementation and security policies, with final enforcement wording reconciled in the readiness and caveat documents
 
 ### 2. Authentication & Authorization
 
 **Security Framework**:
+
 ```
 Authentication
 ├── OAuth 2.0 / JWT
@@ -530,6 +544,7 @@ Authorization
 ### 3. Data Protection
 
 **Data Protection Strategy**:
+
 ```
 Data Protection
 ├── Encryption at Rest
@@ -546,7 +561,7 @@ Data Protection
     └── Consent management
 ```
 
-**Evidence**: Encryption configuration and privacy controls
+**Evidence**: Encryption configuration and privacy controls are documented, though some verification steps remain open in the caveat and risk documents
 
 ---
 
@@ -555,6 +570,7 @@ Data Protection
 ### 1. Container Architecture
 
 **Container Strategy**:
+
 ```
 Docker Containers
 ├── Multi-stage builds
@@ -569,6 +585,7 @@ Docker Containers
 ### 2. Kubernetes Architecture
 
 **Kubernetes Deployment**:
+
 ```
 Kubernetes Resources
 ├── Deployments
@@ -594,6 +611,7 @@ Kubernetes Resources
 ### 3. Helm Architecture
 
 **Helm Chart Structure**:
+
 ```
 Helm Chart
 ├── Chart.yaml
@@ -620,6 +638,7 @@ Helm Chart
 ### 1. API Gateway Architecture
 
 **API Gateway Pattern**:
+
 ```
 API Gateway
 ├── Request routing
@@ -635,6 +654,7 @@ API Gateway
 ### 2. Service Mesh Architecture
 
 **Service Integration**:
+
 ```
 Service Communication
 ├── HTTP/REST APIs
@@ -650,6 +670,7 @@ Service Communication
 ### 3. External Integration Architecture
 
 **External System Integration**:
+
 ```
 External Integrations
 ├── AEP (Agentic Event Processor)
@@ -679,6 +700,7 @@ External Integrations
 ### 1. Monitoring Architecture
 
 **Monitoring Stack**:
+
 ```
 Monitoring Components
 ├── Metrics Collection
@@ -708,6 +730,7 @@ Monitoring Components
 ### 2. Performance Architecture
 
 **Performance Monitoring**:
+
 ```
 Performance Monitoring
 ├── Application Performance
@@ -741,6 +764,7 @@ Performance Monitoring
 ### 1. Horizontal Scaling
 
 **Scaling Strategy**:
+
 ```
 Horizontal Scaling
 ├── Application Scaling
@@ -770,6 +794,7 @@ Horizontal Scaling
 ### 2. Geographic Scaling
 
 **Multi-Region Architecture**:
+
 ```
 Geographic Distribution
 ├── Multi-Region Deployment
@@ -798,6 +823,7 @@ Geographic Distribution
 ### 1. Backend Technology Stack
 
 **Java Platform**:
+
 ```
 Backend Stack
 ├── Java 21
@@ -828,6 +854,7 @@ Backend Stack
 ### 2. Frontend Technology Stack
 
 **React Platform**:
+
 ```
 Frontend Stack
 ├── React 19
@@ -849,6 +876,7 @@ Frontend Stack
 ### 3. Infrastructure Technology Stack
 
 **Cloud Native Stack**:
+
 ```
 Infrastructure Stack
 ├── Containers
@@ -910,7 +938,7 @@ Infrastructure Stack
 5. **Observable**: Comprehensive monitoring and tracing
 6. **Secure**: Security built into all layers
 7. **Extensible**: Plugin framework for extensions
-8. **Production Ready**: Complete deployment and operations
+8. **Operationally Structured**: Deployment and operations assets are documented, with validation depth varying by domain
 
 ### Areas for Improvement
 
@@ -931,18 +959,21 @@ Infrastructure Stack
 ## Evolution Roadmap
 
 ### Phase 1: Production Optimization (Next 3 months)
+
 - Performance testing and optimization
 - Load testing and capacity planning
 - Monitoring and alerting improvements
 - Documentation improvements
 
 ### Phase 2: Capability Enhancement (3-6 months)
+
 - Advanced AI/ML capabilities
 - Enhanced plugin ecosystem
 - Improved developer experience
 - Geographic scaling
 
 ### Phase 3: Ecosystem Growth (6-12 months)
+
 - Third-party integrations
 - Community plugins
 - Advanced analytics
@@ -950,4 +981,4 @@ Infrastructure Stack
 
 ---
 
-*This architecture overview represents the current state of Data-Cloud architecture as of April 3, 2026. It should be updated as the architecture evolves.*
+_This architecture overview represents the current state of Data-Cloud architecture as of April 3, 2026. It should be updated as the architecture evolves._

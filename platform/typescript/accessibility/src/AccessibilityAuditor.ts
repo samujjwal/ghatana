@@ -66,39 +66,6 @@ export interface SimplifiedAuditConfig {
 }
 
 /**
- * Legacy violation format for backward compatibility
- * @deprecated Use Finding from ./types instead
- */
-export interface AccessibilityViolation {
-  id: string;
-  impact: "minor" | "moderate" | "serious" | "critical" | null;
-  description: string;
-  help: string;
-  helpUrl: string;
-  html: string;
-  tags: string[];
-  nodes: Array<{
-    html: string;
-    target: string[];
-    failureSummary: string;
-    element: HTMLElement | null;
-  }>;
-}
-
-/**
- * Legacy report format for backward compatibility
- * @deprecated Use AccessibilityReport from ./types instead
- */
-export interface LegacyAccessibilityReport {
-  violations: AccessibilityViolation[];
-  passes: AxeResult[];
-  incomplete: AxeResult[];
-  inapplicable: AxeResult[];
-  timestamp: string;
-  url: string;
-}
-
-/**
  * Main accessibility auditor class
  *
  * This class provides comprehensive WCAG accessibility testing using axe-core,
@@ -308,7 +275,7 @@ export class AccessibilityAuditor {
    */
   public async audit(
     context?: Element | Document | string,
-    options: RunOptions = {}
+    options: RunOptions = {},
   ): Promise<AccessibilityReport> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -333,41 +300,13 @@ export class AccessibilityAuditor {
     try {
       const axeResults = await this.axeCore.run(
         context || document,
-        defaultOptions
+        defaultOptions,
       );
       return this.buildComprehensiveReport(axeResults);
     } catch (error) {
       console.error("Accessibility audit failed:", error);
       throw error;
     }
-  }
-
-  /**
-   * Run legacy audit (backward compatible)
-   * @deprecated Use audit() instead
-   */
-  public async legacyAudit(
-    context?: Element | Document | string,
-    options: RunOptions = {}
-  ): Promise<LegacyAccessibilityReport> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-
-    if (!this.axeCore) {
-      throw new Error("axe-core failed to load");
-    }
-
-    const results = await this.axeCore.run(context || document, options);
-
-    return {
-      violations: this.convertToLegacyViolations(results.violations),
-      passes: results.passes,
-      incomplete: results.incomplete,
-      inapplicable: results.inapplicable,
-      timestamp: results.timestamp,
-      url: results.url,
-    };
   }
 
   /**
@@ -418,7 +357,7 @@ export class AccessibilityAuditor {
    */
   public exportReport(
     report: AccessibilityReport,
-    format: OutputFormat = "json"
+    format: OutputFormat = "json",
   ): string {
     const formatter = OutputFormatterFactory.create(format);
     return formatter.format(report);
@@ -441,7 +380,7 @@ export class AccessibilityAuditor {
   public async saveReport(
     report: AccessibilityReport,
     filename: string,
-    format: OutputFormat = "json"
+    format: OutputFormat = "json",
   ): Promise<void> {
     const content = this.exportReport(report, format);
     const formatter = OutputFormatterFactory.create(format);
@@ -485,7 +424,7 @@ export class AccessibilityAuditor {
    */
   public compareReports(
     current: AccessibilityReport,
-    baseline: AccessibilityReport
+    baseline: AccessibilityReport,
   ): ComparisonResult {
     const scoreChange = current.score.overall - baseline.score.overall;
     const percentChange = (scoreChange / baseline.score.overall) * 100;
@@ -501,18 +440,18 @@ export class AccessibilityAuditor {
 
     // Find new findings (in current but not baseline)
     const baselineIds = new Set(
-      baseline.findings.map((f) => f.id + f.location.selector)
+      baseline.findings.map((f) => f.id + f.location.selector),
     );
     const newFindings = current.findings.filter(
-      (f) => !baselineIds.has(f.id + f.location.selector)
+      (f) => !baselineIds.has(f.id + f.location.selector),
     );
 
     // Find resolved findings (in baseline but not current)
     const currentIds = new Set(
-      current.findings.map((f) => f.id + f.location.selector)
+      current.findings.map((f) => f.id + f.location.selector),
     );
     const resolvedFindings = baseline.findings.filter(
-      (f) => !currentIds.has(f.id + f.location.selector)
+      (f) => !currentIds.has(f.id + f.location.selector),
     );
 
     return {
@@ -561,7 +500,7 @@ export class AccessibilityAuditor {
     output += `📄 Page: ${target.title}\n`;
     output += `🔗 URL: ${target.url}\n`;
     output += `📅 Date: ${new Date(
-      report.metadata.timestamp
+      report.metadata.timestamp,
     ).toLocaleString()}\n\n`;
 
     // Score section
@@ -570,10 +509,10 @@ export class AccessibilityAuditor {
     output += `│ Overall Score: ${score.overall}/100 (${
       score.grade
     })${" ".repeat(
-      Math.max(0, 30 - score.overall.toString().length - score.grade.length)
+      Math.max(0, 30 - score.overall.toString().length - score.grade.length),
     )}│\n`;
     output += `│ Compliance: ${score.complianceLevel}${" ".repeat(
-      Math.max(0, 46 - score.complianceLevel.length)
+      Math.max(0, 46 - score.complianceLevel.length),
     )}│\n`;
     output +=
       "└─────────────────────────────────────────────────────────────┘\n\n";
@@ -677,7 +616,7 @@ export class AccessibilityAuditor {
    * @internal
    */
   private buildComprehensiveReport(
-    axeResults: AxeResults
+    axeResults: AxeResults,
   ): AccessibilityReport {
     const findings = this.convertViolationsToFindings(axeResults.violations);
     const elementsAnalyzed = this.countAnalyzedElements(axeResults);
@@ -686,7 +625,7 @@ export class AccessibilityAuditor {
     const score = this.scorer.calculateScore(
       findings,
       this.config.wcagLevel || "AA",
-      { elementsAnalyzed }
+      { elementsAnalyzed },
     );
 
     // Build summary
@@ -750,7 +689,7 @@ export class AccessibilityAuditor {
           relatedFindings: [],
           affectedUsers: this.determineAffectedUsers(
             violation.id,
-            violation.impact || "minor"
+            violation.impact || "minor",
           ),
           tags: violation.tags,
           testResult: {
@@ -776,7 +715,7 @@ export class AccessibilityAuditor {
    * @deprecated Prefer `convertViolationsToFindings` and the new report model
    */
   private convertToLegacyViolations(
-    violations: AxeResult[]
+    violations: AxeResult[],
   ): AccessibilityViolation[] {
     return violations.map((v) => ({
       id: v.id,
@@ -848,7 +787,7 @@ export class AccessibilityAuditor {
    * @internal
    */
   private determinePrinciple(
-    tags: string[]
+    tags: string[],
   ): "perceivable" | "operable" | "understandable" | "robust" {
     if (
       tags.some((t) => t.includes("cat.keyboard") || t.includes("cat.time"))
@@ -862,7 +801,7 @@ export class AccessibilityAuditor {
     }
     if (
       tags.some(
-        (t) => t.includes("cat.parsing") || t.includes("cat.name-role-value")
+        (t) => t.includes("cat.parsing") || t.includes("cat.name-role-value"),
       )
     ) {
       return "robust";
@@ -884,7 +823,7 @@ export class AccessibilityAuditor {
    */
   private buildRemediationGuidance(
     violation: AxeResult,
-    node: NodeResult
+    node: NodeResult,
   ): RemediationGuidance {
     const steps = this.generateRemediationSteps(violation.id);
     const codeExample = this.generateCodeExample(violation.id, node.html);
@@ -1050,7 +989,7 @@ export class AccessibilityAuditor {
    */
   private determineAffectedUsers(
     ruleId: string,
-    _severity: string
+    _severity: string,
   ): AffectedUserGroup[] {
     const userMap: Record<string, AffectedUserGroup[]> = {
       "color-contrast": ["low-vision", "color-blind"],
@@ -1081,7 +1020,7 @@ export class AccessibilityAuditor {
   private buildSummary(
     findings: Finding[],
     axeResults: AxeResults,
-    elementsAnalyzed: number
+    elementsAnalyzed: number,
   ): AuditSummary {
     const elementsWithIssues = new Set(findings.map((f) => f.location.selector))
       .size;
@@ -1124,7 +1063,7 @@ export class AccessibilityAuditor {
    */
   private generateRecommendations(
     findings: Finding[],
-    score: AccessibilityScore
+    score: AccessibilityScore,
   ): {
     immediate: string[];
     shortTerm: string[];
@@ -1140,7 +1079,7 @@ export class AccessibilityAuditor {
 
     if (critical.length > 0) {
       immediate.push(
-        `Fix ${critical.length} critical accessibility blocker(s) immediately`
+        `Fix ${critical.length} critical accessibility blocker(s) immediately`,
       );
       critical.slice(0, 3).forEach((f) => {
         immediate.push(`- ${f.help}`);
@@ -1149,7 +1088,7 @@ export class AccessibilityAuditor {
 
     if (serious.length > 0) {
       immediate.push(
-        `Address ${serious.length} serious accessibility issue(s)`
+        `Address ${serious.length} serious accessibility issue(s)`,
       );
     }
 
@@ -1157,7 +1096,7 @@ export class AccessibilityAuditor {
     const moderate = findings.filter((f) => f.severity === "moderate");
     if (moderate.length > 0) {
       shortTerm.push(
-        `Resolve ${moderate.length} moderate accessibility issue(s)`
+        `Resolve ${moderate.length} moderate accessibility issue(s)`,
       );
     }
 
@@ -1170,7 +1109,7 @@ export class AccessibilityAuditor {
     // Long-term: AAA compliance, best practices
     if (score.complianceLevel !== "WCAG AAA") {
       longTerm.push(
-        "Work towards WCAG AAA compliance for enhanced accessibility"
+        "Work towards WCAG AAA compliance for enhanced accessibility",
       );
     }
     longTerm.push("Integrate accessibility testing into CI/CD pipeline");

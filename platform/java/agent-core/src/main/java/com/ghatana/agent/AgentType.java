@@ -53,8 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li><b>PLANNING vs COMPOSITE</b>: PLANNING creates an explicit plan before executing steps;
  *       COMPOSITE fans out to parallel sub-agents and aggregates results.</li>
  *   <li><b>LLM is a PROBABILISTIC subtype</b>: Use {@code PROBABILISTIC} with subtype {@code "LLM"}
- *       ({@link com.ghatana.agent.probabilistic.ProbabilisticSubtype#LLM}) instead of the
- *       deprecated {@link #LLM} top-level type.</li>
+ *       ({@link com.ghatana.agent.probabilistic.ProbabilisticSubtype#LLM}).</li>
  * </ul>
  *
  * <h2>Custom Types</h2>
@@ -172,18 +171,6 @@ public enum AgentType {
     REACTIVE,
 
     /**
-     * Large Language Model agent.
-     *
-     * @deprecated Use {@link #PROBABILISTIC} with
-     *             {@link com.ghatana.agent.probabilistic.ProbabilisticSubtype#LLM} instead.
-     *             {@code LLM} is retained for backward compatibility with existing
-     *             agent definitions; it resolves to {@code PROBABILISTIC} at runtime.
-     *             Will be removed in v3.0.0.
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    LLM,
-
-    /**
      * Extension point for domain-specific agent types not covered by the built-in taxonomy.
      *
      * <p>Custom types must be registered at startup via {@link #registerCustomType(String)}.
@@ -255,7 +242,7 @@ public enum AgentType {
      *
      * <p>Handles aliases for forward-compatibility:
      * <ul>
-     *   <li>{@code "LLM"} / {@code "llm"} → {@link #PROBABILISTIC} (deprecated top-level LLM type)</li>
+     *   <li>{@code "LLM"} / {@code "llm"} → {@link #PROBABILISTIC}</li>
      *   <li>{@code "RULE_BASED"} / {@code "rule-based"} → {@link #DETERMINISTIC}</li>
      *   <li>{@code "POLICY"} / {@code "PATTERN"} → {@link #DETERMINISTIC}</li>
      *   <li>{@code "STREAM_PROCESSOR"} / {@code "stream-processor"} → {@link #STREAM_PROCESSOR}</li>
@@ -271,6 +258,8 @@ public enum AgentType {
         String normalized = typeName.trim().toUpperCase().replace('-', '_');
         // Backward-compat aliases
         switch (normalized) {
+            case "LLM":
+                return PROBABILISTIC;
             case "RULE_BASED":
             case "POLICY":
             case "PATTERN":
@@ -290,18 +279,8 @@ public enum AgentType {
             throw new IllegalArgumentException(
                     "Unknown agent type: '" + typeName + "'. Built-in types: " +
                             java.util.Arrays.toString(values()) +
-                            " (current non-deprecated: DETERMINISTIC, PROBABILISTIC, STREAM_PROCESSOR, PLANNING," +
-                            " HYBRID, ADAPTIVE, COMPOSITE, REACTIVE, CUSTOM)" +
                             ", registered custom types: " + CUSTOM_TYPES);
         }
     }
 
-    /**
-     * Returns whether this type is the canonical, non-deprecated form.
-     * Use as a lint/validation check to catch legacy type usage.
-     */
-    @SuppressWarnings("deprecation")
-    public boolean isCanonical() {
-        return this != LLM;
-    }
 }

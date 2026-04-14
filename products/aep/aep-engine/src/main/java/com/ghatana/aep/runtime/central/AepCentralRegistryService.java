@@ -211,8 +211,8 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
             return Promise.of(false);
         }
         return agent.healthCheck()
-                .map(status -> status == com.ghatana.agent.HealthStatus.HEALTHY
-                        || status == com.ghatana.agent.HealthStatus.DEGRADED);
+                .map(status -> status.getStatus() == com.ghatana.platform.health.HealthStatus.Status.HEALTHY
+                        || status.getStatus() == com.ghatana.platform.health.HealthStatus.Status.DEGRADED);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

@@ -81,7 +81,7 @@ public final class StorageCostHandler {
     public Promise<HttpResponse> handleEstimateQuery(HttpRequest request) {
         String sql = request.getQueryParameter("sql");
         if (sql == null || sql.isBlank()) {
-            return http.errorResponse(400, "Missing required query parameter: sql");
+            return Promise.of(http.errorResponse(400, "Missing required query parameter: sql"));
         }
         String tenantId = http.resolveTenantId(request);
         metrics.incrementCounter("cost.estimate.query", "tenant", tenantId);

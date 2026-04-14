@@ -6,7 +6,7 @@ package com.ghatana.aep.runtime;
 
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentType;
-import com.ghatana.agent.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.catalog.AgentCatalog;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
@@ -162,7 +162,7 @@ class AepCentralRegistryServiceTest extends EventloopTestBase {
                 .implementationRef("provider:test")
                 .build();
         doReturn(typedAgent).when(materializer).materialize("provider:test", config);
-        when(typedAgent.healthCheck()).thenReturn(Promise.of(HealthStatus.DEGRADED));
+        when(typedAgent.healthCheck()).thenReturn(Promise.of(HealthStatus.degraded("Agent is degraded")));
 
         runPromise(() -> service.materializeAgent("agent-1", "provider:test", config));
         Boolean healthy = runPromise(() -> service.isAgentHealthy("agent-1"));

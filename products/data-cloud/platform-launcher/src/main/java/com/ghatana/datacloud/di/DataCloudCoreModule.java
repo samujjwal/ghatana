@@ -22,9 +22,9 @@ import io.activej.inject.module.AbstractModule;
  *   <li>{@link StoragePluginRegistry} — singleton plugin discovery registry</li>
  * </ul>
  *
- * <p>The default {@link DataCloudClient} uses in-memory stores (suitable for
- * development and testing). For production, override the client binding with
- * a persistence-backed implementation.
+ * <p>The default {@link DataCloudClient} uses in-memory stores in the LOCAL
+ * profile (suitable for development and testing). For production, override the
+ * client binding with a persistence-backed implementation.
  *
  * <p><b>Dependencies:</b> None — this module is self-contained.
  *
@@ -45,10 +45,10 @@ import io.activej.inject.module.AbstractModule;
 public class DataCloudCoreModule extends AbstractModule {
 
     /**
-     * Provides the data-cloud configuration with production defaults.
+     * Provides the data-cloud configuration with LOCAL in-memory defaults.
      *
-     * <p>Defaults: instance ID {@code "dc-default"}, max 100 connections/tenant,
-     * caching enabled, metrics enabled.
+     * <p>Defaults: instance ID generated at runtime, max 10 connections/tenant,
+     * caching enabled, metrics enabled, LOCAL profile.
      *
      * @return default data-cloud config
      */

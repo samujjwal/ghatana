@@ -1,6 +1,5 @@
 package com.ghatana.platform.security.jwt;
 
-import com.ghatana.platform.security.model.User;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -228,21 +227,6 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
             logger.warn("Failed to extract claims from token", e);
             return Optional.empty();
         }
-    }
-
-    /**
-     * Creates a JWT token for the specified security-layer User model.
-     *
-     * <p>For new code, prefer {@link #createTokenForDomainUser(com.ghatana.platform.domain.auth.User)}
-     * which operates on the canonical domain aggregate.
-     *
-     * @param user the security-layer user model
-     * @return the signed JWT string
-     * @deprecated Use {@link #createTokenForDomainUser(com.ghatana.platform.domain.auth.User)} instead
-     */
-    @Deprecated
-    public String createToken(User user) {
-        return createToken(user.getUsername(), List.copyOf(user.getRoles()), null);
     }
 
     /**

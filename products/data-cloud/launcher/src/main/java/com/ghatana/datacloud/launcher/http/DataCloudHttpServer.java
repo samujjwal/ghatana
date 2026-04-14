@@ -15,9 +15,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 import java.util.function.Supplier;
 
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
@@ -102,6 +104,13 @@ public class DataCloudHttpServer {
     // ==================== Request Validation Constants ====================
     /** Maximum JSON body size accepted: 10 MB. Larger payloads return HTTP 413. */
     private static final long MAX_BODY_BYTES = 10 * 1024 * 1024L;
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final Set<Pattern> BODYLESS_MUTATION_ROUTES = Set.of(
+        Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable|upgrade)$"),
+        Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
+        Pattern.compile("^/api/v1/learning/review/[^/]+/(approve|reject)$"),
+        Pattern.compile("^/api/v1/models/[^/]+/promote$")
+    );
 
     // ==================== Rate Limiting Constants ====================
     /** Maximum number of requests allowed per IP per window. */
@@ -117,6 +126,7 @@ public class DataCloudHttpServer {
     private final ObjectMapper objectMapper;
     private HttpServer server;
     private Eventloop eventloop;
+    private AutonomyController autonomyController;
 
     /**
      * Optional brain for DC-6 brain routes.
@@ -551,11 +561,6 @@ public class DataCloudHttpServer {
         return this;
     }
 
-
-        this.auditService = service;
-        return this;
-    }
-
     /**
      * Attaches an {@link ApiKeyResolver} and activates the security filter (DC-E1).
      *
@@ -855,20 +860,20 @@ public class DataCloudHttpServer {
             // Storage cost estimate + per-collection cost report (B11)
             .with(HttpMethod.GET,  "/api/v1/queries/estimate",
                     storageCostHandler != null ? storageCostHandler::handleEstimateQuery
-                            : req -> http.errorResponse(503, "Analytics engine not available"))
+                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
             .with(HttpMethod.GET,  "/api/v1/collections/:id/cost-report",
                     storageCostHandler != null ? storageCostHandler::handleCollectionCostReport
-                            : req -> http.errorResponse(503, "Analytics engine not available"))
+                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
 
             // Federated Trino query endpoint (B13)
             .with(HttpMethod.POST, "/api/v1/queries/federated",
                     federatedQueryHandler != null ? federatedQueryHandler::handleFederatedQuery
-                            : req -> http.errorResponse(503, "Analytics engine not available"))
+                            : req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")))
 
             // Manual storage-tier migration (B10)
             .with(HttpMethod.POST, "/api/v1/collections/:id/migrate",
                     tierMigrationHandler != null ? tierMigrationHandler::handleMigrateCollection
-                            : req -> http.errorResponse(503, "Tier migration schedulers are not configured"))
+                            : req -> Promise.of(httpSupport.errorResponse(503, "Tier migration schedulers are not configured")))
 
             .build();
 
@@ -1043,9 +1048,9 @@ public class DataCloudHttpServer {
     private AsyncServlet contentTypeFilter(AsyncServlet delegate) {
         return request -> {
             HttpMethod method = request.getMethod();
-            if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+            if (isMutationMethod(method) && requiresJsonBody(request)) {
                 String ct = request.getHeader(HttpHeaders.CONTENT_TYPE);
-                if (ct == null || !ct.contains("application/json")) {
+                if (ct == null || !ct.contains(JSON_CONTENT_TYPE)) {
                     return Promise.of(HttpResponse.ofCode(415)
                         .withHeader(HttpHeaders.CONTENT_TYPE,
                             HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
@@ -1057,6 +1062,20 @@ public class DataCloudHttpServer {
             }
             return delegate.serve(request);
         };
+    }
+
+    private static boolean isMutationMethod(HttpMethod method) {
+        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
+    }
+
+    private static boolean requiresJsonBody(HttpRequest request) {
+        String path = request.getPath();
+        for (Pattern route : BODYLESS_MUTATION_ROUTES) {
+            if (route.matcher(path).matches()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

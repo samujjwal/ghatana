@@ -9,8 +9,8 @@
  */
 package com.ghatana.agent.resilience;
 
-import com.ghatana.agent.HealthStatus;
 import com.ghatana.agent.TypedAgent;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -67,7 +67,7 @@ public final class AgentHealthMonitor {
             String summary
     ) {
         public boolean isHealthy() {
-            return agentStatus == HealthStatus.HEALTHY
+            return agentStatus.getStatus() == HealthStatus.Status.HEALTHY
                     && circuitBreakerState != CircuitBreaker.State.OPEN;
         }
     }
@@ -163,20 +163,25 @@ public final class AgentHealthMonitor {
     @NotNull
     public Promise<HealthStatus> overallHealth() {
         return checkAll().map(snapshots -> {
-            if (snapshots.isEmpty()) return HealthStatus.HEALTHY;
-            AtomicReference<HealthStatus> worst = new AtomicReference<>(HealthStatus.HEALTHY);
+            if (snapshots.isEmpty()) return HealthStatus.healthy("No agents registered");
+            AtomicReference<HealthStatus.Status> worst = new AtomicReference<>(HealthStatus.Status.HEALTHY);
             for (AgentHealthSnapshot s : snapshots.values()) {
-                if (s.agentStatus() == HealthStatus.UNHEALTHY
+                if (s.agentStatus().getStatus() == HealthStatus.Status.UNHEALTHY
                         || s.circuitBreakerState() == CircuitBreaker.State.OPEN) {
-                    worst.set(HealthStatus.UNHEALTHY);
+                    worst.set(HealthStatus.Status.UNHEALTHY);
                     break;
                 }
-                if (s.agentStatus() == HealthStatus.DEGRADED
+                if (s.agentStatus().getStatus() == HealthStatus.Status.DEGRADED
                         || s.circuitBreakerState() == CircuitBreaker.State.HALF_OPEN) {
-                    worst.set(HealthStatus.DEGRADED);
+                    worst.set(HealthStatus.Status.DEGRADED);
                 }
             }
-            return worst.get();
+            return switch (worst.get()) {
+                case HEALTHY -> HealthStatus.healthy("All agents healthy");
+                case DEGRADED -> HealthStatus.degraded("Some agents degraded");
+                case UNHEALTHY -> HealthStatus.unhealthy("Some agents unhealthy", (Throwable) null);
+                default -> HealthStatus.unknown("Health status unknown");
+            };
         });
     }
 
@@ -205,7 +210,7 @@ public final class AgentHealthMonitor {
                 })
                 .mapException(e -> {
                     AgentHealthSnapshot snap = new AgentHealthSnapshot(
-                            agentId, HealthStatus.UNHEALTHY,
+                            agentId, HealthStatus.unhealthy("Health check threw exception", e),
                             entry.circuitBreaker() != null
                                     ? entry.circuitBreaker().getState()
                                     : CircuitBreaker.State.CLOSED,

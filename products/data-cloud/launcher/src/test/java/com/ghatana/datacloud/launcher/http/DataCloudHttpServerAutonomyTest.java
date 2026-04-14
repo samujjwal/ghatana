@@ -3,7 +3,6 @@ package com.ghatana.datacloud.launcher.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
-import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;

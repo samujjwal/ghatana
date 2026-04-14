@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * for tenant A is never visible to tenant B.
  *
  * <p>All public methods accepting {@code agentId} also require a {@code tenantId}.
- * Single-argument overloads default to {@code "default"} for backward compatibility.
  *
  * @doc.type class
  * @doc.purpose Multi-tenant GAA/planner agent instance registry
@@ -54,7 +53,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlannerRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(PlannerRegistry.class);
-    private static final String DEFAULT_TENANT = "default";
 
     private final PlannerAgentFactory factory;
 
@@ -94,18 +92,6 @@ public class PlannerRegistry {
         log.info("Registered planner agent: tenantId={} agentId={}", tenantId, agentId);
     }
 
-    /**
-     * Registers an agent under the default tenant.
-     *
-     * @param agentId the unique agent identifier
-     * @param agent   the agent instance
-     * @deprecated Use {@link #register(String, String, BaseAgent)} with an explicit tenantId.
-     */
-    @Deprecated(since = "2.3.0", forRemoval = true)
-    public void register(String agentId, BaseAgent<?, ?> agent) {
-        register(DEFAULT_TENANT, agentId, agent);
-    }
-
     // =========================================================================
     // Lookup
     // =========================================================================
@@ -122,18 +108,6 @@ public class PlannerRegistry {
         Objects.requireNonNull(agentId, "agentId must not be null");
         Map<String, BaseAgent<?, ?>> agents = tenantAgents.get(tenantId);
         return agents == null ? Optional.empty() : Optional.ofNullable(agents.get(agentId));
-    }
-
-    /**
-     * Looks up an agent in the default tenant.
-     *
-     * @param agentId the agent identifier
-     * @return optional containing the agent if found
-     * @deprecated Use {@link #lookup(String, String)} with an explicit tenantId.
-     */
-    @Deprecated(since = "2.3.0", forRemoval = true)
-    public Optional<BaseAgent<?, ?>> lookup(String agentId) {
-        return lookup(DEFAULT_TENANT, agentId);
     }
 
     // =========================================================================
@@ -177,14 +151,4 @@ public class PlannerRegistry {
         return agents == null ? Map.of() : Map.copyOf(agents);
     }
 
-    /**
-     * Returns all agents for the default tenant.
-     *
-     * @return immutable copy of the default-tenant agent map
-     * @deprecated Use {@link #getAgents(String)} with an explicit tenantId.
-     */
-    @Deprecated(since = "2.3.0", forRemoval = true)
-    public Map<String, BaseAgent<?, ?>> getAgents() {
-        return getAgents(DEFAULT_TENANT);
-    }
 }

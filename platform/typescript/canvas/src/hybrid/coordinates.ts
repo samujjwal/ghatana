@@ -12,13 +12,13 @@
 import type { Point, Rect, ViewportState, CoordinateSystem } from "./types";
 
 /**
- * Convert screen coordinates to canvas coordinates
+ * Convert screen coordinates to world (canvas) coordinates.
  *
  * @param point - Point in screen coordinates
  * @param viewport - Current viewport state
- * @returns Point in canvas coordinates
+ * @returns Point in world (canvas) coordinates
  */
-export function screenToCanvas(point: Point, viewport: ViewportState): Point {
+export function screenToWorld(point: Point, viewport: ViewportState): Point {
   return {
     x: (point.x - viewport.x) / viewport.zoom,
     y: (point.y - viewport.y) / viewport.zoom,
@@ -26,73 +26,17 @@ export function screenToCanvas(point: Point, viewport: ViewportState): Point {
 }
 
 /**
- * Convert canvas coordinates to screen coordinates
- *
- * @param point - Point in canvas coordinates
- * @param viewport - Current viewport state
- * @returns Point in screen coordinates
- */
-export function canvasToScreen(point: Point, viewport: ViewportState): Point {
-  return {
-    x: point.x * viewport.zoom + viewport.x,
-    y: point.y * viewport.zoom + viewport.y,
-  };
-}
-
-/**
- * Convert screen coordinates to canvas world coordinates.
- *
- * Alias for {@link screenToCanvas} using industry-standard naming.
- * Prefer this name in all new code.
- *
- * @param point - Point in screen coordinates
- * @param viewport - Current viewport state
- * @returns Point in world (canvas) coordinates
- */
-export function screenToWorld(point: Point, viewport: ViewportState): Point {
-  return screenToCanvas(point, viewport);
-}
-
-/**
- * Convert canvas world coordinates to screen coordinates.
- *
- * Alias for {@link canvasToScreen} using industry-standard naming.
- * Prefer this name in all new code.
+ * Convert world (canvas) coordinates to screen coordinates.
  *
  * @param point - Point in world (canvas) coordinates
  * @param viewport - Current viewport state
  * @returns Point in screen coordinates
  */
 export function worldToScreen(point: Point, viewport: ViewportState): Point {
-  return canvasToScreen(point, viewport);
-}
-
-/**
- * Convert canvas coordinates to ReactFlow graph coordinates.
- *
- * @deprecated ReactFlow's "graph" coordinate space is identical to "canvas"
- * space. This function is an identity transform — call sites should use the
- * canvas-space value directly. Will be removed in the next major version.
- *
- * @param point - Point in canvas coordinates
- * @returns The same point unchanged
- */
-export function canvasToGraph(point: Point): Point {
-  return point;
-}
-
-/**
- * Convert ReactFlow graph coordinates to canvas coordinates.
- *
- * @deprecated ReactFlow's "graph" coordinate space is identical to "canvas"
- * space. This function is an identity transform — call sites should use the
- * graph-space value directly. Will be removed in the next major version.
- *
- * @param point - Point in graph coordinates
- * @returns The same point unchanged
- */
-export function graphToCanvas(point: Point): Point {
-  return point;
+  return {
+    x: point.x * viewport.zoom + viewport.x,
+    y: point.y * viewport.zoom + viewport.y,
+  };
 }
 
 /**
@@ -112,28 +56,28 @@ export function normalizeCoordinates(
 ): Point {
   if (from === to) return point;
 
-  // Convert to canvas/world space first (common intermediate space).
-  // 'graph' is identical to 'canvas' in ReactFlow's model — both map to
+  // Convert to world space first (common intermediate space).
+  // 'graph' is identical to 'world' in ReactFlow's model — both map to
   // world coordinates. No conversion needed between them.
-  let canvasPoint: Point;
+  let worldPoint: Point;
   switch (from) {
     case "screen":
-      canvasPoint = screenToCanvas(point, viewport);
+      worldPoint = screenToWorld(point, viewport);
       break;
     case "graph":
     case "canvas":
     default:
-      canvasPoint = point;
+      worldPoint = point;
   }
 
-  // Convert from canvas/world space to the target space.
+  // Convert from world space to the target space.
   switch (to) {
     case "screen":
-      return canvasToScreen(canvasPoint, viewport);
+      return worldToScreen(worldPoint, viewport);
     case "graph":
     case "canvas":
     default:
-      return canvasPoint;
+      return worldPoint;
   }
 }
 
@@ -325,20 +269,20 @@ export function expandRect(rect: Rect, amount: number): Rect {
 }
 
 /**
- * Calculate the viewport bounds in canvas coordinates
+ * Calculate the viewport bounds in world coordinates
  *
  * @param containerWidth - Container width in pixels
  * @param containerHeight - Container height in pixels
  * @param viewport - Viewport state
- * @returns Viewport bounds in canvas coordinates
+ * @returns Viewport bounds in world coordinates
  */
 export function getViewportBounds(
   containerWidth: number,
   containerHeight: number,
   viewport: ViewportState,
 ): Rect {
-  const topLeft = screenToCanvas({ x: 0, y: 0 }, viewport);
-  const bottomRight = screenToCanvas(
+  const topLeft = screenToWorld({ x: 0, y: 0 }, viewport);
+  const bottomRight = screenToWorld(
     { x: containerWidth, y: containerHeight },
     viewport,
   );

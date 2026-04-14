@@ -90,17 +90,20 @@ public final class ClickHouseTraceExporter implements TraceExporter {
                 : 0L;
 
         return SpanData.builder()
-                .spanId(span.getSpanId())
-                .traceId(span.getTraceId())
-                .parentSpanId(span.getParentSpanId())
-                .name(span.getOperationName())
-                .serviceName(SERVICE_NAME)
-                .operationName(span.getOperationName())
-                .startTime(span.getStartTime())
-                .endTime(span.getEndTime() != null ? span.getEndTime() : span.getStartTime())
-                .durationMs(durationMs)
-                .status(toStatusString(span.getStatus()))
-                .tags(span.getAttributes())
+                .withSpanId(span.getSpanId())
+                .withTraceId(span.getTraceId())
+                .withParentSpanId(span.getParentSpanId())
+                .withName(span.getOperationName())
+                .withServiceName(SERVICE_NAME)
+                .withOperationName(span.getOperationName())
+                .withStartTime(span.getStartTime())
+                .withEndTime(span.getEndTime() != null ? span.getEndTime() : span.getStartTime())
+                .withDurationMs(durationMs)
+                .withStatus(toStatusString(span.getStatus()))
+                .withTags(span.getAttributes().entrySet().stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                java.util.Map.Entry::getKey,
+                                e -> String.valueOf(e.getValue()))))
                 .build();
     }
 

@@ -1,7 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
-import com.ghatana.datacloud.analytics.QueryResult;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -12,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,12 +84,12 @@ public final class FederatedQueryHandler {
                 payload = http.objectMapper().readValue(
                         body.getString(StandardCharsets.UTF_8), Map.class);
             } catch (Exception e) {
-                return http.errorResponse(400, "Invalid JSON body: " + e.getMessage());
+                return Promise.of(http.errorResponse(400, "Invalid JSON body: " + e.getMessage()));
             }
 
             Object sqlRaw = payload.get("sql");
             if (sqlRaw == null || String.valueOf(sqlRaw).isBlank()) {
-                return http.errorResponse(400, "Missing required field: sql");
+                return Promise.of(http.errorResponse(400, "Missing required field: sql"));
             }
             String sql = String.valueOf(sqlRaw).trim();
 

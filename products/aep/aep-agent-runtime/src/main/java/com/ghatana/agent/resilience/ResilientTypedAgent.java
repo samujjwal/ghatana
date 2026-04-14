@@ -15,7 +15,11 @@
  */
 package com.ghatana.agent.resilience;
 
-import com.ghatana.agent.*;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.platform.core.exception.ServiceUnavailableException;
 import com.ghatana.platform.resilience.CircuitBreaker;
@@ -113,10 +117,10 @@ public final class ResilientTypedAgent<I, O> implements TypedAgent<I, O> {
         return delegate.healthCheck().map(status -> {
             if (circuitBreaker != null
                     && circuitBreaker.getState() == CircuitBreaker.State.OPEN) {
-                return HealthStatus.DEGRADED;
+                return HealthStatus.degraded("Circuit breaker is open");
             }
             if (bulkhead != null && bulkhead.isExhausted()) {
-                return HealthStatus.DEGRADED;
+                return HealthStatus.degraded("Bulkhead is exhausted");
             }
             return status;
         });

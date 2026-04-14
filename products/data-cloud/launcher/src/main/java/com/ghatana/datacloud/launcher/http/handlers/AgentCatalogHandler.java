@@ -73,7 +73,7 @@ public final class AgentCatalogHandler {
             Map<String, Object> response = new HashMap<>();
             response.put("agents", catalog);
             response.put("total", catalog.size());
-            return http.jsonResponse(200, response);
+            return Promise.of(http.jsonResponse(200, response));
         }).mapException(e -> {
             log.error("Failed to load agent catalog", e);
             return e;
@@ -98,8 +98,8 @@ public final class AgentCatalogHandler {
             return catalog.stream()
                     .filter(a -> agentId.equals(a.get("id")))
                     .findFirst()
-                    .<Promise<HttpResponse>>map(agent -> http.jsonResponse(200, agent))
-                    .orElseGet(() -> http.errorResponse(404, "Agent not found: " + agentId));
+                    .<Promise<HttpResponse>>map(agent -> Promise.of(http.jsonResponse(200, agent)))
+                    .orElseGet(() -> Promise.of(http.errorResponse(404, "Agent not found: " + agentId)));
         });
     }
 

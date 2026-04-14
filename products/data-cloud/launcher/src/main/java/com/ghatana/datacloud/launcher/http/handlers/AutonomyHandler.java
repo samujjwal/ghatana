@@ -159,7 +159,7 @@ public final class AutonomyHandler {
         String tenantId = http.resolveTenantId(request);
         return autonomyController.listAllStates(tenantId)
             .map(states -> http.jsonResponse(Map.of(
-                "globalOverride", globalOverride != null ? globalOverride.name() : "NONE",
+                "globalLevel", globalOverride != null ? globalOverride.name() : "NONE",
                 "shutoffActive", globalOverride == AutonomyLevel.SUGGEST,
                 "domainCount", states.size(),
                 "timestamp", Instant.now().toString()

@@ -89,7 +89,11 @@ public class PerformanceMonitor {
     private final AtomicInteger apiAvailabilityViolations = new AtomicInteger(0);
 
     public PerformanceMonitor() {
-        this.meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        this(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+    }
+
+    public PerformanceMonitor(PrometheusMeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
 
         // Initialize JVM and system metrics
         new JvmMemoryMetrics().bindTo(meterRegistry);

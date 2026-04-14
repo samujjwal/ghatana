@@ -7,10 +7,12 @@
 
 package com.ghatana.agent.migration;
 
+import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.coordination.OrchestrationStrategy;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -217,8 +219,8 @@ public final class OrchestrationBridge {
 
         @Override
         @NotNull
-        public Promise<com.ghatana.agent.HealthStatus> healthCheck() {
-            return Promise.of(com.ghatana.agent.HealthStatus.HEALTHY);
+        public Promise<HealthStatus> healthCheck() {
+            return Promise.of(HealthStatus.healthy("Agent is healthy"));
         }
 
         @Override

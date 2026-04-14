@@ -158,6 +158,39 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * Builds a JSON response with the given HTTP status code and data.
+     *
+     * @param statusCode the HTTP status code
+     * @param data the response data to serialize as JSON
+     * @return HTTP response with JSON body
+     */
+    public HttpResponse jsonResponse(int statusCode, Map<String, Object> data) {
+        try {
+            String json = objectMapper.writeValueAsString(data);
+            return HttpResponse.ofCode(statusCode)
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(500)
+                .withBody(("{\"error\":\"json serialization failed\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Returns a blocking executor for async operations.
+     *
+     * @return Executor for blocking operations
+     */
+    public java.util.concurrent.Executor blockingExecutor() {
+        return java.util.concurrent.Executors.newCachedThreadPool();
+    }
+
+    /**
      * Builds an error response with the given HTTP status code, message, and
      * an {@code X-Request-Id} header set to {@code correlationId}.
      */

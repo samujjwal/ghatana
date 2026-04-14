@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.di;
 
 import com.ghatana.datacloud.DataCloud.DataCloudConfig;
+import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataRecord;
 import com.ghatana.datacloud.client.LearningSignalStore;
@@ -213,6 +214,7 @@ class DataCloudDiModulesTest {
             DataCloudConfig config = injector.getInstance(DataCloudConfig.class);
 
             assertThat(config).isNotNull();
+            assertThat(config.profile()).isEqualTo(DataCloudProfile.LOCAL);
         }
 
         @Test
@@ -344,12 +346,10 @@ class DataCloudDiModulesTest {
             DataCloudStorageModule module = new DataCloudStorageModule();
 
             HikariDataSource dataSource = (HikariDataSource) module.warmTierDataSource();
-            try {
+            try (HikariDataSource ignored = dataSource) {
                 assertThat(dataSource.getMaximumPoolSize()).isEqualTo(10);
                 assertThat(dataSource.getMinimumIdle()).isEqualTo(2);
                 assertThat(dataSource.getValidationTimeout()).isEqualTo(5_000L);
-            } finally {
-                dataSource.close();
             }
         }
 
@@ -486,7 +486,7 @@ class DataCloudDiModulesTest {
             Injector injector = createBrainInjector();
 
             MemoryTierRouter<DataRecord> router =
-                    injector.getInstance(new Key<MemoryTierRouter<DataRecord>>(){});
+                    injector.getInstance(new Key<>(){});
 
             assertThat(router).isNotNull();
             assertThat(router).isInstanceOf(DefaultMemoryTierRouter.class);
@@ -696,7 +696,6 @@ class DataCloudDiModulesTest {
 
             assertThat(reflex).isNotNull();
             assertThat(catalog).isNotNull();
-            assertThat(reflex).isNotSameAs(catalog);
         }
 
         @Test

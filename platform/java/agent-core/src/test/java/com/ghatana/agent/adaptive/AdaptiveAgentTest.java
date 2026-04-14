@@ -4,7 +4,12 @@
 
 package com.ghatana.agent.adaptive;
 
-import com.ghatana.agent.*;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.AgentType;
+import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import io.activej.eventloop.Eventloop;
@@ -243,7 +248,7 @@ class AdaptiveAgentTest {
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 3);
 
             HealthStatus status = runOnEventloop(agent::healthCheck);
-            assertThat(status).isEqualTo(HealthStatus.HEALTHY);
+            assertThat(status.getStatus()).isEqualTo(HealthStatus.Status.HEALTHY);
         }
     }
 }

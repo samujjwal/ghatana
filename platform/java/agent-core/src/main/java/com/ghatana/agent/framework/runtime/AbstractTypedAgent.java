@@ -16,8 +16,12 @@
 
 package com.ghatana.agent.framework.runtime;
 
-import com.ghatana.agent.*;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -173,10 +177,10 @@ public abstract class AbstractTypedAgent<I, O> implements TypedAgent<I, O> {
     @NotNull
     public Promise<HealthStatus> healthCheck() {
         return switch (state.get()) {
-            case READY, PROCESSING -> Promise.of(HealthStatus.HEALTHY);
-            case INITIALIZING -> Promise.of(HealthStatus.STARTING);
-            case SHUTTING_DOWN -> Promise.of(HealthStatus.STOPPING);
-            case CREATED, STOPPED -> Promise.of(HealthStatus.UNHEALTHY);
+            case READY, PROCESSING -> Promise.of(HealthStatus.healthy("Agent is healthy"));
+            case INITIALIZING -> Promise.of(HealthStatus.degraded("Agent is starting"));
+            case SHUTTING_DOWN -> Promise.of(HealthStatus.degraded("Agent is stopping"));
+            case CREATED, STOPPED -> Promise.of(HealthStatus.unhealthy("Agent is not running", (Throwable) null));
         };
     }
 

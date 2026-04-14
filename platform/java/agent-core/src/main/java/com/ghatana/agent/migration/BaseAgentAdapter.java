@@ -7,7 +7,13 @@
 
 package com.ghatana.agent.migration;
 
-import com.ghatana.agent.*;
+import com.ghatana.agent.AgentConfig;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.AgentType;
+import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.DeterminismGuarantee;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
@@ -114,7 +120,7 @@ public class BaseAgentAdapter<I, O> implements TypedAgent<I, O> {
     @Override
     @NotNull
     public Promise<HealthStatus> healthCheck() {
-        return Promise.of(HealthStatus.HEALTHY);
+        return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     /**

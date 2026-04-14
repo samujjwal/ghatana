@@ -2,7 +2,6 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.junit.jupiter.api.AfterEach;
@@ -18,15 +17,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for the plugin management HTTP endpoints (B6).

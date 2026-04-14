@@ -97,14 +97,6 @@ public final class AgentSpecValidator {
         if (agentType == null) {
             issues.add(new ValidationIssue(
                     "identity.agentType", null, "agentType is required"));
-            return;
-        }
-        if (!agentType.isCanonical()) {
-            issues.add(new ValidationIssue(
-                    "identity.agentType",
-                    agentType.name(),
-                    "AgentType '" + agentType.name() + "' is deprecated. "
-                            + "Use PROBABILISTIC with LLM reasoning profile instead."));
         }
     }
 

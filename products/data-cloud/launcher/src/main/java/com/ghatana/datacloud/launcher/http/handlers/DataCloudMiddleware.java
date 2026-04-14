@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * HTTP middleware filters for Data-Cloud: CORS, rate-limiting, content-type
@@ -25,6 +27,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class DataCloudMiddleware {
 
     private static final Logger log = LoggerFactory.getLogger(DataCloudMiddleware.class);
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final Set<Pattern> BODYLESS_MUTATION_ROUTES = Set.of(
+            Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable|upgrade)$"),
+            Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
+            Pattern.compile("^/api/v1/learning/review/[^/]+/(approve|reject)$"),
+            Pattern.compile("^/api/v1/models/[^/]+/promote$")
+    );
 
     private final String corsAllowOrigin;
     private final String corsAllowMethods;
@@ -202,9 +211,9 @@ public final class DataCloudMiddleware {
     public AsyncServlet contentTypeFilter(AsyncServlet delegate) {
         return request -> {
             HttpMethod method = request.getMethod();
-            if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+            if (isMutationMethod(method) && requiresJsonBody(request)) {
                 String ct = request.getHeader(HttpHeaders.CONTENT_TYPE);
-                if (ct == null || !ct.contains("application/json")) {
+                if (ct == null || !ct.contains(JSON_CONTENT_TYPE)) {
                     return Promise.of(HttpResponse.ofCode(415)
                         .withHeader(HttpHeaders.CONTENT_TYPE,
                             HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
@@ -216,6 +225,20 @@ public final class DataCloudMiddleware {
             }
             return delegate.serve(request);
         };
+    }
+
+    private static boolean isMutationMethod(HttpMethod method) {
+        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
+    }
+
+    private static boolean requiresJsonBody(HttpRequest request) {
+        String path = request.getPath();
+        for (Pattern route : BODYLESS_MUTATION_ROUTES) {
+            if (route.matcher(path).matches()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public AsyncServlet payloadSizeLimitFilter(AsyncServlet delegate) {

@@ -9,8 +9,12 @@
  */
 package com.ghatana.agent.framework.checkpoint;
 
-import com.ghatana.agent.*;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

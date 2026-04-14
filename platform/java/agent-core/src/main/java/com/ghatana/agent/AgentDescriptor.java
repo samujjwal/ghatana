@@ -172,19 +172,4 @@ public class AgentDescriptor {
     public boolean hasCapability(String capability) {
         return capabilities.contains(capability);
     }
-
-    /**
-     * Creates a backward-compatible {@link AgentCapabilities} from this descriptor.
-     *
-     * @return an AgentCapabilities record
-     */
-    public AgentCapabilities toCapabilities() {
-        return new AgentCapabilities(
-                name,
-                type != null ? type.name() : "UNKNOWN",
-                description,
-                capabilities,
-                Set.of() // tools — not tracked in descriptor
-        );
-    }
 }

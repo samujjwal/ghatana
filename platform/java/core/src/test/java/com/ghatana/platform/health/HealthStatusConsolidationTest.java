@@ -71,28 +71,26 @@ class HealthStatusConsolidationTest {
     }
 
     @Test
-    @DisplayName("Agent-core HealthStatus is allowed as legacy enum but must not be extended")
-    void agentHealthStatusAllowedAsLegacyEnumOnly() {
+    @DisplayName("Agent-core should not have its own HealthStatus - use canonical platform HealthStatus")
+    void agentHealthStatusShouldNotExist() {
         JavaClasses classes = new ClassFileImporter()
             .importPackages(AGENT_PACKAGES);
 
-        // Agent-core has its own lightweight enum for agent-specific states STARTING/STOPPING
-        // It's allowed to exist because it has converter methods to/from canonical
+        // Agent-core HealthStatus enum was removed - all code should use platform HealthStatus
         boolean agentHealthStatusExists = classes.stream()
             .anyMatch(c -> c.getFullName().equals("com.ghatana.agent.HealthStatus"));
 
         assertThat(agentHealthStatusExists)
-            .as("Agent-core HealthStatus enum is allowed (has converter methods)")
-            .isTrue();
+            .as("Agent-core HealthStatus should not exist (removed - use platform HealthStatus)")
+            .isFalse();
 
-        // But no other agent package should define its own HealthStatus
-        long otherAgentHealthStatus = classes.stream()
-            .filter(c -> !c.getFullName().equals("com.ghatana.agent.HealthStatus"))
+        // No agent package should define its own HealthStatus
+        long agentHealthStatusCount = classes.stream()
             .filter(c -> c.getSimpleName().equals("HealthStatus"))
             .count();
 
-        assertThat(otherAgentHealthStatus)
-            .as("Only com.ghatana.agent.HealthStatus is allowed; no other agent HealthStatus")
+        assertThat(agentHealthStatusCount)
+            .as("Agent packages should not define HealthStatus (use platform.health)")
             .isEqualTo(0L);
     }
 
@@ -117,24 +115,10 @@ class HealthStatusConsolidationTest {
     }
 
     @Test
-    @DisplayName("Agent-core HealthStatus enum should have converter methods")
-    void agentHealthStatusShouldHaveConverterMethods() {
-        JavaClasses classes = new ClassFileImporter()
-            .importPackages(AGENT_PACKAGES);
-
-        var agentHealthStatus = classes.stream()
-            .filter(c -> c.getFullName().equals("com.ghatana.agent.HealthStatus"))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Agent HealthStatus not found"));
-
-        // Must have toPlatformHealthStatus() converter method
-        var methods = agentHealthStatus.getMethods().stream()
-            .map(m -> m.getName())
-            .toList();
-
-        assertThat(methods)
-            .as("Agent HealthStatus must have converter methods")
-            .contains("toPlatformHealthStatus");
+    @DisplayName("Agent-core uses canonical platform HealthStatus directly")
+    void agentCoreUsesCanonicalHealthStatus() {
+        // All agent code now imports HealthStatus from com.ghatana.platform.health
+        // The deprecated agent HealthStatus enum was removed as part of deprecation cleanup
     }
 
     @Test

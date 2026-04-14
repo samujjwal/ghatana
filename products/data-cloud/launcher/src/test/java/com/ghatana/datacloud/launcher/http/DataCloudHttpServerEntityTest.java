@@ -116,6 +116,20 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
+        @DisplayName("returns 415 when Content-Type header is missing")
+        void saveEntity_missingContentType_returns415() throws Exception {
+            startServer();
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"x\"}"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/" + TestConstants.COLLECTION_PRODUCTS))
+                    .build();
+            HttpResponse<String> resp = httpClient.send(req, BodyHandlers.ofString());
+
+            assertStatusCode(resp, 415);
+        }
+
+        @Test
         @DisplayName("returns 400 when request body is empty")
         void saveEntity_emptyBody_returns400() throws Exception {
             startServer();

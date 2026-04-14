@@ -84,11 +84,10 @@ class CatalogCanonicalValuesTest {
                             + " is not a valid AgentType. Valid values: " + java.util.Arrays.asList(AgentType.values()),
                     e);
         }
-        assertThat(agentType.isCanonical())
-                .as(
-                        "identity.agentType '%s' in %s is deprecated — use a canonical type",
-                        agentType, yamlFile.getFileName())
-                .isTrue();
+        // All AgentType values are now canonical (deprecated LLM type was removed)
+        assertThat(agentType)
+                .as("identity.agentType in %s must be a valid AgentType", yamlFile.getFileName())
+                .isNotNull();
 
         // autonomyLevel — must resolve to a canonical AutonomyLevel (or legacy alias)
         String rawAnalomy = identity.path("autonomyLevel").asText(null);

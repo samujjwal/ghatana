@@ -10,17 +10,13 @@ import com.ghatana.aep.engine.controller.HttpHandlerUtils;
 import com.ghatana.aep.engine.registry.AepCentralRegistryService;
 import com.ghatana.aep.engine.registry.AgentExecutionService;
 import com.ghatana.aep.integration.registry.CatalogRegistryContractAdapter;
-import com.ghatana.aep.integration.registry.DataCloudAgentRegistryClient;
 import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
 import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.agent.catalog.CatalogRegistry;
-import com.ghatana.orchestrator.client.AgentRegistryClient;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
-import io.activej.promise.Promise;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,37 +40,6 @@ public class AepRegistryModule extends AbstractModule {
     @Override
     protected void configure() {
         log.info("Configuring AEP registry module (v2.5)");
-    }
-
-    /**
-     * Provides an {@link AgentRegistryClient} backed by Data-Cloud's HTTP API.
-     *
-     * @return Data-Cloud-backed agent registry client
-     *
-     * @doc.type method
-     * @doc.purpose Provides DataCloudAgentRegistryClient
-     * @doc.layer product
-     * @doc.pattern Factory
-     */
-    @Provides
-    AgentRegistryClient agentRegistryClient() {
-        EnvConfig env = EnvConfig.fromSystem();
-        String dcBaseUrl = env.aepDcBaseUrl();
-        var dcClient = new DataCloudAgentRegistryClient(dcBaseUrl);
-        // Adapt the DataCloud client to the orchestrator.client.AgentRegistryClient expected by Orchestrator
-        return new AgentRegistryClient() {
-            @Override
-            public Promise<Optional<AgentRegistryClient.AgentInfo>> getAgent(String agentRef) {
-                return dcClient.getAgent(agentRef)
-                        .map(opt -> opt.map(info -> new AgentRegistryClient.AgentInfo(
-                                info.getAgentId(), info.getName(), info.getStatus())));
-            }
-
-            @Override
-            public Promise<Boolean> isHealthy() {
-                return dcClient.isHealthy();
-            }
-        };
     }
 
     /**

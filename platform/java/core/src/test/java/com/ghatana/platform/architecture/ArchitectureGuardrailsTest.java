@@ -474,12 +474,12 @@ class ArchitectureGuardrailsTest {
         @DisplayName("No code may import deleted domain.agent.registry.HealthStatus (use agent.HealthStatus)")
         void noCodeShouldUseDeletedDomainRegistryHealthStatus() {
             // domain.agent.registry.HealthStatus was a 4-value subset enum, deleted in V4.1.
-            // All callers migrated to com.ghatana.agent.HealthStatus (6-value lifecycle enum).
+            // All callers migrated to com.ghatana.platform.health.HealthStatus (canonical platform class).
             ArchRule rule = noClasses()
                     .should().dependOnClassesThat()
                     .haveFullyQualifiedName("com.ghatana.platform.domain.agent.registry.HealthStatus")
                     .because("com.ghatana.platform.domain.agent.registry.HealthStatus was deleted in V4.1. "
-                            + "Use com.ghatana.agent.HealthStatus (agent-core module) instead.")
+                            + "Use com.ghatana.platform.health.HealthStatus (platform module) instead.")
                     .allowEmptyShould(true);
 
             rule.check(platformClasses);
@@ -535,13 +535,13 @@ class ArchitectureGuardrailsTest {
         @DisplayName("HealthStatus implementations must not duplicate agent lifecycle contract")
         void healthStatusDuplicatesMustNotExist() {
             // Prevent re-creation of HealthStatus enum in domain.agent.registry.
-            // The only allowed agent lifecycle HealthStatus is in com.ghatana.agent (agent-core).
+            // The canonical HealthStatus is in com.ghatana.platform.health (platform module).
             ArchRule rule = noClasses()
                     .that().haveSimpleName("HealthStatus")
                     .and().resideInAPackage("com.ghatana.platform.domain.agent.registry..")
                     .should().dependOnClassesThat().haveSimpleName("Object")  // always-false guard
                     .because("HealthStatus must not be re-introduced in domain.agent.registry. "
-                            + "Use com.ghatana.agent.HealthStatus from agent-core instead.")
+                            + "Use com.ghatana.platform.health.HealthStatus from platform module instead.")
                     .allowEmptyShould(true);
 
             rule.check(platformClasses);

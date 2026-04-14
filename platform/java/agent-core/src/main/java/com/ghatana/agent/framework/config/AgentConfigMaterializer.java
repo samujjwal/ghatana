@@ -221,7 +221,7 @@ public class AgentConfigMaterializer {
 
         AgentConfig config = switch (agentType) {
             case DETERMINISTIC -> materializeDeterministic(dto);
-            case PROBABILISTIC, LLM -> materializeProbabilistic(dto);
+            case PROBABILISTIC -> materializeProbabilistic(dto);
             case STREAM_PROCESSOR -> materializeStreamProcessor(dto);
             case PLANNING -> materializePlanning(dto);
             case HYBRID -> materializeHybrid(dto);

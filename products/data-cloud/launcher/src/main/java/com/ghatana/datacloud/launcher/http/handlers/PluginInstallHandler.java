@@ -85,7 +85,7 @@ public final class PluginInstallHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("plugins", items);
         response.put("total", items.size());
-        return http.jsonResponse(200, response);
+        return Promise.of(http.jsonResponse(200, response));
     }
 
     // ─── GET /api/v1/plugins/:id ──────────────────────────────────────────────
@@ -99,8 +99,8 @@ public final class PluginInstallHandler {
         metrics.incrementCounter("plugin.get", "tenant", tenantId, "pluginId", pluginId);
 
         return pluginRegistry.getPlugin(pluginId)
-                .<Promise<HttpResponse>>map(plugin -> http.jsonResponse(200, pluginView(plugin)))
-                .orElseGet(() -> http.errorResponse(404, "Plugin not found: " + pluginId));
+                .<Promise<HttpResponse>>map(plugin -> Promise.of(http.jsonResponse(200, pluginView(plugin))))
+                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
     }
 
     // ─── POST /api/v1/plugins/:id/enable ─────────────────────────────────────
@@ -119,9 +119,9 @@ public final class PluginInstallHandler {
                     log.info("Plugin {} enabled by tenant {}", pluginId, tenantId);
                     Map<String, Object> result = pluginView(plugin);
                     result.put("status", "enabled");
-                    return http.jsonResponse(200, result);
+                    return Promise.of(http.jsonResponse(200, result));
                 })
-                .orElseGet(() -> http.errorResponse(404, "Plugin not found: " + pluginId));
+                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
     }
 
     // ─── POST /api/v1/plugins/:id/disable ────────────────────────────────────
@@ -135,7 +135,7 @@ public final class PluginInstallHandler {
         metrics.incrementCounter("plugin.disable", "tenant", tenantId, "pluginId", pluginId);
 
         if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
-            return http.errorResponse(404, "Plugin not found: " + pluginId);
+            return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
         }
 
         disabledPlugins.add(pluginId);
@@ -145,7 +145,7 @@ public final class PluginInstallHandler {
         result.put("pluginId", pluginId);
         result.put("status", "disabled");
         result.put("message", "Plugin disabled. Active operations will drain before shutdown.");
-        return http.jsonResponse(200, result);
+        return Promise.of(http.jsonResponse(200, result));
     }
 
     // ─── POST /api/v1/plugins/:id/upgrade ────────────────────────────────────
@@ -189,7 +189,7 @@ public final class PluginInstallHandler {
                         return http.jsonResponse(202, result);
                     });
                 })
-                .orElseGet(() -> http.errorResponse(404, "Plugin not found: " + pluginId));
+                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────

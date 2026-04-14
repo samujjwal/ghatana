@@ -57,13 +57,7 @@ export { LayerContainer } from "./LayerContainer";
 
 // Utilities
 export {
-  // Canonical names (prefer these in new code)
   screenToWorld,
   worldToScreen,
-  // Legacy names (kept for backwards compatibility; @deprecated, see JSDoc)
-  screenToCanvas,
-  canvasToScreen,
-  graphToCanvas,
-  canvasToGraph,
   normalizeCoordinates,
 } from "./coordinates";
