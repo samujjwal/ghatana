@@ -248,6 +248,7 @@ function PolicyCard({ policy, onApply }: { policy: Policy; onApply: () => void }
           <button
             onClick={onApply}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            aria-label="More options"
           >
             <MoreVertical className="h-4 w-4 text-gray-400" />
           </button>
@@ -416,12 +417,13 @@ export function TrustCenter() {
               )}
             />
           </div>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" aria-label="Filter">
             <Filter className="h-4 w-4 text-gray-400" />
           </button>
           <button
               onClick={() => refetchPolicies()}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              aria-label="Refresh"
             >
             <RefreshCw className="h-4 w-4 text-gray-400" />
           </button>

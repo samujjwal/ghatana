@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstac
 import {
     collectionsApi,
     Collection,
+    CollectionSchema,
     CreateCollectionDto,
     UpdateCollectionDto,
     CollectionQueryParams,
@@ -180,7 +181,7 @@ export function useUpdateCollectionSchema() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, schema }: { id: string; schema: Record<string, unknown> }) =>
+        mutationFn: ({ id, schema }: { id: string; schema: CollectionSchema }) =>
             collectionsApi.updateSchema(id, schema),
         onSuccess: (updatedCollection) => {
             queryClient.setQueryData(

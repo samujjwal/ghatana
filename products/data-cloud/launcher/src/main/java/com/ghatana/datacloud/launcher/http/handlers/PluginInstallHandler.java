@@ -152,44 +152,24 @@ public final class PluginInstallHandler {
 
     /**
      * Signals upgrade intent for a plugin. Validates the target version is newer than current
-     * and records the upgrade request. Actual in-process JAR hot-swap is deferred to a future
-     * platform capability; this endpoint closes the UI TODO (B6).
+    /**
+     * {@code POST /api/v1/plugins/:id/upgrade}
+     *
+     * <p>Runtime plugin hot-swap (installing a new version without restarting the process) is not
+     * supported by the Data-Cloud standalone launcher.  Plugins are bundled at build time via the
+     * ServiceLoader mechanism; upgrading requires deploying a new server build.
+     *
+     * <p>Returns {@code 501 Not Implemented} with a clear explanation so callers know this is an
+     * explicit capability boundary rather than a temporary error.
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
         String tenantId = http.resolveTenantId(request);
-        metrics.incrementCounter("plugin.upgrade", "tenant", tenantId, "pluginId", pluginId);
-
-        return pluginRegistry.getPlugin(pluginId)
-                .<Promise<HttpResponse>>map(plugin -> {
-                    return request.loadBody().map(body -> {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> payload;
-                        try {
-                            payload = http.objectMapper().readValue(
-                                    body.getString(java.nio.charset.StandardCharsets.UTF_8),
-                                    Map.class);
-                        } catch (Exception e) {
-                            payload = Map.of();
-                        }
-
-                        String targetVersion = payload.containsKey("targetVersion")
-                                ? String.valueOf(payload.get("targetVersion"))
-                                : "latest";
-
-                        log.info("Plugin {} upgrade requested to version {} by tenant {}",
-                                pluginId, targetVersion, tenantId);
-
-                        Map<String, Object> result = new HashMap<>();
-                        result.put("pluginId", pluginId);
-                        result.put("currentVersion", plugin.getVersion());
-                        result.put("requestedVersion", targetVersion);
-                        result.put("status", "upgrade_scheduled");
-                        result.put("message", "Upgrade scheduled. The plugin will be updated during the next maintenance window.");
-                        return http.jsonResponse(202, result);
-                    });
-                })
-                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
+        metrics.incrementCounter("plugin.upgrade.rejected", "tenant", tenantId, "pluginId", pluginId);
+        log.info("[B6] Plugin upgrade requested for {} — returning 501 (not supported, bundled-only)", pluginId);
+        return Promise.of(http.errorResponse(501,
+                "Plugin upgrade is not supported. Data-Cloud plugins are bundled at build time. " +
+                "To upgrade a plugin, deploy a new server version containing the updated plugin JAR."));
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────

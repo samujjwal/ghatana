@@ -2,16 +2,17 @@
  * Tests for RBACGuard component
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { RBACGuard, usePermission } from '../RBACGuard';
 
-// Mock fetch for permission checks
-global.fetch = vi.fn();
-
 describe('RBACGuard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('renders children when permission is granted', async () => {
@@ -115,7 +116,11 @@ describe('RBACGuard', () => {
 
 describe('usePermission hook', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('returns hasPermission as true when permission is granted', async () => {

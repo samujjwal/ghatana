@@ -15,7 +15,7 @@ import { useFocusRing } from '../hooks/useFocusRing';
 import { useId } from '../hooks/useId';
 import { useMergeRefs } from '../hooks/useMergeRefs';
 
-type TextFieldSize = 'sm' | 'md' | 'lg';
+type TextFieldSize = 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
 
 const sizeMetrics: Record<TextFieldSize, { paddingBlock: string; paddingInline: string; fontSize: string; labelFontSize: string }> = {
   sm: {
@@ -31,6 +31,24 @@ const sizeMetrics: Record<TextFieldSize, { paddingBlock: string; paddingInline: 
     labelFontSize: fontSize.sm,
   },
   lg: {
+    paddingBlock: '10px',
+    paddingInline: '14px',
+    fontSize: fontSize.lg,
+    labelFontSize: fontSize.base,
+  },
+  small: {
+    paddingBlock: '6px',
+    paddingInline: '10px',
+    fontSize: fontSize.sm,
+    labelFontSize: fontSize.sm,
+  },
+  medium: {
+    paddingBlock: '8px',
+    paddingInline: '12px',
+    fontSize: fontSize.base,
+    labelFontSize: fontSize.sm,
+  },
+  large: {
     paddingBlock: '10px',
     paddingInline: '14px',
     fontSize: fontSize.lg,

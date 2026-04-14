@@ -10,6 +10,8 @@ import com.ghatana.ai.llm.OpenAICompletionService;
 import com.ghatana.datacloud.application.observability.ClickHouseTraceExporter;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.datacloud.ai.AIModelManager;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.report.ReportService;
@@ -32,7 +34,12 @@ import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -123,7 +130,10 @@ public final class DataCloudHttpLauncherBootstrap {
                 log.info("Federated Trino queries enabled: {}", trinoUrl);
             }
 
-            DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
+            ApiKeyResolver apiKeyResolver = buildApiKeyResolver(env, log);
+
+                boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
+                DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
                     .withFeatureStoreService(featureStoreService)
@@ -131,8 +141,13 @@ public final class DataCloudHttpLauncherBootstrap {
                     .withTraceExportService(traceExportService)
                     .withTrinoUrl(trinoUrl)
                     .withMetricsCollector(MetricsCollectorFactory.create(
-                            new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
-                                    io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)));
+                        new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                            io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)))
+                    .withStrictTenantResolution(!isLocalProfile);
+
+                if (apiKeyResolver != null) {
+                httpServer.withApiKeyResolver(apiKeyResolver);
+                }
             startTransport(
                     httpServer,
                     port,
@@ -147,6 +162,50 @@ public final class DataCloudHttpLauncherBootstrap {
                     "Failed to start HTTP server on port " + port,
                     e);
         }
+    }
+
+    /**
+     * Builds an {@link ApiKeyResolver} from the {@code DATACLOUD_API_KEYS} environment variable.
+     *
+     * <p>The variable accepts a comma-separated list of static API keys.  Each valid key resolves
+     * to a {@link Principal} with the {@code "api-client"} role and {@code "service"} tenant.
+     * Returns {@code null} when the variable is absent or blank, leaving the security
+     * filter inactive (acceptable in {@code local} profile; a warning is logged otherwise).
+     *
+     * @param env environment variables map
+     * @param log logger for diagnostics
+     * @return a ready {@link ApiKeyResolver}, or {@code null} when auth is unconfigured
+     */
+    static ApiKeyResolver buildApiKeyResolver(Map<String, String> env, Logger log) {
+        String keysEnv = env.get("DATACLOUD_API_KEYS");
+        boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
+
+        if (keysEnv == null || keysEnv.isBlank()) {
+            if (!isLocalProfile) {
+                log.warn("[DC-E1] DATACLOUD_API_KEYS not set in non-local profile — " +
+                         "API key authentication is DISABLED. Set DATACLOUD_API_KEYS to enable.");
+            }
+            return null;
+        }
+
+        Set<String> validKeys = Arrays.stream(keysEnv.split(","))
+                .map(String::trim)
+                .filter(k -> !k.isBlank())
+                .collect(Collectors.toUnmodifiableSet());
+
+        if (validKeys.isEmpty()) {
+            log.warn("[DC-E1] DATACLOUD_API_KEYS is set but contains no valid keys — API key authentication is DISABLED");
+            return null;
+        }
+
+        log.info("[DC-E1] API key authentication enabled ({} key(s) registered)", validKeys.size());
+        return apiKey -> {
+            if (validKeys.contains(apiKey)) {
+                String keyId = "key-" + apiKey.substring(Math.max(0, apiKey.length() - 8));
+                return Optional.of(new Principal(keyId, List.of("api-client"), "service"));
+            }
+            return Optional.empty();
+        };
     }
 
     private static DataSource buildDatabaseDataSource() {

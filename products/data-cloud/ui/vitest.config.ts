@@ -5,12 +5,21 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const workspaceAliases = {
+  // Note: @ghatana/canvas/flow MUST be listed BEFORE @ghatana/canvas (more specific first)
+  '@ghatana/canvas/flow': path.resolve(__dirname, 'src/__tests__/stubs/flow-canvas.tsx'),
   '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
   '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/canvas'),
   '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
+  '@ghatana/privacy-ui': path.resolve(__dirname, '../../../platform/typescript/privacy-ui/src/index.ts'),
+  '@ghatana/security-ui': path.resolve(__dirname, '../../../platform/typescript/security-ui/src/index.ts'),
+  '@ghatana/selection-ui': path.resolve(__dirname, '../../../platform/typescript/selection-ui/src/index.ts'),
+  '@ghatana/audit-ui': path.resolve(__dirname, '../../../platform/typescript/audit-ui/src/index.ts'),
+  '@ghatana/nlp-ui': path.resolve(__dirname, '../../../platform/typescript/nlp-ui/src/index.ts'),
+  '@ghatana/voice-ui': path.resolve(__dirname, '../../../platform/typescript/voice-ui/src/index.ts'),
+  '@ghatana/wizard': path.resolve(__dirname, '../../../platform/typescript/wizard/src/index.ts'),
 };
 
 /**
@@ -49,8 +58,12 @@ export default defineConfig({
     },
   },
   resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
     alias: {
       ...workspaceAliases,
+      'react': path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      'react-router-dom': path.resolve(__dirname, 'node_modules/react-router'),
       '@': path.resolve(__dirname, './src'),
       // Short aliases matching tsconfig.json paths
       '@components': path.resolve(__dirname, './src/components'),
@@ -59,9 +72,6 @@ export default defineConfig({
       '@types': path.resolve(__dirname, './src/types'),
       '@api': path.resolve(__dirname, './src/api'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      // Redirect @ghatana/canvas/flow to a lightweight stub so jsdom tests don't
-      // need ReactFlow's browser-only DOM APIs. vi.mock() calls in tests supersede this.
-      '@ghatana/canvas/flow': path.resolve(__dirname, 'src/__tests__/stubs/flow-canvas.tsx'),
       // Provide explicit aliases for `entities` subpaths used by jsdom/parse5 to avoid ESM exports mismatch
       ...(entitiesDecodePath ? { 'entities/decode': entitiesDecodePath } : {}),
       ...(entitiesEscapePath ? { 'entities/escape': entitiesEscapePath } : {}),

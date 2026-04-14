@@ -208,34 +208,6 @@ export class BrainService {
     );
   }
 
-  /**
-   * Emergency global autonomy shutoff (B9).
-   *
-   * Sets all domains to SUGGEST (full human-in-the-loop) via
-   * PUT /api/v1/autonomy/level.
-   *
-   * @param level   - target level; defaults to 'SUGGEST' for emergency halt
-   * @param reason  - audit reason string
-   */
-  async setGlobalAutonomyLevel(
-    level: 'SUGGEST' | 'CONFIRM' | 'NOTIFY' | 'AUTONOMOUS',
-    reason: string
-  ): Promise<{ globalLevel: string; affectedDomains: number; timestamp: string; reason: string }> {
-    return apiClient.put<{ globalLevel: string; affectedDomains: number; timestamp: string; reason: string }>(
-      '/autonomy/level',
-      { level, reason }
-    );
-  }
-
-  /**
-   * Get current global autonomy override level (B9).
-   */
-  async getGlobalAutonomyLevel(): Promise<{ globalOverride: string; shutoffActive: boolean; domainCount: number }> {
-    return apiClient.get<{ globalOverride: string; shutoffActive: boolean; domainCount: number }>(
-      '/autonomy/level'
-    );
-  }
-
   // ==================== Memory ====================
 
   /**

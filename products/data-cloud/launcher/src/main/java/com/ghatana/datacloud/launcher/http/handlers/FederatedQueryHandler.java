@@ -78,11 +78,12 @@ public final class FederatedQueryHandler {
         metrics.incrementCounter("query.federated", "tenant", tenantId);
 
         return request.loadBody().then(body -> {
-            @SuppressWarnings("unchecked")
             Map<String, Object> payload;
             try {
-                payload = http.objectMapper().readValue(
+                @SuppressWarnings("unchecked")
+                Map<String, Object> parsed = (Map<String, Object>) http.objectMapper().readValue(
                         body.getString(StandardCharsets.UTF_8), Map.class);
+                payload = parsed;
             } catch (Exception e) {
                 return Promise.of(http.errorResponse(400, "Invalid JSON body: " + e.getMessage()));
             }

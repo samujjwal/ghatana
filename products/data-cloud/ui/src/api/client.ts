@@ -18,7 +18,7 @@ const CollectionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  schema: z.record(z.any()),
+  schema: z.record(z.string(), z.unknown()),
   tags: z.array(z.string()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -42,7 +42,7 @@ const LineageNodeSchema = z.object({
   id: z.string(),
   type: z.enum(['dataset', 'transformation', 'model']),
   name: z.string(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const LineageEdgeSchema = z.object({
@@ -152,7 +152,7 @@ export class DataCloudApiClient {
     };
 
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
     }
 
     try {

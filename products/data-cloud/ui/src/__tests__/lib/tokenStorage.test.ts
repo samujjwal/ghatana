@@ -55,12 +55,16 @@ describe('TokenStorage', () => {
     });
 
     it('clears expired token from sessionStorage on access', () => {
-      const removeSpy = vi.spyOn(Storage.prototype, 'removeItem');
       vi.spyOn(Date, 'now').mockReturnValue(NOW);
       TokenStorage.set('expiring', 10);
+      // Confirm token is stored in sessionStorage
+      expect(sessionStorage.getItem('auth_token')).toBe('expiring');
+      // Advance time past expiry
       vi.spyOn(Date, 'now').mockReturnValue(NOW + 20_000);
-      TokenStorage.get();
-      expect(removeSpy).toHaveBeenCalled();
+      // Access should clear and return null
+      expect(TokenStorage.get()).toBeNull();
+      // Confirm sessionStorage was cleared
+      expect(sessionStorage.getItem('auth_token')).toBeNull();
     });
 
     it('expiresIn returns null when no expiry set', () => {

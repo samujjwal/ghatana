@@ -112,7 +112,7 @@ describe('EditCollectionPage', () => {
 
         render(<EditCollectionPage />, { wrapper: TestWrapper });
 
-        await waitFor(() => {
+        await waitFor(async () => {
             const { toast } = await import('sonner');
             // toast.error should have been called
             expect(vi.mocked(toast.error)).toHaveBeenCalled();

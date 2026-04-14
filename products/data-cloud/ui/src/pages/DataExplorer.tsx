@@ -240,7 +240,7 @@ export function DataExplorer() {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" onClick={() => refetch()}>
+                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" onClick={() => refetch()} aria-label="Refresh">
                         <RefreshCw className={cn('h-4 w-4 text-gray-500', isLoading && 'animate-spin')} />
                     </button>
                     <button

@@ -52,6 +52,7 @@ protobuf-plugin = "0.9.4"
 jmh-plugin = "0.7.3"
 jmh = "1.37"
 cyclonedx-plugin = "3.2.2"
+owasp-plugin = "11.1.1"
 
 # AI/ML
 langchain4j = "1.0.0-beta1"
@@ -126,6 +127,7 @@ cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
 foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay-resolver-convention" }
 openapi-generator = { id = "org.openapitools.openapi-generator", version.ref = "openapi-generator" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+owasp = { id = "org.owasp.dependencycheck", version.ref = "owasp-plugin" }
 
 [libraries]
 # =============================================================================

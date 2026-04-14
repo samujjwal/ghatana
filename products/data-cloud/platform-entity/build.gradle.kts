@@ -42,3 +42,44 @@ dependencies {
     testAnnotationProcessor(libs.lombok)
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
 }
+
+tasks.test {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude("**/generated/**", "**/*\$Builder.class")
+        }
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value = "COVEREDRATIO"
+                minimum = "0.12".toBigDecimal()  // P0.3.1: raise to 0.70 after full test suite added
+            }
+        }
+    }
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude("**/generated/**", "**/*\$Builder.class")
+        }
+    )
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}

@@ -165,12 +165,14 @@ describe('useSchemaValidation', () => {
       useSchemaValidation(schema)
     );
 
+    let isValid: boolean;
     act(() => {
-      const isValid = result.current.validate({ value: 'not a number' });
-      expect(isValid).toBe(false);
-      expect(result.current.isValid).toBe(false);
-      expect(result.current.error).toBeTruthy();
+      isValid = result.current.validate({ value: 'not a number' });
     });
+
+    expect(isValid!).toBe(false);
+    expect(result.current.isValid).toBe(false);
+    expect(result.current.error).toBeTruthy();
   });
 
   it('clears error', () => {
@@ -237,7 +239,9 @@ describe('useDebouncedValidation', () => {
       result.current.validate({ email: 'invalid' });
     });
 
-    vi.advanceTimersByTime(300);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
 
     expect(result.current.isValid).toBe(false);
     expect(result.current.error).toBeTruthy();

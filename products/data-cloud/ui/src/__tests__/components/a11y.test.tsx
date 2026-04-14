@@ -88,8 +88,8 @@ describe('LoadingState accessibility', () => {
 
 const makePlugin = (overrides: Partial<Plugin> = {}): Plugin => ({
   id: 'plugin-001',
-  tenantId: 'tenant-001',
   metadata: {
+    id: 'plugin-001-meta',
     name: 'Kafka Connector',
     description: 'Stream events from Kafka',
     version: '1.0.0',
@@ -97,10 +97,12 @@ const makePlugin = (overrides: Partial<Plugin> = {}): Plugin => ({
     author: 'Ghatana',
     tags: [],
     icon: undefined,
+    license: 'MIT',
   },
   status: 'active',
   installedAt: '2026-01-01T00:00:00Z',
-  config: {},
+  capabilities: [],
+  configuration: {},
   ...overrides,
 });
 

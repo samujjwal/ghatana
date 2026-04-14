@@ -84,7 +84,7 @@ describe('AppErrorBoundary', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
 
     // Click recover
-    await user.click(screen.getByText(/try to recover/i));
+    await user.click(screen.getByRole('button', { name: /try to recover/i }));
 
     // After reset, the boundary tries to render children again.
     // Since the component is still set to throw, boundary catches again.

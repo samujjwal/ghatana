@@ -10,6 +10,13 @@ const workspaceAliases = {
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/foundation/platform-utils/src/index.ts'),
   '@ghatana/canvas': path.resolve(__dirname, '../../../platform/typescript/canvas'),
   '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
+  '@ghatana/privacy-ui': path.resolve(__dirname, '../../../platform/typescript/privacy-ui/src/index.ts'),
+  '@ghatana/security-ui': path.resolve(__dirname, '../../../platform/typescript/security-ui/src/index.ts'),
+  '@ghatana/selection-ui': path.resolve(__dirname, '../../../platform/typescript/selection-ui/src/index.ts'),
+  '@ghatana/audit-ui': path.resolve(__dirname, '../../../platform/typescript/audit-ui/src/index.ts'),
+  '@ghatana/nlp-ui': path.resolve(__dirname, '../../../platform/typescript/nlp-ui/src/index.ts'),
+  '@ghatana/voice-ui': path.resolve(__dirname, '../../../platform/typescript/voice-ui/src/index.ts'),
+  '@ghatana/wizard': path.resolve(__dirname, '../../../platform/typescript/wizard/src/index.ts'),
 }
 
 /**

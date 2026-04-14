@@ -45,7 +45,7 @@ describe('useSelection', () => {
     expect(result.current.selectedIds.has('1')).toBe(true);
     expect(result.current.selectedItems).toEqual([{ id: '1', name: 'Item 1' }]);
     expect(result.current.isAllSelected).toBe(false);
-    expect(result.current.isIndeterminate).toBe(false);
+    expect(result.current.isIndeterminate).toBe(true);
   });
 
   it('untoggles selection for a selected item', () => {

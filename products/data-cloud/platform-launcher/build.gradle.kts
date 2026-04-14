@@ -3,7 +3,7 @@ plugins {
     id("java-test-fixtures")
     alias(libs.plugins.jmh)
     alias(libs.plugins.spotbugs)
-    // alias(libs.plugins.owasp)
+    alias(libs.plugins.owasp)
 }
 
 group = "com.ghatana.datacloud"
@@ -141,14 +141,14 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                minimum = "0.00".toBigDecimal()
+                minimum = "0.20".toBigDecimal()  // P0.3.1: raised from 0.00; raise to 0.50 in Phase 2
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.00".toBigDecimal()
+                minimum = "0.10".toBigDecimal()  // P0.3.1: raised from 0.00
             }
         }
     }

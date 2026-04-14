@@ -10,11 +10,17 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.Period;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +80,30 @@ public class DataLifecycleHandler {
         "email", "phone", "ssn", "passport_number", "date_of_birth",
         "full_name", "ip_address", "credit_card", "bank_account"
     );
+
+    /** Validity window for HMAC purge confirmation tokens (5 minutes). */
+    private static final long PURGE_TOKEN_VALIDITY_MS = 5L * 60 * 1000;
+
+    /** HMAC-SHA256 algorithm identifier. */
+    private static final String HMAC_ALGORITHM = "HmacSHA256";
+
+    /**
+     * Secret key used to sign and verify purge confirmation tokens.
+     * Resolved from {@code DATACLOUD_PURGE_TOKEN_SECRET} env var.
+     * Falls back to a process-stable random key so the server always boots.
+     * In production, set a persistent secret so tokens survive restarts.
+     */
+    private static final byte[] PURGE_TOKEN_SECRET;
+    static {
+        String envSecret = System.getenv("DATACLOUD_PURGE_TOKEN_SECRET");
+        if (envSecret != null && !envSecret.isBlank()) {
+            PURGE_TOKEN_SECRET = envSecret.getBytes(StandardCharsets.UTF_8);
+        } else {
+            // Fallback: stable within jvm process, won't survive restarts.
+            // Production must set DATACLOUD_PURGE_TOKEN_SECRET.
+            PURGE_TOKEN_SECRET = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
+        }
+    }
 
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
@@ -247,30 +277,64 @@ public class DataLifecycleHandler {
                         ApiResponse.error("MISSING_COLLECTION", "collection is required", tenantId, requestId),
                         objectMapper));
                 }
+
+                if (dryRun) {
+                    // Dry run: generate a time-limited HMAC token the caller must include in the
+                    // real execute request.  Token = Base64( HMAC-SHA256(secret, tenantId+":"+collection+":"+epochMs) )
+                    long issuedAtMs = Instant.now().toEpochMilli();
+                    String token = buildPurgeToken(tenantId, collection, issuedAtMs);
+                    log.info("[DC-E5] purge DRY RUN collection={} tenant={}", collection, tenantId);
+
+                    Map<String, Object> result = Map.of(
+                        "collection",         collection,
+                        "dryRun",             true,
+                        "status",             "DRY_RUN_COMPLETE",
+                        "confirmationToken",  token,
+                        "tokenExpiresInSec",  PURGE_TOKEN_VALIDITY_MS / 1000,
+                        "estimatedRows",      0,
+                        "requestId",          requestId
+                    );
+                    emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
+                              collection, Map.of("dryRun", true));
+                    return Promise.of(http.envelopeResponse(
+                        ApiResponse.success(result, tenantId, requestId), objectMapper));
+                }
+
+                // Execute path: token is mandatory and must pass HMAC verification
                 if (confirmationToken.isBlank()) {
                     return Promise.of(http.envelopeResponse(
                         ApiResponse.error("MISSING_CONFIRMATION",
-                            "confirmationToken is required to authorise data deletion",
+                            "confirmationToken is required to authorise data deletion. " +
+                            "Perform a dry-run first to obtain a valid token.",
                             tenantId, requestId),
                         objectMapper));
                 }
 
-                // Token check: production would compute and compare HMAC
-                // For this layer we verify the token is non-empty and log for policy layer
-                log.info("[DC-E5] purge {} collection={} tenant={} dryRun={}",
-                         dryRun ? "DRY RUN for" : "INITIATED for", collection, tenantId, dryRun);
+                TokenValidationResult tokenResult = validatePurgeToken(confirmationToken, tenantId, collection);
+                if (!tokenResult.valid()) {
+                    log.warn("[DC-E5] purge REJECTED invalid token: {} collection={} tenant={}",
+                             tokenResult.reason(), collection, tenantId);
+                    emitAudit(tenantId, requestId, "RETENTION_PURGE_REJECTED",
+                              collection, Map.of("reason", tokenResult.reason()));
+                    return Promise.of(http.envelopeResponse(
+                        ApiResponse.error("INVALID_CONFIRMATION_TOKEN",
+                            "Confirmation token is invalid or expired: " + tokenResult.reason(),
+                            tenantId, requestId),
+                        objectMapper));
+                }
+
+                log.info("[DC-E5] purge AUTHORISED collection={} tenant={}", collection, tenantId);
+                emitAudit(tenantId, requestId, "RETENTION_PURGE",
+                          collection, Map.of("dryRun", false, "token", "***"));
 
                 Map<String, Object> result = Map.of(
                     "collection",    collection,
-                    "dryRun",        dryRun,
-                    "status",        dryRun ? "DRY_RUN_COMPLETE" : "PURGE_SCHEDULED",
-                    "estimatedRows", 0,  // production: query expired-entity count
+                    "dryRun",        false,
+                    "status",        "PURGE_SCHEDULED",
+                    "estimatedRows", 0,  // P2.1.1: replace with real entity count after EntityStore injection
                     "scheduledAt",   Instant.now().toString(),
                     "requestId",     requestId
                 );
-
-                emitAudit(tenantId, requestId, "RETENTION_PURGE",
-                          collection, Map.of("dryRun", dryRun, "token", "***"));
 
                 return Promise.of(http.envelopeResponse(
                     ApiResponse.success(result, tenantId, requestId), objectMapper));
@@ -440,5 +504,81 @@ public class DataLifecycleHandler {
     /** Returns the map key used to store/look up a retention policy. */
     private static String policyKey(String tenantId, String collection) {
         return tenantId + ":" + collection;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HMAC purge token helpers (P2.1.2)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Builds a time-limited HMAC-SHA256 purge confirmation token.
+     *
+     * <p>Format: {@code Base64Url( epochMs + "." + HMAC-SHA256(secret, tenantId+":"+collection+":"+epochMs) )}
+     */
+    static String buildPurgeToken(String tenantId, String collection, long issuedAtMs) {
+        String payload = tenantId + ":" + collection + ":" + issuedAtMs;
+        String hmac = hmacSha256Hex(PURGE_TOKEN_SECRET, payload);
+        String raw = issuedAtMs + "." + hmac;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Validates a purge confirmation token against tenant + collection and expiry window.
+     */
+    static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection) {
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(token);
+            String raw = new String(decoded, StandardCharsets.UTF_8);
+            int dotIdx = raw.indexOf('.');
+            if (dotIdx < 1) {
+                return TokenValidationResult.failure("malformed token");
+            }
+            long issuedAtMs = Long.parseLong(raw.substring(0, dotIdx));
+            String providedHmac = raw.substring(dotIdx + 1);
+
+            long ageMs = Instant.now().toEpochMilli() - issuedAtMs;
+            if (ageMs > PURGE_TOKEN_VALIDITY_MS) {
+                return TokenValidationResult.failure("token expired (age=" + (ageMs / 1000) + "s, max=300s)");
+            }
+            if (ageMs < 0) {
+                return TokenValidationResult.failure("token issued in the future");
+            }
+
+            String expectedHmac = hmacSha256Hex(PURGE_TOKEN_SECRET,
+                    tenantId + ":" + collection + ":" + issuedAtMs);
+            if (!constantTimeEquals(expectedHmac, providedHmac)) {
+                return TokenValidationResult.failure("token signature mismatch");
+            }
+            return TokenValidationResult.success();
+        } catch (IllegalArgumentException e) {
+            return TokenValidationResult.failure("token decode error: " + e.getMessage());
+        }
+    }
+
+    private static String hmacSha256Hex(byte[] secret, String data) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            mac.init(new SecretKeySpec(secret, HMAC_ALGORITHM));
+            byte[] result = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(result);
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            throw new IllegalStateException("HMAC-SHA256 unavailable", e);
+        }
+    }
+
+    /** Constant-time string comparison to prevent timing attacks. */
+    private static boolean constantTimeEquals(String a, String b) {
+        if (a.length() != b.length()) return false;
+        int diff = 0;
+        for (int i = 0; i < a.length(); i++) {
+            diff |= a.charAt(i) ^ b.charAt(i);
+        }
+        return diff == 0;
+    }
+
+    /** Result of a purge token validation. */
+    record TokenValidationResult(boolean valid, String reason) {
+        static TokenValidationResult success()                { return new TokenValidationResult(true, null); }
+        static TokenValidationResult failure(String reason)   { return new TokenValidationResult(false, reason); }
     }
 }

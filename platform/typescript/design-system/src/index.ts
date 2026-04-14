@@ -11,7 +11,7 @@
 export * from './atoms/Button';
 export * from './atoms/TextField';
 export * from './atoms/IconButton';
-export * from './atoms/Input';
+export { Input } from './atoms/Input';
 export * from './atoms/InputAdornment';
 export * from './atoms/TextArea';
 export * from './atoms/Badge';

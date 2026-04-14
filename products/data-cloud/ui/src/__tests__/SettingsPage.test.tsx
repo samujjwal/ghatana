@@ -124,7 +124,7 @@ describe('[M008]: Settings Page', () => {
       // When changing and saving
       render(<div data-testid="setting">
         <input data-testid="timeout-input" type="number" defaultValue={30} />
-        <button data-testid="save-btn">Save</button>
+        <button data-testid="save-btn" onClick={() => void mockValidateSetting('security.sessionTimeout', 45)}>Save</button>
       </div>);
 
       await user.clear(screen.getByTestId('timeout-input'));
@@ -184,7 +184,7 @@ describe('[M008]: Settings Page', () => {
 
       // When resetting
       render(<div data-testid="setting">
-        <button data-testid="reset-btn">Reset to Default</button>
+        <button data-testid="reset-btn" onClick={() => void mockResetSetting('theme.primaryColor')}>Reset to Default</button>
       </div>);
 
       await user.click(screen.getByTestId('reset-btn'));

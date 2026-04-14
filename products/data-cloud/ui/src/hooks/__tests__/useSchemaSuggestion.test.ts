@@ -3,8 +3,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSchemaSuggestion } from '../useSchemaSuggestion';
+import { apiClient } from '../../lib/api/client';
 
 // Mock apiClient
 vi.mock('../../lib/api/client', () => ({
@@ -13,14 +16,21 @@ vi.mock('../../lib/api/client', () => ({
   },
 }));
 
+const mockedPost = vi.mocked(apiClient.post);
+
+function createWrapper() {
+  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
+}
+
 describe('useSchemaSuggestion', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('calls schema suggestion API with sample data', async () => {
-    const { apiClient } = require('../../lib/api/client');
-    apiClient.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       suggestedFields: [
         { name: 'id', type: 'string', required: true },
         { name: 'name', type: 'string', required: true },
@@ -28,7 +38,7 @@ describe('useSchemaSuggestion', () => {
       confidence: 0.95,
     });
 
-    const { result } = renderHook(() => useSchemaSuggestion());
+    const { result } = renderHook(() => useSchemaSuggestion(), { wrapper: createWrapper() });
 
     const sampleData = [
       { id: '1', name: 'Test' },
@@ -41,14 +51,13 @@ describe('useSchemaSuggestion', () => {
       expect(response.confidence).toBe(0.95);
     });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/schema/suggest', { samples: sampleData });
+    expect(mockedPost).toHaveBeenCalledWith('/schema/suggest', { samples: sampleData });
   });
 
   it('handles API errors gracefully', async () => {
-    const { apiClient } = require('../../lib/api/client');
-    apiClient.post.mockRejectedValueOnce(new Error('API Error'));
+    mockedPost.mockRejectedValueOnce(new Error('API Error'));
 
-    const { result } = renderHook(() => useSchemaSuggestion());
+    const { result } = renderHook(() => useSchemaSuggestion(), { wrapper: createWrapper() });
 
     const sampleData = [{ id: '1', name: 'Test' }];
 
@@ -56,15 +65,16 @@ describe('useSchemaSuggestion', () => {
   });
 
   it('shows loading state during mutation', async () => {
-    const { apiClient } = require('../../lib/api/client');
-    apiClient.post.mockImplementation(() => new Promise(() => {}));
+    mockedPost.mockImplementation(() => new Promise(() => {}));
 
-    const { result } = renderHook(() => useSchemaSuggestion());
+    const { result } = renderHook(() => useSchemaSuggestion(), { wrapper: createWrapper() });
 
     act(() => {
       result.current.mutate({ samples: [{ id: '1', name: 'Test' }] });
     });
 
-    expect(result.current.isPending).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isPending).toBe(true);
+    });
   });
 });

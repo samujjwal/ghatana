@@ -214,7 +214,7 @@ export const collectionsApi = {
     /**
      * Update collection schema via upsert.
      */
-    updateSchema: async (id: string, schema: Record<string, unknown>): Promise<Collection> => {
+    updateSchema: async (id: string, schema: CollectionSchema): Promise<Collection> => {
         return collectionsApi.update(id, { schema });
     },
 

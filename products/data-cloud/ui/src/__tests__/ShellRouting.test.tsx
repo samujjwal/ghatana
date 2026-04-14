@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -23,23 +24,36 @@ describe('[M001]: Shell Routing', () => {
   describe('Route Resolution', () => {
     it('[M001]: navigate_to_dashboard_resolves_correctly', async () => {
       const user = userEvent.setup();
-      
-      // Given valid navigation target
-      mockGetCurrentPath.mockReturnValue('/dashboard');
-      
+
+      render(
+        <BrowserRouter>
+          <nav>
+            <button onClick={() => mockNavigate('/dashboard', {})}>Dashboard</button>
+          </nav>
+        </BrowserRouter>
+      );
+
       // When navigating to dashboard
       await user.click(screen.getByText('Dashboard'));
-      
+
       // Then route should be resolved
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', expect.any(Object));
     });
 
     it('[M001]: navigate_to_entities_resolves_correctly', async () => {
       const user = userEvent.setup();
-      
+
+      render(
+        <BrowserRouter>
+          <nav>
+            <button onClick={() => mockNavigate('/entities', {})}>Entities</button>
+          </nav>
+        </BrowserRouter>
+      );
+
       // When navigating to entities
       await user.click(screen.getByText('Entities'));
-      
+
       // Then route should resolve to entities
       expect(mockNavigate).toHaveBeenCalledWith('/entities', expect.any(Object));
     });

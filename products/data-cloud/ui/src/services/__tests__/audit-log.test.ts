@@ -6,15 +6,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { auditLogService, useAuditLog, type AuditEvent } from '../audit-log';
 
 // Mock fetch
-global.fetch = vi.fn();
-
 describe('auditLogService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.stubGlobal('fetch', vi.fn());
     localStorage.clear();
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 
@@ -176,11 +175,12 @@ describe('auditLogService', () => {
 
 describe('useAuditLog hook', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.stubGlobal('fetch', vi.fn());
     localStorage.clear();
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 

@@ -259,6 +259,7 @@ public class DataCloudHttpServer {
 
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
+    private boolean strictTenantResolution = false;
     private EntityCrudHandler entityHandler;
     private EntityExportHandler exportHandler;
     private EntityAnomalyHandler anomalyHandler;
@@ -636,6 +637,15 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Enables strict tenant resolution: requests missing X-Tenant-Id are rejected in non-local profiles.
+     * Should be called from bootstrap if DATACLOUD_PROFILE != local.
+     */
+    public DataCloudHttpServer withStrictTenantResolution(boolean enabled) {
+        this.strictTenantResolution = enabled;
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -644,7 +654,7 @@ public class DataCloudHttpServer {
         eventloop = Eventloop.create();
 
         // ---- Instantiate extracted handler delegates ----
-        httpSupport = new HttpHandlerSupport(objectMapper, CORS_ALLOW_ORIGIN, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS);
+        httpSupport = new HttpHandlerSupport(objectMapper, CORS_ALLOW_ORIGIN, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution);
 
         sseHandler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, httpSupport);
         if (openSearchConnector != null) sseHandler.withOpenSearchConnector(openSearchConnector);

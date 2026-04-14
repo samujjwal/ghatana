@@ -38,4 +38,13 @@ declare module '@ghatana/realtime' {
   ): void;
 
   export function useWebSocket(...args: unknown[]): unknown;
+
+  export interface Closeable {
+    close(): void;
+  }
+
+  export function useSSESubscription(
+    subscribe: () => Closeable,
+    deps: readonly unknown[]
+  ): void;
 }

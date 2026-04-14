@@ -64,6 +64,7 @@ export function AICollaborator() {
   const [nodes] = useAtom(nodesAtom);
   const [isOpen, setIsOpen] = useState(false);
   const [_selectedSuggestion, setSelectedSuggestion] = useState<AgentSuggestion | null>(null);
+  const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
 
   /**
    * Fetch agent recommendations for current workflow.
@@ -104,7 +105,11 @@ export function AICollaborator() {
     staleTime: 2000,
   });
 
-  const suggestions = recommendations?.suggestions ?? [];
+  React.useEffect(() => {
+    if (recommendations?.suggestions) {
+      setSuggestions(recommendations.suggestions);
+    }
+  }, [recommendations]);
 
   /**
    * Handles accepting a suggestion.

@@ -7,7 +7,7 @@
  * @doc.pattern Form
  */
 import React from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, type Resolver } from 'react-hook-form';
 import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';
 import { Plus, Trash2 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -55,24 +55,11 @@ interface CollectionFormProps {
   isSubmitting: boolean;
 }
 
-export interface CollectionFormData {
-  name: string;
-  description: string;
-  isActive: boolean;
-  schema: {
-    name: string;
-    fields: Array<{
-      name: string;
-      type: string;
-      required: boolean;
-      description?: string;
-    }>;
-  };
-}
+export type CollectionFormData = z.output<typeof collectionSchema>;
 
 export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }: CollectionFormProps) {
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CollectionFormData>({
-    resolver: zodResolver(collectionSchema),
+    resolver: zodResolver(collectionSchema) as unknown as Resolver<CollectionFormData>,
     defaultValues: initialData ? {
       name: initialData.name,
       description: initialData.description,
@@ -197,6 +184,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
                     size="sm"
                     onClick={() => removeField(index)}
                     className="text-red-500 hover:text-red-700"
+                    aria-label={`Remove field ${index + 1}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

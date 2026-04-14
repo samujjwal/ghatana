@@ -246,7 +246,7 @@ export const mockApiService = {
     store: vi.fn((entry: MemoryEntry) =>
       Promise.resolve({ ...entry, id: 'mem-123' })
     ),
-    retrieve: vi.fn((agentId: string, tier: string) =>
+    retrieve: vi.fn((agentId: string, tier: 'episodic' | 'semantic' | 'procedural') =>
       Promise.resolve(createMockMemoryEntry({ agentId, tier }))
     ),
     list: vi.fn(() => Promise.resolve([createMockMemoryEntry()])),
@@ -285,7 +285,7 @@ export const mockApiService = {
  */
 export const CreateEntityRequestSchema = z.object({
   collection: z.string().min(1),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   tenantId: z.string().optional(),
 });
 
@@ -307,7 +307,7 @@ export type CreatePipelineRequest = z.infer<typeof CreatePipelineRequestSchema>;
  */
 export const AppendEventRequestSchema = z.object({
   type: z.string(),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 export type AppendEventRequest = z.infer<typeof AppendEventRequestSchema>;

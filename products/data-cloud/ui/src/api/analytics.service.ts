@@ -206,10 +206,10 @@ async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiS
       { context: 'anomaly_and_optimization', limit: 5 },
       { headers: { 'X-Tenant-ID': tenantId } },
     );
-    const raw = resp.data?.data?.suggestions ?? [];
-    const isFallback = resp.data?.ai?.fallback ?? false;
-    const confidence = resp.data?.ai?.confidence ?? 0.5;
-    return raw.map((s, i): AnalyticsAiSuggestion => ({
+    const raw = resp.data?.suggestions ?? [];
+    const isFallback = resp.ai?.fallback ?? false;
+    const confidence = resp.ai?.confidence ?? 0.5;
+    return raw.map((s: { type?: string; title?: string; description?: string; reasons?: string[] }, i: number): AnalyticsAiSuggestion => ({
       key: `analytics-${i}`,
       type: mapSuggestionType(s.type),
       title: s.title ?? 'Suggestion',

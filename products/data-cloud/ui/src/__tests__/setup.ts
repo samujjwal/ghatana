@@ -2,7 +2,12 @@ import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { configureAxe } from 'vitest-axe';
-import 'vitest-axe/extend-expect';
+// vitest-axe@0.1.0: extend-expect.js is empty (0 bytes), manually register the matcher
+// Using require to bypass TypeScript type-only export limitation in matchers.d.ts
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+const vitestAxeMatchers = require('vitest-axe/matchers') as Record<string, any>;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+expect.extend(vitestAxeMatchers);
 import { server } from '../mocks/server';
 
 /**
@@ -29,10 +34,10 @@ import { server } from '../mocks/server';
  */
 export const axe = configureAxe({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rules: [
+  rules: {
     // Colour-contrast cannot be evaluated against jsdom's computed styles
-    { id: 'color-contrast', enabled: false },
-  ] as any,
+    'color-contrast': { enabled: false },
+  } as any,
 });
 
 // ---------------------------------------------------------------------------

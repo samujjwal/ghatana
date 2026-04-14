@@ -2,12 +2,16 @@
  * Tests for EntityBrowserPage bulk operations
  */
 
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useSelection } from '../../hooks/useSelection';
+import type { UseSelectionReturn } from '../../hooks/useSelection';
+import { logActivity } from '../../lib/api/user-activity';
 
 // Mock the hooks and services
-vi.mock('../hooks/useSelection', () => ({
+vi.mock('../../hooks/useSelection', () => ({
   useSelection: vi.fn(() => ({
     selectedIds: new Set(),
     selectedItems: [],
@@ -19,7 +23,7 @@ vi.mock('../hooks/useSelection', () => ({
   })),
 }));
 
-vi.mock('../lib/api/user-activity', () => ({
+vi.mock('../../lib/api/user-activity', () => ({
   logActivity: vi.fn(),
 }));
 
@@ -29,15 +33,37 @@ vi.mock('@audio-video/ui', () => ({
   })),
 }));
 
-vi.mock('../components/privacy/ConsentManager', () => ({
+vi.mock('../../components/privacy/ConsentManager', () => ({
   useConsent: vi.fn(() => ({
     consentGranted: true,
   })),
 }));
 
-vi.mock('../components/security/RBACGuard', () => ({
-  RBACGuard: ({ children, fallback }: any) => <>{children || fallback}</>,
+vi.mock('../../components/security/RBACGuard', () => ({
+  RBACGuard: ({ children, fallback }: { children?: React.ReactNode; fallback?: React.ReactNode }) => <>{children ?? fallback}</>,
 }));
+
+const mockedUseSelection = vi.mocked(useSelection);
+const mockedLogActivity = vi.mocked(logActivity);
+
+function makeSelectionState(
+  overrides: Record<string, unknown> = {}
+): UseSelectionReturn<unknown> {
+  return {
+    selectedIds: new Set<string>(),
+    selectedItems: [],
+    isAllSelected: false,
+    isIndeterminate: false,
+    isSelected: vi.fn(() => false),
+    toggleSelection: vi.fn(),
+    toggleAll: vi.fn(),
+    selectAll: vi.fn(),
+    clearSelection: vi.fn(),
+    selectIds: vi.fn(),
+    selectedCount: 0,
+    ...overrides,
+  } as UseSelectionReturn<unknown>;
+}
 
 describe('EntityBrowserPage bulk operations', () => {
   let queryClient: QueryClient;
@@ -45,35 +71,29 @@ describe('EntityBrowserPage bulk operations', () => {
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
-        queries: {
-          retry: false,
-        },
-        mutations: {
-          retry: false,
-        },
+        queries: { retry: false },
+        mutations: { retry: false },
       },
     });
     vi.clearAllMocks();
+    // Reset default mock implementation
+    mockedUseSelection.mockReturnValue(makeSelectionState());
   });
 
   it('renders bulk action toolbar when items are selected', () => {
-    const { useSelection } = require('../hooks/useSelection');
-    useSelection.mockReturnValue({
+    mockedUseSelection.mockReturnValue(makeSelectionState({
       selectedIds: new Set(['1', '2']),
       selectedItems: [{ id: '1' }, { id: '2' }],
-      isAllSelected: false,
-      isIndeterminate: false,
-      toggleSelection: vi.fn(),
-      toggleAll: vi.fn(),
-      clearSelection: vi.fn(),
-    });
+    }));
+
+    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
 
     render(
       <QueryClientProvider client={queryClient}>
         <div>
-          {useSelection().selectedIds.size > 0 && (
+          {selectionState.selectedIds.size > 0 && (
             <div data-testid="bulk-toolbar">
-              <span>{useSelection().selectedIds.size} selected</span>
+              <span>{selectionState.selectedIds.size} selected</span>
             </div>
           )}
         </div>
@@ -85,21 +105,12 @@ describe('EntityBrowserPage bulk operations', () => {
   });
 
   it('does not render bulk action toolbar when no items selected', () => {
-    const { useSelection } = require('../hooks/useSelection');
-    useSelection.mockReturnValue({
-      selectedIds: new Set(),
-      selectedItems: [],
-      isAllSelected: false,
-      isIndeterminate: false,
-      toggleSelection: vi.fn(),
-      toggleAll: vi.fn(),
-      clearSelection: vi.fn(),
-    });
+    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
 
     render(
       <QueryClientProvider client={queryClient}>
         <div>
-          {useSelection().selectedIds.size > 0 && (
+          {selectionState.selectedIds.size > 0 && (
             <div data-testid="bulk-toolbar">Bulk Actions</div>
           )}
         </div>
@@ -111,21 +122,18 @@ describe('EntityBrowserPage bulk operations', () => {
 
   it('calls clearSelection when Clear button is clicked', () => {
     const clearSelection = vi.fn();
-    const { useSelection } = require('../hooks/useSelection');
-    useSelection.mockReturnValue({
+    mockedUseSelection.mockReturnValue(makeSelectionState({
       selectedIds: new Set(['1']),
       selectedItems: [{ id: '1' }],
-      isAllSelected: false,
-      isIndeterminate: false,
-      toggleSelection: vi.fn(),
-      toggleAll: vi.fn(),
       clearSelection,
-    });
+    }));
+
+    const selectionState = mockedUseSelection({ items: [], keyFn: (i: unknown) => (i as { id: string }).id });
 
     render(
       <QueryClientProvider client={queryClient}>
         <div>
-          {useSelection().selectedIds.size > 0 && (
+          {selectionState.selectedIds.size > 0 && (
             <div data-testid="bulk-toolbar">
               <button onClick={clearSelection}>Clear</button>
             </div>
@@ -139,8 +147,8 @@ describe('EntityBrowserPage bulk operations', () => {
   });
 
   it('calls logActivity when bulk delete is executed', async () => {
-    const { logActivity } = require('../lib/api/user-activity');
-    
+    mockedLogActivity.mockResolvedValue(undefined);
+
     render(
       <QueryClientProvider client={queryClient}>
         <div />
@@ -155,7 +163,7 @@ describe('EntityBrowserPage bulk operations', () => {
       resourceType: 'entity',
     });
 
-    expect(logActivity).toHaveBeenCalledWith({
+    expect(mockedLogActivity).toHaveBeenCalledWith({
       action: 'bulk_delete',
       target: 'test-namespace',
       type: 'delete',

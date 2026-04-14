@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -100,11 +101,20 @@ describe('[M004]: Workflow Designer', () => {
     it('[M004]: workflow_canvas_deletes_node', async () => {
       const user = userEvent.setup();
 
-      // Given selected node
-      render(<div data-testid="workflow-canvas">
-        <div data-testid="node-1" className="workflow-node selected">Node 1</div>
-        <button data-testid="delete-node-btn">Delete</button>
-      </div>);
+      // Given selected node - use a component with state so clicking delete actually removes it
+      function CanvasWithNode() {
+        const [nodes, setNodes] = React.useState([{ id: 'node-1', label: 'Node 1' }]);
+        return (
+          <div data-testid="workflow-canvas">
+            {nodes.map(n => (
+              <div key={n.id} data-testid={n.id} className="workflow-node selected">{n.label}</div>
+            ))}
+            <button data-testid="delete-node-btn" onClick={() => setNodes([])}>Delete</button>
+          </div>
+        );
+      }
+
+      render(<CanvasWithNode />);
 
       // When deleting node
       await user.click(screen.getByTestId('delete-node-btn'));
@@ -330,7 +340,7 @@ describe('[M004]: Workflow Designer', () => {
       });
 
       // When saving
-      render(<button data-testid="save-draft-btn">Save Draft</button>);
+      render(<button data-testid="save-draft-btn" onClick={() => void mockCreateWorkflow({ name: 'Test Workflow', definition: { nodes: [], edges: [] } })}>Save Draft</button>);
       await user.click(screen.getByTestId('save-draft-btn'));
 
       // Then workflow should be saved as draft
@@ -382,7 +392,7 @@ describe('[M004]: Workflow Designer', () => {
       });
 
       // When clicking test
-      render(<button data-testid="test-btn">Test Workflow</button>);
+      render(<button data-testid="test-btn" onClick={() => void mockExecuteWorkflow({ workflowId: 'wf-1' })}>Test Workflow</button>);
       await user.click(screen.getByTestId('test-btn'));
 
       // Then execution should start

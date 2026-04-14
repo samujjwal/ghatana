@@ -78,7 +78,7 @@ describe('[M003]: Collections UI', () => {
       ]);
 
       // When clicking next page
-      render(<button data-testid="next-page">Next</button>);
+      render(<button data-testid="next-page" onClick={() => mockGetCollections('tenant-1', { page: 2 })}>Next</button>);
       await user.click(screen.getByTestId('next-page'));
 
       // Then next page should be fetched
@@ -139,8 +139,8 @@ describe('[M003]: Collections UI', () => {
       });
 
       // When filling and submitting form
-      render(<form data-testid="create-form">
-        <input data-testid="name-input" value="New Collection" />
+      render(<form data-testid="create-form" onSubmit={(e) => { e.preventDefault(); void mockCreateCollection({ name: 'New Collection' }); }}>
+        <input data-testid="name-input" defaultValue="New Collection" />
         <textarea data-testid="desc-input">Test description</textarea>
         <button type="submit" data-testid="submit-btn">Create</button>
       </form>);
@@ -231,8 +231,8 @@ describe('[M003]: Collections UI', () => {
       });
 
       // When saving changes
-      render(<form data-testid="edit-form">
-        <input data-testid="name-input" value="Updated Customers" />
+      render(<form data-testid="edit-form" onSubmit={(e) => { e.preventDefault(); void mockUpdateCollection({ id: 'col-1', name: 'Updated Customers' }); }}>
+        <input data-testid="name-input" defaultValue="Updated Customers" />
         <button type="submit" data-testid="save-btn">Save</button>
       </form>);
 

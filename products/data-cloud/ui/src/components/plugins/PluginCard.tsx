@@ -103,26 +103,14 @@ export function PluginCard({
   const isActive = status === 'active';
   const isProcessing = status === 'installing' || status === 'uninstalling';
 
-  const handleCardClick = () => {
-    if (isInstalled && onViewDetails) {
-      onViewDetails(plugin.id);
-    }
-  };
-
   return (
     <div
       className={cn(
         cardStyles.base,
         'relative overflow-hidden transition-all hover:shadow-lg group',
         isActive && 'ring-2 ring-green-500/20',
-        isInstalled && onViewDetails && 'cursor-pointer',
         className
       )}
-      onClick={handleCardClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
-      role={isInstalled && onViewDetails ? 'button' : undefined}
-      tabIndex={isInstalled && onViewDetails ? 0 : undefined}
-      aria-label={isInstalled && onViewDetails ? `View details for ${metadata.name}` : undefined}
     >
       {/* Quick Actions Overlay - Shows on Hover */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">

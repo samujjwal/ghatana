@@ -19,6 +19,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "types": ["vite/client", "node", "react", "react-dom"],
     "paths": {
       "@/*": ["src/*"],
@@ -29,18 +30,14 @@
       "@api/*": ["src/api/*"],
       "@utils/*": ["src/utils/*"],
       "@ghatana/design-system": [
-        "../../../platform/typescript/capabilities/design-system"
-      ],
-      "@ghatana/canvas/flow": [
-        "../../../platform/typescript/canvas/src/flow/index.ts"
+        "../../../platform/typescript/design-system/src"
       ],
       "@ghatana/theme": ["../../../platform/typescript/theme"],
       "@ghatana/tokens": ["../../../platform/typescript/tokens"],
+      "@ghatana/wizard": ["node_modules/@ghatana/wizard/src/index.ts"],
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils"
       ],
-      "@ghatana/canvas": ["../../../platform/typescript/canvas/src/index.ts"],
-      "@ghatana/canvas/*": ["../../../platform/typescript/canvas/src/*/index.ts"],
       "@ghatana/privacy-ui": [
         "../../../platform/typescript/privacy-ui/src"
       ],
@@ -58,6 +55,9 @@
       ],
       "@ghatana/selection-ui": [
         "../../../platform/typescript/selection-ui/src"
+      ],
+      "@ghatana/realtime": [
+        "../../../platform/typescript/realtime/dist/index.d.ts"
       ]
     },
     "typeRoots": [

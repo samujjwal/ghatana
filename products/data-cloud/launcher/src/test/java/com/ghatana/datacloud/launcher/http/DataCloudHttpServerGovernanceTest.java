@@ -236,9 +236,8 @@ class DataCloudHttpServerGovernanceTest {
             waitForServerReady(port);
 
             String body = mapper.writeValueAsString(Map.of(
-                "collection",        "expired_sessions",
-                "confirmationToken", "tok-abc123",
-                "dryRun",            true
+                "collection", "expired_sessions",
+                "dryRun",     true
             ));
             HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
 
@@ -247,7 +246,8 @@ class DataCloudHttpServerGovernanceTest {
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
             assertThat(data.get("dryRun")).isEqualTo(true);
             assertThat(data.get("status")).isEqualTo("DRY_RUN_COMPLETE");
-            assertThat(data).containsKey("scheduledAt");
+            assertThat(data).containsKey("confirmationToken");
+            assertThat(data).containsKey("tokenExpiresInSec");
         }
 
         @Test
@@ -258,9 +258,22 @@ class DataCloudHttpServerGovernanceTest {
             server.start();
             waitForServerReady(port);
 
+            // Step 1: perform a dry-run to obtain a valid HMAC-signed confirmation token
+            String dryRunBody = mapper.writeValueAsString(Map.of(
+                "collection", "old_events",
+                "dryRun",     true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody);
+            assertThat(dryRunResp.statusCode()).isEqualTo(200);
+            Map<String, Object> dryRunData = (Map<String, Object>)
+                    mapper.readValue(dryRunResp.body(), Map.class).get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
+            assertThat(confirmationToken).isNotBlank();
+
+            // Step 2: execute the real purge using the signed token
             String body = mapper.writeValueAsString(Map.of(
                 "collection",        "old_events",
-                "confirmationToken", "tok-valid"
+                "confirmationToken", confirmationToken
             ));
             HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
 

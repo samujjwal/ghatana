@@ -212,7 +212,7 @@ describe('[M006]: SQL Workspace', () => {
       mockExecuteQuery.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       // When cancelling
-      render(<button data-testid="cancel-btn">Cancel</button>);
+      render(<button data-testid="cancel-btn" onClick={() => void mockCancelQuery('q-1')}>Cancel</button>);
       await user.click(screen.getByTestId('cancel-btn'));
 
       // Then cancel should be called

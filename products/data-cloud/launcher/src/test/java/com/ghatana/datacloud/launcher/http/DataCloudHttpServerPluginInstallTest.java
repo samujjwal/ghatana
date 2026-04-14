@@ -183,13 +183,13 @@ class DataCloudHttpServerPluginInstallTest {
     class UpgradePluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id")
-        void upgradePlugin_unknownId_returns404() throws Exception {
+        @DisplayName("returns 501 Not Implemented (upgrade not supported in bundled plugin model)")
+        void upgradePlugin_returns501NotImplemented() throws Exception {
             startServer();
 
-            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/upgrade");
+            HttpResponse<String> response = post("/api/v1/plugins/any-plugin/upgrade");
 
-            assertThat(response.statusCode()).isEqualTo(404);
+            assertThat(response.statusCode()).isEqualTo(501);
         }
     }
 }

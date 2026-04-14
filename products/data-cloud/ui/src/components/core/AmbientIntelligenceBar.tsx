@@ -360,6 +360,7 @@ export function AmbientIntelligenceBar({ className }: AmbientIntelligenceBarProp
         <button
           onClick={refresh}
           disabled={isLoading}
+          aria-label="Refresh"
           className={cn(
             'p-1.5 rounded-lg',
             'hover:bg-gray-100 dark:hover:bg-gray-800',

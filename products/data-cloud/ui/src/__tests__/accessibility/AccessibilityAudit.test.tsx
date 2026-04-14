@@ -78,16 +78,22 @@ function getInteractiveElements(container: HTMLElement): Element[] {
 
 /**
  * Checks that every button element has an accessible name.
- * An accessible name can come from textContent, aria-label, or aria-labelledby.
+ * An accessible name can come from textContent, aria-label, aria-labelledby,
+ * title, or an associated <label> element (via id matching label[for]).
  */
 function buttonsHaveAccessibleNames(container: HTMLElement): boolean {
     const buttons = Array.from(container.querySelectorAll('button'));
     return buttons.every(
-        (btn) =>
-            (btn.textContent?.trim().length ?? 0) > 0 ||
-            btn.hasAttribute('aria-label') ||
-            btn.hasAttribute('aria-labelledby') ||
-            btn.hasAttribute('title')
+        (btn) => {
+            if ((btn.textContent?.trim().length ?? 0) > 0) return true;
+            if (btn.hasAttribute('aria-label')) return true;
+            if (btn.hasAttribute('aria-labelledby')) return true;
+            if (btn.hasAttribute('title')) return true;
+            // Check for an associated <label> via for/id pairing
+            const id = btn.id;
+            if (id && container.querySelector(`label[for="${id}"]`)) return true;
+            return false;
+        }
     );
 }
 

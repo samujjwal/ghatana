@@ -21,13 +21,13 @@
 
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react';
 import { expect } from 'vitest';
-import 'vitest-axe/extend-expect';
 import { axe } from '../setup';
 import type { ReactElement } from 'react';
+import type { AxeCore } from 'vitest-axe';
 
 export interface A11yRenderResult extends RenderResult {
   /** The axe violations found (empty array means accessible). */
-  violations: import('axe-core').Result[];
+  violations: AxeCore.Result[];
 }
 
 /**

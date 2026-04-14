@@ -3,11 +3,14 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import io.activej.http.*;
+import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Shared HTTP helper methods for all handler classes extracted from
@@ -23,19 +26,39 @@ import java.util.UUID;
  */
 public class HttpHandlerSupport {
 
+    private static final Logger log = LoggerFactory.getLogger(HttpHandlerSupport.class);
+
     private final ObjectMapper objectMapper;
     private final String corsAllowOrigin;
     private final String corsAllowMethods;
     private final String corsAllowHeaders;
+    /**
+     * When {@code true}, {@link #resolveTenantId} logs a warning for requests that
+     * arrive without a tenant header, and {@link #requireTenantIdOrFail} returns
+     * {@code null} (the caller should respond with HTTP 400).
+     *
+     * <p>Set via {@link DataCloudHttpServer#withStrictTenantResolution()} from the
+     * bootstrap when {@code DATACLOUD_PROFILE} is not {@code local}.
+     */
+    private final boolean strictTenantResolution;
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
                               String corsAllowOrigin,
                               String corsAllowMethods,
                               String corsAllowHeaders) {
-        this.objectMapper = objectMapper;
-        this.corsAllowOrigin = corsAllowOrigin;
-        this.corsAllowMethods = corsAllowMethods;
-        this.corsAllowHeaders = corsAllowHeaders;
+        this(objectMapper, corsAllowOrigin, corsAllowMethods, corsAllowHeaders, false);
+    }
+
+    public HttpHandlerSupport(ObjectMapper objectMapper,
+                              String corsAllowOrigin,
+                              String corsAllowMethods,
+                              String corsAllowHeaders,
+                              boolean strictTenantResolution) {
+        this.objectMapper           = objectMapper;
+        this.corsAllowOrigin        = corsAllowOrigin;
+        this.corsAllowMethods       = corsAllowMethods;
+        this.corsAllowHeaders       = corsAllowHeaders;
+        this.strictTenantResolution = strictTenantResolution;
     }
 
     /**
@@ -226,6 +249,10 @@ public class HttpHandlerSupport {
      * that do not inject tenant headers, while preserving multi-tenant behaviour
      * when the header is supplied.
      *
+     * <p>In non-local profiles ({@link #strictTenantResolution} is {@code true}),
+     * a warning is logged when the fallback is used.  Handlers that must reject
+     * unauthenticated tenant access should call {@link #requireTenantIdOrFail} instead.
+     *
      * <p>Fixes: DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 3 — all previously
      * excluded HTTP-server test suites were failing with 500 because the tests did
      * not send {@code X-Tenant-Id}.
@@ -235,7 +262,34 @@ public class HttpHandlerSupport {
         if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
         String fromQuery = request.getQueryParameter("tenantId");
         if (fromQuery != null && !fromQuery.isBlank()) return fromQuery;
+        if (strictTenantResolution) {
+            log.warn("[DC-T1] Request missing X-Tenant-Id header in non-local profile — " +
+                     "falling back to 'default' tenant. Use requireTenantIdOrFail() to reject.");
+        }
         return "default";
+    }
+
+    /**
+     * Resolves the tenant ID from the request, returning {@code null} when none is present.
+     *
+     * <p>Handlers in non-local profiles should prefer this method and return HTTP 400
+     * to the caller when the result is {@code null}.  Example usage:
+     * <pre>{@code
+     * String tenantId = http.requireTenantIdOrFail(request);
+     * if (tenantId == null) {
+     *     return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+     * }
+     * }</pre>
+     *
+     * @param request inbound HTTP request
+     * @return tenant ID if present; {@code null} if absent
+     */
+    public String requireTenantIdOrFail(HttpRequest request) {
+        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
+        String fromQuery = request.getQueryParameter("tenantId");
+        if (fromQuery != null && !fromQuery.isBlank()) return fromQuery;
+        return null;
     }
 
     /**
