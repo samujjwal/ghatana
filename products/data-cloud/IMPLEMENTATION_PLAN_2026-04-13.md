@@ -9,16 +9,16 @@ Status: Living document — update task status as work progresses
 
 ## Progress Tracker
 
-*Last updated: 2026-04-13 (session 2)*
+*Last updated: 2026-04-14 (session 4)*
 
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
-| P0.1.1 | Fix EnablePluginTests failures | ⬜ Not started | — |
-| P0.1.2 | Fix WarmTierTests failures | ⬜ Not started | — |
-| P0.1.3 | Fix all remaining test failures | ⬜ Not started | — |
+| P0.1.1 | Fix EnablePluginTests failures | ✅ Done | Verified `DataCloudHttpServerPluginInstallTest$EnablePluginTests` passes after route-aware content-type enforcement |
+| P0.1.2 | Fix WarmTierTests failures | ✅ Done | Verified `DataCloudHttpServerTierMigrationTest$WarmTierTests` passes |
+| P0.1.3 | Fix all remaining test failures | ✅ Done | Aggregate Data Cloud Java module test sweep is green; no failing JUnit XMLs remain under current `build/test-results/test` outputs |
 | P0.2.1 | Re-enable OWASP dependency check | ✅ Done | `alias(libs.plugins.owasp)` uncommented in `platform-launcher/build.gradle.kts` |
 | P0.2.2 | Enable SpotBugs and resolve findings | ⬜ Not started | SpotBugs was already enabled; findings not triaged |
-| P0.3.1 | Raise Jacoco coverage minimums | ⬜ Not started | — |
+| P0.3.1 | Raise Jacoco coverage minimums | ✅ Done | Raised to 0.40 for spi, all tests pass |
 | P0.4.1 | Verify TypeScript strict-mode type check | ✅ Done | `pnpm exec tsc --noEmit` exits 0 — 0 errors in strict mode |
 | P0.4.2 | Run and fix all UI unit tests | ✅ Done | 753/753 tests pass (60/60 files) — all accessibility, stub-onClick, and async issues resolved |
 | P0.5.1 | Wire or remove data-cloud-cache module | ✅ N/A | Directory does not exist — no orphan |
@@ -26,8 +26,8 @@ Status: Living document — update task status as work progresses
 | P1.1.2 | Remove in-memory EventLogStore fallback | ✅ Done | Same pattern as P1.1.1 — already implemented |
 | P1.1.3 | Register PostgreSQL EntityStore via ServiceLoader | ⬜ Not started | `enterprise/` plugin dir exists; `PostgresEntityStore` presence unconfirmed |
 | P1.1.4 | Register Kafka EventLogStore via ServiceLoader | ✅ Done | `KafkaEventLogStore` exists in `plugins/kafka/` |
-| P1.1.5 | Test coverage for store discovery | ⬜ Not started | — |
-| P1.2.1 | Enforce API key auth in non-local profiles at server start | ⬜ Not started | Server logs warning but does not enforce; needs guard in `start()` |
+| P1.1.5 | Test coverage for store discovery | ✅ Done | Added focused coverage in `DataCloudFactoryTest` for entity/event store discovery fail-fast, local fallback, and provider-present paths |
+| P1.2.1 | Enforce API key auth in non-local profiles at server start | ✅ Done | `DataCloudHttpServer.start()` now fails fast in non-local profiles without auth; local profile logs warning only; covered by `DataCloudHttpServerSecurityConfigurationTest` |
 | P1.2.2 | Wire `ApiKeyResolver` from `DATACLOUD_API_KEYS` env var | ✅ Done | `buildApiKeyResolver()` added to `DataCloudHttpLauncherBootstrap`; resolver wired via `.withApiKeyResolver()` |
 | P1.2.3 | Add JWT support | ⬜ Not started | — |
 | P1.3.1 | Remove silent default-tenant fallback | ✅ Done | Added `strictTenantResolution` flag + `requireTenantIdOrFail()` helper; wired from bootstrap (non-local profile enables strict mode); `resolveTenantId()` logs warning in strict mode |
@@ -37,7 +37,7 @@ Status: Living document — update task status as work progresses
 | P1.5.2 | Publish OpenAPI spec as static file | ⬜ Not started | — |
 | P1.5.3 | Align UI MSW mock handlers with spec | ⬜ Not started | — |
 | P1.6.1 | Wire real health probes (fix UNKNOWN subsystems) | ⚠️ Partial | `JdbcDatabaseHealthProbe` wired in bootstrap when `databaseEnabled=true`; `HealthHandler` hardcodes `UNKNOWN` for 5 subsystems but `subsystemSuppliers` loop overrides — see investigation note |
-| P1.6.2 | Add health probe for AI inference subsystem | ⬜ Not started | — |
+| P1.6.2 | Add health probe for AI inference subsystem | ✅ Done | `DataCloudHttpLauncherBootstrap` now wires `ai_inference` health when AI services initialize; bootstrap probe reports model registry + feature store readiness and is covered by focused launcher tests |
 | P1.7.1 | Propagate correlation IDs end-to-end | ✅ Done | `resolveCorrelationId()` exists in `HttpHandlerSupport`; wired in response headers |
 | P2.1.1 | Implement real entity deletion in purge | ⬜ Not started | `handlePurge()` stub remains; EntityStore injection needed |
 | P2.1.2 | Implement HMAC-based purge confirmation token | ✅ Done | Full HMAC-SHA256 token generation + validation impl in `DataLifecycleHandler`; dry-run returns signed token; execute verifies 5-min window + HMAC sig; constant-time compare; secret from `DATACLOUD_PURGE_TOKEN_SECRET` env |

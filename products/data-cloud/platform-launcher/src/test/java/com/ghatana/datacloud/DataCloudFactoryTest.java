@@ -2,6 +2,8 @@ package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.DataCloud.DataCloudConfig;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,24 +25,82 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("DataCloud Factory Tests")
 class DataCloudFactoryTest extends EventloopTestBase {
 
+    private static final DataCloudConfig LOCAL_CONFIG = DataCloudConfig.builder()
+        .profile(DataCloudProfile.LOCAL)
+        .build();
+
+    private static final DataCloudConfig PRODUCTION_CONFIG = DataCloudConfig.builder()
+        .profile(DataCloudProfile.PRODUCTION)
+        .build();
+
     @Test
     @DisplayName("production profile fails fast when no durable entity store is registered")
     void productionProfileFailsFastWhenNoDurableEntityStoreIsRegistered() {
-        DataCloudConfig config = DataCloudConfig.builder()
-            .profile(DataCloudProfile.PRODUCTION)
-            .build();
-
-        assertThatThrownBy(() -> DataCloud.create(config))
+        assertThatThrownBy(() -> DataCloud.create(PRODUCTION_CONFIG))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("No durable EntityStore provider found");
     }
 
     @Test
+    @DisplayName("entity store discovery uses registered provider when present")
+    void entityStoreDiscoveryUsesRegisteredProviderWhenPresent() {
+        DataCloudClient client = DataCloud.forTesting();
+
+        try {
+            EntityStore entityStore = client.entityStore();
+
+            assertThat(DataCloud.discoverEntityStore(PRODUCTION_CONFIG, java.util.Optional.of(entityStore)))
+                .isSameAs(entityStore);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    @DisplayName("entity store discovery falls back to in-memory in local profile")
+    void entityStoreDiscoveryFallsBackToInMemoryInLocalProfile() {
+        assertThat(DataCloud.discoverEntityStore(LOCAL_CONFIG, java.util.Optional.empty()))
+            .extracting(store -> store.getClass().getName())
+            .asString()
+            .contains("InMemoryEntityStore");
+    }
+
+    @Test
+    @DisplayName("event log discovery fails fast when no durable store is registered")
+    void eventLogDiscoveryFailsFastWhenNoDurableStoreIsRegistered() {
+        assertThatThrownBy(() -> DataCloud.discoverEventLogStore(PRODUCTION_CONFIG, java.util.Optional.empty()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("No durable EventLogStore provider found");
+    }
+
+    @Test
+    @DisplayName("event log discovery uses registered provider when present")
+    void eventLogDiscoveryUsesRegisteredProviderWhenPresent() {
+        DataCloudClient client = DataCloud.forTesting();
+
+        try {
+            EventLogStore eventLogStore = client.eventLogStore();
+
+            assertThat(DataCloud.discoverEventLogStore(PRODUCTION_CONFIG, java.util.Optional.of(eventLogStore)))
+                .isSameAs(eventLogStore);
+        } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    @DisplayName("event log discovery falls back to in-memory in local profile")
+    void eventLogDiscoveryFallsBackToInMemoryInLocalProfile() {
+        assertThat(DataCloud.discoverEventLogStore(LOCAL_CONFIG, java.util.Optional.empty()))
+            .extracting(store -> store.getClass().getName())
+            .asString()
+            .contains("InMemoryEventLogStore");
+    }
+
+    @Test
     @DisplayName("local profile falls back to in-memory stores")
     void localProfileFallsBackToInMemoryStores() {
-        DataCloudClient client = DataCloud.create(DataCloudConfig.builder()
-            .profile(DataCloudProfile.LOCAL)
-            .build());
+        DataCloudClient client = DataCloud.create(LOCAL_CONFIG);
 
         try {
             assertThat(client.entityStore().getClass().getName())

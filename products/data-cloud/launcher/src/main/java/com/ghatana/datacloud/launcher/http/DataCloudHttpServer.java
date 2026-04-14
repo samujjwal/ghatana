@@ -36,6 +36,7 @@ import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
@@ -70,6 +71,8 @@ import com.ghatana.datacloud.launcher.http.voice.NopVoiceSttAdapter;
 import com.ghatana.datacloud.launcher.http.voice.NopVoiceTtsAdapter;
 import com.ghatana.datacloud.launcher.http.voice.VoiceSttPort;
 import com.ghatana.datacloud.launcher.http.voice.WhisperSttConfig;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * HTTP Server for Data-Cloud Standalone deployment.
@@ -238,6 +241,17 @@ public class DataCloudHttpServer {
      * When {@code null}, the security filter is not activated.
      */
     private ApiKeyResolver apiKeyResolver;
+
+    /**
+     * Optional JWT provider for bearer authentication (DC-E1).
+     * When {@code null}, JWT bearer authentication is disabled.
+     */
+    private JwtTokenProvider jwtProvider;
+
+    /**
+     * JWT claim name used to resolve tenant identity; defaults to {@code tenant_id}.
+     */
+    private String jwtTenantClaim = DataCloudSecurityFilter.DEFAULT_TENANT_CLAIM;
 
     /**
      * Optional policy engine for CRITICAL-route enforcement (DC-E1).
@@ -582,6 +596,33 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches a JWT provider and activates bearer-token authentication for protected routes.
+     *
+     * <p>JWT authentication is evaluated after API key authentication when both are configured.
+     * Tenant identity is extracted from the configured claim name (default {@code tenant_id}).
+     *
+     * @param provider JWT token provider; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withJwtProvider(JwtTokenProvider provider) {
+        this.jwtProvider = provider;
+        return this;
+    }
+
+    /**
+     * Configures the JWT claim name used to resolve tenant identity.
+     *
+     * @param tenantClaim claim name; blank values reset to {@code tenant_id}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withJwtTenantClaim(String tenantClaim) {
+        this.jwtTenantClaim = tenantClaim != null && !tenantClaim.isBlank()
+                ? tenantClaim
+                : DataCloudSecurityFilter.DEFAULT_TENANT_CLAIM;
+        return this;
+    }
+
+    /**
      * Attaches a {@link PolicyEngine} for CRITICAL-route governance enforcement (DC-E1).
      *
      * <p>Requires {@link #withApiKeyResolver} to also be called — the security filter
@@ -645,12 +686,33 @@ public class DataCloudHttpServer {
         return this;
     }
 
+    static void validateSecurityConfiguration(boolean authConfigured,
+                                              boolean strictTenantResolution,
+                                              Logger logger) {
+        requireNonNull(logger, "logger");
+
+        if (authConfigured) {
+            return;
+        }
+
+        if (strictTenantResolution) {
+            throw new IllegalStateException(
+                "Security filter must be configured for non-local profiles. " +
+                    "Call withApiKeyResolver() or withJwtProvider()."
+            );
+        }
+
+        logger.warn("Running without authentication — LOCAL profile only.");
+    }
+
     /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
      */
     public void start() throws Exception {
+        validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
+
         eventloop = Eventloop.create();
 
         // ---- Instantiate extracted handler delegates ----
@@ -690,6 +752,23 @@ public class DataCloudHttpServer {
         VoiceSttPort sttPort = sttConfig.enabled()
             ? new HttpWhisperSttAdapter(sttConfig, objectMapper, blockingExecutor)
             : NopVoiceSttAdapter.INSTANCE;
+
+        if (completionService != null || sttConfig.enabled()) {
+            healthSubsystemSuppliers.putIfAbsent("voice_gateway", () -> {
+                Map<String, Object> snapshot = new LinkedHashMap<>();
+                snapshot.put("status", "UP");
+                snapshot.put("stt", sttConfig.enabled() ? "UP" : "NOT_CONFIGURED");
+                snapshot.put("llm", completionService != null ? "UP" : "NOT_CONFIGURED");
+                return snapshot;
+            });
+        }
+        if (auditService != null) {
+            healthSubsystemSuppliers.putIfAbsent("audit_service", () -> Map.of("status", "UP", "mode", "in-process"));
+        }
+        if (policyEngine != null) {
+            healthSubsystemSuppliers.putIfAbsent("policy_engine", () -> Map.of("status", "UP", "mode", "in-process"));
+        }
+
         voiceHandler = new VoiceGatewayHandler(
             completionService,
             auditService,
@@ -889,20 +968,24 @@ public class DataCloudHttpServer {
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
 
-        // DC-E1: wrap router with security filter when apiKeyResolver is configured
+        // DC-E1: wrap router with security filter when API key or JWT auth is configured
         AsyncServlet rootServlet;
-        if (apiKeyResolver != null) {
+        if (apiKeyResolver != null || jwtProvider != null) {
             DataCloudSecurityFilter securityFilter = DataCloudSecurityFilter.builder()
                 .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .jwtTenantClaim(jwtTenantClaim)
                 .policyEngine(policyEngine)
                 .auditService(auditService)
                 .build();
             rootServlet = securityFilter.apply(filteredRouter);
-            log.info("[DC-E1] security filter active (policy engine: {})",
+            log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {})",
+                apiKeyResolver != null ? "enabled" : "disabled",
+                jwtProvider != null ? "enabled" : "disabled",
                 policyEngine != null ? "enabled" : "advisory-only");
         } else {
             rootServlet = filteredRouter;
-            log.info("[DC-E1] security filter inactive — withApiKeyResolver not called");
+            log.info("[DC-E1] security filter inactive — withApiKeyResolver/withJwtProvider not called");
         }
 
         server = HttpServer.builder(eventloop,

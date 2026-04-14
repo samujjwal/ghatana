@@ -28,13 +28,17 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.observability.clickhouse.ClickHouseTraceStorage;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.zaxxer.hikari.HikariDataSource;
 import io.activej.dns.DnsClient;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -131,6 +135,8 @@ public final class DataCloudHttpLauncherBootstrap {
             }
 
             ApiKeyResolver apiKeyResolver = buildApiKeyResolver(env, log);
+            JwtTokenProvider jwtProvider = buildJwtProvider(env, log);
+            String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
 
                 boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
@@ -146,12 +152,17 @@ public final class DataCloudHttpLauncherBootstrap {
                     .withStrictTenantResolution(!isLocalProfile);
 
                 if (apiKeyResolver != null) {
-                httpServer.withApiKeyResolver(apiKeyResolver);
+                    httpServer.withApiKeyResolver(apiKeyResolver);
+                }
+                if (jwtProvider != null) {
+                    httpServer.withJwtProvider(jwtProvider)
+                            .withJwtTenantClaim(jwtTenantClaim);
                 }
             startTransport(
                     httpServer,
                     port,
                     databaseEnabled,
+                    aiEnabled ? new AiServices(aiModelManager, featureStoreService) : null,
                     databaseDataSource,
                     log,
                     Runtime.getRuntime()::addShutdownHook);
@@ -206,6 +217,29 @@ public final class DataCloudHttpLauncherBootstrap {
             }
             return Optional.empty();
         };
+    }
+
+    /**
+     * Builds a shared-secret JWT provider from standalone launcher environment variables.
+     *
+     * <p>Required variables when enabled:
+     * <ul>
+     *   <li>{@code DATACLOUD_JWT_SECRET} — shared secret used to sign and validate tokens</li>
+     *   <li>{@code DATACLOUD_JWT_VALIDITY_MS} — optional token validity, default 3600000</li>
+     * </ul>
+     *
+     * @return JWT provider or {@code null} when JWT auth is not configured
+     */
+    static JwtTokenProvider buildJwtProvider(Map<String, String> env, Logger log) {
+        String secret = env.get("DATACLOUD_JWT_SECRET");
+        if (secret == null || secret.isBlank()) {
+            return null;
+        }
+
+        long validityMs = Long.parseLong(env.getOrDefault("DATACLOUD_JWT_VALIDITY_MS", "3600000"));
+        log.info("[DC-E1] JWT authentication enabled (tenant claim: {})",
+                env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"));
+        return JwtTokenProviders.fromSharedSecret(secret, validityMs);
     }
 
     private static DataSource buildDatabaseDataSource() {
@@ -336,12 +370,16 @@ public final class DataCloudHttpLauncherBootstrap {
             DataCloudHttpServer httpServer,
             int port,
             boolean databaseEnabled,
+            AiServices aiServices,
             DataSource databaseDataSource,
             Logger log,
             Consumer<Thread> shutdownHookRegistrar) {
         try {
             if (databaseEnabled && databaseDataSource != null) {
                 httpServer.withHealthSubsystem("database", new JdbcDatabaseHealthProbe(databaseDataSource, 5));
+            }
+            if (aiServices != null) {
+                httpServer.withHealthSubsystem("ai_inference", buildAiInferenceHealthProbe(aiServices));
             }
             httpServer.start();
             log.info("HTTP server started on port {}", port);
@@ -358,6 +396,27 @@ public final class DataCloudHttpLauncherBootstrap {
                     "Failed to start HTTP server on port " + port,
                     e);
         }
+    }
+
+    static Supplier<Map<String, Object>> buildAiInferenceHealthProbe(AiServices aiServices) {
+        return () -> {
+            Map<String, Object> snapshot = new LinkedHashMap<>();
+            boolean modelRegistryReady = aiServices != null && aiServices.aiModelManager() != null;
+            boolean featureStoreReady = aiServices != null && aiServices.featureStoreService() != null;
+            boolean healthy = modelRegistryReady && featureStoreReady;
+
+            snapshot.put("status", healthy ? "UP" : "DOWN");
+            snapshot.put("model_registry", modelRegistryReady ? "UP" : "DOWN");
+            snapshot.put("feature_store", featureStoreReady ? "UP" : "DOWN");
+            snapshot.put("mode", "startup-initialized");
+            snapshot.put("checked_at", Instant.now().toString());
+
+            if (!healthy) {
+                snapshot.put("message", "AI services incomplete");
+            }
+
+            return snapshot;
+        };
     }
 
     static BrainServices startBrainServices(

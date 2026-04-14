@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:audit"))
+    implementation(project(":platform:java:security"))
 
     // AI platform integration — model registry, feature store, observability (all merged into ai-integration)
     implementation(project(":platform:java:ai-integration"))

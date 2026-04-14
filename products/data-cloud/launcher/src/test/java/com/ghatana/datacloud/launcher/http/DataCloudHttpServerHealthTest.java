@@ -43,8 +43,8 @@ class DataCloudHttpServerHealthTest {
     }
 
     @Test
-    @DisplayName("health detail keeps default unknown database probe when none registered")
-    void healthDetailUsesDefaultUnknownProbe() throws Exception {
+    @DisplayName("health detail reports not configured for optional subsystems without probes")
+    void healthDetailUsesNotConfiguredDefaults() throws Exception {
         startServer();
 
         HttpResponse<String> response = get("/health/detail");
@@ -56,8 +56,8 @@ class DataCloudHttpServerHealthTest {
         Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
         @SuppressWarnings("unchecked")
         Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
-        assertThat(database).containsEntry("status", "UNKNOWN");
-        assertThat(database).containsEntry("note", "active-probe-not-configured");
+        assertThat(database).containsEntry("status", "NOT_CONFIGURED");
+        assertThat(database).containsEntry("note", "dependency-not-configured");
     }
 
     @Test
@@ -107,6 +107,19 @@ class DataCloudHttpServerHealthTest {
         Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
         assertThat(database).containsEntry("status", "DOWN");
         assertThat(database).containsEntry("error", "IllegalStateException");
+    }
+
+    @Test
+    @DisplayName("ready returns 503 when database probe is down")
+    void readyReturns503WhenDatabaseProbeIsDown() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+            .withHealthSubsystem("database", () -> Map.of("status", "DOWN", "message", "db unreachable"));
+        server.start();
+
+        HttpResponse<String> response = get("/ready");
+
+        assertThat(response.statusCode()).isEqualTo(503);
+        assertThat(response.body()).contains("Critical dependencies are not ready");
     }
 
     private void startServer() throws Exception {

@@ -3,11 +3,12 @@ package com.ghatana.datacloud.launcher.http;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
-import com.ghatana.platform.http.security.filter.ApiKeyAuthFilter;
 import com.ghatana.platform.http.security.filter.TenantIsolationHttpFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.platform.security.SecurityUtils;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -28,7 +28,7 @@ import java.util.UUID;
  * <pre>
  *   CORS / rate-limit / payload-size → (this filter) →
  *     1. Pass health/metrics probes without authentication ({@link EndpointSensitivity#PUBLIC}).
- *     2. API key authentication via {@link ApiKeyAuthFilter}.
+ *     2. API key authentication first, JWT bearer authentication second.
  *     3. Tenant isolation setup via {@link TenantIsolationHttpFilter}.
  *     4. Policy engine check for {@link EndpointSensitivity#CRITICAL} routes.
  *     5. Async audit emission for SENSITIVE and CRITICAL routes.
@@ -77,15 +77,27 @@ public final class DataCloudSecurityFilter {
 
     /** Header name that carries the correlation ID for distributed tracing. */
     static final String HEADER_REQUEST_ID = "X-Request-ID";
+    static final String HEADER_API_KEY = "X-API-Key";
+    static final String HEADER_AUTHORIZATION = "Authorization";
+    static final String DEFAULT_TENANT_CLAIM = "tenant_id";
 
     private final ApiKeyResolver apiKeyResolver;
+    private final JwtTokenProvider jwtProvider;
+    private final String jwtTenantClaim;
     private final PolicyEngine policyEngine;
     private final AuditService auditService;
     private final boolean enforcing;
     private final Set<String> policyExcludedTenants;
 
     private DataCloudSecurityFilter(Builder b) {
-        this.apiKeyResolver         = Objects.requireNonNull(b.apiKeyResolver, "apiKeyResolver");
+        if (b.apiKeyResolver == null && b.jwtProvider == null) {
+            throw new NullPointerException("Either apiKeyResolver or jwtProvider must be configured");
+        }
+        this.apiKeyResolver         = b.apiKeyResolver;
+        this.jwtProvider            = b.jwtProvider;
+        this.jwtTenantClaim         = b.jwtTenantClaim != null && !b.jwtTenantClaim.isBlank()
+                ? b.jwtTenantClaim
+                : DEFAULT_TENANT_CLAIM;
         this.policyEngine           = b.policyEngine;        // nullable — policy checks skipped when null
         this.auditService           = b.auditService;        // nullable — audit skipped when null
         this.enforcing              = b.enforcing;
@@ -115,10 +127,6 @@ public final class DataCloudSecurityFilter {
         // Inner-most filter: tenant isolation sets TenantContext.
         AsyncServlet tenantWrapped = TenantIsolationHttpFilter.wrap(delegate);
 
-        // API key auth wraps tenant isolation so the key is authenticated before context setup.
-        ApiKeyAuthFilter apiKeyFilter = new ApiKeyAuthFilter(apiKeyResolver);
-        AsyncServlet authedServlet = apiKeyFilter.secure(tenantWrapped);
-
         // Outer-most: our policy + audit logic that decides which path to take.
         return request -> {
             String path   = request.getPath();
@@ -131,10 +139,8 @@ public final class DataCloudSecurityFilter {
                 return delegate.serve(request);
             }
 
-            // (2–3) Authenticate and establish TenantContext via authedServlet.
-            // If auth fails, authedServlet returns 401 before reaching tenantWrapped.
-            // We intercept the response to also emit audit on 401.
-            return authedServlet.serve(request)
+            // (2–3) Authenticate and establish TenantContext before the tenant isolation filter.
+            return authenticate(request, tenantWrapped)
                 .then(response -> {
                     Principal authenticatedPrincipal = request.getAttachment(Principal.class);
                     String tenantId = resolveTenantId(request, authenticatedPrincipal);
@@ -149,6 +155,82 @@ public final class DataCloudSecurityFilter {
                             principalName);
                 });
         };
+    }
+
+    private Promise<HttpResponse> authenticate(io.activej.http.HttpRequest request,
+                                               AsyncServlet tenantWrapped) {
+        if (apiKeyResolver != null) {
+            String apiKey = request.getHeader(HttpHeaders.of(HEADER_API_KEY));
+            if (apiKey != null && !apiKey.isBlank()) {
+                return authenticateApiKey(request, tenantWrapped, apiKey);
+            }
+        }
+
+        if (jwtProvider != null) {
+            String token = SecurityUtils.extractBearerToken(request.getHeader(HttpHeaders.of(HEADER_AUTHORIZATION)));
+            if (token != null && !token.isBlank()) {
+                return authenticateJwt(request, tenantWrapped, token);
+            }
+        }
+
+        return Promise.of(unauthorized("Missing authentication credentials"));
+    }
+
+    private Promise<HttpResponse> authenticateApiKey(io.activej.http.HttpRequest request,
+                                                     AsyncServlet tenantWrapped,
+                                                     String apiKey) {
+        var principalOpt = apiKeyResolver.resolve(apiKey);
+        if (principalOpt.isEmpty()) {
+            log.warn("Unauthorized request: invalid API key");
+            return Promise.of(unauthorized("Missing or invalid API key"));
+        }
+
+        return serveAsPrincipal(request, tenantWrapped, principalOpt.get());
+    }
+
+    private Promise<HttpResponse> authenticateJwt(io.activej.http.HttpRequest request,
+                                                  AsyncServlet tenantWrapped,
+                                                  String token) {
+        try {
+            if (!jwtProvider.validateToken(token)) {
+                log.warn("Unauthorized request: invalid JWT bearer token");
+                return Promise.of(unauthorized("Missing, expired, or invalid JWT bearer token"));
+            }
+
+            String userId = jwtProvider.getUserIdFromToken(token).orElse(null);
+            String tenantId = jwtProvider.extractClaims(token)
+                    .map(claims -> claims.get(jwtTenantClaim))
+                    .map(Object::toString)
+                    .filter(value -> !value.isBlank())
+                    .orElse(null);
+
+            if (userId == null || tenantId == null) {
+                log.warn("Unauthorized request: JWT missing required identity claims userId={} tenantClaim={}",
+                        userId != null,
+                        jwtTenantClaim);
+                return Promise.of(unauthorized("JWT missing required identity claims"));
+            }
+
+            Principal principal = new Principal(userId, jwtProvider.getRolesFromToken(token), tenantId);
+            return serveAsPrincipal(request, tenantWrapped, principal);
+        } catch (RuntimeException exception) {
+            log.warn("Unauthorized request: JWT authentication failed: {}", exception.getMessage());
+            return Promise.of(unauthorized("Missing, expired, or invalid JWT bearer token"));
+        }
+    }
+
+    private Promise<HttpResponse> serveAsPrincipal(io.activej.http.HttpRequest request,
+                                                   AsyncServlet tenantWrapped,
+                                                   Principal principal) {
+        request.attach(Principal.class, principal);
+        TenantContext.Scope scope = TenantContext.scope(principal);
+        try {
+            return tenantWrapped.serve(request)
+                    .whenComplete((response, error) -> scope.close());
+        } catch (Exception exception) {
+            scope.close();
+            return Promise.ofException(exception);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -344,12 +426,23 @@ public final class DataCloudSecurityFilter {
             .build();
     }
 
+            private static HttpResponse unauthorized(String message) {
+            String body = "{\"error\":{\"code\":\"UNAUTHENTICATED\","
+                + "\"message\":\"" + message + "\"}}";
+            return HttpResponse.ofCode(401)
+                .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+                .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                .build();
+            }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Builder
     // ─────────────────────────────────────────────────────────────────────────
 
     public static final class Builder {
         private ApiKeyResolver apiKeyResolver;
+        private JwtTokenProvider jwtProvider;
+        private String jwtTenantClaim;
         private PolicyEngine policyEngine;
         private AuditService auditService;
         private boolean enforcing = true;
@@ -361,6 +454,22 @@ public final class DataCloudSecurityFilter {
          */
         public Builder apiKeyResolver(ApiKeyResolver resolver) {
             this.apiKeyResolver = resolver;
+            return this;
+        }
+
+        /**
+         * JWT provider used for bearer-token authentication when API keys are absent.
+         */
+        public Builder jwtProvider(JwtTokenProvider provider) {
+            this.jwtProvider = provider;
+            return this;
+        }
+
+        /**
+         * Configurable tenant claim name extracted from JWT tokens.
+         */
+        public Builder jwtTenantClaim(String tenantClaim) {
+            this.jwtTenantClaim = tenantClaim;
             return this;
         }
 

@@ -44,11 +44,11 @@ tasks.jacocoTestReport {
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     violationRules {
-        rule {
-            limit {
-                counter = "INSTRUCTION"
-                value = "COVEREDRATIO"
-                minimum = "0.08".toBigDecimal()  // P0.3.1: raise to 0.80 after full test suite added
+            rule {
+                limit {
+                    counter = "INSTRUCTION"
+                    value = "COVEREDRATIO"
+                    minimum = "0.40".toBigDecimal()  // P0.3.1: raise to 0.80 after full test suite added
             }
         }
     }

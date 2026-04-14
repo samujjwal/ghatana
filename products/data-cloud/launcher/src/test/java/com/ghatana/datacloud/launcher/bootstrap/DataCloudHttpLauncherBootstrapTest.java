@@ -16,7 +16,10 @@ import com.ghatana.datacloud.analytics.report.ReportService;
 import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.datacloud.ai.AIModelManager;
+import com.ghatana.platform.security.port.JwtTokenProvider;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +34,37 @@ import org.slf4j.Logger;
 @DisplayName("DataCloudHttpLauncherBootstrap")
 class DataCloudHttpLauncherBootstrapTest {
 
+    private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
+
+    @Test
+    @DisplayName("buildJwtProvider returns null when JWT auth is not configured")
+    void buildJwtProviderReturnsNullWhenNotConfigured() {
+        Logger log = mock(Logger.class);
+
+        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(Map.of(), log);
+
+        assertThat(provider).isNull();
+    }
+
+    @Test
+    @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured")
+    void buildJwtProviderCreatesSharedSecretProvider() {
+        Logger log = mock(Logger.class);
+
+        JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(
+                Map.of(
+                "DATACLOUD_JWT_SECRET", TEST_JWT_SECRET,
+                        "DATACLOUD_JWT_TENANT_CLAIM", "tenant_id",
+                        "DATACLOUD_JWT_VALIDITY_MS", "60000"),
+                log);
+
+        assertThat(provider).isNotNull();
+        String token = provider.createToken("svc-user", java.util.List.of("reader"), Map.of("tenant_id", "tenant-a"));
+        assertThat(provider.validateToken(token)).isTrue();
+        assertThat(provider.getUserIdFromToken(token)).contains("svc-user");
+        assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-a");
+    }
+
     @Test
     @DisplayName("wires database health subsystem and shutdown hook on successful startup")
     void wiresDatabaseHealthSubsystemAndShutdownHook() throws Exception {
@@ -40,16 +74,19 @@ class DataCloudHttpLauncherBootstrapTest {
         AtomicReference<Thread> registeredHook = new AtomicReference<>();
 
         when(httpServer.withHealthSubsystem(eq("database"), any())).thenReturn(httpServer);
+        when(httpServer.withHealthSubsystem(eq("ai_inference"), any())).thenReturn(httpServer);
 
         DataCloudHttpLauncherBootstrap.startTransport(
                 httpServer,
                 8082,
                 true,
+            new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class)),
                 dataSource,
                 log,
                 registeredHook::set);
 
         verify(httpServer).withHealthSubsystem(eq("database"), any());
+        verify(httpServer).withHealthSubsystem(eq("ai_inference"), any());
         verify(httpServer).start();
         assertThat(registeredHook.get()).isNotNull();
     }
@@ -64,11 +101,13 @@ class DataCloudHttpLauncherBootstrapTest {
                 httpServer,
                 8082,
                 false,
+            null,
                 null,
                 log,
                 hook -> {});
 
         verify(httpServer, never()).withHealthSubsystem(eq("database"), any());
+        verify(httpServer, never()).withHealthSubsystem(eq("ai_inference"), any());
         verify(httpServer).start();
     }
 
@@ -83,6 +122,7 @@ class DataCloudHttpLauncherBootstrapTest {
                 httpServer,
                 8082,
                 false,
+            null,
                 null,
                 log,
                 hook -> {}))
@@ -91,6 +131,34 @@ class DataCloudHttpLauncherBootstrapTest {
                 .hasCauseInstanceOf(IllegalStateException.class);
 
         verify(log).error(eq("Failed to start HTTP server on port {}"), eq(8082), any(IllegalStateException.class));
+    }
+
+    @Test
+    @DisplayName("ai inference health probe reports startup-initialized services as up")
+    void aiInferenceHealthProbeReportsStartupInitializedServicesAsUp() {
+        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe(
+                new DataCloudHttpLauncherBootstrap.AiServices(
+                        mock(AIModelManager.class),
+                        mock(com.ghatana.aiplatform.featurestore.FeatureStoreService.class)))
+                .get();
+
+        assertThat(snapshot).containsEntry("status", "UP");
+        assertThat(snapshot).containsEntry("model_registry", "UP");
+        assertThat(snapshot).containsEntry("feature_store", "UP");
+        assertThat(snapshot).containsEntry("mode", "startup-initialized");
+    }
+
+    @Test
+    @DisplayName("ai inference health probe reports incomplete services as down")
+    void aiInferenceHealthProbeReportsIncompleteServicesAsDown() {
+        Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe(
+                new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), null))
+                .get();
+
+        assertThat(snapshot).containsEntry("status", "DOWN");
+        assertThat(snapshot).containsEntry("model_registry", "UP");
+        assertThat(snapshot).containsEntry("feature_store", "DOWN");
+        assertThat(snapshot).containsEntry("message", "AI services incomplete");
     }
 
     @Test

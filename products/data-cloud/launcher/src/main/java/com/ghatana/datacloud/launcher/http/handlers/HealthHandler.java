@@ -124,11 +124,11 @@ public class HealthHandler {
         threadSubsystem.put("active_threads", Thread.activeCount());
         subsystems.put("threads", threadSubsystem);
 
-        subsystems.put("ai_inference", unknownSubsystem());
-        subsystems.put("database", unknownSubsystem());
-        subsystems.put("voice_gateway", unknownSubsystem());
-        subsystems.put("audit_service", unknownSubsystem());
-        subsystems.put("policy_engine", unknownSubsystem());
+        subsystems.put("ai_inference", notConfiguredSubsystem());
+        subsystems.put("database", notConfiguredSubsystem());
+        subsystems.put("voice_gateway", notConfiguredSubsystem());
+        subsystems.put("audit_service", notConfiguredSubsystem());
+        subsystems.put("policy_engine", notConfiguredSubsystem());
 
         for (Map.Entry<String, Supplier<Map<String, Object>>> entry : subsystemSuppliers.entrySet()) {
             subsystems.put(entry.getKey(), safeSubsystemSnapshot(entry.getKey(), entry.getValue()));
@@ -154,8 +154,8 @@ public class HealthHandler {
         }
     }
 
-    private Map<String, Object> unknownSubsystem() {
-        return Map.of("status", "UNKNOWN", "note", "active-probe-not-configured");
+    private Map<String, Object> notConfiguredSubsystem() {
+        return Map.of("status", "NOT_CONFIGURED", "note", "dependency-not-configured");
     }
 
     private String deriveOverallStatus(Map<String, Object> subsystems) {
@@ -184,10 +184,24 @@ public class HealthHandler {
     }
 
     public Promise<HttpResponse> handleReady(HttpRequest request) {
-        return Promise.of(httpSupport.jsonResponse(Map.of(
-            "status", "READY",
-            "timestamp", Instant.now().toString()
-        )));
+        Map<String, Object> subsystems = buildSubsystemSnapshot();
+        boolean criticalDown = isCriticalSubsystemDown(subsystems);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", criticalDown ? "NOT_READY" : "READY");
+        body.put("timestamp", Instant.now().toString());
+        body.put("subsystems", subsystems);
+        HttpResponse response = criticalDown
+                ? httpSupport.errorResponse(503, "Critical dependencies are not ready")
+                : httpSupport.jsonResponse(body);
+        return Promise.of(response);
+    }
+
+    private boolean isCriticalSubsystemDown(Map<String, Object> subsystems) {
+        return isDown(subsystems.get("database")) || isDown(subsystems.get("event_store"));
+    }
+
+    private boolean isDown(Object subsystem) {
+        return subsystem instanceof Map<?, ?> values && "DOWN".equals(values.get("status"));
     }
 
     public Promise<HttpResponse> handleLive(HttpRequest request) {

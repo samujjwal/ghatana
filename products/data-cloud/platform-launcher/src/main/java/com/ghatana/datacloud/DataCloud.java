@@ -78,9 +78,15 @@ public final class DataCloud {
         );
     }
 
-    private static EntityStore discoverEntityStore(DataCloudConfig config) {
-        ServiceLoader<EntityStore> loader = ServiceLoader.load(EntityStore.class);
-        return loader.findFirst().orElseGet(() -> {
+    static EntityStore discoverEntityStore(DataCloudConfig config) {
+        return discoverEntityStore(config, ServiceLoader.load(EntityStore.class).findFirst());
+    }
+
+    static EntityStore discoverEntityStore(DataCloudConfig config, Optional<EntityStore> discoveredStore) {
+        Objects.requireNonNull(config, "config required");
+        Objects.requireNonNull(discoveredStore, "discoveredStore required");
+
+        return discoveredStore.orElseGet(() -> {
             if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
                 throw new IllegalStateException(
                     "No durable EntityStore provider found. Register an EntityStore implementation via META-INF/services."
@@ -90,9 +96,15 @@ public final class DataCloud {
         });
     }
 
-    private static EventLogStore discoverEventLogStore(DataCloudConfig config) {
-        ServiceLoader<EventLogStore> loader = ServiceLoader.load(EventLogStore.class);
-        return loader.findFirst().orElseGet(() -> {
+    static EventLogStore discoverEventLogStore(DataCloudConfig config) {
+        return discoverEventLogStore(config, ServiceLoader.load(EventLogStore.class).findFirst());
+    }
+
+    static EventLogStore discoverEventLogStore(DataCloudConfig config, Optional<EventLogStore> discoveredStore) {
+        Objects.requireNonNull(config, "config required");
+        Objects.requireNonNull(discoveredStore, "discoveredStore required");
+
+        return discoveredStore.orElseGet(() -> {
             if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
                 throw new IllegalStateException(
                     "No durable EventLogStore provider found. Register an EventLogStore implementation via META-INF/services."
