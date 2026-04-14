@@ -28,6 +28,7 @@ module.exports = [
       "gradlew",
       "gradlew.bat",
       "platform/typescript/**",
+      "products/yappc/config/agents/event-schemas/**",
     ],
   },
   {
