@@ -10,7 +10,7 @@ import {
   type UserInteraction,
 } from '../RecommendationEngine';
 
-describe.skip('RecommendationEngine', () => {
+describe('RecommendationEngine', () => {
   let engine: RecommendationEngine;
   let items: RecommendationItem[];
 

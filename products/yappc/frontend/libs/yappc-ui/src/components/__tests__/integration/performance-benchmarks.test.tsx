@@ -96,7 +96,7 @@ function logBenchmark(result: BenchmarkResult) {
 // Performance Tests
 // ============================================================================
 
-describe.skip('Performance Benchmarks', () => {
+describe('Performance Benchmarks', () => {
   describe('Event Bus Performance', () => {
     it('should emit events efficiently', async () => {
       const result = await benchmark(

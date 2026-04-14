@@ -35,7 +35,7 @@ vi.mock('../../../routes/app/project/canvas/CanvasScene', () => ({
 import CanvasScene from '../../../routes/app/project/canvas/CanvasScene';
 import { canvasAtom } from '../../../components/canvas/workspace/canvasAtoms';
 
-describe.skip('Feature 6.4: CanvasScene Integration', () => {
+describe('Feature 6.4: CanvasScene Integration', () => {
   let store: ReturnType<typeof createStore>;
 
   beforeEach(() => {

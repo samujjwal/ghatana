@@ -95,7 +95,7 @@ function TestCanvasWrapper({ initialItems = [mockBaseItem], ...props }: unknown)
     );
 }
 
-describe.skip('Phase 1: Generic Canvas Foundation', () => {
+describe('Phase 1: Generic Canvas Foundation', () => {
 
     describe('GenericCanvas Component', () => {
         test('renders with default view mode', () => {
@@ -186,7 +186,7 @@ describe.skip('Phase 1: Generic Canvas Foundation', () => {
     });
 });
 
-describe.skip('Phase 2: Registry Migration', () => {
+describe('Phase 2: Registry Migration', () => {
 
     describe('UnifiedRegistry', () => {
         let registry: UnifiedRegistry<unknown>;
@@ -293,7 +293,7 @@ describe.skip('Phase 2: Registry Migration', () => {
     });
 });
 
-describe.skip('Phase 3: Performance & Advanced Features', () => {
+describe('Phase 3: Performance & Advanced Features', () => {
 
     describe('usePerformanceMonitor', () => {
         test('tracks performance metrics', () => {
@@ -472,7 +472,7 @@ describe.skip('Phase 3: Performance & Advanced Features', () => {
     });
 });
 
-describe.skip('Integration Tests', () => {
+describe('Integration Tests', () => {
 
     test('integrates all phases together', async () => {
         // Create a comprehensive test component that uses all features

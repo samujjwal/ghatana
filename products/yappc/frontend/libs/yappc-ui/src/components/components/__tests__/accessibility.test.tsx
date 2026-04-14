@@ -7,23 +7,23 @@
  * @jest-environment jsdom
  */
 
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { describe, it, expect } from 'vitest';
 
+import { ThemeProvider } from '../../theme/ThemeProvider';
 import { Button } from '../Button/Button.enhanced';
-import { Select } from '../Select/Select.enhanced';
 import { TextField } from '../TextField/TextField.enhanced';
 
 expect.extend(toHaveNoViolations);
 
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
-  const theme = createTheme();
-  return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+  return render(<ThemeProvider>{ui}</ThemeProvider>);
 };
 
-describe.skip('Accessibility Tests', () => {
+describe('Accessibility Tests', () => {
   describe('Button Component', () => {
     it('should not have accessibility violations', async () => {
       const { container } = renderWithTheme(<Button>Accessible Button</Button>);

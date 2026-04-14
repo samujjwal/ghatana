@@ -7,7 +7,7 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 import { eventBus, useEventBus, useEventEmitter } from '../../core/event-bus';
@@ -18,17 +18,15 @@ import { useDataSource } from '../../hooks/useDataSource';
 // ============================================================================
 
 const server = setupServer(
-  rest.get('/api/users', (req, res, ctx) => {
-    return res(
-      ctx.json([
-        { id: 1, name: 'John Doe', email: 'john@example.com' },
-        { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-      ])
-    );
-  }),
-  rest.post('/api/users', (req, res, ctx) => {
-    return res(ctx.json({ id: 3, name: 'New User', email: 'new@example.com' }));
-  })
+  http.get('/api/users', () =>
+    HttpResponse.json([
+      { id: 1, name: 'John Doe', email: 'john@example.com' },
+      { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+    ])
+  ),
+  http.post('/api/users', () =>
+    HttpResponse.json({ id: 3, name: 'New User', email: 'new@example.com' })
+  )
 );
 
 beforeAll(() => server.listen());
@@ -43,23 +41,21 @@ afterAll(() => server.close());
 // Integration Tests
 // ============================================================================
 
-describe.skip('Event Bus + DataSource Integration', () => {
+describe('Event Bus + DataSource Integration', () => {
   describe('Data Refresh on Event', () => {
     it('should refetch data when refresh event is emitted', async () => {
       let fetchCount = 0;
 
       server.use(
-        rest.get('/api/users', (req, res, ctx) => {
+        http.get('/api/users', () => {
           fetchCount++;
-          return res(
-            ctx.json([
-              {
-                id: 1,
-                name: `User ${fetchCount}`,
-                email: `user${fetchCount}@example.com`,
-              },
-            ])
-          );
+          return HttpResponse.json([
+            {
+              id: 1,
+              name: `User ${fetchCount}`,
+              email: `user${fetchCount}@example.com`,
+            },
+          ]);
         })
       );
 
@@ -100,13 +96,13 @@ describe.skip('Event Bus + DataSource Integration', () => {
       const postFetches: number[] = [];
 
       server.use(
-        rest.get('/api/users', (req, res, ctx) => {
+        http.get('/api/users', () => {
           userFetches.push(Date.now());
-          return res(ctx.json([{ id: 1, name: 'User' }]));
+          return HttpResponse.json([{ id: 1, name: 'User' }]);
         }),
-        rest.get('/api/posts', (req, res, ctx) => {
+        http.get('/api/posts', () => {
           postFetches.push(Date.now());
-          return res(ctx.json([{ id: 1, title: 'Post' }]));
+          return HttpResponse.json([{ id: 1, title: 'Post' }]);
         })
       );
 
@@ -191,9 +187,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
       const errorEvents: unknown[] = [];
 
       server.use(
-        rest.get('/api/error', (req, res, ctx) => {
-          return res(ctx.status(500), ctx.json({ message: 'Server error' }));
-        })
+        http.get('/api/error', () =>
+          HttpResponse.json({ message: 'Server error' }, { status: 500 })
+        )
       );
 
       eventBus.on('data:error', (payload) => {
@@ -226,9 +222,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
       const events: string[] = [];
 
       server.use(
-        rest.post('/api/users', (req, res, ctx) => {
-          return res(ctx.status(500)); // Simulate error
-        })
+        http.post('/api/users', () =>
+          new HttpResponse(null, { status: 500 }) // Simulate error
+        )
       );
 
       const { result } = renderHook(() => {
@@ -402,11 +398,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
       let fetchCount = 0;
 
       server.use(
-        rest.get('/api/users', (req, res, ctx) => {
+        http.get('/api/users', () => {
           fetchCount++;
-          return res(
-            ctx.json([{ id: fetchCount, name: `Fetch ${fetchCount}` }])
-          );
+          return HttpResponse.json([{ id: fetchCount, name: `Fetch ${fetchCount}` }]);
         })
       );
 

@@ -22,7 +22,7 @@ import { project } from '@xyflow/react';
 
 import { ComponentPalette } from '../ComponentPalette';
 
-describe.skip('ComponentPalette drag integration', () => {
+describe('ComponentPalette drag integration', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });

@@ -45,7 +45,7 @@ function HookHarness({ rf }: { rf: any }) {
     );
 }
 
-describe.skip('useCanvasScene integration with React Flow mock', () => {
+describe('useCanvasScene integration with React Flow mock', () => {
     beforeEach(() => {
         mockSetCanvasState.mockReset();
         mockCanvasState = { elements: [], connections: [] };

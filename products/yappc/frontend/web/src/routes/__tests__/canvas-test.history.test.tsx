@@ -54,7 +54,7 @@ interface CanvasDocument {
   };
 }
 
-describe.skip('Feature 1.4: Document Management - Integration Tests', () => {
+describe('Feature 1.4: Document Management - Integration Tests', () => {
   describe('History Management with BaseItem Elements', () => {
     it('should undo/redo element position changes', () => {
       const initial: BaseItem = {

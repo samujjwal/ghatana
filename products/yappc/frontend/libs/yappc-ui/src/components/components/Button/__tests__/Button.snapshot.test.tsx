@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import ThemeProvider from '../../../theme/ThemeProvider';
 import { Button } from '../Button';
 
-describe.skip('Button Snapshots', () => {
+describe('Button Snapshots', () => {
   // Helper function to render button with theme
   const renderWithTheme = (ui: React.ReactNode) => {
     return render(<ThemeProvider mode="light">{ui}</ThemeProvider>);

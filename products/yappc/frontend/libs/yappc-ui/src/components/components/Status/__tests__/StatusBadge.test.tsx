@@ -1,16 +1,16 @@
 // All tests skipped - incomplete feature
-import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 
+import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { StatusBadge } from './StatusBadge';
 
-const theme = createTheme();
-
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
-describe.skip('StatusBadge', () => {
+describe('StatusBadge', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderWithTheme(<StatusBadge status="success" />);

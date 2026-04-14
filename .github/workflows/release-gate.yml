@@ -1,0 +1,292 @@
+name: Release Gate
+
+# ──────────────────────────────────────────────────────────────────
+# Authoritative release gate for YAPPC and platform/typescript.
+#
+# A build is considered release-ready only after every job in this
+# workflow succeeds.  See docs/trackers/TEST_TIER_INVENTORY.md for
+# the full definition.
+#
+# Distinction from yappc-ci.yml / ui-package-gates.yml:
+#   - Those workflows own unit, integration and contract tiers.
+#   - This workflow owns the *smoke* tier: the minimum real-stack
+#     browser journey that must pass before any deployment.
+# ──────────────────────────────────────────────────────────────────
+
+on:
+  workflow_run:
+    workflows: ["YAPPC CI", "UI Package Gates"]
+    types: [completed]
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL of the YAPPC frontend to smoke-test"
+        required: false
+        default: "http://localhost:7002"
+
+concurrency:
+  group: release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Guard: only run when both upstream workflows succeeded.
+  # ─────────────────────────────────────────────────────────────────
+  verify-upstream:
+    name: Verify upstream CI success
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Confirm upstream conclusion
+        run: |
+          echo "Upstream: ${{ github.event.workflow_run.name }} → ${{ github.event.workflow_run.conclusion }}"
+          echo "Release gate proceeding."
+
+  # ─────────────────────────────────────────────────────────────────
+  # Backend API smoke: start the backend, confirm /health and
+  # /metrics, run one real auth + workspace-creation API cycle.
+  # Requires: Postgres service (same as yappc-ci).
+  # ─────────────────────────────────────────────────────────────────
+  api-smoke:
+    name: API smoke (real stack)
+    runs-on: ubuntu-latest
+    needs: verify-upstream
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: yappc_smoke
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_smoke_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://yappc:yappc_smoke_pass@localhost:5432/yappc_smoke"
+      JWT_SECRET: "smoke-test-secret-not-for-production"
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/yappc/frontend
+
+      - name: Run database migrations
+        run: pnpm db:migrate
+        working-directory: products/yappc/frontend/apps/api
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Start API server in background
+        run: |
+          pnpm dev &
+          # Wait up to 30 s for the server to be ready
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/health && break || sleep 1
+          done
+        working-directory: products/yappc/frontend/apps/api
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          PORT: 4000
+
+      - name: Assert /health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/health)
+          [ "$STATUS" = "200" ] || (echo "Health check failed: $STATUS" && exit 1)
+
+      - name: Assert /metrics endpoint
+        run: |
+          curl -sf http://localhost:4000/metrics | grep -q 'process_cpu_seconds_total' \
+            || (echo "Metrics endpoint missing Prometheus output" && exit 1)
+
+      - name: Run real-stack API E2E tests
+        run: pnpm vitest run --project api-app src/__tests__/auth-flow.api-e2e.test.ts
+        working-directory: products/yappc/frontend
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          RUN_REAL_DB_TESTS: "true"
+
+  # ─────────────────────────────────────────────────────────────────
+  # Browser smoke: spin up the frontend dev server and run the
+  # real-backend Playwright release-gate suite.
+  # The suite does NOT intercept any API routes.
+  # ─────────────────────────────────────────────────────────────────
+  browser-smoke:
+    name: Browser smoke (real stack + Playwright)
+    runs-on: ubuntu-latest
+    needs: api-smoke
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: yappc_browser_smoke
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_smoke_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://yappc:yappc_smoke_pass@localhost:5432/yappc_browser_smoke"
+      JWT_SECRET: "smoke-test-secret-not-for-production"
+      NODE_ENV: test
+      PLAYWRIGHT_BASE_URL: "http://localhost:7002"
+      PLAYWRIGHT_PROJECT: "release-gate"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/yappc/frontend
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: products/yappc/frontend
+
+      - name: Run database migrations and seed smoke data
+        run: |
+          pnpm db:migrate
+          pnpm db:seed:smoke
+        working-directory: products/yappc/frontend/apps/api
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Start API server
+        run: |
+          pnpm dev &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/health && break || sleep 1
+          done
+        working-directory: products/yappc/frontend/apps/api
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+
+      - name: Start frontend dev server
+        run: |
+          pnpm dev &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:7002 && break || sleep 1
+          done
+        working-directory: products/yappc/frontend/apps/web
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:4000"
+
+      - name: Run Playwright release-gate suite
+        run: |
+          pnpm exec playwright test \
+            --project=chromium \
+            --grep "@release-gate" \
+            --reporter=list,junit \
+            --output=test-results
+        working-directory: products/yappc/frontend
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ env.PLAYWRIGHT_BASE_URL }}
+          REAL_BACKEND: "true"
+
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-release-gate
+          path: |
+            products/yappc/frontend/test-results/
+            products/yappc/frontend/playwright-report/
+
+  # ─────────────────────────────────────────────────────────────────
+  # Event-schema contract smoke: ensure event schemas still validate
+  # known golden payloads (a quick subset of the full contract suite).
+  # ─────────────────────────────────────────────────────────────────
+  contract-smoke:
+    name: Event-schema contract smoke
+    runs-on: ubuntu-latest
+    needs: verify-upstream
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/yappc/frontend
+
+      - name: Run event-schema contract suite
+        run: pnpm vitest run config/agents/event-schemas/__tests__/
+        working-directory: products/yappc
+
+  # ─────────────────────────────────────────────────────────────────
+  # Gate summary: all required jobs must be green.
+  # This is the single status check that branch-protection references.
+  # ─────────────────────────────────────────────────────────────────
+  release-gate-summary:
+    name: Release gate — PASSED
+    runs-on: ubuntu-latest
+    needs: [api-smoke, browser-smoke, contract-smoke]
+    if: always()
+    steps:
+      - name: Assert all gate jobs passed
+        run: |
+          API_RESULT="${{ needs.api-smoke.result }}"
+          BROWSER_RESULT="${{ needs.browser-smoke.result }}"
+          CONTRACT_RESULT="${{ needs.contract-smoke.result }}"
+          echo "api-smoke:      $API_RESULT"
+          echo "browser-smoke:  $BROWSER_RESULT"
+          echo "contract-smoke: $CONTRACT_RESULT"
+          if [ "$API_RESULT" != "success" ] || \
+             [ "$BROWSER_RESULT" != "success" ] || \
+             [ "$CONTRACT_RESULT" != "success" ]; then
+            echo "One or more release-gate jobs failed."
+            exit 1
+          fi
+          echo "All release-gate jobs passed. Build is release-ready."

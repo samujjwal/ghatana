@@ -8,17 +8,17 @@ on:
     branches: [main, develop]
     paths:
       # Run on changes to critical paths
-      - 'libs/canvas/src/state/**'
-      - 'libs/canvas/src/elements/**'
-      - 'libs/canvas/src/viewport/**'
-      - 'libs/canvas/src/layout/**'
-      - 'libs/store/src/**'
+      - 'products/yappc/frontend/libs/canvas/src/state/**'
+      - 'products/yappc/frontend/libs/canvas/src/elements/**'
+      - 'products/yappc/frontend/libs/canvas/src/viewport/**'
+      - 'products/yappc/frontend/libs/canvas/src/layout/**'
+      - 'products/yappc/frontend/libs/store/src/**'
       # Run on test infrastructure changes
-      - '**/*.test.{ts,tsx}'
-      - '**/*.spec.{ts,tsx}'
-      - 'vitest.*.{ts,js}'
-      - 'scripts/enforce-coverage.js'
-      - '.github/workflows/coverage.yml'
+      - 'products/yappc/frontend/**/*.test.{ts,tsx}'
+      - 'products/yappc/frontend/**/*.spec.{ts,tsx}'
+      - 'products/yappc/frontend/vitest*.{ts,js}'
+      - 'products/yappc/frontend/scripts/enforce-coverage.js'
+      - '.github/workflows/yappc-fe-coverage.yml'
   workflow_dispatch:
     inputs:
       strict:

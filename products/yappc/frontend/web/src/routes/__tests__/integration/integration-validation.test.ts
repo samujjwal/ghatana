@@ -11,7 +11,7 @@ import * as path from 'path';
 
 import { describe, it, expect } from 'vitest';
 
-describe.skip('Feature 6.4: Integration Test Infrastructure', () => {
+describe('Feature 6.4: Integration Test Infrastructure', () => {
   const rootDir = process.cwd();
   // Support running tests from repository root or from the package root (apps/web).
   // If cwd already points to apps/web, use it directly; otherwise prefix with apps/web.
@@ -36,7 +36,7 @@ describe.skip('Feature 6.4: Integration Test Infrastructure', () => {
     it('contains CanvasScene integration spec', () => {
       const canvasSceneSpec = path.join(
         integrationTestDir,
-        'CanvasScene.integration.spec.tsx'
+        'CanvasScene.integration.test.tsx'
       );
       expect(fs.existsSync(canvasSceneSpec)).toBe(true);
     });
@@ -44,7 +44,7 @@ describe.skip('Feature 6.4: Integration Test Infrastructure', () => {
     it('contains PaletteDragDrop integration spec', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       expect(fs.existsSync(paletteDragDropSpec)).toBe(true);
     });

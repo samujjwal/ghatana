@@ -64,7 +64,7 @@ class InMemoryStorageAdapter implements BehaviorStorageAdapter {
   }
 }
 
-describe.skip('ML Integration Tests', () => {
+describe('ML Integration Tests', () => {
   let storage: InMemoryStorageAdapter;
   let behaviorTracker: BehaviorTracker;
   let recommendationEngine: RecommendationEngine;

@@ -44,7 +44,7 @@ const defaultProps = {
   children: <div>Test Content</div>,
 };
 
-describe.skip('ProjectShell Component', () => {
+describe('ProjectShell Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -260,7 +260,7 @@ describe.skip('ProjectShell Component', () => {
 
 // Integration tests for mobile behavior would require more complex setup
 // These would test responsive behavior, mobile drawer functionality, etc.
-describe.skip('ProjectShell Mobile Behavior', () => {
+describe('ProjectShell Mobile Behavior', () => {
   // Mock window.matchMedia for responsive tests
   const mockMatchMedia = (matches: boolean) => {
     Object.defineProperty(window, 'matchMedia', {

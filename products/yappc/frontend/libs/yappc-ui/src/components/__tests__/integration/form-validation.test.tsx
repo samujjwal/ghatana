@@ -1,3 +1,5 @@
+import { describe, it, expect, vi } from "vitest";
+
 /**
  * Integration Tests: Form + Validation
  *
@@ -10,7 +12,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
 
-describe.skip('Form + Validation Integration', () => {
+describe('Form + Validation Integration', () => {
   describe('Field-Level Validation', () => {
     it('should validate fields on change when validateOnChange is enabled', () => {
       const { result } = renderHook(() =>
@@ -20,7 +22,7 @@ describe.skip('Form + Validation Integration', () => {
             email: [validators.required(), validators.email()],
             password: [validators.required(), validators.minLength(8)],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );
@@ -55,7 +57,7 @@ describe.skip('Form + Validation Integration', () => {
             email: [validators.required(), validators.email()],
             password: [validators.required()],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnBlur: true,
           validateOnChange: false,
         })
@@ -87,7 +89,7 @@ describe.skip('Form + Validation Integration', () => {
 
   describe('Form-Level Validation', () => {
     it('should validate entire form on submit', async () => {
-      const onSubmit = jest.fn();
+      const onSubmit = vi.fn();
 
       const { result } = renderHook(() =>
         useForm({
@@ -109,7 +111,7 @@ describe.skip('Form + Validation Integration', () => {
 
       // Submit empty form
       await act(async () => {
-        const mockEvent = { preventDefault: jest.fn() } as unknown;
+        const mockEvent = { preventDefault: vi.fn() } as unknown;
         await result.current.handleSubmit(mockEvent);
       });
 
@@ -137,7 +139,7 @@ describe.skip('Form + Validation Integration', () => {
 
       // Submit again
       await act(async () => {
-        const mockEvent = { preventDefault: jest.fn() } as unknown;
+        const mockEvent = { preventDefault: vi.fn() } as unknown;
         await result.current.handleSubmit(mockEvent);
       });
 
@@ -150,7 +152,7 @@ describe.skip('Form + Validation Integration', () => {
     });
 
     it('should handle async validation in onSubmit', async () => {
-      const onSubmit = jest.fn().mockImplementation(async (values) => {
+      const onSubmit = vi.fn().mockImplementation(async (values) => {
         // Simulate async operation
         await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -175,7 +177,7 @@ describe.skip('Form + Validation Integration', () => {
       });
 
       await act(async () => {
-        const mockEvent = { preventDefault: jest.fn() } as unknown;
+        const mockEvent = { preventDefault: vi.fn() } as unknown;
         await result.current.handleSubmit(mockEvent);
       });
 
@@ -203,7 +205,7 @@ describe.skip('Form + Validation Integration', () => {
               ),
             ],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );
@@ -260,7 +262,7 @@ describe.skip('Form + Validation Integration', () => {
               ),
             ],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );
@@ -306,7 +308,7 @@ describe.skip('Form + Validation Integration', () => {
               ),
             ],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );
@@ -335,7 +337,7 @@ describe.skip('Form + Validation Integration', () => {
 
   describe('Form State Management', () => {
     it('should properly manage form state through the lifecycle', async () => {
-      const onSubmit = jest.fn();
+      const onSubmit = vi.fn();
 
       const { result } = renderHook(() =>
         useForm({
@@ -361,7 +363,7 @@ describe.skip('Form + Validation Integration', () => {
 
       // Submit form
       await act(async () => {
-        const mockEvent = { preventDefault: jest.fn() } as unknown;
+        const mockEvent = { preventDefault: vi.fn() } as unknown;
         await result.current.handleSubmit(mockEvent);
       });
 
@@ -385,7 +387,7 @@ describe.skip('Form + Validation Integration', () => {
           validationRules: {
             email: [validators.required(), validators.email()],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
         })
       );
 
@@ -414,7 +416,7 @@ describe.skip('Form + Validation Integration', () => {
         useForm({
           initialValues: { field1: '', field2: '', field3: '' },
           validationRules: {},
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
         })
       );
 
@@ -450,7 +452,7 @@ describe.skip('Form + Validation Integration', () => {
             email: [validators.required()],
             password: [validators.required()],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );
@@ -485,7 +487,7 @@ describe.skip('Form + Validation Integration', () => {
 
   describe('Edge Cases', () => {
     it('should handle validation with empty rules', () => {
-      const onSubmit = jest.fn();
+      const onSubmit = vi.fn();
 
       const { result } = renderHook(() =>
         useForm({
@@ -499,7 +501,7 @@ describe.skip('Form + Validation Integration', () => {
 
       // Should allow submission with no validation
       act(async () => {
-        const mockEvent = { preventDefault: jest.fn() } as unknown;
+        const mockEvent = { preventDefault: vi.fn() } as unknown;
         result.current.handleSubmit(mockEvent);
       });
 
@@ -518,7 +520,7 @@ describe.skip('Form + Validation Integration', () => {
               ),
             ],
           },
-          onSubmit: jest.fn(),
+          onSubmit: vi.fn(),
           validateOnChange: true,
         })
       );

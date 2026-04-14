@@ -1,17 +1,17 @@
 // All tests skipped - incomplete feature
+import React from 'react';
 import { render } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import React from 'react';
+import { describe, it, expect } from 'vitest';
 
+import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { GateWidget, type GateStatus } from './GateWidget';
 import { StatusBadge } from './StatusBadge';
 
 expect.extend(toHaveNoViolations);
 
-const theme = createTheme();
-
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 const mockGates: GateStatus[] = [
@@ -39,7 +39,7 @@ const mockGates: GateStatus[] = [
   },
 ];
 
-describe.skip('Status Components Accessibility', () => {
+describe('Status Components Accessibility', () => {
   describe('StatusBadge', () => {
     it('should not have accessibility violations in default state', async () => {
       const { container } = renderWithTheme(

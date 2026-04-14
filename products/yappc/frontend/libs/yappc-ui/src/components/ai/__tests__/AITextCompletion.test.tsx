@@ -29,7 +29,7 @@ const createMockAIService = (overrides?: Partial<IAIService>): IAIService => ({
   ...overrides,
 });
 
-describe.skip('AITextCompletion', () => {
+describe('AITextCompletion', () => {
   let mockAIService: IAIService;
   let mockOnChange: ReturnType<typeof vi.fn>;
 

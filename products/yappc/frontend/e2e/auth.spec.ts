@@ -1,3 +1,15 @@
+/**
+ * TIER CLASSIFICATION: Browser Integration (not UI E2E)
+ *
+ * Authentication endpoints are intercepted via `auth-journey.ts` helpers which
+ * route `**/api/auth/login` and `**/api/auth/me` to MSW-style in-browser mocks
+ * and seed localStorage directly.  This suite therefore validates browser-side
+ * auth wiring and session storage contracts, NOT real backend authentication.
+ *
+ * For real-backend auth validation see:
+ *   - `e2e/release-gate.spec.ts` (Tier: Smoke / Release Gate)
+ *   - `apps/api/src/__tests__/auth-flow.api-e2e.test.ts` (Tier: API E2E)
+ */
 import { test, expect } from './fixtures';
 
 test.describe('Browser Auth Journey', () => {

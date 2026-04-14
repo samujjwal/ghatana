@@ -12,7 +12,7 @@ const renderWithTheme = (ui: React.ReactNode) => {
   return <ThemeProvider mode="light">{ui}</ThemeProvider>;
 };
 
-describe.skip('Button Performance', () => {
+describe('Button Performance', () => {
   // Set a reasonable threshold for button rendering. Raised to account for CI/jsdom
   // timing variance and machine differences; keep reasonably small to catch regressions.
   const RENDER_TIME_THRESHOLD = 25; // milliseconds

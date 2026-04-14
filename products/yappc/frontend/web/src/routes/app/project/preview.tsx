@@ -1,8 +1,13 @@
 /**
  * Project Preview Route
- * 
+ *
  * Live preview of the project with hot reload.
  * Shows the running application in an iframe with controls.
+ *
+ * @doc.type route
+ * @doc.purpose Runtime application preview with device mode controls
+ * @doc.layer product
+ * @doc.pattern Route Component
  */
 
 import { useState } from "react";

@@ -6,7 +6,7 @@ import { ThemeApplicator } from '../renderer/ThemeApplicator';
 
 import type { ThemeContext, TokenRegistry } from '../renderer/ThemeApplicator';
 
-describe.skip('ThemeApplicator', () => {
+describe('ThemeApplicator', () => {
   // Test data
   const mockTokens: TokenRegistry = {
     base: {

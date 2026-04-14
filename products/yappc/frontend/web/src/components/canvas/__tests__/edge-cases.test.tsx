@@ -128,7 +128,7 @@ class BranchManager {
     }
 }
 
-describe.skip('Performance Edge Cases', () => {
+describe('Performance Edge Cases', () => {
 
     describe('BatchProcessor', () => {
         test('handles empty batch', async () => {
@@ -275,7 +275,7 @@ describe.skip('Performance Edge Cases', () => {
     });
 });
 
-describe.skip('Collaboration Edge Cases', () => {
+describe('Collaboration Edge Cases', () => {
 
     describe('OperationalTransform', () => {
         test('handles insert-insert conflicts', () => {
@@ -433,7 +433,7 @@ describe('History Edge Cases', () => {
         });
     });
 
-    describe.skip('BranchManager', () => {
+    describe('BranchManager', () => {
         test('creates branches from any point in history', () => {
             const manager = new BranchManager();
 

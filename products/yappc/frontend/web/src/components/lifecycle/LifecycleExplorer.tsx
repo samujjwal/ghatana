@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lifecycle Explorer Component
  *
@@ -17,6 +16,8 @@ import { useLifecycleArtifacts, usePhaseGates } from '../../services/canvas/life
 import { useSearchParams } from 'react-router';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
+import type { GateStatus } from '@/shared/types/phase-gates';
+import { PHASE_GATES_BY_ID } from '@/shared/types/phase-gates';
 import { ArtifactDetailPanel } from '../shared/ArtifactDetailPanel';
 import { FilterPanel, type FilterConfig } from '../shared/FilterPanel';
 import { AISuggestionPanel } from '../shared/AISuggestionPanel';
@@ -33,6 +34,14 @@ interface LifecycleExplorerProps {
     projectId: string;
     onPhaseSelect?: (phase: LifecyclePhase) => void;
     onArtifactSelect?: (kind: LifecycleArtifactKind) => void;
+}
+
+/** Flattened gate view combining static definition and runtime status. */
+interface PhaseGateView {
+    id: string;
+    name: string;
+    status: GateStatus['status'];
+    blockers: string[];
 }
 
 interface PhaseGroup {
@@ -415,9 +424,20 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                     const isExpanded = expandedPhase === group.phase;
                     const isActive = isPhaseActive(group.phase);
                     const isCompleted = isPhaseCompleted(group.phase);
-                    const phaseGates = Object.entries(gateStatuses)
-                        .filter(([, status]: [string, any]) => status.phase === group.phase)
-                        .map(([id, status]: [string, any]) => ({ id, ...status }));
+                    const phaseGates: PhaseGateView[] = Object.entries(gateStatuses)
+                        .map(([gateId, gateStatus]) => {
+                            const gateDef = PHASE_GATES_BY_ID[gateId];
+                            return { gateId, gateDef, gateStatus };
+                        })
+                        .filter(({ gateDef }) =>
+                            gateDef?.fromPhase === group.phase || gateDef?.toPhase === group.phase
+                        )
+                        .map(({ gateId, gateDef, gateStatus }) => ({
+                            id: gateId,
+                            name: gateDef?.name ?? gateId,
+                            status: gateStatus.status,
+                            blockers: gateStatus.blockedReason ? [gateStatus.blockedReason] : [],
+                        }));
 
                     return (
                         <div key={group.phase} id={`phase-${group.phase}`} className="space-y-2 scroll-mt-6">
@@ -529,7 +549,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                 🚪 Phase Gates
                                             </h4>
                                             <div className="space-y-1">
-                                                {phaseGates.map((gate: unknown) => (
+                                                {phaseGates.map((gate) => (
                                                     <div
                                                         key={gate.id}
                                                         className={`p-3 rounded border ${gate.status === 'passed'
@@ -543,9 +563,9 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                             {gate.status === 'passed' && '✓'}
                                                             {gate.status === 'failed' && '✗'}
                                                             {gate.status === 'blocked' && <Lock className="w-4 h-4" />}
-                                                            {gate.name || gate.id}
+                                                            {gate.name}
                                                         </div>
-                                                        {gate.blockers && gate.blockers.length > 0 && (
+                                                        {gate.blockers.length > 0 && (
                                                             <div className="text-xs text-text-secondary mt-1">
                                                                 Blockers: {gate.blockers.join(', ')}
                                                             </div>

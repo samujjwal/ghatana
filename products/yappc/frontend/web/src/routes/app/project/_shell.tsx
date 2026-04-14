@@ -27,7 +27,7 @@ import {
   headerContextActionsAtom,
   headerPhaseInfoAtom
 } from '../../../state/atoms/layoutAtom';
-import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Boxes as Workspaces, Eye as Visibility, Rocket as RocketLaunch } from 'lucide-react';
+import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Boxes as Workspaces, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
@@ -57,6 +57,12 @@ const projectTabs = [
     label: 'Preview',
     icon: Visibility,
     tooltip: 'Preview your application',
+  },
+  {
+    key: 'lifecycle',
+    label: 'Lifecycle',
+    icon: LifecycleIcon,
+    tooltip: 'Explore phases, artifacts, and transitions (Observe → Learn → Improve)',
   },
   {
     key: 'deploy',

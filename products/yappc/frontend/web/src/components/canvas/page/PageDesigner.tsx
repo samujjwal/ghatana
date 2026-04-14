@@ -24,7 +24,10 @@ import type { ComponentData } from './schemas';
 import type { BuilderDocument } from '@ghatana/ui-builder';
 
 /**
- *
+ * @doc.type component
+ * @doc.purpose YAPPC page designer using shared BuilderDocument contract from @ghatana/ui-builder
+ * @doc.layer product
+ * @doc.pattern Widget
  */
 interface PageDesignerProps {
   initialComponents?: ComponentData[] | BuilderDocument;

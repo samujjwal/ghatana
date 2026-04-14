@@ -8,7 +8,7 @@ import {
   type HostToPreviewMessage,
   type PreviewToHostMessage,
 } from '@ghatana/ui-builder/preview';
-import type { BuilderDocument } from '@ghatana/ui-builder/core';
+import type { BuilderDocument } from '@ghatana/ui-builder';
 
 /**
  * Live Preview Panel component.

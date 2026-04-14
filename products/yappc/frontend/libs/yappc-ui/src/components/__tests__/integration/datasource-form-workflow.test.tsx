@@ -95,7 +95,7 @@ afterAll(() => server.close());
 // Integration Tests
 // ============================================================================
 
-describe.skip('DataSource + Form Workflow Integration', () => {
+describe('DataSource + Form Workflow Integration', () => {
   describe('Load Data into Form', () => {
     it('should load user data from API into form', async () => {
       const { result } = renderHook(() => {

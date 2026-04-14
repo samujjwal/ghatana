@@ -4,7 +4,7 @@ import path from 'path';
 
 import { describe, it, expect } from 'vitest';
 
-describe.skip('routes configuration (smoke)', () => {
+describe('routes configuration (smoke)', () => {
   it('routes file exists or docs include routes marker', () => {
     const routesPath = path.resolve(__dirname, '..', 'routes.ts');
     const docPath = path.resolve(

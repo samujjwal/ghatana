@@ -12,7 +12,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PresetCard, InitializationPreset, PresetCategory } from '@yappc/ui/initialization-ui';
+import { PresetCard, type InitializationPreset, type PresetCategory } from '@yappc/initialization-ui';
 
 // @ts-nocheck
 // ============================================================================

@@ -7,7 +7,7 @@ import {
   type UserPreferences,
 } from '../../adaptive/AdaptiveUI';
 
-describe.skip('AdaptiveUI', () => {
+describe('AdaptiveUI', () => {
   let adaptiveUI: AdaptiveUI;
   let mockLocalStorage: Record<string, string>;
 

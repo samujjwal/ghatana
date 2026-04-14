@@ -16,7 +16,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * End-to-End tests for user authentication flows with MFA.
+ * Mock-backed service integration tests for user authentication flows with MFA.
+ *
+ * <p><strong>Tier classification (2026-04-13):</strong> This suite is classified as
+ * <em>mock-backed service integration</em>, not API E2E.  It exercises the
+ * authentication service logic through real business rules but relies on
+ * {@code MockAuthenticationService} and in-process state rather than a real
+ * HTTP stack or database.  It therefore does <strong>not</strong> satisfy the
+ * API E2E tier requirement defined in {@code docs/trackers/TEST_TIER_INVENTORY.md}.
+ *
+ * <p>See {@code RealAuthenticationApiE2ETest} for the real-stack replacement.
+ *
+ * @doc.type class
+ * @doc.purpose Mock-backed authentication flow correctness tests.
+ * @doc.layer product-test
+ * @doc.pattern ServiceIntegrationTest
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AuthenticationFlowE2ETest extends EventloopTestBase {

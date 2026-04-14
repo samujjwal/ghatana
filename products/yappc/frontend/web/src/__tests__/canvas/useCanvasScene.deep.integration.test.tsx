@@ -53,7 +53,7 @@ function AtomViewer() {
     return <div data-testid="atom-elements-count">{count}</div>;
 }
 
-describe.skip('useCanvasScene deep integration', () => {
+describe('useCanvasScene deep integration', () => {
     beforeEach(() => {
         mockTriggerAutoSave.mockReset();
 

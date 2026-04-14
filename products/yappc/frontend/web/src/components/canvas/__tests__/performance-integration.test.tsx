@@ -25,7 +25,7 @@ const mockItem = {
     data: { width: 50, height: 50 }
 };
 
-describe.skip('Performance Tests', () => {
+describe('Performance Tests', () => {
 
     describe('usePerformanceMonitor', () => {
         test('tracks basic performance metrics', () => {
@@ -228,7 +228,7 @@ describe('Collaboration Tests', () => {
     });
 });
 
-describe.skip('History Tests', () => {
+describe('History Tests', () => {
 
     describe('useAdvancedHistory', () => {
         test('records and replays actions', () => {
@@ -332,7 +332,7 @@ describe.skip('History Tests', () => {
     });
 });
 
-describe.skip('Integration Stress Tests', () => {
+describe('Integration Stress Tests', () => {
 
     test('handles many rapid state changes', async () => {
         const TestComponent = () => {

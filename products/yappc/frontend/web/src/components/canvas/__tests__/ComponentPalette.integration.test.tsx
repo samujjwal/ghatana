@@ -9,7 +9,7 @@ mockUseDraggableWithPayload();
 
 import { ComponentPalette } from '../ComponentPalette';
 
-describe.skip('ComponentPalette integration', () => {
+describe('ComponentPalette integration', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
     });

@@ -10,7 +10,7 @@ mockUseDraggableSimple();
 
 import { ComponentPalette } from '../ComponentPalette';
 
-describe.skip('ComponentPalette', () => {
+describe('ComponentPalette', () => {
     beforeEach(() => {
         // clear DOM between tests
         document.body.innerHTML = '';

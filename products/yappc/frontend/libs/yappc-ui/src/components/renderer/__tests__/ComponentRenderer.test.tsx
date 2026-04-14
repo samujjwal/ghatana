@@ -3,20 +3,21 @@
  * @jest-environment jsdom
  */
 
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
+import { ThemeProvider } from '../../theme/ThemeProvider';
 import { ComponentRenderer } from './ComponentRenderer';
 
 import type { ComponentSchema } from './ComponentRenderer';
 
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
-  const theme = createTheme();
-  return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+  return render(<ThemeProvider>{ui}</ThemeProvider>);
 };
 
-describe.skip('ComponentRenderer', () => {
+describe('ComponentRenderer', () => {
   describe('Basic Rendering', () => {
     it('renders a simple component', () => {
       const schema: ComponentSchema = {

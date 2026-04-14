@@ -116,7 +116,7 @@ afterAll(() => server.close());
 // End-to-End Workflow Tests
 // ============================================================================
 
-describe.skip('End-to-End Workflows', () => {
+describe('End-to-End Workflows', () => {
   describe('User Profile Edit Workflow', () => {
     it('should complete full user profile edit with validation and event broadcasting', async () => {
       const eventLog: string[] = [];

@@ -140,7 +140,7 @@ vi.mock('@xyflow/react', () => ({
 }));
 
 
-describe.skip('Feature 6.4: Palette Drag & Drop Integration', () => {
+describe('Feature 6.4: Palette Drag & Drop Integration', () => {
   let store: ReturnType<typeof createStore>;
   let mockAddComponent: ReturnType<typeof vi.fn>;
 

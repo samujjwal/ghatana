@@ -34,7 +34,7 @@ function HookHarness() {
     );
 }
 
-describe.skip('useCanvasScene integration - no ping-pong', () => {
+describe('useCanvasScene integration - no ping-pong', () => {
     beforeEach(() => {
         mockSetCanvasState.mockReset();
         mockCanvasState = {

@@ -52,7 +52,7 @@ vi.mock('@reactflow/minimap', () => ({
     MiniMap: () => React.createElement('div'),
 }));
 
-describe.skip('CanvasScene handlers stability', () => {
+describe('CanvasScene handlers stability', () => {
     beforeEach(() => {
         // Clear any global handlers
         (globalThis as unknown).__TEST_RF_HANDLERS__ = undefined;

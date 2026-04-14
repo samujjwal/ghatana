@@ -1,21 +1,3 @@
-// @ts-nocheck
-/**
- * Default sizes (width × height) for each canvas node type.
- * Override per-node via node.data.width / node.data.height if set.
- */
-export const NODE_DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
-  frame: { width: 400, height: 300 },
-  'sticky-note': { width: 200, height: 200 },
-  text: { width: 300, height: 150 },
-  task: { width: 250, height: 70 },
-  default: { width: 150, height: 150 },
-};
-
-/** Resolve width/height for a given node type. */
-function getNodeSize(type: string | undefined): { width: number; height: number } {
-  return NODE_DEFAULT_SIZES[type ?? 'default'] ?? NODE_DEFAULT_SIZES.default;
-}
-
 /**
  * UnifiedCanvas Complete - Production-Ready Implementation
  *
@@ -37,6 +19,18 @@ function getNodeSize(type: string | undefined): { width: number; height: number 
  * @doc.purpose Complete canvas route (orchestrator)
  * @doc.layer routes
  */
+export const NODE_DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
+  frame: { width: 400, height: 300 },
+  'sticky-note': { width: 200, height: 200 },
+  text: { width: 300, height: 150 },
+  task: { width: 250, height: 70 },
+  default: { width: 150, height: 150 },
+};
+
+/** Resolve width/height for a given node type. */
+function getNodeSize(type: string | undefined): { width: number; height: number } {
+  return NODE_DEFAULT_SIZES[type ?? 'default'] ?? NODE_DEFAULT_SIZES.default;
+}
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
@@ -670,7 +664,7 @@ function UnifiedCanvasInner() {
   return (
     <CanvasErrorBoundary>
       <Box
-        className="w-full h-full flex flex-col" style={{ backgroundColor: 'phaseTheme.canvasBg', transition: 'background-color 0.5s ease-in-out' }} >
+        className="w-full h-full flex flex-col" style={{ backgroundColor: phaseTheme.canvasBg, transition: 'background-color 0.5s ease-in-out' }} >
         <CanvasChromeLayout
           defaultCalmMode={shouldDefaultToCalmMode}
           leftRail={leftRailContent}

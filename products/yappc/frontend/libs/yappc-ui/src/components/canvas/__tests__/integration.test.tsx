@@ -23,7 +23,7 @@ const TestButton: React.FC<unknown> = ({ label, color, onClick }) => (
   </button>
 );
 
-describe.skip('Canvas Integration Tests', () => {
+describe('Canvas Integration Tests', () => {
   beforeAll(() => {
     RendererComponentRegistry.register('Button', TestButton);
   });

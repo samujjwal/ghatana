@@ -7,7 +7,7 @@ import * as FeatureStories from '../data';
 
 import { CanvasFeatureStoryList } from '../CanvasFeatureStoryList';
 
-describe.skip('CanvasFeatureStoryList', () => {
+describe('CanvasFeatureStoryList', () => {
   it('renders the default category and stories', () => {
     render(<CanvasFeatureStoryList />);
 

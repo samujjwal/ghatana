@@ -45,7 +45,7 @@ class MockStorageAdapter implements BehaviorStorageAdapter {
   }
 }
 
-describe.skip('BehaviorTracker', () => {
+describe('BehaviorTracker', () => {
   let tracker: BehaviorTracker;
   let storage: MockStorageAdapter;
 

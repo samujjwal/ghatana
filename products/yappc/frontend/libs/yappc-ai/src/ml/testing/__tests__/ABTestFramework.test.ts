@@ -10,7 +10,7 @@ import {
   type ExperimentMetric,
 } from '../ABTestFramework';
 
-describe.skip('ABTestFramework', () => {
+describe('ABTestFramework', () => {
   let framework: ABTestFramework;
   let variants: Variant[];
   let metrics: ExperimentMetric[];

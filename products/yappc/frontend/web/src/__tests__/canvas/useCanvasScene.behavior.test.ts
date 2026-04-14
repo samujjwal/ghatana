@@ -23,7 +23,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useCanvasScene } from '../../routes/app/project/canvas/useCanvasScene';
 
 
-describe.skip('useCanvasScene behavior - change detection', () => {
+describe('useCanvasScene behavior - change detection', () => {
   beforeEach(() => {
     mockSetCanvasState.mockReset();
     // initial canvas state with a single node

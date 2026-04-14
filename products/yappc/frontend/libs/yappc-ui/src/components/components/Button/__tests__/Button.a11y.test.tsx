@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import ThemeProvider from '../../../theme/ThemeProvider';
 import { Button } from '../Button';
 
-describe.skip('Button Accessibility', () => {
+describe('Button Accessibility', () => {
   it('should be accessible via keyboard', () => {
     const { container } = render(
       <ThemeProvider mode="light">

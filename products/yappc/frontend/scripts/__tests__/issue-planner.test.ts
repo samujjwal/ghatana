@@ -9,7 +9,7 @@ vi.mock('fs');
 // Import after mocking
 const mockFs = fs as any;
 
-describe.skip('Issue Planning Tool', () => {
+describe('Issue Planning Tool', () => {
   const projectRoot = '/test/project';
   
   beforeEach(() => {

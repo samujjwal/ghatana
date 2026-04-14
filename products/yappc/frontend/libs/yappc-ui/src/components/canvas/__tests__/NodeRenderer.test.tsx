@@ -22,7 +22,7 @@ const MockButton: React.FC<unknown> = ({ label, onClick, color, style }) => (
   </button>
 );
 
-describe.skip('NodeRenderer', () => {
+describe('NodeRenderer', () => {
   beforeAll(() => {
     // Register mock component
     RendererComponentRegistry.register('Button', MockButton, {
@@ -266,7 +266,7 @@ describe('EditModeWrapper', () => {
   });
 });
 
-describe.skip('BatchNodeRenderer', () => {
+describe('BatchNodeRenderer', () => {
   beforeAll(() => {
     RendererComponentRegistry.register('Button', MockButton);
   });

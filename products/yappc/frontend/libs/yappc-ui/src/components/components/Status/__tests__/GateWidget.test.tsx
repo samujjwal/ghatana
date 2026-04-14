@@ -1,13 +1,13 @@
 // All tests skipped - incomplete feature
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React, { act } from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { GateWidget, type GateStatus } from './GateWidget';
 
-const theme = createTheme();
-
 const renderWithTheme = (component: React.ReactElement) => {
-  return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+  return render(<ThemeProvider>{component}</ThemeProvider>);
 };
 
 const mockGates: GateStatus[] = [
@@ -46,7 +46,7 @@ const mockGates: GateStatus[] = [
   },
 ];
 
-describe.skip('GateWidget', () => {
+describe('GateWidget', () => {
   describe('Basic Rendering', () => {
     it('renders with default props', () => {
       renderWithTheme(<GateWidget gates={mockGates} />);

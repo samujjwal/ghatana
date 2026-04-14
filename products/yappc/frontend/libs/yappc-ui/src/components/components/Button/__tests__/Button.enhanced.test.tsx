@@ -3,19 +3,20 @@
  * @jest-environment jsdom
  */
 
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 
+import { ThemeProvider } from '../../../theme/ThemeProvider';
 import { Button } from './Button.enhanced';
 
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
-  const theme = createTheme();
-  return render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+  return render(<ThemeProvider>{ui}</ThemeProvider>);
 };
 
-describe.skip('Button.enhanced', () => {
+describe('Button.enhanced', () => {
   describe('Rendering', () => {
     it('renders with children text', () => {
       renderWithTheme(<Button>Click me</Button>);

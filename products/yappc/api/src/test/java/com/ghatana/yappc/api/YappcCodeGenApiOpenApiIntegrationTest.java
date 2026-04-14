@@ -17,7 +17,16 @@ import static org.assertj.core.api.Assertions.*;
 
 /**
  * @doc.type class
- * @doc.purpose Integration tests for YAPPC Code Generation API OpenAPI specification.
+ * @doc.purpose Mock-schema tests for YAPPC Code Generation API OpenAPI specification.
+ *
+ * <p><strong>Tier classification (2026-04-13):</strong> This suite is classified as
+ * <em>mock schema/contract</em>.  It validates that request and response shapes
+ * match the OpenAPI spec but relies on {@code MockCodeGenApiClient} for HTTP
+ * simulation.  It therefore does <strong>not</strong> prove real HTTP,
+ * serialization, or infrastructure fidelity.
+ *
+ * <p>Real HTTP contract fidelity is enforced by Schemathesis in the
+ * {@code yappc-ci / contract-tests} CI job.
  * @doc.layer product-test
  * @doc.pattern IntegrationTest
  *

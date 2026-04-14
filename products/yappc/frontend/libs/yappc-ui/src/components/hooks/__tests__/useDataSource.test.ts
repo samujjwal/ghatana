@@ -10,7 +10,7 @@ import { useDataSource } from './useDataSource';
 // Mock fetch
 global.fetch = vi.fn();
 
-describe.skip('useDataSource', () => {
+describe('useDataSource', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();

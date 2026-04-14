@@ -47,7 +47,7 @@ const defaultProps = {
   children: <div>Test Content</div>,
 };
 
-describe.skip('ProjectShell Accessibility', () => {
+describe('ProjectShell Accessibility', () => {
   it('should be accessible with default props', async () => {
     const { container } = render(
       <ThemeProvider mode="light">

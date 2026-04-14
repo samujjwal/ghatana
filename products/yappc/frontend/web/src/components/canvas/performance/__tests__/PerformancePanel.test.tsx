@@ -15,7 +15,7 @@ const mockMetrics: PerformanceMetrics = {
   memoryUsage: 85,
 };
 
-describe.skip('PerformancePanel', () => {
+describe('PerformancePanel', () => {
   it('renders when open', () => {
     render(
       <PerformancePanel
