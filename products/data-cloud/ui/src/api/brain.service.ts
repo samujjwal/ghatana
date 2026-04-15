@@ -11,6 +11,9 @@
 
 import { apiClient } from '../lib/api/client';
 import {
+  AutonomyLevelOverrideRequestSchema,
+  AutonomyLevelOverrideResponseSchema,
+  AutonomyLevelStatusSchema,
   AutonomyLogsResponseSchema,
   AutonomyStateResponseSchema,
   BrainAttentionThresholdsSchema,
@@ -21,8 +24,12 @@ import {
   BrainRuntimeStatsSchema,
   BrainSalienceResponseSchema,
   BrainWorkspaceStatusSchema,
+  LearningSignalSchema,
   LearningStatusResponseSchema,
   MemoryRootListResponseSchema,
+  type AutonomyLevelOverrideRequest as BackendAutonomyLevelOverrideRequest,
+  type AutonomyLevelOverrideResponse as BackendAutonomyLevelOverrideResponse,
+  type AutonomyLevelStatus as BackendAutonomyLevelStatus,
   type AutonomyLog as BackendAutonomyLog,
   type AutonomyLogsResponse as BackendAutonomyLogsResponse,
   type AutonomyStateResponse as BackendAutonomyStateResponse,
@@ -36,6 +43,7 @@ import {
   type BrainRuntimeStats as BackendBrainStatsResponse,
   type BrainSalienceResponse as BackendBrainSalienceResponse,
   type BrainWorkspaceStatus as BackendWorkspaceStatusResponse,
+  type LearningSignal as BackendLearningSignal,
   type LearningStatusResponse as BackendLearningStatusResponse,
   type MemoryItem as BackendMemoryItem,
   type MemoryRootListResponse as BackendMemoryRootListResponse,
@@ -119,14 +127,7 @@ export interface FeedbackEvent {
   tags?: string[];
 }
 
-export interface LearningSignal {
-  id: string;
-  timestamp: string;
-  signalType: string;
-  impact: number;
-  status: 'PENDING' | 'PROCESSED' | 'APPLIED';
-  affectedComponents: string[];
-}
+export type LearningSignal = BackendLearningSignal;
 
 export interface BrainStats {
   totalRecordsProcessed: number;
@@ -440,20 +441,23 @@ export class BrainService {
   async setGlobalAutonomyLevel(
     level: 'SUGGEST' | 'CONFIRM' | 'NOTIFY' | 'AUTONOMOUS',
     reason: string
-  ): Promise<{ globalLevel: string; affectedDomains: number; timestamp: string; reason: string }> {
-    return apiClient.put<{ globalLevel: string; affectedDomains: number; timestamp: string; reason: string }>(
+  ): Promise<BackendAutonomyLevelOverrideResponse> {
+    const request = AutonomyLevelOverrideRequestSchema.parse({ level, reason }) as BackendAutonomyLevelOverrideRequest;
+    const rawResponse = await apiClient.put<BackendAutonomyLevelOverrideResponse, BackendAutonomyLevelOverrideRequest>(
       '/autonomy/level',
-      { level, reason }
+      request
     );
+    return AutonomyLevelOverrideResponseSchema.parse(rawResponse);
   }
 
   /**
    * Get current global autonomy override level (B9).
    */
-  async getGlobalAutonomyLevel(): Promise<{ globalOverride: string; shutoffActive: boolean; domainCount: number }> {
-    return apiClient.get<{ globalOverride: string; shutoffActive: boolean; domainCount: number }>(
+  async getGlobalAutonomyLevel(): Promise<BackendAutonomyLevelStatus> {
+    const rawResponse = await apiClient.get<BackendAutonomyLevelStatus>(
       '/autonomy/level'
     );
+    return AutonomyLevelStatusSchema.parse(rawResponse);
   }
 
   // ==================== Memory ====================
@@ -509,7 +513,8 @@ export class BrainService {
    * Submit feedback event
    */
   async submitFeedback(feedback: FeedbackEvent): Promise<LearningSignal> {
-    return apiClient.post<LearningSignal>('/learning/trigger', feedback);
+    const rawResponse = await apiClient.post<LearningSignal>('/learning/trigger', feedback);
+    return LearningSignalSchema.parse(rawResponse);
   }
 
   /**

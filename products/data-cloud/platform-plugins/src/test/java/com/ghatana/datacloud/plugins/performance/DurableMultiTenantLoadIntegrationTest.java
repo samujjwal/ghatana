@@ -18,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -25,6 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -33,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -49,7 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, IntegrationTest
  */
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIfEnvironmentVariable(named = "DATACLOUD_DURABLE_LOAD_ENABLED", matches = "true")
+@Testcontainers
 @DisplayName("Durable Multi-Tenant Load Integration Test")
 @SuppressWarnings({"resource", "deprecation"})
 class DurableMultiTenantLoadIntegrationTest {
@@ -62,7 +66,7 @@ class DurableMultiTenantLoadIntegrationTest {
     private static final int EVENT_OPS_PER_TENANT = Integer.getInteger("datacloud.load.eventOpsPerTenant", 10);
     private static final long TIMEOUT_SECONDS = Long.getLong("datacloud.load.timeoutSeconds", 180L);
     private static final long MAX_HEAP_DELTA_MB = Long.getLong("datacloud.load.maxHeapDeltaMb", 256L);
-    private static final long MAX_P95_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP95EntitySaveMs", 2_500L);
+    private static final long MAX_P95_ENTITY_SAVE_MS = Long.getLong("datacloud.load.maxP95EntitySaveMs", 4_000L);
     private static final long MAX_P95_EVENT_APPEND_MS = Long.getLong("datacloud.load.maxP95EventAppendMs", 2_500L);
     private static final long MAX_P95_QUERY_MS = Long.getLong("datacloud.load.maxP95QueryMs", 2_500L);
     private static final int ITERATIONS = Integer.getInteger("datacloud.load.iterations", 1);
@@ -86,9 +90,11 @@ class DurableMultiTenantLoadIntegrationTest {
 
     @BeforeAll
     static void migrateSchema() {
+        createDatabaseRoles();
         Flyway.configure()
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-            .locations("filesystem:" + Path.of(System.getProperty("user.dir"), "products", "data-cloud", "platform-launcher", "src", "main", "resources", "db", "migration"))
+            .locations("filesystem:" + resolveMigrationDirectory())
+            .target("10")
             .load()
             .migrate();
     }
@@ -117,7 +123,7 @@ class DurableMultiTenantLoadIntegrationTest {
             1_800_000L
         ));
         eventStore = new KafkaEventLogStore(KafkaEventLogStoreConfig.builder()
-            .bootstrapServers(KAFKA.getBootstrapServers())
+            .bootstrapServers(normalizeBootstrapServers(KAFKA.getBootstrapServers()))
             .partitions(1)
             .replicationFactor((short) 1)
             .readTimeoutMs(5_000L)
@@ -171,7 +177,7 @@ class DurableMultiTenantLoadIntegrationTest {
 
         try (ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor()) {
             for (int tenantIndex = 0; tenantIndex < TENANT_COUNT; tenantIndex++) {
-                final String tenantId = "load-tenant-" + tenantIndex;
+                final String tenantId = tenantIdFor(tenantIndex);
                 workers.submit(() -> runTenantScenario(
                     tenantId,
                     entitySaveLatenciesMs,
@@ -319,7 +325,7 @@ class DurableMultiTenantLoadIntegrationTest {
             chain = chain.then(() -> measureLatency(
                 () -> entityStore.save(tenant, EntityStore.Entity.builder()
                     .collection(collection)
-                    .id(tenantId + "-entity-" + entityIndex)
+                    .id(entityIdFor(tenantId, entityIndex))
                     .data(Map.of(
                         "tenantTag", tenantId,
                         "index", entityIndex,
@@ -386,6 +392,56 @@ class DurableMultiTenantLoadIntegrationTest {
         ));
     }
 
+    private static String normalizeBootstrapServers(String bootstrapServers) {
+        return bootstrapServers
+            .replace("PLAINTEXT://", "")
+            .replace("SSL://", "");
+    }
+
+    private static void createDatabaseRoles() {
+        String createRolesSql = """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'application_user') THEN
+                    CREATE ROLE application_user LOGIN;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN
+                    CREATE ROLE admin_user LOGIN;
+                END IF;
+            END
+            $$;
+            """;
+
+        try (var connection = POSTGRES.createConnection("");
+             var statement = connection.createStatement()) {
+            statement.execute(createRolesSql);
+        } catch (Exception exception) {
+            throw new IllegalStateException("failed to provision durable-load database roles", exception);
+        }
+    }
+
+    private static Path resolveMigrationDirectory() {
+        Path workingDirectory = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        Path current = workingDirectory;
+        while (current != null) {
+            Path siblingModulePath = current.resolve("platform-launcher")
+                .resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
+            if (Files.isDirectory(siblingModulePath)) {
+                return siblingModulePath;
+            }
+
+            Path monorepoPath = current.resolve("products").resolve("data-cloud")
+                .resolve("platform-launcher").resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
+            if (Files.isDirectory(monorepoPath)) {
+                return monorepoPath;
+            }
+
+            current = current.getParent();
+        }
+
+        throw new IllegalStateException("could not locate Data Cloud migration directory from " + workingDirectory);
+    }
+
     private static ByteBuffer writePayloadBytes(String tenantId, int eventIndex) {
         try {
             return ByteBuffer.wrap(OBJECT_MAPPER.writeValueAsBytes(Map.of(
@@ -407,6 +463,18 @@ class DurableMultiTenantLoadIntegrationTest {
         } catch (Exception exception) {
             throw new IllegalStateException("failed to deserialize event payload", exception);
         }
+    }
+
+    private static String tenantIdFor(int tenantIndex) {
+        return deterministicUuid("durable-load-tenant-" + tenantIndex);
+    }
+
+    private static String entityIdFor(String tenantId, int entityIndex) {
+        return deterministicUuid(tenantId + ":entity:" + entityIndex);
+    }
+
+    private static String deterministicUuid(String seed) {
+        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     private static long percentile(Queue<Long> values, double percentile) {

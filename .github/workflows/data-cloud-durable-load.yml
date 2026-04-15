@@ -1,0 +1,152 @@
+name: Data Cloud Durable Load Suite
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Tenant count for the durable load suite'
+        required: false
+        default: '100'
+        type: string
+      entity_ops_per_tenant:
+        description: 'Entity writes per tenant'
+        required: false
+        default: '25'
+        type: string
+      event_ops_per_tenant:
+        description: 'Event appends per tenant'
+        required: false
+        default: '25'
+        type: string
+      iterations:
+        description: 'Soak iterations to execute'
+        required: false
+        default: '1'
+        type: string
+      timeout_seconds:
+        description: 'Overall timeout in seconds'
+        required: false
+        default: '1800'
+        type: string
+      min_throughput_ops_per_second:
+        description: 'Minimum acceptable throughput'
+        required: false
+        default: '0'
+        type: string
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  durable-load:
+    name: Durable multi-tenant load baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATACLOUD_LOAD_TENANTS: ${{ inputs.tenants || '100' }}
+      DATACLOUD_LOAD_ENTITY_OPS_PER_TENANT: ${{ inputs.entity_ops_per_tenant || '25' }}
+      DATACLOUD_LOAD_EVENT_OPS_PER_TENANT: ${{ inputs.event_ops_per_tenant || '25' }}
+      DATACLOUD_LOAD_ITERATIONS: ${{ inputs.iterations || '1' }}
+      DATACLOUD_LOAD_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds || '1800' }}
+      DATACLOUD_LOAD_MIN_THROUGHPUT_OPS_PER_SECOND: ${{ inputs.min_throughput_ops_per_second || '0' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run durable load suite
+        run: ./products/data-cloud/scripts/run-durable-load-suite.sh
+
+      - name: Publish durable load test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: |
+            products/data-cloud/platform-plugins/build/test-results/test/*.xml
+          check_name: Data Cloud Durable Load Test Results
+
+      - name: Write durable load summary
+        if: always()
+        run: |
+          METRICS_FILE="products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json"
+          echo "## Data Cloud Durable Load Suite" >> "$GITHUB_STEP_SUMMARY"
+          if [[ ! -f "$METRICS_FILE" ]]; then
+            echo "- Metrics file not produced. Check the durable-load job logs." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+
+            metrics_path = Path('products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json')
+            report = json.loads(metrics_path.read_text())
+            iterations = report.get('iterationsSummary', [])
+            best_iteration = max(iterations, key=lambda item: item.get('throughputOpsPerSecond', 0), default={})
+
+            lines = [
+              '',
+              '| Metric | Value |',
+              '| --- | --- |',
+              f"| Tenant count | {report.get('tenantCount', 'n/a')} |",
+              f"| Entity ops per tenant | {report.get('entityOpsPerTenant', 'n/a')} |",
+              f"| Event ops per tenant | {report.get('eventOpsPerTenant', 'n/a')} |",
+              f"| Iterations | {report.get('iterations', 'n/a')} |",
+              f"| Aggregate entity writes | {report.get('aggregateEntityWrites', 'n/a')} |",
+              f"| Aggregate event appends | {report.get('aggregateEventAppends', 'n/a')} |",
+              f"| Aggregate queries | {report.get('aggregateQueries', 'n/a')} |",
+              f"| Best throughput ops/sec | {report.get('bestThroughputOpsPerSecond', 'n/a')} |",
+              f"| Minimum throughput threshold | {report.get('minThroughputOpsPerSecond', 'n/a')} |",
+            ]
+
+            if best_iteration:
+              lines.extend([
+                '',
+                '### Best Iteration',
+                '',
+                '| Iteration metric | Value |',
+                '| --- | --- |',
+                f"| Iteration | {best_iteration.get('iteration', 'n/a')} |",
+                f"| Duration seconds | {best_iteration.get('durationSeconds', 'n/a')} |",
+                f"| Entity save P95 ms | {best_iteration.get('entitySaveP95Ms', 'n/a')} |",
+                f"| Event append P95 ms | {best_iteration.get('eventAppendP95Ms', 'n/a')} |",
+                f"| Query P95 ms | {best_iteration.get('queryP95Ms', 'n/a')} |",
+                f"| Heap delta MB | {best_iteration.get('heapDeltaMb', 'n/a')} |",
+              ])
+
+            with Path('.github-step-summary.tmp').open('w', encoding='utf-8') as handle:
+              handle.write('\n'.join(lines) + '\n')
+            PY
+
+          cat .github-step-summary.tmp >> "$GITHUB_STEP_SUMMARY"
+          rm -f .github-step-summary.tmp
+
+      - name: Upload durable load metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-durable-load-metrics
+          path: products/data-cloud/build/reports/load-tests/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload durable load test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-durable-load-test-results
+          path: |
+            products/data-cloud/platform-plugins/build/test-results/test/
+            products/data-cloud/platform-plugins/build/reports/tests/test/
+          if-no-files-found: warn
+          retention-days: 30

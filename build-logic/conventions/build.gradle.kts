@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    `java-gradle-plugin`
 }
 
 group = "com.ghatana.build"
@@ -26,4 +27,34 @@ dependencies {
     implementation("org.apache.httpcomponents.client5:httpclient5:5.5.1")
     implementation("org.apache.httpcomponents.core5:httpcore5:5.3.6")
     implementation("org.apache.httpcomponents.core5:httpcore5-h2:5.3.6")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    incremental = false
+    outputs.cacheIf { false }
+}
+
+gradlePlugin {
+    plugins {
+        create("javaModule") {
+            id = "java-module"
+            implementationClass = "com.ghatana.buildlogic.JavaModuleConventionPlugin"
+        }
+        create("javaApplication") {
+            id = "java-application"
+            implementationClass = "com.ghatana.buildlogic.JavaApplicationConventionPlugin"
+        }
+        create("protobufModule") {
+            id = "protobuf-module"
+            implementationClass = "com.ghatana.buildlogic.ProtobufModuleConventionPlugin"
+        }
+        create("financeDomainModule") {
+            id = "finance-domain-module"
+            implementationClass = "com.ghatana.buildlogic.FinanceDomainModuleConventionPlugin"
+        }
+        create("integrationTestProfile") {
+            id = "integration-test-profile"
+            implementationClass = "com.ghatana.buildlogic.IntegrationTestProfileConventionPlugin"
+        }
+    }
 }

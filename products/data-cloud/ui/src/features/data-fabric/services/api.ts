@@ -10,14 +10,206 @@
  */
 
 import { apiClient } from "@/lib/api/client";
+import { z } from 'zod';
+import {
+  ConnectorSchema,
+  ConnectorTypeSchema,
+  CreateConnectorRequestSchema,
+  CreateStorageProfileRequestSchema,
+  StorageProfileMetricsSchema,
+  StorageProfileSchema,
+  UpdateConnectorRequestSchema,
+  UpdateStorageProfileRequestSchema,
+  type Connector,
+  type StorageProfile as ContractStorageProfile,
+  type StorageProfileMetrics as ContractStorageProfileMetrics,
+} from "@/contracts/schemas";
 import type {
+  CompressionType,
   StorageProfile,
   StorageProfileFormInput,
   DataConnector,
   DataConnectorFormInput,
+  EncryptionType,
+  StorageType,
   StorageMetrics,
   SyncStatistics,
 } from "../types";
+
+const ConnectorTestResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+
+const TriggerSyncResponseSchema = z.object({
+  jobId: z.string(),
+});
+
+const SyncStatisticsSchema = z.object({
+  connectorId: z.string(),
+  totalRecords: z.number(),
+  lastSyncRecords: z.number(),
+  totalDuration: z.number(),
+  lastSyncDuration: z.number(),
+  errorCount: z.number(),
+  lastError: z.string().optional(),
+});
+
+const STORAGE_TYPE_BY_CONTRACT: Record<string, StorageType> = {
+  's3': 'S3',
+  'azure-blob': 'AZURE_BLOB',
+  'gcs': 'GCS',
+  'postgresql': 'POSTGRESQL',
+  'timescaledb': 'POSTGRESQL',
+  'clickhouse': 'DATABRICKS',
+  'in-memory': 'HDFS',
+};
+
+function normalizeStorageType(type: string): StorageType {
+  return STORAGE_TYPE_BY_CONTRACT[type.toLowerCase()] ?? 'POSTGRESQL';
+}
+
+function toStorageProfileStatus(profile: ContractStorageProfile): boolean {
+  return profile.status.toLowerCase() === 'active';
+}
+
+function readString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function readBoolean(record: Record<string, unknown>, key: string): boolean | undefined {
+  const value = record[key];
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
+  const config = profile.config;
+  const encryption = (config.encryption as { type?: EncryptionType; keyId?: string } | undefined) ?? { type: 'NONE' };
+  const compression = (config.compression as { type?: CompressionType } | undefined) ?? { type: 'NONE' };
+
+  return {
+    id: profile.id,
+    name: profile.name,
+    type: normalizeStorageType(profile.type),
+    description: readString(config, 'description'),
+    config,
+    encryption: {
+      type: encryption.type ?? 'NONE',
+      keyId: encryption.keyId,
+    },
+    compression: {
+      type: compression.type ?? 'NONE',
+    },
+    isDefault: profile.isDefault,
+    isActive: toStorageProfileStatus(profile),
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+    tenantId: readString(config, 'tenantId') ?? 'default',
+  };
+}
+
+function normalizeConnectorStatus(status: string): DataConnector['status'] {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'active';
+    case 'error':
+      return 'error';
+    case 'testing':
+      return 'testing';
+    default:
+      return 'inactive';
+  }
+}
+
+function mapConnector(connector: Connector): DataConnector {
+  const config = connector.config;
+
+  return {
+    id: connector.id,
+    name: connector.name,
+    sourceType: connector.type,
+    storageProfileId: connector.storageProfileId,
+    connectionConfig: config,
+    syncSchedule: readString(config, 'syncSchedule'),
+    lastSyncAt: readString(config, 'lastSyncAt'),
+    status: normalizeConnectorStatus(connector.status),
+    statusMessage: readString(config, 'statusMessage'),
+    isEnabled: readBoolean(config, 'isEnabled') ?? connector.status.toLowerCase() !== 'inactive',
+    createdAt: connector.createdAt,
+    updatedAt: connector.updatedAt,
+    tenantId: readString(config, 'tenantId') ?? 'default',
+  };
+}
+
+function mapStorageMetrics(profileId: string, metrics: ContractStorageProfileMetrics): StorageMetrics {
+  return {
+    profileId,
+    totalCapacity: metrics.storageTotalBytes,
+    usedCapacity: metrics.storageUsedBytes,
+    availableCapacity: metrics.storageTotalBytes - metrics.storageUsedBytes,
+    lastUpdated: metrics.lastUpdated,
+  };
+}
+
+function toStorageProfileRequest(input: StorageProfileFormInput): Record<string, unknown> {
+  return {
+    name: input.name,
+    type: input.type.toLowerCase().replace('_', '-'),
+    config: {
+      ...input.config,
+      description: input.description,
+      encryption: input.encryption,
+      compression: input.compression,
+    },
+    isDefault: input.isDefault,
+  };
+}
+
+function toStorageProfileUpdateRequest(input: Partial<StorageProfileFormInput>): Record<string, unknown> {
+  return {
+    ...(input.name ? { name: input.name } : {}),
+    ...(input.config || input.description || input.encryption || input.compression
+      ? {
+          config: {
+            ...(input.config ?? {}),
+            ...(input.description ? { description: input.description } : {}),
+            ...(input.encryption ? { encryption: input.encryption } : {}),
+            ...(input.compression ? { compression: input.compression } : {}),
+          },
+        }
+      : {}),
+    ...(typeof input.isDefault === 'boolean' ? { isDefault: input.isDefault } : {}),
+  };
+}
+
+function toConnectorRequest(input: DataConnectorFormInput): Record<string, unknown> {
+  return {
+    name: input.name,
+    type: ConnectorTypeSchema.parse(input.sourceType.toLowerCase()),
+    storageProfileId: input.storageProfileId,
+    config: {
+      ...input.connectionConfig,
+      ...(input.syncSchedule ? { syncSchedule: input.syncSchedule } : {}),
+      isEnabled: input.isEnabled,
+    },
+  };
+}
+
+function toConnectorUpdateRequest(input: Partial<DataConnectorFormInput>): Record<string, unknown> {
+  return {
+    ...(input.name ? { name: input.name } : {}),
+    ...(input.connectionConfig || input.syncSchedule || typeof input.isEnabled === 'boolean'
+      ? {
+          config: {
+            ...(input.connectionConfig ?? {}),
+            ...(input.syncSchedule ? { syncSchedule: input.syncSchedule } : {}),
+            ...(typeof input.isEnabled === 'boolean' ? { isEnabled: input.isEnabled } : {}),
+          },
+        }
+      : {}),
+  };
+}
 
 /**
  * Storage profile API client.
@@ -29,7 +221,8 @@ export const storageProfileApi = {
    * @returns Promise resolving to array of storage profiles
    */
   async getAll(): Promise<StorageProfile[]> {
-    return apiClient.get<StorageProfile[]>('/data-fabric/profiles');
+    const rawResponse = await apiClient.get<ContractStorageProfile[]>('/data-fabric/profiles');
+    return rawResponse.map((profile) => mapStorageProfile(StorageProfileSchema.parse(profile)));
   },
 
   /**
@@ -39,7 +232,8 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage profile
    */
   async getById(profileId: string): Promise<StorageProfile> {
-    return apiClient.get<StorageProfile>(`/data-fabric/profiles/${profileId}`);
+    const rawResponse = await apiClient.get<ContractStorageProfile>(`/data-fabric/profiles/${profileId}`);
+    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
   },
 
   /**
@@ -49,7 +243,9 @@ export const storageProfileApi = {
    * @returns Promise resolving to created profile
    */
   async create(input: StorageProfileFormInput): Promise<StorageProfile> {
-    return apiClient.post<StorageProfile>('/data-fabric/profiles', input);
+    const request = CreateStorageProfileRequestSchema.parse(toStorageProfileRequest(input));
+    const rawResponse = await apiClient.post<ContractStorageProfile>('/data-fabric/profiles', request);
+    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
   },
 
   /**
@@ -63,7 +259,9 @@ export const storageProfileApi = {
     profileId: string,
     input: Partial<StorageProfileFormInput>
   ): Promise<StorageProfile> {
-    return apiClient.put<StorageProfile>(`/data-fabric/profiles/${profileId}`, input);
+    const request = UpdateStorageProfileRequestSchema.parse(toStorageProfileUpdateRequest(input));
+    const rawResponse = await apiClient.put<ContractStorageProfile>(`/data-fabric/profiles/${profileId}`, request);
+    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
   },
 
   /**
@@ -83,7 +281,8 @@ export const storageProfileApi = {
    * @returns Promise resolving to updated profile
    */
   async setDefault(profileId: string): Promise<StorageProfile> {
-    return apiClient.post<StorageProfile>(`/data-fabric/profiles/${profileId}/set-default`);
+    const rawResponse = await apiClient.post<ContractStorageProfile>(`/data-fabric/profiles/${profileId}/set-default`);
+    return mapStorageProfile(StorageProfileSchema.parse(rawResponse));
   },
 
   /**
@@ -93,7 +292,8 @@ export const storageProfileApi = {
    * @returns Promise resolving to storage metrics
    */
   async getMetrics(profileId: string): Promise<StorageMetrics> {
-    return apiClient.get<StorageMetrics>(`/data-fabric/profiles/${profileId}/metrics`);
+    const rawResponse = await apiClient.get<ContractStorageProfileMetrics>(`/data-fabric/profiles/${profileId}/metrics`);
+    return mapStorageMetrics(profileId, StorageProfileMetricsSchema.parse(rawResponse));
   },
 };
 
@@ -107,7 +307,8 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of data connectors
    */
   async getAll(): Promise<DataConnector[]> {
-    return apiClient.get<DataConnector[]>('/data-fabric/connectors');
+    const rawResponse = await apiClient.get<Connector[]>('/data-fabric/connectors');
+    return rawResponse.map((connector) => mapConnector(ConnectorSchema.parse(connector)));
   },
 
   /**
@@ -117,7 +318,8 @@ export const dataConnectorApi = {
    * @returns Promise resolving to data connector
    */
   async getById(connectorId: string): Promise<DataConnector> {
-    return apiClient.get<DataConnector>(`/data-fabric/connectors/${connectorId}`);
+    const rawResponse = await apiClient.get<Connector>(`/data-fabric/connectors/${connectorId}`);
+    return mapConnector(ConnectorSchema.parse(rawResponse));
   },
 
   /**
@@ -127,7 +329,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving to created connector
    */
   async create(input: DataConnectorFormInput): Promise<DataConnector> {
-    return apiClient.post<DataConnector>('/data-fabric/connectors', input);
+    const request = CreateConnectorRequestSchema.parse(toConnectorRequest(input));
+    const rawResponse = await apiClient.post<Connector>('/data-fabric/connectors', request);
+    return mapConnector(ConnectorSchema.parse(rawResponse));
   },
 
   /**
@@ -141,7 +345,9 @@ export const dataConnectorApi = {
     connectorId: string,
     input: Partial<DataConnectorFormInput>
   ): Promise<DataConnector> {
-    return apiClient.put<DataConnector>(`/data-fabric/connectors/${connectorId}`, input);
+    const request = UpdateConnectorRequestSchema.parse(toConnectorUpdateRequest(input));
+    const rawResponse = await apiClient.put<Connector>(`/data-fabric/connectors/${connectorId}`, request);
+    return mapConnector(ConnectorSchema.parse(rawResponse));
   },
 
   /**
@@ -161,9 +367,10 @@ export const dataConnectorApi = {
    * @returns Promise resolving to test result
    */
   async test(connectorId: string): Promise<{ success: boolean; message?: string }> {
-    return apiClient.post<{ success: boolean; message?: string }>(
+    const rawResponse = await apiClient.post<{ success: boolean; message?: string }>(
       `/data-fabric/connectors/${connectorId}/test`
     );
+    return ConnectorTestResponseSchema.parse(rawResponse);
   },
 
   /**
@@ -173,9 +380,10 @@ export const dataConnectorApi = {
    * @returns Promise resolving when sync starts
    */
   async triggerSync(connectorId: string): Promise<{ jobId: string }> {
-    return apiClient.post<{ jobId: string }>(
+    const rawResponse = await apiClient.post<{ jobId: string }>(
       `/data-fabric/connectors/${connectorId}/sync`
     );
+    return TriggerSyncResponseSchema.parse(rawResponse);
   },
 
   /**
@@ -185,9 +393,10 @@ export const dataConnectorApi = {
    * @returns Promise resolving to sync statistics
    */
   async getSyncStatistics(connectorId: string): Promise<SyncStatistics> {
-    return apiClient.get<SyncStatistics>(
+    const rawResponse = await apiClient.get<SyncStatistics>(
       `/data-fabric/connectors/${connectorId}/statistics`
     );
+    return SyncStatisticsSchema.parse(rawResponse);
   },
 
   /**
@@ -197,8 +406,9 @@ export const dataConnectorApi = {
    * @returns Promise resolving to array of connectors
    */
   async getByProfile(profileId: string): Promise<DataConnector[]> {
-    return apiClient.get<DataConnector[]>(
-      `/data-fabric/connectors?profileId=${profileId}`
-    );
+    const rawResponse = await apiClient.get<Connector[]>('/data-fabric/connectors', {
+      params: { profileId },
+    });
+    return rawResponse.map((connector) => mapConnector(ConnectorSchema.parse(connector)));
   },
 };

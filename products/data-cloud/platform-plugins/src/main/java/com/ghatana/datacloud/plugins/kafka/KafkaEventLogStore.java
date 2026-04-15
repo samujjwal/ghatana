@@ -120,6 +120,7 @@ public class KafkaEventLogStore implements EventLogStore {
     // Shared, thread-safe producer (transactional)
     private final KafkaProducer<String, byte[]> producer;
     private final AdminClient adminClient;
+    private final Object producerTransactionLock = new Object();
 
     // Track topics already created so we avoid repeated describe calls
     private final ConcurrentHashMap<String, Boolean> createdTopics = new ConcurrentHashMap<>();
@@ -202,27 +203,29 @@ public class KafkaEventLogStore implements EventLogStore {
         String topic = topicFor(tenant.tenantId());
         ensureTopicExists(topic);
 
-        producer.beginTransaction();
-        try {
-            List<Future<RecordMetadata>> futures = new ArrayList<>(entries.size());
-            for (EventEntry entry : entries) {
-                ProducerRecord<String, byte[]> record = toProducerRecord(topic, tenant.tenantId(), entry);
-                futures.add(producer.send(record));
-            }
-            producer.commitTransaction();
+        synchronized (producerTransactionLock) {
+            producer.beginTransaction();
+            try {
+                List<Future<RecordMetadata>> futures = new ArrayList<>(entries.size());
+                for (EventEntry entry : entries) {
+                    ProducerRecord<String, byte[]> record = toProducerRecord(topic, tenant.tenantId(), entry);
+                    futures.add(producer.send(record));
+                }
+                producer.commitTransaction();
 
-            List<Offset> offsets = new ArrayList<>(futures.size());
-            for (Future<RecordMetadata> f : futures) {
-                RecordMetadata meta = f.get();
-                offsets.add(Offset.of(meta.offset()));
-                appendCounter.increment();
+                List<Offset> offsets = new ArrayList<>(futures.size());
+                for (Future<RecordMetadata> f : futures) {
+                    RecordMetadata meta = f.get();
+                    offsets.add(Offset.of(meta.offset()));
+                    appendCounter.increment();
+                }
+                return offsets;
+            } catch (Exception e) {
+                producer.abortTransaction();
+                appendErrorCounter.increment();
+                log.error("appendBatch failed for tenant={}", tenant.tenantId(), e);
+                throw new RuntimeException("Kafka appendBatch failed", e);
             }
-            return offsets;
-        } catch (Exception e) {
-            producer.abortTransaction();
-            appendErrorCounter.increment();
-            log.error("appendBatch failed for tenant={}", tenant.tenantId(), e);
-            throw new RuntimeException("Kafka appendBatch failed", e);
         }
     }
 
@@ -366,17 +369,19 @@ public class KafkaEventLogStore implements EventLogStore {
         ensureTopicExists(topic);
         return appendTimer.record(() -> {
             ProducerRecord<String, byte[]> record = toProducerRecord(topic, tenant.tenantId(), entry);
-            producer.beginTransaction();
-            try {
-                RecordMetadata meta = producer.send(record).get();
-                producer.commitTransaction();
-                appendCounter.increment();
-                return Offset.of(meta.offset());
-            } catch (Exception e) {
-                producer.abortTransaction();
-                appendErrorCounter.increment();
-                log.error("append failed for tenant={} eventType={}", tenant.tenantId(), entry.eventType(), e);
-                throw new RuntimeException("Kafka append failed", e);
+            synchronized (producerTransactionLock) {
+                producer.beginTransaction();
+                try {
+                    RecordMetadata meta = producer.send(record).get();
+                    producer.commitTransaction();
+                    appendCounter.increment();
+                    return Offset.of(meta.offset());
+                } catch (Exception e) {
+                    producer.abortTransaction();
+                    appendErrorCounter.increment();
+                    log.error("append failed for tenant={} eventType={}", tenant.tenantId(), entry.eventType(), e);
+                    throw new RuntimeException("Kafka append failed", e);
+                }
             }
         });
     }

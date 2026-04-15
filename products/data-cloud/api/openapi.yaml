@@ -80,8 +80,12 @@ tags:
     description: Learning API — policy extraction and human-review queue.
   - name: analytics
     description: Ad-hoc analytics queries backed by ClickHouse.
+  - name: context
+    description: Tenant-scoped context storage and retrieval APIs.
   - name: sse
     description: Server-Sent Event streams for real-time push.
+  - name: data-products
+    description: Publish, discover, and subscribe to reusable data products.
   - name: models
     description: AI/ML model registry — register, query, and promote model metadata.
   - name: features
@@ -1017,6 +1021,297 @@ components:
               type: number
             fallback:
               type: boolean
+
+    SimilarEntityMatch:
+      type: object
+      required: [id, collection, score, data]
+      properties:
+        id:
+          type: string
+        collection:
+          type: string
+        score:
+          type: number
+        data:
+          $ref: "#/components/schemas/FreeformObject"
+
+    SimilarEntitiesResponse:
+      type: object
+      required: [collection, entityId, matches, count, requestId]
+      properties:
+        collection:
+          type: string
+        entityId:
+          type: string
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimilarEntityMatch"
+        count:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+
+    CollectionRagRequest:
+      type: object
+      required: [question]
+      properties:
+        question:
+          type: string
+        k:
+          type: integer
+          format: int32
+          minimum: 1
+          default: 5
+
+    CollectionRagContextItem:
+      type: object
+      required: [id, score, data, excerpt]
+      properties:
+        id:
+          type: string
+        score:
+          type: number
+        data:
+          $ref: "#/components/schemas/FreeformObject"
+        excerpt:
+          type: string
+
+    CollectionRagResponse:
+      type: object
+      required: [collection, question, answer, context, requestId]
+      properties:
+        collection:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        context:
+          type: array
+          items:
+            $ref: "#/components/schemas/CollectionRagContextItem"
+        requestId:
+          type: string
+
+    AnomalyQueryItem:
+      type: object
+      required: [eventId, eventType, timestamp, collection, tenantId, anomalyPayload]
+      properties:
+        eventId:
+          type: string
+        eventType:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        collection:
+          type: string
+        tenantId:
+          type: string
+        anomalyPayload:
+          type: string
+
+    AnomalyQueryResponse:
+      type: object
+      required: [tenantId, since, count, anomalies]
+      properties:
+        tenantId:
+          type: string
+        collection:
+          type: string
+        since:
+          type: string
+          format: date-time
+        count:
+          type: integer
+          format: int64
+        anomalies:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnomalyQueryItem"
+
+    DataProductSchemaField:
+      type: object
+      required: [name, types]
+      properties:
+        name:
+          type: string
+        types:
+          type: array
+          items:
+            type: string
+
+    DataProductSchemaInfo:
+      type: object
+      required: [fields, sampleCount]
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataProductSchemaField"
+        sampleCount:
+          type: integer
+          format: int64
+
+    DataProductAccess:
+      type: object
+      properties:
+        visibility:
+          type: string
+        allowedSubscribers:
+          type: array
+          items:
+            type: string
+
+    DataProductSla:
+      type: object
+      properties:
+        freshnessSeconds:
+          type: number
+        completenessTarget:
+          type: number
+        accuracyTarget:
+          type: number
+
+    DataProductQuality:
+      type: object
+      required: [completeness, freshnessLagSeconds, sampleSize, measuredAt]
+      properties:
+        completeness:
+          type: number
+        freshnessLagSeconds:
+          type: integer
+          format: int64
+        sampleSize:
+          type: integer
+          format: int64
+        measuredAt:
+          type: string
+          format: date-time
+
+    DataProductLineageSummary:
+      type: object
+      required: [upstream, downstream, impactLevel]
+      properties:
+        upstream:
+          type: array
+          items:
+            type: string
+        downstream:
+          type: array
+          items:
+            type: string
+        impactLevel:
+          type: string
+
+    DataProductDescriptor:
+      type: object
+      required: [id, tenantId, name, collection, description, publishedAt, schema, governance, access, sla, quality, qualityStatus, lineage]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        collection:
+          type: string
+        description:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        schema:
+          $ref: "#/components/schemas/DataProductSchemaInfo"
+        governance:
+          $ref: "#/components/schemas/FreeformObject"
+        access:
+          $ref: "#/components/schemas/DataProductAccess"
+        sla:
+          $ref: "#/components/schemas/DataProductSla"
+        quality:
+          $ref: "#/components/schemas/DataProductQuality"
+        qualityStatus:
+          type: string
+        lineage:
+          $ref: "#/components/schemas/DataProductLineageSummary"
+
+    PublishDataProductRequest:
+      type: object
+      required: [collection, name]
+      properties:
+        productId:
+          type: string
+        collection:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        governance:
+          $ref: "#/components/schemas/FreeformObject"
+        access:
+          $ref: "#/components/schemas/DataProductAccess"
+        sla:
+          $ref: "#/components/schemas/DataProductSla"
+
+    PublishDataProductResponse:
+      type: object
+      required: [productId, collection, name, descriptor, requestId, publishedAt]
+      properties:
+        productId:
+          type: string
+        collection:
+          type: string
+        name:
+          type: string
+        descriptor:
+          $ref: "#/components/schemas/DataProductDescriptor"
+        requestId:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+
+    DataProductListResponse:
+      type: object
+      required: [items, count, requestId, timestamp]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DataProductDescriptor"
+        count:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    DataProductSubscriptionRequest:
+      type: object
+      properties:
+        consumerId:
+          type: string
+
+    DataProductSubscriptionResponse:
+      type: object
+      required: [subscriptionId, productId, consumerId, status, requestId]
+      properties:
+        subscriptionId:
+          type: string
+        productId:
+          type: string
+        consumerId:
+          type: string
+        status:
+          type: string
+        requestId:
+          type: string
 
     LineageDagNode:
       type: object
@@ -2229,6 +2524,71 @@ paths:
         "200": { description: Anomaly detection results }
         "501": { description: Anomaly detector not configured }
 
+  /api/v1/anomalies:
+    get:
+      summary: Query persisted anomaly detection events
+      operationId: apiV1AnomaliesGet
+      tags: [analytics]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: collection
+          in: query
+          required: false
+          schema: { type: string }
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Persisted anomalies matching the supplied filter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnomalyQueryResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "501": { description: Anomaly event store not configured }
+
+  /api/v1/entities/{collection}/similar:
+    get:
+      summary: Find entities similar to a reference entity
+      operationId: apiV1EntitiesCollectionSimilarGet
+      tags: [entities, ai]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: query
+          required: true
+          schema: { type: string }
+        - name: k
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            default: 5
+      responses:
+        "200":
+          description: Semantic similarity matches for the requested entity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimilarEntitiesResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
   /api/v1/entities/{collection}/validate:
     post:
       summary: Validate a single entity payload against the collection schema
@@ -2797,6 +3157,99 @@ paths:
             application/json:
               schema:
                 type: object
+
+  /api/v1/context/{collection}/rag:
+    post:
+      summary: Generate a grounded answer from collection-specific vector context
+      operationId: apiV1ContextCollectionRagPost
+      tags: [context, ai]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionRagRequest"
+      responses:
+        "200":
+          description: Grounded answer and supporting semantic context.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionRagResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/data-products:
+    get:
+      summary: List published data products for the tenant
+      operationId: apiV1DataProductsGet
+      tags: [data-products]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            default: 100
+      responses:
+        "200":
+          description: Published data products enriched with current quality status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProductListResponse"
+    post:
+      summary: Publish a collection as a reusable data product
+      operationId: apiV1DataProductsPost
+      tags: [data-products]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishDataProductRequest"
+      responses:
+        "200":
+          description: Data product published successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishDataProductResponse"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/data-products/{productId}/subscribe:
+    post:
+      summary: Subscribe a consumer to a published data product
+      operationId: apiV1DataProductsProductIdSubscribePost
+      tags: [data-products]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DataProductSubscriptionRequest"
+      responses:
+        "200":
+          description: Subscription created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProductSubscriptionResponse"
+        "403": { description: Consumer is not allowed to subscribe to this data product }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/autonomy/level:
     get:

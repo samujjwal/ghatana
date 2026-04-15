@@ -14,7 +14,12 @@ import { apiClient, PaginatedResponse } from './client';
 import { collectionsApi, Collection, CreateCollectionDto, UpdateCollectionDto } from './collections';
 import { workflowsApi, Workflow, WorkflowExecution, CreateWorkflowDto, UpdateWorkflowDto } from './workflows';
 import { collectionDataClient, CollectionRecord, ListRecordsResponse } from './collection-data-client';
-import type { EntityValidationResponse, SearchResult } from '../../contracts/schemas';
+import {
+  EntityValidationResponseSchema,
+  SearchResultSchema,
+  type EntityValidationResponse,
+  type SearchResult,
+} from '../../contracts/schemas';
 
 /**
  * API Response wrapper for backward compatibility with mock client
@@ -486,11 +491,12 @@ class DataCloudApiClient {
     data: Record<string, unknown>
   ): Promise<ApiResponse<EntityValidationResponse>> {
     try {
-      const result = await apiClient.post<EntityValidationResponse>(
+      const rawResult = await apiClient.post<EntityValidationResponse>(
         `/entities/${collectionId}/validate`,
         { data },
         { params: { tenantId: this.tenantId } }
       );
+      const result = EntityValidationResponseSchema.parse(rawResult);
       return {
         data: result,
         status: 200,
@@ -533,7 +539,8 @@ class DataCloudApiClient {
       if (options.limit) params.limit = options.limit;
       if (options.offset) params.offset = options.offset;
 
-      const results = await apiClient.get<SearchResult[]>(`/entities/${options.collectionId}/search`, { params });
+      const rawResults = await apiClient.get<SearchResult[]>(`/entities/${options.collectionId}/search`, { params });
+      const results = rawResults.map((result) => SearchResultSchema.parse(result));
       return {
         data: results,
         status: 200,

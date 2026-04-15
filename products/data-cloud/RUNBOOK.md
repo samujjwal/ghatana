@@ -63,6 +63,8 @@ The durable event-store path is now discovered through the legacy SPI registrati
 
 The durable load suite runs against real PostgreSQL and Kafka Testcontainers, records latency percentiles for entity writes, event appends, and tenant-scoped reads, verifies zero cross-tenant leakage in both stores, supports repeated soak iterations, and writes a JSON metrics artifact to `products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json`.
 
+The dedicated runner disables Testcontainers Ryuk (`TESTCONTAINERS_RYUK_DISABLED=true`) to match the existing Data Cloud CI pattern and forces `TESTCONTAINERS_HOST_OVERRIDE=localhost` so host-run macOS executions connect to exposed container ports correctly instead of resolving `host.docker.internal` from the JVM.
+
 Environment overrides:
 
 - `DATACLOUD_LOAD_TENANTS`
@@ -71,20 +73,39 @@ Environment overrides:
 - `DATACLOUD_LOAD_ITERATIONS`
 - `DATACLOUD_LOAD_TIMEOUT_SECONDS`
 - `DATACLOUD_LOAD_MIN_THROUGHPUT_OPS_PER_SECOND`
+- `DATACLOUD_LOAD_MAX_HEAP_DELTA_MB`
+- `DATACLOUD_LOAD_MAX_P95_ENTITY_SAVE_MS`
+- `DATACLOUD_LOAD_MAX_P95_EVENT_APPEND_MS`
+- `DATACLOUD_LOAD_MAX_P95_QUERY_MS`
 
 For manual Gradle invocation, the equivalent JVM properties are:
 
 ```bash
 ./gradlew :products:data-cloud:platform-plugins:test \
   --tests "*DurableMultiTenantLoadIntegrationTest" \
+  TESTCONTAINERS_RYUK_DISABLED=true \
   -Ddatacloud.load.tenants=100 \
   -Ddatacloud.load.entityOpsPerTenant=25 \
   -Ddatacloud.load.eventOpsPerTenant=25 \
   -Ddatacloud.load.iterations=1 \
   -Ddatacloud.load.timeoutSeconds=1800 \
   -Ddatacloud.load.minThroughputOpsPerSecond=0 \
+  -Ddatacloud.load.maxHeapDeltaMb=256 \
+  -Ddatacloud.load.maxP95EntitySaveMs=2500 \
+  -Ddatacloud.load.maxP95EventAppendMs=2500 \
+  -Ddatacloud.load.maxP95QueryMs=2500 \
   -Ddatacloud.load.metricsOutput=$PWD/products/data-cloud/build/reports/load-tests/durable-multi-tenant-load.json
 ```
+
+### Scheduled CI execution and published artifacts
+
+The durable load suite is also wired into the repository workflow at `.github/workflows/data-cloud-durable-load.yml`.
+
+- It runs on a weekly schedule and also supports `workflow_dispatch` for manual baselines.
+- Each run uploads:
+  - `data-cloud-durable-load-metrics` — JSON metrics artifact from `products/data-cloud/build/reports/load-tests/`
+  - `data-cloud-durable-load-test-results` — JUnit XML plus Gradle HTML test report for the durable suite
+- The workflow writes a compact throughput and latency summary into the GitHub Actions job summary so the latest baseline is visible without downloading artifacts.
 
 ### JMH benchmark compilation and execution
 

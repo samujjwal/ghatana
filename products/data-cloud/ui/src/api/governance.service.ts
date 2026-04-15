@@ -9,44 +9,12 @@
  */
 
 import { apiClient } from '../lib/api/client';
-
-interface ApiEnvelope<T> {
-  data: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-  meta: {
-    tenantId: string;
-    requestId: string;
-    apiVersion?: string;
-  };
-}
-
-interface PiiFieldRegistry {
-  globalFields: string[];
-  tenantFields: string[];
-  effectiveCount: number;
-}
-
-interface ComplianceSummary {
-  tenantId: string;
-  collectionsTotal: number;
-  collectionsClassified: number;
-  collectionsUnclassified: number;
-  piiFieldsRegistered: number;
-  legalHoldsActive: number;
-  retentionExpirationsIn30Days: number;
-  lastAuditAt: string;
-  auditEventsIn30Days: number;
-  authFailuresIn30Days: number;
-  redactionsIn30Days: number;
-  purgesIn30Days: number;
-  recentAuditEvents: Array<Record<string, unknown>>;
-  complianceStatus: 'COMPLIANT' | 'NEEDS_CLASSIFICATION' | 'REVIEW_REQUIRED';
-  generatedAt: string;
-}
+import {
+  ComplianceSummaryEnvelopeSchema,
+  PiiFieldRegistryEnvelopeSchema,
+  type ComplianceSummaryData as ComplianceSummary,
+  type PiiFieldRegistryData as PiiFieldRegistry,
+} from '../contracts/schemas';
 
 export interface Policy {
   id: string;
@@ -138,7 +106,7 @@ export interface AccessRequest {
   reviewedAt?: string;
 }
 
-function unwrapEnvelope<T>(envelope: ApiEnvelope<T>): T {
+function unwrapEnvelope<T>(envelope: { data: T }): T {
   return envelope.data;
 }
 
@@ -334,12 +302,14 @@ function buildAuditLogs(summary: ComplianceSummary): AuditLog[] {
  */
 export class GovernanceService {
   private async getPiiFieldRegistry(): Promise<PiiFieldRegistry> {
-    const response = await apiClient.get<ApiEnvelope<PiiFieldRegistry>>('/governance/privacy/pii-fields');
+    const rawResponse = await apiClient.get('/governance/privacy/pii-fields');
+    const response = PiiFieldRegistryEnvelopeSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 
   private async getComplianceSummary(): Promise<ComplianceSummary> {
-    const response = await apiClient.get<ApiEnvelope<ComplianceSummary>>('/governance/compliance/summary');
+    const rawResponse = await apiClient.get('/governance/compliance/summary');
+    const response = ComplianceSummaryEnvelopeSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 

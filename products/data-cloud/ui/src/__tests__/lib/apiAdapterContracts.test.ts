@@ -213,5 +213,32 @@ describe('frontend adapter contracts', () => {
         description: 'Updated pipeline',
       });
     });
+
+    it('parses canonical pipeline execution payloads into the workflow execution model', async () => {
+      mockApiClient.post.mockResolvedValue({
+        id: 'exec-1',
+        workflowId: 'wf-1',
+        status: 'running',
+        startedAt: '2026-04-15T12:30:00Z',
+        duration: 12,
+      });
+
+      const execution = await workflowsApi.execute('wf-1', { input: { dryRun: true } });
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/pipelines/wf-1/execute', {
+        input: { dryRun: true },
+      });
+      expect(execution).toEqual({
+        id: 'exec-1',
+        workflowId: 'wf-1',
+        status: 'running',
+        startedAt: '2026-04-15T12:30:00Z',
+        completedAt: undefined,
+        duration: 12,
+        nodeExecutions: [],
+        error: undefined,
+        triggeredBy: 'manual',
+      });
+    });
   });
 });

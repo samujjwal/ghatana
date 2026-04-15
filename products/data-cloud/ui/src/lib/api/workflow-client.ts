@@ -18,6 +18,12 @@
  */
 
 import { apiClient } from './client';
+import {
+  PipelineListResponseSchema,
+  PipelineSchema,
+  type Pipeline,
+  type PipelineListResponse,
+} from '../../contracts/schemas';
 import type {
   WorkflowDefinition,
   WorkflowExecution,
@@ -78,6 +84,53 @@ export class WorkflowApiClient {
     };
   }
 
+  private normalizeWorkflowStatus(status?: string): WorkflowDefinition['status'] {
+    switch ((status ?? '').toUpperCase()) {
+      case 'ACTIVE':
+      case 'PUBLISHED':
+        return 'PUBLISHED';
+      case 'ARCHIVED':
+      case 'PAUSED':
+      case 'INACTIVE':
+        return 'ARCHIVED';
+      default:
+        return 'DRAFT';
+    }
+  }
+
+  private pipelineToWorkflowDefinition(pipeline: Pipeline, fallbackCollectionId?: string): WorkflowDefinition {
+    const extras = pipeline as Record<string, unknown>;
+    const collectionId = typeof extras.collectionId === 'string' ? extras.collectionId : (fallbackCollectionId ?? 'default');
+    const variables = extras.variables;
+    const triggers = extras.triggers;
+    const version = extras.version;
+    const updatedBy = extras.updatedBy;
+
+    const status = this.normalizeWorkflowStatus(pipeline.status);
+
+    return {
+      id: pipeline.id,
+      tenantId: pipeline.tenantId ?? this.tenantId,
+      collectionId,
+      name: pipeline.name ?? 'Untitled workflow',
+      description: pipeline.description,
+      status,
+      version: typeof version === 'number' ? version : 1,
+      active: status === 'PUBLISHED',
+      nodes: (pipeline.nodes ?? []) as WorkflowDefinition['nodes'],
+      edges: (pipeline.edges ?? []) as WorkflowDefinition['edges'],
+      triggers: Array.isArray(triggers) ? (triggers as WorkflowDefinition['triggers']) : [],
+      variables: variables && typeof variables === 'object' && !Array.isArray(variables)
+        ? (variables as WorkflowDefinition['variables'])
+        : {},
+      tags: pipeline.tags,
+      createdBy: pipeline.createdBy ?? this.userId,
+      updatedBy: typeof updatedBy === 'string' ? updatedBy : (pipeline.createdBy ?? this.userId),
+      createdAt: pipeline.createdAt ?? new Date().toISOString(),
+      updatedAt: pipeline.updatedAt ?? pipeline.createdAt ?? new Date().toISOString(),
+    };
+  }
+
   /**
    * Sets the tenant ID for subsequent requests.
    *
@@ -109,10 +162,17 @@ export class WorkflowApiClient {
     page: number = 0,
     pageSize: number = 50
   ): Promise<WorkflowListResponse> {
-    return apiClient.get<WorkflowListResponse>('/pipelines', {
-      params: { collectionId, page, pageSize },
+    const rawResponse = await apiClient.get<PipelineListResponse>('/pipelines', {
+      params: { collectionId, limit: pageSize },
       headers: this.getHeaders(),
     });
+    const response = PipelineListResponseSchema.parse(rawResponse);
+    return {
+      workflows: response.pipelines.map((pipeline) => this.pipelineToWorkflowDefinition(pipeline, collectionId)),
+      total: response.count,
+      page,
+      pageSize,
+    };
   }
 
   /**
@@ -122,9 +182,11 @@ export class WorkflowApiClient {
    * @returns the workflow definition
    */
   async getWorkflow(workflowId: string): Promise<WorkflowDefinition> {
-    return apiClient.get<WorkflowDefinition>(`/pipelines/${workflowId}`, {
+    const rawResponse = await apiClient.get<Pipeline>(`/pipelines/${workflowId}`, {
       headers: this.getHeaders(),
     });
+    const response = PipelineSchema.parse(rawResponse);
+    return this.pipelineToWorkflowDefinition(response);
   }
 
   /**
@@ -134,9 +196,11 @@ export class WorkflowApiClient {
    * @returns the created workflow
    */
   async createWorkflow(request: CreateWorkflowRequest): Promise<WorkflowDefinition> {
-    return apiClient.post<WorkflowDefinition>('/pipelines', request, {
+    const rawResponse = await apiClient.post<Pipeline>('/pipelines', request, {
       headers: this.getHeaders(),
     });
+    const response = PipelineSchema.parse(rawResponse);
+    return this.pipelineToWorkflowDefinition(response, request.collectionId);
   }
 
   /**
@@ -150,11 +214,13 @@ export class WorkflowApiClient {
     workflowId: string,
     request: UpdateWorkflowRequest
   ): Promise<WorkflowDefinition> {
-    return apiClient.put<WorkflowDefinition>(
+    const rawResponse = await apiClient.put<Pipeline>(
       `/pipelines/${workflowId}`,
       request,
       { headers: this.getHeaders() }
     );
+    const response = PipelineSchema.parse(rawResponse);
+    return this.pipelineToWorkflowDefinition(response);
   }
 
   /**

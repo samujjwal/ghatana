@@ -51,6 +51,7 @@ import {
   getSchemaSuggestions,
   detectAnomalies,
   getEnrichmentSuggestions,
+  getPipelineOptimisationHints,
   getQueryRecommendations,
 } from '../../lib/api/ai';
 import { dataCloudApi } from '../../lib/api/data-cloud-api';
@@ -81,11 +82,45 @@ describe('legacy API boundaries', () => {
       { params: { tenantId: 'tenant-a' } },
     );
 
+    mockApiClient.post.mockResolvedValueOnce([
+      {
+        id: 'anom-1',
+        type: 'spike',
+        severity: 'warning',
+        metric: 'count',
+        timestamp: '2026-04-15T10:00:00Z',
+        value: 120,
+        expectedValue: 80,
+        deviation: 40,
+        description: 'Entity count spiked above the expected baseline.',
+        suggestedAction: 'Inspect recent ingestion jobs.',
+      },
+    ]);
     await detectAnomalies('tenant-a', { collectionName: 'orders', metrics: ['count'] });
     expect(mockApiClient.post).toHaveBeenCalledWith(
       '/entities/orders/anomalies',
       { collectionName: 'orders', metrics: ['count'] },
       { params: { tenantId: 'tenant-a' } },
+    );
+
+    mockApiClient.post.mockResolvedValueOnce({
+      pipelineId: 'wf-1',
+      hints: [
+        {
+          type: 'performance',
+          title: 'Reduce repeated enrichment lookups',
+          description: 'Cache repeated upstream calls to reduce end-to-end latency.',
+          confidence: 0.92,
+          impact: 'high',
+          fallback: false,
+        },
+      ],
+      generatedAt: '2026-04-14T10:35:00Z',
+    });
+    await getPipelineOptimisationHints('wf-1');
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      '/pipelines/wf-1/optimise-hint',
+      {},
     );
   });
 
@@ -100,7 +135,12 @@ describe('legacy API boundaries', () => {
   });
 
   it('uses canonical validation and search routes in the facade and rejects unsupported ones', async () => {
-    mockApiClient.post.mockResolvedValue({ valid: true, violations: [] });
+    mockApiClient.post.mockResolvedValue({
+      valid: true,
+      violations: [],
+      score: 1,
+      suggestions: [],
+    });
     await dataCloudApi.validateEntity('orders', { id: '1' });
     expect(mockApiClient.post).toHaveBeenCalledWith(
       '/entities/orders/validate',
@@ -108,7 +148,15 @@ describe('legacy API boundaries', () => {
       { params: { tenantId: 'default' } },
     );
 
-    mockApiClient.get.mockResolvedValue([]);
+    mockApiClient.get.mockResolvedValue([
+      {
+        entityId: 'entity-1',
+        collectionId: 'orders',
+        score: 0.98,
+        highlights: { description: ['matching order id'] },
+        data: { id: '1', total: 42 },
+      },
+    ]);
     await dataCloudApi.search('abc', { collectionId: 'orders', limit: 5 });
     expect(mockApiClient.get).toHaveBeenCalledWith(
       '/entities/orders/search',

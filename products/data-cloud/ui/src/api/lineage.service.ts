@@ -9,6 +9,12 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import {
+  LineageDagResponseSchema,
+  LineageImpactResponseSchema,
+  type LineageDagResponse,
+  type LineageImpactResponse,
+} from '../contracts/schemas';
 
 export interface LineageNode {
   id: string;
@@ -66,30 +72,6 @@ export interface ExecutionLog {
   error?: string;
 }
 
-/** Shape returned by GET /api/v1/lineage/:collection */
-interface LineageApiResponse {
-  collection: string;
-  tenantId: string;
-  direction: string;
-  timestamp: string;
-  dag: {
-    nodes: Array<{ id: string; type: string; name: string; role: string; metadata: Record<string, unknown> }>;
-    edges: Array<{ source: string; target: string; type: string }>;
-  };
-  upstreamCount: number;
-  downstreamCount: number;
-}
-
-/** Shape returned by GET /api/v1/lineage/:collection/impact */
-interface ImpactApiResponse {
-  collection: string;
-  tenantId: string;
-  impactLevel: string;
-  affectedCount: number;
-  affectedCollections: string[];
-  timestamp: string;
-}
-
 /**
  * Lineage Service Client
  */
@@ -119,9 +101,10 @@ export class LineageService {
     direction: 'UPSTREAM' | 'DOWNSTREAM' | 'BOTH' = 'BOTH',
     _depth: number = 3
   ): Promise<LineageGraph> {
-    const data = await apiClient.get<LineageApiResponse>(`/lineage/${datasetId}`, {
+    const rawResponse = await apiClient.get<LineageDagResponse>(`/lineage/${datasetId}`, {
       params: { direction },
     });
+    const data = LineageDagResponseSchema.parse(rawResponse);
 
     const nodes: LineageNode[] = data.dag.nodes.map((n) => ({
       id: n.id,
@@ -150,7 +133,8 @@ export class LineageService {
    * Calls {@code GET /api/v1/lineage/:datasetId/impact}.
    */
   async getImpactAnalysis(datasetId: string): Promise<ImpactAnalysis> {
-    const data = await apiClient.get<ImpactApiResponse>(`/lineage/${datasetId}/impact`);
+    const rawResponse = await apiClient.get<LineageImpactResponse>(`/lineage/${datasetId}/impact`);
+    const data = LineageImpactResponseSchema.parse(rawResponse);
 
     return {
       affectedDatasets: data.affectedCount,

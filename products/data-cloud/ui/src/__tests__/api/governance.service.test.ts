@@ -27,6 +27,8 @@ describe('governanceService contract mapping', () => {
           meta: {
             tenantId: 'tenant-a',
             requestId: 'req-pii',
+            timestamp: '2026-04-15T08:01:00Z',
+            apiVersion: 'v1',
           },
         });
       }
@@ -64,6 +66,8 @@ describe('governanceService contract mapping', () => {
           meta: {
             tenantId: 'tenant-a',
             requestId: 'req-summary',
+            timestamp: '2026-04-15T08:05:00Z',
+            apiVersion: 'v1',
           },
         });
       }

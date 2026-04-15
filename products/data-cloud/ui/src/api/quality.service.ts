@@ -10,26 +10,10 @@
 
 import { apiClient } from '../lib/api/client';
 import { collectionsApi, type Collection } from '../lib/api/collections';
-
-interface ApiEnvelope<T> {
-  data: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-  meta: {
-    tenantId: string;
-    requestId: string;
-    apiVersion?: string;
-  };
-}
-
-interface PiiFieldRegistry {
-  globalFields: string[];
-  tenantFields: string[];
-  effectiveCount: number;
-}
+import {
+  PiiFieldRegistryEnvelopeSchema,
+  type PiiFieldRegistryData as PiiFieldRegistry,
+} from '../contracts/schemas';
 
 export interface QualityMetric {
   datasetId: string;
@@ -85,7 +69,7 @@ export interface AnomalyEvent {
   rootCause?: string;
 }
 
-function unwrapEnvelope<T>(envelope: ApiEnvelope<T>): T {
+function unwrapEnvelope<T>(envelope: { data: T }): T {
   return envelope.data;
 }
 
@@ -166,7 +150,8 @@ export class QualityService {
   }
 
   private async getPiiFieldRegistry(): Promise<PiiFieldRegistry> {
-    const response = await apiClient.get<ApiEnvelope<PiiFieldRegistry>>('/governance/privacy/pii-fields');
+    const rawResponse = await apiClient.get('/governance/privacy/pii-fields');
+    const response = PiiFieldRegistryEnvelopeSchema.parse(rawResponse);
     return unwrapEnvelope(response);
   }
 

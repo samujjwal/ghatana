@@ -91,9 +91,15 @@ dependencies {
 tasks.test {
     // useJUnitPlatform() already applied by java-module; keep finalizedBy and environment vars
     finalizedBy(tasks.jacocoTestReport)
-    environment("DOCKER_HOST", "unix:///var/run/docker.sock")
-    environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
-    environment("TESTCONTAINERS_HOST_OVERRIDE", "host.docker.internal")
+    environment("DOCKER_HOST", System.getenv("DOCKER_HOST") ?: "unix:///var/run/docker.sock")
+    environment(
+        "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE",
+        System.getenv("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE") ?: "/var/run/docker.sock"
+    )
+    environment(
+        "TESTCONTAINERS_HOST_OVERRIDE",
+        System.getenv("TESTCONTAINERS_HOST_OVERRIDE") ?: "host.docker.internal"
+    )
 }
 
 jacoco {

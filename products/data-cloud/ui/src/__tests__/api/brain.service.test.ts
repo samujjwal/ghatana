@@ -62,6 +62,45 @@ describe('brainService autonomy boundaries', () => {
     });
   });
 
+  it('parses global autonomy override status from the canonical route', async () => {
+    mockApiClient.get.mockResolvedValueOnce({
+      globalOverride: 'CONFIRM',
+      shutoffActive: false,
+      domainCount: 4,
+    });
+
+    const status = await brainService.getGlobalAutonomyLevel();
+
+    expect(mockApiClient.get).toHaveBeenCalledWith('/autonomy/level');
+    expect(status).toEqual({
+      globalOverride: 'CONFIRM',
+      shutoffActive: false,
+      domainCount: 4,
+    });
+  });
+
+  it('parses global autonomy override updates through the shared request and response contracts', async () => {
+    mockApiClient.put.mockResolvedValueOnce({
+      globalLevel: 'NOTIFY',
+      affectedDomains: 6,
+      timestamp: '2026-04-15T12:20:00Z',
+      reason: 'Emergency review mode',
+    });
+
+    const response = await brainService.setGlobalAutonomyLevel('NOTIFY', 'Emergency review mode');
+
+    expect(mockApiClient.put).toHaveBeenCalledWith('/autonomy/level', {
+      level: 'NOTIFY',
+      reason: 'Emergency review mode',
+    });
+    expect(response).toEqual({
+      globalLevel: 'NOTIFY',
+      affectedDomains: 6,
+      timestamp: '2026-04-15T12:20:00Z',
+      reason: 'Emergency review mode',
+    });
+  });
+
   it('maps domain autonomy state from the canonical route into the UI control model', async () => {
     mockApiClient.get.mockResolvedValue({
       domain: 'optimization',
@@ -296,6 +335,41 @@ describe('brainService autonomy boundaries', () => {
         impact: 0.5,
         urgency: 0.5,
       },
+    });
+  });
+
+  it('parses canonical learning-trigger responses when feedback is submitted', async () => {
+    mockApiClient.post.mockResolvedValue({
+      id: 'feedback-1',
+      timestamp: '2026-04-14T12:27:00Z',
+      signalType: 'manual-feedback',
+      impact: 0.35,
+      status: 'PROCESSED',
+      affectedComponents: ['brain', 'feedback-widget'],
+    });
+
+    const signal = await brainService.submitFeedback({
+      eventType: 'classification-correction',
+      correctValue: 'high-priority',
+      incorrectValue: 'medium-priority',
+      context: { source: 'contract-test' },
+      tags: ['ui'],
+    });
+
+    expect(mockApiClient.post).toHaveBeenCalledWith('/learning/trigger', {
+      eventType: 'classification-correction',
+      correctValue: 'high-priority',
+      incorrectValue: 'medium-priority',
+      context: { source: 'contract-test' },
+      tags: ['ui'],
+    });
+    expect(signal).toEqual({
+      id: 'feedback-1',
+      timestamp: '2026-04-14T12:27:00Z',
+      signalType: 'manual-feedback',
+      impact: 0.35,
+      status: 'PROCESSED',
+      affectedComponents: ['brain', 'feedback-widget'],
     });
   });
 

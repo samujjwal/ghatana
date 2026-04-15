@@ -11,6 +11,12 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import {
+  AgentCatalogEntrySchema,
+  AgentCatalogListSchema,
+  type AgentCapability as BackendAgentCapability,
+  type AgentCatalogEntry,
+} from '../contracts/schemas';
 
 export const AGENT_REGISTRY_BOUNDARY_MESSAGE =
   'Agent registration, deregistration, execution history, and live registry events are not exposed by the current Data Cloud launcher API.';
@@ -22,14 +28,7 @@ export const AGENT_REGISTRY_BOUNDARY_MESSAGE =
 export type AgentStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR' | 'REGISTERING' | 'DEREGISTERING';
 export type ExecutionStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'PENDING';
 
-export interface AgentCapability {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  inputSchema?: Record<string, unknown>;
-  outputSchema?: Record<string, unknown>;
-}
+export type AgentCapability = BackendAgentCapability;
 
 export interface AgentDefinition {
   agentId: string;
@@ -91,21 +90,6 @@ export interface RegistryEvent {
   payload: Record<string, unknown>;
 }
 
-interface AgentCatalogEntry {
-  id?: string;
-  agentId?: string;
-  name?: string;
-  description?: string;
-  version?: string;
-  tenantId?: string;
-  status?: string;
-  capabilities?: AgentCapability[];
-  registeredAt?: string;
-  updatedAt?: string;
-  endpoint?: string;
-  metadata?: Record<string, unknown>;
-}
-
 function normalizeAgentStatus(status?: string): AgentStatus {
   switch (status) {
     case 'ACTIVE':
@@ -153,13 +137,15 @@ export class AgentRegistryService {
 
   /** List all registered agents for a tenant */
   async listAgents(params: AgentListParams = {}): Promise<AgentDefinition[]> {
-    const entries = await apiClient.get<AgentCatalogEntry[]>('/agents/catalog', { params });
+    const rawEntries = await apiClient.get<AgentCatalogEntry[]>('/agents/catalog', { params });
+    const entries = AgentCatalogListSchema.parse(rawEntries);
     return entries.map(mapCatalogEntry);
   }
 
   /** Get a specific agent by ID */
   async getAgent(agentId: string): Promise<AgentDefinition> {
-    const entry = await apiClient.get<AgentCatalogEntry>(`/agents/catalog/${agentId}`);
+    const rawEntry = await apiClient.get<AgentCatalogEntry>(`/agents/catalog/${agentId}`);
+    const entry = AgentCatalogEntrySchema.parse(rawEntry);
     return mapCatalogEntry(entry);
   }
 

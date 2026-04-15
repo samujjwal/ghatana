@@ -189,6 +189,22 @@ export const PipelineListResponseSchema = z.object({
 
 export const PipelineMutationRequestSchema = z.record(z.string(), z.unknown());
 
+export const PipelineOptimisationHintSchema = z.object({
+  type: z.enum(['redundancy', 'parallelisation', 'error_handling', 'data_quality', 'performance', 'cost']),
+  title: z.string(),
+  description: z.string(),
+  confidence: z.number(),
+  impact: z.enum(['high', 'medium', 'low']),
+  fallback: z.boolean(),
+});
+
+export const PipelineOptimisationHintsResponseSchema = z.object({
+  pipelineId: z.string(),
+  hints: z.array(PipelineOptimisationHintSchema),
+  generatedAt: z.string(),
+  modelVersion: z.string().optional(),
+});
+
 export const WorkflowSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -374,6 +390,60 @@ export const CapabilityRegistryDataSchema = z.object({
 });
 
 export const CapabilityRegistryEnvelopeSchema = apiEnvelopeSchema(CapabilityRegistryDataSchema);
+
+export const PiiFieldRegistryDataSchema = z.object({
+  globalFields: z.array(z.string()),
+  tenantFields: z.array(z.string()),
+  effectiveCount: z.number(),
+});
+
+export const PiiFieldRegistryEnvelopeSchema = apiEnvelopeSchema(PiiFieldRegistryDataSchema);
+
+export const ComplianceSummaryDataSchema = z.object({
+  tenantId: z.string(),
+  collectionsTotal: z.number(),
+  collectionsClassified: z.number(),
+  collectionsUnclassified: z.number(),
+  piiFieldsRegistered: z.number(),
+  legalHoldsActive: z.number(),
+  retentionExpirationsIn30Days: z.number(),
+  lastAuditAt: z.string(),
+  auditEventsIn30Days: z.number(),
+  authFailuresIn30Days: z.number(),
+  redactionsIn30Days: z.number(),
+  purgesIn30Days: z.number(),
+  recentAuditEvents: z.array(z.record(z.string(), z.unknown())),
+  complianceStatus: z.enum(['COMPLIANT', 'NEEDS_CLASSIFICATION', 'REVIEW_REQUIRED']),
+  generatedAt: z.string(),
+});
+
+export const ComplianceSummaryEnvelopeSchema = apiEnvelopeSchema(ComplianceSummaryDataSchema);
+
+export const AgentCapabilitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  version: z.string(),
+  inputSchema: z.record(z.string(), z.unknown()).optional(),
+  outputSchema: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const AgentCatalogEntrySchema = z.object({
+  id: z.string().optional(),
+  agentId: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  version: z.string().optional(),
+  tenantId: z.string().optional(),
+  status: z.string().optional(),
+  capabilities: z.array(AgentCapabilitySchema).optional(),
+  registeredAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  endpoint: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const AgentCatalogListSchema = z.array(AgentCatalogEntrySchema);
 
 export const VoiceIntentCatalogEntrySchema = z.object({
   name: z.string(),
@@ -568,6 +638,146 @@ export const SearchResultSchema = z.object({
   score: z.number(),
   highlights: z.record(z.string(), z.array(z.string())).optional(),
   data: z.record(z.string(), z.unknown()),
+});
+
+export const SimilarEntityMatchSchema = z.object({
+  id: z.string(),
+  collection: z.string(),
+  score: z.number(),
+  data: z.record(z.string(), z.unknown()),
+});
+
+export const SimilarEntitiesResponseSchema = z.object({
+  collection: z.string(),
+  entityId: z.string(),
+  matches: z.array(SimilarEntityMatchSchema),
+  count: z.number(),
+  requestId: z.string(),
+});
+
+export const CollectionRagRequestSchema = z.object({
+  question: z.string().min(1),
+  k: z.number().int().positive().optional(),
+});
+
+export const CollectionRagContextItemSchema = z.object({
+  id: z.string(),
+  score: z.number(),
+  data: z.record(z.string(), z.unknown()),
+  excerpt: z.string(),
+});
+
+export const CollectionRagResponseSchema = z.object({
+  collection: z.string(),
+  question: z.string(),
+  answer: z.string(),
+  context: z.array(CollectionRagContextItemSchema),
+  requestId: z.string(),
+});
+
+export const AnomalyQueryItemSchema = z.object({
+  eventId: z.string(),
+  eventType: z.string(),
+  timestamp: z.string(),
+  collection: z.string(),
+  tenantId: z.string(),
+  anomalyPayload: z.string(),
+});
+
+export const AnomalyQueryResponseSchema = z.object({
+  tenantId: z.string(),
+  collection: z.string().nullable().optional(),
+  since: z.string(),
+  count: z.number(),
+  anomalies: z.array(AnomalyQueryItemSchema),
+});
+
+export const DataProductSchemaFieldSchema = z.object({
+  name: z.string(),
+  types: z.array(z.string()),
+});
+
+export const DataProductSchemaInfoSchema = z.object({
+  fields: z.array(DataProductSchemaFieldSchema),
+  sampleCount: z.number(),
+});
+
+export const DataProductAccessSchema = z.object({
+  visibility: z.string(),
+  allowedSubscribers: z.array(z.string()),
+});
+
+export const DataProductSlaSchema = z.object({
+  freshnessSeconds: z.number(),
+  completenessTarget: z.number(),
+  accuracyTarget: z.number(),
+});
+
+export const DataProductQualitySchema = z.object({
+  completeness: z.number(),
+  freshnessLagSeconds: z.number(),
+  sampleSize: z.number(),
+  measuredAt: z.string(),
+});
+
+export const DataProductLineageSummarySchema = z.object({
+  upstream: z.array(z.string()),
+  downstream: z.array(z.string()),
+  impactLevel: z.string(),
+});
+
+export const DataProductDescriptorSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  name: z.string(),
+  collection: z.string(),
+  description: z.string(),
+  publishedAt: z.string(),
+  schema: DataProductSchemaInfoSchema,
+  governance: z.record(z.string(), z.unknown()),
+  access: DataProductAccessSchema,
+  sla: DataProductSlaSchema,
+  quality: DataProductQualitySchema,
+  qualityStatus: z.string(),
+  lineage: DataProductLineageSummarySchema,
+});
+
+export const PublishDataProductRequestSchema = z.object({
+  productId: z.string().optional(),
+  collection: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  governance: z.record(z.string(), z.unknown()).optional(),
+  access: DataProductAccessSchema.optional(),
+  sla: DataProductSlaSchema.optional(),
+});
+
+export const PublishDataProductResponseSchema = z.object({
+  productId: z.string(),
+  collection: z.string(),
+  name: z.string(),
+  descriptor: DataProductDescriptorSchema,
+  requestId: z.string(),
+  publishedAt: z.string(),
+});
+
+export const DataProductListResponseSchema = z.object({
+  items: z.array(DataProductDescriptorSchema),
+  count: z.number(),
+  requestId: z.string(),
+  timestamp: z.string(),
+});
+
+export const DataProductSubscriptionRequestSchema = z.object({
+  consumerId: z.string().optional(),
+});
+
+export const DataProductSubscriptionResponseSchema = z.object({
+  subscriptionId: z.string(),
+  productId: z.string(),
+  consumerId: z.string(),
+  status: z.string(),
+  requestId: z.string(),
 });
 
 export const LineageNodeSchema = z.object({
@@ -789,6 +999,24 @@ export const AutonomyStateResponseSchema = z.object({
   timestamp: z.string(),
 });
 
+export const AutonomyLevelOverrideRequestSchema = z.object({
+  level: z.enum(['SUGGEST', 'CONFIRM', 'NOTIFY', 'AUTONOMOUS']),
+  reason: z.string().min(1),
+});
+
+export const AutonomyLevelOverrideResponseSchema = z.object({
+  globalLevel: z.string(),
+  affectedDomains: z.number(),
+  timestamp: z.string(),
+  reason: z.string(),
+});
+
+export const AutonomyLevelStatusSchema = z.object({
+  globalOverride: z.string(),
+  shutoffActive: z.boolean(),
+  domainCount: z.number(),
+});
+
 // ---------------------------------------------------------------------------
 // Brain
 // ---------------------------------------------------------------------------
@@ -898,6 +1126,15 @@ export const LearningLastResultSchema = z.object({
   ranAt: z.string().optional(),
 });
 
+export const LearningSignalSchema = z.object({
+  id: z.string(),
+  timestamp: z.string(),
+  signalType: z.string(),
+  impact: z.number(),
+  status: z.enum(['PENDING', 'PROCESSED', 'APPLIED']),
+  affectedComponents: z.array(z.string()),
+});
+
 export const LearningStatusResponseSchema = z.object({
   running: z.boolean(),
   lastRunTime: z.string(),
@@ -996,6 +1233,8 @@ export type PipelineEdge = z.infer<typeof PipelineEdgeSchema>;
 export type Pipeline = z.infer<typeof PipelineSchema>;
 export type PipelineListResponse = z.infer<typeof PipelineListResponseSchema>;
 export type PipelineMutationRequest = z.infer<typeof PipelineMutationRequestSchema>;
+export type PipelineOptimisationHint = z.infer<typeof PipelineOptimisationHintSchema>;
+export type PipelineOptimisationHintsResponse = z.infer<typeof PipelineOptimisationHintsResponseSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type PaginatedWorkflowResponse = z.infer<typeof PaginatedWorkflowResponseSchema>;
 export type Execution = z.infer<typeof ExecutionSchema>;
@@ -1016,6 +1255,13 @@ export type AiModel = z.infer<typeof AiModelSchema>;
 export type AiModelList = z.infer<typeof AiModelListSchema>;
 export type CapabilityRegistryData = z.infer<typeof CapabilityRegistryDataSchema>;
 export type CapabilityRegistryEnvelope = z.infer<typeof CapabilityRegistryEnvelopeSchema>;
+export type PiiFieldRegistryData = z.infer<typeof PiiFieldRegistryDataSchema>;
+export type PiiFieldRegistryEnvelope = z.infer<typeof PiiFieldRegistryEnvelopeSchema>;
+export type ComplianceSummaryData = z.infer<typeof ComplianceSummaryDataSchema>;
+export type ComplianceSummaryEnvelope = z.infer<typeof ComplianceSummaryEnvelopeSchema>;
+export type AgentCapability = z.infer<typeof AgentCapabilitySchema>;
+export type AgentCatalogEntry = z.infer<typeof AgentCatalogEntrySchema>;
+export type AgentCatalogList = z.infer<typeof AgentCatalogListSchema>;
 export type VoiceIntentCatalogEntry = z.infer<typeof VoiceIntentCatalogEntrySchema>;
 export type VoiceIntentCatalogData = z.infer<typeof VoiceIntentCatalogDataSchema>;
 export type VoiceIntentCatalogEnvelope = z.infer<typeof VoiceIntentCatalogEnvelopeSchema>;
@@ -1040,6 +1286,25 @@ export type AnalyticsSuggestResponse = z.infer<typeof AnalyticsSuggestResponseSc
 export type AnomalyDetectionRequest = z.infer<typeof AnomalyDetectionRequestSchema>;
 export type DetectedAnomaly = z.infer<typeof DetectedAnomalySchema>;
 export type SearchResult = z.infer<typeof SearchResultSchema>;
+export type SimilarEntityMatch = z.infer<typeof SimilarEntityMatchSchema>;
+export type SimilarEntitiesResponse = z.infer<typeof SimilarEntitiesResponseSchema>;
+export type CollectionRagRequest = z.infer<typeof CollectionRagRequestSchema>;
+export type CollectionRagContextItem = z.infer<typeof CollectionRagContextItemSchema>;
+export type CollectionRagResponse = z.infer<typeof CollectionRagResponseSchema>;
+export type AnomalyQueryItem = z.infer<typeof AnomalyQueryItemSchema>;
+export type AnomalyQueryResponse = z.infer<typeof AnomalyQueryResponseSchema>;
+export type DataProductSchemaField = z.infer<typeof DataProductSchemaFieldSchema>;
+export type DataProductSchemaInfo = z.infer<typeof DataProductSchemaInfoSchema>;
+export type DataProductAccess = z.infer<typeof DataProductAccessSchema>;
+export type DataProductSla = z.infer<typeof DataProductSlaSchema>;
+export type DataProductQuality = z.infer<typeof DataProductQualitySchema>;
+export type DataProductLineageSummary = z.infer<typeof DataProductLineageSummarySchema>;
+export type DataProductDescriptor = z.infer<typeof DataProductDescriptorSchema>;
+export type PublishDataProductRequest = z.infer<typeof PublishDataProductRequestSchema>;
+export type PublishDataProductResponse = z.infer<typeof PublishDataProductResponseSchema>;
+export type DataProductListResponse = z.infer<typeof DataProductListResponseSchema>;
+export type DataProductSubscriptionRequest = z.infer<typeof DataProductSubscriptionRequestSchema>;
+export type DataProductSubscriptionResponse = z.infer<typeof DataProductSubscriptionResponseSchema>;
 export type EntityValidationViolation = z.infer<typeof EntityValidationViolationSchema>;
 export type EntityValidationResponse = z.infer<typeof EntityValidationResponseSchema>;
 export type BatchEntityValidationRequest = z.infer<typeof BatchEntityValidationRequestSchema>;
@@ -1075,6 +1340,9 @@ export type AutonomyLog = z.infer<typeof AutonomyLogSchema>;
 export type AutonomyLogsResponse = z.infer<typeof AutonomyLogsResponseSchema>;
 export type AutonomyDomainState = z.infer<typeof AutonomyDomainStateSchema>;
 export type AutonomyStateResponse = z.infer<typeof AutonomyStateResponseSchema>;
+export type AutonomyLevelOverrideRequest = z.infer<typeof AutonomyLevelOverrideRequestSchema>;
+export type AutonomyLevelOverrideResponse = z.infer<typeof AutonomyLevelOverrideResponseSchema>;
+export type AutonomyLevelStatus = z.infer<typeof AutonomyLevelStatusSchema>;
 export type BrainRuntimeStats = z.infer<typeof BrainRuntimeStatsSchema>;
 export type BrainWorkspaceStatus = z.infer<typeof BrainWorkspaceStatusSchema>;
 export type BrainAttentionThresholds = z.infer<typeof BrainAttentionThresholdsSchema>;
@@ -1086,6 +1354,7 @@ export type BrainPatternMatch = z.infer<typeof BrainPatternMatchSchema>;
 export type BrainPatternMatchResponse = z.infer<typeof BrainPatternMatchResponseSchema>;
 export type BrainSalienceResponse = z.infer<typeof BrainSalienceResponseSchema>;
 export type LearningLastResult = z.infer<typeof LearningLastResultSchema>;
+export type LearningSignal = z.infer<typeof LearningSignalSchema>;
 export type LearningStatusResponse = z.infer<typeof LearningStatusResponseSchema>;
 export type CreateStorageProfileRequest = z.infer<typeof CreateStorageProfileRequestSchema>;
 export type UpdateStorageProfileRequest = z.infer<typeof UpdateStorageProfileRequestSchema>;

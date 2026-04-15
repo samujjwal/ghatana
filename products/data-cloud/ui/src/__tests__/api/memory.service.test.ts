@@ -63,6 +63,10 @@ describe('memoryService', () => {
 
   it('returns root memory items from the list envelope', async () => {
     mockApiClient.get.mockResolvedValue({
+      agentId: 'root',
+      tenantId: 'tenant-a',
+      type: 'all',
+      query: '',
       items: [
         {
           id: 'mem-2',
@@ -77,6 +81,7 @@ describe('memoryService', () => {
         },
       ],
       total: 1,
+      timestamp: '2026-04-14T12:06:00Z',
     });
 
     const items = await memoryService.listMemoryItems({ tenantId: 'tenant-a' });
@@ -87,12 +92,19 @@ describe('memoryService', () => {
 
   it('unwraps agent summary counts from the canonical /memory/:agentId route', async () => {
     mockApiClient.get.mockResolvedValue({
+      agentId: 'agent-9',
+      tenantId: 'tenant-a',
+      total: 7,
+      items: [],
+      contextWindowSize: 12,
       byType: {
         episodic: 2,
         semantic: 1,
         procedural: 0,
         preference: 4,
+        other: 0,
       },
+      timestamp: '2026-04-14T12:08:00Z',
     });
 
     const summary = await memoryService.getAgentMemorySummary('agent-9', 'tenant-a');
@@ -103,6 +115,9 @@ describe('memoryService', () => {
 
   it('lists tier-specific memory items when agentId and type are both provided', async () => {
     mockApiClient.get.mockResolvedValue({
+      agentId: 'agent-1',
+      tenantId: 'tenant-a',
+      tier: 'procedural',
       items: [
         {
           id: 'mem-3',
@@ -117,6 +132,9 @@ describe('memoryService', () => {
         },
       ],
       count: 1,
+      offset: 0,
+      limit: 25,
+      timestamp: '2026-04-14T12:10:30Z',
     });
 
     const items = await memoryService.listMemoryItems({
@@ -134,6 +152,10 @@ describe('memoryService', () => {
 
   it('lists agent-root memory items when only agentId is provided', async () => {
     mockApiClient.get.mockResolvedValue({
+      agentId: 'agent-2',
+      tenantId: 'tenant-a',
+      type: 'all',
+      query: '',
       items: [
         {
           id: 'mem-4',
@@ -148,6 +170,7 @@ describe('memoryService', () => {
         },
       ],
       total: 1,
+      timestamp: '2026-04-14T12:11:30Z',
     });
 
     const items = await memoryService.listMemoryItems({ agentId: 'agent-2', tenantId: 'tenant-a' });
@@ -192,10 +215,12 @@ describe('memoryService', () => {
       intervalMinutes: 60,
       pendingReviews: 0,
       lastResult: {
+        status: 'NOT_STARTED',
         ranAt: '2026-04-14T14:00:00Z',
         recordsAnalyzed: 0,
         patternsDiscovered: 0,
       },
+      timestamp: '2026-04-14T14:00:00Z',
     });
 
     const status = await memoryService.getConsolidationStatus();

@@ -10,6 +10,16 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import {
+  AgentMemorySummaryResponseSchema,
+  LearningStatusResponseSchema,
+  MemoryRootListResponseSchema,
+  MemorySearchRequestSchema,
+  MemorySearchResponseSchema,
+  MemoryTierResponseSchema,
+  type LearningStatusResponse,
+  type MemoryItem as BackendMemoryItem,
+} from '../contracts/schemas';
 
 // =============================================================================
 // Types
@@ -17,18 +27,7 @@ import { apiClient } from '../lib/api/client';
 
 export type MemoryType = 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL' | 'PREFERENCE';
 
-export interface MemoryItem {
-  id: string;
-  tenantId: string;
-  agentId: string;
-  type: MemoryType;
-  content: string;
-  tags: string[];
-  salience: number;
-  createdAt: string;
-  expiresAt?: string;
-  metadata: Record<string, unknown>;
-}
+export type MemoryItem = BackendMemoryItem;
 
 export interface MemorySearchParams {
   tenantId?: string;
@@ -43,44 +42,6 @@ export interface MemoryConsolidationStatus {
   episodesProcessed: number;
   policiesExtracted: number;
   nextScheduled?: string;
-}
-
-interface LearningStatusResponse {
-  running: boolean;
-  lastRunTime: string;
-  nextScheduledRun: string;
-  intervalMinutes: number;
-  pendingReviews: number;
-  lastResult?: {
-    status?: string;
-    tenantId?: string;
-    manual?: boolean;
-    durationMs?: number;
-    patternsDiscovered?: number;
-    patternsUpdated?: number;
-    recordsAnalyzed?: number;
-    ranAt?: string;
-  };
-  timestamp?: string;
-}
-
-interface MemoryListResponse {
-  items: MemoryItem[];
-  total: number;
-}
-
-interface MemoryTierResponse {
-  items: MemoryItem[];
-  count: number;
-}
-
-interface MemorySummaryResponse {
-  byType: Record<string, number>;
-}
-
-interface MemorySearchResponse {
-  results: MemoryItem[];
-  count: number;
 }
 
 // =============================================================================
@@ -107,19 +68,21 @@ export class MemoryService {
 
   /** Get memory summary (count per tier) for an agent */
   async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
-    const response = await apiClient.get<MemorySummaryResponse>(
+    const rawResponse = await apiClient.get(
       `/memory/${agentId}`,
       { params: tenantId ? { tenantId } : {} },
     );
+    const response = AgentMemorySummaryResponseSchema.parse(rawResponse);
     return response.byType;
   }
 
   /** List memory items for an agent by tier */
   async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
-    const response = await apiClient.get<MemoryTierResponse>(
+    const rawResponse = await apiClient.get(
       `/memory/${agentId}/${tier.toLowerCase()}`,
       { params },
     );
+    const response = MemoryTierResponseSchema.parse(rawResponse);
     return response.items;
   }
 
@@ -130,10 +93,12 @@ export class MemoryService {
       return this.listMemoryByTier(agentId, type, rest);
     }
     if (agentId && !type) {
-      const response = await apiClient.get<MemoryListResponse>(`/memory/${agentId}`, { params: rest });
+      const rawResponse = await apiClient.get(`/memory/${agentId}`, { params: rest });
+      const response = MemoryRootListResponseSchema.parse(rawResponse);
       return response.items;
     }
-    const response = await apiClient.get<MemoryListResponse>('/memory', { params });
+    const rawResponse = await apiClient.get('/memory', { params });
+    const response = MemoryRootListResponseSchema.parse(rawResponse);
     return response.items;
   }
 
@@ -149,20 +114,23 @@ export class MemoryService {
 
   /** Semantic search across agent memory */
   async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
-    const response = await apiClient.post<MemorySearchResponse>(
+    const request = MemorySearchRequestSchema.parse({ query });
+    const rawResponse = await apiClient.post(
       `/memory/${agentId}/search`,
-      { query },
+      request,
       { params: tenantId ? { tenantId } : {} },
     );
+    const response = MemorySearchResponseSchema.parse(rawResponse);
     return response.results;
   }
 
   /** Get consolidation status */
   async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
-    const response = await apiClient.get<LearningStatusResponse>(
+    const rawResponse = await apiClient.get(
       '/learning/status',
       { params: tenantId ? { tenantId } : {} },
     );
+    const response = LearningStatusResponseSchema.parse(rawResponse);
     return this.mapConsolidationStatus(response);
   }
 }

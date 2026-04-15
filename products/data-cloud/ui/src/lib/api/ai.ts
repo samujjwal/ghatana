@@ -14,6 +14,15 @@
  */
 
 import { apiClient, type ApiResponse } from './client';
+import {
+    AnomalyDetectionRequestSchema,
+    DetectedAnomalySchema,
+    type AnomalyDetectionRequest,
+    type DetectedAnomaly,
+    PipelineOptimisationHintsResponseSchema,
+    type PipelineOptimisationHint,
+    type PipelineOptimisationHintsResponse,
+} from '../../contracts/schemas';
 
 function withTenantParams(tenantId: string): { params: { tenantId: string } } {
     return { params: { tenantId } };
@@ -158,34 +167,6 @@ export interface LineageExplanation {
 }
 
 /**
- * Anomaly detection request
- */
-export interface AnomalyDetectionRequest {
-    collectionName: string;
-    timeRange?: {
-        start: string;
-        end: string;
-    };
-    metrics?: string[];
-}
-
-/**
- * Detected anomaly
- */
-export interface DetectedAnomaly {
-    id: string;
-    type: 'spike' | 'drop' | 'pattern_change' | 'outlier' | 'missing_data';
-    severity: 'critical' | 'warning' | 'info';
-    metric: string;
-    timestamp: string;
-    value: number;
-    expectedValue: number;
-    deviation: number;
-    description: string;
-    suggestedAction?: string;
-}
-
-/**
  * Data quality assessment
  */
 export interface DataQualityAssessment {
@@ -316,11 +297,13 @@ export async function detectAnomalies(
     tenantId: string,
     request: AnomalyDetectionRequest
 ): Promise<ApiResponse<DetectedAnomaly[]>> {
-    const data = await apiClient.post<DetectedAnomaly[]>(
+    const validatedRequest = AnomalyDetectionRequestSchema.parse(request);
+    const rawResponse = await apiClient.post<DetectedAnomaly[]>(
         `/entities/${request.collectionName}/anomalies`,
-        request,
+        validatedRequest,
         withTenantParams(tenantId),
     );
+    const data = rawResponse.map((anomaly) => DetectedAnomalySchema.parse(anomaly));
     return wrapResponse(data);
 }
 
@@ -377,36 +360,17 @@ export async function findRelatedEntities(
 // ============================================================================
 
 /**
- * A single AI-generated optimisation hint for a data pipeline / workflow.
- * Maps to the backend AiAssistHandler#handlePipelineOptimiseHint response.
- */
-export interface PipelineOptimisationHint {
-    type: 'redundancy' | 'parallelisation' | 'error_handling' | 'data_quality' | 'performance' | 'cost';
-    title: string;
-    description: string;
-    confidence: number;
-    impact: 'high' | 'medium' | 'low';
-    fallback: boolean;
-}
-
-export interface PipelineOptimisationHintsResponse {
-    pipelineId: string;
-    hints: PipelineOptimisationHint[];
-    generatedAt: string;
-    modelVersion?: string;
-}
-
-/**
  * Fetch AI optimisation hints for a specific pipeline / workflow.
  * Calls POST /api/v1/pipelines/:pipelineId/optimise-hint
  */
 export async function getPipelineOptimisationHints(
     pipelineId: string
 ): Promise<ApiResponse<PipelineOptimisationHintsResponse>> {
-    const data = await apiClient.post<PipelineOptimisationHintsResponse>(
+    const rawResponse = await apiClient.post<PipelineOptimisationHintsResponse>(
         `/pipelines/${pipelineId}/optimise-hint`,
         {}
     );
+    const data = PipelineOptimisationHintsResponseSchema.parse(rawResponse);
     return wrapResponse(data);
 }
 

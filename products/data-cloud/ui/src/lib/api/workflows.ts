@@ -15,9 +15,11 @@
 
 import { apiClient, PaginatedResponse } from './client';
 import {
+    ExecutionSchema,
     PipelineListResponseSchema,
     PipelineMutationRequestSchema,
     PipelineSchema,
+    type Execution as BackendExecution,
     type Pipeline as BackendPipeline,
     type PipelineListResponse as BackendPipelineListResponse,
     type PipelineMutationRequest,
@@ -45,6 +47,20 @@ function pipelineToWorkflow(p: BackendPipeline): Workflow {
         updatedAt: String(p.updatedAt ?? new Date().toISOString()),
         createdBy: String(p.createdBy ?? 'unknown'),
         lastExecutedAt: p.lastExecutedAt ? String(p.lastExecutedAt) : undefined,
+    };
+}
+
+function executionToWorkflowExecution(execution: BackendExecution): WorkflowExecution {
+    return {
+        id: execution.id,
+        workflowId: execution.workflowId,
+        status: execution.status,
+        startedAt: execution.startedAt,
+        completedAt: execution.completedAt,
+        duration: execution.duration,
+        nodeExecutions: [],
+        error: execution.error,
+        triggeredBy: 'manual',
     };
 }
 /**
@@ -221,7 +237,8 @@ export const workflowsApi = {
      * POST /api/v1/pipelines/:pipelineId/execute
      */
     execute: async (id: string, params?: Record<string, unknown>): Promise<WorkflowExecution> => {
-        return apiClient.post<WorkflowExecution>(`/pipelines/${id}/execute`, params);
+        const rawResponse = await apiClient.post<BackendExecution>(`/pipelines/${id}/execute`, params);
+        return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
     },
 
     /**

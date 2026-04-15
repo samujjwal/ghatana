@@ -60,6 +60,8 @@ describe('qualityService contract mapping', () => {
       meta: {
         tenantId: 'tenant-a',
         requestId: 'req-1',
+        timestamp: '2026-04-15T07:06:00Z',
+        apiVersion: 'v1',
       },
     });
   });

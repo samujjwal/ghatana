@@ -40,6 +40,40 @@
  */
 
 import { apiClient, type ApiError } from './client';
+import { z } from 'zod';
+
+const CollectionRecordSchema = z.object({
+  id: z.string(),
+  collectionId: z.string(),
+  tenantId: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  createdBy: z.string(),
+  updatedBy: z.string(),
+  version: z.number(),
+});
+
+const ListRecordsResponseSchema = z.object({
+  items: z.array(CollectionRecordSchema),
+  total: z.number(),
+  offset: z.number(),
+  limit: z.number(),
+});
+
+const BulkCreateFailureSchema = z.object({
+  index: z.number(),
+  error: z.string(),
+});
+
+const BulkCreateResponseSchema = z.object({
+  successful: z.array(CollectionRecordSchema),
+  failed: z.array(BulkCreateFailureSchema),
+});
+
+const DeletedCountResponseSchema = z.object({
+  deleted: z.number(),
+});
 
 /**
  * Collection record type - flexible structure for any collection data.
@@ -148,13 +182,14 @@ class CollectionDataClient {
     collectionId: string,
     request: CreateRecordRequest
   ): Promise<CollectionRecord> {
-    return this.retryRequest(() =>
-      apiClient.post<CollectionRecord>(
+    return this.retryRequest(async () => {
+      const rawResponse = await apiClient.post<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
         request,
         this.getRequestConfig()
-      )
-    );
+      );
+      return CollectionRecordSchema.parse(rawResponse);
+    });
   }
 
   /**
@@ -171,12 +206,13 @@ class CollectionDataClient {
     collectionId: string,
     recordId: string
   ): Promise<CollectionRecord> {
-    return this.retryRequest(() =>
-      apiClient.get<CollectionRecord>(
+    return this.retryRequest(async () => {
+      const rawResponse = await apiClient.get<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
         this.getRequestConfig()
-      )
-    );
+      );
+      return CollectionRecordSchema.parse(rawResponse);
+    });
   }
 
   /**
@@ -193,7 +229,7 @@ class CollectionDataClient {
     collectionId: string,
     request: ListRecordsRequest = {}
   ): Promise<ListRecordsResponse> {
-    return this.retryRequest(() => {
+    return this.retryRequest(async () => {
       const params = new URLSearchParams();
 
       if (request.offset !== undefined) params.append('offset', String(request.offset));
@@ -202,10 +238,11 @@ class CollectionDataClient {
       if (request.filter) params.append('filter', JSON.stringify(request.filter));
       if (request.sort) params.append('sort', JSON.stringify(request.sort));
 
-      return apiClient.get<ListRecordsResponse>(
+      const rawResponse = await apiClient.get<ListRecordsResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records`,
         { ...this.getRequestConfig(), params: Object.fromEntries(params) }
       );
+      return ListRecordsResponseSchema.parse(rawResponse);
     });
   }
 
@@ -225,13 +262,14 @@ class CollectionDataClient {
     recordId: string,
     request: UpdateRecordRequest
   ): Promise<CollectionRecord> {
-    return this.retryRequest(() =>
-      apiClient.put<CollectionRecord>(
+    return this.retryRequest(async () => {
+      const rawResponse = await apiClient.put<CollectionRecord>(
         `/tenants/${tenantId}/collections/${collectionId}/records/${recordId}`,
         request,
         this.getRequestConfig()
-      )
-    );
+      );
+      return CollectionRecordSchema.parse(rawResponse);
+    });
   }
 
   /**
@@ -269,13 +307,14 @@ class CollectionDataClient {
     collectionId: string,
     request: BulkCreateRequest
   ): Promise<BulkCreateResponse> {
-    return this.retryRequest(() =>
-      apiClient.post<BulkCreateResponse>(
+    return this.retryRequest(async () => {
+      const rawResponse = await apiClient.post<BulkCreateResponse>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk`,
         request,
         this.getRequestConfig()
-      )
-    );
+      );
+      return BulkCreateResponseSchema.parse(rawResponse);
+    });
   }
 
   /**
@@ -293,11 +332,12 @@ class CollectionDataClient {
     recordIds: string[]
   ): Promise<number> {
     return this.retryRequest(async () => {
-      const result = await apiClient.post<{ deleted: number }>(
+      const rawResult = await apiClient.post<{ deleted: number }>(
         `/tenants/${tenantId}/collections/${collectionId}/records/bulk-delete`,
         { ids: recordIds },
         this.getRequestConfig()
       );
+      const result = DeletedCountResponseSchema.parse(rawResult);
       return result.deleted;
     });
   }

@@ -14,6 +14,10 @@ import type {
   CollectionCostReport,
   MigrateCollectionResult as SharedMigrateCollectionResult,
 } from '../contracts/schemas';
+import {
+  CollectionCostReportSchema,
+  MigrateCollectionResultSchema,
+} from '../contracts/schemas';
 
 export interface CostBreakdown {
   total: number;
@@ -88,7 +92,8 @@ async function getCollectionReports(): Promise<Array<{ collection: Collection; r
   const reports = await Promise.all(
     collectionsPage.items.map(async (collection) => {
       try {
-        const report = await apiClient.get<CollectionCostReport>(`/collections/${collection.id}/cost-report`);
+        const rawReport = await apiClient.get<CollectionCostReport>(`/collections/${collection.id}/cost-report`);
+        const report = CollectionCostReportSchema.parse(rawReport);
         return { collection, report };
       } catch {
         return null;
@@ -255,9 +260,10 @@ export async function migrateCollection(
   collectionId: string,
   targetTier: MigrationTargetTier,
 ): Promise<MigrateCollectionResult> {
-  return apiClient.post<MigrateCollectionResult>(
+  const rawResponse = await apiClient.post<MigrateCollectionResult>(
     `/collections/${collectionId}/migrate`,
     {},
     { params: { targetTier } },
   );
+  return MigrateCollectionResultSchema.parse(rawResponse);
 }

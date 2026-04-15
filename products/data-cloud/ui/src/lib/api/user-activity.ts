@@ -10,6 +10,38 @@
  */
 
 import { apiClient } from './client';
+import { z } from 'zod';
+
+const UserActivityItemSchema = z.object({
+  id: z.string(),
+  action: z.string(),
+  target: z.string(),
+  timestamp: z.string(),
+  type: z.enum(['create', 'update', 'delete', 'query', 'alert']),
+  resourceType: z.string().optional(),
+  resourceId: z.string().optional(),
+});
+
+const ContinueWorkingItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['collection', 'workflow', 'query', 'dashboard']),
+  lastAccessed: z.string(),
+  path: z.string(),
+});
+
+const RecentActivityResponseSchema = z.object({
+  activities: z.array(UserActivityItemSchema),
+  continueWorking: z.array(ContinueWorkingItemSchema),
+});
+
+const LogActivityRequestSchema = z.object({
+  action: z.string(),
+  target: z.string(),
+  type: z.enum(['create', 'update', 'delete', 'query', 'alert']),
+  resourceType: z.string().optional(),
+  resourceId: z.string().optional(),
+});
 
 /**
  * User activity item
@@ -47,7 +79,8 @@ export interface RecentActivityResponse {
  * Get recent user activity
  */
 export async function getRecentActivity(): Promise<RecentActivityResponse> {
-  return apiClient.get<RecentActivityResponse>('/user-activity/recent');
+  const rawResponse = await apiClient.get<RecentActivityResponse>('/user-activity/recent');
+  return RecentActivityResponseSchema.parse(rawResponse);
 }
 
 /**
@@ -60,5 +93,6 @@ export async function logActivity(data: {
   resourceType?: string;
   resourceId?: string;
 }): Promise<void> {
-  await apiClient.post('/user-activity/log', data);
+  const request = LogActivityRequestSchema.parse(data);
+  await apiClient.post('/user-activity/log', request);
 }
