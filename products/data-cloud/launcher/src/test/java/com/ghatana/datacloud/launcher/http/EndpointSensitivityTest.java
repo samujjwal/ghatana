@@ -76,6 +76,7 @@ class EndpointSensitivityTest {
             "/api/v1/entities/users",
             "/api/v1/entities/users/123",
             "/api/v1/entities/users/search",
+            "/api/v1/data-products",
             "/api/v1/entities/users/export",
             // Events (read)
             "/api/v1/events",
@@ -127,6 +128,10 @@ class EndpointSensitivityTest {
             "POST, /api/v1/entities/users",
             "POST, /api/v1/entities/users/batch",
             "POST, /api/v1/entities/users/anomalies",
+            "GET,  /api/v1/entities/users/similar",
+            "POST, /api/v1/context/users/rag",
+            "POST, /api/v1/data-products",
+            "POST, /api/v1/data-products/product-123/subscribe",
             // Events
             "POST, /api/v1/events",
             // Pipeline mutations (non-DELETE)
@@ -135,8 +140,10 @@ class EndpointSensitivityTest {
             // Checkpoint mutations (non-DELETE)
             "POST, /api/v1/checkpoints",
             // Memory — GET is SENSITIVE (personal data)
+            "GET,  /api/v1/memory",
             "GET,  /api/v1/memory/agent-001",
             "GET,  /api/v1/memory/agent-001/episodic",
+            "POST, /api/v1/memory/agent-001",
             "POST, /api/v1/memory/agent-001/search",
             // Brain mutations
             "POST, /api/v1/brain/attention/elevate",

@@ -1,27 +1,33 @@
 /**
- * Stub tests for a FeaturePage (Feature Store).
+ * Boundary tests for feature-store UI coverage.
  *
- * No dedicated FeaturePage component exists in the current codebase.
- * Feature engineering visibility is part of the DataExplorer / InsightsPage area.
- * This file provides a placeholder to keep the plan's test matrix complete
- * and will need real tests when a dedicated FeaturePage component is introduced.
+ * The launcher exposes canonical feature-store endpoints, while the current UI
+ * keeps feature exploration within consolidated experiences instead of a
+ * dedicated standalone page.
  *
  * @doc.type test
- * @doc.purpose Placeholder for FeaturePage — no component yet exists
+ * @doc.purpose Assert current route boundary for feature-store UI coverage
  * @doc.layer frontend
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-describe('FeaturePage — placeholder', () => {
-    it('placeholder passes until a dedicated FeaturePage component is introduced', () => {
-        // No FeaturePage (Feature Store) component exists yet.
-        // When one is added, populate this suite with RTL tests using TestWrapper.
-        expect(true).toBe(true);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const routesSource = readFileSync(path.resolve(__dirname, '../../routes.tsx'), 'utf8');
+const canonicalOpenApi = readFileSync(path.resolve(__dirname, '../../../../api/openapi.yaml'), 'utf8');
+
+describe('FeaturePage — current route boundary', () => {
+    it('does not define a standalone feature-store page route in the current consolidated IA', () => {
+        expect(routesSource).not.toContain('FeatureStorePage');
+        expect(routesSource).not.toContain("path: 'features'");
+        expect(routesSource).toContain("path: 'data'");
     });
 
-    it('feature-engineering concepts are tracked via DataExplorer in the interim', () => {
-        // Feature exploration currently lives in DataExplorer.test.tsx and
-        // CollectionUI.test.tsx. A standalone FeaturePage will be tested here.
-        expect(true).toBe(true);
+    it('still exposes the canonical launcher feature-store endpoints for shared contract coverage', () => {
+        expect(canonicalOpenApi).toContain('/api/v1/features:');
+        expect(canonicalOpenApi).toContain('/api/v1/features/{entityId}:');
     });
 });

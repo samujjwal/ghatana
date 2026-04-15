@@ -100,7 +100,7 @@ describe('legacy API boundaries', () => {
   });
 
   it('uses canonical validation and search routes in the facade and rejects unsupported ones', async () => {
-    mockApiClient.post.mockResolvedValue({ valid: true, errors: [] });
+    mockApiClient.post.mockResolvedValue({ valid: true, violations: [] });
     await dataCloudApi.validateEntity('orders', { id: '1' });
     expect(mockApiClient.post).toHaveBeenCalledWith(
       '/entities/orders/validate',

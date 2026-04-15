@@ -79,10 +79,13 @@ describe('EventPage — EventExplorerPage', () => {
         } as unknown as EventSource);
     });
 
-    it('renders without crashing', async () => {
+    it('renders the event-explorer shell with canonical header and live-tail controls', async () => {
         render(<EventExplorerPage />, { wrapper: TestWrapper });
         await screen.findByText('AGENT_COMPLETED');
-        expect(document.body).toBeTruthy();
+
+        expect(screen.getByRole('heading', { name: 'Event Explorer' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Live Tail/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
     });
 
     it('displays canonical event entries and stats', async () => {

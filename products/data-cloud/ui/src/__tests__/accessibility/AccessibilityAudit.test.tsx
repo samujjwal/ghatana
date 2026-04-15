@@ -35,7 +35,11 @@ vi.mock('../../api/memory.service', () => ({
     memoryService: {
         listMemoryItems: vi.fn().mockResolvedValue({ items: [], total: 0 }),
         deleteMemoryItem: vi.fn(),
-        getConsolidationStatus: vi.fn().mockResolvedValue({ status: 'idle' }),
+        getConsolidationStatus: vi.fn().mockResolvedValue({
+            lastRun: '2026-04-14T12:00:00Z',
+            episodesProcessed: 0,
+            policiesExtracted: 0,
+        }),
     },
 }));
 

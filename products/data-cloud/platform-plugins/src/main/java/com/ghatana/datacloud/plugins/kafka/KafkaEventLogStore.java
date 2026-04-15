@@ -149,6 +149,10 @@ public class KafkaEventLogStore implements EventLogStore {
      *
      * @param config Kafka and store configuration
      */
+    public KafkaEventLogStore() {
+        this(defaultConfigFromEnvironment());
+    }
+
     public KafkaEventLogStore(KafkaEventLogStoreConfig config) {
         this(config, new SimpleMeterRegistry(), Executors.newVirtualThreadPerTaskExecutor());
     }
@@ -375,6 +379,49 @@ public class KafkaEventLogStore implements EventLogStore {
                 throw new RuntimeException("Kafka append failed", e);
             }
         });
+    }
+
+    private static KafkaEventLogStoreConfig defaultConfigFromEnvironment() {
+        String bootstrapServers = System.getProperty(
+            "datacloud.kafka.bootstrapServers",
+            System.getenv().getOrDefault("DATACLOUD_KAFKA_BOOTSTRAP_SERVERS", KafkaEventLogStoreConfig.defaults().bootstrapServers())
+        );
+
+        int partitions = Integer.getInteger(
+            "datacloud.kafka.partitions",
+            parseIntegerEnv("DATACLOUD_KAFKA_PARTITIONS", KafkaEventLogStoreConfig.defaults().partitions())
+        );
+        short replicationFactor = (short) Integer.getInteger(
+            "datacloud.kafka.replicationFactor",
+            parseIntegerEnv("DATACLOUD_KAFKA_REPLICATION_FACTOR", KafkaEventLogStoreConfig.defaults().replicationFactor())
+        ).intValue();
+        long readTimeoutMs = Long.getLong(
+            "datacloud.kafka.readTimeoutMs",
+            parseLongEnv("DATACLOUD_KAFKA_READ_TIMEOUT_MS", KafkaEventLogStoreConfig.defaults().readTimeoutMs())
+        );
+
+        return KafkaEventLogStoreConfig.builder()
+            .bootstrapServers(bootstrapServers)
+            .partitions(partitions)
+            .replicationFactor(replicationFactor)
+            .readTimeoutMs(readTimeoutMs)
+            .build();
+    }
+
+    private static int parseIntegerEnv(String key, int defaultValue) {
+        String raw = System.getenv(key);
+        if (raw == null || raw.isBlank()) {
+            return defaultValue;
+        }
+        return Integer.parseInt(raw.trim());
+    }
+
+    private static long parseLongEnv(String key, long defaultValue) {
+        String raw = System.getenv(key);
+        if (raw == null || raw.isBlank()) {
+            return defaultValue;
+        }
+        return Long.parseLong(raw.trim());
     }
 
     private List<EventEntry> readFromKafka(

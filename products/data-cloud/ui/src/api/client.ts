@@ -9,6 +9,16 @@
  */
 
 import { z } from 'zod';
+import {
+  AnalyticsSqlQueryResponseSchema,
+  CollectionEntityListResponseSchema,
+  CollectionEntitySchema,
+  FeatureSchema as SharedFeatureSchema,
+  type AnalyticsSqlQueryResponse,
+  type CollectionEntity as BackendCollectionEntity,
+  type CollectionEntityListResponse as BackendCollectionListResponse,
+  type Feature as SharedFeature,
+} from '../contracts/schemas';
 
 // ============================================================================
 // Schemas
@@ -18,11 +28,17 @@ const CollectionSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  schema: z.record(z.string(), z.unknown()),
+  schema: z.object({
+    fields: z.array(z.record(z.string(), z.unknown())),
+  }).passthrough(),
   tags: z.array(z.string()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   createdBy: z.string(),
+  schemaType: z.enum(['entity', 'event', 'timeseries', 'graph', 'document']).optional(),
+  status: z.enum(['active', 'draft', 'archived', 'processing']).optional(),
+  entityCount: z.number().optional(),
+  isActive: z.boolean().optional(),
 });
 
 const DatasetSchema = z.object({
@@ -58,20 +74,9 @@ const LineageGraphSchema = z.object({
 
 const QueryResultSchema = z.object({
   columns: z.array(z.string()),
-  rows: z.array(z.array(z.any())),
+  rows: z.array(z.array(z.unknown())),
   rowCount: z.number(),
   executionTime: z.number(),
-});
-
-const FeatureSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  dataType: z.string(),
-  version: z.string(),
-  tags: z.array(z.string()).optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
 });
 
 // ============================================================================
@@ -82,7 +87,7 @@ export type Collection = z.infer<typeof CollectionSchema>;
 export type Dataset = z.infer<typeof DatasetSchema>;
 export type LineageGraph = z.infer<typeof LineageGraphSchema>;
 export type QueryResult = z.infer<typeof QueryResultSchema>;
-export type Feature = z.infer<typeof FeatureSchema>;
+export type Feature = SharedFeature;
 
 export interface ApiError {
   message: string;
@@ -98,7 +103,7 @@ export interface PaginationParams {
 
 export interface SearchParams extends PaginationParams {
   query?: string;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -133,6 +138,38 @@ export class DataCloudApiClient {
    */
   clearToken(): void {
     this.token = null;
+  }
+
+  private unsupportedOperation(message: string): never {
+    throw new Error(message);
+  }
+
+  private mapCollectionEntity(entity: BackendCollectionEntity): Collection {
+    const data = entity.data;
+    return CollectionSchema.parse({
+      id: entity.id,
+      name: typeof data.name === 'string' ? data.name : entity.id,
+      description: typeof data.description === 'string' ? data.description : '',
+      schemaType: data.schemaType ?? 'entity',
+      status: data.status ?? 'draft',
+      isActive: data.isActive ?? data.status === 'active',
+      entityCount: typeof data.entityCount === 'number' ? data.entityCount : 0,
+      schema: data.schema ?? { fields: [] },
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      createdAt: entity.createdAt ?? (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()),
+      updatedAt: entity.updatedAt ?? (typeof data.updatedAt === 'string' ? data.updatedAt : new Date().toISOString()),
+      createdBy: typeof data.createdBy === 'string' ? data.createdBy : 'unknown',
+    });
+  }
+
+  private mapAnalyticsQueryResult(response: AnalyticsSqlQueryResponse): QueryResult {
+    const columns = response.rows[0] ? Object.keys(response.rows[0]) : [];
+    return QueryResultSchema.parse({
+      columns,
+      rows: response.rows.map((row) => columns.map((column) => row[column])),
+      rowCount: response.rowCount,
+      executionTime: response.executionTimeMs,
+    });
   }
 
   // ==========================================================================
@@ -206,12 +243,20 @@ export class DataCloudApiClient {
    * @doc.purpose Fetch list of data collections
    */
   async getCollections(params?: SearchParams): Promise<Collection[]> {
-    const queryString = params ? this.buildQueryString(params) : '';
-    return this.request(
-      `/api/v1/collections${queryString}`,
+    const pageSize = params?.pageSize ?? 50;
+    const page = params?.page ?? 1;
+    const offset = (page - 1) * pageSize;
+    const queryString = this.buildQueryString({
+      limit: pageSize,
+      offset,
+      ...(params?.query ? { search: params.query } : {}),
+    });
+    const response = await this.request<BackendCollectionListResponse>(
+      `/api/v1/entities/dc_collections${queryString}`,
       { method: 'GET' },
-      z.array(CollectionSchema)
+      CollectionEntityListResponseSchema,
     );
+    return response.entities.map((entity) => this.mapCollectionEntity(entity));
   }
 
   /**
@@ -219,11 +264,12 @@ export class DataCloudApiClient {
    * @doc.purpose Fetch single collection details
    */
   async getCollection(id: string): Promise<Collection> {
-    return this.request(
-      `/api/v1/collections/${id}`,
+    const entity = await this.request<BackendCollectionEntity>(
+      `/api/v1/entities/dc_collections/${id}`,
       { method: 'GET' },
-      CollectionSchema
+      CollectionEntitySchema,
     );
+    return this.mapCollectionEntity(entity);
   }
 
   /**
@@ -231,14 +277,20 @@ export class DataCloudApiClient {
    * @doc.purpose Register new data collection
    */
   async createCollection(data: Omit<Collection, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): Promise<Collection> {
-    return this.request(
-      '/api/v1/collections',
+    const saved = await this.request<{ id: string; createdAt?: string }>(
+      '/api/v1/entities/dc_collections',
       {
         method: 'POST',
         body: JSON.stringify(data),
       },
-      CollectionSchema
     );
+    return CollectionSchema.parse({
+      id: saved.id,
+      ...data,
+      createdAt: saved.createdAt ?? new Date().toISOString(),
+      updatedAt: saved.createdAt ?? new Date().toISOString(),
+      createdBy: 'unknown',
+    });
   }
 
   /**
@@ -246,14 +298,14 @@ export class DataCloudApiClient {
    * @doc.purpose Modify collection metadata
    */
   async updateCollection(id: string, data: Partial<Collection>): Promise<Collection> {
-    return this.request(
-      `/api/v1/collections/${id}`,
+    await this.request(
+      '/api/v1/entities/dc_collections',
       {
-        method: 'PUT',
-        body: JSON.stringify(data),
+        method: 'POST',
+        body: JSON.stringify({ id, ...data }),
       },
-      CollectionSchema
     );
+    return this.getCollection(id);
   }
 
   /**
@@ -261,7 +313,7 @@ export class DataCloudApiClient {
    * @doc.purpose Remove collection from catalog
    */
   async deleteCollection(id: string): Promise<void> {
-    await this.request(`/api/v1/collections/${id}`, { method: 'DELETE' });
+    await this.request(`/api/v1/entities/dc_collections/${id}`, { method: 'DELETE' });
   }
 
   // ==========================================================================
@@ -273,11 +325,10 @@ export class DataCloudApiClient {
    * @doc.purpose Fetch datasets belonging to a collection
    */
   async getDatasets(collectionId: string, params?: SearchParams): Promise<Dataset[]> {
-    const queryString = params ? this.buildQueryString(params) : '';
-    return this.request(
-      `/api/v1/collections/${collectionId}/datasets${queryString}`,
-      { method: 'GET' },
-      z.array(DatasetSchema)
+    void collectionId;
+    void params;
+    return this.unsupportedOperation(
+      'Collection-scoped dataset catalog routes are not exposed by the current Data Cloud launcher API.',
     );
   }
 
@@ -286,10 +337,10 @@ export class DataCloudApiClient {
    * @doc.purpose Fetch single dataset details
    */
   async getDataset(collectionId: string, datasetId: string): Promise<Dataset> {
-    return this.request(
-      `/api/v1/collections/${collectionId}/datasets/${datasetId}`,
-      { method: 'GET' },
-      DatasetSchema
+    void collectionId;
+    void datasetId;
+    return this.unsupportedOperation(
+      'Collection-scoped dataset detail routes are not exposed by the current Data Cloud launcher API.',
     );
   }
 
@@ -327,14 +378,15 @@ export class DataCloudApiClient {
    * @doc.purpose Run SQL query against data platform
    */
   async executeQuery(sql: string, limit?: number): Promise<QueryResult> {
-    return this.request(
-      '/api/v1/query/execute',
+    const response = await this.request<AnalyticsSqlQueryResponse>(
+      '/api/v1/analytics/query',
       {
         method: 'POST',
-        body: JSON.stringify({ sql, limit }),
+        body: JSON.stringify({ query: sql, parameters: limit != null ? { limit } : {} }),
       },
-      QueryResultSchema
+      AnalyticsSqlQueryResponseSchema,
     );
+    return this.mapAnalyticsQueryResult(response);
   }
 
   /**
@@ -342,10 +394,10 @@ export class DataCloudApiClient {
    * @doc.purpose Check SQL syntax without execution
    */
   async validateQuery(sql: string): Promise<{ valid: boolean; errors?: string[] }> {
-    return this.request('/api/v1/query/validate', {
-      method: 'POST',
-      body: JSON.stringify({ sql }),
-    });
+    void sql;
+    return this.unsupportedOperation(
+      'Standalone query validation is not exposed by the current Data Cloud launcher API.',
+    );
   }
 
   // ==========================================================================
@@ -361,7 +413,7 @@ export class DataCloudApiClient {
     return this.request(
       `/api/v1/features${queryString}`,
       { method: 'GET' },
-      z.array(FeatureSchema)
+      z.array(SharedFeatureSchema)
     );
   }
 
@@ -373,7 +425,7 @@ export class DataCloudApiClient {
     return this.request(
       `/api/v1/features/${id}`,
       { method: 'GET' },
-      FeatureSchema
+      SharedFeatureSchema
     );
   }
 
@@ -388,7 +440,7 @@ export class DataCloudApiClient {
         method: 'POST',
         body: JSON.stringify(data),
       },
-      FeatureSchema
+      SharedFeatureSchema
     );
   }
 
@@ -405,8 +457,11 @@ export class DataCloudApiClient {
     datasets: Dataset[];
     features: Feature[];
   }> {
-    const queryString = this.buildQueryString({ query, ...params });
-    return this.request(`/api/v1/search${queryString}`, { method: 'GET' });
+    void query;
+    void params;
+    return this.unsupportedOperation(
+      'Global cross-catalog search is not exposed by the current Data Cloud launcher API.',
+    );
   }
 }
 

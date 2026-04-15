@@ -6,11 +6,15 @@ import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.storage.H2SovereignEntityStore;
+import com.ghatana.datacloud.storage.H2SovereignEventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -86,32 +90,69 @@ public final class DataCloud {
         Objects.requireNonNull(config, "config required");
         Objects.requireNonNull(discoveredStore, "discoveredStore required");
 
-        return discoveredStore.orElseGet(() -> {
-            if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
-                throw new IllegalStateException(
-                    "No durable EntityStore provider found. Register an EntityStore implementation via META-INF/services."
-                );
-            }
+        if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
+            return new H2SovereignEntityStore(resolveSovereignDataDirectory(config));
+        }
+
+        if (config.profile() == DataCloudConfig.DataCloudProfile.LOCAL) {
             return new InMemoryEntityStore();
-        });
+        }
+
+        return discoveredStore.orElseThrow(() -> new IllegalStateException(
+            "No durable EntityStore provider found. Register an EntityStore implementation via META-INF/services."
+        ));
     }
 
     static EventLogStore discoverEventLogStore(DataCloudConfig config) {
-        return discoverEventLogStore(config, ServiceLoader.load(EventLogStore.class).findFirst());
+        Objects.requireNonNull(config, "config required");
+
+        if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
+            return new H2SovereignEventLogStore(resolveSovereignDataDirectory(config));
+        }
+
+        if (config.profile() == DataCloudConfig.DataCloudProfile.LOCAL) {
+            return new InMemoryEventLogStore();
+        }
+
+        return discoverEventLogStore(
+            config,
+            ServiceLoader.load(EventLogStore.class).findFirst(),
+            ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class).findFirst()
+        );
     }
 
     static EventLogStore discoverEventLogStore(DataCloudConfig config, Optional<EventLogStore> discoveredStore) {
+        return discoverEventLogStore(config, discoveredStore, Optional.empty());
+    }
+
+    static EventLogStore discoverEventLogStore(
+        DataCloudConfig config,
+        Optional<EventLogStore> discoveredStore,
+        Optional<com.ghatana.datacloud.spi.EventLogStore> legacyDiscoveredStore
+    ) {
         Objects.requireNonNull(config, "config required");
         Objects.requireNonNull(discoveredStore, "discoveredStore required");
+        Objects.requireNonNull(legacyDiscoveredStore, "legacyDiscoveredStore required");
 
-        return discoveredStore.orElseGet(() -> {
-            if (config.profile() != DataCloudConfig.DataCloudProfile.LOCAL) {
-                throw new IllegalStateException(
-                    "No durable EventLogStore provider found. Register an EventLogStore implementation via META-INF/services."
-                );
-            }
+        if (config.profile() == DataCloudConfig.DataCloudProfile.SOVEREIGN) {
+            return new H2SovereignEventLogStore(resolveSovereignDataDirectory(config));
+        }
+
+        if (config.profile() == DataCloudConfig.DataCloudProfile.LOCAL) {
             return new InMemoryEventLogStore();
-        });
+        }
+
+        if (discoveredStore.isPresent()) {
+            return discoveredStore.orElseThrow();
+        }
+
+        if (legacyDiscoveredStore.isPresent()) {
+            return EventLogStoreAdapters.toPlatformStore(legacyDiscoveredStore.orElseThrow());
+        }
+
+        return discoveredStore.orElseThrow(() -> new IllegalStateException(
+            "No durable EventLogStore provider found. Register an EventLogStore implementation via META-INF/services."
+        ));
     }
 
     private static long numericOffsetValue(Offset offset) {
@@ -136,6 +177,14 @@ public final class DataCloud {
             return entryCount;
         }
         return (int) Math.min(offsetValue, entryCount);
+    }
+
+    private static Path resolveSovereignDataDirectory(DataCloudConfig config) {
+        Object configuredDirectory = config.customConfig().get("sovereign.dataDir");
+        if (configuredDirectory instanceof String directory && !directory.isBlank()) {
+            return Paths.get(directory);
+        }
+        return Paths.get(System.getProperty("user.home"), ".ghatana", "datacloud", "sovereign");
     }
 
     // ==================== Configuration ====================
@@ -237,6 +286,7 @@ public final class DataCloud {
          */
         public enum DataCloudProfile {
             LOCAL,
+            SOVEREIGN,
             STAGING,
             PRODUCTION
         }
@@ -249,13 +299,12 @@ public final class DataCloud {
     private static class DefaultDataCloudClient implements DataCloudClient {
         private final EntityStore entityStore;
         private final EventLogStore eventLogStore;
-        private final DataCloudConfig config;
         private volatile boolean closed = false;
 
         DefaultDataCloudClient(EntityStore entityStore, EventLogStore eventLogStore, DataCloudConfig config) {
             this.entityStore = Objects.requireNonNull(entityStore, "entityStore required");
             this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
-            this.config = Objects.requireNonNull(config, "config required");
+            Objects.requireNonNull(config, "config required");
         }
 
         @Override
@@ -410,6 +459,8 @@ public final class DataCloud {
         @Override
         public void close() {
             closed = true;
+            closeIfPossible(entityStore);
+            closeIfPossible(eventLogStore);
         }
 
         @Override
@@ -428,7 +479,16 @@ public final class DataCloud {
             }
         }
 
-        @SuppressWarnings("unchecked")
+        private void closeIfPossible(Object candidate) {
+            if (candidate instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                } catch (Exception ignored) {
+                    // Best-effort cleanup on shutdown.
+                }
+            }
+        }
+
         private Event toEvent(EventLogStore.EventEntry entry) {
             ByteBuffer buf = entry.payload();
             String payloadJson = new String(buf.array(), buf.position(), buf.limit() - buf.position(),

@@ -14,7 +14,7 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { brainService } from '../api/brain.service';
+import { brainService, type BrainStats } from '../api/brain.service';
 import { costService } from '../api/cost.service';
 import { workflowsApi } from '../lib/api/workflows';
 import {
@@ -63,13 +63,6 @@ import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
 
 type TabType = 'overview' | 'brain' | 'analytics' | 'cost';
 
-interface BrainStats {
-  spotlightItemsCount: number;
-  autonomyActionsToday: number;
-  averageConfidence: number;
-  activeSubsystems: number;
-}
-
 // =============================================================================
 // TAB NAVIGATION
 // =============================================================================
@@ -117,15 +110,15 @@ function OverviewTab({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="AI Actions Today"
-          value={brainStats?.autonomyActionsToday || 0}
+          label="Records Processed"
+          value={brainStats?.totalRecordsProcessed || 0}
           icon={<Sparkles className="h-5 w-5" />}
           trend={{ value: 12, direction: 'up' }}
           color="purple"
         />
         <StatCard
-          label="System Confidence"
-          value={`${Math.round((brainStats?.averageConfidence || 0) * 100)}%`}
+          label="Active Patterns"
+          value={brainStats?.activePatterns || 0}
           icon={<Brain className="h-5 w-5" />}
           trend={{ value: 5, direction: 'up' }}
           color="blue"
@@ -156,7 +149,7 @@ function OverviewTab({
               AI Spotlight
             </h3>
             <span className="text-xs text-gray-500">
-              {brainStats?.spotlightItemsCount || 0} items
+              {brainStats?.hotTierRecords || 0} hot-tier records
             </span>
           </div>
           <div className="space-y-3">

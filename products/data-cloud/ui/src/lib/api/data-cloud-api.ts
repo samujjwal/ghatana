@@ -14,6 +14,7 @@ import { apiClient, PaginatedResponse } from './client';
 import { collectionsApi, Collection, CreateCollectionDto, UpdateCollectionDto } from './collections';
 import { workflowsApi, Workflow, WorkflowExecution, CreateWorkflowDto, UpdateWorkflowDto } from './workflows';
 import { collectionDataClient, CollectionRecord, ListRecordsResponse } from './collection-data-client';
+import type { EntityValidationResponse, SearchResult } from '../../contracts/schemas';
 
 /**
  * API Response wrapper for backward compatibility with mock client
@@ -52,17 +53,6 @@ export interface Execution {
   input?: Record<string, unknown>;
   output?: Record<string, unknown>;
   error?: string;
-}
-
-/**
- * Search result type
- */
-export interface SearchResult {
-  entityId: string;
-  collectionId: string;
-  score: number;
-  highlights?: Record<string, string[]>;
-  data: Record<string, unknown>;
 }
 
 /**
@@ -494,9 +484,9 @@ class DataCloudApiClient {
   async validateEntity(
     collectionId: string,
     data: Record<string, unknown>
-  ): Promise<ApiResponse<{ valid: boolean; errors: string[] }>> {
+  ): Promise<ApiResponse<EntityValidationResponse>> {
     try {
-      const result = await apiClient.post<{ valid: boolean; errors: string[] }>(
+      const result = await apiClient.post<EntityValidationResponse>(
         `/entities/${collectionId}/validate`,
         { data },
         { params: { tenantId: this.tenantId } }

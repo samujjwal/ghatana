@@ -9,15 +9,17 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
+
+const mockNavigate = vi.fn();
 
 vi.mock('react-router', async (importOriginal) => {
     const actual = await importOriginal<typeof import('react-router')>();
     return {
         ...actual,
         useParams: vi.fn(() => ({ id: 'col-123' })),
-        useNavigate: vi.fn(() => vi.fn()),
+        useNavigate: vi.fn(() => mockNavigate),
     };
 });
 
@@ -29,11 +31,35 @@ vi.mock('../../lib/api/data-cloud-api', () => ({
 }));
 
 vi.mock('../../features/collection/components/CollectionForm', () => ({
-    CollectionForm: ({ onSubmit }: { onSubmit?: (data: unknown) => void }) => (
+    CollectionForm: ({
+        onSubmit,
+        onCancel,
+        initialData,
+        isSubmitting,
+    }: {
+        onSubmit?: (data: unknown) => void;
+        onCancel?: () => void;
+        initialData?: { name?: string };
+        isSubmitting?: boolean;
+    }) => (
         <form data-testid="collection-form">
+            <div data-testid="initial-name">{initialData?.name ?? 'missing'}</div>
+            <div data-testid="submit-state">{isSubmitting ? 'submitting' : 'idle'}</div>
             <input name="name" placeholder="Collection name" />
-            <button type="submit" onClick={() => onSubmit?.({ name: 'Updated Name' })}>
+            <button
+                type="submit"
+                onClick={() =>
+                    onSubmit?.({
+                        name: 'Updated Name',
+                        description: 'Initial description',
+                        schema: { fields: [{ name: 'name', type: 'STRING' }] },
+                    })
+                }
+            >
                 Save
+            </button>
+            <button type="button" onClick={() => onCancel?.()}>
+                Cancel
             </button>
         </form>
     ),
@@ -48,21 +74,20 @@ vi.mock('sonner', () => ({
 
 import { dataCloudApi } from '../../lib/api/data-cloud-api';
 import { useParams } from 'react-router';
+import { toast } from 'sonner';
 import { EditCollectionPage } from '../../pages/EditCollectionPage';
 
 const mockGetCollectionById = vi.mocked(dataCloudApi.getCollectionById);
+const mockUpdateCollection = vi.mocked(dataCloudApi.updateCollection);
 const mockUseParams = vi.mocked(useParams);
+const mockToastError = vi.mocked(toast.error);
+const mockToastSuccess = vi.mocked(toast.success);
 
 describe('EditCollectionPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUseParams.mockReturnValue({ id: 'col-123' });
-    });
-
-    it('renders without crashing', () => {
-        mockGetCollectionById.mockResolvedValue({ data: { id: 'col-123', name: 'My Collection' } } as never);
-        render(<EditCollectionPage />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
+        mockNavigate.mockReset();
     });
 
     it('shows a loading indicator while fetching collection data', () => {
@@ -81,19 +106,19 @@ describe('EditCollectionPage', () => {
 
     it('renders the collection form after data is loaded', async () => {
         mockGetCollectionById.mockResolvedValue({
-            data: { id: 'col-123', name: 'Test Collection', description: 'A test' },
+            data: { id: 'col-123', name: 'Test Collection', description: 'A test', schema: { fields: [] } },
         } as never);
 
         render(<EditCollectionPage />, { wrapper: TestWrapper });
 
         await waitFor(() => {
-            const form = document.querySelector('[data-testid="collection-form"]');
-            expect(form).not.toBeNull();
+            expect(screen.getByRole('heading', { name: 'Edit Collection' })).toBeInTheDocument();
+            expect(screen.getByTestId('collection-form')).toBeInTheDocument();
+            expect(screen.getByTestId('initial-name')).toHaveTextContent('Test Collection');
         });
     });
 
     it('redirects to /collections when no ID is provided', async () => {
-        const mockNavigate = vi.fn();
         const { useNavigate } = await import('react-router');
         vi.mocked(useNavigate).mockReturnValue(mockNavigate);
         mockUseParams.mockReturnValue({ id: undefined });
@@ -105,6 +130,7 @@ describe('EditCollectionPage', () => {
         await waitFor(() => {
             expect(mockGetCollectionById).not.toHaveBeenCalled();
         });
+        expect(mockNavigate).not.toHaveBeenCalled();
     });
 
     it('shows error state when collection load fails', async () => {
@@ -112,24 +138,59 @@ describe('EditCollectionPage', () => {
 
         render(<EditCollectionPage />, { wrapper: TestWrapper });
 
-        await waitFor(async () => {
-            const { toast } = await import('sonner');
-            // toast.error should have been called
-            expect(vi.mocked(toast.error)).toHaveBeenCalled();
-        }).catch(() => {
-            // Acceptable — navigation may redirect before toast can be asserted
-            expect(document.body).toBeTruthy();
+        await waitFor(() => {
+            expect(mockToastError).toHaveBeenCalledWith('Failed to load collection');
+            expect(mockNavigate).toHaveBeenCalledWith('/collections');
         });
     });
 
-    it('renders page without error when collection exists', async () => {
+    it('shows a not-found state when the collection lookup resolves to null', async () => {
+        mockGetCollectionById.mockResolvedValue({ data: null } as never);
+
+        render(<EditCollectionPage />, { wrapper: TestWrapper });
+
+        expect(await screen.findByText('Collection not found')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /Back to Collections/i }));
+        expect(mockNavigate).toHaveBeenCalledWith('/collections');
+    });
+
+    it('submits canonical collection updates and navigates back to the collection detail page', async () => {
         mockGetCollectionById.mockResolvedValue({
-            data: { id: 'col-123', name: 'Existing Collection', schema: {} },
+            data: {
+                id: 'col-123',
+                name: 'Existing Collection',
+                description: 'Initial description',
+                schema: { fields: [{ id: 'field-1', name: 'name', type: 'STRING' }] },
+            },
+        } as never);
+        mockUpdateCollection.mockResolvedValue({ data: { id: 'col-123' } } as never);
+
+        render(<EditCollectionPage />, { wrapper: TestWrapper });
+
+        expect(await screen.findByTestId('collection-form')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => {
+            expect(mockUpdateCollection).toHaveBeenCalledWith('col-123', {
+                name: 'Updated Name',
+                description: 'Initial description',
+                schema: { fields: [{ id: 'field-1', name: 'name', type: 'STRING' }] },
+            });
+            expect(mockToastSuccess).toHaveBeenCalledWith('Collection updated successfully');
+            expect(mockNavigate).toHaveBeenCalledWith('/collections/col-123');
+        });
+    });
+
+    it('uses the cancel action to navigate back to the collection detail page', async () => {
+        mockGetCollectionById.mockResolvedValue({
+            data: { id: 'col-123', name: 'Existing Collection', description: 'A test', schema: { fields: [] } },
         } as never);
 
         render(<EditCollectionPage />, { wrapper: TestWrapper });
 
-        // Just verifies no JS error was thrown
-        expect(document.body).toBeTruthy();
+        expect(await screen.findByTestId('collection-form')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+        expect(mockNavigate).toHaveBeenCalledWith('/collections/col-123');
     });
 });

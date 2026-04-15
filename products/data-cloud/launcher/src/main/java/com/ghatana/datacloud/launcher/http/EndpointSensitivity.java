@@ -115,6 +115,7 @@ public enum EndpointSensitivity {
         "/api/v1/pipelines",
         "/api/v1/checkpoints",
         "/api/v1/analytics/",
+        "/api/v1/data-products",
         "/api/v1/reports",            // POST (create report) and list operations
         "/api/v1/brain/",
         "/api/v1/memory/",
@@ -172,10 +173,15 @@ public enum EndpointSensitivity {
             return CRITICAL;
         }
 
-        // ── 4. Authenticated reads: most GETs are INTERNAL; memory is SENSITIVE ─
+        // ── 4. AI/semantic inference endpoints are always SENSITIVE ───────────
+        if (path.contains("/similar") || path.contains("/rag")) {
+            return SENSITIVE;
+        }
+
+        // ── 5. Authenticated reads: most GETs are INTERNAL; memory is SENSITIVE ─
         if ("GET".equalsIgnoreCase(method)) {
             // Memory tier reads expose personal-data → elevated to SENSITIVE.
-            if (path.startsWith("/api/v1/memory/")) {
+            if (path.equals("/api/v1/memory") || path.startsWith("/api/v1/memory/")) {
                 return SENSITIVE;
             }
             // All other authenticated GETs default to INTERNAL.
@@ -184,11 +190,15 @@ public enum EndpointSensitivity {
             }
         }
 
-        // ── 5. Remaining writes / mutations → SENSITIVE if prefix matches ─────
+        // ── 6. Remaining writes / mutations → SENSITIVE if prefix matches ─────
         for (String prefix : SENSITIVE_PATH_PREFIXES) {
             if (path.startsWith(prefix)) {
                 return SENSITIVE;
             }
+        }
+
+        if (path.equals("/api/v1/memory")) {
+            return SENSITIVE;
         }
 
         return INTERNAL;

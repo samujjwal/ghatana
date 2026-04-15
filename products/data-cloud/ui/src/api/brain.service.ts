@@ -10,6 +10,43 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import {
+  AutonomyLogsResponseSchema,
+  AutonomyStateResponseSchema,
+  BrainAttentionThresholdsSchema,
+  BrainAttentionThresholdUpdateResponseSchema,
+  BrainElevationResultSchema,
+  BrainPatternListResponseSchema,
+  BrainPatternMatchResponseSchema,
+  BrainRuntimeStatsSchema,
+  BrainSalienceResponseSchema,
+  BrainWorkspaceStatusSchema,
+  LearningStatusResponseSchema,
+  MemoryRootListResponseSchema,
+  type AutonomyLog as BackendAutonomyLog,
+  type AutonomyLogsResponse as BackendAutonomyLogsResponse,
+  type AutonomyStateResponse as BackendAutonomyStateResponse,
+  type BrainAttentionThresholds as BackendAttentionThresholdsResponse,
+  type BrainAttentionThresholdUpdateResponse as BackendAttentionThresholdUpdateResponse,
+  type BrainElevationResult as BackendBrainElevationResponse,
+  type BrainPattern as BackendBrainPattern,
+  type BrainPatternListResponse as BackendBrainPatternListResponse,
+  type BrainPatternMatch as BackendBrainPatternMatch,
+  type BrainPatternMatchResponse as BackendBrainPatternMatchResponse,
+  type BrainRuntimeStats as BackendBrainStatsResponse,
+  type BrainSalienceResponse as BackendBrainSalienceResponse,
+  type BrainWorkspaceStatus as BackendWorkspaceStatusResponse,
+  type LearningStatusResponse as BackendLearningStatusResponse,
+  type MemoryItem as BackendMemoryItem,
+  type MemoryRootListResponse as BackendMemoryRootListResponse,
+} from '../contracts/schemas';
+
+class UnsupportedBoundaryError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsupportedBoundaryError';
+  }
+}
 
 export interface SalienceScore {
   score: number;
@@ -92,58 +129,264 @@ export interface LearningSignal {
 }
 
 export interface BrainStats {
-  spotlightItemsCount: number;
-  autonomyActionsToday: number;
-  averageConfidence: number;
-  activeSubsystems: number;
+  totalRecordsProcessed: number;
+  activePatterns: number;
+  activeRules: number;
+  hotTierRecords: number;
+  warmTierRecords: number;
+  avgProcessingTimeMs: number;
+  uptimeSeconds: number;
+  tenantId: string;
+  timestamp: string;
+}
+
+export interface AttentionThresholds {
+  elevation: number;
+  emergency: number;
+  salience: number;
 }
 
 /**
  * Brain API Client
  */
 export class BrainService {
+  private mapAutonomyMode(level: BackendAutonomyStateResponse['state']['currentLevel']): AutonomyState['mode'] {
+    switch (level) {
+      case 'AUTONOMOUS':
+        return 'AUTONOMOUS';
+      case 'NOTIFY':
+        return 'CHATTY';
+      case 'SUGGEST':
+      case 'CONFIRM':
+      default:
+        return 'ADVISORY';
+    }
+  }
+
+  private mapAutonomyAction(log: BackendAutonomyLog): AutonomyAction {
+    const status: AutonomyAction['status'] = log.decision === 'ALLOWED'
+      ? 'SUCCESS'
+      : log.decision === 'BLOCKED'
+        ? 'FAILED'
+        : 'ADVISORY';
+
+    return {
+      id: log.id,
+      timestamp: log.timestamp,
+      domain: log.actionType,
+      action: `${log.decision} (${log.level})`,
+      status,
+      confidence: log.confidence,
+      outcome: log.level,
+      metadata: log.context ?? {},
+    };
+  }
+
+  private mapAutonomyState(domain: string, response: BackendAutonomyStateResponse): AutonomyState {
+    return {
+      domain,
+      mode: this.mapAutonomyMode(response.state.currentLevel),
+      enabled: true,
+      confidenceThreshold: response.state.confidence ?? 0.8,
+      lastAction: response.state.lastActionAt,
+    };
+  }
+
+  private mapMemoryRecall(item: BackendMemoryItem): MemoryRecall {
+    return {
+      id: item.id,
+      timestamp: item.createdAt,
+      tier: item.type,
+      similarity: item.salience,
+      content: item.content,
+      context: item.metadata,
+    };
+  }
+
+  private mapBrainStats(response: BackendBrainStatsResponse): BrainStats {
+    return {
+      totalRecordsProcessed: response.totalRecordsProcessed,
+      activePatterns: response.activePatterns,
+      activeRules: response.activeRules,
+      hotTierRecords: response.hotTierRecords,
+      warmTierRecords: response.warmTierRecords,
+      avgProcessingTimeMs: response.avgProcessingTimeMs,
+      uptimeSeconds: response.uptimeSeconds,
+      tenantId: response.tenantId,
+      timestamp: response.timestamp,
+    };
+  }
+
+  private mapAttentionThresholds(response: BackendAttentionThresholdsResponse): AttentionThresholds {
+    return {
+      elevation: response.elevationThreshold,
+      emergency: response.emergencyThreshold,
+      salience: response.salienceThreshold,
+    };
+  }
+
+  private mapStoredPattern(pattern: BackendBrainPattern): PatternMatch {
+    return {
+      patternId: pattern.id,
+      name: pattern.name,
+      confidence: pattern.confidence,
+      description: pattern.description,
+      historicalOccurrences: pattern.observations,
+      lastSeen: pattern.updatedAt,
+      metadata: {
+        type: pattern.type,
+        discoveredAt: pattern.discoveredAt,
+      },
+    };
+  }
+
+  private mapMatchedPattern(match: BackendBrainPatternMatch): PatternMatch {
+    return {
+      patternId: match.patternId ?? 'unmatched',
+      name: match.patternName ?? 'Unmatched pattern',
+      confidence: match.confidence,
+      description: match.explanation,
+      historicalOccurrences: 0,
+      metadata: {
+        score: match.score,
+      },
+    };
+  }
+
+  private mapLearningSignals(response: BackendLearningStatusResponse, limit: number): LearningSignal[] {
+    const signals: LearningSignal[] = [];
+    const lastResult = response.lastResult;
+
+    if (lastResult?.ranAt) {
+      signals.push({
+        id: `learning-run-${lastResult.ranAt}`,
+        timestamp: lastResult.ranAt,
+        signalType: lastResult.manual ? 'manual-learning-cycle' : 'scheduled-learning-cycle',
+        impact: Math.min(
+          1,
+          ((lastResult.patternsDiscovered ?? 0) + (lastResult.patternsUpdated ?? 0)) / 10,
+        ),
+        status: lastResult.status === 'COMPLETED'
+          ? 'APPLIED'
+          : response.running
+            ? 'PENDING'
+            : 'PROCESSED',
+        affectedComponents: ['brain', 'learning-bridge'],
+      });
+    }
+
+    if (response.pendingReviews > 0) {
+      signals.push({
+        id: 'learning-pending-reviews',
+        timestamp: response.timestamp ?? response.nextScheduledRun,
+        signalType: 'pending-review-queue',
+        impact: Math.min(1, response.pendingReviews / 10),
+        status: 'PENDING',
+        affectedComponents: ['brain', 'review-queue'],
+      });
+    }
+
+    return signals.slice(0, limit);
+  }
+
   // ==================== Workspace & Spotlight ====================
 
   /**
    * Fetch current GlobalWorkspace spotlight entries
    */
   async getSpotlight(): Promise<SpotlightItem[]> {
-    return apiClient.get<SpotlightItem[]>('/brain/workspace');
+    const response = await apiClient.get<BackendWorkspaceStatusResponse>('/brain/workspace');
+    BrainWorkspaceStatusSchema.parse(response);
+    void response;
+    return [];
   }
 
   /**
    * Elevate salience of an item in the workspace
    */
   async broadcastEmergency(item: Partial<SpotlightItem>): Promise<SpotlightItem> {
-    return apiClient.post<SpotlightItem>('/brain/attention/elevate', item);
+    const rawResponse = await apiClient.post<BackendBrainElevationResponse>('/brain/attention/elevate', {
+      id: item.id,
+      content: item.summary ?? '',
+      reason: item.metadata?.reason ?? 'manual-ui-elevation',
+      emergency: item.emergency ?? true,
+    });
+    const response = BrainElevationResultSchema.parse(rawResponse);
+
+    return {
+      id: response.recordId,
+      tenantId: response.tenantId,
+      summary: item.summary ?? response.reason,
+      salienceScore: {
+        score: response.elevated ? 1 : 0,
+        breakdown: {
+          recency: response.elevated ? 1 : 0,
+          novelty: 0,
+          impact: response.emergency ? 1 : 0.5,
+          urgency: response.emergency ? 1 : 0.5,
+        },
+      },
+      emergency: response.emergency,
+      priority: response.emergency ? 1 : 5,
+      category: 'manual-elevation',
+      spotlightedAt: response.timestamp,
+      expiresAt: response.timestamp,
+      accessCount: 0,
+      tags: [],
+      metadata: {
+        action: response.action,
+        reason: response.reason,
+      },
+    };
   }
 
   /**
    * Get brain statistics
    */
   async getBrainStats(): Promise<BrainStats> {
-    return apiClient.get<BrainStats>('/brain/stats');
+    const rawResponse = await apiClient.get<BackendBrainStatsResponse>('/brain/stats');
+    const response = BrainRuntimeStatsSchema.parse(rawResponse);
+    return this.mapBrainStats(response);
   }
 
   /**
    * Get current attention thresholds
    */
-  async getAttentionThresholds(): Promise<{ elevation: number; emergency: number }> {
-    return apiClient.get<{ elevation: number; emergency: number }>('/brain/attention/thresholds');
+  async getAttentionThresholds(): Promise<AttentionThresholds> {
+    const rawResponse = await apiClient.get<BackendAttentionThresholdsResponse>('/brain/attention/thresholds');
+    const response = BrainAttentionThresholdsSchema.parse(rawResponse);
+    return this.mapAttentionThresholds(response);
   }
 
   /**
    * Update attention thresholds
    */
-  async updateAttentionThresholds(thresholds: { elevation?: number; emergency?: number }): Promise<void> {
-    await apiClient.put<void>('/brain/attention/thresholds', thresholds);
+  async updateAttentionThresholds(thresholds: { elevation?: number; emergency?: number }): Promise<AttentionThresholds> {
+    const rawResponse = await apiClient.put<BackendAttentionThresholdUpdateResponse>('/brain/attention/thresholds', thresholds);
+    const response = BrainAttentionThresholdUpdateResponseSchema.parse(rawResponse);
+    void response;
+    return {
+      elevation: thresholds.elevation ?? 0,
+      emergency: thresholds.emergency ?? 0,
+      salience: 0,
+    };
   }
 
   /**
    * Get salience score for a specific item
    */
   async getSalienceScore(itemId: string): Promise<SalienceScore> {
-    return apiClient.get<SalienceScore>(`/brain/salience/${itemId}`);
+    const rawResponse = await apiClient.get<BackendBrainSalienceResponse>(`/brain/salience/${itemId}`);
+    const response = BrainSalienceResponseSchema.parse(rawResponse);
+    return {
+      score: response.salienceScore,
+      breakdown: {
+        recency: response.salienceScore,
+        novelty: response.isHigh ? response.salienceScore : 0,
+        impact: response.isEmergency ? response.salienceScore : Math.min(response.salienceScore, 0.5),
+        urgency: response.priority > 1 ? Math.min(response.salienceScore, 0.5) : response.salienceScore,
+      },
+    };
   }
 
   // ==================== Autonomy ====================
@@ -155,16 +398,20 @@ export class BrainService {
     domain?: string,
     limit: number = 50
   ): Promise<AutonomyAction[]> {
-    return apiClient.get<AutonomyAction[]>('/brain/autonomy/timeline', {
-      params: { domain, limit },
-    });
+    const rawResponse = await apiClient.get<BackendAutonomyLogsResponse>('/autonomy/logs');
+    const response = AutonomyLogsResponseSchema.parse(rawResponse);
+    const actions = response.logs.map((log) => this.mapAutonomyAction(log));
+    const filtered = domain ? actions.filter((action) => action.domain === domain) : actions;
+    return filtered.slice(0, limit);
   }
 
   /**
    * Get autonomy state for a domain
    */
   async getAutonomyState(domain: string): Promise<AutonomyState> {
-    return apiClient.get<AutonomyState>(`/brain/autonomy/state/${domain}`);
+    const rawResponse = await apiClient.get<BackendAutonomyStateResponse>(`/autonomy/domains/${domain}`);
+    const response = AutonomyStateResponseSchema.parse(rawResponse);
+    return this.mapAutonomyState(domain, response);
   }
 
   /**
@@ -174,9 +421,10 @@ export class BrainService {
     domain: string,
     policy: Partial<AutonomyState>
   ): Promise<AutonomyState> {
-    return apiClient.put<AutonomyState>(
-      `/brain/autonomy/policy/${domain}`,
-      policy
+    void domain;
+    void policy;
+    throw new UnsupportedBoundaryError(
+      'Domain-level autonomy policy updates are not exposed by the current Data Cloud HTTP API; only /api/v1/autonomy/level is writable.'
     );
   }
 
@@ -214,16 +462,25 @@ export class BrainService {
    * Recall episodic memory (delegates to memory plane)
    */
   async recallMemory(query: string, tier?: string): Promise<MemoryRecall[]> {
-    return apiClient.get<MemoryRecall[]>('/memory/recall', {
-      params: { query, tier },
+    const rawResponse = await apiClient.get<BackendMemoryRootListResponse>('/memory', {
+      params: {
+        query,
+        ...(tier ? { type: tier.toLowerCase() } : {}),
+      },
     });
+    const response = MemoryRootListResponseSchema.parse(rawResponse);
+
+    return response.items.map((item) => this.mapMemoryRecall(item));
   }
 
   /**
    * Store memory entry
    */
   async storeMemory(memory: Partial<MemoryRecall>): Promise<MemoryRecall> {
-    return apiClient.post<MemoryRecall>('/memory/store', memory);
+    void memory;
+    throw new UnsupportedBoundaryError(
+      'Brain memory store is not exposed by the current Data Cloud HTTP API without an explicit agentId-backed memory route.'
+    );
   }
 
   // ==================== Patterns ====================
@@ -232,14 +489,18 @@ export class BrainService {
    * Match patterns via ReflexEngine
    */
   async matchPatterns(data: Record<string, unknown>): Promise<PatternMatch[]> {
-    return apiClient.post<PatternMatch[]>('/brain/patterns/match', data);
+    const rawResponse = await apiClient.post<BackendBrainPatternMatchResponse>('/brain/patterns/match', data);
+    const response = BrainPatternMatchResponseSchema.parse(rawResponse);
+    return response.matches.map((match) => this.mapMatchedPattern(match));
   }
 
   /**
    * Get all patterns from PatternCatalog
    */
   async getPatterns(): Promise<PatternMatch[]> {
-    return apiClient.get<PatternMatch[]>('/brain/patterns');
+    const rawResponse = await apiClient.get<BackendBrainPatternListResponse>('/brain/patterns');
+    const response = BrainPatternListResponseSchema.parse(rawResponse);
+    return response.patterns.map((pattern) => this.mapStoredPattern(pattern));
   }
 
   // ==================== Feedback & Learning ====================
@@ -255,9 +516,11 @@ export class BrainService {
    * Get learning signals
    */
   async getLearningSignals(limit: number = 50): Promise<LearningSignal[]> {
-    return apiClient.get<LearningSignal[]>('/learning/status', {
+    const rawResponse = await apiClient.get<BackendLearningStatusResponse>('/learning/status', {
       params: { limit },
     });
+    const response = LearningStatusResponseSchema.parse(rawResponse);
+    return this.mapLearningSignals(response, limit);
   }
 }
 

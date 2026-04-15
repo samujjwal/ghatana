@@ -1,4 +1,8 @@
 import type { MetaField, MetaCollection } from '@/types/schema.types';
+import {
+  CollectionEntityListResponseSchema,
+  type CollectionEntity as BackendCollectionEntity,
+} from '../contracts/schemas';
 
 /**
  * Schema service for managing collection schemas.
@@ -45,6 +49,46 @@ class SchemaService {
   private schemaCache: Map<string, CacheEntry<MetaCollection>> = new Map();
   private fieldsCache: Map<string, CacheEntry<MetaField[]>> = new Map();
 
+  private isMetaCollection(payload: unknown): payload is MetaCollection {
+    return typeof payload === 'object' && payload !== null && 'id' in payload && 'name' in payload;
+  }
+
+  private mapEntityToSchema(tenantId: string, entity: BackendCollectionEntity): MetaCollection {
+    const fields = Array.isArray(entity.data.schema?.fields)
+      ? (entity.data.schema.fields as MetaField[])
+      : [];
+
+    return {
+      id: entity.id,
+      tenantId,
+      name: typeof entity.data.name === 'string' ? entity.data.name : entity.id,
+      description: typeof entity.data.description === 'string' ? entity.data.description : undefined,
+      fields,
+      permission: typeof entity.data.permission === 'object' && entity.data.permission !== null
+        ? (entity.data.permission as Record<string, unknown>)
+        : {},
+      applications: Array.isArray(entity.data.applications)
+        ? entity.data.applications.filter((value): value is string => typeof value === 'string')
+        : [],
+      createdAt: entity.createdAt ?? (typeof entity.data.createdAt === 'string' ? entity.data.createdAt : undefined),
+      updatedAt: entity.updatedAt ?? (typeof entity.data.updatedAt === 'string' ? entity.data.updatedAt : undefined),
+    };
+  }
+
+  private parseSchemaResponse(tenantId: string, collectionName: string, payload: unknown): MetaCollection {
+    if (this.isMetaCollection(payload)) {
+      return payload;
+    }
+
+    const response = CollectionEntityListResponseSchema.parse(payload);
+    const matchedEntity = response.entities.find((entity) => entity.data.name === collectionName);
+    if (!matchedEntity) {
+      throw new Error(`Collection '${collectionName}' not found`);
+    }
+
+    return this.mapEntityToSchema(tenantId, matchedEntity);
+  }
+
   /**
    * Gets collection schema from API or cache.
    *
@@ -70,7 +114,7 @@ class SchemaService {
     // Fetch from API
     try {
       const response = await fetch(
-        `${API_BASE}/collections/${collectionName}?tenantId=${tenantId}`,
+        `${API_BASE}/entities/dc_collections?search=${encodeURIComponent(collectionName)}&limit=50&tenantId=${encodeURIComponent(tenantId)}`,
         {
           headers: {
             'X-Tenant-ID': tenantId,
@@ -83,7 +127,7 @@ class SchemaService {
         throw new Error(`Failed to fetch schema: ${response.statusText}`);
       }
 
-      const schema = (await response.json()) as MetaCollection;
+      const schema = this.parseSchemaResponse(tenantId, collectionName, await response.json());
 
       // Cache result
       this.schemaCache.set(cacheKey, {

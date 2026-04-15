@@ -67,24 +67,12 @@ describe('SqlWorkspacePage', () => {
     });
   });
 
-  it('renders without crashing', async () => {
+  it('renders the SQL workspace shell with editor and execution controls', async () => {
     render(<SqlWorkspacePage />, { wrapper: TestWrapper });
     await screen.findByText('orders');
-    expect(document.body).toBeTruthy();
-  });
-
-  it('displays SQL editor content', async () => {
-    render(<SqlWorkspacePage />, { wrapper: TestWrapper });
-    await screen.findByText('orders');
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/sql|query|editor|workspace|run|execute/i);
-  });
-
-  it('has a run/execute button', async () => {
-    render(<SqlWorkspacePage />, { wrapper: TestWrapper });
-    await screen.findByText('orders');
-    const buttons = Array.from(document.querySelectorAll('button'));
-    expect(buttons.length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: /SQL Workspace/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Run Query/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Direct/i })).toBeInTheDocument();
   });
 
   it('loads canonical collection metadata into the schema sidebar', async () => {

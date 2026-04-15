@@ -12,6 +12,13 @@
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
+import {
+  AnalyticsSuggestResponseSchema,
+  AnalyticsSqlQueryResponseSchema,
+  type AnalyticsSuggestQuery,
+  type AnalyticsSuggestResponse,
+  type AnalyticsSqlQueryResponse,
+} from '../contracts/schemas';
 
 const API_BASE = '/api/v1';
 
@@ -19,16 +26,7 @@ function getTenantId(): string {
   return localStorage.getItem('tenantId') || 'default-tenant';
 }
 
-export interface QueryResultData {
-  queryId: string;
-  queryType: string;
-  rowCount: number;
-  columnCount: number;
-  rows: Record<string, unknown>[];
-  executionTimeMs: number;
-  optimized: boolean;
-  timestamp: string;
-}
+export type QueryResultData = AnalyticsSqlQueryResponse;
 
 /**
  * Submits a SQL query to the analytics engine.
@@ -46,19 +44,12 @@ export async function executeAnalyticsQuery(
   parameters: Record<string, unknown> = {}
 ): Promise<QueryResultData> {
   const tenantId = getTenantId();
-  const response = await fetch(`${API_BASE}/analytics/query`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
-    },
-    body: JSON.stringify({ query: sql, parameters }),
-  });
-  if (!response.ok) {
-    const msg = await response.text().catch(() => response.statusText);
-    throw new Error(msg || `HTTP ${response.status}`);
-  }
-  return response.json() as Promise<QueryResultData>;
+  const response = await apiClient.post<AnalyticsSqlQueryResponse>(
+    '/analytics/query',
+    { query: sql, parameters },
+    { headers: { 'X-Tenant-ID': tenantId } },
+  );
+  return AnalyticsSqlQueryResponseSchema.parse(response);
 }
 
 /**
@@ -76,19 +67,12 @@ export async function executeFederatedQuery(
   parameters: Record<string, unknown> = {}
 ): Promise<QueryResultData> {
   const tenantId = getTenantId();
-  const response = await fetch(`${API_BASE}/queries/federated`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-ID': tenantId,
-    },
-    body: JSON.stringify({ sql, parameters }),
-  });
-  if (!response.ok) {
-    const msg = await response.text().catch(() => response.statusText);
-    throw new Error(msg || `HTTP ${response.status}`);
-  }
-  return response.json() as Promise<QueryResultData>;
+  const response = await apiClient.post<AnalyticsSqlQueryResponse>(
+    '/queries/federated',
+    { sql, parameters },
+    { headers: { 'X-Tenant-ID': tenantId } },
+  );
+  return AnalyticsSqlQueryResponseSchema.parse(response);
 }
 
 // =============================================================================
@@ -185,37 +169,25 @@ export interface AnalyticsAiSuggestion {
   fallback: boolean;
 }
 
-/** Internal response shape expected from POST /api/v1/analytics/suggest */
-interface AnalyticsSuggestResponse {
-  data?: {
-    suggestions?: Array<{
-      type?: string;
-      title?: string;
-      description?: string;
-      reasons?: string[];
-    }>;
-  };
-  ai?: { confidence?: number; fallback?: boolean };
-}
-
 /** Fetch AI suggestions by calling POST /api/v1/analytics/suggest */
 async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiSuggestion[]> {
   try {
-    const resp = await apiClient.post<AnalyticsSuggestResponse>(
+    const response = await apiClient.post<AnalyticsSuggestResponse>(
       '/analytics/suggest',
       { context: 'anomaly_and_optimization', limit: 5 },
       { headers: { 'X-Tenant-ID': tenantId } },
     );
-    const raw = resp.data?.suggestions ?? [];
+    const resp = AnalyticsSuggestResponseSchema.parse(response);
+    const raw = resp.data?.queries ?? [];
     const isFallback = resp.ai?.fallback ?? false;
     const confidence = resp.ai?.confidence ?? 0.5;
-    return raw.map((s: { type?: string; title?: string; description?: string; reasons?: string[] }, i: number): AnalyticsAiSuggestion => ({
+    return raw.map((s: AnalyticsSuggestQuery, i: number): AnalyticsAiSuggestion => ({
       key: `analytics-${i}`,
-      type: mapSuggestionType(s.type),
-      title: s.title ?? 'Suggestion',
-      description: s.description ?? '',
+      type: mapQuerySuggestionType(s),
+      title: s.name ?? 'Suggested query',
+      description: s.explanation ?? s.template ?? '',
       confidence,
-      reasons: s.reasons ?? [],
+      reasons: s.template ? [s.template] : [],
       fallback: isFallback,
     }));
   } catch {
@@ -248,14 +220,12 @@ function deterministicAnalyticsFallback(): AnalyticsAiSuggestion[] {
   ];
 }
 
-function mapSuggestionType(raw?: string): AnalyticsAiSuggestion['type'] {
-  switch (raw?.toLowerCase()) {
-    case 'optimization': return 'optimization';
-    case 'anomaly':
-    case 'anomaly_hint': return 'anomaly';
-    case 'warning': return 'warning';
-    default: return 'insight';
-  }
+function mapQuerySuggestionType(query: AnalyticsSuggestQuery): AnalyticsAiSuggestion['type'] {
+  const text = `${query.name ?? ''} ${query.explanation ?? ''} ${query.template ?? ''}`.toLowerCase();
+  if (text.includes('anomaly') || text.includes('alert')) return 'anomaly';
+  if (text.includes('cache') || text.includes('optim') || text.includes('cost')) return 'optimization';
+  if (text.includes('warn') || text.includes('stale') || text.includes('missing')) return 'warning';
+  return 'insight';
 }
 
 /**

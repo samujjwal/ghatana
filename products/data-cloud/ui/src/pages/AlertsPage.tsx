@@ -37,8 +37,12 @@ import {
     metricCardStyles,
 } from '../lib/theme';
 import { AlertRuleForm, type AlertRule } from '../components/alerts/AlertRuleForm';
-import { alertsService } from '../api/alerts.service';
+import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service';
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
+
+function isAlertsUnsupportedError(error: unknown): boolean {
+    return error instanceof Error && error.message.includes(ALERTS_UNSUPPORTED_MESSAGE);
+}
 
 /**
  * Severity styles
@@ -253,20 +257,25 @@ export function AlertsPage(): React.ReactElement {
     const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
     const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
 
-    const { data: allAlerts = [] } = useQuery({
+    const alertsQuery = useQuery({
         queryKey: ['alerts'],
         queryFn: () => alertsService.getAlerts(),
     });
+    const allAlerts = alertsQuery.data ?? [];
 
-    const { data: alertGroups = [] } = useQuery({
+    const groupsQuery = useQuery({
         queryKey: ['alerts', 'groups'],
         queryFn: () => alertsService.getAlertGroups(),
     });
+    const alertGroups = groupsQuery.data ?? [];
 
-    const { data: suggestions = [] } = useQuery({
+    const suggestionsQuery = useQuery({
         queryKey: ['alerts', 'suggestions'],
         queryFn: () => alertsService.getResolutionSuggestions(),
     });
+    const suggestions = suggestionsQuery.data ?? [];
+
+    const alertsUnsupported = [alertsQuery.error, groupsQuery.error, suggestionsQuery.error].some(isAlertsUnsupportedError);
 
     const acknowledgeMutation = useMutation({
         mutationFn: (alertId: string) => alertsService.acknowledgeAlert(alertId),
@@ -352,15 +361,30 @@ export function AlertsPage(): React.ReactElement {
                     <p className={textStyles.muted}>Monitor and manage system alerts</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className={buttonStyles.secondary}>Configure Rules</button>
+                    <button className={buttonStyles.secondary} disabled={alertsUnsupported}>Configure Rules</button>
                     <button
                         onClick={() => setIsRuleFormOpen(true)}
+                        disabled={alertsUnsupported}
                         className={buttonStyles.primary}
                     >
                         + Create Alert Rule
                     </button>
                 </div>
             </div>
+
+            {alertsUnsupported && (
+                <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6 border-amber-300 bg-amber-50 text-amber-900')}>
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="mt-0.5 h-5 w-5" />
+                        <div>
+                            <h2 className={textStyles.h3}>Alerts Surface Not Available</h2>
+                            <p className={textStyles.muted}>
+                                The current Data Cloud launcher does not expose live alert management routes. This page remains available for future integration, but alert triage, grouping, suggestions, and rule management are currently unsupported.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

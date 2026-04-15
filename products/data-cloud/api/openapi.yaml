@@ -291,7 +291,7 @@ components:
 
     Event:
       type: object
-      required: [tenantId, eventType, payload]
+      required: [offset, type, payload, timestamp]
       properties:
         id:
           type: string
@@ -299,11 +299,801 @@ components:
           readOnly: true
         tenantId:
           type: string
-        eventType:
+        offset:
+          type: integer
+          format: int64
+          readOnly: true
+        type:
           type: string
         payload:
           type: object
           additionalProperties: true
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        source:
+          type: string
+        correlationId:
+          type: string
+        schemaVersion:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AppendEventRequest:
+      type: object
+      required: [type, payload]
+      properties:
+        type:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+        source:
+          type: string
+        correlationId:
+          type: string
+        schemaVersion:
+          type: string
+
+    AppendEventResponse:
+      type: object
+      required: [offset, type, timestamp]
+      properties:
+        offset:
+          type: integer
+          format: int64
+        type:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    EventQueryResponse:
+      type: object
+      required: [events, count, fromOffset, nextOffset, tenantId, timestamp]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        count:
+          type: integer
+          format: int64
+        fromOffset:
+          type: integer
+          format: int64
+        nextOffset:
+          type: integer
+          format: int64
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Pipeline:
+      type: object
+      required: [id, tenantId]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        edges:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        schedule:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        lastExecutedAt:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    PipelineListResponse:
+      type: object
+      required: [tenantId, pipelines, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        pipelines:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pipeline"
+        count:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    PipelineMutationRequest:
+      type: object
+      additionalProperties: true
+
+    Checkpoint:
+      type: object
+      required: [id, data, tenantId]
+      properties:
+        id:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+        tenantId:
+          type: string
+
+    CheckpointListResponse:
+      type: object
+      required: [tenantId, checkpoints, count, timestamp]
+      properties:
+        tenantId:
+          type: string
+        checkpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Checkpoint"
+        count:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    CheckpointSaveResponse:
+      type: object
+      required: [id, tenantId, savedAt]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        savedAt:
+          type: string
+          format: date-time
+
+    MemoryItem:
+      type: object
+      required: [id, tenantId, agentId, type, content, tags, salience, createdAt, metadata]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        agentId:
+          type: string
+        type:
+          type: string
+          enum: [EPISODIC, SEMANTIC, PROCEDURAL, PREFERENCE]
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        salience:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    MemoryStoreRequest:
+      type: object
+      required: [type, content]
+      properties:
+        type:
+          type: string
+          enum: [episodic, semantic, procedural, preference]
+        content:
+          type: string
+        ttlSeconds:
+          type: integer
+          minimum: 1
+        tags:
+          type: array
+          items:
+            type: string
+        salience:
+          type: number
+        metadata:
+          type: object
+          additionalProperties: true
+
+    MemoryRootListResponse:
+      type: object
+      required: [items, total, tenantId, agentId, type, query, timestamp]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemoryItem"
+        total:
+          type: integer
+          format: int64
+        tenantId:
+          type: string
+        agentId:
+          type: string
+        type:
+          type: string
+        query:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AgentMemorySummaryResponse:
+      type: object
+      required: [agentId, tenantId, total, items, contextWindowSize, byType, timestamp]
+      properties:
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        total:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemoryItem"
+        contextWindowSize:
+          type: integer
+          format: int64
+        byType:
+          type: object
+          properties:
+            episodic: { type: integer, format: int64 }
+            semantic: { type: integer, format: int64 }
+            procedural: { type: integer, format: int64 }
+            preference: { type: integer, format: int64 }
+            other: { type: integer, format: int64 }
+        timestamp:
+          type: string
+          format: date-time
+
+    MemoryTierResponse:
+      type: object
+      required: [agentId, tenantId, tier, items, count, offset, limit, timestamp]
+      properties:
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        tier:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemoryItem"
+        count:
+          type: integer
+          format: int64
+        offset:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    MemorySearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+        type:
+          type: string
+          enum: [EPISODIC, SEMANTIC, PROCEDURAL, PREFERENCE, episodic, semantic, procedural, preference]
+        limit:
+          type: integer
+          default: 100
+
+    MemorySearchResponse:
+      type: object
+      required: [agentId, tenantId, query, results, count, timestamp]
+      properties:
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemoryItem"
+        count:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    MemoryDeleteResponse:
+      type: object
+      required: [deleted, memoryId, agentId, tenantId, timestamp]
+      properties:
+        deleted:
+          type: boolean
+        memoryId:
+          type: string
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    MemoryRetainRequest:
+      type: object
+      properties:
+        retainUntilEpoch:
+          type: integer
+          format: int64
+        reason:
+          type: string
+
+    MemoryRetainResponse:
+      type: object
+      required: [retained, memoryId, agentId, tenantId, reason, timestamp]
+      properties:
+        retained:
+          type: boolean
+        memoryId:
+          type: string
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        reason:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainRuntimeStats:
+      type: object
+      required: [totalRecordsProcessed, activePatterns, activeRules, hotTierRecords, warmTierRecords, avgProcessingTimeMs, uptimeSeconds, tenantId, timestamp]
+      properties:
+        totalRecordsProcessed:
+          type: integer
+          format: int64
+        activePatterns:
+          type: integer
+          format: int64
+        activeRules:
+          type: integer
+          format: int64
+        hotTierRecords:
+          type: integer
+          format: int64
+        warmTierRecords:
+          type: integer
+          format: int64
+        avgProcessingTimeMs:
+          type: number
+        uptimeSeconds:
+          type: integer
+          format: int64
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainWorkspaceStatus:
+      type: object
+      required: [status, brainId, note, timestamp]
+      properties:
+        status:
+          type: string
+        brainId:
+          type: string
+        note:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainAttentionThresholds:
+      type: object
+      required: [elevationThreshold, emergencyThreshold, salienceThreshold, timestamp]
+      properties:
+        elevationThreshold:
+          type: number
+        emergencyThreshold:
+          type: number
+        salienceThreshold:
+          type: number
+        totalProcessed:
+          type: integer
+          format: int64
+        elevatedCount:
+          type: integer
+          format: int64
+        emergencyCount:
+          type: integer
+          format: int64
+        elevationRate:
+          type: number
+        source:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainAttentionThresholdUpdateResponse:
+      type: object
+      required: [acknowledged, note, timestamp]
+      properties:
+        acknowledged:
+          type: boolean
+        note:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainElevationResult:
+      type: object
+      required: [elevated, emergency, action, recordId, reason, tenantId, timestamp]
+      properties:
+        elevated:
+          type: boolean
+        emergency:
+          type: boolean
+        action:
+          type: string
+        recordId:
+          type: string
+        reason:
+          type: string
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainPattern:
+      type: object
+      required: [id, name, type, description, confidence, observations, discoveredAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        confidence:
+          type: number
+        observations:
+          type: integer
+          format: int64
+        discoveredAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BrainPatternListResponse:
+      type: object
+      required: [patterns, count, limit, tenantId, timestamp]
+      properties:
+        patterns:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrainPattern"
+        count:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+          format: int64
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainPatternMatch:
+      type: object
+      required: [score, confidence, explanation]
+      properties:
+        patternId:
+          type: string
+        patternName:
+          type: string
+        score:
+          type: number
+        confidence:
+          type: number
+        explanation:
+          type: string
+
+    BrainPatternMatchResponse:
+      type: object
+      required: [recordId, matches, count, tenantId, timestamp]
+      properties:
+        recordId:
+          type: string
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/BrainPatternMatch"
+        count:
+          type: integer
+          format: int64
+        tenantId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    BrainSalienceResponse:
+      type: object
+      required: [itemId, salienceScore, isHigh, isEmergency, priority, summary, tenantId, spotlightedAt, timestamp]
+      properties:
+        itemId:
+          type: string
+        salienceScore:
+          type: number
+        isHigh:
+          type: boolean
+        isEmergency:
+          type: boolean
+        priority:
+          type: integer
+          format: int64
+        summary:
+          type: string
+        tenantId:
+          type: string
+        spotlightedAt:
+          type: string
+          format: date-time
+        timestamp:
+          type: string
+          format: date-time
+
+    LearningLastResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        tenantId:
+          type: string
+        manual:
+          type: boolean
+        durationMs:
+          type: number
+        patternsDiscovered:
+          type: integer
+          format: int64
+        patternsUpdated:
+          type: integer
+          format: int64
+        recordsAnalyzed:
+          type: integer
+          format: int64
+        ranAt:
+          type: string
+          format: date-time
+
+    LearningStatusResponse:
+      type: object
+      required: [running, lastRunTime, nextScheduledRun, intervalMinutes, pendingReviews, timestamp]
+      properties:
+        running:
+          type: boolean
+        lastRunTime:
+          type: string
+        nextScheduledRun:
+          type: string
+        intervalMinutes:
+          type: integer
+          format: int64
+        pendingReviews:
+          type: integer
+          format: int64
+        lastResult:
+          $ref: "#/components/schemas/LearningLastResult"
+        timestamp:
+          type: string
+          format: date-time
+
+    AnalyticsSqlQueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          description: SQL or DSL query string.
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Optional named query parameters.
+
+    AnalyticsSqlQueryResponse:
+      type: object
+      required: [queryId, queryType, rowCount, columnCount, rows, executionTimeMs, optimized, timestamp]
+      properties:
+        queryId:
+          type: string
+        queryType:
+          type: string
+        rowCount:
+          type: integer
+          format: int64
+        columnCount:
+          type: integer
+          format: int64
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        executionTimeMs:
+          type: number
+        optimized:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+        warning:
+          type: string
+
+    AnalyticsSuggestQuery:
+      type: object
+      required: [name, template, explanation]
+      properties:
+        name:
+          type: string
+        template:
+          type: string
+        explanation:
+          type: string
+
+    AnalyticsSuggestResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [queries]
+          properties:
+            queries:
+              type: array
+              items:
+                $ref: "#/components/schemas/AnalyticsSuggestQuery"
+        ai:
+          type: object
+          properties:
+            confidence:
+              type: number
+            fallback:
+              type: boolean
+
+    LineageDagNode:
+      type: object
+      required: [id, type, name, role, metadata]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    LineageDagEdge:
+      type: object
+      required: [source, target, type]
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        type:
+          type: string
+
+    LineageDagResponse:
+      type: object
+      required: [collection, tenantId, direction, timestamp, dag, upstreamCount, downstreamCount]
+      properties:
+        collection:
+          type: string
+        tenantId:
+          type: string
+        direction:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        dag:
+          type: object
+          required: [nodes, edges]
+          properties:
+            nodes:
+              type: array
+              items:
+                $ref: "#/components/schemas/LineageDagNode"
+            edges:
+              type: array
+              items:
+                $ref: "#/components/schemas/LineageDagEdge"
+        upstreamCount:
+          type: integer
+          format: int64
+        downstreamCount:
+          type: integer
+          format: int64
+
+    LineageImpactResponse:
+      type: object
+      required: [collection, tenantId, impactLevel, affectedCount, affectedCollections, timestamp]
+      properties:
+        collection:
+          type: string
+        tenantId:
+          type: string
+        impactLevel:
+          type: string
+        affectedCount:
+          type: integer
+          format: int64
+        affectedCollections:
+          type: array
+          items:
+            type: string
         timestamp:
           type: string
           format: date-time
@@ -578,17 +1368,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: "#/components/schemas/AppendEventRequest"
       responses:
         "200":
           description: Event appended.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id: { type: string, format: uuid }
-                  offset: { type: integer, format: int64 }
+                $ref: "#/components/schemas/AppendEventResponse"
         "400": { $ref: "#/components/responses/BadRequest" }
 
     get:
@@ -598,12 +1385,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
         - $ref: "#/components/parameters/limitQuery"
-        - name: fromOffset
+        - name: from
           in: query
           schema:
             type: integer
             format: int64
-        - name: eventType
+        - name: type
           in: query
           schema:
             type: string
@@ -613,13 +1400,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Event"
-                  total: { type: integer, format: int64 }
+                $ref: "#/components/schemas/EventQueryResponse"
 
   # ── Execution metadata ─────────────────────────────────────────────────────
 
@@ -635,6 +1416,10 @@ paths:
       responses:
         "200":
           description: Paginated pipeline list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineListResponse"
 
     post:
       summary: Save a pipeline definition
@@ -647,11 +1432,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: "#/components/schemas/PipelineMutationRequest"
       responses:
         "200":
           description: Pipeline saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pipeline"
 
   /api/v1/pipelines/{pipelineId}:
     get:
@@ -664,6 +1452,10 @@ paths:
       responses:
         "200":
           description: Pipeline definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pipeline"
         "404": { $ref: "#/components/responses/NotFound" }
 
     put:
@@ -678,11 +1470,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: "#/components/schemas/PipelineMutationRequest"
       responses:
         "200":
           description: Pipeline updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pipeline"
 
     delete:
       summary: Delete a pipeline definition
@@ -709,6 +1504,10 @@ paths:
       responses:
         "200":
           description: Checkpoint list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckpointListResponse"
 
     post:
       summary: Save a checkpoint
@@ -726,6 +1525,10 @@ paths:
       responses:
         "200":
           description: Checkpoint saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckpointSaveResponse"
 
   /api/v1/checkpoints/{checkpointId}:
     get:
@@ -738,6 +1541,10 @@ paths:
       responses:
         "200":
           description: Checkpoint data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checkpoint"
         "404": { $ref: "#/components/responses/NotFound" }
 
     delete:
@@ -750,10 +1557,43 @@ paths:
       responses:
         "200":
           description: Checkpoint deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted, checkpointId, tenantId, timestamp]
+                properties:
+                  deleted: { type: boolean }
+                  checkpointId: { type: string }
+                  tenantId: { type: string }
+                  timestamp:
+                    type: string
+                    format: date-time
 
   # ── Agent memory ───────────────────────────────────────────────────────────
 
   /api/v1/memory/{agentId}:
+    post:
+      summary: Store a new memory entry for an agent
+      operationId: apiV1MemoryAgentIdPost
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryStoreRequest"
+      responses:
+        "200":
+          description: Stored memory entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryItem"
+
     get:
       summary: Get all memory entries for an agent
       operationId: apiV1MemoryAgentIdGet
@@ -764,6 +1604,38 @@ paths:
       responses:
         "200":
           description: Memory entries (all tiers).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentMemorySummaryResponse"
+
+  /api/v1/memory:
+    get:
+      summary: List memory entries across agents for a tenant
+      operationId: apiV1MemoryGet
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: agentId
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: query
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/limitQuery"
+      responses:
+        "200":
+          description: Memory entries filtered across the tenant memory plane.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryRootListResponse"
 
   /api/v1/memory/{agentId}/{tier}:
     get:
@@ -782,6 +1654,10 @@ paths:
       responses:
         "200":
           description: Memory entries for the specified tier.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryTierResponse"
 
   /api/v1/memory/{agentId}/search:
     post:
@@ -796,18 +1672,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                query:
-                  type: string
-                tier:
-                  type: string
-                limit:
-                  type: integer
-                  default: 10
+              $ref: "#/components/schemas/MemorySearchRequest"
       responses:
         "200":
           description: Matching memory entries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemorySearchResponse"
 
   /api/v1/memory/{agentId}/{memoryId}:
     delete:
@@ -825,6 +1697,10 @@ paths:
       responses:
         "200":
           description: Memory entry deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryDeleteResponse"
 
   /api/v1/memory/{agentId}/{memoryId}/retain:
     put:
@@ -839,9 +1715,19 @@ paths:
           schema:
             type: string
         - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryRetainRequest"
       responses:
         "200":
           description: Retention policy applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryRetainResponse"
 
   # ── Brain API ──────────────────────────────────────────────────────────────
 
@@ -868,7 +1754,12 @@ paths:
       operationId: apiV1BrainStatsGet
       tags: [brain]
       responses:
-        "200": { description: Brain stats. }
+        "200":
+          description: Brain stats.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainRuntimeStats"
 
   /api/v1/brain/workspace:
     get:
@@ -878,7 +1769,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Spotlight items. }
+        "200":
+          description: Workspace status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainWorkspaceStatus"
 
   /api/v1/brain/workspace/stream:
     get:
@@ -914,7 +1810,12 @@ paths:
                 reason: { type: string }
                 emergency: { type: boolean, default: false }
       responses:
-        "200": { description: Elevation result. }
+        "200":
+          description: Elevation result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainElevationResult"
         "503": { description: Brain not wired. }
 
   /api/v1/brain/attention/thresholds:
@@ -923,7 +1824,12 @@ paths:
       operationId: apiV1BrainAttentionThresholdsGet
       tags: [brain]
       responses:
-        "200": { description: Threshold configuration. }
+        "200":
+          description: Threshold configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainAttentionThresholds"
 
     put:
       summary: Update attention score thresholds
@@ -938,7 +1844,12 @@ paths:
               additionalProperties:
                 type: number
       responses:
-        "200": { description: Thresholds updated. }
+        "200":
+          description: Thresholds updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainAttentionThresholdUpdateResponse"
 
   /api/v1/brain/patterns:
     get:
@@ -948,7 +1859,12 @@ paths:
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Pattern list. }
+        "200":
+          description: Pattern list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainPatternListResponse"
 
   /api/v1/brain/patterns/match:
     post:
@@ -963,7 +1879,12 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200": { description: Pattern match result. }
+        "200":
+          description: Pattern match result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainPatternMatchResponse"
 
   /api/v1/brain/salience/{itemId}:
     get:
@@ -978,7 +1899,12 @@ paths:
             type: string
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Salience score details. }
+        "200":
+          description: Salience score details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainSalienceResponse"
 
   # ── Learning API ───────────────────────────────────────────────────────────
 
@@ -998,8 +1924,15 @@ paths:
       summary: Get learning subsystem status
       operationId: apiV1LearningStatusGet
       tags: [learning]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Learning status. }
+        "200":
+          description: Learning status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningStatusResponse"
 
   /api/v1/learning/review:
     get:
@@ -1093,24 +2026,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                query:
-                  type: string
-                  description: SQL or DSL query string.
-                params:
-                  type: object
-                  additionalProperties: true
+              $ref: "#/components/schemas/AnalyticsSqlQueryRequest"
       responses:
         "200":
-          description: Query submitted; returns queryId for polling.
+          description: Query result.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  queryId: { type: string }
-                  status: { type: string }
+                $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
         "503": { description: Analytics engine not wired. }
 
   /api/v1/analytics/query/{queryId}:
@@ -1126,7 +2049,12 @@ paths:
             type: string
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Query result or PENDING status. }
+        "200":
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
         "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/analytics/query/{queryId}/plan:
@@ -1492,7 +2420,12 @@ paths:
             schema:
               $ref: "#/components/schemas/FreeformObject"
       responses:
-        "200": { description: Suggested analytics queries with AI metadata }
+        "200":
+          description: Suggested analytics queries with AI metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSuggestResponse"
 
   /api/v1/reports:
     post:
@@ -2036,7 +2969,12 @@ paths:
             format: int64
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: Event at the requested offset. }
+        "200":
+          description: Event at the requested offset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
         "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Cost estimation and storage migration ────────────────────────────────
@@ -2069,10 +3007,69 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties: true
+              required: [sql]
+              properties:
+                sql:
+                  type: string
+                parameters:
+                  type: object
+                  additionalProperties: true
       responses:
-        "200": { description: Federated query result. }
+        "200":
+          description: Federated query result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
         "503": { description: Analytics engine not available. }
+
+  /api/v1/lineage/{collection}:
+    get:
+      summary: Get lineage graph for a collection
+      operationId: apiV1LineageCollectionGet
+      tags: [lineage]
+      parameters:
+        - name: collection
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: direction
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [UPSTREAM, DOWNSTREAM, BOTH]
+      responses:
+        "200":
+          description: Lineage graph.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineageDagResponse"
+        "501": { description: Lineage plugin not configured. }
+
+  /api/v1/lineage/{collection}/impact:
+    get:
+      summary: Get downstream impact analysis for a collection
+      operationId: apiV1LineageCollectionImpactGet
+      tags: [lineage]
+      parameters:
+        - name: collection
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Lineage impact analysis.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineageImpactResponse"
+        "501": { description: Lineage plugin not configured. }
 
   /api/v1/collections/{id}/cost-report:
     get:

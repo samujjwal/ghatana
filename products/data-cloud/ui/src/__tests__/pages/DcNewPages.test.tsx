@@ -390,9 +390,12 @@ describe('EntityBrowserPage', () => {
     expect(screen.getByText(/Select a namespace to browse entities/i)).toBeDefined();
   });
 
-  it('does not crash on render', () => {
-    const { container } = render(<EntityBrowserPage />, { wrapper: TestWrapper });
-    expect(container).toBeTruthy();
+  it('renders the entity-browser shell with search and empty-state guidance', () => {
+    render(<EntityBrowserPage />, { wrapper: TestWrapper });
+
+    expect(screen.getByText('Entity Browser')).toBeDefined();
+    expect(screen.getByLabelText('Search entities')).toBeDefined();
+    expect(screen.getByText(/Select a namespace to browse entities/i)).toBeDefined();
   });
 
   it('renders namespaces and entities from canonical collections and entity routes', async () => {
@@ -546,9 +549,15 @@ describe('DataFabricPage', () => {
     expect(screen.getByText(/COLD.*S3/i)).toBeDefined();
   });
 
-  it('does not crash when metrics load', async () => {
-    const { container } = render(<DataFabricPage />, { wrapper: TestWrapper });
-    await waitFor(() => expect(container).toBeTruthy());
+  it('renders the data-fabric shell with preview metrics summary and migration action', async () => {
+    render(<DataFabricPage />, { wrapper: TestWrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeDefined();
+      expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeDefined();
+      expect(screen.getByText(/Total throughput:/i)).toBeDefined();
+      expect(screen.getByText(/Total storage:/i)).toBeDefined();
+    });
   });
 
   it('shows flow controls', () => {

@@ -1,24 +1,148 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import { InsightsPage } from '../../pages/InsightsPage';
 
+const mockNavigate = vi.fn();
+
+const analyticsMocks = vi.hoisted(() => ({
+  useAnalyticsQuery: vi.fn(),
+  useCollectionEntityCounts: vi.fn(),
+  useAnalyticsAiSuggestions: vi.fn(),
+}));
+
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+vi.mock('../../api/brain.service', () => ({
+  brainService: {
+    getBrainStats: vi.fn().mockResolvedValue({
+      totalRecordsProcessed: 1234,
+      activePatterns: 7,
+      hotTierRecords: 55,
+    }),
+  },
+}));
+
+vi.mock('../../api/cost.service', () => ({
+  costService: {
+    getCostAnalysis: vi.fn().mockResolvedValue({ total: 2450 }),
+  },
+}));
+
+vi.mock('../../lib/api/workflows', () => ({
+  workflowsApi: {
+    list: vi.fn().mockResolvedValue({ total: 9 }),
+  },
+}));
+
+vi.mock('../../api/analytics.service', () => analyticsMocks);
+
+vi.mock('../../lib/api/data-cloud-api', () => ({
+  dataCloudApi: {
+    getCollections: vi.fn().mockResolvedValue([{ id: 'orders', name: 'orders' }]),
+  },
+}));
+
+vi.mock('../../components/layout/PageLayout', () => ({
+  PageHeader: ({ title, subtitle, actions }: { title: string; subtitle: string; actions?: React.ReactNode }) => (
+    <div>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+      {actions}
+    </div>
+  ),
+  PageContent: ({ children, aiSidebar }: { children: React.ReactNode; aiSidebar?: React.ReactNode }) => (
+    <div>
+      <div>{children}</div>
+      <aside>{aiSidebar}</aside>
+    </div>
+  ),
+  AISidebar: ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section>
+      <h2>{title}</h2>
+      {children}
+    </section>
+  ),
+  AISuggestion: ({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) => (
+    <div>
+      <span>{title}</span>
+      <span>{description}</span>
+      {actionLabel ? <button onClick={onAction}>{actionLabel}</button> : null}
+    </div>
+  ),
+  StatCard: ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div>
+      <span>{label}</span>
+      <span>{String(value)}</span>
+    </div>
+  ),
+}));
+
+vi.mock('../../components/brain/SpotlightRing', () => ({
+  SpotlightRing: () => <div>Spotlight Ring</div>,
+}));
+
+vi.mock('../../components/brain/AutonomyTimeline', () => ({
+  AutonomyTimeline: () => <div>Autonomy Timeline</div>,
+}));
+
 
 describe('InsightsPage', () => {
-  it('renders without crashing', () => {
-    render(<InsightsPage />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockNavigate.mockReset();
+    analyticsMocks.useCollectionEntityCounts.mockReturnValue({ data: [], isLoading: false });
+    analyticsMocks.useAnalyticsQuery.mockReturnValue({
+      mutate: vi.fn(),
+      data: undefined,
+      isPending: false,
+      error: null,
+      reset: vi.fn(),
+    });
+    analyticsMocks.useAnalyticsAiSuggestions.mockReturnValue({
+      data: [
+        {
+          key: 'opt-1',
+          type: 'optimization',
+          title: 'Cache repeated analytics query',
+          description: 'query hot path',
+          confidence: 0.87,
+          reasons: ['query'],
+          fallback: false,
+        },
+      ],
+      isLoading: false,
+    });
   });
 
-  it('displays insights content', () => {
+  it('renders live overview metrics from canonical services', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/insight|analytic|trend|metric|report|chart/i);
+
+    expect(await screen.findByText('Records Processed')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(within(screen.getByText('Records Processed').closest('div') as HTMLElement).getByText('1234')).toBeInTheDocument();
+      expect(within(screen.getByText('Active Patterns').closest('div') as HTMLElement).getByText('7')).toBeInTheDocument();
+      expect(within(screen.getByText('Active Pipelines').closest('div') as HTMLElement).getByText('9')).toBeInTheDocument();
+      expect(within(screen.getByText('Est. Monthly Cost').closest('div') as HTMLElement).getByText('$2,450')).toBeInTheDocument();
+    });
   });
 
-  it('renders at least one interactive element', () => {
+  it('renders AI suggestions and deep-links optimization actions', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
-    const elements = document.querySelectorAll('button, input, select');
-    expect(elements.length).toBeGreaterThanOrEqual(0);
+
+    expect(await screen.findByText('Cache repeated analytics query')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/query', {
+      state: { query: 'query hot path' },
+    });
   });
 });

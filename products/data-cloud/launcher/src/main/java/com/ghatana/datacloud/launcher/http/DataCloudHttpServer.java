@@ -4,6 +4,10 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.brain.DataCloudBrain;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.datacloud.launcher.anomaly.AnomalyDetectionTask;
+import com.ghatana.datacloud.launcher.compaction.StorageCompactionTask;
+import com.ghatana.datacloud.storage.H2SovereignEntityStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.http.*;
@@ -64,8 +68,13 @@ import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CapabilityRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
+import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
+import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
+import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
+import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
+import com.ghatana.datacloud.plugins.vector.VectorMemoryPlugin;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.launcher.http.voice.HttpWhisperSttAdapter;
@@ -226,6 +235,9 @@ public class DataCloudHttpServer {
      * via {@link #withMetricsCollector(MetricsCollector)}.
      */
     private MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop();
+    private long storageCompactionIntervalSeconds = 300L;
+    private int storageCompactionTombstoneThreshold = 25;
+    private StorageCompactionTask storageCompactionTask;
 
     // ==================== AI, Voice & Security (E3, E4, E1) ====================
 
@@ -287,6 +299,8 @@ public class DataCloudHttpServer {
     private EntityCrudHandler entityHandler;
     private EntityExportHandler exportHandler;
     private EntityAnomalyHandler anomalyHandler;
+    /** Optional event log store for durable anomaly persistence. */
+    private EventLogStore eventLogStore;
     private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
     private PipelineCheckpointHandler pipelineCheckpointHandler;
@@ -305,6 +319,10 @@ public class DataCloudHttpServer {
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
     private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
+    private DataProductHandler dataProductHandler; // P4.4.1: data products publish/discover/subscribe
+    private LineagePlugin lineagePlugin;              // P3.9.1: entity lineage tracking
+    private LineageHandler lineageHandler;           // P3.9.1: entity lineage HTTP handler
+    private SemanticSearchHandler semanticSearchHandler; // P4.5.1: semantic similarity and RAG
     private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
@@ -431,6 +449,35 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches an {@link EventLogStore} to enable durable anomaly event persistence
+     * and continuous background anomaly detection (P3.6.1).
+     *
+     * @param store the event log store; must not be {@code null}
+     * @return this server for chaining
+     */
+    public DataCloudHttpServer withEventLogStore(EventLogStore store) {
+        this.eventLogStore = store;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link LineagePlugin} to enable entity lineage tracking and visualization (P3.9.1).
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code GET /api/v1/lineage/:collection}        — full upstream/downstream DAG</li>
+     *   <li>{@code GET /api/v1/lineage/:collection/impact} — impact analysis</li>
+     * </ul>
+     *
+     * @param plugin the lineage plugin; must not be {@code null}
+     * @return this server for chaining
+     */
+    public DataCloudHttpServer withLineagePlugin(LineagePlugin plugin) {
+        this.lineagePlugin = plugin;
+        return this;
+    }
+
+    /**
      * Attaches a {@link ReportService} to enable on-demand report generation (DC-10).
      *
      * <p>Required for:
@@ -506,6 +553,12 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withMetricsCollector(MetricsCollector collector) {
         this.metricsCollector = collector;
+        return this;
+    }
+
+    public DataCloudHttpServer withStorageCompactionConfig(long intervalSeconds, int tombstoneThreshold) {
+        this.storageCompactionIntervalSeconds = intervalSeconds;
+        this.storageCompactionTombstoneThreshold = tombstoneThreshold;
         return this;
     }
 
@@ -786,13 +839,24 @@ public class DataCloudHttpServer {
         sseHandler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, httpSupport);
         if (openSearchConnector != null) sseHandler.withOpenSearchConnector(openSearchConnector);
 
+        VectorMemoryPlugin vectorMemoryPlugin = VectorMemoryPlugin.builder()
+            .dimension(128)
+            .embeddingModel("deterministic-hash")
+            .embeddingFunction(SemanticSearchHandler::embedText)
+            .build();
+        vectorMemoryPlugin.initialize(Map.of());
+
+        semanticSearchHandler = new SemanticSearchHandler(vectorMemoryPlugin, client, httpSupport, objectMapper);
+        dataProductHandler = new DataProductHandler(client, httpSupport, objectMapper, lineagePlugin);
+
         entityHandler = new EntityCrudHandler(client, httpSupport, sseHandler.broadcastFunction());
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         entityHandler.withTraceSupport(traceSpanSupport);
+        entityHandler.withSemanticSearchHandler(semanticSearchHandler);
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
-        anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport);
+        anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport, eventLogStore, objectMapper);
         validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
 
         eventHandler = new EventHandler(client, httpSupport);
@@ -863,6 +927,9 @@ public class DataCloudHttpServer {
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper);
 
+        // P3.9.1: Entity lineage tracking and visualization
+        lineageHandler = new LineageHandler(httpSupport, objectMapper, lineagePlugin);
+
 
         pluginInstallHandler = new PluginInstallHandler(
                 httpSupport,
@@ -899,6 +966,7 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/similar", semanticSearchHandler::handleSimilarEntities)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/query/stream", sseHandler::handleStreamingQuerySse)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/:id", entityHandler::handleGetEntity)
             // Point-in-time entity snapshot — GET /api/v1/entities/:collection/:id/history?asOf= (B14)
@@ -911,6 +979,7 @@ public class DataCloudHttpServer {
             // Bulk export and anomaly detection endpoints — delegated to dedicated handlers (DC-004)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
+            .with(HttpMethod.GET,  "/api/v1/anomalies", anomalyHandler::handleQueryAnomalies)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities)
 
@@ -932,7 +1001,9 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleGetCheckpoint)
             .with(HttpMethod.DELETE, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleDeleteCheckpoint)
 
-            // Agent memory plane endpoints (DC-4) — delegated to MemoryPlaneHandler
+            // Agent memory plane endpoints (P4.6.1) — delegated to MemoryPlaneHandler
+            .with(HttpMethod.GET,    "/api/v1/memory",                           memoryHandler::handleListMemory)
+            .with(HttpMethod.POST,   "/api/v1/memory/:agentId",                  memoryHandler::handleStoreMemory)
             .with(HttpMethod.GET,    "/api/v1/memory/:agentId",                  memoryHandler::handleGetAgentMemory)
             .with(HttpMethod.GET,    "/api/v1/memory/:agentId/:tier",            memoryHandler::handleGetAgentMemoryByTier)
             .with(HttpMethod.POST,   "/api/v1/memory/:agentId/search",           memoryHandler::handleSearchAgentMemory)
@@ -1011,11 +1082,21 @@ public class DataCloudHttpServer {
             // Runtime capability registry (P2.7)
             .with(HttpMethod.GET,  "/api/v1/capabilities",                  capabilityRegistryHandler::handleCapabilities)
 
+            // Entity lineage graph and impact analysis (P3.9.1)
+            .with(HttpMethod.GET, "/api/v1/lineage/:collection",        lineageHandler::handleGetLineage)
+            .with(HttpMethod.GET, "/api/v1/lineage/:collection/impact",  lineageHandler::handleGetImpact)
+
             // Tenant-scoped context layer (P3.1) — lightweight runtime key-value store
             .with(HttpMethod.GET,    "/api/v1/context",                     contextLayerHandler::handleGetContext)
             .with(HttpMethod.PUT,    "/api/v1/context",                     contextLayerHandler::handlePutContext)
             .with(HttpMethod.DELETE, "/api/v1/context/keys/:key",           contextLayerHandler::handleDeleteContextKey)
             .with(HttpMethod.GET,    "/api/v1/context/snapshot",            contextLayerHandler::handleGetSnapshot)
+            .with(HttpMethod.POST,   "/api/v1/context/:collection/rag",     semanticSearchHandler::handleCollectionRag)
+
+            // Data product catalog routes (P4.4.1)
+            .with(HttpMethod.GET,    "/api/v1/data-products",               dataProductHandler::handleListDataProducts)
+            .with(HttpMethod.POST,   "/api/v1/data-products",               dataProductHandler::handlePublishDataProduct)
+            .with(HttpMethod.POST,   "/api/v1/data-products/:productId/subscribe", dataProductHandler::handleSubscribe)
 
             // Autonomy management routes (B9) — emergency global shutoff and domain-level controls
             .with(HttpMethod.PUT, "/api/v1/autonomy/level",              autonomyHandler::handleSetGlobalLevel)
@@ -1088,6 +1169,28 @@ public class DataCloudHttpServer {
             try {
                 server.listen();
                 log.info("Data-Cloud HTTP Server started on port {}", port);
+                // Start background anomaly detection scanning (P3.6.1) if detector + event store are both available
+                if (anomalyDetector != null && eventLogStore != null) {
+                    AnomalyDetectionTask anomalyTask = new AnomalyDetectionTask(anomalyDetector, anomalyHandler, eventloop);
+                    anomalyTask.start();
+                    log.info("[DC-P3.6] Continuous anomaly detection active — scan interval {} min",
+                            AnomalyDetectionTask.SCAN_INTERVAL_MINUTES);
+                }
+                if (client.entityStore() instanceof H2SovereignEntityStore sovereignEntityStore) {
+                    storageCompactionTask = new StorageCompactionTask(
+                        sovereignEntityStore,
+                        autonomyController,
+                        auditService,
+                        metricsCollector,
+                        eventloop,
+                        storageCompactionIntervalSeconds,
+                        storageCompactionTombstoneThreshold);
+                    storageCompactionTask.start();
+                    healthSubsystemSuppliers.put("storage_compaction", storageCompactionTask::status);
+                    log.info("Sovereign storage compaction active — interval={}s threshold={}",
+                        storageCompactionIntervalSeconds,
+                        storageCompactionTombstoneThreshold);
+                }
                 eventloop.run();
             } catch (Exception e) {
                 log.error("Failed to start HTTP server", e);
@@ -1102,6 +1205,9 @@ public class DataCloudHttpServer {
         // Delegate SSE + WebSocket cleanup to the extracted streaming handler
         if (sseHandler != null) {
             sseHandler.shutdown();
+        }
+        if (storageCompactionTask != null) {
+            storageCompactionTask.close();
         }
         if (eventloop != null) {
             // server.close() must be called from the reactor thread;
@@ -1141,11 +1247,13 @@ public class DataCloudHttpServer {
         capabilities.put("governance.policyEngine", capabilityEntry(policyEngine != null, resolveSubsystemStatus("policy_engine")));
         capabilities.put("federatedQuery.trino", capabilityEntry(trinoUrl != null && !trinoUrl.isBlank(), null));
         capabilities.put("autonomy", capabilityEntry(autonomyController != null, null));
+        capabilities.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
         capabilities.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
         capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
         capabilities.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
         capabilities.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
         capabilities.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
+        capabilities.put("health.storageCompaction", capabilityEntry(healthSubsystemSuppliers.containsKey("storage_compaction"), resolveSubsystemStatus("storage_compaction")));
         return capabilities;
     }
 

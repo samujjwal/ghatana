@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.clickhouse.client)
     implementation(libs.disruptor)
     runtimeOnly(libs.clickhouse.http.client)
+    runtimeOnly(libs.postgresql)
     implementation(libs.opensearch.java)
     implementation(libs.opensearch.rest.client)
 
@@ -76,6 +77,8 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.archunit.junit5)
+    testImplementation(libs.flyway.core)
+    testImplementation(libs.flyway.postgresql)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.kafka)
@@ -100,6 +103,7 @@ jacoco {
 val jacocoCoveredClasses = sourceSets.main.get().output.asFileTree.matching {
     include(
         "**/validation/**",
+        "**/postgres/**",
         "**/vector/VectorRecord.class"
     )
     exclude(

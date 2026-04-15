@@ -86,6 +86,7 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
             Map<String, Object> body = parseJsonResponse(resp);
             assertThat(body).containsKey("offset");
             assertThat(body.get("offset")).isEqualTo(0);
+            assertThat(body.get("type")).isEqualTo("ENTITY_CREATED");
         }
 
         /**

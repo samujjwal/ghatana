@@ -24,30 +24,89 @@ import { fileURLToPath } from 'node:url';
 import { server } from '../../mocks/server';
 import { TestWrapper } from '../test-utils/wrapper';
 import {
+  AiModelListSchema,
+  AiModelSchema,
+  CapabilityRegistryEnvelopeSchema,
+  CollectionEntityListResponseSchema,
   CollectionSchema,
+  PipelineListResponseSchema,
+  PipelineMutationRequestSchema,
   PaginatedCollectionResponseSchema,
+  EntityValidationResponseSchema,
+  BatchEntityValidationRequestSchema,
+  BatchEntityValidationResponseSchema,
+  BrainAttentionThresholdsSchema,
+  BrainAttentionThresholdUpdateResponseSchema,
+  BrainElevationResultSchema,
+  BrainPatternListResponseSchema,
+  BrainPatternMatchResponseSchema,
+  BrainRuntimeStatsSchema,
+  BrainSalienceResponseSchema,
+  BrainWorkspaceStatusSchema,
+  LearningStatusResponseSchema,
   CreateCollectionRequestSchema,
   UpdateCollectionRequestSchema,
+  FeatureSchema,
   WorkflowSchema,
   PaginatedWorkflowResponseSchema,
   CreateWorkflowRequestSchema,
   ExecutionSchema,
   StorageProfileSchema,
   StorageProfileMetricsSchema,
+  CollectionCostReportSchema,
+  MigrateCollectionResultSchema,
+  PluginViewSchema,
+  PluginListResponseSchema,
   ConnectorSchema,
   ConnectorTypeSchema,
+  ReportListSchema,
+  ReportResultSchema,
   AnalyticsQuerySchema,
   AnalyticsResultSchema,
   PaginatedAnalyticsResultSchema,
+  AnalyticsExplainRequestSchema,
+  AnalyticsExplainResponseSchema,
+  AnalyticsSqlQueryRequestSchema,
+  AnalyticsSqlQueryResponseSchema,
+  AnalyticsSuggestResponseSchema,
+  AnomalyDetectionRequestSchema,
+  DetectedAnomalySchema,
+  SearchResultSchema,
+  LineageDagResponseSchema,
+  LineageImpactResponseSchema,
+  CheckpointSchema,
+  CheckpointListResponseSchema,
+  CheckpointSaveResponseSchema,
   EventSchema,
   AppendEventRequestSchema,
   AppendEventResponseSchema,
   EventQueryRequestSchema,
-  PaginatedEventResponseSchema,
+  EventQueryResponseSchema,
+  MemoryItemSchema,
+  MemoryStoreRequestSchema,
+  MemoryRootListResponseSchema,
+  AgentMemorySummaryResponseSchema,
+  MemoryTierResponseSchema,
+  MemorySearchRequestSchema,
+  MemorySearchResponseSchema,
+  MemoryDeleteResponseSchema,
+  MemoryRetainRequestSchema,
+  MemoryRetainResponseSchema,
+  AutonomyLogsResponseSchema,
+  AutonomyStateResponseSchema,
+  ContextResponseSchema,
+  UpsertContextRequestSchema,
+  UpsertContextResponseSchema,
+  ContextSnapshotSchema,
   CreateStorageProfileRequestSchema,
   UpdateStorageProfileRequestSchema,
   CreateConnectorRequestSchema,
   UpdateConnectorRequestSchema,
+  VoiceIntentCatalogEnvelopeSchema,
+  VoiceIntentClassificationEnvelopeSchema,
+  VoiceIntentConfirmationEnvelopeSchema,
+  VoiceIntentExecutionEnvelopeSchema,
+  VoiceIntentPreviewEnvelopeSchema,
 } from '../../contracts/schemas';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -149,6 +208,77 @@ describe('Contract-Backed Route Tests', () => {
       const result = CollectionSchema.safeParse(incomplete);
       expect(result.success).toBe(false);
     });
+
+    it('canonical dc_collections entity payloads pass contract validation', () => {
+      const response = CollectionEntityListResponseSchema.parse({
+        entities: [
+          {
+            id: 'contract-col-1',
+            data: {
+              name: 'Contract Test Collection',
+              description: 'Verified against the raw entity wrapper contract',
+              schemaType: 'entity',
+              status: 'active',
+              entityCount: 42,
+              schema: {
+                fields: [{ name: 'id', type: 'string', required: true }],
+              },
+              tags: ['contract-test'],
+              createdBy: 'contract-runner',
+            },
+            createdAt: '2026-04-15T07:00:00Z',
+            updatedAt: '2026-04-15T07:05:00Z',
+          },
+        ],
+        count: 1,
+      });
+
+      expect(response.entities[0]?.data.name).toBe('Contract Test Collection');
+      expect(response.count).toBe(1);
+    });
+
+    it('canonical pipeline payloads pass contract validation', () => {
+      const response = PipelineListResponseSchema.parse({
+        tenantId: 'tenant-a',
+        pipelines: [
+          {
+            id: 'wf-1',
+            tenantId: 'tenant-a',
+            name: 'Daily Sync',
+            description: 'Launcher pipeline registry payload',
+            status: 'active',
+            nodes: [
+              {
+                id: 'extract',
+                type: 'source',
+                label: 'Extract',
+                position: { x: 0, y: 0 },
+                data: {},
+              },
+            ],
+            edges: [
+              {
+                id: 'edge-1',
+                source: 'extract',
+                target: 'load',
+                label: 'flows-to',
+              },
+            ],
+            schedule: '0 0 * * *',
+            tags: ['daily', 'sync'],
+            createdAt: '2026-04-14T08:00:00Z',
+            updatedAt: '2026-04-14T09:00:00Z',
+            createdBy: 'contract-runner',
+            lastExecutedAt: '2026-04-14T09:30:00Z',
+          },
+        ],
+        count: 1,
+        timestamp: '2026-04-14T09:31:00Z',
+      });
+
+      expect(response.pipelines[0]?.name).toBe('Daily Sync');
+      expect(response.count).toBe(1);
+    });
   });
 
   describe('Data Fabric — contract compliance', () => {
@@ -195,6 +325,286 @@ describe('Contract-Backed Route Tests', () => {
 
       expect(metrics.latencyP99Ms).toBe(18.7);
       expect(metrics.storageUsedBytes).toBeLessThan(metrics.storageTotalBytes);
+    });
+
+    it('collection cost report and tier migration payloads pass contract validation', () => {
+      const costReport = CollectionCostReportSchema.parse({
+        collectionId: 'orders',
+        tenantId: 'tenant-alpha',
+        totalSizeGb: 12,
+        totalCostDccPerDay: 24,
+        currency: 'DCC',
+        tiers: [
+          {
+            tier: 'HOT',
+            sizeGb: 12,
+            costDccPerDay: 24,
+            backend: 'postgres',
+          },
+        ],
+        note: 'Derived from canonical launcher cost report',
+      });
+
+      const migration = MigrateCollectionResultSchema.parse({
+        collection: 'orders',
+        targetTier: 'WARM',
+        status: 'SCHEDULED',
+        eventsMigrated: 100,
+      });
+
+      expect(costReport.tiers[0]?.tier).toBe('HOT');
+      expect(costReport.totalCostDccPerDay).toBe(24);
+      expect(migration.targetTier).toBe('WARM');
+      expect(migration.eventsMigrated).toBe(100);
+    });
+  });
+
+  describe('Reports and models contracts', () => {
+    it('report generation and cached report payloads pass contract validation', () => {
+      const generated = ReportResultSchema.parse({
+        reportId: 'report-123',
+        reportName: 'daily-entity-summary',
+        format: 'JSON',
+        rowCount: 2,
+        contentType: 'application/json',
+        executionTimeMs: 42,
+        generatedAt: '2026-04-15T10:00:00Z',
+        rows: [
+          { collection: 'orders', count: 12 },
+          { collection: 'customers', count: 4 },
+        ],
+      });
+
+      const cached = ReportListSchema.parse({
+        reports: {
+          'report-123': 'daily-entity-summary',
+          'report-456': 'compliance-overview',
+        },
+        count: 2,
+      });
+
+      expect(generated.reportId).toBe('report-123');
+      expect(cached.count).toBe(2);
+    });
+
+    it('model registry payloads pass contract validation', () => {
+      const model = AiModelSchema.parse({
+        id: '3c6cdb6d-14d4-4d8b-8ec8-5e6e1d26ab0c',
+        tenantId: 'tenant-alpha',
+        name: 'quality-scorer',
+        version: '2.1.0',
+        framework: 'xgboost',
+        deploymentStatus: 'PRODUCTION',
+        trainingMetrics: { auc: 0.94 },
+        createdAt: '2026-04-10T09:00:00Z',
+        updatedAt: '2026-04-15T09:00:00Z',
+        deployedAt: '2026-04-15T09:30:00Z',
+      });
+
+      const listing = AiModelListSchema.parse({
+        models: [model],
+        count: 1,
+      });
+
+      expect(listing.models[0]?.name).toBe('quality-scorer');
+      expect(listing.count).toBe(1);
+    });
+
+    it('feature-store payloads pass contract validation', () => {
+      const feature = FeatureSchema.parse({
+        id: 'feature-1',
+        name: 'engagement_score',
+        description: 'Computed engagement score',
+        dataType: 'FLOAT',
+        version: '1.0.0',
+        tags: ['ml', 'customer'],
+        createdAt: '2026-04-15T08:00:00Z',
+        updatedAt: '2026-04-15T08:10:00Z',
+      });
+
+      expect(feature.name).toBe('engagement_score');
+      expect(feature.tags).toContain('ml');
+    });
+
+    it('plugin payloads pass contract validation', () => {
+      const plugin = PluginViewSchema.parse({
+        id: 'plugin-orders',
+        displayName: 'Orders Connector',
+        version: '1.2.3',
+        status: 'enabled',
+        supportedRecordTypes: ['Entity', 'Metric'],
+      });
+
+      const listing = PluginListResponseSchema.parse({
+        plugins: [plugin],
+        total: 1,
+      });
+
+      expect(listing.plugins[0]?.displayName).toBe('Orders Connector');
+      expect(listing.total).toBe(1);
+    });
+  });
+
+  describe('Capabilities and voice contracts', () => {
+    it('capability registry envelope passes contract validation', () => {
+      const envelope = CapabilityRegistryEnvelopeSchema.parse({
+        data: {
+          capabilities: {
+            analytics: 'ACTIVE',
+            trino: 'NOT_CONFIGURED',
+            voice: 'DEGRADED',
+          },
+          generatedAt: '2026-04-15T10:15:00Z',
+        },
+        meta: {
+          requestId: 'req-123',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:15:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      expect(envelope.data.capabilities.analytics).toBe('ACTIVE');
+    });
+
+    it('voice catalog and classify envelopes pass contract validation', () => {
+      const catalog = VoiceIntentCatalogEnvelopeSchema.parse({
+        data: {
+          intents: [
+            {
+              name: 'query_entities',
+              description: 'Query entities in a collection',
+              httpMethod: 'GET',
+              pathTemplate: '/api/v1/entities/:collection/search',
+              requiredParams: ['collection'],
+              optionalParams: ['query'],
+              sensitivity: 'LOW',
+            },
+          ],
+          count: 1,
+        },
+        meta: {
+          requestId: 'req-voice-catalog',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:20:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      const classified = VoiceIntentClassificationEnvelopeSchema.parse({
+        data: {
+          intent: 'query_entities',
+          description: 'Query entities in a collection',
+          confidence: 0.82,
+          extractedParams: { collection: 'orders' },
+          matched: true,
+          requiresConfirmation: false,
+        },
+        ai: {
+          confidence: 0.82,
+          model: 'voice-classifier',
+          reasons: ['llm'],
+          fallback: false,
+        },
+        meta: {
+          requestId: 'req-voice-classify',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:21:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      const unmatched = VoiceIntentPreviewEnvelopeSchema.parse({
+        data: {
+          intentName: '',
+          executed: false,
+          matched: false,
+          confidence: 0,
+        },
+        meta: {
+          requestId: 'req-voice-preview',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:22:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      expect(catalog.data.count).toBe(1);
+      expect(classified.data.intent).toBe('query_entities');
+      expect(unmatched.data.executed).toBe(false);
+    });
+
+    it('entity search results pass contract validation', () => {
+      const results = [
+        SearchResultSchema.parse({
+          entityId: 'entity-123',
+          collectionId: 'orders',
+          score: 0.98,
+          highlights: {
+            description: ['matching order for premium customer'],
+          },
+          data: {
+            orderId: 'order-123',
+            customerId: 'cust-9',
+            total: 149.5,
+          },
+        }),
+      ];
+
+      expect(results[0]?.collectionId).toBe('orders');
+      expect(results[0]?.highlights?.description?.[0]).toContain('premium');
+    });
+
+    it('voice confirmation and execution envelopes pass contract validation', () => {
+      const confirmation = VoiceIntentConfirmationEnvelopeSchema.parse({
+        data: {
+          requiresConfirmation: true,
+          resolvedIntent: 'delete_entity',
+          resolvedPath: '/api/v1/entities/orders/entity-42',
+          confidence: 0.41,
+          message: 'Low confidence resolution — please confirm',
+        },
+        ai: {
+          confidence: 0.41,
+          model: 'voice-classifier',
+          reasons: ['keyword-heuristic'],
+          fallback: true,
+        },
+        meta: {
+          requestId: 'req-voice-confirm',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:23:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      const execution = VoiceIntentExecutionEnvelopeSchema.parse({
+        data: {
+          executed: true,
+          intentName: 'list_models',
+          httpMethod: 'GET',
+          resolvedPath: '/api/v1/models',
+          parameters: {},
+          sensitivity: 'LOW',
+          description: 'List registered models',
+          speechSummary: 'Listing ML models.',
+        },
+        ai: {
+          confidence: 0.88,
+          model: 'voice-gateway',
+          reasons: ['llm-classified'],
+          fallback: false,
+        },
+        meta: {
+          requestId: 'req-voice-exec',
+          tenantId: 'tenant-alpha',
+          timestamp: '2026-04-15T10:24:00Z',
+          apiVersion: 'v1',
+        },
+      });
+
+      expect(confirmation.data.resolvedIntent).toBe('delete_entity');
+      expect(execution.data.intentName).toBe('list_models');
     });
   });
 
@@ -257,6 +667,190 @@ describe('Contract-Backed Route Tests', () => {
 
       expect(invalid.success).toBe(false);
     });
+
+    it('canonical analytics SQL query and suggest payloads pass contract validation', () => {
+      const request = AnalyticsSqlQueryRequestSchema.parse({
+        query: 'SELECT COUNT(*) AS total FROM events',
+        parameters: { limit: 10 },
+      });
+
+      const response = AnalyticsSqlQueryResponseSchema.parse({
+        queryId: 'query-1',
+        queryType: 'ANALYTICS',
+        rowCount: 1,
+        columnCount: 1,
+        rows: [{ total: 42 }],
+        executionTimeMs: 18,
+        optimized: true,
+        timestamp: '2026-04-14T13:05:00Z',
+      });
+
+      const federated = AnalyticsSqlQueryResponseSchema.parse({
+        queryId: 'query-fed-1',
+        queryType: 'FEDERATED_FALLBACK',
+        rowCount: 1,
+        columnCount: 1,
+        rows: [{ region: 'global' }],
+        executionTimeMs: 32,
+        optimized: true,
+        timestamp: '2026-04-14T13:06:00Z',
+        warning: 'Trino not configured — query executed via local analytics engine.',
+      });
+
+      const suggest = AnalyticsSuggestResponseSchema.parse({
+        data: {
+          queries: [
+            {
+              name: 'Cache repeated revenue queries',
+              template: 'SELECT day, SUM(total) FROM revenue GROUP BY day',
+              explanation: 'Frequent revenue lookups can be served faster from a cached aggregate.',
+            },
+          ],
+        },
+        ai: {
+          confidence: 0.88,
+          fallback: false,
+        },
+      });
+
+      expect(request.query).toContain('COUNT');
+      expect(response.rowCount).toBe(1);
+      expect(federated.warning).toContain('Trino');
+      expect(suggest.data.queries[0]?.name).toContain('Cache');
+    });
+
+    it('canonical analytics explain payloads pass contract validation', () => {
+      const request = AnalyticsExplainRequestSchema.parse({
+        query: 'SELECT region, COUNT(*) FROM orders GROUP BY region',
+        parameters: { tenantId: 'tenant-alpha' },
+      });
+
+      const response = AnalyticsExplainResponseSchema.parse({
+        queryId: 'explain-1',
+        queryType: 'SQL',
+        dataSources: ['orders'],
+        estimatedCost: 12.75,
+        optimized: true,
+        explain: true,
+        timestamp: '2026-04-15T13:10:00Z',
+      });
+
+      expect(request.query).toContain('GROUP BY');
+      expect(response.explain).toBe(true);
+      expect(response.dataSources[0]).toBe('orders');
+    });
+
+    it('canonical anomaly detection payloads pass contract validation', () => {
+      const request = AnomalyDetectionRequestSchema.parse({
+        collectionName: 'orders',
+        timeRange: {
+          start: '2026-04-01T00:00:00Z',
+          end: '2026-04-15T00:00:00Z',
+        },
+        metrics: ['order_count', 'revenue'],
+      });
+
+      const anomaly = DetectedAnomalySchema.parse({
+        id: 'anomaly-1',
+        type: 'spike',
+        severity: 'warning',
+        metric: 'order_count',
+        timestamp: '2026-04-15T09:00:00Z',
+        value: 1420,
+        expectedValue: 940,
+        deviation: 480,
+        description: 'Order volume exceeded the rolling seven-day baseline.',
+        suggestedAction: 'Inspect recent campaign launches and upstream retries.',
+      });
+
+      expect(request.collectionName).toBe('orders');
+      expect(request.metrics).toContain('revenue');
+      expect(anomaly.type).toBe('spike');
+      expect(anomaly.suggestedAction).toContain('campaign');
+    });
+  });
+
+  describe('Context layer contracts', () => {
+    it('context layer request and response payloads pass contract validation', () => {
+      const context = ContextResponseSchema.parse({
+        tenantId: 'tenant-alpha',
+        entries: {
+          'feature.dark-mode': true,
+          locale: 'en-US',
+        },
+        count: 2,
+        version: 8,
+        requestId: 'ctx-req-1',
+      });
+
+      const upsertRequest = UpsertContextRequestSchema.parse({
+        entries: {
+          timezone: 'UTC',
+          'preferences.compact': false,
+        },
+      });
+
+      const upsertResponse = UpsertContextResponseSchema.parse({
+        tenantId: 'tenant-alpha',
+        upserted: 2,
+        version: 9,
+        updatedAt: '2026-04-15T13:15:00Z',
+        requestId: 'ctx-req-2',
+      });
+
+      const snapshot = ContextSnapshotSchema.parse({
+        tenantId: 'tenant-alpha',
+        version: 9,
+        count: 3,
+        createdAt: '2026-04-15T12:00:00Z',
+        snapshotAt: '2026-04-15T13:16:00Z',
+        entries: {
+          locale: 'en-US',
+          timezone: 'UTC',
+          'feature.dark-mode': true,
+        },
+        requestId: 'ctx-req-3',
+      });
+
+      expect(context.entries.locale).toBe('en-US');
+      expect(upsertRequest.entries.timezone).toBe('UTC');
+      expect(upsertResponse.version).toBe(9);
+      expect(snapshot.count).toBe(3);
+    });
+  });
+
+  describe('Lineage contracts', () => {
+    it('canonical lineage graph and impact payloads pass contract validation', () => {
+      const lineageGraph = LineageDagResponseSchema.parse({
+        collection: 'orders',
+        tenantId: 'tenant-alpha',
+        direction: 'BOTH',
+        timestamp: '2026-04-15T12:00:00Z',
+        dag: {
+          nodes: [
+            { id: 'orders', type: 'DATASET', name: 'orders', role: 'root', metadata: {} },
+            { id: 'orders_raw', type: 'DATASET', name: 'orders_raw', role: 'upstream', metadata: {} },
+          ],
+          edges: [
+            { source: 'orders_raw', target: 'orders', type: 'DERIVES_FROM' },
+          ],
+        },
+        upstreamCount: 1,
+        downstreamCount: 0,
+      });
+
+      const lineageImpact = LineageImpactResponseSchema.parse({
+        collection: 'orders',
+        tenantId: 'tenant-alpha',
+        impactLevel: 'MEDIUM',
+        affectedCount: 1,
+        affectedCollections: ['orders_dashboard'],
+        timestamp: '2026-04-15T12:01:00Z',
+      });
+
+      expect(lineageGraph.dag.nodes[0]?.id).toBe('orders');
+      expect(lineageImpact.affectedCollections[0]).toBe('orders_dashboard');
+    });
   });
 
   describe('Request payload contracts', () => {
@@ -288,9 +882,65 @@ describe('Contract-Backed Route Tests', () => {
         },
       });
 
+      const mutatePipeline = PipelineMutationRequestSchema.parse({
+        name: 'Daily Sync',
+        description: 'Synchronize upstream customer data each day',
+        nodes: [{ id: 'extract', type: 'source', label: 'Extract', position: { x: 0, y: 0 }, data: {} }],
+        edges: [],
+        tags: ['daily'],
+      });
+
       expect(createCollection.tags).toContain('crm');
       expect(updateCollection.status).toBe('active');
       expect(createWorkflow.name).toBe('Daily Sync');
+      expect(mutatePipeline.name).toBe('Daily Sync');
+    });
+
+    it('entity validation request and response payloads pass contract validation', () => {
+      const validationResponse = EntityValidationResponseSchema.parse({
+        valid: false,
+        violations: [
+          {
+            field: 'email',
+            message: 'Must be a valid email address.',
+            code: 'INVALID_EMAIL',
+          },
+        ],
+      });
+
+      const batchValidationRequest = BatchEntityValidationRequestSchema.parse({
+        entities: [
+          { id: '1', email: 'invalid' },
+          { id: '2', email: 'valid@example.com' },
+        ],
+      });
+
+      const batchValidationResponse = BatchEntityValidationResponseSchema.parse({
+        allValid: false,
+        results: [
+          {
+            index: 0,
+            valid: false,
+            violations: [
+              {
+                field: 'email',
+                message: 'Must be a valid email address.',
+                code: 'INVALID_EMAIL',
+              },
+            ],
+          },
+          {
+            index: 1,
+            valid: true,
+            violations: [],
+          },
+        ],
+      });
+
+      expect(validationResponse.valid).toBe(false);
+      expect(validationResponse.violations[0]?.field).toBe('email');
+      expect(batchValidationRequest.entities).toHaveLength(2);
+      expect(batchValidationResponse.results[1]?.valid).toBe(true);
     });
 
     it('storage profile and connector request payloads pass contract validation', () => {
@@ -410,9 +1060,10 @@ describe('Contract-Backed Route Tests', () => {
       });
 
       const eventQuery = EventQueryRequestSchema.parse({
-        eventTypes: ['entity.created'],
-        offset: 100,
+        type: 'entity.created',
+        from: 100,
         limit: 50,
+        tenantId: 'tenant-alpha',
       });
 
       const event = EventSchema.parse({
@@ -430,24 +1081,158 @@ describe('Contract-Backed Route Tests', () => {
 
       const appendResponse = AppendEventResponseSchema.parse({
         offset: 129,
-        eventId: 'evt-contract-2',
+        type: 'entity.created',
         timestamp: '2026-04-14T11:01:00Z',
       });
 
-      const paginated = PaginatedEventResponseSchema.parse({
-        items: [event],
-        total: 1,
-        page: 1,
-        pageSize: 50,
-        hasMore: false,
+      const queryResponse = EventQueryResponseSchema.parse({
+        events: [event],
+        count: 1,
+        fromOffset: 100,
         nextOffset: 129,
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T11:01:30Z',
       });
 
       expect(appendRequest.type).toBe('entity.created');
-      expect(eventQuery.offset).toBe(100);
-      expect(eventQuery.eventTypes).toEqual(['entity.created']);
+      expect(eventQuery.from).toBe(100);
+      expect(eventQuery.type).toBe('entity.created');
       expect(appendResponse.offset).toBe(129);
-      expect(paginated.items[0]?.type).toBe('entity.created');
+      expect(queryResponse.events[0]?.type).toBe('entity.created');
+    });
+  });
+
+  describe('Checkpoint and memory contracts', () => {
+    it('checkpoint payloads pass contract validation', () => {
+      const checkpoint = CheckpointSchema.parse({
+        id: 'cp-1',
+        data: { state: 'running', offset: 42 },
+        tenantId: 'tenant-alpha',
+      });
+
+      const checkpointList = CheckpointListResponseSchema.parse({
+        tenantId: 'tenant-alpha',
+        checkpoints: [checkpoint],
+        count: 1,
+        timestamp: '2026-04-14T12:00:00Z',
+      });
+
+      const saveResponse = CheckpointSaveResponseSchema.parse({
+        id: 'cp-1',
+        tenantId: 'tenant-alpha',
+        savedAt: '2026-04-14T12:01:00Z',
+      });
+
+      expect(checkpointList.count).toBe(1);
+      expect(saveResponse.id).toBe('cp-1');
+    });
+
+    it('memory payloads pass contract validation', () => {
+      const storeRequest = MemoryStoreRequestSchema.parse({
+        type: 'episodic',
+        content: 'Remember the failed deployment and rollback plan.',
+        ttlSeconds: 3600,
+        tags: ['ops', 'incident'],
+        salience: 0.91,
+        metadata: { source: 'contract-test' },
+      });
+
+      const item = MemoryItemSchema.parse({
+        id: 'mem-1',
+        tenantId: 'tenant-alpha',
+        agentId: 'agent-1',
+        type: 'EPISODIC',
+        content: 'Remember the failed deployment and rollback plan.',
+        tags: ['ops', 'incident'],
+        salience: 0.91,
+        createdAt: '2026-04-14T12:05:00Z',
+        expiresAt: '2026-04-15T12:05:00Z',
+        metadata: { source: 'contract-test' },
+      });
+
+      const rootList = MemoryRootListResponseSchema.parse({
+        items: [item],
+        total: 1,
+        tenantId: 'tenant-alpha',
+        agentId: 'agent-1',
+        type: 'ALL',
+        query: '',
+        timestamp: '2026-04-14T12:06:00Z',
+      });
+
+      const summary = AgentMemorySummaryResponseSchema.parse({
+        agentId: 'agent-1',
+        tenantId: 'tenant-alpha',
+        total: 1,
+        items: [item],
+        contextWindowSize: 1,
+        byType: {
+          episodic: 1,
+          semantic: 0,
+          procedural: 0,
+          preference: 0,
+          other: 0,
+        },
+        timestamp: '2026-04-14T12:06:00Z',
+      });
+
+      const tier = MemoryTierResponseSchema.parse({
+        agentId: 'agent-1',
+        tenantId: 'tenant-alpha',
+        tier: 'episodic',
+        items: [item],
+        count: 1,
+        offset: 0,
+        limit: 100,
+        timestamp: '2026-04-14T12:06:00Z',
+      });
+
+      const searchRequest = MemorySearchRequestSchema.parse({
+        query: 'rollback',
+        type: 'episodic',
+        limit: 10,
+      });
+
+      const searchResponse = MemorySearchResponseSchema.parse({
+        agentId: 'agent-1',
+        tenantId: 'tenant-alpha',
+        query: 'rollback',
+        results: [item],
+        count: 1,
+        timestamp: '2026-04-14T12:07:00Z',
+      });
+
+      const deleteResponse = MemoryDeleteResponseSchema.parse({
+        deleted: true,
+        memoryId: 'mem-1',
+        agentId: 'agent-1',
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T12:08:00Z',
+      });
+
+      const retainRequest = MemoryRetainRequestSchema.parse({
+        retainUntilEpoch: 1_776_163_200_000,
+        reason: 'case-hold',
+      });
+
+      const retainResponse = MemoryRetainResponseSchema.parse({
+        retained: true,
+        memoryId: 'mem-1',
+        agentId: 'agent-1',
+        tenantId: 'tenant-alpha',
+        reason: 'case-hold',
+        timestamp: '2026-04-14T12:09:00Z',
+      });
+
+      expect(storeRequest.type).toBe('episodic');
+      expect(rootList.items[0]?.type).toBe('EPISODIC');
+      expect(summary.byType.episodic).toBe(1);
+      expect(tier.count).toBe(1);
+      expect(searchRequest.limit).toBe(10);
+      expect(searchResponse.results[0]?.id).toBe('mem-1');
+      expect(deleteResponse.deleted).toBe(true);
+      expect(retainRequest.reason).toBe('case-hold');
+      expect(retainResponse.retained).toBe(true);
     });
   });
 
@@ -458,12 +1243,21 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/entities/{collection}/{id}',
         '/api/v1/entities/{collection}/search',
         '/api/v1/entities/{collection}/validate',
+        '/api/v1/entities/{collection}/validate/batch',
         '/api/v1/entities/{collection}/suggest',
         '/api/v1/entities/{collection}/anomalies',
         '/api/v1/pipelines',
+        '/api/v1/pipelines/{pipelineId}',
+        '/api/v1/pipelines/{pipelineId}/optimise-hint',
         '/api/v1/analytics/suggest',
+        '/api/v1/lineage/{collection}',
+        '/api/v1/lineage/{collection}/impact',
         '/api/v1/agents/catalog',
         '/api/v1/agents/catalog/{id}',
+        '/api/v1/autonomy/level',
+        '/api/v1/autonomy/domains',
+        '/api/v1/autonomy/domains/{domain}',
+        '/api/v1/autonomy/logs',
         '/api/v1/brain/explain',
         '/api/v1/brain/workspace',
         '/api/v1/brain/stats',
@@ -471,7 +1265,23 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/governance/privacy/pii-fields',
         '/api/v1/governance/compliance/summary',
         '/api/v1/plugins',
+        '/api/v1/plugins/{id}',
+        '/api/v1/plugins/{id}/enable',
+        '/api/v1/plugins/{id}/disable',
+        '/api/v1/plugins/{id}/upgrade',
+        '/api/v1/reports',
+        '/api/v1/reports/{reportId}',
+        '/api/v1/features',
+        '/api/v1/features/{entityId}',
+        '/api/v1/models',
+        '/api/v1/models/{modelName}',
+        '/api/v1/models/{modelName}/promote',
+        '/api/v1/voice/intent',
+        '/api/v1/voice/intents',
+        '/api/v1/voice/intent/classify',
+        '/api/v1/capabilities',
         '/api/v1/collections/{id}/cost-report',
+        '/api/v1/collections/{id}/migrate',
         '/metrics',
       ];
 
@@ -503,7 +1313,6 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/pipelines/templates',
         '/api/v1/pipelines/suggestions',
         '/api/v1/pipelines/validate',
-        '/api/v1/lineage/',
         '/api/v1/lineage/{datasetId}',
         '/api/v1/lineage/{datasetId}/impact',
       ];
@@ -511,6 +1320,271 @@ describe('Contract-Backed Route Tests', () => {
       unsupportedPaths.forEach((routePath) => {
         expect(canonicalOpenApi).not.toContain(routePath);
       });
+    });
+
+    it('keeps the canonical event contract aligned with the launcher response shape', () => {
+      expect(canonicalOpenApi).toContain('AppendEventRequest:');
+      expect(canonicalOpenApi).toContain('AppendEventResponse:');
+      expect(canonicalOpenApi).toContain('EventQueryResponse:');
+      expect(canonicalOpenApi).toContain('required: [type, payload]');
+      expect(canonicalOpenApi).toContain('required: [offset, type, timestamp]');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AppendEventRequest"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AppendEventResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/EventQueryResponse"');
+      expect(canonicalOpenApi).toContain('/api/v1/events/{offset}:');
+      expect(canonicalOpenApi).toContain('name: from');
+      expect(canonicalOpenApi).toContain('name: type');
+    });
+
+    it('keeps the canonical pipeline contract aligned with the launcher response shape', () => {
+      expect(canonicalOpenApi).toContain('Pipeline:');
+      expect(canonicalOpenApi).toContain('PipelineListResponse:');
+      expect(canonicalOpenApi).toContain('PipelineMutationRequest:');
+      expect(canonicalOpenApi).toContain('required: [id, tenantId]');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/PipelineListResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/PipelineMutationRequest"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/Pipeline"');
+    });
+
+    it('keeps the canonical checkpoint and memory contracts aligned with the launcher response shape', () => {
+      expect(canonicalOpenApi).toContain('Checkpoint:');
+      expect(canonicalOpenApi).toContain('CheckpointListResponse:');
+      expect(canonicalOpenApi).toContain('CheckpointSaveResponse:');
+      expect(canonicalOpenApi).toContain('MemoryItem:');
+      expect(canonicalOpenApi).toContain('MemoryRootListResponse:');
+      expect(canonicalOpenApi).toContain('AgentMemorySummaryResponse:');
+      expect(canonicalOpenApi).toContain('MemoryTierResponse:');
+      expect(canonicalOpenApi).toContain('MemorySearchRequest:');
+      expect(canonicalOpenApi).toContain('MemorySearchResponse:');
+      expect(canonicalOpenApi).toContain('MemoryDeleteResponse:');
+      expect(canonicalOpenApi).toContain('MemoryRetainRequest:');
+      expect(canonicalOpenApi).toContain('MemoryRetainResponse:');
+      expect(canonicalOpenApi).toContain('/api/v1/memory:');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/CheckpointListResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/MemorySearchResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/MemoryRetainResponse"');
+    });
+
+    it('keeps the canonical brain contracts aligned with the launcher response shape', () => {
+      expect(canonicalOpenApi).toContain('BrainRuntimeStats:');
+      expect(canonicalOpenApi).toContain('BrainWorkspaceStatus:');
+      expect(canonicalOpenApi).toContain('BrainAttentionThresholds:');
+      expect(canonicalOpenApi).toContain('BrainAttentionThresholdUpdateResponse:');
+      expect(canonicalOpenApi).toContain('BrainElevationResult:');
+      expect(canonicalOpenApi).toContain('BrainPatternListResponse:');
+      expect(canonicalOpenApi).toContain('BrainPatternMatchResponse:');
+      expect(canonicalOpenApi).toContain('BrainSalienceResponse:');
+      expect(canonicalOpenApi).toContain('LearningStatusResponse:');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainRuntimeStats"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainWorkspaceStatus"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainAttentionThresholds"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainPatternListResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainSalienceResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/LearningStatusResponse"');
+    });
+
+    it('keeps the canonical analytics SQL and suggestion contracts aligned with the launcher response shape', () => {
+      expect(canonicalOpenApi).toContain('AnalyticsSqlQueryRequest:');
+      expect(canonicalOpenApi).toContain('AnalyticsSqlQueryResponse:');
+      expect(canonicalOpenApi).toContain('AnalyticsSuggestResponse:');
+      expect(canonicalOpenApi).toContain('AnalyticsSuggestQuery:');
+      expect(canonicalOpenApi).toContain('LineageDagResponse:');
+      expect(canonicalOpenApi).toContain('LineageImpactResponse:');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AnalyticsSqlQueryRequest"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AnalyticsSqlQueryResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/AnalyticsSuggestResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/LineageDagResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/LineageImpactResponse"');
+      expect(canonicalOpenApi).toContain('/api/v1/queries/federated:');
+      expect(canonicalOpenApi).toContain('/api/v1/analytics/explain:');
+      expect(canonicalOpenApi).toContain('/api/v1/entities/{collection}/anomalies:');
+    });
+
+    it('keeps the canonical reports, models, voice, and capabilities routes visible to contract coverage', () => {
+      expect(canonicalOpenApi).toContain('/api/v1/reports:');
+      expect(canonicalOpenApi).toContain('/api/v1/reports/{reportId}:');
+      expect(canonicalOpenApi).toContain('/api/v1/models:');
+      expect(canonicalOpenApi).toContain('/api/v1/models/{modelName}:');
+      expect(canonicalOpenApi).toContain('/api/v1/models/{modelName}/promote:');
+      expect(canonicalOpenApi).toContain('/api/v1/features:');
+      expect(canonicalOpenApi).toContain('/api/v1/voice/intent:');
+      expect(canonicalOpenApi).toContain('/api/v1/voice/intents:');
+      expect(canonicalOpenApi).toContain('/api/v1/voice/intent/classify:');
+      expect(canonicalOpenApi).toContain('/api/v1/capabilities:');
+      expect(canonicalOpenApi).toContain('VoiceIntentRequest:');
+      expect(canonicalOpenApi).toContain('VoiceIntentClassificationRequest:');
+    });
+
+    it('keeps the canonical context routes visible to contract coverage', () => {
+      expect(canonicalOpenApi).toContain('/api/v1/context:');
+      expect(canonicalOpenApi).toContain('/api/v1/context/keys/{key}:');
+      expect(canonicalOpenApi).toContain('/api/v1/context/snapshot:');
+    });
+  });
+
+  describe('Brain schemas', () => {
+    it('validates canonical brain launcher payloads', () => {
+      const stats = BrainRuntimeStatsSchema.parse({
+        totalRecordsProcessed: 482,
+        activePatterns: 7,
+        activeRules: 12,
+        hotTierRecords: 43,
+        warmTierRecords: 128,
+        avgProcessingTimeMs: 18.4,
+        uptimeSeconds: 86400,
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T12:30:00Z',
+      });
+
+      const workspace = BrainWorkspaceStatusSchema.parse({
+        status: 'active',
+        brainId: 'brain-1',
+        note: 'Detailed spotlight items available via GET /api/v1/brain/stats',
+        timestamp: '2026-04-14T12:31:00Z',
+      });
+
+      const thresholds = BrainAttentionThresholdsSchema.parse({
+        elevationThreshold: 0.71,
+        emergencyThreshold: 0.93,
+        salienceThreshold: 0.64,
+        totalProcessed: 100,
+        elevatedCount: 15,
+        emergencyCount: 2,
+        elevationRate: 0.15,
+        timestamp: '2026-04-14T12:32:00Z',
+      });
+
+      const thresholdUpdate = BrainAttentionThresholdUpdateResponseSchema.parse({
+        acknowledged: true,
+        note: 'Restart required for threshold changes.',
+        timestamp: '2026-04-14T12:33:00Z',
+      });
+
+      const elevation = BrainElevationResultSchema.parse({
+        elevated: true,
+        emergency: true,
+        action: 'ELEVATED',
+        recordId: '7f1db913-c80f-4c2f-9a72-ff59d6bcf1cb',
+        reason: 'manual-ui-elevation',
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T12:34:00Z',
+      });
+
+      const patternList = BrainPatternListResponseSchema.parse({
+        patterns: [
+          {
+            id: 'pattern-1',
+            name: 'Morning Spike',
+            type: 'TEMPORAL',
+            description: 'Weekly morning traffic spike',
+            confidence: 0.86,
+            observations: 14,
+            discoveredAt: '2026-04-01T09:00:00Z',
+            updatedAt: '2026-04-14T09:00:00Z',
+          },
+        ],
+        count: 1,
+        limit: 100,
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T12:35:00Z',
+      });
+
+      const matchResponse = BrainPatternMatchResponseSchema.parse({
+        recordId: 'record-1',
+        matches: [
+          {
+            patternId: 'pattern-1',
+            patternName: 'Morning Spike',
+            score: 0.88,
+            confidence: 0.86,
+            explanation: 'Matches the known weekly batch spike.',
+          },
+        ],
+        count: 1,
+        tenantId: 'tenant-alpha',
+        timestamp: '2026-04-14T12:36:00Z',
+      });
+
+      const salience = BrainSalienceResponseSchema.parse({
+        itemId: 'spot-1',
+        salienceScore: 0.91,
+        isHigh: true,
+        isEmergency: false,
+        priority: 2,
+        summary: 'Quality regression detected',
+        tenantId: 'tenant-alpha',
+        spotlightedAt: '2026-04-14T12:37:00Z',
+        timestamp: '2026-04-14T12:38:00Z',
+      });
+
+      expect(stats.activePatterns).toBe(7);
+      expect(workspace.status).toBe('active');
+      expect(thresholds.salienceThreshold).toBe(0.64);
+      expect(thresholdUpdate.acknowledged).toBe(true);
+      expect(elevation.emergency).toBe(true);
+      expect(patternList.patterns[0]?.id).toBe('pattern-1');
+      expect(matchResponse.matches[0]?.score).toBe(0.88);
+      expect(salience.isHigh).toBe(true);
+    });
+
+    it('validates canonical autonomy payloads', () => {
+      const logs = AutonomyLogsResponseSchema.parse({
+        logs: [
+          {
+            id: 'log-1',
+            actionType: 'ingestion',
+            tenantId: 'tenant-alpha',
+            level: 'NOTIFY',
+            decision: 'ALLOWED',
+            confidence: 0.91,
+            context: { source: 'contract-test' },
+            timestamp: '2026-04-14T12:00:00Z',
+          },
+        ],
+        count: 1,
+        globalOverride: 'NONE',
+        timestamp: '2026-04-14T12:06:00Z',
+      });
+
+      const state = AutonomyStateResponseSchema.parse({
+        domain: 'optimization',
+        state: {
+          actionType: 'optimization',
+          tenantId: 'tenant-alpha',
+          currentLevel: 'NOTIFY',
+          effectiveMaxLevel: 'AUTONOMOUS',
+          confidence: 0.73,
+          lastActionAt: '2026-04-14T12:10:00Z',
+        },
+        timestamp: '2026-04-14T12:11:00Z',
+      });
+
+      expect(logs.logs[0]?.level).toBe('NOTIFY');
+      expect(state.state.currentLevel).toBe('NOTIFY');
+    });
+
+    it('validates canonical learning status payloads', () => {
+      const learningStatus = LearningStatusResponseSchema.parse({
+        running: false,
+        lastRunTime: '2026-04-14T12:00:00Z',
+        nextScheduledRun: '2026-04-14T13:00:00Z',
+        intervalMinutes: 60,
+        pendingReviews: 2,
+        lastResult: {
+          status: 'COMPLETED',
+          tenantId: 'tenant-alpha',
+          manual: false,
+          durationMs: 1200,
+          patternsDiscovered: 3,
+          patternsUpdated: 1,
+          recordsAnalyzed: 24,
+          ranAt: '2026-04-14T12:00:00Z',
+        },
+        timestamp: '2026-04-14T12:01:00Z',
+      });
+
+      expect(learningStatus.pendingReviews).toBe(2);
+      expect(learningStatus.lastResult?.patternsDiscovered).toBe(3);
     });
   });
 });

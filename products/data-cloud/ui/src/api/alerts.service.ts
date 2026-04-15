@@ -12,6 +12,27 @@
 import { apiClient } from '../lib/api/client';
 import type { AlertRule } from '../components/alerts/AlertRuleForm';
 
+export const ALERTS_UNSUPPORTED_MESSAGE = 'Alert management APIs are not exposed by the current Data Cloud launcher API.';
+
+function unsupportedAlertsOperation<T>(message: string = ALERTS_UNSUPPORTED_MESSAGE): Promise<T> {
+  return Promise.reject(new Error(message));
+}
+
+function createInertEventSource(): EventSource {
+  return {
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    close: () => undefined,
+    dispatchEvent: () => false,
+    onerror: null,
+    onmessage: null,
+    onopen: null,
+    readyState: EventSource.CLOSED,
+    url: '',
+    withCredentials: false,
+  } as EventSource;
+}
+
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
 
@@ -57,66 +78,73 @@ export interface AlertQueryParams {
 export class AlertsService {
   /** List active and historical alerts */
   async getAlerts(params: AlertQueryParams = {}): Promise<Alert[]> {
-    return apiClient.get<Alert[]>('/alerts', { params });
+    void params;
+    return unsupportedAlertsOperation<Alert[]>();
   }
 
   /** Acknowledge an alert */
   async acknowledgeAlert(alertId: string): Promise<Alert> {
-    return apiClient.post<Alert>(`/alerts/${alertId}/acknowledge`);
+    void alertId;
+    return unsupportedAlertsOperation<Alert>();
   }
 
   /** Resolve an alert */
   async resolveAlert(alertId: string): Promise<Alert> {
-    return apiClient.post<Alert>(`/alerts/${alertId}/resolve`);
+    void alertId;
+    return unsupportedAlertsOperation<Alert>();
   }
 
   /** Get AI-detected correlated alert groups */
   async getAlertGroups(): Promise<AlertGroup[]> {
-    return apiClient.get<AlertGroup[]>('/alerts/groups');
+    return unsupportedAlertsOperation<AlertGroup[]>();
   }
 
   /** Auto-resolve a correlated alert group */
   async resolveGroup(groupId: string): Promise<void> {
-    await apiClient.post<void>(`/alerts/groups/${groupId}/resolve`);
+    void groupId;
+    return unsupportedAlertsOperation<void>();
   }
 
   /** Get AI resolution suggestions for active alerts */
   async getResolutionSuggestions(): Promise<ResolutionSuggestion[]> {
-    return apiClient.get<ResolutionSuggestion[]>('/alerts/suggestions');
+    return unsupportedAlertsOperation<ResolutionSuggestion[]>();
   }
 
   /** Apply an AI resolution suggestion */
   async applySuggestion(suggestionId: string): Promise<void> {
-    await apiClient.post<void>(`/alerts/suggestions/${suggestionId}/apply`);
+    void suggestionId;
+    return unsupportedAlertsOperation<void>();
   }
 
   /** Open an SSE stream for live alert events */
   openStream(): EventSource {
-    return new EventSource(
-      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/events/stream?eventType=alert.triggered`,
-    );
+    return createInertEventSource();
   }
 
   // ==================== Alert Rules (B5) ====================
 
   /** List all configured alert rules */
   async listAlertRules(): Promise<AlertRule[]> {
-    return apiClient.get<AlertRule[]>('/alerts/rules');
+    return unsupportedAlertsOperation<AlertRule[]>();
   }
 
   /** Create a new alert rule */
   async createAlertRule(rule: Omit<AlertRule, 'id'>): Promise<AlertRule> {
-    return apiClient.post<AlertRule>('/alerts/rules', rule);
+    void rule;
+    return unsupportedAlertsOperation<AlertRule>();
   }
 
   /** Update an existing alert rule */
   async updateAlertRule(ruleId: string, rule: Partial<AlertRule>): Promise<AlertRule> {
-    return apiClient.put<AlertRule>(`/alerts/rules/${ruleId}`, rule);
+    void ruleId;
+    void rule;
+    return unsupportedAlertsOperation<AlertRule>();
   }
 
   /** Delete an alert rule */
   async deleteAlertRule(ruleId: string): Promise<void> {
-    await apiClient.delete<void>(`/alerts/rules/${ruleId}`);
+    void ruleId;
+    return unsupportedAlertsOperation<void>();
   }
 }
 

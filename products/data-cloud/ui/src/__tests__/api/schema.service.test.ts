@@ -70,6 +70,23 @@ describe('Schema Service', () => {
     applications: [],
   };
 
+  const mockCollectionEntityResponse = {
+    entities: [
+      {
+        id: mockSchema.id,
+        data: {
+          name: mockSchema.name,
+          description: mockSchema.description,
+          schema: {
+            fields: mockFields,
+          },
+          permission: mockSchema.permission,
+          applications: mockSchema.applications,
+        },
+      },
+    ],
+  };
+
   beforeEach(() => {
     schemaService.clearCache();
     global.fetch = vi.fn();
@@ -86,7 +103,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
 
       // When
@@ -95,7 +112,7 @@ describe('Schema Service', () => {
       // Then
       expect(schema).toEqual(mockSchema);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/collections/users'),
+        expect.stringContaining('/api/v1/entities/dc_collections?search=users'),
         expect.any(Object)
       );
     });
@@ -104,7 +121,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
 
       // When
@@ -132,7 +149,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
 
       // When
@@ -157,7 +174,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
 
       // When
@@ -172,7 +189,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
 
       // When
@@ -185,7 +202,20 @@ describe('Schema Service', () => {
 
     it('should return empty array if schema has no fields', async () => {
       // Given
-      const schemaWithoutFields = { ...mockSchema, fields: undefined };
+      const schemaWithoutFields = {
+        entities: [
+          {
+            id: mockSchema.id,
+            data: {
+              name: mockSchema.name,
+              description: mockSchema.description,
+              schema: {},
+              permission: mockSchema.permission,
+              applications: mockSchema.applications,
+            },
+          },
+        ],
+      };
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => schemaWithoutFields,
@@ -370,7 +400,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
       await schemaService.getCollectionSchema('tenant-123', 'users');
 
@@ -378,7 +408,7 @@ describe('Schema Service', () => {
       schemaService.clearCache();
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
       await schemaService.getCollectionSchema('tenant-123', 'users');
 
@@ -390,7 +420,7 @@ describe('Schema Service', () => {
       // Given
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
-        json: async () => mockSchema,
+        json: async () => mockCollectionEntityResponse,
       });
       await schemaService.getCollectionSchema('tenant-123', 'users');
 
@@ -440,6 +470,29 @@ describe('Schema Service', () => {
       await expect(
         schemaService.getCollectionSchema('tenant-123', 'users')
       ).rejects.toThrow();
+    });
+
+    it('should throw when no exact collection match is returned', async () => {
+      // Given
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          entities: [
+            {
+              id: 'collection-2',
+              data: {
+                name: 'orders',
+                schema: { fields: [] },
+              },
+            },
+          ],
+        }),
+      });
+
+      // When & Then
+      await expect(
+        schemaService.getCollectionSchema('tenant-123', 'users')
+      ).rejects.toThrow("Collection 'users' not found");
     });
   });
 });

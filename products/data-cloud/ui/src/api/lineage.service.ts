@@ -8,6 +8,8 @@
  * @doc.layer frontend
  */
 
+import { apiClient } from '../lib/api/client';
+
 export interface LineageNode {
   id: string;
   type: 'DATASET' | 'TRANSFORMATION' | 'QUERY' | 'DASHBOARD' | 'ML_MODEL';
@@ -64,92 +66,152 @@ export interface ExecutionLog {
   error?: string;
 }
 
-function unsupportedOperation<T>(message: string): Promise<T> {
-  return Promise.reject(new Error(message));
+/** Shape returned by GET /api/v1/lineage/:collection */
+interface LineageApiResponse {
+  collection: string;
+  tenantId: string;
+  direction: string;
+  timestamp: string;
+  dag: {
+    nodes: Array<{ id: string; type: string; name: string; role: string; metadata: Record<string, unknown> }>;
+    edges: Array<{ source: string; target: string; type: string }>;
+  };
+  upstreamCount: number;
+  downstreamCount: number;
+}
+
+/** Shape returned by GET /api/v1/lineage/:collection/impact */
+interface ImpactApiResponse {
+  collection: string;
+  tenantId: string;
+  impactLevel: string;
+  affectedCount: number;
+  affectedCollections: string[];
+  timestamp: string;
 }
 
 /**
  * Lineage Service Client
  */
 export class LineageService {
+  private mapNodeType(type: string): LineageNode['type'] {
+    switch (type.toUpperCase()) {
+      case 'TRANSFORMATION':
+        return 'TRANSFORMATION';
+      case 'QUERY':
+        return 'QUERY';
+      case 'DASHBOARD':
+        return 'DASHBOARD';
+      case 'ML_MODEL':
+        return 'ML_MODEL';
+      default:
+        return 'DATASET';
+    }
+  }
+
   /**
-   * Get lineage graph for a dataset
+   * Get lineage graph for a dataset.
+   *
+   * Calls {@code GET /api/v1/lineage/:datasetId?direction=BOTH}.
    */
   async getLineage(
     datasetId: string,
     direction: 'UPSTREAM' | 'DOWNSTREAM' | 'BOTH' = 'BOTH',
-    depth: number = 3
+    _depth: number = 3
   ): Promise<LineageGraph> {
-    void datasetId;
-    void direction;
-    void depth;
-    return unsupportedOperation<LineageGraph>(
-      'Lineage graph APIs are not exposed by the current Data Cloud launcher. Use the Data Explorer lineage preview instead.',
-    );
+    const data = await apiClient.get<LineageApiResponse>(`/lineage/${datasetId}`, {
+      params: { direction },
+    });
+
+    const nodes: LineageNode[] = data.dag.nodes.map((n) => ({
+      id: n.id,
+      type: this.mapNodeType(n.type),
+      name: n.name,
+      metadata: {
+        ...n.metadata,
+        role: n.role,
+      },
+    }));
+
+    const edges: LineageEdge[] = data.dag.edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      type: (e.type === 'DERIVES_FROM' ? 'DERIVES_FROM'
+           : e.type === 'FEEDS_INTO'  ? 'FEEDS_INTO'
+           : 'TRANSFORMS') as LineageEdge['type'],
+    }));
+
+    return { nodes, edges, rootNode: datasetId };
   }
 
   /**
-   * Get impact analysis for a dataset
+   * Get impact analysis for a dataset.
+   *
+   * Calls {@code GET /api/v1/lineage/:datasetId/impact}.
    */
   async getImpactAnalysis(datasetId: string): Promise<ImpactAnalysis> {
-    void datasetId;
-    return unsupportedOperation<ImpactAnalysis>(
-      'Impact analysis APIs are not exposed by the current Data Cloud launcher.',
-    );
+    const data = await apiClient.get<ImpactApiResponse>(`/lineage/${datasetId}/impact`);
+
+    return {
+      affectedDatasets: data.affectedCount,
+      affectedDashboards: 0,
+      affectedQueries: 0,
+      affectedWorkflows: 0,
+      details: data.affectedCollections.map((col) => ({
+        id: col,
+        type: 'DATASET',
+        name: col,
+        impact: data.impactLevel === 'LOW' ? 'INDIRECT' as const : 'DIRECT' as const,
+        distance: 1,
+      })),
+    };
   }
 
   /**
-   * Get time-travel lineage snapshot
+   * Get time-travel lineage snapshot — not yet exposed by the launcher.
    */
   async getTimeTravelLineage(
-    datasetId: string,
-    timestamp: string
+    _datasetId: string,
+    _timestamp: string
   ): Promise<TimeTravelSnapshot> {
-    void datasetId;
-    void timestamp;
-    return unsupportedOperation<TimeTravelSnapshot>(
-      'Time-travel lineage APIs are not exposed by the current Data Cloud launcher.',
-    );
+    return Promise.reject(new Error(
+      'Time-travel lineage is not yet exposed by the Data Cloud launcher.',
+    ));
   }
 
   /**
-   * Get execution logs for a dataset
+   * Get execution logs for a dataset — not yet exposed by the launcher.
    */
   async getExecutionLogs(
-    datasetId: string,
-    limit: number = 50
+    _datasetId: string,
+    _limit: number = 50
   ): Promise<ExecutionLog[]> {
-    void datasetId;
-    void limit;
-    return unsupportedOperation<ExecutionLog[]>(
-      'Lineage execution log APIs are not exposed by the current Data Cloud launcher.',
-    );
+    return Promise.reject(new Error(
+      'Lineage execution log APIs are not yet exposed by the Data Cloud launcher.',
+    ));
   }
 
   /**
-   * Search lineage by keyword
+   * Search lineage by keyword — not yet exposed by the launcher.
    */
   async searchLineage(
-    query: string
+    _query: string
   ): Promise<{ datasets: LineageNode[]; relationships: LineageEdge[] }> {
-    void query;
-    return unsupportedOperation<{ datasets: LineageNode[]; relationships: LineageEdge[] }>(
-      'Lineage search APIs are not exposed by the current Data Cloud launcher.',
-    );
+    return Promise.reject(new Error(
+      'Lineage search APIs are not yet exposed by the Data Cloud launcher.',
+    ));
   }
 
   /**
-   * Get column-level lineage
+   * Get column-level lineage — not yet exposed by the launcher.
    */
   async getColumnLineage(
-    datasetId: string,
-    columnName: string
+    _datasetId: string,
+    _columnName: string
   ): Promise<LineageGraph> {
-    void datasetId;
-    void columnName;
-    return unsupportedOperation<LineageGraph>(
-      'Column lineage APIs are not exposed by the current Data Cloud launcher.',
-    );
+    return Promise.reject(new Error(
+      'Column lineage APIs are not yet exposed by the Data Cloud launcher.',
+    ));
   }
 }
 
@@ -159,4 +221,5 @@ export class LineageService {
 export const lineageService = new LineageService();
 
 export default lineageService;
+
 

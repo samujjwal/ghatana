@@ -14,6 +14,16 @@
  */
 
 import { apiClient } from './client';
+import {
+    ContextResponseSchema,
+    ContextSnapshotSchema,
+    UpsertContextRequestSchema,
+    UpsertContextResponseSchema,
+    type ContextResponse,
+    type ContextSnapshot,
+    type UpsertContextRequest,
+    type UpsertContextResponse,
+} from '../../contracts/schemas';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,71 +33,6 @@ import { apiClient } from './client';
  */
 export type ContextEntries = Record<string, unknown>;
 
-/**
- * Response returned by GET /api/v1/context.
- */
-export interface ContextResponse {
-    /** Tenant identifier owning this context. */
-    tenantId: string;
-    /** All current context entries for the tenant. */
-    entries: ContextEntries;
-    /** Number of entries currently stored. */
-    count: number;
-    /** Current write version, incremented on every upsert or delete. */
-    version: number;
-    /** Correlation/request ID for tracing. */
-    requestId: string;
-}
-
-/**
- * Request body for PUT /api/v1/context.
- *
- * Use the {@code entries} wrapper for explicit semantics:
- * ```ts
- * { entries: { "feature.dark-mode": true, locale: "en-US" } }
- * ```
- * A flat object is also accepted and treated as entries wholesale.
- */
-export interface UpsertContextRequest {
-    entries: ContextEntries;
-}
-
-/**
- * Response returned by PUT /api/v1/context.
- */
-export interface UpsertContextResponse {
-    /** Tenant identifier owning this context. */
-    tenantId: string;
-    /** Number of entries that were inserted or updated. */
-    upserted: number;
-    /** New write version after the upsert. */
-    version: number;
-    /** ISO-8601 timestamp of the update. */
-    updatedAt: string;
-    /** Correlation/request ID for tracing. */
-    requestId: string;
-}
-
-/**
- * Versioned snapshot returned by GET /api/v1/context/snapshot.
- */
-export interface ContextSnapshot {
-    /** Tenant identifier owning this snapshot. */
-    tenantId: string;
-    /** Monotonically increasing version — incremented by every write. */
-    version: number;
-    /** Number of entries in the snapshot. */
-    count: number;
-    /** ISO-8601 timestamp when context was first created for this tenant. */
-    createdAt: string;
-    /** ISO-8601 timestamp when this snapshot was generated. */
-    snapshotAt: string;
-    /** All entries captured at {@code snapshotAt}. */
-    entries: ContextEntries;
-    /** Correlation/request ID for tracing. */
-    requestId: string;
-}
-
 // ─── Client functions ─────────────────────────────────────────────────────────
 
 /**
@@ -96,7 +41,8 @@ export interface ContextSnapshot {
  * @returns Resolved entries, version, and tenant metadata.
  */
 export async function getContext(): Promise<ContextResponse> {
-    return apiClient.get<ContextResponse>('/context');
+    const response = await apiClient.get<ContextResponse>('/context');
+    return ContextResponseSchema.parse(response);
 }
 
 /**
@@ -106,8 +52,9 @@ export async function getContext(): Promise<ContextResponse> {
  * @returns Upsert result including the new write version.
  */
 export async function putContextEntries(entries: ContextEntries): Promise<UpsertContextResponse> {
-    const body: UpsertContextRequest = { entries };
-    return apiClient.put<UpsertContextResponse, UpsertContextRequest>('/context', body);
+    const body = UpsertContextRequestSchema.parse({ entries });
+    const response = await apiClient.put<UpsertContextResponse, UpsertContextRequest>('/context', body);
+    return UpsertContextResponseSchema.parse(response);
 }
 
 /**
@@ -129,5 +76,6 @@ export async function deleteContextKey(key: string): Promise<void> {
  * @returns Full context snapshot with version, counts, and timestamps.
  */
 export async function getContextSnapshot(): Promise<ContextSnapshot> {
-    return apiClient.get<ContextSnapshot>('/context/snapshot');
+    const response = await apiClient.get<ContextSnapshot>('/context/snapshot');
+    return ContextSnapshotSchema.parse(response);
 }

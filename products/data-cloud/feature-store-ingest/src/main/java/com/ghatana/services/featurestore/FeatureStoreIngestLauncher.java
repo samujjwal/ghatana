@@ -15,6 +15,7 @@ import com.ghatana.platform.types.identity.Identifier;
 import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.ghatana.services.featurestore.config.FeatureIngestConfig;
+import com.ghatana.services.featurestore.config.FeatureTransformSpec;
 import com.ghatana.services.featurestore.exception.FeatureExtractionException;
 import com.ghatana.services.featurestore.exception.FeatureIngestException;
 import com.ghatana.services.featurestore.exception.FeatureStoreWriteException;
@@ -96,6 +97,11 @@ public class FeatureStoreIngestLauncher {
      * after all retries. Bounded to 50,000 entries with a 7-day TTL.
      */
     private final DeadLetterQueue deadLetterQueue;
+    /**
+     * YAML-configurable transform spec controlling event-type filtering and field selection.
+     * Defaults to pass-through (all events, all fields) when not set.
+     */
+    private volatile FeatureTransformSpec transformSpec = FeatureTransformSpec.passThrough();
     /**
      * Single-thread scheduler for delayed poll rescheduling. Shared across all
      * tenants to avoid the per-call thread pool leak from creating a new executor
@@ -221,6 +227,25 @@ public class FeatureStoreIngestLauncher {
         LOG.info("[feature-ingest] shutdown requested");
     }
 
+    /**
+     * Applies the YAML-configurable feature transform spec.
+     *
+     * <p>When set, the spec controls which event types are processed and which payload
+     * fields are materialized as features. Pass {@link FeatureTransformSpec#passThrough()}
+     * to accept all events and fields (the default).
+     *
+     * @param spec non-null transform specification
+     * @return this launcher (fluent)
+     * @see FeatureTransformSpec
+     */
+    public FeatureStoreIngestLauncher withTransformSpec(FeatureTransformSpec spec) {
+        if (spec == null) throw new IllegalArgumentException("transformSpec must not be null");
+        this.transformSpec = spec;
+        LOG.info("[feature-ingest] transform spec applied — eventTypes={} includeFields={} excludeFields={}",
+                spec.getEventTypes(), spec.getIncludeFields(), spec.getExcludeFields());
+        return this;
+    }
+
     // ── Offset initialisation and poll scheduling ─────────────────────────
 
     /**
@@ -329,6 +354,20 @@ public class FeatureStoreIngestLauncher {
         long start = System.nanoTime();
         String eventId = entry.eventId().toString();
 
+        // ── Event-type filter (P3.3.1) ───────────────────────────────────────
+        if (!transformSpec.acceptsEventType(entry.eventType())) {
+            LOG.debug("[feature-ingest] skipping event type={} tenant={}", entry.eventType(), tenant.value());
+            metrics.incrementCounter("feature.ingest.events.filtered",
+                "tenant", tenant.value(), "event_type", entry.eventType());
+            return;
+        }
+
+        // ── Feature lag metric (P3.3.1) — time from event timestamp to ingestion ──
+        if (entry.timestamp() != null) {
+            long lagMs = Duration.between(entry.timestamp(), Instant.now()).toMillis();
+            metrics.recordTimer("feature.ingest.lag_ms", lagMs, "tenant", tenant.value());
+        }
+
         // ── Feature extraction ───────────────────────────────────────────────
         List<MLFeature> features;
         try {
@@ -336,7 +375,7 @@ public class FeatureStoreIngestLauncher {
             entry.payload().duplicate().get(raw);
             Map<String, Object> payload = MAPPER.readValue(raw, Map.class);
             String entityId = entry.headers().getOrDefault("entityId", eventId);
-            features = extractFeatures(entityId, payload, entry.timestamp());
+            features = extractFeatures(entityId, payload, entry.timestamp(), transformSpec);
         } catch (Exception ex) {
             FeatureExtractionException extractEx = new FeatureExtractionException(
                 eventId, tenant.value(),
@@ -403,9 +442,27 @@ public class FeatureStoreIngestLauncher {
      * @param entityId       entity identifier for the feature record
      * @param payload        raw event payload map
      * @param eventTimestamp timestamp of the originating event (used for all feature records)
-     * @return immutable list of extracted {@link Feature} objects (never null)
+     * @return immutable list of extracted {@link MLFeature} objects (never null)
      */
     static List<MLFeature> extractFeatures(String entityId, Map<String, Object> payload, Instant eventTimestamp) {
+        return extractFeatures(entityId, payload, eventTimestamp, FeatureTransformSpec.passThrough());
+    }
+
+    /**
+     * Derives a set of numeric feature vectors from a raw event payload, applying the given
+     * {@link FeatureTransformSpec} to control field selection.
+     *
+     * @param entityId       entity identifier for the feature record
+     * @param payload        raw event payload map
+     * @param eventTimestamp timestamp of the originating event
+     * @param spec           transform spec controlling which fields are included
+     * @return immutable list of extracted {@link MLFeature} objects (never null)
+     */
+    static List<MLFeature> extractFeatures(
+            String entityId,
+            Map<String, Object> payload,
+            Instant eventTimestamp,
+            FeatureTransformSpec spec) {
         Instant ts = eventTimestamp != null ? eventTimestamp : Instant.now();
         String resolvedEntityId = entityId != null ? entityId : Identifier.random().raw();
         var features = new java.util.ArrayList<MLFeature>();
@@ -415,6 +472,10 @@ public class FeatureStoreIngestLauncher {
         // JVM restarts, Map implementations, and JSON key-ordering variations.
         // ML models trained on one ordering produce garbage results on another.
         for (Map.Entry<String, Object> kv : new java.util.TreeMap<>(payload).entrySet()) {
+            // P3.3.1: apply field filter from transform spec
+            if (!spec.acceptsField(kv.getKey())) {
+                continue;
+            }
             Object val = kv.getValue();
             double numeric;
             if (val instanceof Number n) {
@@ -435,18 +496,20 @@ public class FeatureStoreIngestLauncher {
         }
 
         // ── Derived time features ────────────────────────────────────────
-        features.add(MLFeature.builder()
-            .name("hour_of_day")
-            .value((double) ts.atZone(java.time.ZoneOffset.UTC).getHour())
-            .entityId(resolvedEntityId)
-            .timestamp(ts)
-            .build());
-        features.add(MLFeature.builder()
-            .name("day_of_week")
-            .value((double) ts.atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue())
-            .entityId(resolvedEntityId)
-            .timestamp(ts)
-            .build());
+        if (spec.isDerivedTimeFeatures()) {
+            features.add(MLFeature.builder()
+                .name("hour_of_day")
+                .value((double) ts.atZone(java.time.ZoneOffset.UTC).getHour())
+                .entityId(resolvedEntityId)
+                .timestamp(ts)
+                .build());
+            features.add(MLFeature.builder()
+                .name("day_of_week")
+                .value((double) ts.atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue())
+                .entityId(resolvedEntityId)
+                .timestamp(ts)
+                .build());
+        }
 
         return java.util.Collections.unmodifiableList(features);
     }
@@ -508,6 +571,19 @@ public class FeatureStoreIngestLauncher {
         FeatureStoreIngestLauncher launcher = new FeatureStoreIngestLauncher(
             eventLogStore, featureStore, metrics, tenants,
             cfg.batchSize, cfg.retryDelayMs, cfg.pollDelayMs);
+
+        // ── P3.3.1: YAML transform spec ───────────────────────────────────
+        String transformConfigPath = env(FeatureIngestConfig.ENV_TRANSFORM_CONFIG, null);
+        if (transformConfigPath != null) {
+            try {
+                FeatureTransformSpec spec = FeatureTransformSpec.fromYamlFile(transformConfigPath);
+                launcher.withTransformSpec(spec);
+                LOG.info("[feature-ingest] transform spec loaded from {}", transformConfigPath);
+            } catch (Exception e) {
+                LOG.warn("[feature-ingest] could not load transform spec from '{}', using pass-through: {}",
+                    transformConfigPath, e.getMessage());
+            }
+        }
 
         Eventloop eventloop = Eventloop.create();
 

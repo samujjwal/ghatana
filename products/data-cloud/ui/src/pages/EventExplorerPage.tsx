@@ -181,7 +181,7 @@ export function EventExplorerPage(): React.ReactElement {
     const sse = eventsService.openStream(params);
     sse.onmessage = (e: MessageEvent) => {
       try {
-        const event = JSON.parse(e.data as string) as EventEntry;
+        const event = eventsService.parseLiveEvent(String(e.data), params.tenantId);
         setLiveEvents((prev) => [event, ...prev].slice(0, MAX_LIVE_EVENTS));
       } catch {
         // ignore malformed frames

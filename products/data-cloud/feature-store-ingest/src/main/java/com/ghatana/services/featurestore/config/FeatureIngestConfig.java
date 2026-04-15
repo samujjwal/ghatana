@@ -35,6 +35,12 @@ public final class FeatureIngestConfig {
     public static final String ENV_BATCH_SIZE     = "FEATURE_INGEST_BATCH_SIZE";
     public static final String ENV_RETRY_DELAY_MS = "FEATURE_INGEST_RETRY_DELAY_MS";
     public static final String ENV_POLL_DELAY_MS  = "FEATURE_INGEST_POLL_DELAY_MS";
+    /**
+     * Path to the YAML feature-transform config file.
+     * When absent, the pipeline accepts all event types and all fields (pass-through).
+     * Example: {@code /etc/feature-ingest/transforms.yaml}
+     */
+    public static final String ENV_TRANSFORM_CONFIG = "FEATURE_INGEST_TRANSFORM_CONFIG";
 
     // ── Pool size defaults ────────────────────────────────────────────────────
     private static final int EVENT_LOG_MAX_POOL = 5;

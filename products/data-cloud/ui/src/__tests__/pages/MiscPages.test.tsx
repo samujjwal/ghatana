@@ -4,7 +4,7 @@
  * DataExplorer, CreateCollectionPage
  */
 import { describe, it, expect } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import { PluginDetailsPage } from '../../pages/PluginDetailsPage';
 import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
@@ -16,60 +16,48 @@ import { CreateCollectionPage } from '../../pages/CreateCollectionPage';
 // ── PluginDetailsPage ─────────────────────────────────────────────────────────
 
 describe('PluginDetailsPage', () => {
-  it('renders without crashing', () => {
+  it('shows the not-found boundary when no plugin id is available', () => {
     render(<PluginDetailsPage />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
-  });
 
-  it('displays plugin detail content', () => {
-    render(<PluginDetailsPage />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/plugin|connector|version|install|config/i);
+    expect(screen.getByText('Plugin Not Found')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Back to Plugins/i })).toBeInTheDocument();
   });
 });
 
 // ── SmartWorkflowBuilder ──────────────────────────────────────────────────────
 
 describe('SmartWorkflowBuilder', () => {
-  it('renders without crashing', () => {
+  it('renders the smart workflow shell with natural-language input controls', () => {
     render(<SmartWorkflowBuilder />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
-  });
 
-  it('displays workflow builder content', () => {
-    render(<SmartWorkflowBuilder />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/workflow|builder|step|pipeline|node|trigger/i);
+    expect(screen.getByRole('heading', { name: 'Smart Workflow Builder' })).toBeInTheDocument();
+    expect(screen.getAllByText(/Describe your pipeline/i).length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText(/Load data from S3/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Generate Pipeline/i })).toBeDisabled();
+    expect(screen.getByText(/Try an example:/i)).toBeInTheDocument();
   });
 });
 
 // ── IntelligentHub ────────────────────────────────────────────────────────────
 
 describe('IntelligentHub', () => {
-  it('renders without crashing', () => {
+  it('renders the unified workspace shell with ask-anything and quick actions', () => {
     render(<IntelligentHub />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
-  });
 
-  it('displays hub/intelligence content', () => {
-    render(<IntelligentHub />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/hub|intelligen|ai|insight|unified/i);
+    expect(screen.getByPlaceholderText(/Ask anything/i)).toBeInTheDocument();
+    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
+    expect(screen.getByText('Insights')).toBeInTheDocument();
+    expect(screen.getByText('AI Recommendations')).toBeInTheDocument();
   });
 });
 
 // ── DataExplorer ──────────────────────────────────────────────────────────────
 
 describe('DataExplorer', () => {
-  it('renders without crashing', () => {
+  it('renders the data explorer shell', () => {
     render(<DataExplorer />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
-  });
 
-  it('displays data explorer content', () => {
-    render(<DataExplorer />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/explor|data|record|collection|query|filter/i);
+    expect(screen.getByText(/Data Explorer/i)).toBeInTheDocument();
   });
 
   it('normalizes unsupported view params back to a safe default', async () => {
@@ -81,20 +69,32 @@ describe('DataExplorer', () => {
       expect(window.location.search).toBe('?view=table');
     });
   });
+
+  it('renders live lineage preview data when the lineage view is selected', async () => {
+    window.history.pushState({}, '', '/data?view=lineage');
+
+    render(<DataExplorer />, { wrapper: TestWrapper });
+
+    const collection = await screen.findByText(/Products/i);
+    fireEvent.click(collection);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Live upstream and downstream lineage/i)).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/Affected datasets:/i)).toBeInTheDocument();
+    });
+  });
 });
 
 // ── CreateCollectionPage ──────────────────────────────────────────────────────
 
 describe('CreateCollectionPage', () => {
-  it('renders without crashing', () => {
+  it('renders the create-collection shell and form container', () => {
     render(<CreateCollectionPage />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
-  });
 
-  it('displays create collection form', () => {
-    render(<CreateCollectionPage />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body.toLowerCase()).toMatch(/creat|collection|name|schema|field|new/i);
+    expect(screen.getByRole('heading', { name: 'Create New Collection' })).toBeInTheDocument();
+    expect(screen.getByText(/Define a new collection and its schema/i)).toBeInTheDocument();
   });
 
   it('has form submission elements', () => {

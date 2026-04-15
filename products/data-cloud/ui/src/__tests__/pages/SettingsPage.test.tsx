@@ -6,9 +6,14 @@ import { SettingsPage } from '../../pages/SettingsPage';
 
 
 describe('SettingsPage', () => {
-  it('renders without crashing', () => {
+  it('renders the settings shell with sidebar navigation and profile defaults', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
-    expect(document.body).toBeTruthy();
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Profile Settings' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('John')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Doe')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('john.doe@example.com')).toBeInTheDocument();
   });
 
   it('shows all four settings sections', () => {
@@ -21,31 +26,36 @@ describe('SettingsPage', () => {
 
   it('defaults to Profile section', () => {
     render(<SettingsPage />, { wrapper: TestWrapper });
-    const body = document.body.textContent ?? '';
-    expect(body).toMatch(/profile/i);
+    expect(screen.getByRole('heading', { name: 'Profile Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /profile/i })).toHaveClass('bg-blue-50');
   });
 
   it('switches to Preferences section on click', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('Preferences'));
-    const body = document.body.textContent ?? '';
-    expect(body).toMatch(/preference/i);
+
+    expect(screen.getByRole('heading', { name: 'Preferences' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('System Default')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('English')).toBeInTheDocument();
   });
 
   it('switches to Notifications section on click', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('Notifications'));
-    const body = document.body.textContent ?? '';
-    expect(body).toMatch(/notification/i);
+
+    expect(screen.getByRole('heading', { name: 'Notification Settings' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Email Notifications')).toBeChecked();
+    expect(screen.getByLabelText('Slack Notifications')).not.toBeChecked();
   });
 
   it('switches to API Keys section on click', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />, { wrapper: TestWrapper });
     await user.click(screen.getByText('API Keys'));
-    const body = document.body.textContent ?? '';
-    expect(body).toMatch(/api/i);
+
+    expect(screen.getByRole('heading', { name: 'API Keys' })).toBeInTheDocument();
+    expect(screen.getByText(/Generate New Key/i)).toBeInTheDocument();
   });
 });

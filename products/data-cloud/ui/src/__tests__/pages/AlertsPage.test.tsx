@@ -19,6 +19,7 @@ const { mockAlertsService } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../api/alerts.service', () => ({
+  ALERTS_UNSUPPORTED_MESSAGE: 'Alert management APIs are not exposed by the current Data Cloud launcher API.',
   alertsService: mockAlertsService,
 }));
 
@@ -86,10 +87,13 @@ describe('AlertsPage', () => {
     mockAlertsService.updateAlertRule.mockResolvedValue({ id: 'rule-1' });
   });
 
-  it('renders without crashing', async () => {
+  it('renders the alerts shell with grouped-view triage controls', async () => {
     render(<AlertsPage />, { wrapper: TestWrapper });
     await screen.findByText('Kafka backlog spike');
-    expect(document.body).toBeTruthy();
+
+    expect(screen.getByRole('heading', { name: 'Alerts' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Create Alert Rule/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /AI Grouped/i })).toBeInTheDocument();
   });
 
   it('shows canonical alert count summary cards', async () => {
@@ -148,5 +152,16 @@ describe('AlertsPage', () => {
     await waitFor(() => {
       expect(mockAlertsService.applySuggestion).toHaveBeenCalledWith('suggestion-1');
     });
+  });
+
+  it('surfaces an honest unsupported-state banner when the launcher does not expose alerts routes', async () => {
+    mockAlertsService.getAlerts.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
+    mockAlertsService.getAlertGroups.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
+    mockAlertsService.getResolutionSuggestions.mockRejectedValueOnce(new Error('Alert management APIs are not exposed by the current Data Cloud launcher API.'));
+
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText(/Alerts Surface Not Available/i)).toBeInTheDocument();
+    expect(screen.getByText(/does not expose live alert management routes/i)).toBeInTheDocument();
   });
 });

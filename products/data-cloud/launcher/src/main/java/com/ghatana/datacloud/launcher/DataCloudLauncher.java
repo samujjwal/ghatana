@@ -43,14 +43,14 @@ public class DataCloudLauncher {
         log.info("Starting Data-Cloud Standalone...");
 
         try {
-            // B2: Detect local-dev profile before validation so that infra checks are skipped
-            boolean localProfile = isLocalProfile(args, System.getenv());
+            DataCloud.DataCloudConfig.DataCloudProfile profile = DataCloudLauncherSettings.resolveProfile(args, System.getenv());
+            boolean embeddedProfile = DataCloudLauncherSettings.isEmbeddedProfile(profile);
 
-            if (!localProfile) {
+            if (!embeddedProfile) {
                 // Validate configuration before creating any resources (fail-fast)
                 DataCloudConfigValidator.fromEnvironment().validate();
             } else {
-                log.info("Local-dev profile active — skipping infra connectivity checks (H2 embedded mode)");
+                log.info("Embedded profile {} active — skipping external infra connectivity checks", profile.name().toLowerCase());
             }
 
             DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig(args);
@@ -61,11 +61,17 @@ public class DataCloudLauncher {
                         "No transport enabled. Configure DATACLOUD_HTTP_ENABLED, DATACLOUD_GRPC_ENABLED, DATACLOUD_GRPC_PORT, or pass --http/--grpc.");
             }
 
-            // B2: Use embedded H2-backed client when running in local-dev profile
-            DataCloudClient client = localProfile ? DataCloud.embedded() : DataCloud.create(config);
+            DataCloudClient client = profile == DataCloud.DataCloudConfig.DataCloudProfile.LOCAL
+                ? DataCloud.embedded()
+                : DataCloud.create(config);
 
             log.info("Data-Cloud Client started successfully");
-            log.info("  Mode: {}", localProfile ? "local-dev (H2 embedded, no external infra)" : "production");
+            log.info("  Mode: {}", switch (profile) {
+                case LOCAL -> "local-dev (in-memory embedded, no external infra)";
+                case SOVEREIGN -> "sovereign (file-backed H2, no external infra)";
+                case STAGING -> "staging";
+                case PRODUCTION -> "production";
+            });
             log.info("  Instance ID: {}", config.instanceId());
             log.info("  Max Connections: {}", config.maxConnectionsPerTenant());
             log.info("  Caching: {}", config.enableCaching() ? "enabled" : "disabled");
@@ -99,19 +105,6 @@ public class DataCloudLauncher {
             log.error("Failed to start Data-Cloud", e);
             System.exit(1);
         }
-    }
-
-    /**
-     * Returns {@code true} when the local-dev profile is requested via
-     * {@code --profile=local} CLI arg or {@code DATACLOUD_PROFILE=local} env var.
-     */
-    static boolean isLocalProfile(String[] args, java.util.Map<String, String> env) {
-        for (String arg : args) {
-            if ("--profile=local".equals(arg)) {
-                return true;
-            }
-        }
-        return "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
     }
 
     private static void startGrpcServer(DataCloudClient client) {

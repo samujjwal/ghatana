@@ -14,34 +14,18 @@
  */
 
 import { apiClient, PaginatedResponse } from './client';
+import {
+    PipelineListResponseSchema,
+    PipelineMutationRequestSchema,
+    PipelineSchema,
+    type Pipeline as BackendPipeline,
+    type PipelineListResponse as BackendPipelineListResponse,
+    type PipelineMutationRequest,
+} from '../../contracts/schemas';
 
 // ---------------------------------------------------------------------------
 // Backend pipeline response shapes
 // ---------------------------------------------------------------------------
-
-interface BackendPipeline {
-    id: string;
-    tenantId?: string;
-    name?: string;
-    description?: string;
-    status?: string;
-    nodes?: unknown[];
-    edges?: unknown[];
-    schedule?: string;
-    tags?: string[];
-    createdAt?: string;
-    updatedAt?: string;
-    createdBy?: string;
-    lastExecutedAt?: string;
-    [key: string]: unknown;
-}
-
-interface BackendPipelineListResponse {
-    tenantId: string;
-    pipelines: BackendPipeline[];
-    count: number;
-    timestamp: string;
-}
 
 // ---------------------------------------------------------------------------
 // Transformation helpers
@@ -175,9 +159,10 @@ export const workflowsApi = {
      */
     list: async (params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> => {
         const limit = params?.pageSize ?? 50;
-        const raw = await apiClient.get<BackendPipelineListResponse>('/pipelines', {
+        const rawResponse = await apiClient.get<BackendPipelineListResponse>('/pipelines', {
             params: { limit, ...(params?.status ? { status: params.status } : {}) },
         });
+        const raw = PipelineListResponseSchema.parse(rawResponse);
         const items = (raw.pipelines ?? []).map(pipelineToWorkflow);
         const page = params?.page ?? 1;
         const offset = (page - 1) * limit;
@@ -195,7 +180,8 @@ export const workflowsApi = {
      * GET /api/v1/pipelines/:pipelineId
      */
     get: async (id: string): Promise<Workflow> => {
-        const raw = await apiClient.get<BackendPipeline>(`/pipelines/${id}`);
+        const rawResponse = await apiClient.get<BackendPipeline>(`/pipelines/${id}`);
+        const raw = PipelineSchema.parse(rawResponse);
         return pipelineToWorkflow(raw);
     },
 
@@ -204,7 +190,9 @@ export const workflowsApi = {
      * POST /api/v1/pipelines
      */
     create: async (data: CreateWorkflowDto): Promise<Workflow> => {
-        const raw = await apiClient.post<BackendPipeline, CreateWorkflowDto>('/pipelines', data);
+        const request = PipelineMutationRequestSchema.parse(data) as PipelineMutationRequest;
+        const rawResponse = await apiClient.post<BackendPipeline, PipelineMutationRequest>('/pipelines', request);
+        const raw = PipelineSchema.parse(rawResponse);
         return pipelineToWorkflow(raw);
     },
 
@@ -213,7 +201,9 @@ export const workflowsApi = {
      * PUT /api/v1/pipelines/:pipelineId
      */
     update: async (id: string, data: UpdateWorkflowDto): Promise<Workflow> => {
-        const raw = await apiClient.put<BackendPipeline, UpdateWorkflowDto>(`/pipelines/${id}`, data);
+        const request = PipelineMutationRequestSchema.parse(data) as PipelineMutationRequest;
+        const rawResponse = await apiClient.put<BackendPipeline, PipelineMutationRequest>(`/pipelines/${id}`, request);
+        const raw = PipelineSchema.parse(rawResponse);
         return pipelineToWorkflow(raw);
     },
 

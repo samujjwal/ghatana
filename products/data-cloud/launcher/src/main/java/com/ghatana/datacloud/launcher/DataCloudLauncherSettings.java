@@ -23,9 +23,15 @@ public final class DataCloudLauncherSettings {
 
     static DataCloud.DataCloudConfig parseClientConfig(String[] args, Map<String, String> env) {
         DataCloud.DataCloudConfig.Builder builder = DataCloud.DataCloudConfig.builder();
+        Map<String, Object> customConfig = new java.util.LinkedHashMap<>();
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--profile" -> {
+                    if (i + 1 < args.length) {
+                        builder.profile(parseProfile(args[++i]));
+                    }
+                }
                 case "--instance-id" -> {
                     if (i + 1 < args.length) {
                         builder.instanceId(args[++i]);
@@ -39,11 +45,22 @@ public final class DataCloudLauncherSettings {
                 case "--enable-caching" -> builder.enableCaching(true);
                 case "--disable-caching" -> builder.enableCaching(false);
                 case "--enable-metrics" -> builder.enableMetrics(true);
+                case "--sovereign-data-dir" -> {
+                    if (i + 1 < args.length) {
+                        customConfig.put("sovereign.dataDir", args[++i]);
+                    }
+                }
                 default -> {
-                    // Ignore non-config flags here; transport toggles are handled separately.
+                    if (args[i].startsWith("--profile=")) {
+                        builder.profile(parseProfile(args[i].substring("--profile=".length())));
+                    } else if (args[i].startsWith("--sovereign-data-dir=")) {
+                        customConfig.put("sovereign.dataDir", args[i].substring("--sovereign-data-dir=".length()));
+                    }
                 }
             }
         }
+
+        builder.profile(resolveProfile(args, env));
 
         String instanceId = env.get("DATACLOUD_INSTANCE_ID");
         if (instanceId != null) {
@@ -55,7 +72,36 @@ public final class DataCloudLauncherSettings {
             builder.maxConnectionsPerTenant(Integer.parseInt(maxConnections));
         }
 
+        String sovereignDataDir = env.get("DATACLOUD_SOVEREIGN_DATA_DIR");
+        if (sovereignDataDir != null && !sovereignDataDir.isBlank()) {
+            customConfig.put("sovereign.dataDir", sovereignDataDir);
+        }
+
+        builder.customConfig(customConfig);
+
         return builder.build();
+    }
+
+    public static DataCloud.DataCloudConfig.DataCloudProfile resolveProfile(String[] args, Map<String, String> env) {
+        for (int i = 0; i < args.length; i++) {
+            if ("--profile".equals(args[i]) && i + 1 < args.length) {
+                return parseProfile(args[i + 1]);
+            }
+            if (args[i].startsWith("--profile=")) {
+                return parseProfile(args[i].substring("--profile=".length()));
+            }
+        }
+
+        String rawProfile = env.get("DATACLOUD_PROFILE");
+        if (rawProfile == null || rawProfile.isBlank()) {
+            return DataCloud.DataCloudConfig.DataCloudProfile.LOCAL;
+        }
+        return parseProfile(rawProfile);
+    }
+
+    public static boolean isEmbeddedProfile(DataCloud.DataCloudConfig.DataCloudProfile profile) {
+        return profile == DataCloud.DataCloudConfig.DataCloudProfile.LOCAL
+            || profile == DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN;
     }
 
     public static boolean shouldStartGrpcServer(String[] args) {
@@ -115,6 +161,22 @@ public final class DataCloudLauncherSettings {
         return isEnabled(env.get("DATACLOUD_AI_ENABLED"));
     }
 
+    public static int resolveStorageCompactionThreshold(Map<String, String> env) {
+        String raw = env.get("DATACLOUD_COMPACTION_TOMBSTONE_THRESHOLD");
+        if (raw == null || raw.isBlank()) {
+            return 25;
+        }
+        return Integer.parseInt(raw);
+    }
+
+    public static long resolveStorageCompactionIntervalSeconds(Map<String, String> env) {
+        String raw = env.get("DATACLOUD_COMPACTION_INTERVAL_SECONDS");
+        if (raw == null || raw.isBlank()) {
+            return 300L;
+        }
+        return Long.parseLong(raw);
+    }
+
     /**
      * Resolves the maximum number of requests per IP allowed in a rate-limit window.
      * Reads {@code DATACLOUD_RATE_LIMIT_REQUESTS}; defaults to {@code 200}.
@@ -144,5 +206,15 @@ public final class DataCloudLauncherSettings {
             return false;
         }
         return Boolean.parseBoolean(rawValue);
+    }
+
+    private static DataCloud.DataCloudConfig.DataCloudProfile parseProfile(String rawProfile) {
+        return switch (rawProfile.trim().toLowerCase()) {
+            case "local" -> DataCloud.DataCloudConfig.DataCloudProfile.LOCAL;
+            case "sovereign" -> DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN;
+            case "staging" -> DataCloud.DataCloudConfig.DataCloudProfile.STAGING;
+            case "production" -> DataCloud.DataCloudConfig.DataCloudProfile.PRODUCTION;
+            default -> throw new IllegalArgumentException("Unknown DATACLOUD profile: " + rawProfile);
+        };
     }
 }

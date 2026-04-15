@@ -156,4 +156,36 @@ class DataCloudLauncherSettingsTest {
         assertThat(requests).isEqualTo(200);
         assertThat(windowSec).isEqualTo(60L);
     }
+
+    @Test
+    @DisplayName("client config resolves sovereign profile and data dir from env")
+    void clientConfigResolvesSovereignProfileAndDataDirFromEnvironment() {
+        DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig(
+                new String[0],
+                Map.of(
+                        "DATACLOUD_PROFILE", "sovereign",
+                        "DATACLOUD_SOVEREIGN_DATA_DIR", "/tmp/dc-sovereign"));
+
+        assertThat(config.profile()).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN);
+        assertThat(config.customConfig()).containsEntry("sovereign.dataDir", "/tmp/dc-sovereign");
+        assertThat(DataCloudLauncherSettings.isEmbeddedProfile(config.profile())).isTrue();
+    }
+
+    @Test
+    @DisplayName("client config resolves sovereign profile from cli flag")
+    void clientConfigResolvesSovereignProfileFromCliFlag() {
+        DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig(
+                new String[] {"--profile=sovereign", "--sovereign-data-dir=/var/lib/datacloud"},
+                Map.of());
+
+        assertThat(config.profile()).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN);
+        assertThat(config.customConfig()).containsEntry("sovereign.dataDir", "/var/lib/datacloud");
+    }
+
+    @Test
+    @DisplayName("storage compaction settings fall back to sovereign defaults")
+    void storageCompactionSettingsFallBackToDefaults() {
+        assertThat(DataCloudLauncherSettings.resolveStorageCompactionThreshold(Map.of())).isEqualTo(25);
+        assertThat(DataCloudLauncherSettings.resolveStorageCompactionIntervalSeconds(Map.of())).isEqualTo(300L);
+    }
 }

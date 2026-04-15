@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 
 vi.mock('../../lib/api/client', () => ({
@@ -25,25 +25,12 @@ describe('BrainPage — IntelligentHub', () => {
         vi.clearAllMocks();
     });
 
-    it('renders without crashing', () => {
+    it('renders the intelligent-hub shell with ask-anything and quick-action sections', () => {
         render(<IntelligentHub />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
-    });
 
-    it('displays AI or intelligence-related content', () => {
-        render(<IntelligentHub />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/intel|ai|brain|agent|hub|model|predict/i);
-    });
-
-    it('renders a meaningful page structure', () => {
-        render(<IntelligentHub />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
-
-    it('renders without throwing', () => {
-        expect(() =>
-            render(<IntelligentHub />, { wrapper: TestWrapper })
-        ).not.toThrow();
+        expect(screen.getByPlaceholderText(/Ask anything/i)).toBeInTheDocument();
+        expect(screen.getByText('Quick Actions')).toBeInTheDocument();
+        expect(screen.getByText('Insights')).toBeInTheDocument();
+        expect(screen.getByText('AI Recommendations')).toBeInTheDocument();
     });
 });

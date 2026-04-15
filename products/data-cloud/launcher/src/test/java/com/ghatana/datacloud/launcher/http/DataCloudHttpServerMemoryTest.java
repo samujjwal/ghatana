@@ -15,6 +15,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -59,6 +61,141 @@ class DataCloudHttpServerMemoryTest {
     }
 
     // ==================== GET /api/v1/memory/:agentId ====================
+
+    @Test
+    @DisplayName("storeMemory: persists AGENT_MEMORY item with ttl-derived expiresAt")
+    void storeMemory_persistsAgentMemoryItem() throws Exception {
+        when(mockClient.save(anyString(), eq("dc_memory"), any(Map.class)))
+            .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+                "mem-100",
+                "dc_memory",
+                invocation.getArgument(2, Map.class))));
+
+        startServer();
+
+        HttpResponse<String> resp = post(
+            "/api/v1/memory/bot-writer",
+            """
+            {
+              "type": "episodic",
+              "content": "User asked for a short summary",
+              "ttlSeconds": 600,
+              "tags": ["summary", "user-request"],
+              "salience": 0.9,
+              "metadata": {"source": "chat"}
+            }
+            """);
+
+        assertThat(resp.statusCode()).isEqualTo(200);
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(body.get("agentId")).isEqualTo("bot-writer");
+        assertThat(body.get("type")).isEqualTo("EPISODIC");
+        assertThat(body.get("content")).isEqualTo("User asked for a short summary");
+        assertThat(body.get("expiresAt")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("getAgentMemory: returns context-window items ordered by salience then recency")
+    void getAgentMemory_returnsContextWindowItemsOrdered() throws Exception {
+        List<DataCloudClient.Entity> items = List.of(
+            DataCloudClient.Entity.of("m-low", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-order",
+                "type", "EPISODIC",
+                "content", "low salience",
+                "salience", 0.1,
+                "createdAt", "2026-04-14T10:00:00Z")),
+            DataCloudClient.Entity.of("m-high-old", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-order",
+                "type", "EPISODIC",
+                "content", "high but older",
+                "salience", 0.9,
+                "createdAt", "2026-04-14T11:00:00Z")),
+            DataCloudClient.Entity.of("m-high-new", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-order",
+                "type", "SEMANTIC",
+                "content", "high and newer",
+                "salience", 0.9,
+                "createdAt", "2026-04-14T12:00:00Z"))
+        );
+        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items));
+
+        startServer();
+
+        HttpResponse<String> resp = get("/api/v1/memory/bot-order?limit=2");
+
+        assertThat(resp.statusCode()).isEqualTo(200);
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        List<?> returnedItems = (List<?>) body.get("items");
+        assertThat(returnedItems).hasSize(2);
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-high-new");
+        assertThat(((Map<?, ?>) returnedItems.get(1)).get("id")).isEqualTo("m-high-old");
+    }
+
+    @Test
+    @DisplayName("getAgentMemory: expired items are deleted and excluded from response")
+    void getAgentMemory_cleansUpExpiredItems() throws Exception {
+        List<DataCloudClient.Entity> items = List.of(
+            DataCloudClient.Entity.of("m-expired", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-exp",
+                "type", "EPISODIC",
+                "content", "expired",
+                "expiresAt", Instant.now().minusSeconds(60).toString())),
+            DataCloudClient.Entity.of("m-active", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-exp",
+                "type", "EPISODIC",
+                "content", "active",
+                "expiresAt", Instant.now().plusSeconds(60).toString()))
+        );
+        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items));
+        when(mockClient.delete(anyString(), eq("dc_memory"), eq("m-expired")))
+            .thenReturn(Promise.complete());
+
+        startServer();
+
+        HttpResponse<String> resp = get("/api/v1/memory/bot-exp");
+
+        assertThat(resp.statusCode()).isEqualTo(200);
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(((Number) body.get("total")).intValue()).isEqualTo(1);
+        List<?> returnedItems = (List<?>) body.get("items");
+        assertThat(returnedItems).hasSize(1);
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-active");
+        verify(mockClient).delete(anyString(), eq("dc_memory"), eq("m-expired"));
+    }
+
+    @Test
+    @DisplayName("listMemory root: returns filtered items for UI consumption")
+    void listMemoryRoot_returnsItemsWrapper() throws Exception {
+        List<DataCloudClient.Entity> items = List.of(
+            DataCloudClient.Entity.of("m-root-1", "dc_memory", Map.of(
+                "recordType", "AGENT_MEMORY",
+                "agentId", "bot-root",
+                "type", "SEMANTIC",
+                "content", "remember this",
+                "salience", 0.7,
+                "createdAt", "2026-04-14T12:00:00Z"))
+        );
+        when(mockClient.query(anyString(), eq("dc_memory"), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(items));
+
+        startServer();
+
+        HttpResponse<String> resp = get("/api/v1/memory?agentId=bot-root&type=semantic&limit=10");
+
+        assertThat(resp.statusCode()).isEqualTo(200);
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(((Number) body.get("total")).intValue()).isEqualTo(1);
+        List<?> returnedItems = (List<?>) body.get("items");
+        assertThat(returnedItems).hasSize(1);
+        assertThat(((Map<?, ?>) returnedItems.get(0)).get("id")).isEqualTo("m-root-1");
+    }
 
     @Test
     @DisplayName("getAgentMemory: mixed-type items → 200 with correct byType counts")
@@ -273,6 +410,15 @@ class DataCloudHttpServerMemoryTest {
         HttpRequest req = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create("http://127.0.0.1:" + port + path))
+            .build();
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> post(String path, String body) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
             .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }

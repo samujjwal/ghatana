@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { collectionsApi, type Collection } from '../lib/api/collections';
+import { lineageService } from '../api/lineage.service';
+import { LineageGraph } from '../components/lineage/LineageGraph';
 
 /**
  * View modes for the explorer
@@ -217,6 +219,20 @@ export function DataExplorer() {
 
     const collections = collectionsPage?.items ?? [];
 
+    const { data: lineageGraph, isLoading: lineageLoading } = useQuery({
+        queryKey: ['lineage', selectedCollection?.id, viewMode],
+        queryFn: () => lineageService.getLineage(selectedCollection!.id),
+        enabled: viewMode === 'lineage' && selectedCollection !== null,
+        staleTime: 60_000,
+    });
+
+    const { data: impactAnalysis } = useQuery({
+        queryKey: ['lineage-impact', selectedCollection?.id, viewMode],
+        queryFn: () => lineageService.getImpactAnalysis(selectedCollection!.id),
+        enabled: viewMode === 'lineage' && selectedCollection !== null,
+        staleTime: 60_000,
+    });
+
     const viewModes: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
         { id: 'table', label: 'Table', icon: <Table className="h-4 w-4" /> },
         { id: 'lineage', label: 'Lineage', icon: <GitBranch className="h-4 w-4" /> },
@@ -355,15 +371,51 @@ export function DataExplorer() {
                         )}
 
                         {viewMode === 'lineage' && (
-                            <div className="text-center py-8 text-gray-500">
-                                <GitBranch className="h-12 w-12 mx-auto mb-4" />
-                                <p className="font-medium text-gray-700 dark:text-gray-300">Lineage preview</p>
-                                <p className="text-sm mt-2">
-                                    The standalone launcher does not currently expose live lineage APIs.
-                                </p>
-                                <p className="text-sm">
-                                    Use this view as a navigation placeholder until backend lineage support is implemented.
-                                </p>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="font-medium text-gray-700 dark:text-gray-300">Lineage preview</p>
+                                        <p className="text-sm mt-2 text-gray-500">
+                                            Live upstream and downstream lineage from the canonical launcher route.
+                                        </p>
+                                    </div>
+                                    {impactAnalysis && (
+                                        <div className="text-right text-sm text-gray-600 dark:text-gray-300">
+                                            <p>
+                                                Impact level: <strong>{impactAnalysis.affectedDatasets > 1 ? 'HIGH' : impactAnalysis.affectedDatasets === 1 ? 'MEDIUM' : 'LOW'}</strong>
+                                            </p>
+                                            <p>
+                                                Affected datasets: <strong>{impactAnalysis.affectedDatasets}</strong>
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {lineageLoading && <LazyLoading message="Loading lineage graph..." />}
+
+                                {!lineageLoading && lineageGraph && (
+                                    <>
+                                        <LineageGraph
+                                            nodes={lineageGraph.nodes}
+                                            edges={lineageGraph.edges}
+                                            rootNode={lineageGraph.rootNode}
+                                            height="420px"
+                                        />
+
+                                        {impactAnalysis && impactAnalysis.details.length > 0 && (
+                                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/30">
+                                                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Downstream impact</p>
+                                                <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                                                    {impactAnalysis.details.map((detail) => (
+                                                        <p key={detail.id}>
+                                                            {detail.name} • {detail.impact} impact
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         )}
                     </Suspense>

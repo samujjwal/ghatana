@@ -1,9 +1,8 @@
 /**
  * Data-Cloud SDK Module
  *
- * Placeholder module for SDK generation. OpenAPI generator tasks are disabled
- * due to plugin resolution issues. This module can be re-enabled when the
- * OpenAPI generator plugin is properly configured.
+ * Generates lightweight Java, TypeScript, and Python SDKs from the canonical
+ * Data-Cloud OpenAPI specification using an in-repo code generator.
  */
 plugins {
     base
@@ -13,10 +12,106 @@ plugins {
 group = "com.ghatana.datacloud"
 version = rootProject.version
 
+val openApiSpec = projectDir.parentFile.resolve("api/openapi.yaml")
+val generatedSdkRoot = layout.buildDirectory.dir("generated/sdk")
+val generatedJavaSources = generatedSdkRoot.map { it.dir("java/src/main/java") }
+val generatedTypeScriptDir = generatedSdkRoot.map { it.dir("typescript") }
+val generatedPythonDir = generatedSdkRoot.map { it.dir("python") }
+
+val sdkCodegen = sourceSets.create("sdkCodegen") {
+    java.srcDir("src/codegen/java")
+}
+
+sourceSets.named("main") {
+    java.srcDir(generatedJavaSources)
+}
+
+configurations[sdkCodegen.implementationConfigurationName].extendsFrom(configurations.implementation.get())
+configurations[sdkCodegen.runtimeOnlyConfigurationName].extendsFrom(configurations.runtimeOnly.get())
 
 dependencies {
+    implementation(libs.jackson.databind)
+
+    add(sdkCodegen.implementationConfigurationName, libs.jackson.databind)
+    add(sdkCodegen.implementationConfigurationName, libs.jackson.dataformat.yaml)
+
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(project(":products:data-cloud:launcher"))
+    testImplementation(project(":products:data-cloud:platform-launcher"))
+    testImplementation(project(":products:data-cloud:spi"))
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+val compileSdkCodegen by tasks.registering(JavaCompile::class) {
+    description = "Compiles the Data-Cloud SDK code generator."
+    group = "codegen"
+
+    source = sdkCodegen.java
+    classpath = sdkCodegen.compileClasspath
+    destinationDirectory.set(layout.buildDirectory.dir("classes/sdkCodegen"))
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
+    options.compilerArgs.add("-proc:none")
+}
+
+val generateDataCloudSdks by tasks.registering(JavaExec::class) {
+    description = "Generates Java, TypeScript, and Python SDKs from the canonical OpenAPI spec."
+    group = "codegen"
+
+    dependsOn(compileSdkCodegen)
+
+    classpath = files(compileSdkCodegen.flatMap { it.destinationDirectory }) +
+        configurations[sdkCodegen.runtimeClasspathConfigurationName]
+    mainClass.set("com.ghatana.datacloud.sdk.codegen.DataCloudSdkGeneratorMain")
+
+    inputs.file(openApiSpec)
+    outputs.dir(generatedSdkRoot)
+
+    args(openApiSpec.absolutePath, generatedSdkRoot.get().asFile.absolutePath)
+}
+
+tasks.named<JavaCompile>("compileJava") {
+    dependsOn(generateDataCloudSdks)
+}
+
+val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
+    description = "Type-checks the generated TypeScript SDK."
+    group = "verification"
+
+    dependsOn(generateDataCloudSdks)
+    workingDir = rootDir
+    commandLine(
+        "pnpm",
+        "exec",
+        "tsc",
+        "--noEmit",
+        "--project",
+        generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
+    )
+}
+
+val verifyGeneratedPythonSdk by tasks.registering(Exec::class) {
+    description = "Syntax-checks the generated Python SDK."
+    group = "verification"
+
+    dependsOn(generateDataCloudSdks)
+    commandLine(
+        "python3",
+        "-m",
+        "py_compile",
+        generatedPythonDir.get().file("datacloud_sdk/__init__.py").asFile.absolutePath,
+        generatedPythonDir.get().file("datacloud_sdk/client.py").asFile.absolutePath
+    )
+}
+
+tasks.named<Test>("test") {
+    dependsOn(generateDataCloudSdks)
+    systemProperty("datacloud.sdk.generatedRoot", generatedSdkRoot.get().asFile.absolutePath)
+}
+
+tasks.named("check") {
+    dependsOn(verifyGeneratedTypeScriptSdk)
+    dependsOn(verifyGeneratedPythonSdk)
 }

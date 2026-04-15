@@ -68,33 +68,12 @@ describe('WorkflowPage — WorkflowsPage', () => {
         mockApiClient.delete.mockResolvedValue(undefined);
     });
 
-    it('renders without crashing', () => {
+    it('renders the workflows shell with canonical search and filter controls', () => {
         render(<WorkflowsPage />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
-    });
-
-    it('displays workflow or automation content', () => {
-        render(<WorkflowsPage />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/workflow|pipeline|automat|trigger|step/i);
-    });
-
-    it('renders with meaningful page structure', () => {
-        render(<WorkflowsPage />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
-
-    it('does not throw on render', () => {
-        expect(() =>
-            render(<WorkflowsPage />, { wrapper: TestWrapper })
-        ).not.toThrow();
-    });
-
-    it('renders interactive controls', () => {
-        render(<WorkflowsPage />, { wrapper: TestWrapper });
-        const interactives = document.querySelectorAll('button, a, input, [role="button"]');
-        // Workflows page should have at least some interactive elements
-        expect(interactives.length).toBeGreaterThanOrEqual(0);
+        expect(screen.getByRole('heading', { name: 'Workflows' })).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Search workflows/i)).toBeInTheDocument();
+        expect(screen.getByText('All Workflows')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /New Workflow/i })).toBeInTheDocument();
     });
 
     it('renders canonical pipeline payload details from the launcher route', async () => {

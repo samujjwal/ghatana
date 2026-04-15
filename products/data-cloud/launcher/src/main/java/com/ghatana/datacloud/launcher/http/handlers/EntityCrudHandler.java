@@ -45,6 +45,7 @@ public class EntityCrudHandler {
     private final HttpHandlerSupport http;
     private final BiConsumer<String, Map<String, Object>> wsBroadcaster;
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
+    private SemanticSearchHandler semanticSearchHandler;
 
     private EntitySchemaValidator schemaValidator;
     private OpenSearchConnector openSearchConnector;
@@ -76,6 +77,11 @@ public class EntityCrudHandler {
 
     public EntityCrudHandler withTraceSupport(TraceSpanSupport traceSupport) {
         this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
+        return this;
+    }
+
+    public EntityCrudHandler withSemanticSearchHandler(SemanticSearchHandler semanticSearchHandler) {
+        this.semanticSearchHandler = semanticSearchHandler;
         return this;
     }
 
@@ -142,7 +148,11 @@ public class EntityCrudHandler {
                                     "tenantId",  resolvedTenantId
                                 ));
                                 return entity;
-                            });
+                            })
+                            .then(savedEntity -> semanticSearchHandler == null
+                                ? Promise.of(savedEntity)
+                                : semanticSearchHandler.indexEntity(resolvedTenantId, collection, savedEntity)
+                                    .map(ignored -> savedEntity));
                     })
                     .map(entity -> http.jsonResponse(Map.of(
                         "id", entity.id(),
@@ -300,7 +310,11 @@ public class EntityCrudHandler {
                                     "tenantId",  resolvedTenantId
                                 ));
                                 return v;
-                            });
+                            })
+                            .then(deleted -> semanticSearchHandler == null
+                                ? Promise.of(deleted)
+                                : semanticSearchHandler.deleteEntity(resolvedTenantId, id)
+                                    .map(ignored -> deleted));
                     })
                     .map(v -> http.jsonResponse(Map.of(
                         "deleted", true,

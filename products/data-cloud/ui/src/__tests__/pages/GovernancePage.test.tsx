@@ -96,26 +96,13 @@ describe('GovernancePage — TrustCenter', () => {
         });
     });
 
-    it('renders without crashing', () => {
-        render(<TrustCenter />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
-    });
+    it('shows an honest empty-state message when no policies match the governance query', async () => {
+        mockGovernanceService.getPolicies.mockResolvedValue([]);
 
-    it('displays governance or compliance content', () => {
         render(<TrustCenter />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/govern|trust|compli|policy|securit|audit|privacy/i);
-    });
 
-    it('renders with meaningful structure', () => {
-        render(<TrustCenter />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
-
-    it('does not throw on render', () => {
-        expect(() =>
-            render(<TrustCenter />, { wrapper: TestWrapper })
-        ).not.toThrow();
+        expect(await screen.findByText(/No policies found/i)).toBeInTheDocument();
+        expect(screen.getByText(/Overall Compliance Score/i)).toBeInTheDocument();
     });
 
     it('renders canonical governance payloads into compliance score, policies, and audit log', async () => {

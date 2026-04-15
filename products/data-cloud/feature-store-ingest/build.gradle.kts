@@ -42,6 +42,8 @@ dependencies {
     // Jackson for JSON
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
+    // P3.3.1: YAML-configurable feature transform spec
+    implementation(libs.jackson.dataformat.yaml)
 
     // Logging (Log4j2 + SLF4J)
     implementation(libs.log4j.core)

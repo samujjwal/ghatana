@@ -10,6 +10,10 @@
 
 import { apiClient } from '../lib/api/client';
 import { collectionsApi, type Collection } from '../lib/api/collections';
+import type {
+  CollectionCostReport,
+  MigrateCollectionResult as SharedMigrateCollectionResult,
+} from '../contracts/schemas';
 
 export interface CostBreakdown {
   total: number;
@@ -77,21 +81,6 @@ export interface HotnessMetric {
   lastAccessed: string;
   predictedTier: string;
   recommendedAction?: string;
-}
-
-interface CollectionCostReport {
-  collectionId: string;
-  tenantId: string;
-  totalSizeGb: number;
-  totalCostDccPerDay: number;
-  currency: string;
-  tiers: Array<{
-    tier: 'HOT' | 'WARM' | 'COLD';
-    sizeGb: number;
-    costDccPerDay: number;
-    backend: string;
-  }>;
-  note: string;
 }
 
 async function getCollectionReports(): Promise<Array<{ collection: Collection; report: CollectionCostReport }>> {
@@ -257,12 +246,7 @@ export default costService;
 export type MigrationTargetTier = 'WARM' | 'COLD';
 
 /** Response shape from POST /api/v1/collections/:id/migrate */
-export interface MigrateCollectionResult {
-  collection: string;
-  targetTier: MigrationTargetTier;
-  status: 'SCHEDULED' | 'COMPLETED';
-  eventsMigrated: number;
-}
+export type MigrateCollectionResult = SharedMigrateCollectionResult;
 
 /**
  * Triggers a manual storage-tier migration for the specified collection.

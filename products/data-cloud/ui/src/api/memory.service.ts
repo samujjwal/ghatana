@@ -45,6 +45,44 @@ export interface MemoryConsolidationStatus {
   nextScheduled?: string;
 }
 
+interface LearningStatusResponse {
+  running: boolean;
+  lastRunTime: string;
+  nextScheduledRun: string;
+  intervalMinutes: number;
+  pendingReviews: number;
+  lastResult?: {
+    status?: string;
+    tenantId?: string;
+    manual?: boolean;
+    durationMs?: number;
+    patternsDiscovered?: number;
+    patternsUpdated?: number;
+    recordsAnalyzed?: number;
+    ranAt?: string;
+  };
+  timestamp?: string;
+}
+
+interface MemoryListResponse {
+  items: MemoryItem[];
+  total: number;
+}
+
+interface MemoryTierResponse {
+  items: MemoryItem[];
+  count: number;
+}
+
+interface MemorySummaryResponse {
+  byType: Record<string, number>;
+}
+
+interface MemorySearchResponse {
+  results: MemoryItem[];
+  count: number;
+}
+
 // =============================================================================
 // Client
 // =============================================================================
@@ -58,20 +96,31 @@ export interface MemoryConsolidationStatus {
  * @doc.pattern Service
  */
 export class MemoryService {
+  private mapConsolidationStatus(response: LearningStatusResponse): MemoryConsolidationStatus {
+    return {
+      lastRun: response.lastRunTime !== 'never' ? response.lastRunTime : response.lastResult?.ranAt,
+      episodesProcessed: response.lastResult?.recordsAnalyzed ?? 0,
+      policiesExtracted: response.lastResult?.patternsDiscovered ?? 0,
+      nextScheduled: response.nextScheduledRun !== 'not started' ? response.nextScheduledRun : undefined,
+    };
+  }
+
   /** Get memory summary (count per tier) for an agent */
   async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
-    return apiClient.get<Record<string, number>>(
+    const response = await apiClient.get<MemorySummaryResponse>(
       `/memory/${agentId}`,
       { params: tenantId ? { tenantId } : {} },
     );
+    return response.byType;
   }
 
   /** List memory items for an agent by tier */
   async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
-    return apiClient.get<MemoryItem[]>(
+    const response = await apiClient.get<MemoryTierResponse>(
       `/memory/${agentId}/${tier.toLowerCase()}`,
       { params },
     );
+    return response.items;
   }
 
   /** List memory items for an agent/tenant (all tiers) */
@@ -80,11 +129,12 @@ export class MemoryService {
     if (agentId && type) {
       return this.listMemoryByTier(agentId, type, rest);
     }
-    if (agentId) {
-      // Default to episodic if no type specified
-      return this.listMemoryByTier(agentId, 'EPISODIC', rest);
+    if (agentId && !type) {
+      const response = await apiClient.get<MemoryListResponse>(`/memory/${agentId}`, { params: rest });
+      return response.items;
     }
-    return apiClient.get<MemoryItem[]>('/memory', { params });
+    const response = await apiClient.get<MemoryListResponse>('/memory', { params });
+    return response.items;
   }
 
   /** Delete a memory item */
@@ -94,23 +144,26 @@ export class MemoryService {
 
   /** Mark a memory item as retained (bypass decay) */
   async retainMemoryItem(agentId: string, memoryId: string): Promise<void> {
-    await apiClient.put<void>(`/memory/${agentId}/${memoryId}/retain`);
+    await apiClient.put<void>(`/memory/${agentId}/${memoryId}/retain`, {});
   }
 
   /** Semantic search across agent memory */
   async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
-    return apiClient.post<MemoryItem[]>(
+    const response = await apiClient.post<MemorySearchResponse>(
       `/memory/${agentId}/search`,
-      { query, tenantId },
+      { query },
+      { params: tenantId ? { tenantId } : {} },
     );
+    return response.results;
   }
 
   /** Get consolidation status */
   async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
-    return apiClient.get<MemoryConsolidationStatus>(
+    const response = await apiClient.get<LearningStatusResponse>(
       '/learning/status',
       { params: tenantId ? { tenantId } : {} },
     );
+    return this.mapConsolidationStatus(response);
   }
 }
 

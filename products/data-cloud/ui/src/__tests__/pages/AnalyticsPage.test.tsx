@@ -8,42 +8,126 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 
-vi.mock('../../lib/api/client', () => ({
-    apiClient: {
-        get: vi.fn().mockResolvedValue([]),
-        post: vi.fn().mockResolvedValue({}),
+const analyticsMocks = vi.hoisted(() => ({
+    useAnalyticsQuery: vi.fn(),
+    useCollectionEntityCounts: vi.fn(),
+    useAnalyticsAiSuggestions: vi.fn(),
+}));
+
+vi.mock('../../api/brain.service', () => ({
+    brainService: {
+        getBrainStats: vi.fn().mockResolvedValue({ totalRecordsProcessed: 0, activePatterns: 0, hotTierRecords: 0 }),
     },
 }));
+
+vi.mock('../../api/cost.service', () => ({
+    costService: {
+        getCostAnalysis: vi.fn().mockResolvedValue({ total: 0 }),
+    },
+}));
+
+vi.mock('../../lib/api/workflows', () => ({
+    workflowsApi: {
+        list: vi.fn().mockResolvedValue({ total: 0 }),
+    },
+}));
+
+vi.mock('../../api/analytics.service', () => analyticsMocks);
+
+vi.mock('../../lib/api/data-cloud-api', () => ({
+    dataCloudApi: {
+        getCollections: vi.fn().mockResolvedValue([
+            { id: 'orders', name: 'orders' },
+            { id: 'customers', name: 'customers' },
+        ]),
+    },
+}));
+
+vi.mock('../../components/layout/PageLayout', () => ({
+    PageHeader: ({ title }: { title: string }) => <div><h1>{title}</h1></div>,
+    PageContent: ({ children, aiSidebar }: { children: React.ReactNode; aiSidebar?: React.ReactNode }) => <div>{children}{aiSidebar}</div>,
+    AISidebar: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+    AISuggestion: ({ title, description }: { title: string; description: string }) => <div><span>{title}</span><span>{description}</span></div>,
+    StatCard: ({ label, value }: { label: string; value: React.ReactNode }) => <div><span>{label}</span><span>{String(value)}</span></div>,
+}));
+
+vi.mock('../../components/brain/SpotlightRing', () => ({ SpotlightRing: () => <div>Spotlight Ring</div> }));
+vi.mock('../../components/brain/AutonomyTimeline', () => ({ AutonomyTimeline: () => <div>Autonomy Timeline</div> }));
 
 import { InsightsPage } from '../../pages/InsightsPage';
 
 describe('AnalyticsPage — InsightsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        analyticsMocks.useCollectionEntityCounts.mockReturnValue({
+            data: [
+                { collection: 'orders', count: 14, executionTimeMs: 5 },
+                { collection: 'customers', count: 6, executionTimeMs: 4 },
+            ],
+            isLoading: false,
+        });
+        analyticsMocks.useAnalyticsAiSuggestions.mockReturnValue({
+            data: [
+                {
+                    key: 'warn-1',
+                    type: 'warning',
+                    title: 'Freshness lag detected',
+                    description: 'orders has not refreshed in 6h',
+                    confidence: 0,
+                    reasons: ['stale'],
+                    fallback: true,
+                },
+            ],
+            isLoading: false,
+        });
+        analyticsMocks.useAnalyticsQuery.mockReturnValue({
+            mutate: vi.fn(),
+            data: undefined,
+            isPending: false,
+            error: null,
+            reset: vi.fn(),
+        });
     });
 
-    it('renders without crashing', () => {
+    it('renders canonical analytics collection summaries and anomaly hints', async () => {
         render(<InsightsPage />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
+
+        fireEvent.click(screen.getByRole('button', { name: /dashboards/i }));
+
+        expect(await screen.findByText('Entity Distribution by Collection')).toBeInTheDocument();
+
+        await waitFor(() => {
+            expect(within(screen.getByText('Total Entities').closest('div') as HTMLElement).getByText('20')).toBeInTheDocument();
+            expect(screen.getByText('orders')).toBeInTheDocument();
+            expect(screen.getByText('customers')).toBeInTheDocument();
+            expect(screen.getAllByText('Freshness lag detected').length).toBeGreaterThan(0);
+            expect(screen.getAllByText(/heuristic/i).length).toBeGreaterThan(0);
+        });
     });
 
-    it('displays analytics or insights content', () => {
+    it('submits quick analytics queries through the canonical mutation hook', async () => {
+        const mutate = vi.fn();
+        analyticsMocks.useAnalyticsQuery.mockReturnValue({
+            mutate,
+            data: undefined,
+            isPending: false,
+            error: null,
+            reset: vi.fn(),
+        });
+
         render(<InsightsPage />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/insight|analytic|metric|dashboard|chart|report/i);
-    });
 
-    it('renders with page structure', () => {
-        render(<InsightsPage />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
+        fireEvent.click(screen.getByRole('button', { name: /dashboards/i }));
 
-    it('does not throw on render', () => {
-        expect(() =>
-            render(<InsightsPage />, { wrapper: TestWrapper })
-        ).not.toThrow();
+        const editor = await screen.findByPlaceholderText(/select count\(\*\) as total/i);
+        fireEvent.change(editor, { target: { value: '  SELECT id FROM orders  ' } });
+        fireEvent.click(screen.getByRole('button', { name: /run query/i }));
+
+        await waitFor(() => {
+            expect(mutate).toHaveBeenCalledWith({ sql: 'SELECT id FROM orders' });
+        });
     });
 });

@@ -10,26 +10,16 @@
  */
 
 import { apiClient, PaginatedResponse } from './client';
+import {
+    CollectionEntityListResponseSchema,
+    CollectionEntitySchema,
+    type CollectionEntity as BackendEntity,
+    type CollectionEntityListResponse as BackendEntityListResponse,
+} from '../../contracts/schemas';
 
 // ---------------------------------------------------------------------------
 // Backend entity response shapes (raw responses from /api/v1/entities/…)
 // ---------------------------------------------------------------------------
-
-interface BackendEntity {
-    id: string;
-    collection: string;
-    data: Record<string, unknown>;
-    version?: number;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-interface BackendEntityListResponse {
-    entities: BackendEntity[];
-    count: number;
-    tenantId?: string;
-    timestamp?: string;
-}
 
 // ---------------------------------------------------------------------------
 // Transformation helpers
@@ -137,9 +127,10 @@ export const collectionsApi = {
     list: async (params?: CollectionQueryParams): Promise<PaginatedResponse<Collection>> => {
         const limit = params?.pageSize ?? 50;
         const offset = ((params?.page ?? 1) - 1) * limit;
-        const raw = await apiClient.get<BackendEntityListResponse>('/entities/dc_collections', {
+        const rawResponse = await apiClient.get<BackendEntityListResponse>('/entities/dc_collections', {
             params: { limit, offset, ...(params?.search ? { search: params.search } : {}) },
         });
+        const raw = CollectionEntityListResponseSchema.parse(rawResponse);
         const items = (raw.entities ?? []).map(entityToCollection);
         const page = params?.page ?? 1;
         return {
@@ -156,7 +147,8 @@ export const collectionsApi = {
      * GET /api/v1/entities/dc_collections/:id
      */
     get: async (id: string): Promise<Collection> => {
-        const raw = await apiClient.get<BackendEntity>(`/entities/dc_collections/${id}`);
+        const rawResponse = await apiClient.get<BackendEntity>(`/entities/dc_collections/${id}`);
+        const raw = CollectionEntitySchema.parse(rawResponse);
         return entityToCollection(raw);
     },
 

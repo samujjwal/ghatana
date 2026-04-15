@@ -3,16 +3,25 @@ package com.ghatana.datacloud;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig;
 import com.ghatana.datacloud.DataCloud.DataCloudConfig.DataCloudProfile;
 import com.ghatana.datacloud.spi.EntityStore;
+import io.activej.promise.Promise;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import org.junit.jupiter.api.AfterEach;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for DataCloud factory behavior and profile-gated store discovery.
@@ -33,10 +42,18 @@ class DataCloudFactoryTest extends EventloopTestBase {
         .profile(DataCloudProfile.PRODUCTION)
         .build();
 
+    @TempDir
+    Path tempDir;
+
+    @AfterEach
+    void clearKafkaBootstrapOverride() {
+        System.clearProperty("datacloud.kafka.bootstrapServers");
+    }
+
     @Test
     @DisplayName("production profile fails fast when no durable entity store is registered")
     void productionProfileFailsFastWhenNoDurableEntityStoreIsRegistered() {
-        assertThatThrownBy(() -> DataCloud.create(PRODUCTION_CONFIG))
+        assertThatThrownBy(() -> DataCloud.discoverEntityStore(PRODUCTION_CONFIG, java.util.Optional.empty()))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("No durable EntityStore provider found");
     }
@@ -57,9 +74,9 @@ class DataCloudFactoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("entity store discovery falls back to in-memory in local profile")
-    void entityStoreDiscoveryFallsBackToInMemoryInLocalProfile() {
-        assertThat(DataCloud.discoverEntityStore(LOCAL_CONFIG, java.util.Optional.empty()))
+    @DisplayName("entity store discovery prefers in-memory in local profile even when a provider is present")
+    void entityStoreDiscoveryPrefersInMemoryInLocalProfileEvenWhenAProviderIsPresent() {
+        assertThat(DataCloud.discoverEntityStore(LOCAL_CONFIG, java.util.Optional.of(mock(EntityStore.class))))
             .extracting(store -> store.getClass().getName())
             .asString()
             .contains("InMemoryEntityStore");
@@ -89,12 +106,45 @@ class DataCloudFactoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("event log discovery falls back to in-memory in local profile")
-    void eventLogDiscoveryFallsBackToInMemoryInLocalProfile() {
-        assertThat(DataCloud.discoverEventLogStore(LOCAL_CONFIG, java.util.Optional.empty()))
+    @DisplayName("event log discovery prefers in-memory in local profile even when a provider is present")
+    void eventLogDiscoveryPrefersInMemoryInLocalProfileEvenWhenAProviderIsPresent() {
+        assertThat(DataCloud.discoverEventLogStore(LOCAL_CONFIG, java.util.Optional.of(mock(EventLogStore.class))))
             .extracting(store -> store.getClass().getName())
             .asString()
             .contains("InMemoryEventLogStore");
+    }
+
+    @Test
+    @DisplayName("event log discovery adapts a legacy SPI provider when the platform provider is absent")
+    void eventLogDiscoveryAdaptsLegacySpiProviderWhenPresent() {
+        com.ghatana.datacloud.spi.EventLogStore legacyStore = mock(com.ghatana.datacloud.spi.EventLogStore.class);
+        when(legacyStore.getLatestOffset(argThat(tenant -> "tenant-adapter".equals(tenant.tenantId()))))
+            .thenReturn(Promise.of(com.ghatana.platform.types.identity.Offset.of(12L)));
+
+        EventLogStore discovered = DataCloud.discoverEventLogStore(
+            PRODUCTION_CONFIG,
+            Optional.empty(),
+            Optional.of(legacyStore)
+        );
+
+        com.ghatana.platform.types.identity.Offset latest = runPromise(() -> discovered.getLatestOffset(
+            new com.ghatana.platform.domain.eventstore.TenantContext("tenant-adapter", null, Map.of())
+        ));
+
+        assertThat(latest.value()).isEqualTo("12");
+        verify(legacyStore).getLatestOffset(argThat(tenant -> "tenant-adapter".equals(tenant.tenantId())));
+    }
+
+    @Test
+    @DisplayName("production profile discovers Kafka legacy provider via ServiceLoader")
+    void productionProfileDiscoversKafkaLegacyProviderViaServiceLoader() {
+        System.setProperty("datacloud.kafka.bootstrapServers", "localhost:19092");
+
+        EventLogStore discovered = DataCloud.discoverEventLogStore(PRODUCTION_CONFIG);
+
+        assertThat(discovered.getClass().getName())
+            .doesNotContain("InMemoryEventLogStore")
+            .contains("EventLogStoreAdapters");
     }
 
     @Test
@@ -150,6 +200,49 @@ class DataCloudFactoryTest extends EventloopTestBase {
             assertThat(saved.id()).isEqualTo("item-1");
         } finally {
             client.close();
+        }
+    }
+
+    @Test
+    @DisplayName("sovereign profile uses file-backed H2 stores and persists across restart")
+    void sovereignProfileUsesFileBackedStoresAndPersistsAcrossRestart() {
+        DataCloudConfig sovereignConfig = DataCloudConfig.builder()
+            .profile(DataCloudProfile.SOVEREIGN)
+            .customConfig(Map.of("sovereign.dataDir", tempDir.toString()))
+            .build();
+
+        DataCloudClient firstClient = DataCloud.create(sovereignConfig);
+        try {
+            assertThat(firstClient.entityStore().getClass().getName()).contains("H2SovereignEntityStore");
+            assertThat(firstClient.eventLogStore().getClass().getName()).contains("H2SovereignEventLogStore");
+
+            runPromise(() -> firstClient.save(
+                "tenant-sovereign",
+                "documents",
+                Map.<String, Object>of("id", "doc-1", "title", "Manifest")));
+            runPromise(() -> firstClient.appendEvent(
+                "tenant-sovereign",
+                DataCloudClient.Event.of("document.created", Map.of("entityId", "doc-1"))));
+        } finally {
+            firstClient.close();
+        }
+
+        DataCloudClient secondClient = DataCloud.create(sovereignConfig);
+        try {
+            java.util.Optional<DataCloudClient.Entity> entity = runPromise(() -> secondClient.findById(
+                "tenant-sovereign",
+                "documents",
+                "doc-1"));
+            List<DataCloudClient.Event> events = runPromise(() -> secondClient.queryEvents(
+                "tenant-sovereign",
+                DataCloudClient.EventQuery.byType("document.created")));
+
+            assertThat(entity).isPresent();
+            assertThat(entity.orElseThrow().id()).isEqualTo("doc-1");
+            assertThat(events).hasSize(1);
+            assertThat(events.get(0).type()).isEqualTo("document.created");
+        } finally {
+            secondClient.close();
         }
     }
 }

@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 
 vi.mock('../../api/memory.service', () => ({
@@ -30,39 +30,106 @@ import { MemoryPlaneViewerPage } from '../../pages/MemoryPlaneViewerPage';
 import { memoryService } from '../../api/memory.service';
 
 const mockListMemoryItems = vi.mocked(memoryService.listMemoryItems);
+const mockDeleteMemoryItem = vi.mocked(memoryService.deleteMemoryItem);
+const mockGetConsolidationStatus = vi.mocked(memoryService.getConsolidationStatus);
+
+const sampleItems = [
+  {
+    id: 'mem-001',
+    tenantId: 'tenant-a',
+    agentId: 'agent-123',
+    type: 'EPISODIC' as const,
+    content: 'User asked about refund policy',
+    tags: ['refund', 'policy'],
+    salience: 0.85,
+    createdAt: '2026-04-14T12:00:00Z',
+    metadata: { source: 'conversation', region: 'us-east' },
+  },
+  {
+    id: 'mem-002',
+    tenantId: 'tenant-a',
+    agentId: 'agent-456',
+    type: 'EPISODIC' as const,
+    content: 'Failed to process order #12345',
+    tags: ['order', 'failure'],
+    salience: 0.62,
+    createdAt: '2026-04-14T12:10:00Z',
+    metadata: {},
+  },
+];
 
 describe('MemoryPage — MemoryPlaneViewerPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockListMemoryItems.mockResolvedValue({ items: [], total: 0 } as never);
+        mockListMemoryItems.mockResolvedValue(sampleItems as never);
+        mockDeleteMemoryItem.mockResolvedValue(undefined as never);
+        mockGetConsolidationStatus.mockResolvedValue({
+            lastRun: '2026-04-14T12:00:00Z',
+            episodesProcessed: 24,
+            policiesExtracted: 3,
+        });
     });
 
-    it('renders without crashing', () => {
-        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
-    });
-
-    it('displays memory-related content', () => {
-        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/memory|retention|consolidat|plane|recall/i);
-    });
-
-    it('renders page with structural content', () => {
-        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
-
-    it('handles empty memory list without crashing', async () => {
-        mockListMemoryItems.mockResolvedValue({ items: [], total: 0 } as never);
+    it('renders consolidation summary and canonical memory items', async () => {
         render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
 
-        await waitFor(() => expect(document.body).toBeTruthy());
+        expect(await screen.findByText('User asked about refund policy')).toBeInTheDocument();
+        expect(screen.getByText('Failed to process order #12345')).toBeInTheDocument();
+        expect(screen.getByText(/Episodes processed:/i)).toBeInTheDocument();
+        expect(screen.getByText('24')).toBeInTheDocument();
+        expect(screen.getByText('3')).toBeInTheDocument();
     });
 
-    it('renders without throwing', () => {
-        expect(() =>
-            render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper })
-        ).not.toThrow();
+    it('passes active type and agent filter through the canonical memory service query', async () => {
+        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
+
+        await screen.findByText('User asked about refund policy');
+        expect(mockListMemoryItems).toHaveBeenCalledWith({
+            type: 'EPISODIC',
+            agentId: undefined,
+            query: undefined,
+        });
+
+        fireEvent.change(screen.getByLabelText('Filter by agent'), { target: { value: 'agent-123' } });
+
+        await waitFor(() => {
+            expect(mockListMemoryItems).toHaveBeenLastCalledWith({
+                type: 'EPISODIC',
+                agentId: 'agent-123',
+                query: undefined,
+            });
+        });
+    });
+
+    it('filters client-side search results and shows an honest empty state when nothing matches', async () => {
+        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
+
+        await screen.findByText('User asked about refund policy');
+        fireEvent.change(screen.getByLabelText('Search memory items'), { target: { value: 'zzznomatch' } });
+
+        expect(screen.getByText(/No episodic memory items found/i)).toBeInTheDocument();
+        expect(screen.getByText(/Try clearing the search filter/i)).toBeInTheDocument();
+        expect(screen.getByText(/0 items/i)).toBeInTheDocument();
+    });
+
+    it('toggles metadata visibility for a memory card', async () => {
+        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
+
+        await screen.findByText('User asked about refund policy');
+        fireEvent.click(screen.getAllByRole('button', { name: /show metadata/i })[0]);
+
+        expect(screen.getByText(/"source": "conversation"/i)).toBeInTheDocument();
+        expect(screen.getByText(/"region": "us-east"/i)).toBeInTheDocument();
+    });
+
+    it('deletes memory items through the canonical launcher boundary', async () => {
+        render(<MemoryPlaneViewerPage />, { wrapper: TestWrapper });
+
+        await screen.findByText('User asked about refund policy');
+        fireEvent.click(screen.getAllByLabelText('Delete memory item')[0]);
+
+        await waitFor(() => {
+            expect(mockDeleteMemoryItem).toHaveBeenCalledWith('default', 'mem-001');
+        });
     });
 });

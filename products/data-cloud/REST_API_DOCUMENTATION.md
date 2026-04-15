@@ -1,263 +1,233 @@
-# Data-Cloud REST API Documentation
+# Data Cloud REST API Documentation
 
-**Version:** 2026.3.1  
-**Framework:** ActiveJ HTTP Server  
-**Base URL:** `/api/v1`
+This document is the human-readable companion to the canonical contract in `products/data-cloud/api/openapi.yaml`. When there is any mismatch, the OpenAPI file wins.
 
-This document describes the Data-Cloud product API surface for data management, analytics, governance, AI/ML-native features, and execution persistence.
+## Request Model
 
-Boundary note: Data-Cloud is an independent AI/ML-native product, but it does not host agentic orchestration. AEP performs agentic processing by consuming Data-Cloud public contracts and event-cloud streams, then writing results and execution state back into Data-Cloud.
+- Base API prefix: `/api/v1`
+- Health and probe endpoints live outside `/api/v1`
+- Auth: local profile can run without auth; non-local deployments should use API key or JWT auth
+- Tenant resolution: `X-Tenant-ID` is the default tenant boundary header unless JWT tenant claims are configured
+- Content type: write routes expect `application/json`
+- Rate limiting: enforced in the launcher via configurable sliding-window limits
 
-Canonical contract note: the machine-readable source of truth is `products/data-cloud/api/openapi.yaml`; this document is a human-oriented companion.
+## Core Examples
 
----
+Create an entity:
 
-## Collections API
-
-### POST /api/v1/collections
-
-Create a new collection.
-
-**Authentication:**
-- Required header: `X-Tenant-ID` (tenant identifier)
-- Optional header: `X-User-ID` (user identifier for audit)
-
-**Request Body:**
 ```json
+POST /api/v1/entities/tickets
 {
-  "name": "string (required)",
-  "displayName": "string (optional)",
-  "description": "string (optional)",
-  "schema": {
-    "fields": [
-      {
-        "name": "string (required)",
-        "type": "STRING|NUMBER|BOOLEAN|DATE|TIMESTAMP|JSON",
-        "required": "boolean (optional, default: false)",
-        "indexed": "boolean (optional, default: false)",
-        "displayHint": "string (optional)"
-      }
-    ]
-  },
-  "storageProfile": {
-    "tier": "HOT|WARM|COLD (default: HOT)",
-    "ttlDays": "integer (optional)"
+  "title": "login failure investigation",
+  "summary": "password reset token expired"
+}
+```
+
+Similarity search:
+
+```json
+GET /api/v1/entities/tickets/similar?id=11111111-1111-1111-1111-111111111111&k=5
+```
+
+Publish a data product:
+
+```json
+POST /api/v1/data-products
+{
+  "name": "Support Tickets",
+  "collection": "tickets",
+  "description": "Support search and analytics",
+  "sla": {
+    "freshnessSeconds": 600,
+    "completenessTarget": 0.95
   }
 }
 ```
 
-**Response (201 Created):**
+Grounded retrieval:
+
 ```json
+POST /api/v1/context/tickets/rag
 {
-  "id": "uuid",
-  "tenantId": "string",
-  "name": "string",
-  "displayName": "string",
-  "description": "string",
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp",
-  "recordCount": 0,
-  "storageProfile": {
-    "tier": "string",
-    "ttlDays": "integer"
-  }
+  "question": "How should I troubleshoot an expired password reset token?",
+  "k": 3
 }
 ```
 
-**Error Responses:**
-- **400 Bad Request:** Invalid request format or missing required fields
-  ```json
-  {"error": "Invalid collection schema: field 'name' is required"}
-  ```
-- **401 Unauthorized:** Missing `X-Tenant-ID` header
-  ```json
-  {"error": "X-Tenant-Id header is required"}
-  ```
-- **403 Forbidden:** User lacks permission to create collections
-  ```json
-  {"error": "User does not have permission to create collections"}
-  ```
-- **500 Internal Server Error:** Database or service error
+## Endpoint Inventory
 
----
+### Probes And Runtime Info
 
-### GET /api/v1/collections
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Liveness summary |
+| GET | `/health/detail` | Detailed subsystem health |
+| GET | `/ready` | Readiness probe |
+| GET | `/live` | Liveness probe |
+| GET | `/info` | Runtime info |
+| GET | `/metrics` | Metrics export |
 
-List all collections for a tenant (with pagination).
+### Entities And Search
 
-**Authentication:**
-- Required header: `X-Tenant-ID`
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/entities/:collection` | Save or upsert an entity |
+| GET | `/api/v1/entities/:collection` | Query entities |
+| GET | `/api/v1/entities/:collection/:id` | Fetch one entity |
+| DELETE | `/api/v1/entities/:collection/:id` | Delete one entity |
+| POST | `/api/v1/entities/:collection/batch` | Batch upsert |
+| DELETE | `/api/v1/entities/:collection/batch` | Batch delete |
+| GET | `/api/v1/entities/:collection/:id/history` | Point-in-time entity snapshot |
+| GET | `/api/v1/entities/:collection/search` | Full-text search |
+| GET | `/api/v1/entities/:collection/similar` | Semantic similarity search |
+| GET | `/api/v1/entities/:collection/stream` | CDC stream for a collection |
+| GET | `/api/v1/entities/:collection/query/stream` | Streaming query SSE |
+| GET | `/api/v1/entities/:collection/export` | Bulk export |
+| POST | `/api/v1/entities/:collection/anomalies` | On-demand anomaly detection |
+| GET | `/api/v1/anomalies` | Query persisted anomaly results |
+| POST | `/api/v1/entities/:collection/validate` | Validate one payload |
+| POST | `/api/v1/entities/:collection/validate/batch` | Batch validation |
+| POST | `/api/v1/entities/:collection/suggest` | AI-assisted entity suggestions |
 
-**Query Parameters:**
-- `page`: Page number (0-indexed, default: 0)
-- `size`: Page size (default: 20, max: 100)
-- `sortBy`: Sort field: `name|createdAt|updatedAt` (default: `createdAt`)
-- `sortOrder`: `ASC|DESC` (default: `DESC`)
-- `filter`: Optional JSON filter criteria
+### Events
 
-**Response (200 OK):**
-```json
-{
-  "content": [
-    {
-      "id": "uuid",
-      "name": "string",
-      "displayName": "string",
-      "createdAt": "timestamp",
-      "recordCount": "integer"
-    }
-  ],
-  "page": 0,
-  "size": 20,
-  "totalElements": 150,
-  "totalPages": 8,
-  "hasMore": true
-}
-```
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/events` | Append an event |
+| GET | `/api/v1/events` | Query events |
+| GET | `/api/v1/events/:offset` | Fetch one event by offset |
 
-**Error Responses:**
-- **400 Bad Request:** Invalid pagination parameters
-- **401 Unauthorized:** Missing `X-Tenant-ID` header
-- **500 Internal Server Error:** Database error
+### Pipelines And Checkpoints
 
----
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/pipelines` | List pipelines |
+| POST | `/api/v1/pipelines` | Save pipeline |
+| GET | `/api/v1/pipelines/:pipelineId` | Get pipeline |
+| PUT | `/api/v1/pipelines/:pipelineId` | Update pipeline |
+| DELETE | `/api/v1/pipelines/:pipelineId` | Delete pipeline |
+| GET | `/api/v1/checkpoints` | List checkpoints |
+| POST | `/api/v1/checkpoints` | Save checkpoint |
+| GET | `/api/v1/checkpoints/:checkpointId` | Get checkpoint |
+| DELETE | `/api/v1/checkpoints/:checkpointId` | Delete checkpoint |
+| POST | `/api/v1/pipelines/:pipelineId/optimise-hint` | AI optimisation hint |
 
-### GET /api/v1/collections/{collectionId}
+### Memory, Brain, Learning
 
-Get a specific collection by ID.
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/memory` | List stored memory across agents |
+| POST | `/api/v1/memory/:agentId` | Store memory item |
+| GET | `/api/v1/memory/:agentId` | Read agent memory |
+| GET | `/api/v1/memory/:agentId/:tier` | Read tier-specific memory |
+| POST | `/api/v1/memory/:agentId/search` | Search memory |
+| DELETE | `/api/v1/memory/:agentId/:memoryId` | Delete memory item |
+| PUT | `/api/v1/memory/:agentId/:memoryId/retain` | Retain memory item |
+| GET | `/api/v1/brain/health` | Brain health |
+| GET | `/api/v1/brain/config` | Brain config |
+| GET | `/api/v1/brain/stats` | Brain stats |
+| GET | `/api/v1/brain/workspace` | Brain workspace snapshot |
+| GET | `/api/v1/brain/workspace/stream` | Brain workspace SSE |
+| POST | `/api/v1/brain/attention/elevate` | Attention override |
+| GET | `/api/v1/brain/attention/thresholds` | Read attention thresholds |
+| PUT | `/api/v1/brain/attention/thresholds` | Update attention thresholds |
+| GET | `/api/v1/brain/patterns` | List patterns |
+| POST | `/api/v1/brain/patterns/match` | Pattern matching |
+| GET | `/api/v1/brain/salience/:itemId` | Item salience lookup |
+| POST | `/api/v1/brain/explain` | AI explanation |
+| POST | `/api/v1/learning/trigger` | Trigger learning job |
+| GET | `/api/v1/learning/status` | Learning status |
+| GET | `/api/v1/learning/review` | Review queue |
+| POST | `/api/v1/learning/review/:reviewId/approve` | Approve review item |
+| POST | `/api/v1/learning/review/:reviewId/reject` | Reject review item |
+| DELETE | `/api/v1/learning/review/completed` | Purge completed reviews |
+| GET | `/api/v1/learning/stream` | Learning SSE |
 
-**Authentication:**
-- Required header: `X-Tenant-ID`
+### Analytics, Reports, Models, Features
 
-**Path Parameters:**
-- `collectionId`: UUID of the collection
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/analytics/query` | Run analytics query |
+| GET | `/api/v1/analytics/query/:queryId` | Get query result |
+| GET | `/api/v1/analytics/query/:queryId/plan` | Get query plan |
+| POST | `/api/v1/analytics/aggregate` | Aggregate query |
+| POST | `/api/v1/analytics/explain` | Explain query without running it |
+| POST | `/api/v1/analytics/suggest` | AI analytics suggestions |
+| POST | `/api/v1/reports` | Create report |
+| GET | `/api/v1/reports` | List reports |
+| GET | `/api/v1/reports/:reportId` | Get report |
+| GET | `/api/v1/models` | List AI models |
+| POST | `/api/v1/models` | Register AI model |
+| GET | `/api/v1/models/:modelName` | Get model |
+| POST | `/api/v1/models/:modelName/promote` | Promote model |
+| POST | `/api/v1/features` | Ingest feature data |
+| GET | `/api/v1/features/:entityId` | Read feature data |
 
-**Response (200 OK):**
-```json
-{
-  "id": "uuid",
-  "tenantId": "string",
-  "name": "string",
-  "displayName": "string",
-  "description": "string",
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp",
-  "recordCount": "integer",
-  "schema": {
-    "fields": [
-      {
-        "name": "string",
-        "type": "string",
-        "required": "boolean",
-        "indexed": "boolean"
-      }
-    ]
-  },
-  "storageProfile": {
-    "tier": "string",
-    "ttlDays": "integer"
-  }
-}
-```
+### Governance, Lineage, Context, Data Products
 
-**Error Responses:**
-- **401 Unauthorized:** Missing `X-Tenant-ID` header
-- **403 Forbidden:** Collection belongs to different tenant
-- **404 Not Found:** Collection does not exist
-- **500 Internal Server Error:** Database error
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/v1/governance/retention/classify` | Classify retention policy |
+| GET | `/api/v1/governance/retention/policy` | Get retention policy |
+| POST | `/api/v1/governance/retention/purge` | Purge data |
+| POST | `/api/v1/governance/privacy/redact` | Redact sensitive data |
+| GET | `/api/v1/governance/privacy/pii-fields` | List PII fields |
+| GET | `/api/v1/governance/compliance/summary` | Compliance summary |
+| GET | `/api/v1/lineage/:collection` | Collection lineage graph |
+| GET | `/api/v1/lineage/:collection/impact` | Impact analysis |
+| GET | `/api/v1/context` | Read runtime context |
+| PUT | `/api/v1/context` | Upsert runtime context |
+| DELETE | `/api/v1/context/keys/:key` | Delete one context key |
+| GET | `/api/v1/context/snapshot` | Read versioned context snapshot |
+| POST | `/api/v1/context/:collection/rag` | Grounded retrieval response |
+| GET | `/api/v1/data-products` | List published data products |
+| POST | `/api/v1/data-products` | Publish a data product descriptor |
+| POST | `/api/v1/data-products/:productId/subscribe` | Subscribe to a data product |
 
----
+### Capabilities, Plugins, Autonomy, Agent Catalog
 
-### PUT /api/v1/collections/{collectionId}
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/capabilities` | Runtime capability registry |
+| PUT | `/api/v1/autonomy/level` | Set global autonomy level |
+| GET | `/api/v1/autonomy/level` | Get global autonomy level |
+| GET | `/api/v1/autonomy/domains` | List autonomy domains |
+| GET | `/api/v1/autonomy/domains/:domain` | Get domain autonomy settings |
+| GET | `/api/v1/autonomy/logs` | Get autonomy audit logs |
+| GET | `/api/v1/agents/catalog` | List agent catalog entries |
+| GET | `/api/v1/agents/catalog/:id` | Get one agent catalog entry |
+| GET | `/api/v1/plugins` | List installed plugins |
+| GET | `/api/v1/plugins/:id` | Get plugin details |
+| POST | `/api/v1/plugins/:id/enable` | Enable plugin |
+| POST | `/api/v1/plugins/:id/disable` | Disable plugin |
+| POST | `/api/v1/plugins/:id/upgrade` | Upgrade plugin |
 
-Update an existing collection.
+### Operations And Streaming
 
-**Authentication:**
-- Required header: `X-Tenant-ID`
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/events/stream` | Global SSE stream |
+| GET | `/api/v1/voice/intents` | List supported voice intents |
+| POST | `/api/v1/voice/intent` | Resolve voice intent |
+| POST | `/api/v1/voice/intent/classify` | Classify voice input only |
+| GET | `/api/v1/queries/estimate` | Estimate storage cost for a query |
+| GET | `/api/v1/collections/:id/cost-report` | Collection cost report |
+| POST | `/api/v1/queries/federated` | Federated query execution |
+| POST | `/api/v1/collections/:id/migrate` | Manual tier migration |
+| WS | `/ws` | WebSocket change notifications |
 
-**Path Parameters:**
-- `collectionId`: UUID of the collection
+## Common Response Patterns
 
-**Request Body:**
-```json
-{
-  "displayName": "string (optional)",
-  "description": "string (optional)",
-  "storageProfile": {
-    "tier": "HOT|WARM|COLD (optional)",
-    "ttlDays": "integer (optional)"
-  }
-}
-```
+- Validation failures: `400` or `422` with an `error` field
+- Missing resources: `404`
+- Unsupported optional subsystem: `501` or `503` depending on handler behavior
+- Successful mutations usually return JSON with IDs, timestamps, and request correlation fields
 
-**Response (200 OK):**
-```json
-{
-  "id": "uuid",
-  "name": "string",
-  "displayName": "string",
-  "updatedAt": "timestamp",
-  "storageProfile": {
-    "tier": "string",
-    "ttlDays": "integer"
-  }
-}
-```
+## Notes On Accuracy
 
-**Error Responses:**
-- **400 Bad Request:** Invalid update request
-- **401 Unauthorized:** Missing `X-Tenant-ID` header
-- **403 Forbidden:** User lacks permission or collection belongs to different tenant
-- **404 Not Found:** Collection does not exist
-- **500 Internal Server Error:** Database error
-
----
-
-### DELETE /api/v1/collections/{collectionId}
-
-Delete a collection.
-
-**Authentication:**
-- Required header: `X-Tenant-ID`
-
-**Path Parameters:**
-- `collectionId`: UUID of the collection
-
-**Response (204 No Content):** Collection deleted successfully
-
-**Error Responses:**
-- **401 Unauthorized:** Missing `X-Tenant-ID` header
-- **403 Forbidden:** User lacks permission or collection belongs to different tenant
-- **404 Not Found:** Collection does not exist
-- **409 Conflict:** Collection has active records or operations
-- **500 Internal Server Error:** Database error
-
----
-
-## Common Error Codes
-
-| Code | Status | Description |
-|------|--------|-------------|
-| `MISSING_TENANT_ID` | 401 | X-Tenant-ID header is required |
-| `UNAUTHORIZED` | 401 | User is not authenticated |
-| `FORBIDDEN` | 403 | User lacks required permissions |
-| `NOT_FOUND` | 404 | Resource does not exist |
-| `INVALID_REQUEST` | 400 | Request validation failed |
-| `CONFLICT` | 409 | Resource is in conflicting state |
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
-
----
-
-## Rate Limiting
-
-The API implements tenant-level rate limiting:
-- **Rate Limit:** 1000 requests per minute per tenant
-- **Response Headers:**
-  - `X-RateLimit-Limit`: Maximum requests per minute
-  - `X-RateLimit-Remaining`: Remaining quota in current window
-  - `X-RateLimit-Reset`: Unix timestamp when quota resets
-
-**Example:**
+- This file reflects the routes currently registered in the launcher.
+- Schema-level request and response details should be taken from `products/data-cloud/api/openapi.yaml` and generated SDKs.
+- If you add a route to `DataCloudHttpServer`, update both the OpenAPI contract and this document in the same change.
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 950

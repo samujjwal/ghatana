@@ -10,6 +10,12 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import {
+  PluginListResponseSchema,
+  PluginViewSchema,
+  type PluginListResponse as BackendPluginListResponse,
+  type PluginView as BackendPluginView,
+} from '../contracts/schemas';
 import type { LogEntry } from '../components/plugins/PluginLogsViewer';
 import type { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
 
@@ -86,19 +92,6 @@ export interface PluginUpdateRequest {
   configuration?: PluginConfiguration;
 }
 
-interface BackendPluginView {
-  id: string;
-  displayName: string;
-  version: string;
-  status: 'enabled' | 'disabled';
-  supportedRecordTypes: string[];
-}
-
-interface BackendPluginListResponse {
-  plugins: BackendPluginView[];
-  total: number;
-}
-
 const DEFAULT_PLUGIN_AUTHOR = 'Ghatana Data Cloud';
 const DEFAULT_PLUGIN_LICENSE = 'Bundled';
 
@@ -172,12 +165,14 @@ function mapPluginView(plugin: BackendPluginView): Plugin {
 
 export class PluginService {
   async getInstalledPlugins(): Promise<Plugin[]> {
-    const response = await apiClient.get<BackendPluginListResponse>('/plugins');
+    const rawResponse = await apiClient.get<BackendPluginListResponse>('/plugins');
+    const response = PluginListResponseSchema.parse(rawResponse);
     return response.plugins.map(mapPluginView);
   }
 
   async getPlugin(pluginId: string): Promise<Plugin> {
-    const response = await apiClient.get<BackendPluginView>(`/plugins/${pluginId}`);
+    const rawResponse = await apiClient.get<BackendPluginView>(`/plugins/${pluginId}`);
+    const response = PluginViewSchema.parse(rawResponse);
     return mapPluginView(response);
   }
 

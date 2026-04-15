@@ -10,6 +10,7 @@ import com.ghatana.ai.llm.OllamaCompletionService;
 import com.ghatana.ai.llm.OpenAICompletionService;
 import com.ghatana.datacloud.application.observability.ClickHouseTraceExporter;
 import com.ghatana.datacloud.application.observability.TraceExportService;
+import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
@@ -27,11 +28,14 @@ import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.datacloud.client.autonomy.AutonomyController;
+import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.observability.clickhouse.ClickHouseTraceStorage;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.zaxxer.hikari.HikariDataSource;
@@ -83,6 +87,9 @@ public final class DataCloudHttpLauncherBootstrap {
             Function<LearningSignalStore, DataCloudBrain> brainFactory,
             Function<DataCloudBrain, DataCloudLearningBridge> learningBridgeFactory) throws UnknownHostException {
         int port = DataCloudLauncherSettings.resolveHttpPort(env);
+        DataCloud.DataCloudConfig.DataCloudProfile profile = DataCloudLauncherSettings.resolveProfile(new String[0], env);
+        boolean embeddedProfile = DataCloudLauncherSettings.isEmbeddedProfile(profile);
+        boolean sovereignProfile = profile == DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN;
 
         DataCloudBrain brain = null;
         DataCloudLearningBridge learningBridge = null;
@@ -109,7 +116,7 @@ public final class DataCloudHttpLauncherBootstrap {
         boolean databaseEnabled = DataCloudLauncherSettings.isDatabaseEnabled(env);
         boolean aiEnabled = DataCloudLauncherSettings.isAiEnabled(env);
         DataSource databaseDataSource = null;
-        if (databaseEnabled || aiEnabled) {
+        if (!embeddedProfile && (databaseEnabled || aiEnabled)) {
             databaseDataSource = startRequiredDatabaseDataSource(log, DataCloudHttpLauncherBootstrap::buildDatabaseDataSource);
         }
 
@@ -123,7 +130,10 @@ public final class DataCloudHttpLauncherBootstrap {
         // B1: Wire LLM completion service using platform:java:ai-integration.
         // Resolved from AI_PROVIDER / OPENAI_API_KEY / OLLAMA_HOST env vars.
         // Nullable — server gracefully degrades to stub mode when absent.
-        CompletionService completionService = buildCompletionService(env, log);
+        CompletionService completionService = sovereignProfile ? null : buildCompletionService(env, log);
+        if (sovereignProfile) {
+            log.info("Sovereign profile active — external LLM completion backends are disabled");
+        }
 
         // B4: Wire ClickHouseTraceStorage as TraceExporter so spans are flushed
         // to the observability backend instead of being silently discarded.
@@ -142,8 +152,8 @@ public final class DataCloudHttpLauncherBootstrap {
             ApiKeyResolver apiKeyResolver = buildApiKeyResolver(env, log);
             JwtTokenProvider jwtProvider = buildJwtProvider(env, log);
             String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
+            AutonomyController autonomyController = sovereignProfile ? new DefaultAutonomyController() : null;
 
-                boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
                 EventLogStore eventLogStore = client.eventLogStore();
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
@@ -156,16 +166,29 @@ public final class DataCloudHttpLauncherBootstrap {
                     .withMetricsCollector(MetricsCollectorFactory.create(
                         new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
                             io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)))
-                    .withStrictTenantResolution(!isLocalProfile)
+                    .withStrictTenantResolution(!embeddedProfile)
+                    .withStorageCompactionConfig(
+                        DataCloudLauncherSettings.resolveStorageCompactionIntervalSeconds(env),
+                        DataCloudLauncherSettings.resolveStorageCompactionThreshold(env))
                     .withRateLimitConfig(
                         DataCloudLauncherSettings.resolveRateLimitRequests(env),
                         DataCloudLauncherSettings.resolveRateLimitWindowSeconds(env));
 
+                if (autonomyController != null) {
+                    httpServer.withAutonomyController(autonomyController);
+                }
+
                 if (eventLogStore != null) {
                     httpServer
                         .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
+                        .withEventLogStore(eventLogStore)
                         .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
                 }
+
+                // P3.9.1: Entity lineage tracking via LineagePlugin
+                LineagePlugin lineagePlugin = new LineagePlugin();
+                lineagePlugin.start(); // starts synchronously via Promise.complete()
+                httpServer.withLineagePlugin(lineagePlugin);
 
                 if (apiKeyResolver != null) {
                     httpServer.withApiKeyResolver(apiKeyResolver);
@@ -205,10 +228,11 @@ public final class DataCloudHttpLauncherBootstrap {
      */
     static ApiKeyResolver buildApiKeyResolver(Map<String, String> env, Logger log) {
         String keysEnv = env.get("DATACLOUD_API_KEYS");
-        boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
+        boolean embeddedProfile = DataCloudLauncherSettings.isEmbeddedProfile(
+            DataCloudLauncherSettings.resolveProfile(new String[0], env));
 
         if (keysEnv == null || keysEnv.isBlank()) {
-            if (!isLocalProfile) {
+            if (!embeddedProfile) {
                 log.warn("[DC-E1] DATACLOUD_API_KEYS not set in non-local profile — " +
                          "API key authentication is DISABLED. Set DATACLOUD_API_KEYS to enable.");
             }

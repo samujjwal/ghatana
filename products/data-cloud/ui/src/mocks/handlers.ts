@@ -24,6 +24,8 @@ import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from '../lib/mock-data';
 import {
   StorageProfileSchema,
   ConnectorSchema,
+  LineageDagResponseSchema,
+  LineageImpactResponseSchema,
 } from '../contracts/schemas';
 import type { z } from 'zod';
 
@@ -343,6 +345,48 @@ const collectionHandlers = [
     }
     collections = collections.filter((c) => c.id !== params.id);
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // GET /api/v1/lineage/:collection
+  http.get(`${BASE}/lineage/:collection`, async ({ params, request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const collection = String(params.collection);
+    const direction = new URL(request.url).searchParams.get('direction') ?? 'BOTH';
+
+    return contractJson(LineageDagResponseSchema, {
+      collection,
+      tenantId: 'default',
+      direction,
+      timestamp: new Date().toISOString(),
+      dag: {
+        nodes: [
+          { id: collection, type: 'DATASET', name: collection, role: 'root', metadata: {} },
+          { id: `${collection}-source`, type: 'DATASET', name: `${collection} Source`, role: 'upstream', metadata: {} },
+          { id: `${collection}-consumer`, type: 'DATASET', name: `${collection} Consumer`, role: 'downstream', metadata: {} },
+        ],
+        edges: [
+          { source: `${collection}-source`, target: collection, type: 'DERIVES_FROM' },
+          { source: collection, target: `${collection}-consumer`, type: 'FEEDS_INTO' },
+        ],
+      },
+      upstreamCount: 1,
+      downstreamCount: 1,
+    });
+  }),
+
+  // GET /api/v1/lineage/:collection/impact
+  http.get(`${BASE}/lineage/:collection/impact`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const collection = String(params.collection);
+
+    return contractJson(LineageImpactResponseSchema, {
+      collection,
+      tenantId: 'default',
+      impactLevel: 'MEDIUM',
+      affectedCount: 1,
+      affectedCollections: [`${collection}-consumer`],
+      timestamp: new Date().toISOString(),
+    });
   }),
 ];
 
@@ -683,16 +727,44 @@ const connectorHandlers = [
 // ---------------------------------------------------------------------------
 
 const supportHandlers = [
+  http.post(`${BASE}/analytics/query`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      queryId: 'query-msw-1',
+      queryType: 'ANALYTICS',
+      rowCount: 1,
+      columnCount: 1,
+      rows: [{ total: 42 }],
+      executionTimeMs: 18,
+      optimized: true,
+      timestamp: new Date().toISOString(),
+    });
+  }),
+
+  http.post(`${BASE}/queries/federated`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      queryId: 'query-fed-msw-1',
+      queryType: 'FEDERATED_FALLBACK',
+      rowCount: 1,
+      columnCount: 1,
+      rows: [{ region: 'global' }],
+      executionTimeMs: 32,
+      optimized: true,
+      timestamp: new Date().toISOString(),
+      warning: 'Trino not configured — query executed via local analytics engine.',
+    });
+  }),
+
   http.post(`${BASE}/analytics/suggest`, async () => {
     await delay(SIMULATED_DELAY_MS);
     return HttpResponse.json({
       data: {
-        suggestions: [
+        queries: [
           {
-            type: 'optimization',
-            title: 'Cache repeated revenue queries',
-            description: 'Frequent revenue lookups can be served faster from a cached aggregate.',
-            reasons: ['high-frequency-query', 'cost-optimization'],
+            name: 'Cache repeated revenue queries',
+            template: 'SELECT date_trunc(\'day\', created_at) AS day, SUM(total) FROM revenue GROUP BY 1',
+            explanation: 'Frequent revenue lookups can be served faster from a cached aggregate.',
           },
         ],
       },
@@ -705,86 +777,90 @@ const supportHandlers = [
 
   http.get(`${BASE}/brain/workspace`, async () => {
     await delay(SIMULATED_DELAY_MS);
-    return HttpResponse.json([
-      {
-        id: 'spotlight-1',
-        tenantId: 'default',
-        summary: 'Quality regression detected in customer_events.',
-        salienceScore: {
-          score: 0.91,
-          breakdown: {
-            recency: 0.95,
-            novelty: 0.8,
-            impact: 0.9,
-            urgency: 0.92,
-          },
-        },
-        emergency: false,
-        priority: 1,
-        category: 'quality',
-        spotlightedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        accessCount: 3,
-        tags: ['quality', 'customer_events'],
-        metadata: { source: 'msw' },
-      },
-    ]);
+    return HttpResponse.json({
+      status: 'active',
+      brainId: 'brain-msw',
+      note: 'Detailed spotlight items available via GET /api/v1/brain/stats',
+      timestamp: new Date().toISOString(),
+    });
   }),
 
   http.get(`${BASE}/brain/stats`, async () => {
     await delay(SIMULATED_DELAY_MS);
     return HttpResponse.json({
-      spotlightItemsCount: 1,
-      autonomyActionsToday: 4,
-      averageConfidence: 0.87,
-      activeSubsystems: 5,
+      totalRecordsProcessed: 482,
+      activePatterns: 7,
+      activeRules: 12,
+      hotTierRecords: 43,
+      warmTierRecords: 128,
+      avgProcessingTimeMs: 18.4,
+      uptimeSeconds: 86400,
+      tenantId: 'default',
+      timestamp: new Date().toISOString(),
     });
   }),
 
-  http.get(`${BASE}/brain/autonomy/timeline`, async ({ request }) => {
+  http.get(`${BASE}/autonomy/logs`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get('limit') ?? 10);
-    return HttpResponse.json(
-      Array.from({ length: Math.min(limit, 2) }, (_, index) => ({
-        id: `autonomy-${index + 1}`,
-        timestamp: new Date(Date.now() - index * 15 * 60 * 1000).toISOString(),
-        domain: 'data-quality',
-        action: index === 0 ? 'raise-alert' : 'refresh-profile',
-        status: index === 0 ? 'ADVISORY' : 'SUCCESS',
-        confidence: 0.84,
-        outcome: index === 0 ? 'Suggested operator review' : 'Profile refreshed',
-        metadata: { source: 'msw' },
-      })),
-    );
+    const logs = Array.from({ length: Math.min(limit, 2) }, (_, index) => ({
+      id: `autonomy-${index + 1}`,
+      actionType: index === 0 ? 'quality' : 'optimization',
+      tenantId: 'default',
+      level: index === 0 ? 'SUGGEST' : 'NOTIFY',
+      decision: index === 0 ? 'ADVISORY' : 'ALLOWED',
+      confidence: 0.84,
+      context: { source: 'msw' },
+      timestamp: new Date(Date.now() - index * 15 * 60 * 1000).toISOString(),
+    }));
+
+    return HttpResponse.json({
+      logs,
+      count: logs.length,
+      globalOverride: 'NONE',
+      timestamp: new Date().toISOString(),
+    });
+  }),
+
+  http.get(`${BASE}/autonomy/domains/:domain`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const domain = String(params.domain ?? 'optimization');
+    return HttpResponse.json({
+      domain,
+      state: {
+        actionType: domain,
+        tenantId: 'default',
+        currentLevel: domain === 'security' ? 'SUGGEST' : 'NOTIFY',
+        effectiveMaxLevel: 'AUTONOMOUS',
+        confidence: 0.78,
+        lastActionAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
   }),
 
   http.get(`${BASE}/learning/status`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);
     const url = new URL(request.url);
     const tenantId = url.searchParams.get('tenantId');
-    const hasLimit = url.searchParams.has('limit');
-
-    if (hasLimit) {
-      const limit = Number(url.searchParams.get('limit') ?? 10);
-      return HttpResponse.json(
-        Array.from({ length: Math.min(limit, 3) }, (_, index) => ({
-          id: `signal-${index + 1}`,
-          timestamp: new Date(Date.now() - index * 10 * 60 * 1000).toISOString(),
-          signalType: index === 0 ? 'feedback' : 'pattern-match',
-          impact: 0.5 + index * 0.1,
-          status: index === 0 ? 'PENDING' : 'PROCESSED',
-          affectedComponents: ['brain', 'ambient-intelligence'],
-        })),
-      );
-    }
-
     return HttpResponse.json({
-      lastRun: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      episodesProcessed: 24,
-      policiesExtracted: 3,
-      nextScheduled: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      tenantId: tenantId ?? 'default',
+      running: false,
+      lastRunTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      nextScheduledRun: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      intervalMinutes: 60,
+      pendingReviews: 2,
+      lastResult: {
+        status: 'COMPLETED',
+        tenantId: tenantId ?? 'default',
+        manual: false,
+        durationMs: 1200,
+        patternsDiscovered: 3,
+        patternsUpdated: 1,
+        recordsAnalyzed: 24,
+        ranAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      },
+      timestamp: new Date().toISOString(),
     });
   }),
 

@@ -65,26 +65,11 @@ describe('PipelinePage — DataFabricPage', () => {
         mockApiClient.delete.mockResolvedValue(undefined);
     });
 
-    it('renders without crashing', () => {
+    it('renders the data-fabric shell with preview messaging and migration controls', () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
-        expect(document.body).toBeTruthy();
-    });
-
-    it('displays pipeline or fabric content', () => {
-        render(<DataFabricPage />, { wrapper: TestWrapper });
-        const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/pipeline|fabric|data|flow|connector/i);
-    });
-
-    it('renders the page with some structure', () => {
-        render(<DataFabricPage />, { wrapper: TestWrapper });
-        expect(document.body.children.length).toBeGreaterThan(0);
-    });
-
-    it('renders without throwing for an empty pipeline list', () => {
-        expect(() =>
-            render(<DataFabricPage />, { wrapper: TestWrapper })
-        ).not.toThrow();
+        expect(screen.getByRole('heading', { name: /Data Fabric/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Migrate Tier/i })).toBeInTheDocument();
+        expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeInTheDocument();
     });
 
     it('surfaces the preview boundary and static topology labels', () => {

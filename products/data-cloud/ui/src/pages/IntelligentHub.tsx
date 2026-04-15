@@ -446,15 +446,15 @@ export function IntelligentHub() {
       icon: <Workflow className="h-5 w-5 text-purple-500" />,
     },
     {
-      id: 'confidence',
-      title: 'AI Confidence',
-      value: brainStats ? `${Math.round(brainStats.averageConfidence * 100)}%` : '–',
+      id: 'patterns',
+      title: 'Active Patterns',
+      value: brainStats?.activePatterns ?? '–',
       icon: <BarChart3 className="h-5 w-5 text-green-500" />,
     },
     {
-      id: 'actions',
-      title: 'AI Actions Today',
-      value: brainStats?.autonomyActionsToday ?? '–',
+      id: 'processed',
+      title: 'Records Processed',
+      value: brainStats?.totalRecordsProcessed ?? '–',
       icon: <Sparkles className="h-5 w-5 text-amber-500" />,
     },
   ];

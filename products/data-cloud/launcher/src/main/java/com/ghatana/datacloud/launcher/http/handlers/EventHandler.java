@@ -78,7 +78,7 @@ public class EventHandler {
                     () -> client.appendEvent(tenantId, event))
                     .map(offset -> http.jsonResponse(Map.of(
                         "offset", offset.value(),
-                        "eventType", eventType,
+                        "type", eventType,
                         "timestamp", Instant.now().toString()
                     )));
             } catch (Exception e) {
