@@ -1,83 +1,112 @@
-# Ghatana Shared TypeScript Libraries – Index & Layering
+# Platform TypeScript Libraries — Index
 
-This index summarizes the **shared TypeScript libraries under `libs/typescript`**, their intended responsibilities, layering, overlaps, and enhancement opportunities.
+> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-04-14
 
-Libraries:
+Reference for all canonical `@ghatana/*` TypeScript platform libraries.
 
-- `@ghatana/canvas` ← **NEW** (BDY-2, 2026-03-21)
-- `@yappc/accessibility-audit`
-- `@ghatana/api`
-- `@ghatana/charts`
-- `@ghatana/design-system`
-- `@ghatana/org-events`
-- `@ghatana/platform-utils`
-- `@ghatana/realtime`
-- `@ghatana/state`
-- `@ghatana/storybook`
-- `@ghatana/test-utils`
-- `@ghatana/theme`
-- `@ghatana/tokens`
-- `@ghatana/ui`
-
-Each library has a dedicated spec file:
-
-- `LIBRARY_tokens.md`
-- `LIBRARY_theme.md`
-- `LIBRARY_ui.md`
-- `LIBRARY_design-system.md`
-- `LIBRARY_accessibility-audit.md`
-- `LIBRARY_platform-utils.md`
-- `LIBRARY_utils.md`
-- `LIBRARY_api.md`
-- `LIBRARY_realtime.md`
-- `LIBRARY_state.md`
-- `LIBRARY_charts.md`
-- `LIBRARY_org-events.md`
-- `LIBRARY_storybook.md`
-- `LIBRARY_test-utils.md`
+**Dependency direction:** `tokens` / `theme` → `platform-utils` → `design-system` / `canvas` / `realtime` / `events` → domain packages. Products must never depend on each other through `@ghatana/*` libraries.
 
 ---
 
-## 1. High-Level Layering
+## Library Catalogue
 
-Intended layering (from low-level to high-level):
+| Package | Location | Purpose | Key Exports |
+|---------|----------|---------|-------------|
+| `@ghatana/tokens` | `platform/typescript/tokens` | Framework-agnostic design tokens | Color, spacing, typography, animation tokens |
+| `@ghatana/theme` | `platform/typescript/theme` | Theme provider | `ThemeProvider`, `useTheme`, CSS variable injection |
+| `@ghatana/design-system` | `platform/typescript/design-system` | WCAG AA UI component library | `Button`, `Input`, `Card`, `Modal`, 40+ components |
+| `@ghatana/platform-utils` | `platform/typescript/foundation/platform-utils` | Cross-cutting utilities | `cn`, `truncate`, `formatDate`, `debounce`, `formatBytes`, a11y helpers |
+| `@ghatana/api` | `platform/typescript/api` | HTTP client | `ApiClient`, request interceptors, retry logic |
+| `@ghatana/realtime` | `platform/typescript/realtime` | Real-time comms | WebSocket client, SSE client, React hooks |
+| `@ghatana/events` | `platform/typescript/events` | Typed event bus | `EventDispatcher`, `EventPayload`, typed events |
+| `@ghatana/browser-events` | `platform/typescript/browser-events` | Browser event handlers | Mouse, keyboard, clipboard, focus event handlers |
+| `@ghatana/state` | `platform/typescript/state` | State management | `AsyncState<T>`, atoms, persistence, React hooks |
+| `@ghatana/config` | `platform/typescript/config` | Configuration + feature flags | `loadEnv`, `createConfig`, `createFeatureFlags` |
+| `@ghatana/canvas` | `platform/typescript/canvas` | Canvas and flow UI | Flow canvas, node/edge types, viewport |
+| `@ghatana/charts` | `platform/typescript/charts` | Chart components | Declarative chart wrappers built on Recharts |
+| `@ghatana/i18n` | `platform/typescript/i18n` | Internationalisation | Translation loading, `useTranslation` |
+| `@ghatana/eslint-plugin` | `platform/typescript/eslint-plugin` | Architecture lint rules | Boundary, duplication, migration rules |
+| `@ghatana/code-editor` | `platform/typescript/code-editor` | Monaco editor component | Lazily-loaded, syntax highlighting |
+| `@ghatana/platform-shell` | `platform/typescript/platform-shell` | Platform chrome | `NavBar`, `TenantSelector`, `NotificationCenter` |
+| `@ghatana/sso-client` | `platform/typescript/sso-client` | SSO / JWT auth | Token management, login flows |
+| `@ghatana/platform-testing` | `platform/typescript/testing` | Shared test helpers | Accessibility, WCAG, performance testing utilities |
+| `@ghatana/ui-integration` | `platform/typescript/ui-integration` | AI + collaboration layer | AI features, multi-user integration |
+| `@ghatana/accessibility-audit` | `platform/typescript/accessibility-audit` | Automated WCAG audit | axe-core integration, CI audit helpers |
 
-1. **Tokens** – `@ghatana/tokens`  
-   Framework-agnostic design tokens (colors, spacing, typography, shadows, etc.).
-
-2. **Theme** – `@ghatana/theme`  
-   Theme objects, providers, hooks, brand presets built on tokens.
-
-3. **Platform Utils** – `@ghatana/platform-utils`  
-   Cross-cutting utilities (formatters, platform/responsive, classnames, accessibility helpers).
-
-4. **UI Components** – `@ghatana/ui`  
-   Atomic Design-based React components using tokens, theme, utils.
-
-5. **Design System Facade** – `@ghatana/design-system`  
-  Opinionated facade combining tokens, theme, UI, platform-utils, a11y audit, and AI hooks.
-
-6. **Visualization** – `@ghatana/charts`  
-   Chart primitives built on top of `recharts` + theme + UI.
-
-7. **API & State** – `@ghatana/api`, `@ghatana/state`, `@ghatana/realtime`  
-   Fetch-based client, state helpers, and realtime helpers for apps and libraries.
-
-8. **Testing & Storybook** – `@ghatana/test-utils`, `@ghatana/storybook`, `@yappc/accessibility-audit`  
-   Shared test utilities, Storybook configuration, and accessibility auditing.
-
-9. **Domain Contracts** – `@ghatana/org-events`  
-   Protobuf-generated DTOs and event contracts.
+Each library has a detailed spec in `LIBRARY_<name>.md` in this directory.
 
 ---
 
-## 2. Cross-Cutting Observations
+## Quick-Start Patterns
 
-- **Accessibility spread across libs:**
+### Environment validation
+```ts
+import { z } from "zod";
+import { loadEnv, BaseEnvSchema } from "@ghatana/config";
 
-  - `@ghatana/platform-utils` exposes generic accessibility helpers (contrast, reduced motion, ARIA label helpers).
-  - `@yappc/accessibility-audit` focuses on axe-core based auditing and CI/test integration.
-  - **Contract:** keep runtime component-level a11y helpers in `platform-utils`, and deep auditing/reporting in `accessibility-audit`.
+const Env = BaseEnvSchema.extend({ DATABASE_URL: z.string().url() });
+export const env = loadEnv(Env);
+```
+
+### HTTP client
+```ts
+import { createApiClient } from "@ghatana/api";
+const client = createApiClient({ baseUrl: env.API_BASE_URL });
+const data = await client.get<User[]>("/users");
+```
+
+### UI components
+```ts
+import { Button, Card, Input } from "@ghatana/design-system";
+import { cn } from "@ghatana/platform-utils";
+```
+
+### State management
+```ts
+import { createAtom, useStateAtom } from "@ghatana/state";
+const counterAtom = createAtom(0);
+function Counter() {
+  const [count, setCount] = useStateAtom(counterAtom);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+### Feature flags
+```ts
+import { createFeatureFlags } from "@ghatana/config";
+const flags = createFeatureFlags({
+  newUI: { type: "boolean", enabled: process.env.NODE_ENV !== "production" },
+  rollout: { type: "rollout", percentage: 20 },
+});
+if (flags.isEnabled("newUI")) { ... }
+```
+
+---
+
+## Layer Rules
+
+- `@ghatana/tokens` must not import from any other `@ghatana/*` package
+- `@ghatana/theme` may only import from `@ghatana/tokens`
+- `@ghatana/design-system` may import from `tokens`, `theme`, `platform-utils`
+- `@ghatana/canvas` may import from `tokens`, `theme`, `platform-utils`, `design-system`
+- No `@ghatana/*` library may import from a product package (`@yappc/*`, `@dcmaar/*`, etc.)
+
+Violations are caught by `scripts/check-platform-package-governance.js` in CI.
+
+---
+
+## Cross-Cutting Notes
+
+- **Accessibility:** Runtime component-level a11y helpers live in `@ghatana/platform-utils`. Deep auditing and CI reporting lives in `@ghatana/accessibility-audit`.
+- **`@ghatana/ui`** was removed in V4.1 → replaced by `@ghatana/design-system`. Do not import `@ghatana/ui`.
+- **`@ghatana/dcmaar` / `@ghatana/dcmaar-backend-shim`** are `"private": true` workspace entries inside `products/dcmaar/`, not library packages.
+
+---
+
+## Related Documents
+
+- [GOVERNANCE.md](../GOVERNANCE.md) — Package naming rules, ownership, RFC process
+- [../ONBOARDING.md](../ONBOARDING.md) — First-build guide
 
 - **Design system layering:**
 

@@ -1,62 +1,28 @@
-# Unified Agent System: Master Index
+# Agent System Documentation
 
-**Version:** 2.0.0  
-**Last Updated:** 2026-04-05  
-**Status:** Authoritative  
-**Scope:** Platform-wide agent architecture, AEP integration, and implementation guidance
+> **Owner:** Platform Team / AEP Team | **Status:** Active | **Last Updated:** 2026-04-14
 
 ---
 
-## 1. Purpose
+## Documentation Map
 
-This document serves as the **authoritative entry point** for all agent-related documentation in the Ghatana platform. It bridges the theoretical specifications (DSLA/NDSLA) with the concrete implementation (platform/agent-core, products/aep).
-
-### Key Documents Hierarchy
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  THIS DOCUMENT (Master Index)                               │
-│  └─ Unified_Self_Learning_Agents_Spec_Merged.md (Theory)    │
-│  └─ Agent_Implementation_Guide.md (Practice)              │
-│  └─ AEP_Integration_Architecture.md (Product Integration)   │
-│  └─ agent-spec.md (YAML Contract Reference)                 │
-│  └─ AGENT_SYSTEM_MODERNIZATION_BLUEPRINT_2026-04-06.md      │
-│     (Current-state review + target architecture + roadmap)  │
-└─────────────────────────────────────────────────────────────┘
-```
+| Document | Audience | Content |
+|----------|----------|---------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Architects, engineers | Nine-type taxonomy, three-plane model, dispatch system, registry, ADR references |
+| [Agent_Implementation_Guide.md](./Agent_Implementation_Guide.md) | Agent developers | Minimal implementation, registration, agent type deep dives, testing |
+| [agent-spec.md](./agent-spec.md) | All | YAML specification schema reference (fields, types, examples) |
+| [Unified_Self_Learning_Agents_Spec_Merged.md](./Unified_Self_Learning_Agents_Spec_Merged.md) | Architects | Authoritative DSLA / NDSLA theoretical specification (47 sections) |
 
 ---
 
-## 2. Quick Navigation
+## Quick Links
 
-### For Different Audiences
-
-| Role                   | Start Here                                                                                                 | Then Read                                      |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **New Engineer**       | [Onboarding Guide](/docs/ONBOARDING.md)                                                                    | Agent_Implementation_Guide.md                  |
-| **Agent Developer**    | [TypedAgent Interface](/platform/java/agent-core/src/main/java/com/ghatana/agent/TypedAgent.java)          | AEP_Integration_Architecture.md                |
-| **Product Manager**    | [AEP World-Class Report](/products/aep/docs/AEP_WORLD_CLASS_AGENTIC_EVENT_PROCESSING_REPORT_2026-03-23.md) | DSLA/NDSLA decision guide (Section 16)         |
-| **Architect**          | [ADR-001: Typed Agent Framework](/docs/adr/ADR-001-typed-agent-framework.md)                               | Unified_Self_Learning_Agents_Spec_Merged.md    |
-| **Ops/SRE**            | [AEP Operational Runbook](/products/aep/docs/OPERATIONAL_RUNBOOK.md)                                       | [AEP Topology](/products/aep/docs/TOPOLOGY.md) |
-| **Modernization Work** | [Agent System Modernization Blueprint](./AGENT_SYSTEM_MODERNIZATION_BLUEPRINT_2026-04-06.md)               | AEP_Integration_Architecture.md                |
-
----
-
-## 3. Core Concepts Map
-
-### 3.1 Agent Taxonomy (Implemented)
-
-| Type                 | Determinism | Implementation Status | Primary Location                          |
-| -------------------- | ----------- | --------------------- | ----------------------------------------- |
-| **DETERMINISTIC**    | 100%        | ✅ Production         | `platform/java/agent-core/deterministic/` |
-| **PROBABILISTIC**    | 0%          | ✅ Production         | `platform/java/agent-core/probabilistic/` |
-| **STREAM_PROCESSOR** | Varies      | ✅ Production         | `platform/java/agent-core/stream/`        |
-| **PLANNING**         | Varies      | ✅ Production         | `platform/java/agent-core/planning/`      |
-| **HYBRID**           | Partial     | ✅ Production         | `platform/java/agent-core/hybrid/`        |
-| **ADAPTIVE**         | 0%          | ✅ Production         | `platform/java/agent-core/adaptive/`      |
-| **COMPOSITE**        | Varies      | ✅ Production         | `platform/java/agent-core/composite/`     |
-| **REACTIVE**         | 100%        | ✅ Production         | `platform/java/agent-core/reactive/`      |
-| **CUSTOM**           | —           | ✅ Extensible         | Runtime registration                      |
+- **Implement a new agent**: [Agent_Implementation_Guide.md §1](./Agent_Implementation_Guide.md)
+- **Understand the taxonomy**: [ARCHITECTURE.md §2](./ARCHITECTURE.md#2-nine-type-agent-taxonomy)
+- **Register an agent**: [ARCHITECTURE.md §4](./ARCHITECTURE.md#4-three-tier-dispatch-system)
+- **YAML agent spec**: [agent-spec.md](./agent-spec.md)
+- **ADR decisions**: [../adr/ADR-001](../adr/ADR-001-typed-agent-framework.md), [ADR-020](../adr/ADR-020-agent-system-five-layer-architecture.md)
+- **AEP product docs**: `products/aep/docs/`
 
 ### 3.2 DSLA vs NDSLA vs Hybrid (Theory → Practice Mapping)
 
