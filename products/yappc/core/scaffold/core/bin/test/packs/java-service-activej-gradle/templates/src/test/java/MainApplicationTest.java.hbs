@@ -1,0 +1,31 @@
+package
+{{packageName}}; import io.activej.http.HttpResponse; import
+io.activej.test.rules.EventloopRule; import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test; import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.RegisterExtension; import static
+org.junit.jupiter.api.Assertions.*; /** * Unit tests for
+{{className}}
+*/ @DisplayName("{{serviceName}}
+Application Tests") class
+{{className}}Test { @RegisterExtension static final EventloopRule eventloopRule
+= new EventloopRule(); private
+{{className}}
+application; @BeforeEach void setUp() { application = new
+{{className}}(); } @Test @DisplayName("Application should start successfully")
+void applicationStartsSuccessfully() { assertNotNull(application); } @Test
+@DisplayName("Health endpoint should return OK status") void
+healthEndpointReturnsOk() { // This is a basic test structure // In a real
+application, you would set up the servlet and test actual HTTP calls
+assertTrue(true, "Health endpoint test placeholder"); } @Test @DisplayName("Root
+endpoint should return welcome message") void
+rootEndpointReturnsWelcomeMessage() { // This is a basic test structure // In a
+real application, you would set up the servlet and test actual HTTP calls
+assertTrue(true, "Root endpoint test placeholder"); } @Test
+@DisplayName("Metrics endpoint should return metrics data") void
+metricsEndpointReturnsMetrics() { // This is a basic test structure // In a real
+application, you would set up the servlet and test actual HTTP calls
+assertTrue(true, "Metrics endpoint test placeholder"); } @Test
+@DisplayName("Echo endpoint should echo request data") void
+echoEndpointEchoesRequestData() { // This is a basic test structure // In a real
+application, you would set up the servlet and test actual HTTP calls
+assertTrue(true, "Echo endpoint test placeholder"); } }

@@ -1,0 +1,4 @@
+com.ghatana.refactorer.languages.JavaLanguageService
+com.ghatana.refactorer.languages.PythonLanguageService
+com.ghatana.refactorer.languages.tsjs.TypeScriptJavaScriptLanguageService
+com.ghatana.refactorer.languages.ShellLanguageService

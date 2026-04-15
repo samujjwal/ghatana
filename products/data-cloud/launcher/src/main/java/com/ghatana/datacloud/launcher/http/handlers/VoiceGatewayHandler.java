@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * HTTP handler for voice-first command execution (E4: Voice-First Experience).
@@ -90,14 +92,20 @@ public class VoiceGatewayHandler {
     private static final double KEYWORD_CONFIDENCE = 0.55;
     /** Confidence assigned for ambiguous matches where multiple candidates score equally. */
     private static final double AMBIGUOUS_CONFIDENCE = 0.40;
+    /** Maximum voice requests per tenant per minute. */
+    static final int VOICE_RATE_LIMIT_PER_MINUTE = 30;
 
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
     private final Executor blockingExecutor;
-    private final CompletionService completionService;  // nullable — fallback mode when absent
-    private final AuditService auditService;            // nullable — audit skipped when absent
-    private final VoiceSttPort sttPort;                 // nullable → use NopVoiceSttAdapter behaviour
-    private final VoiceTtsPort ttsPort;                 // non-null — NopVoiceTtsAdapter when not configured
+    private final CompletionService completionService;    // nullable — fallback mode when absent
+    private final AuditService auditService;              // nullable — audit skipped when absent
+    private final VoiceSttPort sttPort;                   // nullable → use NopVoiceSttAdapter behaviour
+    private final VoiceTtsPort ttsPort;                   // non-null — NopVoiceTtsAdapter when not configured
+    private final ContextLayerHandler contextLayer;       // nullable — grounding skipped when absent
+
+    /** Per-tenant per-minute request counters: key = "tenantId:bucketMinute". */
+    private final ConcurrentHashMap<String, AtomicInteger> rateBuckets = new ConcurrentHashMap<>();
 
     public VoiceGatewayHandler(
             CompletionService completionService,
@@ -107,6 +115,18 @@ public class VoiceGatewayHandler {
             Executor blockingExecutor,
             VoiceSttPort sttPort,
             VoiceTtsPort ttsPort) {
+        this(completionService, auditService, objectMapper, http, blockingExecutor, sttPort, ttsPort, null);
+    }
+
+    public VoiceGatewayHandler(
+            CompletionService completionService,
+            AuditService auditService,
+            ObjectMapper objectMapper,
+            HttpHandlerSupport http,
+            Executor blockingExecutor,
+            VoiceSttPort sttPort,
+            VoiceTtsPort ttsPort,
+            ContextLayerHandler contextLayer) {
         this.completionService = completionService;
         this.auditService      = auditService;
         this.objectMapper      = objectMapper;
@@ -114,6 +134,7 @@ public class VoiceGatewayHandler {
         this.blockingExecutor  = blockingExecutor;
         this.sttPort           = sttPort;
         this.ttsPort           = ttsPort != null ? ttsPort : NopVoiceTtsAdapter.INSTANCE;
+        this.contextLayer      = contextLayer;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -148,6 +169,15 @@ public class VoiceGatewayHandler {
     public Promise<HttpResponse> handleVoiceIntent(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+
+        if (isRateLimited(tenantId)) {
+            log.warn("[DC-E4] voice rate limit exceeded for tenant={}", tenantId);
+            return Promise.of(http.envelopeResponse(
+                ApiResponse.error("RATE_LIMITED",
+                    "Voice endpoint rate limit exceeded. Limit: " + VOICE_RATE_LIMIT_PER_MINUTE + " requests/minute",
+                    tenantId, requestId),
+                objectMapper));
+        }
 
         // max 64 KB JSON body — raw audio MUST be delivered base64-encoded within this limit
         return request.loadBody(1024 * 64)
@@ -435,19 +465,27 @@ public class VoiceGatewayHandler {
             .map(i -> i.name() + ": " + i.description())
             .reduce("", (a, b) -> a + "\n" + b);
 
+        // Optional context grounding: include tenant context entries in prompt
+        Map<String, Object> ctx = groundingContextFor(tenantId);
+        String groundingBlock = ctx.isEmpty() ? "" : String.format(
+            "%nCurrent workspace context (use to fill missing parameters):%n%s",
+            ctx.entrySet().stream()
+                .map(e -> "  " + e.getKey() + " = " + e.getValue())
+                .reduce("", (a, b) -> a + "\n" + b));
+
         String prompt = String.format(
             """
             You are a voice intent classifier for Data-Cloud.
             Available intents:
             %s
-
+            %s
             User utterance: "%s"
 
             Classify the utterance to the best matching intent and extract parameters.
             Return JSON only:
             {"intent": "intent_name", "confidence": 0.0-1.0, "params": {"key": "value"}}
             If no intent matches, return: {"intent": null, "confidence": 0.0, "params": {}}""",
-            intentNames, sanitise(utterance));
+            intentNames, groundingBlock, sanitise(utterance));
 
         CompletionRequest req = CompletionRequest.builder()
             .messages(List.of(
@@ -646,6 +684,36 @@ public class VoiceGatewayHandler {
     private static String resolveRequestId(HttpRequest request) {
         String rid = request.getHeader(io.activej.http.HttpHeaders.of("X-Request-ID"));
         return (rid != null && !rid.isBlank()) ? rid : UUID.randomUUID().toString();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Rate limiting (per-tenant, per-minute bucket)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns {@code true} when the tenant has exceeded {@link #VOICE_RATE_LIMIT_PER_MINUTE}
+     * voice requests in the current calendar minute.  Old buckets are NOT explicitly evicted
+     * (they are tiny and short-lived); the key encodes the minute so they become unreachable
+     * after the minute rolls over.
+     */
+    boolean isRateLimited(String tenantId) {
+        long minuteBucket = System.currentTimeMillis() / 60_000L;
+        String key = tenantId + ":" + minuteBucket;
+        AtomicInteger counter = rateBuckets.computeIfAbsent(key, k -> new AtomicInteger(0));
+        return counter.incrementAndGet() > VOICE_RATE_LIMIT_PER_MINUTE;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Context grounding
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the current context entries for {@code tenantId} from the Context Layer,
+     * or an empty map when the Context Layer is not wired or has no entries.
+     */
+    private Map<String, Object> groundingContextFor(String tenantId) {
+        if (contextLayer == null) return Map.of();
+        return contextLayer.currentEntries(tenantId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

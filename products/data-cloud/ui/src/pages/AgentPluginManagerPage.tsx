@@ -29,12 +29,16 @@ import {
   X,
 } from 'lucide-react';
 import {
+  AGENT_REGISTRY_BOUNDARY_MESSAGE,
   agentRegistryService,
   type AgentDefinition,
   type AgentRegistrationRequest,
   type AgentStatus,
   type RegistryEvent,
 } from '../api/agent-registry.service';
+
+export const AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE =
+  'This launcher exposes a read-only agent catalog. Registration, deregistration, and live registry events are not available here.';
 
 // =============================================================================
 // Status helpers
@@ -93,11 +97,12 @@ function eventTypeBadge(type: RegistryEvent['eventType']): string {
 
 interface AgentCardProps {
   agent: AgentDefinition;
-  onDeregister: (id: string) => void;
+  onDeregister?: (id: string) => void;
   deregistering: boolean;
+  canManage: boolean;
 }
 
-function AgentCard({ agent, onDeregister, deregistering }: AgentCardProps): React.ReactElement {
+function AgentCard({ agent, onDeregister, deregistering, canManage }: AgentCardProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -123,14 +128,20 @@ function AgentCard({ agent, onDeregister, deregistering }: AgentCardProps): Reac
               {statusIcon(agent.status)}
               {agent.status}
             </span>
-            <button
-              onClick={() => onDeregister(agent.agentId)}
-              disabled={deregistering}
-              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-              title="Deregister agent"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {canManage ? (
+              <button
+                onClick={() => onDeregister?.(agent.agentId)}
+                disabled={deregistering}
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                title="Deregister agent"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : (
+              <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700">
+                Catalog only
+              </span>
+            )}
           </div>
         </div>
 
@@ -286,9 +297,10 @@ function AgentRegistrationModal({
 interface RegistryEventsFeedProps {
   events: RegistryEvent[];
   connected: boolean;
+  supported: boolean;
 }
 
-function RegistryEventsFeed({ events, connected }: RegistryEventsFeedProps): React.ReactElement {
+function RegistryEventsFeed({ events, connected, supported }: RegistryEventsFeedProps): React.ReactElement {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-full flex flex-col">
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -302,9 +314,15 @@ function RegistryEventsFeed({ events, connected }: RegistryEventsFeedProps): Rea
         </span>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2 font-mono text-xs">
+        {!supported && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 font-sans text-sm text-amber-900">
+            <p className="font-medium">Live registry events are unavailable</p>
+            <p className="mt-1 text-xs leading-5 text-amber-800">{AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE}</p>
+          </div>
+        )}
         {events.length === 0 && (
           <div className="text-gray-400 text-center py-8 font-sans text-sm">
-            Waiting for registry events…
+            {supported ? 'Waiting for registry events…' : 'No live event stream available.'}
           </div>
         )}
         {events.map((event) => (
@@ -329,6 +347,8 @@ function RegistryEventsFeed({ events, connected }: RegistryEventsFeedProps): Rea
  * AgentPluginManagerPage — registers, monitors, and manages Data-Cloud agents.
  */
 export function AgentPluginManagerPage(): React.ReactElement {
+  const registryMutationsSupported = false;
+  const registryEventsSupported = false;
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [registryEvents, setRegistryEvents] = useState<RegistryEvent[]>([]);
@@ -365,6 +385,11 @@ export function AgentPluginManagerPage(): React.ReactElement {
 
   // ── SSE stream ──
   useEffect(() => {
+    if (!registryEventsSupported) {
+      setSseConnected(false);
+      return;
+    }
+
     const source = agentRegistryService.streamRegistryEvents(
       undefined,
       (event) => {
@@ -384,11 +409,14 @@ export function AgentPluginManagerPage(): React.ReactElement {
 
   const handleDeregister = useCallback(
     (agentId: string) => {
+      if (!registryMutationsSupported) {
+        return;
+      }
       if (confirm('Deregister this agent? All executions history will be retained.')) {
         deregisterMutation.mutate(agentId);
       }
     },
-    [deregisterMutation]
+    [deregisterMutation, registryMutationsSupported]
   );
 
   const activeCount = agents.filter((a) => a.status === 'ACTIVE').length;
@@ -407,7 +435,7 @@ export function AgentPluginManagerPage(): React.ReactElement {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Agent Registry</h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Monitor and manage registered agents
+                  Monitor the launcher-exposed agent catalog
                 </p>
               </div>
             </div>
@@ -421,12 +449,18 @@ export function AgentPluginManagerPage(): React.ReactElement {
               </button>
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                disabled={!registryMutationsSupported}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                title={!registryMutationsSupported ? AGENT_REGISTRY_BOUNDARY_MESSAGE : 'Register Agent'}
               >
                 <Plus className="h-4 w-4" />
                 Register Agent
               </button>
             </div>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE}
           </div>
 
           {/* KPIs */}
@@ -469,13 +503,7 @@ export function AgentPluginManagerPage(): React.ReactElement {
             {!isLoading && !isError && agents.length === 0 && (
               <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-300">
                 <Bot className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No agents registered yet.</p>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="mt-3 text-sm text-indigo-600 hover:underline"
-                >
-                  Register your first agent →
-                </button>
+                <p className="text-gray-500">No agent catalog entries are currently exposed.</p>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -488,6 +516,7 @@ export function AgentPluginManagerPage(): React.ReactElement {
                     deregisterMutation.isPending &&
                     deregisterMutation.variables === agent.agentId
                   }
+                  canManage={registryMutationsSupported}
                 />
               ))}
             </div>
@@ -495,13 +524,13 @@ export function AgentPluginManagerPage(): React.ReactElement {
 
           {/* Events Feed (right col) */}
           <div className="lg:col-span-1 min-h-[400px]">
-            <RegistryEventsFeed events={registryEvents} connected={sseConnected} />
+            <RegistryEventsFeed events={registryEvents} connected={sseConnected} supported={registryEventsSupported} />
           </div>
         </div>
       </div>
 
       {/* Registration Modal */}
-      {showModal && (
+      {showModal && registryMutationsSupported && (
         <AgentRegistrationModal
           onClose={() => setShowModal(false)}
           onSubmit={(req) => registerMutation.mutate(req)}

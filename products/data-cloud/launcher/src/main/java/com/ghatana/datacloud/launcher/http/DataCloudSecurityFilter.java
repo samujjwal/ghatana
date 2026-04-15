@@ -9,6 +9,7 @@ import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.security.SecurityUtils;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.datacloud.launcher.support.RequestContext;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -140,7 +142,7 @@ public final class DataCloudSecurityFilter {
             }
 
             // (2–3) Authenticate and establish TenantContext before the tenant isolation filter.
-            return authenticate(request, tenantWrapped)
+            return authenticate(request, tenantWrapped, sensitivity)
                 .then(response -> {
                     Principal authenticatedPrincipal = request.getAttachment(Principal.class);
                     String tenantId = resolveTenantId(request, authenticatedPrincipal);
@@ -158,18 +160,19 @@ public final class DataCloudSecurityFilter {
     }
 
     private Promise<HttpResponse> authenticate(io.activej.http.HttpRequest request,
-                                               AsyncServlet tenantWrapped) {
+                                               AsyncServlet tenantWrapped,
+                                               EndpointSensitivity sensitivity) {
         if (apiKeyResolver != null) {
             String apiKey = request.getHeader(HttpHeaders.of(HEADER_API_KEY));
             if (apiKey != null && !apiKey.isBlank()) {
-                return authenticateApiKey(request, tenantWrapped, apiKey);
+                return authenticateApiKey(request, tenantWrapped, apiKey, sensitivity);
             }
         }
 
         if (jwtProvider != null) {
             String token = SecurityUtils.extractBearerToken(request.getHeader(HttpHeaders.of(HEADER_AUTHORIZATION)));
             if (token != null && !token.isBlank()) {
-                return authenticateJwt(request, tenantWrapped, token);
+                return authenticateJwt(request, tenantWrapped, token, sensitivity);
             }
         }
 
@@ -178,19 +181,21 @@ public final class DataCloudSecurityFilter {
 
     private Promise<HttpResponse> authenticateApiKey(io.activej.http.HttpRequest request,
                                                      AsyncServlet tenantWrapped,
-                                                     String apiKey) {
+                                                     String apiKey,
+                                                     EndpointSensitivity sensitivity) {
         var principalOpt = apiKeyResolver.resolve(apiKey);
         if (principalOpt.isEmpty()) {
             log.warn("Unauthorized request: invalid API key");
             return Promise.of(unauthorized("Missing or invalid API key"));
         }
 
-        return serveAsPrincipal(request, tenantWrapped, principalOpt.get());
+        return serveAsPrincipal(request, tenantWrapped, principalOpt.get(), sensitivity);
     }
 
     private Promise<HttpResponse> authenticateJwt(io.activej.http.HttpRequest request,
                                                   AsyncServlet tenantWrapped,
-                                                  String token) {
+                                                  String token,
+                                                  EndpointSensitivity sensitivity) {
         try {
             if (!jwtProvider.validateToken(token)) {
                 log.warn("Unauthorized request: invalid JWT bearer token");
@@ -212,7 +217,7 @@ public final class DataCloudSecurityFilter {
             }
 
             Principal principal = new Principal(userId, jwtProvider.getRolesFromToken(token), tenantId);
-            return serveAsPrincipal(request, tenantWrapped, principal);
+            return serveAsPrincipal(request, tenantWrapped, principal, sensitivity);
         } catch (RuntimeException exception) {
             log.warn("Unauthorized request: JWT authentication failed: {}", exception.getMessage());
             return Promise.of(unauthorized("Missing, expired, or invalid JWT bearer token"));
@@ -221,13 +226,31 @@ public final class DataCloudSecurityFilter {
 
     private Promise<HttpResponse> serveAsPrincipal(io.activej.http.HttpRequest request,
                                                    AsyncServlet tenantWrapped,
-                                                   Principal principal) {
+                                                   Principal principal,
+                                                   EndpointSensitivity sensitivity) {
         request.attach(Principal.class, principal);
+        String method = request.getMethod().name();
+        String path = request.getPath();
+        String requestId = ensureRequestId(request, null);
+        AccessLevel requiredAccess = requiredAccess(method, path, sensitivity);
+        if (!hasRequiredAccess(principal, requiredAccess)) {
+            log.warn("Forbidden request: principal={} method={} path={} requiredAccess={}",
+                    principal.getName(), method, path, requiredAccess.name());
+            if (enforcing) {
+                return Promise.of(forbiddenResponse(requestId, requiredAccess));
+            }
+        }
+
         TenantContext.Scope scope = TenantContext.scope(principal);
+        RequestContext principalScope = RequestContext.bindPrincipal(principal.getName());
         try {
-            return tenantWrapped.serve(request)
-                    .whenComplete((response, error) -> scope.close());
+            return evaluatePolicyBeforeServing(request, tenantWrapped, principal, sensitivity, requestId)
+                .whenComplete((response, error) -> {
+                    principalScope.close();
+                    scope.close();
+                });
         } catch (Exception exception) {
+            principalScope.close();
             scope.close();
             return Promise.ofException(exception);
         }
@@ -255,23 +278,10 @@ public final class DataCloudSecurityFilter {
             return Promise.of(response);
         }
 
-        // (4) Policy engine check for CRITICAL routes (unless excluded).
-        if (sensitivity == EndpointSensitivity.CRITICAL && policyEngine != null) {
-            if (!policyExcludedTenants.contains(tenantId)) {
-                return evaluatePolicy(
-                        request,
-                        response,
-                        path,
-                        method,
-                        sensitivity,
-                        requestId,
-                        tenantId,
-                        principalName);
-            }
-        }
-
-        // (5) Fire-and-forget audit for SENSITIVE and CRITICAL.
-        if (sensitivity == EndpointSensitivity.SENSITIVE || sensitivity == EndpointSensitivity.CRITICAL) {
+        if (sensitivity == EndpointSensitivity.SENSITIVE
+            || sensitivity == EndpointSensitivity.CRITICAL
+            || statusCode == 401
+            || statusCode == 403) {
             emitAudit(
                     request,
                     path,
@@ -287,21 +297,26 @@ public final class DataCloudSecurityFilter {
         return Promise.of(response);
     }
 
-    private Promise<HttpResponse> evaluatePolicy(
+    private Promise<HttpResponse> evaluatePolicyBeforeServing(
             io.activej.http.HttpRequest request,
-            HttpResponse response,
-            String path,
-            String method,
+            AsyncServlet tenantWrapped,
+            Principal principal,
             EndpointSensitivity sensitivity,
-            String requestId,
-            String tenantId,
-            String principalName) {
+            String requestId) {
+        String path = request.getPath();
+        String method = request.getMethod().name();
+        String tenantId = principal.getTenantId();
+
+        if (sensitivity != EndpointSensitivity.CRITICAL || policyEngine == null || policyExcludedTenants.contains(tenantId)) {
+            return serveDelegate(tenantWrapped, request);
+        }
 
         Map<String, Object> ctx = Map.of(
             "tenantId",    tenantId,
             "path",        path,
             "method",      method,
             "sensitivity", sensitivity.name(),
+            "roles",       principal.getRoles(),
             "requestId",   requestId,
             "timestamp",   Instant.now().toString()
         );
@@ -312,24 +327,20 @@ public final class DataCloudSecurityFilter {
                     if (enforcing) {
                         log.warn("[DC-SEC] Policy denied {} {} for tenant={} requestId={}",
                                  method, path, tenantId, requestId);
-                        emitAudit(request, path, method, sensitivity, false, 403, requestId, tenantId, principalName);
                         return Promise.of(policyDenyResponse(requestId));
                     } else {
                         log.warn("[DC-SEC][AUDIT-ONLY] Policy would deny {} {} for tenant={} requestId={}",
                                  method, path, tenantId, requestId);
                     }
                 }
-                emitAudit(request, path, method, sensitivity, true, response.getCode(), requestId, tenantId, principalName);
-                return Promise.of(response);
+                return serveDelegate(tenantWrapped, request);
             }, e -> {
-                // Fail-closed: any policy engine error blocks the request in enforcing mode.
                 log.error("[DC-SEC] Policy evaluation error for {} {} requestId={}: {}",
                           method, path, requestId, e.getMessage(), e);
-                emitAudit(request, path, method, sensitivity, false, 403, requestId, tenantId, principalName);
                 if (enforcing) {
                     return Promise.of(policyDenyResponse(requestId));
                 }
-                return Promise.of(response);
+                return serveDelegate(tenantWrapped, request);
             });
     }
 
@@ -352,7 +363,7 @@ public final class DataCloudSecurityFilter {
 
         AuditEvent event = AuditEvent.builder()
             .tenantId(tenantId)
-            .eventType("HTTP_REQUEST")
+            .eventType(resolveAuditEventType(path, sensitivity, statusCode))
             .principal(principalName)
             .resourceType("HTTP_ENDPOINT")
             .resourceId(method + " " + path)
@@ -374,8 +385,14 @@ public final class DataCloudSecurityFilter {
     // ─────────────────────────────────────────────────────────────────────────
 
     private static String ensureRequestId(io.activej.http.HttpRequest request, HttpResponse response) {
+        RequestIdAttachment attachedRequestId = request.getAttachment(RequestIdAttachment.class);
+        if (attachedRequestId != null) {
+            return attachedRequestId.value();
+        }
         String existing = request.getHeader(HttpHeaders.of(HEADER_REQUEST_ID));
-        return (existing != null && !existing.isBlank()) ? existing : UUID.randomUUID().toString();
+        String requestId = (existing != null && !existing.isBlank()) ? existing : UUID.randomUUID().toString();
+        request.attach(RequestIdAttachment.class, new RequestIdAttachment(requestId));
+        return requestId;
     }
 
     private static String resolveTenantId(
@@ -416,6 +433,14 @@ public final class DataCloudSecurityFilter {
         }
     }
 
+    private Promise<HttpResponse> serveDelegate(AsyncServlet delegate, io.activej.http.HttpRequest request) {
+        try {
+            return delegate.serve(request);
+        } catch (Exception exception) {
+            return Promise.ofException(exception);
+        }
+    }
+
     private static HttpResponse policyDenyResponse(String requestId) {
         String body = "{\"error\":{\"code\":\"POLICY_DENY\","
             + "\"message\":\"Request blocked by governance policy\","
@@ -424,6 +449,76 @@ public final class DataCloudSecurityFilter {
             .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
             .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
             .build();
+    }
+
+    private static HttpResponse forbiddenResponse(String requestId, AccessLevel requiredAccess) {
+        String body = "{\"error\":{\"code\":\"FORBIDDEN\"," 
+            + "\"message\":\"Request requires role " + requiredAccess.name() + " or higher\"," 
+            + "\"requestId\":\"" + requestId + "\"}}";
+        return HttpResponse.ofCode(403)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
+    private static String resolveAuditEventType(String path, EndpointSensitivity sensitivity, int statusCode) {
+        if (statusCode == 401) {
+            return "AUTH_FAILURE";
+        }
+        if (statusCode == 403) {
+            return path.startsWith("/api/v1/governance/") ? "POLICY_DENY" : "AUTHZ_FAILURE";
+        }
+        if (sensitivity == EndpointSensitivity.CRITICAL) {
+            return "CRITICAL_ACCESS";
+        }
+        if (sensitivity == EndpointSensitivity.SENSITIVE) {
+            return "SENSITIVE_ACCESS";
+        }
+        return "HTTP_REQUEST";
+    }
+
+    private AccessLevel requiredAccess(String method, String path, EndpointSensitivity sensitivity) {
+        if (path.startsWith("/api/v1/governance/")) {
+            return "GET".equalsIgnoreCase(method) ? AccessLevel.AUDITOR : AccessLevel.ADMIN;
+        }
+        if (path.startsWith("/api/v1/autonomy/")
+                || path.startsWith("/api/v1/plugins/")
+                || path.contains("/promote")
+                || path.contains("/approve")
+                || path.contains("/reject")) {
+            return AccessLevel.ADMIN;
+        }
+        if ("GET".equalsIgnoreCase(method)) {
+            return AccessLevel.VIEWER;
+        }
+        if (sensitivity == EndpointSensitivity.SENSITIVE || sensitivity == EndpointSensitivity.CRITICAL) {
+            return AccessLevel.OPERATOR;
+        }
+        return AccessLevel.VIEWER;
+    }
+
+    private boolean hasRequiredAccess(Principal principal, AccessLevel requiredAccess) {
+        if (requiredAccess == AccessLevel.NONE) {
+            return true;
+        }
+        Set<String> normalizedRoles = principal.getRoles().stream()
+            .map(role -> role == null ? "" : role.trim().toUpperCase(Locale.ROOT).replace('-', '_'))
+            .collect(java.util.stream.Collectors.toSet());
+
+        if (normalizedRoles.contains("ADMIN")
+                || normalizedRoles.contains("API_CLIENT")
+                || normalizedRoles.contains("PROCESSOR")) {
+            return true;
+        }
+        return switch (requiredAccess) {
+            case NONE -> true;
+            case VIEWER -> normalizedRoles.contains("VIEWER") || normalizedRoles.contains("READER")
+                || normalizedRoles.contains("AUDITOR") || normalizedRoles.contains("OPERATOR")
+                || normalizedRoles.contains("EDITOR");
+            case AUDITOR -> normalizedRoles.contains("AUDITOR");
+            case OPERATOR -> normalizedRoles.contains("OPERATOR") || normalizedRoles.contains("EDITOR");
+            case ADMIN -> false;
+        };
     }
 
             private static HttpResponse unauthorized(String message) {
@@ -512,4 +607,14 @@ public final class DataCloudSecurityFilter {
             return new DataCloudSecurityFilter(this);
         }
     }
+
+    private enum AccessLevel {
+        NONE,
+        VIEWER,
+        AUDITOR,
+        OPERATOR,
+        ADMIN
+    }
+
+    private record RequestIdAttachment(String value) { }
 }

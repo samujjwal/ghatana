@@ -743,4 +743,37 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         return Promise.of(plan);
     }
 
+    /**
+     * Generates a query plan for the given query text without executing it (EXPLAIN-style).
+     *
+     * <p>Useful for cost estimation, data-source routing preview, and query type discovery
+     * before committing to a full query execution. The returned plan is NOT stored in the
+     * query-plan cache — it is ephemeral to the caller.
+     *
+     * @param tenantId  tenant context for data-source resolution
+     * @param queryText the query to plan (SQL or DSL)
+     * @param parameters optional bind parameters
+     * @return promise of the estimated plan; never {@code null}
+     */
+    public Promise<QueryPlan> explainQuery(String tenantId, String queryText,
+                                           Map<String, Object> parameters) {
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        Objects.requireNonNull(queryText, "queryText cannot be null");
+
+        String ephemeralId = "explain-" + UUID.randomUUID();
+        AnalyticsQuery query = AnalyticsQuery.builder()
+                .id(ephemeralId)
+                .tenantId(tenantId)
+                .queryText(queryText)
+                .parameters(new HashMap<>(parameters == null ? Map.of() : parameters))
+                .submittedAt(Instant.now())
+                .status("EXPLAIN")
+                .build();
+
+        QueryPlan plan = generateQueryPlan(query);
+        logger.debug("EXPLAIN plan generated: type={}, sources={}, cost={}",
+                plan.getQueryType(), plan.getDataSources().size(), plan.getEstimatedCost());
+        return Promise.of(plan);
+    }
+
 }

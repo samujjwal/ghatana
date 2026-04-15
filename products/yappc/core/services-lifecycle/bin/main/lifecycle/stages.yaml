@@ -1,0 +1,235 @@
+# Lifecycle Stages Configuration
+# Reference: developer-tasks.md Part II - The 8 Lifecycle Stages
+# The Developer Lifecycle Model (YAPPC)
+
+stages:
+  - id: intent
+    name: "Intent"
+    description: "Clarify the goal and desired outcome"
+    order: 1
+    icon: "lightbulb"
+    color: "#FFD54F"
+    required: true
+    entry_criteria:
+      - "Task or request received"
+      - "Initial context available"
+    exit_criteria:
+      - "Goal clearly defined"
+      - "Success criteria established"
+      - "Scope boundaries identified"
+    typical_activities:
+      - "Understand business problem"
+      - "Clarify goals and objectives"
+      - "Ask clarifying questions"
+      - "Identify constraints"
+      - "Validate problem statement"
+    artifacts:
+      - IntentDocument
+      - GoalStatement
+      - SuccessCriteria
+
+  - id: context
+    name: "Context"
+    description: "Gather background, history, and relevant information"
+    order: 2
+    icon: "explore"
+    color: "#4FC3F7"
+    required: true
+    entry_criteria:
+      - "Intent stage completed"
+      - "Goal clearly defined"
+    exit_criteria:
+      - "Relevant context gathered"
+      - "Constraints understood"
+      - "Dependencies identified"
+    typical_activities:
+      - "Read requirements"
+      - "Explore codebase"
+      - "Analyze documentation"
+      - "Research libraries"
+      - "Identify stakeholders"
+    artifacts:
+      - ContextSummary
+      - RequirementsAnalysis
+      - DependencyMap
+
+  - id: plan
+    name: "Plan"
+    description: "Break down work and create execution plan"
+    order: 3
+    icon: "event_note"
+    color: "#81C784"
+    required: true
+    entry_criteria:
+      - "Context stage completed"
+      - "Requirements understood"
+    exit_criteria:
+      - "Work items defined"
+      - "Estimates provided"
+      - "Dependencies mapped"
+      - "Risks identified"
+    typical_activities:
+      - "Break work into tasks"
+      - "Estimate effort"
+      - "Identify dependencies"
+      - "Prioritize tasks"
+      - "Define execution order"
+    artifacts:
+      - TaskBreakdown
+      - Estimates
+      - DependencyGraph
+      - RiskRegister
+
+  - id: execute
+    name: "Execute"
+    description: "Implement the solution"
+    order: 4
+    icon: "build"
+    color: "#64B5F6"
+    required: true
+    entry_criteria:
+      - "Plan stage completed"
+      - "Environment ready"
+      - "Dependencies resolved"
+    exit_criteria:
+      - "Implementation complete"
+      - "Code committed"
+      - "Tests passing"
+    typical_activities:
+      - "Write code"
+      - "Implement business logic"
+      - "Build UI components"
+      - "Write tests"
+      - "Debug issues"
+    artifacts:
+      - SourceCode
+      - Tests
+      - CommitHistory
+
+  - id: verify
+    name: "Verify"
+    description: "Validate the implementation meets requirements"
+    order: 5
+    icon: "verified"
+    color: "#9575CD"
+    required: true
+    entry_criteria:
+      - "Execute stage completed"
+      - "Implementation available"
+    exit_criteria:
+      - "All tests passing"
+      - "Code review approved"
+      - "Acceptance criteria met"
+    typical_activities:
+      - "Run tests"
+      - "Code review"
+      - "Security review"
+      - "Performance testing"
+      - "Acceptance testing"
+    artifacts:
+      - TestResults
+      - ReviewComments
+      - VerificationReport
+
+  - id: observe
+    name: "Observe"
+    description: "Monitor in production and gather feedback"
+    order: 6
+    icon: "visibility"
+    color: "#F06292"
+    required: true
+    entry_criteria:
+      - "Verify stage completed"
+      - "Deployed to environment"
+    exit_criteria:
+      - "Metrics collected"
+      - "Feedback gathered"
+      - "Issues identified"
+    typical_activities:
+      - "Monitor metrics"
+      - "Analyze logs"
+      - "Track user feedback"
+      - "Identify issues"
+      - "Measure performance"
+    artifacts:
+      - MetricsReport
+      - FeedbackSummary
+      - IncidentLog
+
+  - id: learn
+    name: "Learn"
+    description: "Extract lessons and improve processes"
+    order: 7
+    icon: "school"
+    color: "#FFB74D"
+    required: false
+    entry_criteria:
+      - "Observe stage data available"
+      - "Project milestone reached"
+    exit_criteria:
+      - "Lessons documented"
+      - "Improvements identified"
+    typical_activities:
+      - "Conduct retrospectives"
+      - "Document lessons learned"
+      - "Identify improvements"
+      - "Share knowledge"
+      - "Update practices"
+    artifacts:
+      - LessonsLearned
+      - RetrospectiveNotes
+      - ImprovementPlan
+
+  - id: institutionalize
+    name: "Institutionalize"
+    description: "Embed learnings into organizational practices"
+    order: 8
+    icon: "account_balance"
+    color: "#A1887F"
+    required: false
+    entry_criteria:
+      - "Learn stage completed"
+      - "Improvements validated"
+    exit_criteria:
+      - "Practices updated"
+      - "Documentation updated"
+      - "Team trained"
+    typical_activities:
+      - "Update documentation"
+      - "Create templates"
+      - "Update standards"
+      - "Train team"
+      - "Automate processes"
+    artifacts:
+      - UpdatedDocumentation
+      - Templates
+      - StandardsUpdate
+      - TrainingMaterials
+
+# Stage groupings for UI
+stage_groups:
+  - id: discovery
+    name: "Discovery"
+    description: "Understanding what to build"
+    stages:
+      - intent
+      - context
+    color: "#FFF9C4"
+
+  - id: delivery
+    name: "Delivery"
+    description: "Building and validating"
+    stages:
+      - plan
+      - execute
+      - verify
+    color: "#E3F2FD"
+
+  - id: operations
+    name: "Operations"
+    description: "Running and improving"
+    stages:
+      - observe
+      - learn
+      - institutionalize
+    color: "#FCE4EC"

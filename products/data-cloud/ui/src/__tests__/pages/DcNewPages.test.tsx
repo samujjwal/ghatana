@@ -19,6 +19,7 @@ import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
+import { apiClient } from '../../lib/api/client';
 
 // =============================================================================
 // Module mocks
@@ -337,6 +338,8 @@ describe('MemoryPlaneViewerPage', () => {
 
 import { EntityBrowserPage } from '../../pages/EntityBrowserPage';
 
+const mockedApiClientGet = vi.mocked(apiClient.get);
+
 const SAMPLE_ENTITIES = [
   {
     id: 'ent-001',
@@ -360,6 +363,11 @@ const SAMPLE_ENTITIES = [
 
 // Since mocking the apiClient is handled at the top, tests render without network calls.
 describe('EntityBrowserPage', () => {
+  beforeEach(() => {
+    mockedApiClientGet.mockReset();
+    mockedApiClientGet.mockResolvedValue([]);
+  });
+
   it('renders page header', () => {
     render(<EntityBrowserPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Entity Browser')).toBeDefined();
@@ -386,6 +394,75 @@ describe('EntityBrowserPage', () => {
     const { container } = render(<EntityBrowserPage />, { wrapper: TestWrapper });
     expect(container).toBeTruthy();
   });
+
+  it('renders namespaces and entities from canonical collections and entity routes', async () => {
+    mockedApiClientGet
+      .mockResolvedValueOnce({
+        entities: [
+          {
+            id: 'products',
+            collection: 'dc_collections',
+            data: {
+              name: 'Products',
+              description: 'Product catalog',
+              schemaType: 'entity',
+              status: 'active',
+              entityCount: 2,
+              schema: { fields: [] },
+              tags: [],
+              createdBy: 'tester',
+            },
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+        count: 1,
+      })
+      .mockResolvedValueOnce({
+        entities: [
+          {
+            id: 'ent-001',
+            tenantId: 'tenant-a',
+            collectionName: 'products',
+            data: { name: 'Widget Pro', price: 49.99 },
+            version: 2,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-02T00:00:00Z',
+          },
+        ],
+        total: 1,
+        limit: 20,
+        offset: 0,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          suggestions: [],
+        },
+        ai: {
+          confidence: 0.2,
+          model: 'fallback',
+          fallback: true,
+        },
+      });
+
+    render(<EntityBrowserPage />, { wrapper: TestWrapper });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'products' })).toBeDefined();
+      expect(screen.getByText(/name: Widget Pro/i)).toBeDefined();
+    });
+
+    expect(mockedApiClientGet).toHaveBeenNthCalledWith(
+      1,
+      '/entities/dc_collections',
+      { params: { limit: 100, offset: 0 } },
+    );
+    expect(mockedApiClientGet).toHaveBeenNthCalledWith(
+      2,
+      '/entities/products',
+      { params: { limit: 20 } },
+    );
+  });
 });
 
 // =============================================================================
@@ -393,6 +470,7 @@ describe('EntityBrowserPage', () => {
 // =============================================================================
 
 import { DataFabricPage } from '../../pages/DataFabricPage';
+import { FABRIC_METRICS_BOUNDARY_MESSAGE } from '../../pages/DataFabricPage';
 
 const SAMPLE_FABRIC_METRICS = {
   tiers: [
@@ -451,6 +529,7 @@ describe('DataFabricPage', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Data Fabric')).toBeDefined();
     expect(screen.getByText(/four-tier event cloud topology/i)).toBeDefined();
+    expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeDefined();
   });
 
   it('renders the flow canvas placeholder', () => {

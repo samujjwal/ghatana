@@ -83,6 +83,10 @@ export interface DataCloudApiConfig {
 class DataCloudApiClient {
   private tenantId: string = 'default';
 
+  private unsupportedOperation(message: string): never {
+    throw new Error(message);
+  }
+
   constructor(config?: DataCloudApiConfig) {
     if (config?.tenantId) {
       this.tenantId = config.tenantId;
@@ -461,23 +465,8 @@ class DataCloudApiClient {
    * Get execution by ID
    */
   async getExecutionById(id: string): Promise<ApiResponse<Execution>> {
-    try {
-      const execution = await apiClient.get<WorkflowExecution>(`/executions/${id}`);
-      return {
-        data: {
-          id: execution.id,
-          workflowId: execution.workflowId,
-          status: execution.status,
-          startedAt: execution.startedAt,
-          completedAt: execution.completedAt,
-          duration: execution.duration,
-          error: execution.error,
-        },
-        status: 200,
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    void id;
+    return this.unsupportedOperation('Execution-by-ID lookup is not exposed by the current Data Cloud launcher API.');
   }
 
   /**
@@ -508,8 +497,9 @@ class DataCloudApiClient {
   ): Promise<ApiResponse<{ valid: boolean; errors: string[] }>> {
     try {
       const result = await apiClient.post<{ valid: boolean; errors: string[] }>(
-        `/collections/${collectionId}/validate`,
-        { data }
+        `/entities/${collectionId}/validate`,
+        { data },
+        { params: { tenantId: this.tenantId } }
       );
       return {
         data: result,
@@ -526,18 +516,8 @@ class DataCloudApiClient {
   async suggestSchema(
     data: Record<string, unknown>[]
   ): Promise<ApiResponse<{ fields: Array<{ name: string; type: string }> }>> {
-    try {
-      const result = await apiClient.post<{ fields: Array<{ name: string; type: string }> }>(
-        '/schema/suggest',
-        { samples: data }
-      );
-      return {
-        data: result,
-        status: 200,
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    void data;
+    return this.unsupportedOperation('Collection-agnostic schema suggestion is not exposed by the current Data Cloud launcher API.');
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -551,13 +531,19 @@ class DataCloudApiClient {
     query: string,
     options?: { collectionId?: string; limit?: number; offset?: number }
   ): Promise<ApiResponse<SearchResult[]>> {
-    try {
-      const params: Record<string, unknown> = { q: query };
-      if (options?.collectionId) params.collectionId = options.collectionId;
-      if (options?.limit) params.limit = options.limit;
-      if (options?.offset) params.offset = options.offset;
+    if (!options?.collectionId) {
+      return this.unsupportedOperation('Cross-collection search is not exposed by the current Data Cloud launcher API. Provide a collectionId to use canonical entity search.');
+    }
 
-      const results = await apiClient.get<SearchResult[]>('/search', { params });
+    try {
+      const params: Record<string, unknown> = {
+        q: query,
+        tenantId: this.tenantId,
+      };
+      if (options.limit) params.limit = options.limit;
+      if (options.offset) params.offset = options.offset;
+
+      const results = await apiClient.get<SearchResult[]>(`/entities/${options.collectionId}/search`, { params });
       return {
         data: results,
         status: 200,

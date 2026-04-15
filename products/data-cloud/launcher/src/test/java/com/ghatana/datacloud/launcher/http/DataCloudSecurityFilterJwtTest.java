@@ -42,7 +42,7 @@ class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
         when(jwtProvider.validateToken(VALID_TOKEN)).thenReturn(true);
         when(jwtProvider.validateToken(INVALID_TOKEN)).thenReturn(false);
         when(jwtProvider.getUserIdFromToken(VALID_TOKEN)).thenReturn(Optional.of("jwt-user"));
-        when(jwtProvider.getRolesFromToken(VALID_TOKEN)).thenReturn(List.of("viewer"));
+        when(jwtProvider.getRolesFromToken(VALID_TOKEN)).thenReturn(List.of("admin"));
         when(jwtProvider.extractClaims(VALID_TOKEN)).thenReturn(Optional.of(Map.of("tenant_id", "tenant-jwt")));
     }
 

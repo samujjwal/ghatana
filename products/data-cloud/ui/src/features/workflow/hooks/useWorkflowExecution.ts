@@ -27,6 +27,22 @@ import {
   resetExecutionAtom,
 } from '../stores/execution.store';
 import type { ExecuteWorkflowRequest, ExecutionStatusValue } from '../types/workflow.types';
+import { ExecutionStatus, type WorkflowExecution } from '../types/workflow.types';
+
+function createPendingExecution(
+  executionId: string,
+  workflowId: string,
+): WorkflowExecution {
+  return {
+    id: executionId,
+    workflowId,
+    status: ExecutionStatus.RUNNING,
+    progress: 0,
+    startedAt: new Date().toISOString(),
+    nodeStatuses: [],
+    tenantId: 'default',
+  };
+}
 
 /**
  * Hook state type.
@@ -69,9 +85,7 @@ export function useWorkflowExecution() {
       try {
         const response = await workflowClient.executeWorkflow(workflowId, request);
 
-        // Load the execution
-        const executionData = await workflowClient.getExecutionStatus(response.executionId);
-        startExecution(executionData);
+        startExecution(createPendingExecution(response.executionId, workflowId));
 
         return response.executionId;
       } catch (error) {

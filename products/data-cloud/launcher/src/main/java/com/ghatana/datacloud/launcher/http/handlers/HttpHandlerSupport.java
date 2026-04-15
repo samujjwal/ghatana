@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
+import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
@@ -74,6 +75,10 @@ public class HttpHandlerSupport {
      * @return correlation ID guaranteed to be non-null and non-blank
      */
     public String resolveCorrelationId(HttpRequest request) {
+        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
+        if (metadata != null && metadata.requestId() != null && !metadata.requestId().isBlank()) {
+            return metadata.requestId();
+        }
         String fromRequestId = request.getHeader(HttpHeaders.of("X-Request-Id"));
         if (fromRequestId != null && !fromRequestId.isBlank()) return fromRequestId.trim();
         String fromCorrelationId = request.getHeader(HttpHeaders.of("X-Correlation-Id"));
@@ -257,6 +262,8 @@ public class HttpHandlerSupport {
      * not send {@code X-Tenant-Id}.
      */
     public String resolveTenantId(HttpRequest request) {
+        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) return metadata.tenantId();
         String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
         if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
         String fromQuery = request.getQueryParameter("tenantId");
@@ -284,6 +291,21 @@ public class HttpHandlerSupport {
      * @return tenant ID if present; {@code null} if absent
      */
     public String requireTenantIdOrFail(HttpRequest request) {
+        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) return metadata.tenantId();
+        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
+        String fromQuery = request.getQueryParameter("tenantId");
+        if (fromQuery != null && !fromQuery.isBlank()) return fromQuery;
+        return null;
+    }
+
+    /**
+     * Returns the tenant identifier when present without applying the default fallback tenant.
+     */
+    public String peekTenantId(HttpRequest request) {
+        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) return metadata.tenantId();
         String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
         if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
         String fromQuery = request.getQueryParameter("tenantId");
@@ -364,6 +386,7 @@ public class HttpHandlerSupport {
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(envelope.getMeta().getRequestId()))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {

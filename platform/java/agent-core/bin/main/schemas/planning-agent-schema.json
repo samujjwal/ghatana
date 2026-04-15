@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/planning-agent.json",
+  "title": "Planning Agent Configuration",
+  "description": "Schema for PLANNING agent type — goal-directed planners (HTN, ReAct, tree-of-thought) with multi-step lifecycle",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "PLANNING" },
+        "planning": {
+          "$ref": "#/$defs/PlanningSpec"
+        }
+      },
+      "required": ["type", "planning"]
+    }
+  },
+
+  "$defs": {
+    "PlanningSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["HTN", "REACT", "TOT", "WORKFLOW", "OBJECTIVE_DECOMPOSITION"],
+          "default": "WORKFLOW",
+          "description": "Planning algorithm: HTN (Hierarchical Task Network), ReAct, Tree-of-Thought, Workflow, Objective Decomposition"
+        },
+        "maxPlanDepth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5,
+          "description": "Maximum recursion depth for plan expansion"
+        },
+        "maxReplans": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 3,
+          "description": "Maximum number of REPLAN cycles before failure"
+        },
+        "planningLlm": {
+          "$ref": "#/$defs/PlanningLlmConfig",
+          "description": "LLM configuration used for plan generation steps"
+        },
+        "goalDecomposition": {
+          "$ref": "#/$defs/GoalDecomposition",
+          "description": "Goal decomposition rules for HTN and OBJECTIVE_DECOMPOSITION subtypes"
+        },
+        "lifecycleStates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["initialising", "planning", "executing", "observing", "replanning", "blocked", "waiting", "suspended", "completed", "failed"]
+          },
+          "description": "Declared lifecycle states this planner can enter",
+          "default": ["planning", "executing", "observing", "replanning", "completed", "failed"]
+        },
+        "delegationPolicy": {
+          "$ref": "#/$defs/DelegationPolicy",
+          "description": "Policy for delegating subtasks to other agents"
+        },
+        "humanApprovalRequired": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to pause and require human approval before executing the plan"
+        }
+      },
+      "required": ["subtype"]
+    },
+
+    "PlanningLlmConfig": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["ANTHROPIC", "OPENAI", "GOOGLE", "LOCAL"],
+          "description": "LLM provider for planning"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model identifier (e.g. gpt-4, claude-3-5-sonnet-20241022)"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "default": 0.2
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128000,
+          "default": 4096
+        },
+        "systemPrompt": {
+          "type": "string",
+          "description": "System prompt override for the planning LLM"
+        }
+      },
+      "required": ["provider", "model"]
+    },
+
+    "GoalDecomposition": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["sequential", "parallel", "conditional", "adaptive"],
+          "default": "sequential"
+        },
+        "subGoalTemplates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "condition": { "type": "string" },
+              "delegateTo": { "type": "string" }
+            },
+            "required": ["name"]
+          }
+        }
+      }
+    },
+
+    "DelegationPolicy": {
+      "type": "object",
+      "properties": {
+        "allowedAgents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Agent IDs this planner is allowed to delegate to"
+        },
+        "maxParallelDelegations": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Maximum number of concurrent subtask delegations"
+        },
+        "resultAggregation": {
+          "type": "string",
+          "enum": ["first-wins", "majority-vote", "weighted-average", "sequential-merge"],
+          "default": "sequential-merge"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Timeout for each delegated subtask"
+        }
+      }
+    }
+  }
+}

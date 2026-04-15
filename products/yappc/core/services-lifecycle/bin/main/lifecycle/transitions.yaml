@@ -1,0 +1,212 @@
+# Lifecycle Stage Transitions
+# Reference: developer-tasks.md Part II - Stage Transitions
+# Defines allowed transitions between lifecycle stages
+
+transitions:
+  # Forward Transitions (Primary Flow)
+  - from: intent
+    to: context
+    type: forward
+    description: "Move from goal clarification to gathering context"
+    required_artifacts:
+      - GoalStatement
+    triggers:
+      - manual
+      - auto_on_criteria
+
+  - from: context
+    to: plan
+    type: forward
+    description: "Move from context gathering to planning"
+    required_artifacts:
+      - ContextSummary
+    triggers:
+      - manual
+      - auto_on_criteria
+
+  - from: plan
+    to: execute
+    type: forward
+    description: "Move from planning to execution"
+    required_artifacts:
+      - TaskBreakdown
+    triggers:
+      - manual
+      - auto_on_criteria
+
+  - from: execute
+    to: verify
+    type: forward
+    description: "Move from execution to verification"
+    required_artifacts:
+      - SourceCode
+    triggers:
+      - manual
+      - auto_on_criteria
+
+  - from: verify
+    to: observe
+    type: forward
+    description: "Move from verification to observation"
+    required_artifacts:
+      - VerificationReport
+    triggers:
+      - manual
+      - auto_on_criteria
+
+  - from: observe
+    to: learn
+    type: forward
+    description: "Move from observation to learning"
+    required_artifacts:
+      - MetricsReport
+    triggers:
+      - manual
+      - scheduled
+
+  - from: learn
+    to: institutionalize
+    type: forward
+    description: "Move from learning to institutionalization"
+    required_artifacts:
+      - LessonsLearned
+    triggers:
+      - manual
+
+  # Backward Transitions (Iteration)
+  - from: context
+    to: intent
+    type: backward
+    description: "Return to intent when goals need clarification"
+    reason: "Goal ambiguity discovered"
+    triggers:
+      - manual
+
+  - from: plan
+    to: context
+    type: backward
+    description: "Return to context when more information needed"
+    reason: "Insufficient context for planning"
+    triggers:
+      - manual
+
+  - from: plan
+    to: intent
+    type: backward
+    description: "Return to intent when scope changes"
+    reason: "Scope or goal change required"
+    triggers:
+      - manual
+
+  - from: execute
+    to: plan
+    type: backward
+    description: "Return to plan when approach needs revision"
+    reason: "Plan inadequate or blocked"
+    triggers:
+      - manual
+
+  - from: execute
+    to: context
+    type: backward
+    description: "Return to context when missing information"
+    reason: "Missing context discovered"
+    triggers:
+      - manual
+
+  - from: verify
+    to: execute
+    type: backward
+    description: "Return to execute when verification fails"
+    reason: "Verification failure"
+    triggers:
+      - manual
+      - auto_on_failure
+
+  - from: verify
+    to: plan
+    type: backward
+    description: "Return to plan when approach fundamentally wrong"
+    reason: "Approach redesign needed"
+    triggers:
+      - manual
+
+  - from: observe
+    to: execute
+    type: backward
+    description: "Return to execute for bug fixes"
+    reason: "Production issue discovered"
+    triggers:
+      - manual
+      - auto_on_alert
+
+  - from: observe
+    to: verify
+    type: backward
+    description: "Return to verify for additional testing"
+    reason: "Edge case discovered"
+    triggers:
+      - manual
+
+  # Skip Transitions (For Experienced Practitioners)
+  - from: intent
+    to: plan
+    type: skip
+    description: "Skip context when already well understood"
+    conditions:
+      - "Context already documented"
+      - "Repeat task pattern"
+    triggers:
+      - manual
+
+  - from: context
+    to: execute
+    type: skip
+    description: "Skip planning for simple tasks"
+    conditions:
+      - "Task is well-defined"
+      - "Minimal complexity"
+      - "Single developer"
+    triggers:
+      - manual
+
+  - from: verify
+    to: learn
+    type: skip
+    description: "Skip observation for internal changes"
+    conditions:
+      - "No production impact"
+      - "Internal tooling only"
+    triggers:
+      - manual
+
+# Transition Rules
+rules:
+  - id: no_skip_without_justification
+    description: "Skip transitions require documented justification"
+    enforcement: warning
+
+  - id: backward_requires_reason
+    description: "Backward transitions must have a documented reason"
+    enforcement: required
+
+  - id: verify_failure_auto_revert
+    description: "Automatic return to execute on test failure"
+    enforcement: auto
+
+  - id: max_backward_count
+    description: "Alert if more than 3 backward transitions"
+    max_count: 3
+    enforcement: warning
+
+# Transition Hooks
+hooks:
+  pre_transition:
+    - validate_exit_criteria
+    - check_required_artifacts
+    - notify_stakeholders
+
+  post_transition:
+    - log_transition
+    - update_progress
+    - trigger_automation

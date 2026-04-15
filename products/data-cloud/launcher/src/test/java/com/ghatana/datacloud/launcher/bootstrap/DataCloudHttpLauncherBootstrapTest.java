@@ -66,6 +66,30 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
+    @DisplayName("trace sampling defaults to full coverage in local and staging profiles")
+    void traceSamplingDefaultsToFullCoverageInLocalAndStaging() {
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "local")))
+                .isEqualTo(1.0);
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "staging")))
+                .isEqualTo(1.0);
+    }
+
+    @Test
+    @DisplayName("trace sampling defaults to one percent outside local and staging")
+    void traceSamplingDefaultsToOnePercentOutsideLocalAndStaging() {
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "production")))
+                .isEqualTo(0.01);
+    }
+
+    @Test
+    @DisplayName("trace sampling honors explicit environment override")
+    void traceSamplingHonorsExplicitOverride() {
+        assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(
+                Map.of("DATACLOUD_PROFILE", "production", "DATACLOUD_TRACE_SAMPLING_RATIO", "0.25")))
+                .isEqualTo(0.25);
+    }
+
+    @Test
     @DisplayName("wires database health subsystem and shutdown hook on successful startup")
     void wiresDatabaseHealthSubsystemAndShutdownHook() throws Exception {
         DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class);

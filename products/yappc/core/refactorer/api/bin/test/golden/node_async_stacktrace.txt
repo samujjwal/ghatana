@@ -1,0 +1,5 @@
+TypeError: Cannot read property 'data' of undefined
+    at getData (/app/service.js:5:15)
+    at async fetchData (/app/index.js:20:5)
+    at Promise.all (/app/index.js:25:10)
+    at async main (/app/index.js:30:3)

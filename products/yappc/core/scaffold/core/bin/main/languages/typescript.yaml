@@ -1,0 +1,188 @@
+name: TypeScript
+versions:
+  - "4.9"
+  - "5.0"
+  - "5.1"
+  - "5.2"
+  - "5.3"
+  - "5.4"
+
+packageManagement:
+  options:
+    - npm
+    - yarn
+    - pnpm
+    - bun
+  files:
+    - package.json
+    - package-lock.json
+    - yarn.lock
+    - pnpm-lock.yaml
+    - bun.lockb
+  commands:
+    init: "{{packageManager}} init"
+    install: "{{packageManager}} install"
+    add: "{{packageManager}} add {{package}}"
+    dev: "{{packageManager}} run dev"
+    build: "{{packageManager}} run build"
+    test: "{{packageManager}} test"
+
+buildSystems:
+  vite:
+    files:
+      - vite.config.ts
+      - tsconfig.json
+    commands:
+      dev: "vite"
+      build: "vite build"
+      preview: "vite preview"
+    outputs:
+      - esm
+      - cjs
+      - umd
+      - iife
+
+  webpack:
+    files:
+      - webpack.config.js
+      - tsconfig.json
+    commands:
+      build: "webpack"
+      dev: "webpack serve"
+    outputs:
+      - bundle.js
+
+  rollup:
+    files:
+      - rollup.config.js
+      - tsconfig.json
+    commands:
+      build: "rollup -c"
+    outputs:
+      - esm
+      - cjs
+
+  tsc:
+    files:
+      - tsconfig.json
+    commands:
+      build: "tsc"
+      watch: "tsc --watch"
+    outputs:
+      - js
+      - d.ts
+
+frameworks:
+  react:
+    templates:
+      - ts-react-vite
+      - ts-react-nextjs
+    conventions:
+      - src/components/
+      - src/hooks/
+      - src/pages/
+      - src/utils/
+    testing:
+      - jest
+      - vitest
+      - react-testing-library
+
+  vue:
+    templates:
+      - ts-vue-vite
+      - ts-vue-nuxt
+    conventions:
+      - src/components/
+      - src/views/
+      - src/stores/
+      - src/composables/
+    testing:
+      - vitest
+      - vue-test-utils
+
+  angular:
+    templates:
+      - ts-angular-cli
+    conventions:
+      - src/app/components/
+      - src/app/services/
+      - src/app/modules/
+    testing:
+      - jest
+      - karma
+
+  nextjs:
+    templates:
+      - ts-react-nextjs
+    conventions:
+      - app/
+      - pages/
+      - components/
+      - lib/
+    testing:
+      - jest
+      - playwright
+
+  express:
+    templates:
+      - ts-node-express
+    conventions:
+      - src/routes/
+      - src/controllers/
+      - src/middleware/
+      - src/models/
+    testing:
+      - jest
+      - supertest
+
+  fastify:
+    templates:
+      - ts-node-fastify
+    conventions:
+      - src/routes/
+      - src/plugins/
+      - src/services/
+    testing:
+      - jest
+      - tap
+
+testing:
+  frameworks:
+    - jest
+    - vitest
+    - mocha
+    - jasmine
+    - playwright
+    - cypress
+  conventions:
+    - "*.test.ts"
+    - "*.spec.ts"
+    - "describe/it"
+  coverage:
+    - c8
+    - istanbul
+    - jest --coverage
+
+linting:
+  tools:
+    - eslint
+    - prettier
+    - typescript-eslint
+    - tslint
+  config:
+    - .eslintrc.js
+    - .prettierrc
+    - tsconfig.json
+
+conventions:
+  directory:
+    - src
+    - dist
+    - tests
+    - docs
+  naming:
+    - camelCase
+    - PascalCase
+  imports:
+    - absolute-imports
+    - path-aliases

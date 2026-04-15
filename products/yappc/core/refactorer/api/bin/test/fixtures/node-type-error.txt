@@ -1,0 +1,4 @@
+TypeError: Cannot read property 'length' of undefined
+    at Object.<anonymous> (/path/to/app.js:10:15)
+    at Module._compile (internal/modules/cjs/loader.js:778:30)
+    at Module._extensions..js (internal/modules/cjs/loader.js:789:10)

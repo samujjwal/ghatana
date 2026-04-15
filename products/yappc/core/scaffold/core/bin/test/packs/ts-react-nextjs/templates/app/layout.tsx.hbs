@@ -1,0 +1,33 @@
+import type { Metadata } from 'next'
+{{#if enableTailwind}}import './globals.css'{{/if}}
+
+export const metadata: Metadata = {
+  title: '{{projectName}}',
+  description: '{{description}}',
+  keywords: ['Next.js', 'React', 'TypeScript'],
+  authors: [{ name: '{{author}}' }],
+  creator: '{{author}}',
+  publisher: '{{author}}',
+  robots: 'index, follow',
+  viewport: 'width=device-width, initial-scale=1',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head />
+      <body{{#if enableTailwind}} className="min-h-screen bg-white dark:bg-gray-900"{{/if}}>
+        <div id="root">
+          {children}
+        </div>
+      </body>
+    </html>
+  )
+}

@@ -7,6 +7,8 @@ package com.ghatana.datacloud.launcher.support;
 import org.slf4j.MDC;
 
 import java.io.Closeable;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Thread-local request context holder for structured logging via SLF4J MDC.
@@ -43,11 +45,15 @@ public final class RequestContext implements Closeable {
 
     static final String KEY_REQUEST_ID = "requestId";
     static final String KEY_TENANT_ID  = "tenantId";
+    static final String KEY_TRACE_ID   = "traceId";
+    static final String KEY_HTTP_METHOD = "httpMethod";
+    static final String KEY_HTTP_PATH = "httpPath";
+    static final String KEY_PRINCIPAL = "principal";
 
-    private final boolean clearTenantId;
+    private final Set<String> keysToClear;
 
-    private RequestContext(boolean clearTenantId) {
-        this.clearTenantId = clearTenantId;
+    private RequestContext(Set<String> keysToClear) {
+        this.keysToClear = keysToClear;
     }
 
     /**
@@ -61,7 +67,21 @@ public final class RequestContext implements Closeable {
     public static RequestContext bind(String requestId, String tenantId) {
         MDC.put(KEY_REQUEST_ID, requestId);
         MDC.put(KEY_TENANT_ID, tenantId);
-        return new RequestContext(true);
+        return new RequestContext(new LinkedHashSet<>(Set.of(KEY_REQUEST_ID, KEY_TENANT_ID)));
+    }
+
+    public static RequestContext bind(String requestId, String tenantId, String traceId, String method, String path) {
+        MDC.put(KEY_REQUEST_ID, requestId);
+        MDC.put(KEY_TENANT_ID, tenantId);
+        MDC.put(KEY_TRACE_ID, traceId);
+        MDC.put(KEY_HTTP_METHOD, method);
+        MDC.put(KEY_HTTP_PATH, path);
+        return new RequestContext(new LinkedHashSet<>(Set.of(
+                KEY_REQUEST_ID,
+                KEY_TENANT_ID,
+                KEY_TRACE_ID,
+                KEY_HTTP_METHOD,
+                KEY_HTTP_PATH)));
     }
 
     /**
@@ -73,14 +93,30 @@ public final class RequestContext implements Closeable {
      */
     public static RequestContext bindRequestId(String requestId) {
         MDC.put(KEY_REQUEST_ID, requestId);
-        return new RequestContext(false);
+        return new RequestContext(new LinkedHashSet<>(Set.of(KEY_REQUEST_ID)));
+    }
+
+    public static RequestContext bindRequest(String requestId, String traceId, String method, String path) {
+        MDC.put(KEY_REQUEST_ID, requestId);
+        MDC.put(KEY_TRACE_ID, traceId);
+        MDC.put(KEY_HTTP_METHOD, method);
+        MDC.put(KEY_HTTP_PATH, path);
+        return new RequestContext(new LinkedHashSet<>(Set.of(
+                KEY_REQUEST_ID,
+                KEY_TRACE_ID,
+                KEY_HTTP_METHOD,
+                KEY_HTTP_PATH)));
+    }
+
+    public static RequestContext bindPrincipal(String principal) {
+        MDC.put(KEY_PRINCIPAL, principal);
+        return new RequestContext(new LinkedHashSet<>(Set.of(KEY_PRINCIPAL)));
     }
 
     @Override
     public void close() {
-        MDC.remove(KEY_REQUEST_ID);
-        if (clearTenantId) {
-            MDC.remove(KEY_TENANT_ID);
+        for (String key : keysToClear) {
+            MDC.remove(key);
         }
     }
 }

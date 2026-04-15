@@ -9,7 +9,9 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from '../lib/api/client';
+
+export const SCHEMA_SUGGESTION_BOUNDARY_MESSAGE =
+  'Schema suggestion requires a collection-scoped canonical route and is not exposed by the current Data Cloud launcher through this hook.';
 
 /**
  * Schema suggestion request
@@ -40,7 +42,8 @@ interface SchemaSuggestionResponse {
 export function useSchemaSuggestion() {
   return useMutation({
     mutationFn: async (data: SchemaSuggestionRequest): Promise<SchemaSuggestionResponse> => {
-      return await apiClient.post<SchemaSuggestionResponse>('/schema/suggest', data);
+      void data;
+      throw new Error(SCHEMA_SUGGESTION_BOUNDARY_MESSAGE);
     },
   });
 }

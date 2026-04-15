@@ -31,6 +31,9 @@ import type {
   ValidateWorkflowResponse,
 } from '../../features/workflow/types/workflow.types';
 
+export const WORKFLOW_CLIENT_BOUNDARY_MESSAGE =
+  'Workflow execution detail, template browsing, workflow suggestions, and remote validation are not exposed by the current Data Cloud launcher API.';
+
 /**
  * API client configuration.
  *
@@ -190,11 +193,8 @@ export class WorkflowApiClient {
    * @returns the execution status
    */
   async getExecutionStatus(executionId: string): Promise<WorkflowExecution> {
-    // No dedicated execution endpoint in the current backend.
-    // Query events API for execution status by event correlation ID.
-    return apiClient.get<WorkflowExecution>(`/events/${executionId}`, {
-      headers: this.getHeaders(),
-    });
+    void executionId;
+    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -203,10 +203,8 @@ export class WorkflowApiClient {
    * @param executionId the execution ID
    */
   async cancelExecution(executionId: string): Promise<void> {
-    // No dedicated cancel endpoint in the current backend.
-    await apiClient.post(`/events/${executionId}/cancel`, undefined, {
-      headers: this.getHeaders(),
-    });
+    void executionId;
+    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -216,10 +214,8 @@ export class WorkflowApiClient {
    * @returns the suggestions response
    */
   async getSuggestions(collectionId: string): Promise<SuggestionsResponse> {
-    return apiClient.get<SuggestionsResponse>('/pipelines/suggestions', {
-      params: { collectionId },
-      headers: this.getHeaders(),
-    });
+    void collectionId;
+    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -229,10 +225,8 @@ export class WorkflowApiClient {
    * @returns the templates response
    */
   async getTemplates(category?: string): Promise<TemplatesResponse> {
-    return apiClient.get<TemplatesResponse>('/pipelines/templates', {
-      params: category ? { category } : undefined,
-      headers: this.getHeaders(),
-    });
+    void category;
+    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -242,11 +236,8 @@ export class WorkflowApiClient {
    * @returns the validation result
    */
   async validateWorkflow(workflow: WorkflowDefinition): Promise<ValidateWorkflowResponse> {
-    return apiClient.post<ValidateWorkflowResponse>(
-      '/pipelines/validate',
-      workflow,
-      { headers: this.getHeaders() }
-    );
+    void workflow;
+    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
   }
 
   /**

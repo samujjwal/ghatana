@@ -62,6 +62,8 @@ import com.ghatana.datacloud.launcher.http.handlers.PluginInstallHandler;
 import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
 import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
+import com.ghatana.datacloud.launcher.http.handlers.CapabilityRegistryHandler;
+import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
@@ -112,14 +114,20 @@ public class DataCloudHttpServer {
         Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable|upgrade)$"),
         Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
         Pattern.compile("^/api/v1/learning/review/[^/]+/(approve|reject)$"),
+        Pattern.compile("^/api/v1/learning/review/completed$"),
         Pattern.compile("^/api/v1/models/[^/]+/promote$")
     );
 
     // ==================== Rate Limiting Constants ====================
-    /** Maximum number of requests allowed per IP per window. */
-    private static final int RATE_LIMIT_REQUESTS = 200;
-    /** Sliding-window size in seconds (60 s). */
-    private static final long RATE_LIMIT_WINDOW_SECONDS = 60L;
+    /** Default maximum requests per IP per window (can be overridden via {@code DATACLOUD_RATE_LIMIT_REQUESTS}). */
+    private static final int DEFAULT_RATE_LIMIT_REQUESTS = 200;
+    /** Default sliding-window size in seconds (can be overridden via {@code DATACLOUD_RATE_LIMIT_WINDOW_SECONDS}). */
+    private static final long DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60L;
+
+    /** Tunable rate limit: requests per IP per window. Defaults to {@link #DEFAULT_RATE_LIMIT_REQUESTS}. */
+    private int rateLimitRequests = DEFAULT_RATE_LIMIT_REQUESTS;
+    /** Tunable rate limit: sliding-window size in seconds. Defaults to {@link #DEFAULT_RATE_LIMIT_WINDOW_SECONDS}. */
+    private long rateLimitWindowSeconds = DEFAULT_RATE_LIMIT_WINDOW_SECONDS;
 
     /** Heartbeat interval: block this long waiting for the next event before sending a heartbeat. */
     private static final long SSE_HEARTBEAT_TIMEOUT_SEC = 30L;
@@ -154,16 +162,13 @@ public class DataCloudHttpServer {
 
     /**
      * Sliding-window rate limiter (platform:java:governance).
-    * Wraps the delegate servlet and enforces {@link #RATE_LIMIT_REQUESTS} requests
-    * per {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window per tenant/client bucket.
+    * Wraps the delegate servlet and enforces {@link #rateLimitRequests} requests
+    * per {@link #rateLimitWindowSeconds}-second sliding window per tenant/client bucket.
      * The raw 429 from the platform filter is upgraded in {@link #rateLimitFilter}
      * to include a JSON body and CORS headers required by the Data-Cloud API contract.
+     * Initialised in {@link #start()} after tunable config has been applied.
      */
-        private final RateLimitFilter platformRateLimiter =
-            new RateLimitFilter(
-                RATE_LIMIT_REQUESTS,
-                RATE_LIMIT_WINDOW_SECONDS,
-                DataCloudHttpServer::rateLimitClientKey);
+    private RateLimitFilter platformRateLimiter;
 
     /**
      * Optional schema validator for entity data.
@@ -266,6 +271,11 @@ public class DataCloudHttpServer {
     private TraceExportService traceExportService;
 
     /**
+     * Trace sampling ratio applied when requests do not provide an upstream traceparent decision.
+     */
+    private double traceSamplingRate = 1.0;
+
+    /**
      * Optional Trino coordinator JDBC URL for federated cross-tier queries (B13).
      * When {@code null}, federated queries fall back to the local analytics engine.
      */
@@ -293,6 +303,8 @@ public class DataCloudHttpServer {
     private AutonomyHandler autonomyHandler; // B9: emergency autonomy shutoff
     private AgentCatalogHandler agentCatalogHandler; // B3: agent catalog runtime API
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
+    private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
+    private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
     private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
@@ -535,6 +547,20 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Configures request trace sampling ratio for launcher-generated spans.
+     *
+     * @param samplingRate value in the inclusive range {@code [0.0, 1.0]}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withTraceSamplingRate(double samplingRate) {
+        if (samplingRate < 0.0 || samplingRate > 1.0) {
+            throw new IllegalArgumentException("samplingRate must be between 0.0 and 1.0");
+        }
+        this.traceSamplingRate = samplingRate;
+        return this;
+    }
+
+    /**
      * Configures the Trino coordinator JDBC URL for federated cross-tier queries (B13).
      *
      * <p>When set, {@code POST /api/v1/queries/federated} routes queries through the
@@ -642,6 +668,22 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches an {@link AuditService} for security and governance audit persistence.
+     *
+     * @param service audit service; must not be {@code null}
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach audit persistence for launcher HTTP flows
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withAuditService(AuditService service) {
+        this.auditService = service;
+        return this;
+    }
+
+    /**
      * Attaches an {@link AutonomyController} to enable autonomy management routes (B9).
      *
      * <p>Required for:
@@ -686,6 +728,22 @@ public class DataCloudHttpServer {
         return this;
     }
 
+    /**
+     * Overrides the default rate-limit thresholds used by the platform rate limiter.
+     *
+     * <p>Call this method before {@link #start()} to apply env-configurable limits.
+     * If not called, defaults are {@code 200} requests per {@code 60}-second window.
+     *
+     * @param requests   maximum requests per IP allowed within the window
+     * @param windowSec  sliding-window size in seconds
+     * @return {@code this} for chaining
+     */
+    public DataCloudHttpServer withRateLimitConfig(int requests, long windowSec) {
+        this.rateLimitRequests = requests;
+        this.rateLimitWindowSeconds = windowSec;
+        return this;
+    }
+
     static void validateSecurityConfiguration(boolean authConfigured,
                                               boolean strictTenantResolution,
                                               Logger logger) {
@@ -713,10 +771,17 @@ public class DataCloudHttpServer {
     public void start() throws Exception {
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
 
+        platformRateLimiter = new RateLimitFilter(
+                rateLimitRequests,
+                rateLimitWindowSeconds,
+                DataCloudHttpServer::rateLimitClientKey);
+
         eventloop = Eventloop.create();
 
         // ---- Instantiate extracted handler delegates ----
         httpSupport = new HttpHandlerSupport(objectMapper, CORS_ALLOW_ORIGIN, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution);
+        DataCloudBusinessMetrics businessMetrics = new DataCloudBusinessMetrics(metricsCollector);
+        TraceSpanSupport traceSpanSupport = new TraceSpanSupport(traceExportService);
 
         sseHandler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, httpSupport);
         if (openSearchConnector != null) sseHandler.withOpenSearchConnector(openSearchConnector);
@@ -724,12 +789,14 @@ public class DataCloudHttpServer {
         entityHandler = new EntityCrudHandler(client, httpSupport, sseHandler.broadcastFunction());
         if (schemaValidator != null) entityHandler.withSchemaValidator(schemaValidator);
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
+        entityHandler.withTraceSupport(traceSpanSupport);
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
         anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport);
         validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
 
         eventHandler = new EventHandler(client, httpSupport);
+        eventHandler.withTraceSupport(traceSpanSupport);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
@@ -742,7 +809,7 @@ public class DataCloudHttpServer {
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
-        healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers);
+        healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers, metricsCollector);
 
         // DC-E3: AI assist handler — nullable completionService enables graceful degradation
         aiAssistHandler = new AiAssistHandler(completionService, objectMapper, httpSupport, blockingExecutor);
@@ -779,7 +846,8 @@ public class DataCloudHttpServer {
             NopVoiceTtsAdapter.INSTANCE);
 
         // DC-E5: Data lifecycle and governance handler
-        dataLifecycleHandler = new DataLifecycleHandler(objectMapper, httpSupport, auditService);
+        dataLifecycleHandler = new DataLifecycleHandler(client, objectMapper, httpSupport, auditService);
+        dataLifecycleHandler.withTraceSupport(traceSpanSupport);
 
         // B9: Autonomy management handler — nullable controller enables graceful 503
         autonomyHandler = new AutonomyHandler(autonomyController, httpSupport);
@@ -787,7 +855,15 @@ public class DataCloudHttpServer {
         // B3: Agent catalog runtime handler — loads YAML definitions from classpath
         agentCatalogHandler = new AgentCatalogHandler(httpSupport, metricsCollector);
 
-        // B6: Plugin install/upgrade lifecycle handler
+        capabilityRegistryHandler = new CapabilityRegistryHandler(
+            httpSupport,
+            objectMapper,
+            this::buildCapabilitySnapshot);
+
+        // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
+        contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper);
+
+
         pluginInstallHandler = new PluginInstallHandler(
                 httpSupport,
                 com.ghatana.datacloud.spi.StoragePluginRegistry.getInstance(),
@@ -805,6 +881,8 @@ public class DataCloudHttpServer {
 
         // B10: Tier migration handler — uses schedulers when they are configured via withTierMigrationSchedulers()
         tierMigrationHandler = new TierMigrationHandler(httpSupport, warmMigrationScheduler, coldMigrationScheduler);
+
+        log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
 
         RoutingServlet router = RoutingServlet.builder(eventloop)
             // Health endpoints — delegated to HealthHandler (P7-2b)
@@ -878,14 +956,16 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/learning/trigger",                    learningHandler::handleLearningTrigger)
             .with(HttpMethod.GET,  "/api/v1/learning/status",                     learningHandler::handleLearningStatus)
             .with(HttpMethod.GET,  "/api/v1/learning/review",                     learningHandler::handleLearningReviewQueue)
-            .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/approve",   learningHandler::handleLearningReviewApprove)
-            .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/reject",    learningHandler::handleLearningReviewReject)
+            .with(HttpMethod.POST,   "/api/v1/learning/review/:reviewId/approve",   learningHandler::handleLearningReviewApprove)
+            .with(HttpMethod.POST,   "/api/v1/learning/review/:reviewId/reject",    learningHandler::handleLearningReviewReject)
+            .with(HttpMethod.DELETE, "/api/v1/learning/review/completed",           learningHandler::handlePurgeCompletedReviews)
 
             // Analytics routes (DC-9) — delegated to AnalyticsHandler
             .with(HttpMethod.POST, "/api/v1/analytics/query",                     analyticsHandler::handleAnalyticsQuery)
             .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId",            analyticsHandler::handleAnalyticsGetResult)
             .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId/plan",       analyticsHandler::handleAnalyticsGetPlan)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregate",                 analyticsHandler::handleAnalyticsAggregate)
+            .with(HttpMethod.POST, "/api/v1/analytics/explain",                   analyticsHandler::handleAnalyticsExplain)
 
             // Reporting routes (DC-10) — delegated to AnalyticsHandler
             .with(HttpMethod.POST, "/api/v1/reports",             analyticsHandler::handleCreateReport)
@@ -927,6 +1007,15 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/governance/privacy/redact",     dataLifecycleHandler::handleRedact)
             .with(HttpMethod.GET,  "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
             .with(HttpMethod.GET,  "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
+
+            // Runtime capability registry (P2.7)
+            .with(HttpMethod.GET,  "/api/v1/capabilities",                  capabilityRegistryHandler::handleCapabilities)
+
+            // Tenant-scoped context layer (P3.1) — lightweight runtime key-value store
+            .with(HttpMethod.GET,    "/api/v1/context",                     contextLayerHandler::handleGetContext)
+            .with(HttpMethod.PUT,    "/api/v1/context",                     contextLayerHandler::handlePutContext)
+            .with(HttpMethod.DELETE, "/api/v1/context/keys/:key",           contextLayerHandler::handleDeleteContextKey)
+            .with(HttpMethod.GET,    "/api/v1/context/snapshot",            contextLayerHandler::handleGetSnapshot)
 
             // Autonomy management routes (B9) — emergency global shutoff and domain-level controls
             .with(HttpMethod.PUT, "/api/v1/autonomy/level",              autonomyHandler::handleSetGlobalLevel)
@@ -988,6 +1077,8 @@ public class DataCloudHttpServer {
             log.info("[DC-E1] security filter inactive — withApiKeyResolver/withJwtProvider not called");
         }
 
+        rootServlet = new RequestObservationFilter(httpSupport, businessMetrics, traceExportService, traceSamplingRate).apply(rootServlet);
+
         server = HttpServer.builder(eventloop,
                 corsFilter(rateLimitFilter(rootServlet)))
             .withListenPort(port)
@@ -1028,6 +1119,84 @@ public class DataCloudHttpServer {
         log.info("Data-Cloud HTTP Server stopped");
     }
 
+    private Map<String, Object> buildCapabilitySnapshot() {
+        Map<String, Object> capabilities = new LinkedHashMap<>();
+        capabilities.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
+        capabilities.put("authentication.jwt", capabilityEntry(jwtProvider != null, null));
+        capabilities.put("brain", capabilityEntry(brain != null, null));
+        capabilities.put("learning", capabilityEntry(learningBridge != null, null));
+        capabilities.put("analytics", capabilityEntry(analyticsEngine != null, null));
+        capabilities.put("reporting", capabilityEntry(reportService != null, null));
+        capabilities.put("search.openSearch", capabilityEntry(openSearchConnector != null, null));
+        capabilities.put("entityExport", capabilityEntry(exportService != null, null));
+        capabilities.put("anomalyDetection", capabilityEntry(anomalyDetector != null, null));
+        capabilities.put("schemaValidation", capabilityEntry(schemaValidator != null, null));
+        capabilities.put("ai.modelRegistry", capabilityEntry(aiModelManager != null, null));
+        capabilities.put("ai.featureStore", capabilityEntry(featureStoreService != null, resolveSubsystemStatus("ai_inference")));
+        capabilities.put("ai.assist", capabilityEntry(completionService != null, null));
+        capabilities.put(
+            "voiceGateway",
+            capabilityEntry(completionService != null || WhisperSttConfig.fromEnv().enabled(), resolveSubsystemStatus("voice_gateway")));
+        capabilities.put("governance.audit", capabilityEntry(auditService != null, resolveSubsystemStatus("audit_service")));
+        capabilities.put("governance.policyEngine", capabilityEntry(policyEngine != null, resolveSubsystemStatus("policy_engine")));
+        capabilities.put("federatedQuery.trino", capabilityEntry(trinoUrl != null && !trinoUrl.isBlank(), null));
+        capabilities.put("autonomy", capabilityEntry(autonomyController != null, null));
+        capabilities.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
+        capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
+        capabilities.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
+        capabilities.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
+        capabilities.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
+        return capabilities;
+    }
+
+    private String buildCapabilitySummaryLog() {
+        return buildCapabilitySnapshot().entrySet().stream()
+            .map(entry -> entry.getKey() + "=" + ((Map<?, ?>) entry.getValue()).get("status"))
+            .sorted()
+            .reduce((left, right) -> left + ", " + right)
+            .orElse("none");
+    }
+
+    private Map<String, Object> capabilityEntry(boolean configured, String subsystemStatus) {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("status", subsystemStatusToCapabilityStatus(configured, subsystemStatus));
+        entry.put("configured", configured);
+        if (subsystemStatus != null) {
+            entry.put("dependencyStatus", subsystemStatus);
+        }
+        return entry;
+    }
+
+    private String subsystemStatusToCapabilityStatus(boolean configured, String subsystemStatus) {
+        if (!configured) {
+            return "NOT_CONFIGURED";
+        }
+        if (subsystemStatus == null || subsystemStatus.isBlank() || "UP".equals(subsystemStatus)) {
+            return "ACTIVE";
+        }
+        if ("DOWN".equals(subsystemStatus) || "DEGRADED".equals(subsystemStatus)) {
+            return "DEGRADED";
+        }
+        if ("NOT_CONFIGURED".equals(subsystemStatus)) {
+            return "NOT_CONFIGURED";
+        }
+        return "ACTIVE";
+    }
+
+    private String resolveSubsystemStatus(String subsystemName) {
+        Supplier<Map<String, Object>> supplier = healthSubsystemSuppliers.get(subsystemName);
+        if (supplier == null) {
+            return null;
+        }
+        try {
+            Map<String, Object> snapshot = supplier.get();
+            Object status = snapshot.get("status");
+            return status == null ? null : String.valueOf(status);
+        } catch (RuntimeException exception) {
+            return "DOWN";
+        }
+    }
+
 
     // ==================== HTTP Middleware Filters ====================
 
@@ -1065,8 +1234,8 @@ public class DataCloudHttpServer {
     * Middleware: sliding-window tenant/IP-aware rate limiter, backed by
      * {@code platform:java:governance} {@link RateLimitFilter}.
      *
-    * <p>Each unique tenant/client bucket is allowed at most {@link #RATE_LIMIT_REQUESTS}
-    * requests within a {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window (evaluated by
+    * <p>Each unique tenant/client bucket is allowed at most {@link #rateLimitRequests}
+    * requests within a {@link #rateLimitWindowSeconds}-second sliding window (evaluated by
      * the platform filter's deque-based algorithm).
      *
      * <p>The raw 429 response emitted by the platform filter (plain text, no CORS) is
@@ -1091,12 +1260,12 @@ public class DataCloudHttpServer {
             // Upgrade platform's plain-text 429 → JSON 429 with CORS header
             String body = String.format(
                     "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
-                    RATE_LIMIT_WINDOW_SECONDS);
+                    rateLimitWindowSeconds);
             return HttpResponse.ofCode(429)
                     .withHeader(HttpHeaders.CONTENT_TYPE,
                             HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                     .withHeader(HttpHeaders.of("Retry-After"),
-                            HttpHeaderValue.of(String.valueOf(RATE_LIMIT_WINDOW_SECONDS)))
+                            HttpHeaderValue.of(String.valueOf(rateLimitWindowSeconds)))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                             HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
                     .withBody(body.getBytes(StandardCharsets.UTF_8))

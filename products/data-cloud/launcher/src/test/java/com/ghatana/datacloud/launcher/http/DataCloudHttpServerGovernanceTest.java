@@ -6,12 +6,16 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.BatchResult;
+import com.ghatana.datacloud.spi.EntityStore;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,9 +25,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for data lifecycle and governance API endpoints (DC-E5).
@@ -41,6 +50,7 @@ import static org.mockito.Mockito.mock;
 class DataCloudHttpServerGovernanceTest {
 
     private DataCloudClient mockClient;
+    private EntityStore mockEntityStore;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
@@ -49,6 +59,8 @@ class DataCloudHttpServerGovernanceTest {
     @BeforeEach
     void setUp() throws Exception {
         mockClient = mock(DataCloudClient.class);
+        mockEntityStore = mock(EntityStore.class);
+        when(mockClient.entityStore()).thenReturn(mockEntityStore);
         port       = findFreePort();
         httpClient = HttpClient.newBuilder().build();
     }
@@ -231,6 +243,11 @@ class DataCloudHttpServerGovernanceTest {
         @DisplayName("dry run returns DRY_RUN_COMPLETE status")
         @SuppressWarnings("unchecked")
         void dryRun_returnsDryRunComplete() throws Exception {
+            when(mockEntityStore.query(any(), any())).thenReturn(Promise.of(EntityStore.QueryResult.of(List.of(
+                entity("exp-1", "expired_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString())),
+                entity("live-1", "expired_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString()))
+            ))));
+
             server = new DataCloudHttpServer(mockClient, port);
             server.start();
             waitForServerReady(port);
@@ -246,14 +263,21 @@ class DataCloudHttpServerGovernanceTest {
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
             assertThat(data.get("dryRun")).isEqualTo(true);
             assertThat(data.get("status")).isEqualTo("DRY_RUN_COMPLETE");
+            assertThat(data.get("estimatedRows")).isEqualTo(1);
             assertThat(data).containsKey("confirmationToken");
             assertThat(data).containsKey("tokenExpiresInSec");
         }
 
         @Test
-        @DisplayName("real purge returns PURGE_SCHEDULED status")
+        @DisplayName("real purge deletes expired entities and returns PURGE_COMPLETED status")
         @SuppressWarnings("unchecked")
         void realPurge_returnsPurgeScheduled() throws Exception {
+            when(mockEntityStore.query(any(), any())).thenReturn(Promise.of(EntityStore.QueryResult.of(List.of(
+                entity("old-1", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(300).toString())),
+                entity("old-2", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(120).toString()))
+            ))));
+            when(mockEntityStore.deleteBatch(any(), any())).thenReturn(Promise.of(BatchResult.success(2)));
+
             server = new DataCloudHttpServer(mockClient, port);
             server.start();
             waitForServerReady(port);
@@ -280,7 +304,9 @@ class DataCloudHttpServerGovernanceTest {
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
-            assertThat(data.get("status")).isEqualTo("PURGE_SCHEDULED");
+            assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(data.get("deletedRows")).isEqualTo(2);
+            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 2));
         }
 
         @Test
@@ -314,6 +340,14 @@ class DataCloudHttpServerGovernanceTest {
         @DisplayName("redacts specified PII fields and returns REDACTED status")
         @SuppressWarnings("unchecked")
         void specififiedFields_redacted() throws Exception {
+            EntityStore.Entity existingEntity = entity(
+                "ent-abc123",
+                "user_profiles",
+                Map.of("email", "user@example.com", "phone", "+1-555-0101", "role", "admin")
+            );
+            when(mockEntityStore.findById(any(), any())).thenReturn(Promise.of(Optional.of(existingEntity)));
+            when(mockEntityStore.save(any(), any())).thenAnswer(invocation -> Promise.of(invocation.getArgument(1)));
+
             server = new DataCloudHttpServer(mockClient, port);
             server.start();
             waitForServerReady(port);
@@ -337,12 +371,24 @@ class DataCloudHttpServerGovernanceTest {
             @SuppressWarnings("unchecked")
             List<String> redactedFields = (List<String>) data.get("redactedFields");
             assertThat(redactedFields).containsExactlyInAnyOrder("email", "phone");
+            verify(mockEntityStore).save(any(), argThat(entity ->
+                "[REDACTED]".equals(entity.data().get("email"))
+                    && "[REDACTED]".equals(entity.data().get("phone"))
+                    && "admin".equals(entity.data().get("role"))));
         }
 
         @Test
-        @DisplayName("omitting fields defaults to all global PII fields")
+        @DisplayName("omitting fields requests all global PII fields and redacts present values")
         @SuppressWarnings("unchecked")
         void noFields_defaultsToAllPiiFields() throws Exception {
+            EntityStore.Entity existingEntity = entity(
+                "ent-xyz789",
+                "customers",
+                Map.of("email", "customer@example.com", "phone", "+1-555-0102", "ssn", "123-45-6789")
+            );
+            when(mockEntityStore.findById(any(), any())).thenReturn(Promise.of(Optional.of(existingEntity)));
+            when(mockEntityStore.save(any(), any())).thenAnswer(invocation -> Promise.of(invocation.getArgument(1)));
+
             server = new DataCloudHttpServer(mockClient, port);
             server.start();
             waitForServerReady(port);
@@ -357,9 +403,10 @@ class DataCloudHttpServerGovernanceTest {
             assertThat(resp.statusCode()).isEqualTo(200);
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
-            List<?> redactedFields = (List<?>) data.get("redactedFields");
-            // Should include at least the global PII fields
-            assertThat(redactedFields.size()).isGreaterThanOrEqualTo(9);
+            List<String> redactedFields = (List<String>) data.get("redactedFields");
+            List<String> requestedFields = (List<String>) data.get("requestedFields");
+            assertThat(requestedFields.size()).isGreaterThanOrEqualTo(9);
+            assertThat(redactedFields).containsExactlyInAnyOrder("email", "phone", "ssn");
         }
 
         @Test
@@ -379,6 +426,78 @@ class DataCloudHttpServerGovernanceTest {
             Map<String, Object> error = (Map<String, Object>) respBody.get("error");
             assertThat(error.get("code")).isEqualTo("MISSING_REQUIRED");
         }
+    }
+
+    @Test
+    @DisplayName("executes classify, policy, redact, and purge as one governance lifecycle")
+    @SuppressWarnings("unchecked")
+    void governanceLifecycleExecutesAcrossRetentionAndPrivacyEndpoints() throws Exception {
+        EntityStore.Entity existingEntity = entity(
+            "ent-lifecycle",
+            "user_profiles",
+            Map.of("email", "person@example.com", "phone", "+1-555-0101", "name", "Person")
+        );
+        when(mockEntityStore.findById(any(), any())).thenReturn(Promise.of(Optional.of(existingEntity)));
+        when(mockEntityStore.save(any(), any())).thenAnswer(invocation -> Promise.of(invocation.getArgument(1)));
+        when(mockEntityStore.query(any(), any())).thenReturn(Promise.of(EntityStore.QueryResult.of(List.of(
+            entity("expired-1", "user_profiles", Map.of("expiresAt", Instant.now().minusSeconds(180).toString()))
+        ))));
+        when(mockEntityStore.deleteBatch(any(), any())).thenReturn(Promise.of(BatchResult.success(1)));
+
+        server = new DataCloudHttpServer(mockClient, port);
+        server.start();
+        waitForServerReady(port);
+
+        HttpResponse<String> classifyResponse = post(
+            "/api/v1/governance/retention/classify",
+            mapper.writeValueAsString(Map.of(
+                "collection", "user_profiles",
+                "tier", "compliance",
+                "reason", "lifecycle-test"
+            )));
+        assertThat(classifyResponse.statusCode()).isEqualTo(200);
+
+        HttpResponse<String> policyResponse = get("/api/v1/governance/retention/policy?collection=user_profiles");
+        assertThat(policyResponse.statusCode()).isEqualTo(200);
+        Map<String, Object> policyBody = mapper.readValue(policyResponse.body(), Map.class);
+        Map<String, Object> policyData = (Map<String, Object>) policyBody.get("data");
+        assertThat(policyData.get("tier")).isEqualTo("compliance");
+
+        HttpResponse<String> redactResponse = post(
+            "/api/v1/governance/privacy/redact",
+            mapper.writeValueAsString(Map.of(
+                "collection", "user_profiles",
+                "entityId", "ent-lifecycle",
+                "fields", List.of("email", "phone"),
+                "reason", "customer-erasure"
+            )));
+        assertThat(redactResponse.statusCode()).isEqualTo(200);
+        Map<String, Object> redactBody = mapper.readValue(redactResponse.body(), Map.class);
+        Map<String, Object> redactData = (Map<String, Object>) redactBody.get("data");
+        assertThat(redactData.get("status")).isEqualTo("REDACTED");
+
+        HttpResponse<String> dryRunResponse = post(
+            "/api/v1/governance/retention/purge",
+            mapper.writeValueAsString(Map.of(
+                "collection", "user_profiles",
+                "dryRun", true
+            )));
+        assertThat(dryRunResponse.statusCode()).isEqualTo(200);
+        Map<String, Object> dryRunBody = mapper.readValue(dryRunResponse.body(), Map.class);
+        String confirmationToken = (String) ((Map<String, Object>) dryRunBody.get("data")).get("confirmationToken");
+        assertThat(confirmationToken).isNotBlank();
+
+        HttpResponse<String> purgeResponse = post(
+            "/api/v1/governance/retention/purge",
+            mapper.writeValueAsString(Map.of(
+                "collection", "user_profiles",
+                "confirmationToken", confirmationToken
+            )));
+        assertThat(purgeResponse.statusCode()).isEqualTo(200);
+        Map<String, Object> purgeBody = mapper.readValue(purgeResponse.body(), Map.class);
+        Map<String, Object> purgeData = (Map<String, Object>) purgeBody.get("data");
+        assertThat(purgeData.get("status")).isEqualTo("PURGE_COMPLETED");
+        assertThat(purgeData.get("deletedRows")).isEqualTo(1);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -505,5 +624,14 @@ class DataCloudHttpServerGovernanceTest {
             }
         }
         throw new IllegalStateException("Server did not start within 5 seconds on port " + port);
+    }
+
+    private static EntityStore.Entity entity(String id, String collection, Map<String, Object> data) {
+        return new EntityStore.Entity(
+            EntityStore.EntityId.of(id),
+            collection,
+            data,
+            EntityStore.EntityMetadata.empty()
+        );
     }
 }

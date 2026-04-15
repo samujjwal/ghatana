@@ -50,7 +50,7 @@ const quickNavItems: SearchResult[] = [
     { id: 'nav-collections', title: 'Collections', type: 'page', icon: <Database className="h-4 w-4" />, path: '/collections' },
     { id: 'nav-workflows', title: 'Workflows', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/workflows' },
     { id: 'nav-sql', title: 'SQL Workspace', type: 'page', icon: <FileText className="h-4 w-4" />, path: '/sql' },
-    { id: 'nav-lineage', title: 'Lineage Explorer', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/lineage' },
+    { id: 'nav-lineage', title: 'Lineage Preview', description: 'Open the Data Explorer lineage preview', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/data?view=lineage' },
     { id: 'nav-governance', title: 'Governance', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/governance' },
     { id: 'nav-alerts', title: 'Alerts', type: 'page', icon: <Bell className="h-4 w-4" />, path: '/alerts' },
     { id: 'nav-settings', title: 'Settings', type: 'page', icon: <Settings className="h-4 w-4" />, path: '/settings' },

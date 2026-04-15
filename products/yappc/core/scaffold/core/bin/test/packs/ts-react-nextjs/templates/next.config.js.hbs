@@ -1,0 +1,7 @@
+/** @type {import('next').NextConfig} */ const nextConfig = { output:
+'standalone', experimental: { turbo: { rules: { '*.svg': { loaders:
+['@svgr/webpack'], as: '*.js', }, }, }, }, images: { unoptimized: true, }, //
+Enable React strict mode reactStrictMode: true, // Disable x-powered-by header
+poweredByHeader: false, // Compress responses compress: true, // Enable SWC
+minification swcMinify: true, // Experimental features experimental: { appDir:
+true, serverComponentsExternalPackages: [], }, }; module.exports = nextConfig;

@@ -110,4 +110,50 @@ class DataCloudLauncherSettingsTest {
 
         assertThat(port).isEqualTo(8181);
     }
+
+    @Test
+    @DisplayName("rate limit requests falls back to default 200 when env var absent")
+    void rateLimitRequestsDefaultsTo200() {
+        int requests = DataCloudLauncherSettings.resolveRateLimitRequests(Map.of());
+
+        assertThat(requests).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("rate limit requests is resolved from DATACLOUD_RATE_LIMIT_REQUESTS env var")
+    void rateLimitRequestsResolvesFromEnvironment() {
+        int requests = DataCloudLauncherSettings.resolveRateLimitRequests(
+                Map.of("DATACLOUD_RATE_LIMIT_REQUESTS", "500"));
+
+        assertThat(requests).isEqualTo(500);
+    }
+
+    @Test
+    @DisplayName("rate limit window seconds falls back to default 60 when env var absent")
+    void rateLimitWindowSecondsDefaultsTo60() {
+        long windowSec = DataCloudLauncherSettings.resolveRateLimitWindowSeconds(Map.of());
+
+        assertThat(windowSec).isEqualTo(60L);
+    }
+
+    @Test
+    @DisplayName("rate limit window seconds resolves from DATACLOUD_RATE_LIMIT_WINDOW_SECONDS env var")
+    void rateLimitWindowSecondsResolvesFromEnvironment() {
+        long windowSec = DataCloudLauncherSettings.resolveRateLimitWindowSeconds(
+                Map.of("DATACLOUD_RATE_LIMIT_WINDOW_SECONDS", "120"));
+
+        assertThat(windowSec).isEqualTo(120L);
+    }
+
+    @Test
+    @DisplayName("rate limit ignores blank env var and falls back to defaults")
+    void rateLimitIgnoresBlankEnvVar() {
+        int requests = DataCloudLauncherSettings.resolveRateLimitRequests(
+                Map.of("DATACLOUD_RATE_LIMIT_REQUESTS", "  "));
+        long windowSec = DataCloudLauncherSettings.resolveRateLimitWindowSeconds(
+                Map.of("DATACLOUD_RATE_LIMIT_WINDOW_SECONDS", "  "));
+
+        assertThat(requests).isEqualTo(200);
+        assertThat(windowSec).isEqualTo(60L);
+    }
 }

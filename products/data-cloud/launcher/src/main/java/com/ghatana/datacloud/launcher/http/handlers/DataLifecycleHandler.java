@@ -1,9 +1,15 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
+import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -15,12 +21,15 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.Period;
 import java.util.Base64;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +96,9 @@ public class DataLifecycleHandler {
     /** HMAC-SHA256 algorithm identifier. */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
 
+    private static final String REDACTED_VALUE = "[REDACTED]";
+    private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
+
     /**
      * Secret key used to sign and verify purge confirmation tokens.
      * Resolved from {@code DATACLOUD_PURGE_TOKEN_SECRET} env var.
@@ -105,9 +117,11 @@ public class DataLifecycleHandler {
         }
     }
 
+    private final DataCloudClient client;
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
     private final AuditService auditService; // nullable
+    private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
 
     /**
      * Per-tenant retention policy store: key = {@code tenantId:collection}.
@@ -121,14 +135,24 @@ public class DataLifecycleHandler {
     /**
      * Creates a governance handler.
      *
+     * @param client       data-cloud client; must not be null
      * @param objectMapper Jackson mapper; must not be null
      * @param http         shared HTTP support; must not be null
      * @param auditService optional audit service; when null audit emissions are skipped
      */
-    public DataLifecycleHandler(ObjectMapper objectMapper, HttpHandlerSupport http, AuditService auditService) {
+    public DataLifecycleHandler(DataCloudClient client,
+                                ObjectMapper objectMapper,
+                                HttpHandlerSupport http,
+                                AuditService auditService) {
+        this.client       = client;
         this.objectMapper = objectMapper;
         this.http         = http;
         this.auditService = auditService;
+    }
+
+    public DataLifecycleHandler withTraceSupport(TraceSpanSupport traceSupport) {
+        this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
+        return this;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -154,6 +178,12 @@ public class DataLifecycleHandler {
     public Promise<HttpResponse> handleClassifyRetention(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.retention.classify",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
 
         return request.loadBody(1024 * 16)
             .then(body -> {
@@ -204,7 +234,7 @@ public class DataLifecycleHandler {
                 log.info("[DC-E5] retention classified collection={} tier={} tenant={}", collection, tier, tenantId);
                 return Promise.of(http.envelopeResponse(
                     ApiResponse.success(result, tenantId, requestId), objectMapper));
-            });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -217,12 +247,18 @@ public class DataLifecycleHandler {
         String tenantId   = http.resolveTenantId(request);
         String requestId  = resolveRequestId(request);
         String collection = sanitise(request.getQueryParameter("collection"));
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.retention.policy",
+                traceSupport.requestSpanId(request),
+                collection == null || collection.isBlank() ? Map.of("request.id", requestId) : Map.of("request.id", requestId, "collection", collection));
 
         if (collection == null || collection.isBlank()) {
             return Promise.of(http.envelopeResponse(
                 ApiResponse.error("MISSING_COLLECTION", "collection query parameter is required",
                     tenantId, requestId),
-                objectMapper));
+                objectMapper)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
         // Look up a previously classified policy; fall back to the well-known default tier
@@ -239,7 +275,8 @@ public class DataLifecycleHandler {
         );
 
         return Promise.of(http.envelopeResponse(
-            ApiResponse.success(policy, tenantId, requestId), objectMapper));
+            ApiResponse.success(policy, tenantId, requestId), objectMapper))
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -264,6 +301,13 @@ public class DataLifecycleHandler {
     public Promise<HttpResponse> handlePurge(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.retention.purge",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
 
         return request.loadBody(1024 * 8)
             .then(body -> {
@@ -278,26 +322,35 @@ public class DataLifecycleHandler {
                         objectMapper));
                 }
 
-                if (dryRun) {
-                    // Dry run: generate a time-limited HMAC token the caller must include in the
-                    // real execute request.  Token = Base64( HMAC-SHA256(secret, tenantId+":"+collection+":"+epochMs) )
-                    long issuedAtMs = Instant.now().toEpochMilli();
-                    String token = buildPurgeToken(tenantId, collection, issuedAtMs);
-                    log.info("[DC-E5] purge DRY RUN collection={} tenant={}", collection, tenantId);
+                EntityStore entityStore = requireEntityStore();
 
-                    Map<String, Object> result = Map.of(
-                        "collection",         collection,
-                        "dryRun",             true,
-                        "status",             "DRY_RUN_COMPLETE",
-                        "confirmationToken",  token,
-                        "tokenExpiresInSec",  PURGE_TOKEN_VALIDITY_MS / 1000,
-                        "estimatedRows",      0,
-                        "requestId",          requestId
-                    );
-                    emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
-                              collection, Map.of("dryRun", true));
-                    return Promise.of(http.envelopeResponse(
-                        ApiResponse.success(result, tenantId, requestId), objectMapper));
+                if (dryRun) {
+                    return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                        .map(queryResult -> {
+                            List<EntityStore.Entity> candidates = findPurgeCandidates(tenantId, collection, queryResult.entities());
+                            long issuedAtMs = Instant.now().toEpochMilli();
+                            String token = buildPurgeToken(tenantId, collection, issuedAtMs);
+                            log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
+                                collection, tenantId, candidates.size());
+
+                            Map<String, Object> result = new LinkedHashMap<>();
+                            result.put("collection", collection);
+                            result.put("dryRun", true);
+                            result.put("status", "DRY_RUN_COMPLETE");
+                            result.put("confirmationToken", token);
+                            result.put("tokenExpiresInSec", PURGE_TOKEN_VALIDITY_MS / 1000);
+                            result.put("estimatedRows", candidates.size());
+                            result.put("sampleEntityIds", candidates.stream()
+                                .map(entity -> entity.id().value())
+                                .limit(10)
+                                .toList());
+                            result.put("requestId", requestId);
+
+                            emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
+                                collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
+                            return http.envelopeResponse(
+                                ApiResponse.success(result, tenantId, requestId), objectMapper);
+                        });
                 }
 
                 // Execute path: token is mandatory and must pass HMAC verification
@@ -323,22 +376,68 @@ public class DataLifecycleHandler {
                         objectMapper));
                 }
 
-                log.info("[DC-E5] purge AUTHORISED collection={} tenant={}", collection, tenantId);
-                emitAudit(tenantId, requestId, "RETENTION_PURGE",
-                          collection, Map.of("dryRun", false, "token", "***"));
+                return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                    .then(queryResult -> {
+                        List<EntityStore.Entity> candidates = findPurgeCandidates(tenantId, collection, queryResult.entities());
+                        List<EntityStore.EntityId> entityIds = candidates.stream()
+                            .map(EntityStore.Entity::id)
+                            .toList();
 
-                Map<String, Object> result = Map.of(
-                    "collection",    collection,
-                    "dryRun",        false,
-                    "status",        "PURGE_SCHEDULED",
-                    "estimatedRows", 0,  // P2.1.1: replace with real entity count after EntityStore injection
-                    "scheduledAt",   Instant.now().toString(),
-                    "requestId",     requestId
-                );
+                        if (entityIds.isEmpty()) {
+                            emitGovernanceEvent(
+                                tenantContext,
+                                requestId,
+                                "RETENTION_PURGE",
+                                collection,
+                                Map.of("deletedCount", 0, "status", "NO_MATCHES"));
+                            return Promise.of(http.envelopeResponse(
+                                ApiResponse.success(Map.of(
+                                    "collection", collection,
+                                    "dryRun", false,
+                                    "status", "PURGE_COMPLETED",
+                                    "deletedRows", 0,
+                                    "deletedEntityIds", List.of(),
+                                    "requestId", requestId,
+                                    "completedAt", Instant.now().toString()
+                                ), tenantId, requestId), objectMapper));
+                        }
 
-                return Promise.of(http.envelopeResponse(
-                    ApiResponse.success(result, tenantId, requestId), objectMapper));
-            });
+                        return entityStore.deleteBatch(tenantContext, entityIds)
+                            .map(batchResult -> {
+                                log.info("[DC-E5] purge COMPLETED collection={} tenant={} deleted={}",
+                                    collection, tenantId, batchResult.successCount());
+                                emitAudit(tenantId, requestId, "RETENTION_PURGE",
+                                    collection, Map.of(
+                                        "dryRun", false,
+                                        "deletedCount", batchResult.successCount(),
+                                        "requestedCount", entityIds.size()));
+                                emitGovernanceEvent(
+                                    tenantContext,
+                                    requestId,
+                                    "RETENTION_PURGE",
+                                    collection,
+                                    Map.of(
+                                        "deletedCount", batchResult.successCount(),
+                                        "requestedCount", entityIds.size(),
+                                        "failedCount", batchResult.failureCount()));
+
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("collection", collection);
+                                result.put("dryRun", false);
+                                result.put("status", "PURGE_COMPLETED");
+                                result.put("deletedRows", batchResult.successCount());
+                                result.put("requestedRows", entityIds.size());
+                                result.put("failedRows", batchResult.failureCount());
+                                result.put("deletedEntityIds", candidates.stream()
+                                    .map(entity -> entity.id().value())
+                                    .toList());
+                                result.put("completedAt", Instant.now().toString());
+                                result.put("requestId", requestId);
+                                return http.envelopeResponse(
+                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                            });
+                    });
+                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -360,6 +459,13 @@ public class DataLifecycleHandler {
     public Promise<HttpResponse> handleRedact(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.privacy.redact",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
 
         return request.loadBody(1024 * 8)
             .then(body -> {
@@ -382,26 +488,88 @@ public class DataLifecycleHandler {
                         objectMapper));
                 }
 
-                // Production: load entity, replace fields, save, emit event
-                // Here: return the redaction plan (and schedule async execution)
-                Map<String, Object> result = Map.of(
-                    "collection",    collection,
-                    "entityId",      entityId,
-                    "redactedFields", fieldsToRedact.stream().sorted().toList(),
-                    "reason",        reason,
-                    "status",        "REDACTED",
-                    "redactedAt",    Instant.now().toString()
-                );
+                EntityStore entityStore = requireEntityStore();
+                EntityStore.EntityId storeEntityId = EntityStore.EntityId.of(entityId);
+                return entityStore.findById(tenantContext, storeEntityId)
+                    .then(entityOpt -> {
+                        if (entityOpt.isEmpty()) {
+                            return Promise.of(http.envelopeResponse(
+                                ApiResponse.error("ENTITY_NOT_FOUND",
+                                    "No entity found for entityId=" + entityId,
+                                    tenantId, requestId),
+                                objectMapper));
+                        }
 
-                emitAudit(tenantId, requestId, "PII_REDACT", collection,
-                          Map.of("entityId", entityId, "fieldCount", fieldsToRedact.size(), "reason", reason));
+                        EntityStore.Entity existingEntity = entityOpt.get();
+                        Map<String, Object> redactedData = new HashMap<>(existingEntity.data());
+                        List<String> changedFields = new ArrayList<>();
 
-                log.info("[DC-E5] PII redact collection={} entityId={} fields={} tenant={}",
-                         collection, entityId, fieldsToRedact.size(), tenantId);
+                        for (String field : fieldsToRedact) {
+                            Object currentValue = redactedData.get(field);
+                            if (currentValue == null || REDACTED_VALUE.equals(currentValue)) {
+                                continue;
+                            }
+                            redactedData.put(field, REDACTED_VALUE);
+                            changedFields.add(field);
+                        }
 
-                return Promise.of(http.envelopeResponse(
-                    ApiResponse.success(result, tenantId, requestId), objectMapper));
-            });
+                        if (changedFields.isEmpty()) {
+                            Map<String, Object> result = Map.of(
+                                "collection", collection,
+                                "entityId", entityId,
+                                "redactedFields", List.of(),
+                                "requestedFields", fieldsToRedact.stream().sorted().toList(),
+                                "reason", reason,
+                                "status", "NO_OP",
+                                "redactedAt", Instant.now().toString()
+                            );
+                            emitAudit(tenantId, requestId, "PII_REDACT", collection,
+                                Map.of("entityId", entityId, "fieldCount", 0, "reason", reason, "status", "NO_OP"));
+                            return Promise.of(http.envelopeResponse(
+                                ApiResponse.success(result, tenantId, requestId), objectMapper));
+                        }
+
+                        EntityStore.Entity updatedEntity = new EntityStore.Entity(
+                            existingEntity.id(),
+                            existingEntity.collection(),
+                            redactedData,
+                            existingEntity.metadata().withUpdate("governance-redact")
+                        );
+
+                        return entityStore.save(tenantContext, updatedEntity)
+                            .map(savedEntity -> {
+                                emitAudit(tenantId, requestId, "PII_REDACT", collection,
+                                    Map.of(
+                                        "entityId", entityId,
+                                        "fieldCount", changedFields.size(),
+                                        "fields", changedFields,
+                                        "reason", reason));
+                                emitGovernanceEvent(
+                                    tenantContext,
+                                    requestId,
+                                    "PII_REDACT",
+                                    collection,
+                                    Map.of(
+                                        "entityId", entityId,
+                                        "fields", changedFields,
+                                        "reason", reason));
+
+                                log.info("[DC-E5] PII redact collection={} entityId={} fields={} tenant={}",
+                                    collection, entityId, changedFields.size(), tenantId);
+
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("collection", collection);
+                                result.put("entityId", savedEntity.id().value());
+                                result.put("redactedFields", changedFields.stream().sorted().toList());
+                                result.put("requestedFields", fieldsToRedact.stream().sorted().toList());
+                                result.put("reason", reason);
+                                result.put("status", "REDACTED");
+                                result.put("redactedAt", Instant.now().toString());
+                                return http.envelopeResponse(
+                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                            });
+                    });
+                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -413,6 +581,12 @@ public class DataLifecycleHandler {
     public Promise<HttpResponse> handleListPiiFields(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.privacy.list_pii_fields",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
 
         Map<String, Object> data = Map.of(
             "globalFields",   GLOBAL_PII_FIELDS.stream().sorted().toList(),
@@ -421,7 +595,8 @@ public class DataLifecycleHandler {
         );
 
         return Promise.of(http.envelopeResponse(
-            ApiResponse.success(data, tenantId, requestId), objectMapper));
+            ApiResponse.success(data, tenantId, requestId), objectMapper))
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -434,22 +609,25 @@ public class DataLifecycleHandler {
     public Promise<HttpResponse> handleComplianceSummary(HttpRequest request) {
         String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.compliance.summary",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
 
-        Map<String, Object> summary = Map.of(
-            "tenantId",                    tenantId,
-            "collectionsTotal",            0,
-            "collectionsClassified",       0,
-            "collectionsUnclassified",     0,
-            "piiFieldsRegistered",         GLOBAL_PII_FIELDS.size(),
-            "legalHoldsActive",            0,
-            "retentionExpirationsIn30Days", 0,
-            "lastAuditAt",                 Instant.EPOCH.toString(),
-            "complianceStatus",            "NEEDS_CLASSIFICATION",
-            "generatedAt",                 Instant.now().toString()
-        );
+        Map<String, Object> summary = buildBaseComplianceSummary(tenantId);
+        if (auditService instanceof AuditSummaryProvider auditSummaryProvider) {
+            return auditSummaryProvider.summarize(tenantId, Instant.now().minusSeconds(30L * 24 * 60 * 60), 500)
+                .map(auditSummary -> enrichComplianceSummary(summary, auditSummary))
+                .map(enrichedSummary -> http.envelopeResponse(
+                    ApiResponse.success(enrichedSummary, tenantId, requestId), objectMapper))
+                .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+        }
 
         return Promise.of(http.envelopeResponse(
-            ApiResponse.success(summary, tenantId, requestId), objectMapper));
+            ApiResponse.success(summary, tenantId, requestId), objectMapper))
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -465,6 +643,187 @@ public class DataLifecycleHandler {
             return GLOBAL_PII_FIELDS.stream().sorted().toList();
         }
         return List.of();
+    }
+
+    private Map<String, Object> buildBaseComplianceSummary(String tenantId) {
+        long collectionsClassified = retentionPolicies.keySet().stream()
+            .filter(key -> key.startsWith(tenantId + ":"))
+            .count();
+        long collectionsTotal = collectionsClassified;
+        long expiringIn30Days = retentionPolicies.entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(tenantId + ":"))
+            .map(Map.Entry::getValue)
+            .map(policy -> policy.get("expiresAt"))
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .map(this::parseInstantSafely)
+            .filter(instant -> instant != null && !instant.isBefore(Instant.now())
+                && !instant.isAfter(Instant.now().plusSeconds(30L * 24 * 60 * 60)))
+            .count();
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("tenantId", tenantId);
+        summary.put("collectionsTotal", collectionsTotal);
+        summary.put("collectionsClassified", collectionsClassified);
+        summary.put("collectionsUnclassified", 0L);
+        summary.put("piiFieldsRegistered", GLOBAL_PII_FIELDS.size());
+        summary.put("legalHoldsActive", 0);
+        summary.put("retentionExpirationsIn30Days", expiringIn30Days);
+        summary.put("lastAuditAt", Instant.EPOCH.toString());
+        summary.put("auditEventsIn30Days", 0L);
+        summary.put("authFailuresIn30Days", 0L);
+        summary.put("redactionsIn30Days", 0L);
+        summary.put("purgesIn30Days", 0L);
+        summary.put("recentAuditEvents", List.of());
+        summary.put("complianceStatus", collectionsClassified == 0 ? "NEEDS_CLASSIFICATION" : "COMPLIANT");
+        summary.put("generatedAt", Instant.now().toString());
+        return summary;
+    }
+
+    private Map<String, Object> enrichComplianceSummary(
+            Map<String, Object> baseSummary,
+            AuditSummaryProvider.AuditSummary auditSummary) {
+        Map<String, Long> eventCounts = auditSummary.eventCounts();
+        long totalAuditEvents = eventCounts.values().stream().mapToLong(Long::longValue).sum();
+        long authFailures = eventCounts.getOrDefault("AUTH_FAILURE", 0L);
+        long redactions = eventCounts.getOrDefault("PII_REDACT", 0L);
+        long purges = eventCounts.getOrDefault("RETENTION_PURGE", 0L)
+            + eventCounts.getOrDefault("RETENTION_PURGE_DRY_RUN", 0L)
+            + eventCounts.getOrDefault("RETENTION_PURGE_REJECTED", 0L);
+
+        baseSummary.put("lastAuditAt", auditSummary.lastAuditAt().toString());
+        baseSummary.put("auditEventsIn30Days", totalAuditEvents);
+        baseSummary.put("authFailuresIn30Days", authFailures);
+        baseSummary.put("redactionsIn30Days", redactions);
+        baseSummary.put("purgesIn30Days", purges);
+        baseSummary.put("recentAuditEvents", auditSummary.recentEvents());
+        if (authFailures > 0) {
+            baseSummary.put("complianceStatus", "REVIEW_REQUIRED");
+        }
+        return baseSummary;
+    }
+
+    private Instant parseInstantSafely(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(value);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private EntityStore requireEntityStore() {
+        EntityStore entityStore = client.entityStore();
+        if (entityStore == null) {
+            throw new IllegalStateException("EntityStore is not configured for governance operations.");
+        }
+        return entityStore;
+    }
+
+    private TenantContext buildTenantContext(String tenantId, String requestId) {
+        return TenantContext.of(tenantId).withMetadata("requestId", requestId);
+    }
+
+    private EntityStore.QuerySpec buildCollectionQuery(String collection) {
+        return EntityStore.QuerySpec.builder()
+            .collection(collection)
+            .limit(PURGE_QUERY_LIMIT)
+            .build();
+    }
+
+    private List<EntityStore.Entity> findPurgeCandidates(String tenantId,
+                                                         String collection,
+                                                         List<EntityStore.Entity> entities) {
+        Map<String, Object> policy = retentionPolicies.get(policyKey(tenantId, collection));
+        Instant now = Instant.now();
+        Instant policyCutoff = resolvePolicyCutoff(policy, now);
+        return entities.stream()
+            .filter(entity -> isEntityExpired(entity, policyCutoff, now))
+            .toList();
+    }
+
+    private Instant resolvePolicyCutoff(Map<String, Object> policy, Instant now) {
+        if (policy == null) {
+            return null;
+        }
+
+        Object retentionDaysValue = policy.get("retentionDays");
+        if (!(retentionDaysValue instanceof Number retentionDaysNumber)) {
+            return null;
+        }
+
+        long retentionDays = retentionDaysNumber.longValue();
+        if (retentionDays <= 0 || retentionDays >= (Integer.MAX_VALUE / 365L)) {
+            return null;
+        }
+        return now.minusSeconds(retentionDays * 86_400L);
+    }
+
+    private boolean isEntityExpired(EntityStore.Entity entity, Instant policyCutoff, Instant now) {
+        Instant explicitExpiry = extractExplicitExpiry(entity);
+        if (explicitExpiry != null) {
+            return !explicitExpiry.isAfter(now);
+        }
+        if (policyCutoff == null) {
+            return false;
+        }
+        Instant updatedAt = entity.metadata().updatedAt();
+        return !updatedAt.isAfter(policyCutoff);
+    }
+
+    private Instant extractExplicitExpiry(EntityStore.Entity entity) {
+        for (String field : List.of("retentionExpiresAt", "expiresAt", "ttlExpiresAt")) {
+            Object value = entity.data().get(field);
+            if (value instanceof String timestamp && !timestamp.isBlank()) {
+                try {
+                    return Instant.parse(timestamp);
+                } catch (RuntimeException ignored) {
+                    // Ignore malformed timestamps and continue with policy-based expiry.
+                }
+            }
+        }
+        return null;
+    }
+
+    private void emitGovernanceEvent(TenantContext tenantContext,
+                                     String requestId,
+                                     String eventType,
+                                     String collection,
+                                     Map<String, Object> payload) {
+        EventLogStore eventLogStore = client.eventLogStore();
+        if (eventLogStore == null) {
+            return;
+        }
+
+        Map<String, Object> eventPayload = new LinkedHashMap<>(payload);
+        eventPayload.put("collection", collection);
+        eventPayload.put("requestId", requestId);
+        eventPayload.put("timestamp", Instant.now().toString());
+
+        try {
+            byte[] bytes = objectMapper.writeValueAsBytes(eventPayload);
+            com.ghatana.platform.domain.eventstore.TenantContext eventTenantContext =
+                com.ghatana.platform.domain.eventstore.TenantContext.of(
+                    tenantContext.tenantId(),
+                    tenantContext.metadata());
+            EventLogStore.EventEntry eventEntry = EventLogStore.EventEntry.builder()
+                .eventType(eventType)
+                .eventVersion("1.0.0")
+                .timestamp(Instant.now())
+                .payload(ByteBuffer.wrap(bytes))
+                .contentType("application/json")
+                .headers(Map.of(
+                    "tenantId", tenantContext.tenantId(),
+                    "collection", collection,
+                    "requestId", requestId))
+                .build();
+            eventLogStore.append(eventTenantContext, eventEntry)
+                .whenException(error -> log.warn("[DC-E5] governance event emit failed: {}", error.getMessage()));
+        } catch (Exception exception) {
+            log.warn("[DC-E5] governance event serialization failed: {}", exception.getMessage());
+        }
     }
 
     private void emitAudit(String tenantId, String requestId, String eventType,

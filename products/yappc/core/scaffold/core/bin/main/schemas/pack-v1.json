@@ -1,0 +1,256 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://yappc.dev/schemas/pack/v1.json",
+    "title": "YAPPC Pack Metadata Schema",
+    "description": "Schema for pack.json files defining YAPPC packs",
+    "type": "object",
+    "required": [
+        "name",
+        "version",
+        "type"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Pack name"
+        },
+        "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "description": "Semantic version"
+        },
+        "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Pack description"
+        },
+        "author": {
+            "type": "string",
+            "description": "Pack author"
+        },
+        "license": {
+            "type": "string",
+            "description": "Pack license"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Pack tags"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "base",
+                "service",
+                "library",
+                "application",
+                "feature",
+                "fullstack",
+                "middleware"
+            ],
+            "description": "Pack type"
+        },
+        "language": {
+            "type": "string",
+            "description": "Primary language"
+        },
+        "framework": {
+            "type": "string",
+            "description": "Framework name"
+        },
+        "buildSystem": {
+            "type": "string",
+            "description": "Build system"
+        },
+        "platform": {
+            "type": "string",
+            "description": "Target platform"
+        },
+        "dependencies": {
+            "type": "object",
+            "properties": {
+                "runtime": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "build": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "test": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "plugins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "templates": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/template"
+            }
+        },
+        "hooks": {
+            "type": "object",
+            "properties": {
+                "pre-generation": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post-generation": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pre-build": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post-build": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "variables": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/variable"
+            }
+        },
+        "requirements": {
+            "type": "object",
+            "properties": {
+                "java-version": {
+                    "type": "string"
+                },
+                "gradle-version": {
+                    "type": "string"
+                },
+                "node-version": {
+                    "type": "string"
+                },
+                "docker": {
+                    "type": "boolean"
+                },
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "modules": {
+            "type": "array",
+            "items": {
+                "$ref": "composition-v1.json#/definitions/module"
+            }
+        },
+        "integrations": {
+            "type": "array",
+            "items": {
+                "$ref": "composition-v1.json#/definitions/integration"
+            }
+        }
+    },
+    "definitions": {
+        "template": {
+            "type": "object",
+            "required": [
+                "source",
+                "target"
+            ],
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "description": "Template source path"
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Target output path"
+                },
+                "condition": {
+                    "type": "string",
+                    "description": "Conditional expression"
+                },
+                "executable": {
+                    "type": "boolean",
+                    "description": "Make file executable"
+                },
+                "merge": {
+                    "type": "string",
+                    "enum": [
+                        "replace",
+                        "merge",
+                        "append",
+                        "skip-if-exists"
+                    ],
+                    "description": "Merge strategy"
+                }
+            }
+        },
+        "variable": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "array",
+                        "object"
+                    ],
+                    "description": "Variable type"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Variable description"
+                },
+                "default": {
+                    "description": "Default value"
+                },
+                "required": {
+                    "type": "boolean",
+                    "description": "Is required"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Valid options"
+                },
+                "validation": {
+                    "type": "string",
+                    "description": "Validation regex"
+                }
+            }
+        }
+    }
+}

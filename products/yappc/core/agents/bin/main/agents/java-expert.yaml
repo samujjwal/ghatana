@@ -1,0 +1,88 @@
+# Java Expert Agent - Schema-Driven Definition
+# 
+# This YAML file replaces the following Java classes:
+# - JavaExpertAgent.java (115 lines)
+# - JavaExpertInput.java (27 lines)
+# - JavaExpertOutput.java (30 lines)
+# - JavaExpertGenerator.java (50 lines)
+# 
+# Total reduction: ~200 lines -> ~50 lines (75% reduction)
+
+agent:
+  # Identification
+  id: expert.java
+  name: "Java Expert"
+  description: "Expert Java engineer for architecture and implementation guidance"
+  version: "1.0.0"
+  
+  # Categorization
+  tags: [java, architecture, code-review, backend]
+  capabilities: [code-analysis, best-practices, architecture-review, performance-optimization]
+  
+  # Input/Output Schema References
+  input_schema: schemas/java-expert-input.json
+  output_schema: schemas/java-expert-output.json
+  
+  # Generator Configuration
+  generator:
+    type: llm
+    prompt_template: prompts/java-expert.txt
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 2000
+    max_retries: 3
+  
+  # Input Validation
+  validation:
+    - field: codeContext
+      required: true
+      min_length: 10
+      max_length: 50000
+    - field: question
+      required: true
+      min_length: 5
+    - field: projectMetadata
+      required: false
+      type: object
+  
+  # Caching Configuration
+  cache:
+    enabled: true
+    ttl: 3600  # 1 hour
+    key_fields: [codeContext, question]  # Fields to use for cache key
+  
+  # Performance Settings
+  performance:
+    timeout: 30s
+    max_concurrent: 10
+  
+  # Rate Limiting
+  rate_limits:
+    - scope: user
+      max_requests: 100
+      window: 1h
+  
+  # Metadata for UI
+  ui:
+    icon: "java-icon.svg"
+    color: "#007396"
+    display_category: "Code Analysis"
+    input_form:
+      fields:
+        - name: codeContext
+          type: code_editor
+          language: java
+          label: "Java Code"
+          placeholder: "Paste your Java code here..."
+          rows: 10
+        - name: question
+          type: text
+          label: "Your Question"
+          placeholder: "What would you like to know about this code?"
+        - name: projectMetadata
+          type: hidden  # Auto-populated from context
+  
+  # Cost Tracking
+  cost:
+    estimated_tokens_per_request: 1500
+    cost_per_1k_tokens: 0.03

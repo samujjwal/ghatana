@@ -1,0 +1,11 @@
+catalog:
+  id: "test-product"
+  name: "Test Product Catalog"
+  version: "1.0.0"
+  extends:
+    - "test-platform"
+  agents:
+    - "agents/*-agent.yaml"
+  metadata:
+    priority: 200
+    scope: "product"

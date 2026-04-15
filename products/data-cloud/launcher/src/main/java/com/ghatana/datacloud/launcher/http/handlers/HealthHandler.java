@@ -1,9 +1,15 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.http.HttpRequest;
+import io.activej.http.HttpHeaderValue;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,6 +42,7 @@ public class HealthHandler {
 
     private final HttpHandlerSupport httpSupport;
     private final Map<String, Supplier<Map<String, Object>>> subsystemSuppliers;
+    private final MetricsCollector metricsCollector;
 
     /** SLO targets (informational — not dynamically enforced here, used for dashboard tooling). */
     private static final double SLO_AVAILABILITY_TARGET   = 0.999;   // 99.9 %
@@ -43,14 +50,21 @@ public class HealthHandler {
     private static final long   SLO_ERROR_RATE_THRESHOLD  = 1;       // 1 % error rate ceiling
 
     public HealthHandler(HttpHandlerSupport httpSupport) {
-        this(httpSupport, Map.of());
+        this(httpSupport, Map.of(), null);
     }
 
     public HealthHandler(HttpHandlerSupport httpSupport,
                          Map<String, Supplier<Map<String, Object>>> subsystemSuppliers) {
+        this(httpSupport, subsystemSuppliers, null);
+    }
+
+    public HealthHandler(HttpHandlerSupport httpSupport,
+                         Map<String, Supplier<Map<String, Object>>> subsystemSuppliers,
+                         MetricsCollector metricsCollector) {
         this.httpSupport = httpSupport;
         Objects.requireNonNull(subsystemSuppliers, "subsystemSuppliers must not be null");
         this.subsystemSuppliers = Map.copyOf(subsystemSuppliers);
+        this.metricsCollector = metricsCollector;
     }
 
     public Promise<HttpResponse> handleHealth(HttpRequest request) {
@@ -126,6 +140,7 @@ public class HealthHandler {
 
         subsystems.put("ai_inference", notConfiguredSubsystem());
         subsystems.put("database", notConfiguredSubsystem());
+        subsystems.put("event_store", notConfiguredSubsystem());
         subsystems.put("voice_gateway", notConfiguredSubsystem());
         subsystems.put("audit_service", notConfiguredSubsystem());
         subsystems.put("policy_engine", notConfiguredSubsystem());
@@ -221,6 +236,17 @@ public class HealthHandler {
     }
 
     public Promise<HttpResponse> handleMetrics(HttpRequest request) {
+        MeterRegistry registry = metricsCollector != null ? metricsCollector.getMeterRegistry() : null;
+        if (registry instanceof PrometheusMeterRegistry prometheusRegistry) {
+            String requestId = httpSupport.resolveCorrelationId(request);
+            return Promise.of(HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/plain; version=0.0.4; charset=utf-8"))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(httpSupport.corsAllowOrigin()))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(requestId))
+                .withBody(prometheusRegistry.scrape().getBytes(StandardCharsets.UTF_8))
+                .build());
+        }
+
         return Promise.of(httpSupport.jsonResponse(Map.of(
             "service", "datacloud",
             "uptime_seconds", System.currentTimeMillis() / 1000,

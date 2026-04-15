@@ -13,7 +13,7 @@
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import {
   FlowCanvas,
   FlowControls,
@@ -25,7 +25,6 @@ import {
   type FlowEdge,
   type OnConnect,
 } from '@ghatana/canvas/flow';
-import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 
 // =============================================================================
@@ -51,13 +50,59 @@ interface FabricMetricsResponse {
   lastUpdated: string;
 }
 
-// =============================================================================
-// API
-// =============================================================================
+export const FABRIC_METRICS_BOUNDARY_MESSAGE =
+  'Live data-fabric metrics are not exposed by the current Data Cloud launcher API. This page shows a preview topology only.';
 
-async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
-  return apiClient.get<FabricMetricsResponse>('/dc/fabric/metrics');
-}
+const PREVIEW_FABRIC_METRICS: FabricMetricsResponse = {
+  tiers: [
+    {
+      tier: 'HOT',
+      label: 'HOT Tier (Redis)',
+      throughputEps: 18250,
+      latencyP99Ms: 18,
+      errorRate: 0.001,
+      queueDepth: 42,
+      status: 'healthy',
+      instanceCount: 3,
+    },
+    {
+      tier: 'WARM',
+      label: 'WARM Tier (PostgreSQL)',
+      throughputEps: 9300,
+      latencyP99Ms: 64,
+      errorRate: 0.003,
+      queueDepth: 17,
+      status: 'healthy',
+      instanceCount: 2,
+      storageGb: 460.2,
+    },
+    {
+      tier: 'COOL',
+      label: 'COOL Tier (Iceberg)',
+      throughputEps: 1200,
+      latencyP99Ms: 140,
+      errorRate: 0,
+      queueDepth: 3,
+      status: 'healthy',
+      instanceCount: 1,
+      storageGb: 1820.7,
+    },
+    {
+      tier: 'COLD',
+      label: 'COLD Tier (S3/Archive)',
+      throughputEps: 85,
+      latencyP99Ms: 1900,
+      errorRate: 0,
+      queueDepth: 0,
+      status: 'healthy',
+      instanceCount: 1,
+      storageGb: 12240.4,
+    },
+  ],
+  totalEventsPerSec: 28835,
+  totalStorageGb: 14521.3,
+  lastUpdated: 'preview',
+};
 
 // =============================================================================
 // Node layout
@@ -244,13 +289,7 @@ function TierLegend(): React.ReactElement {
  * @doc.pattern Page
  */
 export function DataFabricPage(): React.ReactElement {
-  const { data: fabricMetrics, isLoading, error } = useQuery({
-    queryKey: ['dc', 'fabric', 'metrics'],
-    queryFn: fetchFabricMetrics,
-    refetchInterval: 15_000,
-    staleTime: 10_000,
-    retry: 1,
-  });
+  const fabricMetrics = PREVIEW_FABRIC_METRICS;
 
   // B10: Manual tier migration state
   const [migrateCollection, setMigrateCollection] = useState('');
@@ -302,11 +341,9 @@ export function DataFabricPage(): React.ReactElement {
           <p className="text-sm text-gray-500 mt-0.5">
             Live four-tier event cloud topology — HOT → WARM → COOL → COLD
           </p>
+          <p className="text-xs text-amber-700 mt-1">{FABRIC_METRICS_BOUNDARY_MESSAGE}</p>
         </div>
         <div className="flex items-center gap-3">
-          {isLoading && (
-            <span className="text-sm text-gray-400 animate-pulse">Fetching metrics…</span>
-          )}
           {/* B10: Manual Tier Migration */}
           <button
             type="button"
@@ -371,19 +408,7 @@ export function DataFabricPage(): React.ReactElement {
 
       {/* Main canvas area */}
       <div className="flex-1 relative">
-        {error instanceof Error && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
-              <p className="text-red-700 font-medium">Failed to load fabric metrics</p>
-              <p className="text-red-500 text-sm mt-1">{error.message}</p>
-              <p className="text-gray-500 text-xs mt-3">
-                Showing topology skeleton — connect to Data-Cloud API for live data
-              </p>
-            </div>
-          </div>
-        )}
-
-        {!isLoading && nodes.length === 0 && !error && (
+        {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10 text-gray-400 text-sm">
             No tier data available
           </div>

@@ -8,23 +8,28 @@
  * @doc.layer frontend
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import React from 'react';
 
-vi.mock('../../lib/api/client', () => ({
-    apiClient: {
-        get: vi.fn().mockResolvedValue([]),
-        post: vi.fn().mockResolvedValue({}),
-        put: vi.fn().mockResolvedValue({}),
-        delete: vi.fn().mockResolvedValue(undefined),
+const { mockApiClient } = vi.hoisted(() => ({
+    mockApiClient: {
+        get: vi.fn(),
+        post: vi.fn(),
+        put: vi.fn(),
+        delete: vi.fn(),
     },
+}));
+
+vi.mock('../../lib/api/client', () => ({
+    apiClient: mockApiClient,
 }));
 
 vi.mock('@ghatana/canvas/flow', () => ({
     FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
         React.createElement('div', { 'data-testid': 'flow-canvas' }, children),
     FlowControls: () => React.createElement('div', { 'data-testid': 'flow-controls' }),
+    MarkerType: { ArrowClosed: 'arrowclosed' },
     useNodesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
     useEdgesState: (initial: unknown[]) => [initial, vi.fn(), vi.fn()],
     addEdge: vi.fn((conn: unknown, eds: unknown) => eds),
@@ -44,10 +49,20 @@ vi.mock('reactflow', async () => ({
 }));
 
 import { DataFabricPage } from '../../pages/DataFabricPage';
+import { FABRIC_METRICS_BOUNDARY_MESSAGE } from '../../pages/DataFabricPage';
 
 describe('PipelinePage — DataFabricPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockApiClient.get.mockResolvedValue([]);
+        mockApiClient.post.mockResolvedValue({
+            collection: 'orders',
+            targetTier: 'WARM',
+            status: 'SCHEDULED',
+            eventsMigrated: 1250,
+        });
+        mockApiClient.put.mockResolvedValue({});
+        mockApiClient.delete.mockResolvedValue(undefined);
     });
 
     it('renders without crashing', () => {
@@ -70,5 +85,42 @@ describe('PipelinePage — DataFabricPage', () => {
         expect(() =>
             render(<DataFabricPage />, { wrapper: TestWrapper })
         ).not.toThrow();
+    });
+
+    it('surfaces the preview boundary and static topology labels', () => {
+        render(<DataFabricPage />, { wrapper: TestWrapper });
+
+        expect(screen.getByText(FABRIC_METRICS_BOUNDARY_MESSAGE)).toBeInTheDocument();
+        expect(screen.getByText(/HOT \(Redis\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/WARM \(PostgreSQL\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/COOL \(Iceberg\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/COLD \(S3\/Archive\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/Total throughput:/i)).toBeInTheDocument();
+        expect(screen.getByText(/Total storage:/i)).toBeInTheDocument();
+    });
+
+    it('submits a manual migration request through the canonical launcher route', async () => {
+        render(<DataFabricPage />, { wrapper: TestWrapper });
+
+        fireEvent.click(screen.getByRole('button', { name: /migrate tier/i }));
+        fireEvent.change(screen.getByPlaceholderText(/collection \/ stream name/i), {
+            target: { value: 'orders' },
+        });
+        fireEvent.change(screen.getByRole('combobox'), {
+            target: { value: 'WARM' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /start migration/i }));
+
+        await waitFor(() => {
+            expect(mockApiClient.post).toHaveBeenCalledWith(
+                '/collections/orders/migrate',
+                {},
+                { params: { targetTier: 'WARM' } },
+            );
+        });
+
+        await waitFor(() => {
+            expect(screen.queryByPlaceholderText(/collection \/ stream name/i)).not.toBeInTheDocument();
+        });
     });
 });

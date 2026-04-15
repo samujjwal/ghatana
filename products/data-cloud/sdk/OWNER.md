@@ -31,7 +31,7 @@ generated at build time and are NOT committed to VCS.
 
 ## Source of Truth
 
-`products/data-cloud/docs/openapi.yaml` — always regenerate after updating the spec.
+`products/data-cloud/api/openapi.yaml` — always regenerate after updating the spec.
 
 ## Contract Stability
 

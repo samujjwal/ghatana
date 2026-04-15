@@ -295,4 +295,98 @@ class DataCloudLearningBridgeTest {
             bridge.close(); // should not throw
         }
     }
+
+    // ==================== Hardening (P3.7.1) ====================
+
+    @Nested
+    @DisplayName("Hardening")
+    class HardeningTests {
+
+        @Test
+        @DisplayName("purgeCompletedReviews: removes APPROVED and REJECTED items from queue")
+        void purgeCompleted_removesApprovedAndRejected() {
+            seedReviewItem("a");
+            seedReviewItem("b");
+            seedReviewItem("c");
+            bridge.approveReview("review-a");
+            bridge.rejectReview("review-b");
+            // "review-c" stays PENDING
+
+            int purged = bridge.purgeCompletedReviews();
+
+            assertThat(purged).isEqualTo(2);
+            assertThat(bridge.getReviewQueue()).containsOnlyKeys("review-c");
+        }
+
+        @Test
+        @DisplayName("purgeCompletedReviews: returns 0 when no completed reviews exist")
+        void purgeCompleted_returnsZeroWhenEmpty() {
+            seedReviewItem("x");
+            // leave it PENDING
+
+            int purged = bridge.purgeCompletedReviews();
+
+            assertThat(purged).isEqualTo(0);
+            assertThat(bridge.getReviewQueue()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("purgeCompletedReviews: idempotent — second call returns 0")
+        void purgeCompleted_idempotent() {
+            seedReviewItem("y");
+            bridge.approveReview("review-y");
+
+            bridge.purgeCompletedReviews();
+            int secondPurge = bridge.purgeCompletedReviews();
+
+            assertThat(secondPurge).isEqualTo(0);
+            assertThat(bridge.getReviewQueue()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("review queue cap: items beyond MAX_REVIEW_QUEUE_SIZE are not enqueued")
+        void queueCap_enforcedOnEnqueue() {
+            // Build a result with many low-confidence patterns to overflow the cap
+            java.util.List<com.ghatana.datacloud.pattern.PatternRecord> manyPatterns =
+                new java.util.ArrayList<>();
+            for (int i = 0; i < DataCloudLearningBridge.MAX_REVIEW_QUEUE_SIZE + 10; i++) {
+                manyPatterns.add(com.ghatana.datacloud.pattern.PatternRecord.builder()
+                    .id("pattern-" + i)
+                    .name("p" + i)
+                    .confidence(0.1f)
+                    .build());
+            }
+            DataCloudBrain.LearningResult bigResult = DataCloudBrain.LearningResult.builder()
+                .patternsDiscovered(manyPatterns)
+                .patternsUpdated(List.of())
+                .patternsDeprecated(List.of())
+                .build();
+            when(mockBrain.learn(any(), any())).thenReturn(Promise.of(bigResult));
+
+            bridge.runLearning("t", false);
+
+            assertThat(bridge.getReviewQueue().size())
+                .isLessThanOrEqualTo(DataCloudLearningBridge.MAX_REVIEW_QUEUE_SIZE);
+        }
+
+        /**
+         * Seeds the review queue by running a learning cycle that yields one low-confidence pattern.
+         */
+        private void seedReviewItem(String patternId) {
+            com.ghatana.datacloud.pattern.PatternRecord lowConfPattern =
+                com.ghatana.datacloud.pattern.PatternRecord.builder()
+                    .id(patternId)
+                    .name("test-pattern-" + patternId)
+                    .confidence(0.3f)
+                    .build();
+            DataCloudBrain.LearningResult resultWithLowConf =
+                DataCloudBrain.LearningResult.builder()
+                    .patternsDiscovered(List.of(lowConfPattern))
+                    .patternsUpdated(List.of())
+                    .patternsDeprecated(List.of())
+                    .build();
+            when(mockBrain.learn(any(), any())).thenReturn(Promise.of(resultWithLowConf));
+            bridge.runLearning("t", false);
+        }
+    }
 }

@@ -1,0 +1,203 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://yappc.dev/schemas/variables/v1.json",
+    "title": "YAPPC Variable Definitions Schema",
+    "description": "Schema for variable definitions and resolution",
+    "type": "object",
+    "properties": {
+        "project": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "displayName": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "description": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "version": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "author": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "license": {
+                    "$ref": "#/definitions/variableDefinition"
+                }
+            }
+        },
+        "technical": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "framework": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "architecture": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "database": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "ports": {
+                    "$ref": "#/definitions/variableDefinition"
+                }
+            }
+        },
+        "deployment": {
+            "type": "object",
+            "properties": {
+                "target": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "environment": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "region": {
+                    "$ref": "#/definitions/variableDefinition"
+                },
+                "cloud": {
+                    "$ref": "#/definitions/variableDefinition"
+                }
+            }
+        },
+        "features": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/variableDefinition"
+            }
+        },
+        "variableResolution": {
+            "type": "object",
+            "properties": {
+                "precedence": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "command-line",
+                            "environment-variables",
+                            "project-config",
+                            "user-config",
+                            "organization-standards",
+                            "defaults"
+                        ]
+                    }
+                },
+                "interpolation": {
+                    "type": "object",
+                    "properties": {
+                        "syntax": {
+                            "type": "string",
+                            "default": "{{variable.path}}"
+                        },
+                        "functions": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "env",
+                                    "file",
+                                    "exec",
+                                    "timestamp",
+                                    "uuid"
+                                ]
+                            }
+                        },
+                        "conditionals": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "if",
+                                    "unless",
+                                    "switch"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "variableDefinition": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "array",
+                        "object",
+                        "enum"
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "default": {
+                    "description": "Default value"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "validation": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "type": "string"
+                        },
+                        "minLength": {
+                            "type": "integer"
+                        },
+                        "maxLength": {
+                            "type": "integer"
+                        },
+                        "minimum": {
+                            "type": "number"
+                        },
+                        "maximum": {
+                            "type": "number"
+                        },
+                        "range": {
+                            "type": "object",
+                            "properties": {
+                                "min": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                }
+                            }
+                        }
+                    }
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "conditional": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "type": "string"
+                },
+                "condition": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

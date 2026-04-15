@@ -46,5 +46,5 @@ The deployable HTTP + gRPC server for Data-Cloud Standalone. Responsible for:
 
 ## OpenAPI Contract
 
-Single source of truth: `products/data-cloud/docs/openapi.yaml`  
+Single source of truth: `products/data-cloud/api/openapi.yaml`  
 Drift check: `products/data-cloud/scripts/check-openapi-drift.sh` (CI enforced)

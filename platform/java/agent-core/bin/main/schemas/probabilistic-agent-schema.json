@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/probabilistic-agent.json",
+  "title": "Probabilistic Agent Configuration",
+  "description": "Schema for PROBABILISTIC agent type — ML model inference, confidence calibration, fallback chains",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "PROBABILISTIC" },
+        "probabilistic": {
+          "$ref": "#/$defs/ProbabilisticSpec"
+        }
+      },
+      "required": ["type", "probabilistic"]
+    }
+  },
+
+  "$defs": {
+    "ProbabilisticSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["ML_MODEL", "BAYESIAN", "STATISTICAL", "LLM"],
+          "default": "ML_MODEL"
+        },
+        "model": {
+          "$ref": "#/$defs/ModelConfig"
+        },
+        "confidence": {
+          "$ref": "#/$defs/ConfidenceConfig"
+        },
+        "fallbacks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ModelConfig" },
+          "description": "Fallback model chain, tried in order on primary failure"
+        },
+        "shadowMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, inference runs but results are marked SKIPPED (for A/B testing)"
+        },
+        "batchSize": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Batch inference size"
+        }
+      },
+      "required": ["model"],
+      "additionalProperties": false
+    },
+
+    "ModelConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Model identifier"
+        },
+        "version": {
+          "type": "string",
+          "description": "Model version"
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "Inference endpoint URL (gRPC or HTTP)"
+        },
+        "timeout": {
+          "$ref": "agent-base-schema.json#/$defs/Duration",
+          "default": "100ms",
+          "description": "Per-request inference timeout"
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "ConfidenceConfig": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.85,
+          "description": "Minimum confidence to accept result as SUCCESS"
+        },
+        "calibration": {
+          "type": "string",
+          "enum": ["IDENTITY", "ISOTONIC", "PLATT", "TEMPERATURE"],
+          "default": "IDENTITY",
+          "description": "Confidence calibration method"
+        },
+        "temperature": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0,
+          "description": "Temperature for TEMPERATURE calibration"
+        },
+        "plattA": {
+          "type": "number",
+          "default": -1.0,
+          "description": "Platt scaling parameter A"
+        },
+        "plattB": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Platt scaling parameter B"
+        },
+        "isotonicBreakpoints": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Sorted breakpoints for isotonic regression"
+        },
+        "isotonicValues": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Calibrated values at breakpoints"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

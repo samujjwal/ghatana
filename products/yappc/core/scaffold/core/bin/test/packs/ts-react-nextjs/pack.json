@@ -1,0 +1,104 @@
+{
+  "name": "ts-react-nextjs",
+  "version": "1.0.0",
+  "description": "TypeScript React application with Next.js, App Router, and modern tooling",
+  "author": "Ghatana YAPPC Team",
+  "license": "Apache-2.0",
+  "tags": ["typescript", "react", "nextjs", "ssr", "fullstack"],
+  "type": "application",
+  "language": "typescript",
+  "framework": "nextjs",
+  "dependencies": {
+    "runtime": ["next:^15.0.3", "react:^18.3.1", "react-dom:^18.3.1"],
+    "build": ["node:18+", "pnpm:8+"],
+    "devDependencies": [
+      "typescript:^5.6.3",
+      "@types/node:^22.8.6",
+      "@types/react:^18.3.11",
+      "@types/react-dom:^18.3.1",
+      "eslint:^9.12.0",
+      "eslint-config-next:^15.0.3"
+    ]
+  },
+  "templates": {
+    "package-json": {
+      "source": "templates/package.json.hbs",
+      "target": "package.json",
+      "merge": "replace"
+    },
+    "next-config": {
+      "source": "templates/next.config.js.hbs",
+      "target": "next.config.js",
+      "merge": "replace"
+    },
+    "tsconfig": {
+      "source": "templates/tsconfig.json.hbs",
+      "target": "tsconfig.json",
+      "merge": "replace"
+    },
+    "tailwind-config": {
+      "source": "templates/tailwind.config.js.hbs",
+      "target": "tailwind.config.js",
+      "merge": "replace",
+      "condition": "enableTailwind"
+    },
+    "app-layout": {
+      "source": "templates/app/layout.tsx.hbs",
+      "target": "app/layout.tsx",
+      "merge": "replace"
+    },
+    "app-page": {
+      "source": "templates/app/page.tsx.hbs",
+      "target": "app/page.tsx",
+      "merge": "replace"
+    },
+    "app-globals": {
+      "source": "templates/app/globals.css.hbs",
+      "target": "app/globals.css",
+      "merge": "replace"
+    },
+    "dockerfile": {
+      "source": "templates/Dockerfile.hbs",
+      "target": "Dockerfile",
+      "merge": "replace",
+      "condition": "enableDocker"
+    }
+  },
+  "hooks": {
+    "pre-generation": ["yappc doctor --tools node,pnpm"],
+    "post-generation": ["pnpm install", "pnpm run build"]
+  },
+  "variables": {
+    "projectName": {
+      "type": "string",
+      "description": "Project name",
+      "required": true,
+      "validation": "^[a-z][a-z0-9-]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name",
+      "required": true
+    },
+    "enableTailwind": {
+      "type": "boolean",
+      "description": "Enable Tailwind CSS",
+      "default": true
+    },
+    "enableDocker": {
+      "type": "boolean",
+      "description": "Generate Docker configuration",
+      "default": true
+    }
+  },
+  "requirements": {
+    "node-version": "18+",
+    "pnpm": true,
+    "tools": ["node", "pnpm"]
+  }
+}

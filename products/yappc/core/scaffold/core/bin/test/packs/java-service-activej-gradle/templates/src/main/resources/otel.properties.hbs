@@ -1,0 +1,16 @@
+# OpenTelemetry Configuration for
+{{serviceName}}
+
+# Service identification otel.service.name={{serviceName}}
+otel.resource.attributes=service.name={{serviceName}},service.version=1.0.0,service.namespace=production
+# Exporters configuration otel.exporter.otlp.endpoint=http://localhost:4317
+otel.exporter.otlp.protocol=grpc otel.exporter.otlp.compression=gzip # Traces
+configuration otel.traces.exporter=otlp
+otel.traces.sampler=parentbased_traceidratio otel.traces.sampler.arg=1.0 #
+Metrics configuration otel.metrics.exporter=otlp
+otel.metrics.export.interval=30s # Logs configuration otel.logs.exporter=otlp #
+Instrumentation configuration otel.instrumentation.http.enabled=true
+otel.instrumentation.runtime-telemetry.enabled=true
+otel.instrumentation.runtime-telemetry-java8.enabled=true # Propagation
+otel.propagators=tracecontext,baggage,b3,b3multi,jaeger,ottrace,xray # SDK
+configuration otel.sdk.disabled=false otel.experimental.sdk.enabled=true

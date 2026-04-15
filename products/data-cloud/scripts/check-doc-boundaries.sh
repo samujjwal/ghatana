@@ -16,12 +16,9 @@ CANONICAL_DOCS=(
   "${PRODUCT_DIR}/README.md"
   "${PRODUCT_DIR}/OWNER.md"
   "${PRODUCT_DIR}/REST_API_DOCUMENTATION.md"
-  "${PRODUCT_DIR}/api/data-cloud-api.openapi.yaml"
+  "${PRODUCT_DIR}/api/openapi.yaml"
   "${PRODUCT_DIR}/feature-store-ingest/README.md"
-  "${PRODUCT_DIR}/docs/ADR-DC-001-MODULE-OWNERSHIP.md"
-  "${PRODUCT_DIR}/docs/openapi.yaml"
-  "${PRODUCT_DIR}/docs/DATA_CLOUD_E2E_VISION_EXECUTION_PLAN.md"
-  "${PRODUCT_DIR}/docs/DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN.md"
+  "${PRODUCT_DIR}/docs-generated/07-architecture-decisions/adr-dc-001-module-ownership.md"
 )
 
 for file in "${CANONICAL_DOCS[@]}"; do
@@ -31,7 +28,7 @@ for file in "${CANONICAL_DOCS[@]}"; do
   fi
 done
 
-VIOLATIONS=$(grep -HnE '/api/v1/agents|AgentRegistryHandler|agents event stream' "${CANONICAL_DOCS[@]}" || true)
+VIOLATIONS=$(grep -HnE '/api/v1/agents/(execute|stream|runtime|invoke|register)|AgentRegistryHandler|agents event stream' "${CANONICAL_DOCS[@]}" || true)
 
 if [[ -z "$VIOLATIONS" ]]; then
   echo "✓ Canonical Data Cloud docs respect the AEP agentic boundary."

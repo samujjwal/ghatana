@@ -40,15 +40,18 @@ public class LearningHandler {
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
         String tenantId = http.resolveTenantId(request);
-        try {
-            Map<String, Object> result = learningBridge.runLearning(tenantId, true);
-            Map<String, Object> resp = new LinkedHashMap<>(result);
-            resp.put("timestamp", Instant.now().toString());
-            return Promise.of(http.jsonResponse(Map.copyOf(resp)));
-        } catch (Exception e) {
-            log.error("[DC-8] learning trigger failed: {}", e.getMessage(), e);
-            return Promise.of(http.errorResponse(500, "Learning trigger failed: " + e.getMessage()));
-        }
+        String correlationId = http.resolveCorrelationId(request);
+        return Promise.ofBlocking(http.blockingExecutor(), () -> {
+            try {
+                Map<String, Object> result = learningBridge.runLearning(tenantId, true);
+                Map<String, Object> resp = new LinkedHashMap<>(result);
+                resp.put("timestamp", Instant.now().toString());
+                return http.jsonResponse(Map.copyOf(resp), correlationId);
+            } catch (Exception e) {
+                log.error("[DC-8] learning trigger failed for tenant={}: {}", tenantId, e.getMessage(), e);
+                return http.errorResponse(500, "Learning trigger failed: " + e.getMessage());
+            }
+        });
     }
 
     public Promise<HttpResponse> handleLearningStatus(HttpRequest request) {
@@ -101,6 +104,23 @@ public class LearningHandler {
         return Promise.of(http.jsonResponse(Map.of(
             "reviewId",  reviewId,
             "decision",  "REJECTED",
+            "timestamp", Instant.now().toString()
+        )));
+    }
+
+    /**
+     * {@code DELETE /api/v1/learning/review/completed}
+     *
+     * <p>Removes all APPROVED and REJECTED items from the in-memory review queue.
+     * Safe to call repeatedly; idempotent when the queue is already clean.
+     */
+    public Promise<HttpResponse> handlePurgeCompletedReviews(HttpRequest request) {
+        if (learningBridge == null) {
+            return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
+        }
+        int purged = learningBridge.purgeCompletedReviews();
+        return Promise.of(http.jsonResponse(Map.of(
+            "purged",    purged,
             "timestamp", Instant.now().toString()
         )));
     }

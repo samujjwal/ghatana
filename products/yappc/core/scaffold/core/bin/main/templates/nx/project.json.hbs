@@ -1,0 +1,10 @@
+{ "name": "{{projectName}}", "$schema":
+"../../node_modules/nx/schemas/project-schema.json", "sourceRoot": "{{projectRoot}}/src",
+"projectType": "{{projectType}}", "tags": [], "targets": { "build": {
+"executor": "@nx/vite:build", "outputs": ["{options.outputPath}"], "options": {
+"outputPath": "dist/{projectRoot}" } }, "dev": { "executor":
+"@nx/vite:dev-server", "options": { "buildTarget": "build" } }, "test": {
+"executor": "@nx/jest:jest", "options": { "jestConfig":
+"{projectRoot}/jest.config.ts" } }, "lint": { "executor": "@nx/eslint:lint" },
+"typecheck": { "executor": "@nx/js:tsc", "options": { "rootDir":
+"{projectRoot}", "tsConfig": "{projectRoot}/tsconfig.lib.json" } } } }

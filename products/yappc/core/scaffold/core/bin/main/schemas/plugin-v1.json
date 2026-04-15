@@ -1,0 +1,198 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://yappc.dev/schemas/plugin/v1.json",
+    "title": "YAPPC Plugin Configuration Schema",
+    "description": "Schema for plugin configurations",
+    "type": "object",
+    "properties": {
+        "discovery": {
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Plugin discovery paths"
+                },
+                "autoLoad": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Auto-load plugins"
+                },
+                "priority": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "local",
+                            "global",
+                            "registry"
+                        ]
+                    },
+                    "description": "Discovery priority order"
+                }
+            }
+        },
+        "registry": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Plugin registry URL"
+                },
+                "authentication": {
+                    "type": "string",
+                    "enum": [
+                        "required",
+                        "optional",
+                        "none"
+                    ],
+                    "description": "Authentication requirement"
+                },
+                "caching": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "ttl": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Cache TTL in seconds"
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Cache directory path"
+                        }
+                    }
+                }
+            }
+        },
+        "security": {
+            "type": "object",
+            "properties": {
+                "signatureVerification": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Verify plugin signatures"
+                },
+                "sandboxing": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable plugin sandboxing"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "read",
+                            "write",
+                            "network",
+                            "execute"
+                        ]
+                    },
+                    "description": "Allowed permissions"
+                },
+                "trustedSources": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "official",
+                            "verified",
+                            "community"
+                        ]
+                    },
+                    "description": "Trusted plugin sources"
+                }
+            }
+        },
+        "lifecycle": {
+            "type": "object",
+            "properties": {
+                "initOrder": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "core",
+                            "language",
+                            "framework",
+                            "integration"
+                        ]
+                    },
+                    "description": "Plugin initialization order"
+                },
+                "errorHandling": {
+                    "type": "string",
+                    "enum": [
+                        "continue",
+                        "stop",
+                        "rollback"
+                    ],
+                    "description": "Error handling strategy"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Plugin operation timeout in ms"
+                }
+            }
+        },
+        "plugins": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/pluginConfig"
+            }
+        }
+    },
+    "definitions": {
+        "pluginConfig": {
+            "type": "object",
+            "required": [
+                "id",
+                "enabled"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Plugin identifier"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Plugin enabled status"
+                },
+                "version": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                    "description": "Plugin version"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "local",
+                        "registry",
+                        "url"
+                    ],
+                    "description": "Plugin source"
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Plugin path (for local plugins)"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Plugin URL (for remote plugins)"
+                },
+                "config": {
+                    "type": "object",
+                    "description": "Plugin-specific configuration"
+                }
+            }
+        }
+    }
+}

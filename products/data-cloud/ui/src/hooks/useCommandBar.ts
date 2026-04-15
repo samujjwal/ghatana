@@ -175,7 +175,7 @@ const ROUTE_MAP: Record<string, string> = {
   trust: '/trust',
   governance: '/trust',
   quality: '/data?view=quality',
-  cost: '/data?view=cost',
+  cost: '/insights',
   lineage: '/data?view=lineage',
 };
 

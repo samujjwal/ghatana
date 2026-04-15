@@ -115,6 +115,30 @@ public final class DataCloudLauncherSettings {
         return isEnabled(env.get("DATACLOUD_AI_ENABLED"));
     }
 
+    /**
+     * Resolves the maximum number of requests per IP allowed in a rate-limit window.
+     * Reads {@code DATACLOUD_RATE_LIMIT_REQUESTS}; defaults to {@code 200}.
+     */
+    public static int resolveRateLimitRequests(Map<String, String> env) {
+        String raw = env.get("DATACLOUD_RATE_LIMIT_REQUESTS");
+        if (raw == null || raw.isBlank()) {
+            return 200;
+        }
+        return Integer.parseInt(raw);
+    }
+
+    /**
+     * Resolves the sliding-window size in seconds for the rate limiter.
+     * Reads {@code DATACLOUD_RATE_LIMIT_WINDOW_SECONDS}; defaults to {@code 60}.
+     */
+    public static long resolveRateLimitWindowSeconds(Map<String, String> env) {
+        String raw = env.get("DATACLOUD_RATE_LIMIT_WINDOW_SECONDS");
+        if (raw == null || raw.isBlank()) {
+            return 60L;
+        }
+        return Long.parseLong(raw);
+    }
+
     private static boolean isEnabled(String rawValue) {
         if (rawValue == null) {
             return false;

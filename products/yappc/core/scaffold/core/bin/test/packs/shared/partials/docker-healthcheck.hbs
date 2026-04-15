@@ -1,0 +1,4 @@
+{{! Shared Docker health check partial }}
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \ CMD
+{{#if healthCheckCommand}}{{healthCheckCommand}}{{else}}curl -f
+  http://localhost:{{port}}/health || exit 1{{/if}}

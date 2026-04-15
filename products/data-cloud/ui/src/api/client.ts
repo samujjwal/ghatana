@@ -302,10 +302,10 @@ export class DataCloudApiClient {
    * @doc.purpose Fetch upstream and downstream lineage
    */
   async getLineage(datasetId: string, depth: number = 3): Promise<LineageGraph> {
-    return this.request(
-      `/api/v1/lineage/${datasetId}?depth=${depth}`,
-      { method: 'GET' },
-      LineageGraphSchema
+    void datasetId;
+    void depth;
+    throw new Error(
+      'Lineage graph APIs are not exposed by the current Data Cloud launcher. Use the Data Explorer lineage preview instead.',
     );
   }
 
@@ -314,11 +314,8 @@ export class DataCloudApiClient {
    * @doc.purpose Analyze downstream impact of changes
    */
   async getImpactAnalysis(datasetId: string): Promise<LineageGraph> {
-    return this.request(
-      `/api/v1/lineage/${datasetId}/impact`,
-      { method: 'GET' },
-      LineageGraphSchema
-    );
+    void datasetId;
+    throw new Error('Impact analysis APIs are not exposed by the current Data Cloud launcher.');
   }
 
   // ==========================================================================

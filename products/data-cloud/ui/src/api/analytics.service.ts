@@ -202,7 +202,7 @@ interface AnalyticsSuggestResponse {
 async function fetchAnalyticsSuggestions(tenantId: string): Promise<AnalyticsAiSuggestion[]> {
   try {
     const resp = await apiClient.post<AnalyticsSuggestResponse>(
-      '/api/v1/analytics/suggest',
+      '/analytics/suggest',
       { context: 'anomaly_and_optimization', limit: 5 },
       { headers: { 'X-Tenant-ID': tenantId } },
     );

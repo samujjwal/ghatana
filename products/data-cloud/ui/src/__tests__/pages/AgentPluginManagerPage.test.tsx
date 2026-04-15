@@ -1,8 +1,8 @@
 /**
  * Tests for AgentPluginManagerPage
  *
- * Covers agent listing, loading/error/empty states, registration modal,
- * deregistration flow, and SSE registry event feed.
+ * Covers read-only agent catalog rendering plus explicit boundary states for
+ * unsupported registration, deregistration, and live SSE features.
  *
  * @doc.type test
  * @doc.purpose RTL tests for AgentPluginManagerPage
@@ -22,6 +22,8 @@ import React from 'react';
 // =============================================================================
 
 vi.mock('../../api/agent-registry.service', () => ({
+  AGENT_REGISTRY_BOUNDARY_MESSAGE:
+    'Agent registration, deregistration, execution history, and live registry events are not exposed by the current Data Cloud launcher API.',
   agentRegistryService: {
     listAgents: vi.fn(),
     registerAgent: vi.fn(),
@@ -149,16 +151,11 @@ describe('AgentPluginManagerPage', () => {
 
     // Default: successful data load
     vi.mocked(agentRegistryService.listAgents).mockResolvedValue(SAMPLE_AGENTS);
-    vi.mocked(agentRegistryService.registerAgent).mockResolvedValue(SAMPLE_AGENTS[0]);
-    vi.mocked(agentRegistryService.deregisterAgent).mockResolvedValue(undefined);
-    vi.mocked(agentRegistryService.streamRegistryEvents).mockImplementation(
-      (_tenantId, onEvent) => {
-        const source = makeFakeEventSource({ connected: true });
-        // Store onEvent for later triggering in specific tests
-        (source as { _onEvent?: (e: RegistryEvent) => void })._onEvent = onEvent;
-        return source as unknown as EventSource;
-      }
-    );
+    vi.mocked(agentRegistryService.registerAgent).mockRejectedValue(new Error('unsupported'));
+    vi.mocked(agentRegistryService.deregisterAgent).mockRejectedValue(new Error('unsupported'));
+    vi.mocked(agentRegistryService.streamRegistryEvents).mockImplementation(() => {
+      throw new Error('unsupported');
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -167,7 +164,7 @@ describe('AgentPluginManagerPage', () => {
   it('renders "Agent Registry" heading', () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Agent Registry')).toBeDefined();
-    expect(screen.getByText(/monitor and manage registered agents/i)).toBeDefined();
+    expect(screen.getByText(/monitor the launcher-exposed agent catalog/i)).toBeDefined();
   });
 
   // --------------------------------------------------------------------------
@@ -224,15 +221,17 @@ describe('AgentPluginManagerPage', () => {
     vi.mocked(agentRegistryService.listAgents).mockResolvedValue([]);
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
     await waitFor(() => {
-      expect(screen.getByText(/no agents registered yet/i)).toBeDefined();
+      expect(screen.getByText(/no agent catalog entries are currently exposed/i)).toBeDefined();
     });
   });
 
-  it('empty state has a "Register your first agent" link', async () => {
+  it('shows a boundary note explaining that mutations are unavailable', async () => {
     vi.mocked(agentRegistryService.listAgents).mockResolvedValue([]);
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
     await waitFor(() => {
-      expect(screen.getByText(/register your first agent/i)).toBeDefined();
+      expect(
+        screen.getAllByText(/registration, deregistration, and live registry events are not available here/i).length,
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -256,135 +255,47 @@ describe('AgentPluginManagerPage', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 6. Registration modal - open
+  // 6. Registration is disabled in launcher mode
   // --------------------------------------------------------------------------
-  it('opens registration modal when "Register Agent" button is clicked', async () => {
-    const user = userEvent.setup();
+  it('disables the register button because launcher mode is read-only', async () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    const headerBtn = screen
-      .getAllByRole('button', { name: /register agent/i })
-      .find((btn) => btn.classList.contains('bg-indigo-600'))!;
-    await user.click(headerBtn);
-    // Modal heading should now be visible
-    expect(screen.getByRole('heading', { name: 'Register Agent' })).toBeDefined();
-    expect(screen.getByPlaceholderText('My Agent')).toBeDefined();
+    const headerBtn = screen.getByRole('button', { name: /register agent/i });
+    expect(headerBtn).toBeDisabled();
+    expect(screen.queryByRole('heading', { name: 'Register Agent' })).toBeNull();
   });
 
   // --------------------------------------------------------------------------
-  // 7. Registration modal - cancel
+  // 7. Deregistration
   // --------------------------------------------------------------------------
-  it('closes modal when Cancel is clicked', async () => {
-    const user = userEvent.setup();
-    render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    await user.click(screen.getByRole('button', { name: /register agent/i }));
-    expect(screen.getByPlaceholderText('My Agent')).toBeDefined();
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByPlaceholderText('My Agent')).toBeNull();
-  });
-
-  // --------------------------------------------------------------------------
-  // 8. Registration modal - submit
-  // --------------------------------------------------------------------------
-  it('calls registerAgent on form submission and closes modal', async () => {
-    const user = userEvent.setup();
-    render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-
-    // Open modal using the header button (has bg-indigo-600 class)
-    const headerBtn = screen
-      .getAllByRole('button', { name: /register agent/i })
-      .find((btn) => btn.classList.contains('bg-indigo-600'))!;
-    await user.click(headerBtn);
-
-    // Fill name field
-    const nameInput = screen.getByPlaceholderText('My Agent');
-    await user.clear(nameInput);
-    await user.type(nameInput, 'Test Agent');
-
-    // Click the modal's submit button (type=submit inside the form)
-    const submitBtn = document.querySelector<HTMLButtonElement>('form button[type="submit"]')!;
-    await user.click(submitBtn);
-
-    await waitFor(() => {
-      expect(agentRegistryService.registerAgent).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Test Agent' })
-      );
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // 9. Deregistration
-  // --------------------------------------------------------------------------
-  it('calls deregisterAgent when deregister button is clicked and user confirms', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const user = userEvent.setup();
+  it('shows catalog-only badges instead of deregistration controls', async () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
 
     await waitFor(() => screen.getByText('Planning Agent'));
-    const trashButtons = screen.getAllByTitle('Deregister agent');
-    await user.click(trashButtons[0]);
-
-    await waitFor(() => {
-      expect(agentRegistryService.deregisterAgent).toHaveBeenCalledWith('agent-001');
-    });
-
-    vi.restoreAllMocks();
-  });
-
-  it('does NOT call deregisterAgent when user cancels the confirm dialog', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
-    const user = userEvent.setup();
-    render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-
-    await waitFor(() => screen.getByText('Planning Agent'));
-    const trashButtons = screen.getAllByTitle('Deregister agent');
-    await user.click(trashButtons[0]);
-
-    expect(agentRegistryService.deregisterAgent).not.toHaveBeenCalled();
-    vi.restoreAllMocks();
+    expect(screen.queryByTitle('Deregister agent')).toBeNull();
+    expect(screen.getAllByText('Catalog only').length).toBeGreaterThan(0);
   });
 
   // --------------------------------------------------------------------------
-  // 10. SSE live feed
+  // 8. SSE live feed boundary
   // --------------------------------------------------------------------------
   it('renders "Live Registry Events" feed panel', () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Live Registry Events')).toBeDefined();
   });
 
-  it('establishes SSE stream on mount and closes it on unmount', () => {
-    const fakeSource = makeFakeEventSource();
-    vi.mocked(agentRegistryService.streamRegistryEvents).mockReturnValue(
-      fakeSource as unknown as EventSource
-    );
-    const { unmount } = render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    expect(agentRegistryService.streamRegistryEvents).toHaveBeenCalledTimes(1);
-    unmount();
-    expect(fakeSource.close).toHaveBeenCalledTimes(1);
+  it('does not establish SSE stream on mount in launcher mode', () => {
+    render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
+    expect(agentRegistryService.streamRegistryEvents).not.toHaveBeenCalled();
   });
 
-  it('appends incoming SSE events to the feed', async () => {
-    let capturedOnEvent: ((event: RegistryEvent) => void) | undefined;
-
-    vi.mocked(agentRegistryService.streamRegistryEvents).mockImplementation(
-      (_tenantId, onEvent) => {
-        capturedOnEvent = onEvent;
-        return makeFakeEventSource() as unknown as EventSource;
-      }
-    );
-
+  it('renders an explicit boundary note for the unavailable live event stream', async () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    expect(screen.getByText(/waiting for registry events/i)).toBeDefined();
-
-    // Simulate an incoming SSE event
-    capturedOnEvent!(SAMPLE_REGISTRY_EVENT);
-
-    await waitFor(() => {
-      expect(screen.getByText('AGENT_REGISTERED')).toBeDefined();
-    });
+    expect(screen.getByText(/live registry events are unavailable/i)).toBeDefined();
+    expect(screen.getByText(/no live event stream available/i)).toBeDefined();
   });
 
   // --------------------------------------------------------------------------
-  // 11. Capabilities expand/collapse
+  // 9. Capabilities expand/collapse
   // --------------------------------------------------------------------------
   it('expands agent capabilities when "Capabilities" button is clicked', async () => {
     const user = userEvent.setup();

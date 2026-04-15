@@ -178,7 +178,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
         return {
             id,
             role: 'assistant',
-            content: 'Navigate to the Lineage view in Data Fabric to visualise upstream and downstream dependencies for any collection.',
+            content: 'Open the lineage preview in Data Explorer to review the current placeholder lineage experience. Live lineage APIs are not exposed by this launcher yet.',
             type: 'lineage',
             timestamp: new Date(),
             metadata: { confidence: 0.2 },
@@ -191,7 +191,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
         content: `I can help you with:
 - **SQL Queries**: Describe what data you need and I\'ll run it against the analytics engine.
 - **Schema Exploration**: Ask about a collection to open it in the Data Fabric viewer.
-- **Lineage Analysis**: Trace data dependencies via the Lineage view.
+    - **Lineage Preview**: Open the current placeholder lineage view in Data Explorer.
 - **Semantic Search**: Describe a concept and I\'ll find related collections.
 
 What would you like to know?`,

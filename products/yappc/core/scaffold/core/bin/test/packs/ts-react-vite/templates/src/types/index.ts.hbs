@@ -1,0 +1,106 @@
+{{>../shared/partials/license-header}}
+
+export interface ApiResponse {
+  [key: string]: any
+}
+
+export interface ApiError {
+  message: string
+  status: number
+  timestamp: string
+}
+
+export interface HealthResponse {
+  status: 'UP' | 'DOWN'
+  service: string
+  version: string
+  timestamp: number
+}
+
+export interface EchoResponse {
+  method: string
+  path: string
+  headers: Record<string, string>
+  body: string
+  timestamp: number
+}
+
+// Component props types
+export interface BaseComponentProps {
+  className?: string
+  children?: React.ReactNode
+}
+
+// Navigation types
+export interface NavItem {
+  label: string
+  path: string
+  icon?: string
+}
+
+// Form types
+export interface FormField {
+  name: string
+  type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'checkbox'
+  label: string
+  placeholder?: string
+  required?: boolean
+  options?: Array<{ value: string; label: string }>
+}
+
+// State management types (depending on chosen solution)
+{{#eq stateManagement "zustand"}}
+export interface AppState {
+  user: User | null
+  theme: 'light' | 'dark'
+  loading: boolean
+  error: string | null
+}
+
+export interface AppActions {
+  setUser: (user: User | null) => void
+  setTheme: (theme: 'light' | 'dark') => void
+  setLoading: (loading: boolean) => void
+  setError: (error: string | null) => void
+}
+{{/eq}}
+
+{{#eq stateManagement "redux-toolkit"}}
+export interface RootState {
+  user: UserState
+  ui: UIState
+}
+
+export interface UserState {
+  currentUser: User | null
+  isAuthenticated: boolean
+}
+
+export interface UIState {
+  theme: 'light' | 'dark'
+  loading: boolean
+  error: string | null
+}
+{{/eq}}
+
+// User types
+export interface User {
+  id: string
+  email: string
+  name: string
+  avatar?: string
+  role: 'admin' | 'user'
+  createdAt: string
+  updatedAt: string
+}
+
+// Environment variables
+export interface ImportMetaEnv {
+  readonly VITE_API_URL: string
+  readonly VITE_APP_TITLE: string
+  readonly VITE_APP_VERSION: string
+}
+
+export interface ImportMeta {
+  readonly env: ImportMetaEnv
+}

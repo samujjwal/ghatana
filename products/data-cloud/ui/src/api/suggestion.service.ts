@@ -56,7 +56,9 @@ export interface SuggestionFeedback {
   timestamp: number;
 }
 
-const API_BASE = '/api/v1';
+export const SUGGESTION_SERVICE_BOUNDARY_MESSAGE =
+  'Workflow suggestion feedback APIs are not exposed by the current Data Cloud launcher API.';
+
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 interface CacheEntry<T> {
@@ -86,46 +88,10 @@ class SuggestionService {
     context: string,
     type: 'field' | 'transformation' | 'validation'
   ): Promise<SuggestionResponse> {
-    const cacheKey = `${workflowId}:${context}:${type}`;
-
-    // Check cache
-    const cached = this.suggestionCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.debug('Suggestion cache hit:', cacheKey);
-      return cached.data;
-    }
-
-    // Fetch from API
-    try {
-      const response = await fetch(`${API_BASE}/workflows/${workflowId}/suggestions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': this.getTenantId(),
-        },
-        body: JSON.stringify({ context, type }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch suggestions: ${response.statusText}`);
-      }
-
-      const data = (await response.json()) as SuggestionResponse;
-
-      // Cache result
-      this.suggestionCache.set(cacheKey, {
-        data,
-        timestamp: Date.now(),
-      });
-
-      console.debug('Suggestions fetched and cached:', cacheKey);
-      return data;
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      throw new Error(
-        `Failed to fetch suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    void workflowId;
+    void context;
+    void type;
+    throw new Error(SUGGESTION_SERVICE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -141,31 +107,9 @@ class SuggestionService {
    * @throws Error if request fails
    */
   async acceptSuggestion(workflowId: string, suggestionId: string): Promise<void> {
-    try {
-      const response = await fetch(
-        `${API_BASE}/workflows/${workflowId}/suggestions/${suggestionId}/accept`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant-ID': this.getTenantId(),
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to accept suggestion: ${response.statusText}`);
-      }
-
-      // Record feedback
-      this.recordFeedback(workflowId, suggestionId, true);
-      console.debug('Suggestion accepted:', suggestionId);
-    } catch (error) {
-      console.error('Error accepting suggestion:', error);
-      throw new Error(
-        `Failed to accept suggestion: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    void workflowId;
+    void suggestionId;
+    throw new Error(SUGGESTION_SERVICE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -186,33 +130,10 @@ class SuggestionService {
     suggestionId: string,
     reason?: string
   ): Promise<void> {
-    try {
-      const url = new URL(`${API_BASE}/workflows/${workflowId}/suggestions/${suggestionId}/reject`, window.location.origin);
-      if (reason) {
-        url.searchParams.append('reason', reason);
-      }
-
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Tenant-ID': this.getTenantId(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to reject suggestion: ${response.statusText}`);
-      }
-
-      // Record feedback
-      this.recordFeedback(workflowId, suggestionId, false, reason);
-      console.debug('Suggestion rejected:', suggestionId);
-    } catch (error) {
-      console.error('Error rejecting suggestion:', error);
-      throw new Error(
-        `Failed to reject suggestion: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    void workflowId;
+    void suggestionId;
+    void reason;
+    throw new Error(SUGGESTION_SERVICE_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -313,14 +234,6 @@ class SuggestionService {
     };
   }
 
-  /**
-   * Gets tenant ID from localStorage or session.
-   *
-   * @returns tenant ID
-   */
-  private getTenantId(): string {
-    return localStorage.getItem('tenantId') || 'default-tenant';
-  }
 }
 
 // Export singleton instance

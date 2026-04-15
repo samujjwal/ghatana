@@ -1,0 +1,9 @@
+thread 'main' panicked at 'index out of bounds: the len is 3 but the index is 5', src/main.rs:10:5
+stack backtrace:
+   0: std::panicking::begin_panic
+             at /rustc/abc123/library/std/src/panicking.rs:100:14
+   1: app::main
+             at ./src/main.rs:10:5
+   2: std::rt::lang_start
+             at /rustc/abc123/library/std/src/rt.rs:65:5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

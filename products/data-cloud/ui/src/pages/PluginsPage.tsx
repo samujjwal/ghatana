@@ -22,25 +22,21 @@ import {
   Package,
   Search,
   Filter,
-  Upload,
   RefreshCw,
-  Download,
   Shield,
   AlertCircle,
   CheckCircle,
-  X,
   Activity,
 } from 'lucide-react';
 import { cn, buttonStyles, inputStyles, textStyles, bgStyles } from '../lib/theme';
 import { PluginCard } from '../components/plugins/PluginCard';
-import { PluginConfigModal } from '../components/plugins/PluginConfigModal';
 import {
   pluginService,
   type PluginCategory,
   type Plugin,
 } from '../api/plugin.service';
 
-type TabType = 'installed' | 'marketplace' | 'upload';
+type TabType = 'installed' | 'catalog' | 'delivery';
 
 /**
  * Plugins Page Component
@@ -52,10 +48,6 @@ export function PluginsPage(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<PluginCategory | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'error'>('all');
-  const [configuringPlugin, setConfiguringPlugin] = useState<Plugin | null>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
 
   // Fetch installed plugins
   const {
@@ -66,22 +58,6 @@ export function PluginsPage(): React.ReactElement {
     queryKey: ['plugins', 'installed'],
     queryFn: () => pluginService.getInstalledPlugins(),
     staleTime: 30000,
-  });
-
-  // Fetch marketplace plugins
-  const {
-    data: marketplacePlugins = [],
-    isLoading: loadingMarketplace,
-    error: marketplaceError,
-  } = useQuery({
-    queryKey: ['plugins', 'marketplace', categoryFilter, searchQuery],
-    queryFn: () =>
-      pluginService.browseMarketplace({
-        category: categoryFilter === 'all' ? undefined : categoryFilter,
-        search: searchQuery || undefined,
-      }),
-    staleTime: 60000,
-    enabled: activeTab === 'marketplace',
   });
 
   // Enable plugin mutation
@@ -100,75 +76,6 @@ export function PluginsPage(): React.ReactElement {
     },
   });
 
-  // Install plugin mutation
-  const installMutation = useMutation({
-    mutationFn: (pluginId: string) =>
-      pluginService.installPlugin({ pluginId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins'] });
-    },
-  });
-
-  // Uninstall plugin mutation
-  const uninstallMutation = useMutation({
-    mutationFn: (pluginId: string) => pluginService.uninstallPlugin(pluginId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins'] });
-    },
-  });
-
-  // Update plugin mutation
-  const updateMutation = useMutation({
-    mutationFn: (pluginId: string) =>
-      pluginService.updatePlugin(pluginId, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins'] });
-    },
-  });
-
-  // Refresh registry mutation
-  const refreshMutation = useMutation({
-    mutationFn: () => pluginService.refreshRegistry(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins', 'marketplace'] });
-    },
-  });
-
-  // Upload plugin mutation
-  const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      try {
-        const result = await pluginService.uploadPlugin(file);
-        clearInterval(interval);
-        setUploadProgress(100);
-        return result;
-      } catch (error) {
-        clearInterval(interval);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plugins'] });
-      setUploadFile(null);
-      setUploadProgress(0);
-      setActiveTab('installed');
-    },
-    onError: () => {
-      setUploadProgress(0);
-    },
-  });
-
   const categories: Array<{ value: PluginCategory | 'all'; label: string }> = [
     { value: 'all', label: 'All' },
     { value: 'connector', label: 'Connectors' },
@@ -182,8 +89,8 @@ export function PluginsPage(): React.ReactElement {
 
   const tabs = [
     { id: 'installed' as const, label: 'Installed', icon: <Package className="h-4 w-4" /> },
-    { id: 'marketplace' as const, label: 'Marketplace', icon: <Download className="h-4 w-4" /> },
-    { id: 'upload' as const, label: 'Upload', icon: <Upload className="h-4 w-4" /> },
+    { id: 'catalog' as const, label: 'Catalog Boundary', icon: <Shield className="h-4 w-4" /> },
+    { id: 'delivery' as const, label: 'Deployment', icon: <RefreshCw className="h-4 w-4" /> },
   ];
 
   // Filter installed plugins
@@ -228,18 +135,17 @@ export function PluginsPage(): React.ReactElement {
             <div>
               <h1 className={textStyles.h1}>Plugins</h1>
               <p className={cn(textStyles.body, 'mt-1')}>
-                Extend Data Cloud with plugins for connectors, transformers, and integrations
+                Monitor the bundled plugins shipped with the current launcher build
               </p>
             </div>
             <button
-              onClick={() => refreshMutation.mutate()}
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
+              }}
               className={cn(buttonStyles.ghost, 'px-3 py-2')}
-              disabled={refreshMutation.isPending}
-              title="Refresh registry"
+              title="Refresh bundled plugin status"
             >
-              <RefreshCw
-                className={cn('h-5 w-5', refreshMutation.isPending && 'animate-spin')}
-              />
+              <RefreshCw className="h-5 w-5" />
             </button>
           </div>
 
@@ -307,7 +213,7 @@ export function PluginsPage(): React.ReactElement {
       </div>
 
       {/* Filters */}
-      {(activeTab === 'installed' || activeTab === 'marketplace') && (
+      {activeTab === 'installed' && (
         <div className="px-6 py-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-4">
             {/* Search */}
@@ -399,14 +305,8 @@ export function PluginsPage(): React.ReactElement {
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className={cn(textStyles.h3, 'mb-2')}>No plugins installed</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Browse the marketplace to find and install plugins
+                  No bundled plugins are currently registered in this launcher build
                 </p>
-                <button
-                  onClick={() => setActiveTab('marketplace')}
-                  className={cn(buttonStyles.primary, 'px-4 py-2')}
-                >
-                  Browse Marketplace
-                </button>
               </div>
             ) : filteredInstalledPlugins.length === 0 ? (
               <div className="text-center py-12">
@@ -435,12 +335,6 @@ export function PluginsPage(): React.ReactElement {
                     mode="installed"
                     onEnable={(id) => enableMutation.mutate(id)}
                     onDisable={(id) => disableMutation.mutate(id)}
-                    onConfigure={() => setConfiguringPlugin(plugin)}
-                    onUninstall={(id) => {
-                      if (confirm('Are you sure you want to uninstall this plugin?')) {
-                        uninstallMutation.mutate(id);
-                      }
-                    }}
                     onViewDetails={(id) => navigate(`/plugins/${id}`)}
                   />
                 ))}
@@ -449,173 +343,36 @@ export function PluginsPage(): React.ReactElement {
           </div>
         )}
 
-        {activeTab === 'marketplace' && (
-          <div>
-            {loadingMarketplace ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : marketplaceError ? (
-              <div className="text-center py-12">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">
-                  Failed to load marketplace plugins
+        {activeTab === 'catalog' && (
+          <div className="max-w-3xl mx-auto rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-100">
+            <div className="flex items-start gap-3">
+              <Shield className="mt-0.5 h-5 w-5 flex-shrink-0" />
+              <div>
+                <h3 className={cn(textStyles.h3, 'mb-2')}>Bundled Plugin Boundary</h3>
+                <p className="text-sm leading-6">
+                  The canonical backend only exposes bundled plugin inventory plus enable, disable, and upgrade-intent endpoints.
+                  Marketplace browsing, runtime installation, and custom uploads are intentionally unavailable in this launcher.
                 </p>
               </div>
-            ) : marketplacePlugins.length === 0 ? (
-              <div className="text-center py-12">
-                <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className={cn(textStyles.h3, 'mb-2')}>No plugins found</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Try adjusting your filters or search query
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {marketplacePlugins.map((plugin) => (
-                  <PluginCard
-                    key={plugin.id}
-                    plugin={plugin}
-                    mode="marketplace"
-                    onInstall={(id) => installMutation.mutate(id)}
-                    onUpdate={(id) => updateMutation.mutate(id)}
-                  />
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         )}
 
-        {activeTab === 'upload' && (
-          <div className="max-w-2xl mx-auto">
-            {!uploadFile ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
-                <Upload className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className={cn(textStyles.h3, 'mb-2')}>Upload Custom Plugin</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Upload a custom plugin JAR file to install it
+        {activeTab === 'delivery' && (
+          <div className="max-w-3xl mx-auto rounded-xl border border-blue-200 bg-blue-50 p-6 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100">
+            <div className="flex items-start gap-3">
+              <RefreshCw className="mt-0.5 h-5 w-5 flex-shrink-0" />
+              <div>
+                <h3 className={cn(textStyles.h3, 'mb-2')}>How Plugin Changes Ship</h3>
+                <p className="text-sm leading-6">
+                  To add or upgrade a plugin, publish a new Data Cloud server build that includes the updated bundled plugin artifact.
+                  Runtime upload and hot-swap flows were removed here to match the actual launcher capability boundary.
                 </p>
-                <input
-                  type="file"
-                  accept=".jar"
-                  className="hidden"
-                  id="plugin-upload"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setUploadFile(file);
-                    }
-                  }}
-                />
-                <label
-                  htmlFor="plugin-upload"
-                  className={cn(buttonStyles.primary, 'px-6 py-3 cursor-pointer inline-block')}
-                >
-                  Choose File
-                </label>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
-                  Only JAR files are supported (max 50MB)
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/20 rounded-lg flex items-center justify-center">
-                      <Package className="h-6 w-6 text-primary-600" />
-                    </div>
-                    <div>
-                      <h3 className={cn(textStyles.h4, 'mb-1')}>{uploadFile.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {(uploadFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                  </div>
-                  {!uploadMutation.isPending && (
-                    <button
-                      onClick={() => {
-                        setUploadFile(null);
-                        setUploadProgress(0);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
-
-                {uploadMutation.isPending && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-600 dark:text-gray-400">Uploading...</span>
-                      <span className="font-medium">{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-primary-600 h-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {uploadMutation.isError && (
-                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-red-900 dark:text-red-100">
-                          Upload failed
-                        </p>
-                        <p className="text-xs text-red-800 dark:text-red-200 mt-1">
-                          {uploadMutation.error instanceof Error
-                            ? uploadMutation.error.message
-                            : 'An error occurred during upload'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!uploadMutation.isPending && !uploadMutation.isError && (
-                  <button
-                    onClick={() => uploadMutation.mutate(uploadFile)}
-                    className={cn(buttonStyles.primary, 'w-full px-4 py-3')}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Install Plugin
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex gap-3">
-                <Shield className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    Plugin Security
-                  </h4>
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    Custom plugins run with full system access. Only install plugins from trusted
-                    sources. All plugins are scanned for security vulnerabilities before
-                    installation.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Configuration Modal */}
-      {configuringPlugin && (
-        <PluginConfigModal
-          plugin={configuringPlugin}
-          isOpen={true}
-          onClose={() => setConfiguringPlugin(null)}
-        />
-      )}
     </div>
   );
 }

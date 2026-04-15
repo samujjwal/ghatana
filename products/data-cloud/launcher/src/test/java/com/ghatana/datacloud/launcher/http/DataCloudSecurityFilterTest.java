@@ -86,7 +86,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         auditService   = mock(AuditService.class);
 
         // Default: valid key → authenticated principal
-        Principal principal = new Principal("test-service", List.of("reader"), TEST_TENANT);
+        Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
         when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
         when(apiKeyResolver.resolve(INVALID_API_KEY)).thenReturn(Optional.empty());
 
@@ -250,7 +250,9 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(auditService).record(any(AuditEvent.class));
+            ArgumentCaptor<AuditEvent> eventCaptor = ArgumentCaptor.forClass(AuditEvent.class);
+            verify(auditService).record(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_FAILURE");
         }
 
         @Test
@@ -309,6 +311,71 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
             verify(auditService, never()).record(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("RBAC route authorization")
+    class RbacTests {
+
+        @Test
+        @DisplayName("viewer can read INTERNAL route")
+        void viewerCanReadInternalRoute() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+
+            int status = runPromise(() -> secured.serve(get(INTERNAL_PATH)).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("viewer cannot mutate SENSITIVE route")
+        void viewerCannotMutateSensitiveRoute() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("auditor can read governance summary")
+        void auditorCanReadGovernanceSummary() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+
+            int status = runPromise(() -> secured.serve(get("/api/v1/governance/compliance/summary")).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("operator cannot execute governance mutation")
+        void operatorCannotExecuteGovernanceMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("operator-user", List.of("operator"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
     }
 
@@ -377,6 +444,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy ALLOWS → returns 200 and emits audit")
         void criticalPath_policyAllows_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -390,6 +459,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy DENIES with enforcing=true → returns 403 with POLICY_DENY body")
         void criticalPath_policyDenies_enforcing_returns403() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -402,6 +473,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy DENIES enforcing=true → 403 response body contains POLICY_DENY code")
         void criticalPath_policyDenies_enforcing_responseBodyContainsPolicyDenyCode() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -416,6 +489,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy DENIES enforcing=true → audit emitted with success=false")
         void criticalPath_policyDenies_emitsFailureAudit() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -428,6 +503,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy DENIES with enforcing=false (audit-only) → passes through with 200")
         void criticalPath_policyDenies_auditOnly_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
             AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -440,6 +517,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy engine exception → fail-closed, returns 403 in enforcing mode")
         void criticalPath_policyThrows_failsClosed_returns403() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
@@ -453,6 +532,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policy engine exception in audit-only mode → passes through")
         void criticalPath_policyThrows_auditOnly_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
             AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
@@ -466,6 +547,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("CRITICAL path policy evaluation uses datacloud.sensitive-route-access policy name")
         void criticalPath_evaluatesCorrectPolicyName() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = get(CRITICAL_PATH);
@@ -479,6 +562,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             @Test
             @DisplayName("CRITICAL path policy evaluation uses authenticated tenant context")
             void criticalPath_policyContextUsesAuthenticatedTenant() {
+                when(apiKeyResolver.resolve(VALID_API_KEY))
+                    .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
                 when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
                 AsyncServlet secured = enforcing().apply(OK_DELEGATE);
                 HttpRequest req = get(CRITICAL_PATH);
@@ -495,6 +580,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         @Test
         @DisplayName("policyExcludedTenants bypasses policy engine for matching tenant")
         void criticalPath_excludedTenant_bypassesPolicy() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
                     .apiKeyResolver(apiKeyResolver)
                     .policyEngine(policyEngine)

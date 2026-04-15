@@ -156,6 +156,24 @@ let workflows = [...mockWorkflows];
 let storageProfiles = [...mockStorageProfiles];
 let connectors = [...mockConnectors];
 
+const mockPlugins = [
+  {
+    id: 'core-audit-plugin',
+    displayName: 'Core Audit Plugin',
+    version: '1.0.0',
+    status: 'enabled' as const,
+    supportedRecordTypes: ['AUDIT_EVENT', 'PII_EVENT'],
+  },
+  {
+    id: 'entity-sync-plugin',
+    displayName: 'Entity Sync Plugin',
+    version: '1.0.0',
+    status: 'disabled' as const,
+    supportedRecordTypes: ['ENTITY', 'FEATURE_VECTOR'],
+  },
+];
+let plugins = [...mockPlugins];
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -174,6 +192,27 @@ function paginate<T>(items: T[], page = 1, pageSize = 20) {
 
 function generateId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function buildCollectionCostReport(collection: (typeof collections)[0]) {
+  const totalSizeGb = Math.max(0.25, Number((collection.entityCount / 50_000).toFixed(2)));
+  const totalCostDccPerDay = Number((totalSizeGb * 1.75).toFixed(2));
+  return {
+    collectionId: collection.id,
+    tenantId: 'default',
+    totalSizeGb,
+    totalCostDccPerDay,
+    currency: 'DCC',
+    tiers: [
+      {
+        tier: 'HOT' as const,
+        sizeGb: totalSizeGb,
+        costDccPerDay: totalCostDccPerDay,
+        backend: 'rocksdb',
+      },
+    ],
+    note: 'Mock cost report derived from collection volume for UI tests.',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -283,6 +322,16 @@ const collectionHandlers = [
       return HttpResponse.json({ code: 'NOT_FOUND', message: 'Collection not found' }, { status: 404 });
     }
     return HttpResponse.json(collectionToEntity(col));
+  }),
+
+  // GET /api/v1/collections/:id/cost-report
+  http.get(`${BASE}/collections/:id/cost-report`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const col = collections.find((c) => c.id === params.id);
+    if (!col) {
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Collection not found' }, { status: 404 });
+    }
+    return HttpResponse.json(buildCollectionCostReport(col));
   }),
 
   // DELETE /api/v1/entities/dc_collections/:id
@@ -414,6 +463,46 @@ const workflowHandlers = [
       nodeExecutions: wf.nodes.map((n) => ({ nodeId: n.id, status: 'pending' })),
       triggeredBy: 'manual',
     }, { status: 202 });
+  }),
+];
+
+const pluginHandlers = [
+  http.get(`${BASE}/plugins`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({ plugins, total: plugins.length });
+  }),
+
+  http.get(`${BASE}/plugins/:id`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const plugin = plugins.find((entry) => entry.id === params.id);
+    if (!plugin) {
+      return HttpResponse.json({ code: 'NOT_FOUND', message: 'Plugin not found' }, { status: 404 });
+    }
+    return HttpResponse.json(plugin);
+  }),
+
+  http.post(`${BASE}/plugins/:id/enable`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    plugins = plugins.map((plugin) =>
+      plugin.id === params.id ? { ...plugin, status: 'enabled' as const } : plugin,
+    );
+    return HttpResponse.json({ success: true });
+  }),
+
+  http.post(`${BASE}/plugins/:id/disable`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    plugins = plugins.map((plugin) =>
+      plugin.id === params.id ? { ...plugin, status: 'disabled' as const } : plugin,
+    );
+    return HttpResponse.json({ success: true });
+  }),
+
+  http.post(`${BASE}/plugins/:id/upgrade`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json(
+      { code: 'NOT_IMPLEMENTED', message: 'Bundled plugin upgrades require a new launcher build' },
+      { status: 501 },
+    );
   }),
 ];
 
@@ -590,6 +679,196 @@ const connectorHandlers = [
 ];
 
 // ---------------------------------------------------------------------------
+// Brain, learning, user activity, and lightweight observability handlers
+// ---------------------------------------------------------------------------
+
+const supportHandlers = [
+  http.post(`${BASE}/analytics/suggest`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      data: {
+        suggestions: [
+          {
+            type: 'optimization',
+            title: 'Cache repeated revenue queries',
+            description: 'Frequent revenue lookups can be served faster from a cached aggregate.',
+            reasons: ['high-frequency-query', 'cost-optimization'],
+          },
+        ],
+      },
+      ai: {
+        confidence: 0.88,
+        fallback: false,
+      },
+    });
+  }),
+
+  http.get(`${BASE}/brain/workspace`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json([
+      {
+        id: 'spotlight-1',
+        tenantId: 'default',
+        summary: 'Quality regression detected in customer_events.',
+        salienceScore: {
+          score: 0.91,
+          breakdown: {
+            recency: 0.95,
+            novelty: 0.8,
+            impact: 0.9,
+            urgency: 0.92,
+          },
+        },
+        emergency: false,
+        priority: 1,
+        category: 'quality',
+        spotlightedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        accessCount: 3,
+        tags: ['quality', 'customer_events'],
+        metadata: { source: 'msw' },
+      },
+    ]);
+  }),
+
+  http.get(`${BASE}/brain/stats`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      spotlightItemsCount: 1,
+      autonomyActionsToday: 4,
+      averageConfidence: 0.87,
+      activeSubsystems: 5,
+    });
+  }),
+
+  http.get(`${BASE}/brain/autonomy/timeline`, async ({ request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const url = new URL(request.url);
+    const limit = Number(url.searchParams.get('limit') ?? 10);
+    return HttpResponse.json(
+      Array.from({ length: Math.min(limit, 2) }, (_, index) => ({
+        id: `autonomy-${index + 1}`,
+        timestamp: new Date(Date.now() - index * 15 * 60 * 1000).toISOString(),
+        domain: 'data-quality',
+        action: index === 0 ? 'raise-alert' : 'refresh-profile',
+        status: index === 0 ? 'ADVISORY' : 'SUCCESS',
+        confidence: 0.84,
+        outcome: index === 0 ? 'Suggested operator review' : 'Profile refreshed',
+        metadata: { source: 'msw' },
+      })),
+    );
+  }),
+
+  http.get(`${BASE}/learning/status`, async ({ request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const url = new URL(request.url);
+    const tenantId = url.searchParams.get('tenantId');
+    const hasLimit = url.searchParams.has('limit');
+
+    if (hasLimit) {
+      const limit = Number(url.searchParams.get('limit') ?? 10);
+      return HttpResponse.json(
+        Array.from({ length: Math.min(limit, 3) }, (_, index) => ({
+          id: `signal-${index + 1}`,
+          timestamp: new Date(Date.now() - index * 10 * 60 * 1000).toISOString(),
+          signalType: index === 0 ? 'feedback' : 'pattern-match',
+          impact: 0.5 + index * 0.1,
+          status: index === 0 ? 'PENDING' : 'PROCESSED',
+          affectedComponents: ['brain', 'ambient-intelligence'],
+        })),
+      );
+    }
+
+    return HttpResponse.json({
+      lastRun: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      episodesProcessed: 24,
+      policiesExtracted: 3,
+      nextScheduled: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      tenantId: tenantId ?? 'default',
+    });
+  }),
+
+  http.get(`${BASE}/user-activity/recent`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      activities: [
+        {
+          id: 'activity-1',
+          action: 'navigate',
+          target: 'Data Quality',
+          timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+          type: 'query',
+          resourceType: 'navigation',
+          resourceId: '/data?view=quality',
+        },
+      ],
+      continueWorking: [
+        {
+          id: 'continue-1',
+          name: 'Customer Events',
+          type: 'collection',
+          lastAccessed: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          path: '/collections/col-001',
+        },
+      ],
+    });
+  }),
+
+  http.post(`${BASE}/user-activity/log`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get('/api/executions/summary', async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({ running: 1, failed: 0 });
+  }),
+
+  http.get('/api/metrics/system', async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({ cpu: 32, memory: 58, latency: 14, throughput: 1200, activeConnections: 18, queueDepth: 2 });
+  }),
+
+  http.get(`${BASE}/metrics/system`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({ cpu: 32, memory: 58, throughput: 1200, latency: 14, activeConnections: 18, queueDepth: 2 });
+  }),
+
+  http.get(`${BASE}/executions`, async ({ request }) => {
+    await delay(SIMULATED_DELAY_MS);
+    const url = new URL(request.url);
+    const statuses = (url.searchParams.get('status') ?? '').split(',').filter(Boolean);
+    const executions = [
+      {
+        id: 'exec-1',
+        pipelineId: 'wf-001',
+        pipelineName: 'Nightly Customer Sync',
+        status: 'running',
+        startTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        progress: 62,
+        nodesCurrent: 5,
+        nodesTotal: 8,
+      },
+      {
+        id: 'exec-2',
+        pipelineId: 'wf-002',
+        pipelineName: 'Governance Backfill',
+        status: 'completed',
+        startTime: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        duration: 1800,
+      },
+    ];
+
+    return HttpResponse.json(
+      statuses.length > 0
+        ? executions.filter((execution) => statuses.includes(execution.status))
+        : executions,
+    );
+  }),
+];
+
+// ---------------------------------------------------------------------------
 // AI handlers
 // ---------------------------------------------------------------------------
 
@@ -641,8 +920,10 @@ const aiHandlers = [
 export const handlers = [
   ...collectionHandlers,
   ...workflowHandlers,
+  ...pluginHandlers,
   ...storageFabricHandlers,
   ...connectorHandlers,
+  ...supportHandlers,
   ...aiHandlers,
 ];
 
@@ -652,6 +933,7 @@ export const handlers = [
 export function resetMockData() {
   collections = [...mockCollections];
   workflows = [...mockWorkflows];
+  plugins = [...mockPlugins];
   storageProfiles = [...mockStorageProfiles];
   connectors = [...mockConnectors];
 }

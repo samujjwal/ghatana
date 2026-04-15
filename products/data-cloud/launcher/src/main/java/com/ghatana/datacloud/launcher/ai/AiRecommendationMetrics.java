@@ -127,8 +127,9 @@ public final class AiRecommendationMetrics {
                 metrics.getMeterRegistry()
                     .summary(METRIC_CONFIDENCE, "type", type, "tenant", safeTenant)
                     .record(confidence);
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
                 // Micrometer registry may not be fully configured in all deployment modes
+                log.debug("[DC-E3] Micrometer summary registration skipped: {}", ex.getMessage());
             }
 
         } catch (Exception e) {

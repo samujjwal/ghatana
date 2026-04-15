@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -33,7 +33,16 @@ import { collectionsApi, type Collection } from '../lib/api/collections';
 /**
  * View modes for the explorer
  */
-type ViewMode = 'table' | 'lineage' | 'quality' | 'schema';
+const DATA_EXPLORER_VIEW_MODES = ['table', 'lineage', 'quality', 'schema'] as const;
+
+type ViewMode = (typeof DATA_EXPLORER_VIEW_MODES)[number];
+
+function normalizeViewMode(view: string | null): ViewMode {
+    if (view && DATA_EXPLORER_VIEW_MODES.includes(view as ViewMode)) {
+        return view as ViewMode;
+    }
+    return 'table';
+}
 
 /**
  * Schema type badge
@@ -186,9 +195,18 @@ function LazyLoading({ message = 'Loading...' }: { message?: string }) {
 export function DataExplorer() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const viewMode = (searchParams.get('view') as ViewMode) || 'table';
+    const rawViewMode = searchParams.get('view');
+    const viewMode = normalizeViewMode(rawViewMode);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+
+    useEffect(() => {
+        if (rawViewMode && rawViewMode !== viewMode) {
+            const normalizedParams = new URLSearchParams(searchParams);
+            normalizedParams.set('view', viewMode);
+            setSearchParams(normalizedParams, { replace: true });
+        }
+    }, [rawViewMode, searchParams, setSearchParams, viewMode]);
 
     // Fetch real collections from API
     const { data: collectionsPage, isLoading, refetch } = useQuery({
@@ -223,7 +241,7 @@ export function DataExplorer() {
                     Data Explorer
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                    Explore and manage your data collections with full visibility into quality and lineage
+                    Explore and manage your data collections with quality insights and a preview of lineage context
                 </p>
             </div>
 
@@ -339,9 +357,13 @@ export function DataExplorer() {
                         {viewMode === 'lineage' && (
                             <div className="text-center py-8 text-gray-500">
                                 <GitBranch className="h-12 w-12 mx-auto mb-4" />
-                                <p>Lineage visualization would be loaded here</p>
-                                <p className="text-sm">Upstream: raw_events, user_profiles</p>
-                                <p className="text-sm">Downstream: analytics_dashboard</p>
+                                <p className="font-medium text-gray-700 dark:text-gray-300">Lineage preview</p>
+                                <p className="text-sm mt-2">
+                                    The standalone launcher does not currently expose live lineage APIs.
+                                </p>
+                                <p className="text-sm">
+                                    Use this view as a navigation placeholder until backend lineage support is implemented.
+                                </p>
                             </div>
                         )}
                     </Suspense>

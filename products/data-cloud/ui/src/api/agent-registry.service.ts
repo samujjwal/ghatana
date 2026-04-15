@@ -12,6 +12,9 @@
 
 import { apiClient } from '../lib/api/client';
 
+export const AGENT_REGISTRY_BOUNDARY_MESSAGE =
+  'Agent registration, deregistration, execution history, and live registry events are not exposed by the current Data Cloud launcher API.';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -88,6 +91,51 @@ export interface RegistryEvent {
   payload: Record<string, unknown>;
 }
 
+interface AgentCatalogEntry {
+  id?: string;
+  agentId?: string;
+  name?: string;
+  description?: string;
+  version?: string;
+  tenantId?: string;
+  status?: string;
+  capabilities?: AgentCapability[];
+  registeredAt?: string;
+  updatedAt?: string;
+  endpoint?: string;
+  metadata?: Record<string, unknown>;
+}
+
+function normalizeAgentStatus(status?: string): AgentStatus {
+  switch (status) {
+    case 'ACTIVE':
+    case 'INACTIVE':
+    case 'ERROR':
+    case 'REGISTERING':
+    case 'DEREGISTERING':
+      return status;
+    default:
+      return 'INACTIVE';
+  }
+}
+
+function mapCatalogEntry(entry: AgentCatalogEntry): AgentDefinition {
+  const timestamp = new Date().toISOString();
+  return {
+    agentId: entry.agentId ?? entry.id ?? 'unknown-agent',
+    name: entry.name ?? 'Unnamed Agent',
+    description: entry.description ?? 'No description provided.',
+    version: entry.version ?? 'unknown',
+    tenantId: entry.tenantId ?? 'default',
+    status: normalizeAgentStatus(entry.status),
+    capabilities: entry.capabilities ?? [],
+    registeredAt: entry.registeredAt ?? timestamp,
+    updatedAt: entry.updatedAt ?? entry.registeredAt ?? timestamp,
+    endpoint: entry.endpoint,
+    metadata: entry.metadata ?? {},
+  };
+}
+
 // =============================================================================
 // Client
 // =============================================================================
@@ -105,22 +153,26 @@ export class AgentRegistryService {
 
   /** List all registered agents for a tenant */
   async listAgents(params: AgentListParams = {}): Promise<AgentDefinition[]> {
-    return apiClient.get<AgentDefinition[]>('/agents', { params });
+    const entries = await apiClient.get<AgentCatalogEntry[]>('/agents/catalog', { params });
+    return entries.map(mapCatalogEntry);
   }
 
   /** Get a specific agent by ID */
   async getAgent(agentId: string): Promise<AgentDefinition> {
-    return apiClient.get<AgentDefinition>(`/agents/${agentId}`);
+    const entry = await apiClient.get<AgentCatalogEntry>(`/agents/catalog/${agentId}`);
+    return mapCatalogEntry(entry);
   }
 
   /** Register a new agent */
   async registerAgent(request: AgentRegistrationRequest): Promise<AgentDefinition> {
-    return apiClient.post<AgentDefinition>('/agents/register', request);
+    void request;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 
   /** Deregister an agent by ID */
   async deregisterAgent(agentId: string): Promise<void> {
-    await apiClient.delete<void>(`/agents/${agentId}`);
+    void agentId;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 
   /** Update an agent's capabilities */
@@ -128,10 +180,9 @@ export class AgentRegistryService {
     agentId: string,
     capabilities: Omit<AgentCapability, 'id'>[]
   ): Promise<AgentDefinition> {
-    return apiClient.put<AgentDefinition>(
-      `/agents/${agentId}/capabilities`,
-      { capabilities }
-    );
+    void agentId;
+    void capabilities;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 
   // ==================== Executions ====================
@@ -141,7 +192,9 @@ export class AgentRegistryService {
     agentId: string,
     params: ExecutionListParams = {}
   ): Promise<AgentExecution[]> {
-    return apiClient.get<AgentExecution[]>(`/agents/${agentId}/executions`, { params });
+    void agentId;
+    void params;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 
   /** Record a new execution event for an agent */
@@ -149,7 +202,9 @@ export class AgentRegistryService {
     agentId: string,
     execution: Partial<AgentExecution>
   ): Promise<AgentExecution> {
-    return apiClient.post<AgentExecution>(`/agents/${agentId}/executions`, execution);
+    void agentId;
+    void execution;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 
   // ==================== SSE Stream ====================
@@ -168,22 +223,10 @@ export class AgentRegistryService {
     onEvent: (event: RegistryEvent) => void,
     onError?: (error: Event) => void
   ): EventSource {
-    const url = new URL(
-      `${import.meta.env.VITE_API_URL ?? '/api/v1'}/agents/events/stream`,
-      window.location.origin
-    );
-    if (tenantId) url.searchParams.set('tenantId', tenantId);
-
-    const source = new EventSource(url.toString());
-    source.onmessage = (e) => {
-      try {
-        onEvent(JSON.parse(e.data) as RegistryEvent);
-      } catch {
-        // Ignore malformed events
-      }
-    };
-    if (onError) source.onerror = onError;
-    return source;
+    void tenantId;
+    void onEvent;
+    void onError;
+    throw new Error(AGENT_REGISTRY_BOUNDARY_MESSAGE);
   }
 }
 

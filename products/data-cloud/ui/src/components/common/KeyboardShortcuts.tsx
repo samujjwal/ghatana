@@ -53,7 +53,7 @@ const shortcutCategories: ShortcutCategory[] = [
             { keys: ['G', 'C'], description: 'Go to Collections' },
             { keys: ['G', 'W'], description: 'Go to Workflows' },
             { keys: ['G', 'S'], description: 'Go to SQL Workspace' },
-            { keys: ['G', 'L'], description: 'Go to Lineage Explorer' },
+            { keys: ['G', 'L'], description: 'Go to Lineage preview' },
         ],
     },
     {

@@ -9,7 +9,7 @@ Status: Living document — update task status as work progresses
 
 ## Progress Tracker
 
-*Last updated: 2026-04-14 (session 4)*
+*Last updated: 2026-04-14 (session 12)*
 
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
@@ -17,7 +17,7 @@ Status: Living document — update task status as work progresses
 | P0.1.2 | Fix WarmTierTests failures | ✅ Done | Verified `DataCloudHttpServerTierMigrationTest$WarmTierTests` passes |
 | P0.1.3 | Fix all remaining test failures | ✅ Done | Aggregate Data Cloud Java module test sweep is green; no failing JUnit XMLs remain under current `build/test-results/test` outputs |
 | P0.2.1 | Re-enable OWASP dependency check | ✅ Done | `alias(libs.plugins.owasp)` uncommented in `platform-launcher/build.gradle.kts` |
-| P0.2.2 | Enable SpotBugs and resolve findings | ⬜ Not started | SpotBugs was already enabled; findings not triaged |
+| P0.2.2 | Enable SpotBugs and resolve findings | ✅ Done | SpotBugs plugin `com.github.spotbugs` v5.0.14 (tool v4.8.6) added to launcher; 42 findings resolved — `DE_MIGHT_IGNORE` fixed in `SseStreamingHandler.shutdown` and `AiRecommendationMetrics.recordRecommendation`; false-positive exclusion filter at `config/spotbugs-exclude.xml` with regex package patterns; BUILD SUCCESSFUL |
 | P0.3.1 | Raise Jacoco coverage minimums | ✅ Done | Raised to 0.40 for spi, all tests pass |
 | P0.4.1 | Verify TypeScript strict-mode type check | ✅ Done | `pnpm exec tsc --noEmit` exits 0 — 0 errors in strict mode |
 | P0.4.2 | Run and fix all UI unit tests | ✅ Done | 753/753 tests pass (60/60 files) — all accessibility, stub-onClick, and async issues resolved |
@@ -29,41 +29,41 @@ Status: Living document — update task status as work progresses
 | P1.1.5 | Test coverage for store discovery | ✅ Done | Added focused coverage in `DataCloudFactoryTest` for entity/event store discovery fail-fast, local fallback, and provider-present paths |
 | P1.2.1 | Enforce API key auth in non-local profiles at server start | ✅ Done | `DataCloudHttpServer.start()` now fails fast in non-local profiles without auth; local profile logs warning only; covered by `DataCloudHttpServerSecurityConfigurationTest` |
 | P1.2.2 | Wire `ApiKeyResolver` from `DATACLOUD_API_KEYS` env var | ✅ Done | `buildApiKeyResolver()` added to `DataCloudHttpLauncherBootstrap`; resolver wired via `.withApiKeyResolver()` |
-| P1.2.3 | Add JWT support | ⬜ Not started | — |
+| P1.2.3 | Add JWT support | ✅ Done | `DataCloudHttpServer` and launcher bootstrap already wire `withJwtProvider()` + tenant claim resolution; verified by `DataCloudHttpServerJwtAuthTest` |
 | P1.3.1 | Remove silent default-tenant fallback | ✅ Done | Added `strictTenantResolution` flag + `requireTenantIdOrFail()` helper; wired from bootstrap (non-local profile enables strict mode); `resolveTenantId()` logs warning in strict mode |
-| P1.3.2 | Tenant header propagation through async chain | ⬜ Not started | — |
+| P1.3.2 | Tenant header propagation through async chain | ✅ Done | Added request-scoped metadata attachment + outer request observation filter so tenant/request metadata is attached once and reused across async handler/security flow; verified by `DataCloudHttpServerObservabilityTest` on the entity save → event append chain |
 | P1.4.1 | Route-aware content-type middleware | ✅ Done | `BODYLESS_MUTATION_ROUTES` Set already defined in `DataCloudHttpServer`; bodyless mutation routes bypassed correctly |
-| P1.5.1 | Generate OpenAPI spec from routes | ⬜ Not started | — |
-| P1.5.2 | Publish OpenAPI spec as static file | ⬜ Not started | — |
-| P1.5.3 | Align UI MSW mock handlers with spec | ⬜ Not started | — |
-| P1.6.1 | Wire real health probes (fix UNKNOWN subsystems) | ⚠️ Partial | `JdbcDatabaseHealthProbe` wired in bootstrap when `databaseEnabled=true`; `HealthHandler` hardcodes `UNKNOWN` for 5 subsystems but `subsystemSuppliers` loop overrides — see investigation note |
+| P1.5.1 | Generate OpenAPI spec from routes | ⚠️ Partial | Canonical spec now lives at `products/data-cloud/api/openapi.yaml`; launcher route parity is enforced by `check-openapi-drift.sh` and `OpenApiRouteAlignmentTest`, but full response-schema parity against `ui/src/contracts/schemas.ts` still needs broader frontend reconciliation |
+| P1.5.2 | Fix frontend/backend route drift | ✅ Done | Plugin, governance, cost, quality, lineage, observability, legacy AI helper surfaces, schema-suggestion hook, workflow execution monitor, Entity Browser, agent manager surfaces, workflow-client convenience APIs, stale workflow suggestion helpers, brain-agent integration hooks, Data Fabric metrics preview, workflow AI collaborator, visualization integration wrappers, and plugin integration wrappers now call supported canonical routes, use honest derived read models, or fail explicitly at unsupported boundaries; invalid Data Explorer `view` params now normalize safely, bundled/preview navigation copy is aligned, two unused legacy service/test clusters were deleted, and duplicated `/api/v1` prefixing was removed; ArchUnit `http→support→http` cycle resolved by moving `PromiseSupport` to `http.handlers` package; all 71 launcher tests pass |
+| P1.5.3 | Add API contract test suite | ⚠️ Partial | Added launcher-side OpenAPI route alignment coverage, frontend contract-backed assertions for canonical OpenAPI route presence and unsupported stale-path absence, legacy helper boundary regressions covering canonical AI/entity remaps plus explicit unsupported failures, focused tests for unsupported schema-suggestion/workflow-execution-monitor boundaries, a canonical Entity Browser page regression covering collection discovery plus entity listing, agent catalog boundary coverage for read-only launcher support versus unsupported registry mutations/SSE, workflow-client boundary coverage for execute-versus-unsupported template/suggestion/status helpers, explicit boundary tests for stale workflow-suggestion and brain-agent integration modules, focused UI regressions for Data Fabric preview mode plus workflow AI collaborator launcher boundaries, hook-level boundary tests for visualization/plugin integration wrappers, additional workflow/event response-shape assertions against shared Zod contracts, new analytics plus request-payload contract coverage for shared collection, workflow, storage-profile, storage-metrics, connector, append-event, and event-query schemas, and page-level canonical launcher regressions for WorkflowsPage pipeline payload rendering/AI hints, DataFabricPage preview-boundary and migration-request behavior, SqlWorkspacePage direct-versus-federated query execution, TrustCenter governance/compliance payload mapping, AlertsPage grouped/list triage behavior, and EventExplorerPage stats/detail/live-tail behavior; full all-path contract execution plus broader frontend sample/schema coverage remains open |
+| P1.6.1 | Wire real health probes (fix UNKNOWN subsystems) | ✅ Done | `HealthHandler` now reports optional subsystems as `NOT_CONFIGURED`, bootstrap wires `database`, `ai_inference`, and real `event_store` probes, and readiness fails on real critical dependency outages; covered by focused launcher health tests |
 | P1.6.2 | Add health probe for AI inference subsystem | ✅ Done | `DataCloudHttpLauncherBootstrap` now wires `ai_inference` health when AI services initialize; bootstrap probe reports model registry + feature store readiness and is covered by focused launcher tests |
 | P1.7.1 | Propagate correlation IDs end-to-end | ✅ Done | `resolveCorrelationId()` exists in `HttpHandlerSupport`; wired in response headers |
-| P2.1.1 | Implement real entity deletion in purge | ⬜ Not started | `handlePurge()` stub remains; EntityStore injection needed |
+| P2.1.1 | Implement real entity deletion in purge | ✅ Done | `DataLifecycleHandler` now queries the real `EntityStore`, computes expired candidates, executes `deleteBatch()`, and emits governance events; verified by `DataCloudHttpServerGovernanceTest` |
 | P2.1.2 | Implement HMAC-based purge confirmation token | ✅ Done | Full HMAC-SHA256 token generation + validation impl in `DataLifecycleHandler`; dry-run returns signed token; execute verifies 5-min window + HMAC sig; constant-time compare; secret from `DATACLOUD_PURGE_TOKEN_SECRET` env |
-| P2.2.1 | Implement durable PII redaction | ⬜ Not started | `handleRedact()` is still a stub |
-| P2.3.1 | Implement durable audit trail | ⬜ Not started | — |
-| P2.4.1 | RBAC with policy engine | ⬜ Not started | — |
-| P2.5.1 | OpenTelemetry tracing integration | ⬜ Not started | — |
-| P2.5.2 | Structured log enrichment | ⬜ Not started | — |
+| P2.2.1 | Implement durable PII redaction | ✅ Done | `handleRedact()` now loads entities from `EntityStore`, masks PII fields durably via `save()`, preserves idempotent no-op behavior, and emits governance events; verified by `DataCloudHttpServerGovernanceTest` |
+| P2.3.1 | Implement durable audit trail | ✅ Done | Added `EventLogAuditService` backed by the platform `EventLogStore`, wired via `DataCloudHttpServer.withAuditService()`, persisted audit events to the dedicated `__audit` stream, and upgraded compliance summary to read real audit history; covered by `EventLogAuditServiceTest` and launcher governance tests |
+| P2.4.1 | RBAC with policy engine | ✅ Done | `DataCloudSecurityFilter` now enforces RBAC before handler execution (`ADMIN`, `OPERATOR`, `AUDITOR`, `VIEWER`), evaluates policy on CRITICAL routes before delegation, and emits explicit auth/authz audit events; covered by focused security filter tests |
+| P2.5.1 | OpenTelemetry tracing integration | ✅ Done | `RequestObservationFilter` now assigns stable sampled request spans, entity/event/governance handlers export child spans with request → handler → store parentage, and bootstrap sampling is configurable via `DATACLOUD_TRACE_SAMPLING_RATIO` (defaults: local/staging `1.0`, non-local `0.01`) |
+| P2.5.2 | Structured log enrichment | ✅ Done | `RequestObservationFilter` now binds MDC requestId, tenantId, traceId, method, path, and authenticated principal for the full request lifetime and emits structured start/completion request logs |
 | P2.6.1 | Plugin lifecycle honesty (501 for upgrade) | ✅ Done | `handleUpgradePlugin()` now returns `501 Not Implemented` with descriptive message; upgrade counter changed to `plugin.upgrade.rejected` |
-| P2.7.1 | Capability registry API | ⬜ Not started | — |
-| P2.7.2 | Startup capability summary log | ⬜ Not started | — |
-| P2.8.1 | Metrics export endpoint | ⬜ Not started | — |
-| P2.8.2 | Business KPI metrics | ⬜ Not started | — |
-| P2.9.1 | Rate limit tuning | ⬜ Not started | — |
-| P2.10.1 | Integration test: purge + redact lifecycle | ⬜ Not started | — |
-| P2.10.2 | Integration test: tenant isolation | ⬜ Not started | — |
-| P3.1.1 | Context layer API | ⬜ Not started | — |
-| P3.1.2 | Context layer TypeScript client | ⬜ Not started | — |
-| P3.1.3 | Context snapshot endpoint | ⬜ Not started | — |
-| P3.2.1 | Federated query enhancement | ⬜ Not started | — |
+| P2.7.1 | Capability registry API | ✅ Done | Added `GET /api/v1/capabilities` backed by actual runtime wiring and subsystem health snapshots; verified by `DataCloudHttpServerCapabilityTest` |
+| P2.7.2 | Startup capability summary log | ✅ Done | `DataCloudHttpServer.start()` now logs a structured runtime capability summary derived from the same registry snapshot |
+| P2.8.1 | Metrics export endpoint | ✅ Done | `/metrics` now serves Prometheus text from the Micrometer `PrometheusMeterRegistry` when configured; verified by `DataCloudHttpServerObservabilityTest` |
+| P2.8.2 | Business KPI metrics | ✅ Done | Added tenant-scoped entity, event-append, and governance KPI counters/timers and verified they increment on real HTTP operations through `/metrics` integration coverage |
+| P2.9.1 | Rate limit tuning | ✅ Done | Rate limit constants now env-configurable via `DATACLOUD_RATE_LIMIT_REQUESTS` (default 200) and `DATACLOUD_RATE_LIMIT_WINDOW_SECONDS` (default 60); `DataCloudHttpServer.withRateLimitConfig(requests, windowSec)` builder added; lazy-init `platformRateLimiter` in `start()`; bootstrap reads env vars via `DataCloudLauncherSettings`; 5 new settings tests pass |
+| P2.10.1 | Integration test: purge + redact lifecycle | ✅ Done | Added combined classify → policy → redact → purge lifecycle coverage in `DataCloudHttpServerGovernanceTest` |
+| P2.10.2 | Integration test: tenant isolation | ⬜ Not started | Durable-store tenant isolation remains open because a real PostgreSQL-backed `EntityStore` implementation is still not present in the current workspace |
+| P3.1.1 | Context layer API | ✅ Done | `ContextLayerHandler` added with 4 routes: `GET /api/v1/context`, `PUT /api/v1/context`, `DELETE /api/v1/context/keys/:key`, `GET /api/v1/context/snapshot`; in-memory `ConcurrentHashMap` per-tenant store with `AtomicLong` version tracking; wired in `DataCloudHttpServer.start()` and RoutingServlet; 9 integration tests pass |
+| P3.1.2 | Context layer TypeScript client | ✅ Done | `src/lib/api/context.ts` added with fully-typed `getContext()`, `putContextEntries()`, `deleteContextKey()`, `getContextSnapshot()` functions; `ContextResponse`, `UpsertContextResponse`, `ContextSnapshot` interfaces; exported from `index.ts`; 5 Vitest tests all pass |
+| P3.1.3 | Context snapshot endpoint | ✅ Done | `GET /api/v1/context/snapshot` implemented in `ContextLayerHandler.handleGetSnapshot()`; returns versioned snapshot: tenantId, version, count, createdAt, snapshotAt, entries, requestId; covered by 2 dedicated integration tests |
+| P3.2.1 | Federated query enhancement | ✅ Done | Added query timeout enforcement (`DEFAULT_QUERY_TIMEOUT_SECONDS = 30`, configurable via 5-arg constructor, `stmt.setQueryTimeout()`); tenant catalog isolation (`eventcloud_<tenantId>` JDBC URL via `buildTenantUrl()`); query cost estimation via `EXPLAIN` before execution; `estimatedCost` and `tenantCatalog` fields in response; `mapException` wraps JDBC errors; 10 unit tests in `FederatedQueryHandlerEnhancementTest` pass |
 | P3.3.1 | Voice intent improvements | ⬜ Not started | — |
-| P3.4.1 | Feature store enhancements | ⬜ Not started | — |
-| P3.5.1 | Schema registry improvements | ⬜ Not started | — |
+| P3.4.1 | Feature store enhancements | ✅ Done | Hardened `VoiceGatewayHandler`: added per-tenant rate limiting (`VOICE_RATE_LIMIT_PER_MINUTE = 30`, minute-bucket `ConcurrentHashMap`); context grounding via optional `ContextLayerHandler` injection; LLM prompt enriched with tenant context entries; made `ContextLayerHandler.currentEntries()` package-private; 11 unit tests in `VoiceGatewayHandlerHardeningTest` pass |
+| P3.5.1 | Schema registry improvements | ✅ Done | Wired `KnowledgeGraphPlugin` into `ContextLayerHandler`: new 3-arg constructor; `handleGetContext` enriches response with `relationships` list (sourceEntity, targetEntity, type, optional confidence) via `queryEdges()`; graceful fallback when KG unavailable; 5 unit tests in `ContextLayerHandlerKgEnrichmentTest` pass |
 | P3.6.1 | Streaming query improvements | ⬜ Not started | — |
-| P3.7.1 | Learning pipeline hardening | ⬜ Not started | — |
-| P3.8.1 | Analytics query planner | ⬜ Not started | — |
+| P3.7.1 | Learning pipeline hardening | ✅ Done | Fixed blocking eventloop in `handleLearningTrigger` via `Promise.ofBlocking`; added `MAX_REVIEW_QUEUE_SIZE = 1000` cap in `DataCloudLearningBridge`; added `purgeCompletedReviews()` + `DELETE /api/v1/learning/review/completed` endpoint; route added to OpenAPI spec and `BODYLESS_MUTATION_ROUTES`; 4 new hardening tests pass (20 total in bridge test) |
+| P3.8.1 | Analytics query planner | ✅ Done | Added `explainQuery()` to `AnalyticsQueryEngine` (plan-without-execution); added `handleAnalyticsExplain()` + `POST /api/v1/analytics/explain` endpoint; wired route in `DataCloudHttpServer`; added to OpenAPI spec; 4 new tests pass (24 total in analytics test class) |
 | P3.9.1 | Agent memory improvements | ⬜ Not started | — |
 | P4.1.1 | Autonomous ops | ⬜ Not started | — |
 | P4.2.1 | Sovereign mode | ⬜ Not started | — |

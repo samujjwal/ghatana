@@ -11,6 +11,7 @@
 export * from './client';
 export * from './collections';
 export * from './workflows';
+export * from './context';
 export type {
     CollectionRecord,
     CreateRecordRequest,

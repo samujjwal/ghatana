@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -28,10 +29,16 @@ public class EventHandler {
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
+    private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
 
     public EventHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
         this.http = http;
+    }
+
+    public EventHandler withTraceSupport(TraceSpanSupport traceSupport) {
+        this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -40,6 +47,13 @@ public class EventHandler {
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+            request,
+            tenantId,
+            "datacloud.http.event.append",
+            traceSupport.requestSpanId(request),
+            Map.of());
 
         return request.loadBody().then(buf -> {
             try {
@@ -55,7 +69,13 @@ public class EventHandler {
 
                 DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
 
-                return client.appendEvent(tenantId, event)
+                return traceSupport.trace(
+                    request,
+                    tenantId,
+                    "datacloud.event.store.append",
+                    handlerSpan.spanId(),
+                    Map.of("event.type", eventType),
+                    () -> client.appendEvent(tenantId, event))
                     .map(offset -> http.jsonResponse(Map.of(
                         "offset", offset.value(),
                         "eventType", eventType,
@@ -65,7 +85,7 @@ public class EventHandler {
                 log.error("Error appending event", e);
                 return Promise.of(http.errorResponse(400, "Invalid event data: " + e.getMessage()));
             }
-        });
+        }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     public Promise<HttpResponse> handleQueryEvents(HttpRequest request) {
@@ -88,13 +108,26 @@ public class EventHandler {
         ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);
         if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
 
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.event.query",
+                traceSupport.requestSpanId(request),
+                Map.of());
+
         String eventType = request.getQueryParameter("type");
         final int finalFromOffset = fromOffset;
         DataCloudClient.EventQuery query = eventType != null
             ? DataCloudClient.EventQuery.byType(eventType)
             : DataCloudClient.EventQuery.all();
 
-        return client.queryEvents(tenantId, query)
+        return traceSupport.trace(
+            request,
+            tenantId,
+            "datacloud.event.store.query",
+            handlerSpan.spanId(),
+            eventType == null ? Map.of("fromOffset", finalFromOffset) : Map.of("fromOffset", finalFromOffset, "event.type", eventType),
+            () -> client.queryEvents(tenantId, query))
             .map(events -> {
                 var filtered = events.stream()
                     .skip(finalFromOffset)
@@ -119,7 +152,7 @@ public class EventHandler {
                     "tenantId", tenantId,
                     "timestamp", Instant.now().toString()
                 ));
-            });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     public Promise<HttpResponse> handleGetEventByOffset(HttpRequest request) {
@@ -140,7 +173,20 @@ public class EventHandler {
             return Promise.of(http.errorResponse(400, "Invalid offset parameter: must be an integer"));
         }
 
-        return client.queryEvents(tenantId, DataCloudClient.EventQuery.all())
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.event.get_by_offset",
+                traceSupport.requestSpanId(request),
+                Map.of("offset", offset));
+
+        return traceSupport.trace(
+            request,
+            tenantId,
+            "datacloud.event.store.query",
+            handlerSpan.spanId(),
+            Map.of("offset", offset),
+            () -> client.queryEvents(tenantId, DataCloudClient.EventQuery.all()))
             .map(events -> {
                 if (offset < 0 || offset >= events.size()) {
                     return http.errorResponse(404, "Event not found at offset: " + offset);
@@ -152,6 +198,6 @@ public class EventHandler {
                     "payload", e.payload(),
                     "timestamp", e.timestamp().toString()
                 ));
-            });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 }

@@ -4,7 +4,7 @@
  * DataExplorer, CreateCollectionPage
  */
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 import { PluginDetailsPage } from '../../pages/PluginDetailsPage';
 import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
@@ -70,6 +70,16 @@ describe('DataExplorer', () => {
     render(<DataExplorer />, { wrapper: TestWrapper });
     const body = document.body.textContent ?? '';
     expect(body.toLowerCase()).toMatch(/explor|data|record|collection|query|filter/i);
+  });
+
+  it('normalizes unsupported view params back to a safe default', async () => {
+    window.history.pushState({}, '', '/data?view=cost');
+
+    render(<DataExplorer />, { wrapper: TestWrapper });
+
+    await waitFor(() => {
+      expect(window.location.search).toBe('?view=table');
+    });
   });
 });
 

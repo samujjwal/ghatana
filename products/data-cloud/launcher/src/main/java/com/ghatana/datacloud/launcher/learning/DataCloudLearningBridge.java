@@ -35,6 +35,9 @@ public class DataCloudLearningBridge implements AutoCloseable {
     /** How often the scheduled trigger fires. */
     static final long INTERVAL_MINUTES = 5L;
 
+    /** Maximum number of items retained in the in-memory review queue. */
+    static final int MAX_REVIEW_QUEUE_SIZE = 1_000;
+
     private final DataCloudBrain brain;
     private final ScheduledExecutorService scheduler;
 
@@ -138,9 +141,10 @@ public class DataCloudLearningBridge implements AutoCloseable {
             int discovered = result.getPatternsDiscovered().size();
             int updated    = result.getPatternsUpdated().size();
 
-            // Enqueue low-confidence discovered patterns for human review
+            // Enqueue low-confidence discovered patterns for human review,
+            // but respect the MAX_REVIEW_QUEUE_SIZE cap to bound memory usage
             result.getPatternsDiscovered().forEach(p -> {
-                if (p.getConfidence() < 0.7f) {
+                if (p.getConfidence() < 0.7f && reviewQueue.size() < MAX_REVIEW_QUEUE_SIZE) {
                     String reviewId = "review-" + p.getId();
                     reviewQueue.putIfAbsent(reviewId, Map.of(
                         "reviewId",       reviewId,
@@ -236,6 +240,23 @@ public class DataCloudLearningBridge implements AutoCloseable {
      */
     public boolean rejectReview(String reviewId) {
         return applyDecision(reviewId, "REJECTED");
+    }
+
+    /**
+     * Removes all APPROVED and REJECTED items from the review queue.
+     *
+     * @return number of items removed
+     */
+    public int purgeCompletedReviews() {
+        int[] count = {0};
+        reviewQueue.entrySet().removeIf(entry -> {
+            Object status = entry.getValue().get("status");
+            boolean completed = "APPROVED".equals(status) || "REJECTED".equals(status);
+            if (completed) count[0]++;
+            return completed;
+        });
+        log.info("DataCloudLearningBridge: purged {} completed review(s)", count[0]);
+        return count[0];
     }
 
     private boolean applyDecision(String reviewId, String decision) {

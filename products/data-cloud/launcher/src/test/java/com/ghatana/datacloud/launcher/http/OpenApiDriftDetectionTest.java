@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
  * OpenAPI contract drift detection tests.
  *
  * <p>These tests validate that runtime HTTP responses conform to the structural
- * constraints documented in {@code docs/openapi.yaml}. They catch drift between
+ * constraints documented in {@code api/openapi.yaml}. They catch drift between
  * the specification and the implementation <em>without</em> requiring a full
  * schema-validation library — instead, each test asserts the mandatory response
  * fields and types defined in the spec.

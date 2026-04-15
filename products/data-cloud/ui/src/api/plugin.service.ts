@@ -2,7 +2,7 @@
  * Plugin API Service
  *
  * Provides API client for plugin management operations.
- * Handles plugin discovery, installation, configuration, and lifecycle.
+ * Handles the bundled plugin lifecycle exposed by the Data Cloud launcher.
  *
  * @doc.type service
  * @doc.purpose Plugin management API client
@@ -10,6 +10,8 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import type { LogEntry } from '../components/plugins/PluginLogsViewer';
+import type { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
 
 export type PluginStatus = 'active' | 'inactive' | 'error' | 'installing' | 'uninstalling';
 export type PluginCategory = 'connector' | 'transformer' | 'quality' | 'governance' | 'visualization' | 'integration' | 'ai';
@@ -84,171 +86,269 @@ export interface PluginUpdateRequest {
   configuration?: PluginConfiguration;
 }
 
-/**
- * Plugin API Client
- */
+interface BackendPluginView {
+  id: string;
+  displayName: string;
+  version: string;
+  status: 'enabled' | 'disabled';
+  supportedRecordTypes: string[];
+}
+
+interface BackendPluginListResponse {
+  plugins: BackendPluginView[];
+  total: number;
+}
+
+const DEFAULT_PLUGIN_AUTHOR = 'Ghatana Data Cloud';
+const DEFAULT_PLUGIN_LICENSE = 'Bundled';
+
+function unsupportedOperation<T>(message: string): Promise<T> {
+  return Promise.reject(new Error(message));
+}
+
+function inferCategory(recordTypes: string[]): PluginCategory {
+  const normalizedTypes = recordTypes.map((type) => type.toLowerCase());
+  if (normalizedTypes.some((type) => type.includes('event') || type.includes('entity'))) {
+    return 'connector';
+  }
+  if (normalizedTypes.some((type) => type.includes('audit') || type.includes('pii'))) {
+    return 'governance';
+  }
+  if (normalizedTypes.some((type) => type.includes('metric') || type.includes('quality'))) {
+    return 'quality';
+  }
+  if (normalizedTypes.some((type) => type.includes('vector') || type.includes('feature'))) {
+    return 'ai';
+  }
+  return 'integration';
+}
+
+function createMetadata(plugin: BackendPluginView): PluginMetadata {
+  const category = inferCategory(plugin.supportedRecordTypes);
+  const supportedTypes = plugin.supportedRecordTypes.map((type) => type.toLowerCase());
+  return {
+    id: plugin.id,
+    name: plugin.displayName,
+    version: plugin.version,
+    author: DEFAULT_PLUGIN_AUTHOR,
+    description: `Bundled ${category} plugin with runtime support for ${plugin.supportedRecordTypes.join(', ') || 'core storage'} workloads.`,
+    category,
+    documentation: '/docs/platform-libraries',
+    license: DEFAULT_PLUGIN_LICENSE,
+    tags: supportedTypes.length > 0 ? supportedTypes : ['bundled'],
+  };
+}
+
+function mapPluginView(plugin: BackendPluginView): Plugin {
+  const timestamp = new Date().toISOString();
+  const status: PluginStatus = plugin.status === 'enabled' ? 'active' : 'inactive';
+  return {
+    id: plugin.id,
+    metadata: createMetadata(plugin),
+    status,
+    installedAt: timestamp,
+    updatedAt: timestamp,
+    capabilities: plugin.supportedRecordTypes.map((type) => ({
+      id: `${plugin.id}:${type.toLowerCase()}`,
+      name: type,
+      description: `Handles ${type.toLowerCase()} records within the bundled plugin runtime.`,
+      type: 'processor',
+    })),
+    configuration: {},
+    health: {
+      status: status === 'active' ? 'healthy' : 'degraded',
+      lastCheck: timestamp,
+      message: status === 'active'
+        ? 'Bundled plugin is available to the running launcher.'
+        : 'Bundled plugin has been disabled at runtime.',
+    },
+    stats: {
+      usageCount: 0,
+      errorCount: 0,
+      averageExecutionTime: 0,
+    },
+  };
+}
+
 export class PluginService {
-  // ==================== Installed Plugins ====================
-
-  /**
-   * Get all installed plugins
-   */
   async getInstalledPlugins(): Promise<Plugin[]> {
-    return apiClient.get<Plugin[]>('/plugins');
+    const response = await apiClient.get<BackendPluginListResponse>('/plugins');
+    return response.plugins.map(mapPluginView);
   }
 
-  /**
-   * Get plugin by ID
-   */
   async getPlugin(pluginId: string): Promise<Plugin> {
-    return apiClient.get<Plugin>(`/plugins/${pluginId}`);
+    const response = await apiClient.get<BackendPluginView>(`/plugins/${pluginId}`);
+    return mapPluginView(response);
   }
 
-  /**
-   * Enable a plugin
-   */
   async enablePlugin(pluginId: string): Promise<Plugin> {
-    return apiClient.post<Plugin>(`/plugins/${pluginId}/enable`);
+    await apiClient.post<Record<string, unknown>>(`/plugins/${pluginId}/enable`);
+    return this.getPlugin(pluginId);
   }
 
-  /**
-   * Disable a plugin
-   */
   async disablePlugin(pluginId: string): Promise<Plugin> {
-    return apiClient.post<Plugin>(`/plugins/${pluginId}/disable`);
+    await apiClient.post<Record<string, unknown>>(`/plugins/${pluginId}/disable`);
+    return this.getPlugin(pluginId);
   }
 
-  /**
-   * Update plugin configuration
-   */
   async updatePluginConfiguration(
     pluginId: string,
     configuration: PluginConfiguration
   ): Promise<Plugin> {
-    return apiClient.put<Plugin>(`/plugins/${pluginId}/configuration`, configuration);
+    void pluginId;
+    void configuration;
+    return unsupportedOperation<Plugin>(
+      'Plugin configuration is not exposed by the bundled Data Cloud launcher API.',
+    );
   }
 
-  /**
-   * Uninstall a plugin
-   */
   async uninstallPlugin(pluginId: string): Promise<void> {
-    await apiClient.delete<void>(`/plugins/${pluginId}`);
+    void pluginId;
+    return unsupportedOperation<void>(
+      'Bundled plugins cannot be uninstalled at runtime. Disable the plugin instead.',
+    );
   }
 
-  /**
-   * Get plugin health status
-   */
   async getPluginHealth(pluginId: string): Promise<Plugin['health']> {
-    return apiClient.get<Plugin['health']>(`/plugins/${pluginId}/health`);
+    const plugin = await this.getPlugin(pluginId);
+    return plugin.health;
   }
 
-  // ==================== Marketplace ====================
-
-  /**
-   * Browse marketplace plugins
-   */
   async browseMarketplace(params?: {
     category?: PluginCategory;
     search?: string;
     official?: boolean;
   }): Promise<PluginMarketplaceItem[]> {
-    return apiClient.get<PluginMarketplaceItem[]>('/plugins/marketplace', { params });
+    void params;
+    return [];
   }
 
-  /**
-   * Get marketplace plugin details
-   */
   async getMarketplacePlugin(pluginId: string): Promise<PluginMarketplaceItem> {
-    return apiClient.get<PluginMarketplaceItem>(`/plugins/marketplace/${pluginId}`);
+    void pluginId;
+    return unsupportedOperation<PluginMarketplaceItem>(
+      'Marketplace metadata is not exposed by the bundled Data Cloud launcher API.',
+    );
   }
 
-  /**
-   * Install a plugin from marketplace
-   */
   async installPlugin(request: PluginInstallRequest): Promise<Plugin> {
-    return apiClient.post<Plugin>('/plugins/install', request);
+    void request;
+    return unsupportedOperation<Plugin>(
+      'Runtime plugin installation is not supported. Plugins are bundled at build time.',
+    );
   }
 
-  /**
-   * Update an installed plugin
-   */
   async updatePlugin(
     pluginId: string,
     request: PluginUpdateRequest
   ): Promise<Plugin> {
-    return apiClient.put<Plugin>(`/plugins/${pluginId}/update`, request);
+    await apiClient.post<Record<string, unknown>, PluginUpdateRequest>(`/plugins/${pluginId}/upgrade`, request);
+    return this.getPlugin(pluginId);
   }
 
-  // ==================== Upload Custom Plugin ====================
-
-  /**
-   * Upload a custom plugin
-   */
   async uploadPlugin(file: File, configuration?: PluginConfiguration): Promise<Plugin> {
-    const formData = new FormData();
-    formData.append('plugin', file);
-    if (configuration) {
-      formData.append('configuration', JSON.stringify(configuration));
-    }
-    return apiClient.post<Plugin, FormData>('/plugins/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    void file;
+    void configuration;
+    return unsupportedOperation<Plugin>(
+      'Runtime plugin upload is not supported. Deploy a new launcher build with the bundled plugin.',
+    );
   }
 
-  // ==================== Plugin Registry ====================
-
-  /**
-   * Refresh plugin registry
-   */
   async refreshRegistry(): Promise<void> {
-    await apiClient.post<void>('/plugins/registry/refresh');
+    return;
   }
 
-  /**
-   * Validate plugin compatibility
-   */
   async validatePlugin(pluginId: string, version?: string): Promise<{
     compatible: boolean;
     issues: string[];
     warnings: string[];
   }> {
-    return apiClient.post(`/plugins/${pluginId}/validate`, { version });
+    void pluginId;
+    void version;
+    return {
+      compatible: true,
+      issues: [],
+      warnings: ['Compatibility checks are limited to bundled plugins already present in the launcher build.'],
+    };
   }
 
-  /**
-   * Get plugin execution logs
-   */
   async getPluginLogs(
     pluginId: string,
     params: { level?: string; limit?: number; since?: string } = {}
-  ): Promise<import('../components/plugins/PluginLogsViewer').LogEntry[]> {
-    return apiClient.get(`/plugins/${pluginId}/logs`, { params });
+  ): Promise<LogEntry[]> {
+    const plugin = await this.getPlugin(pluginId);
+    const message = plugin.status === 'active'
+      ? 'Bundled plugin is enabled. Detailed runtime logs are not exposed over HTTP.'
+      : 'Bundled plugin is disabled. Re-enable it to resume traffic.';
+    const entries: LogEntry[] = [
+      {
+        timestamp: new Date().toISOString(),
+        level: plugin.status === 'active' ? 'INFO' : 'WARN',
+        message,
+        source: plugin.id,
+        context: {
+          requestedLevel: params.level ?? 'INFO',
+        },
+      },
+    ];
+    return entries.slice(0, params.limit ?? 1);
   }
 
-  /**
-   * Get plugin performance metrics
-   */
   async getPluginPerformanceMetrics(
     pluginId: string,
     timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
-  ): Promise<import('../components/plugins/PluginPerformanceMetrics').PluginPerformanceMetrics> {
-    return apiClient.get(`/plugins/${pluginId}/performance`, { params: { timeRange } });
+  ): Promise<PluginPerformanceMetrics> {
+    void timeRange;
+    const plugin = await this.getPlugin(pluginId);
+    return {
+      pluginId,
+      timestamp: new Date().toISOString(),
+      executionTime: {
+        avg: plugin.stats?.averageExecutionTime ?? 0,
+        min: 0,
+        max: plugin.stats?.averageExecutionTime ?? 0,
+        p50: plugin.stats?.averageExecutionTime ?? 0,
+        p95: plugin.stats?.averageExecutionTime ?? 0,
+        p99: plugin.stats?.averageExecutionTime ?? 0,
+      },
+      memory: {
+        used: 0,
+        peak: 1,
+        average: 0,
+      },
+      throughput: {
+        requestsPerSecond: 0,
+        recordsProcessed: 0,
+        bytesProcessed: 0,
+      },
+      errors: {
+        count: plugin.stats?.errorCount ?? 0,
+        rate: 0,
+        types: {},
+      },
+      cpu: {
+        usage: 0,
+        cores: 0,
+      },
+    };
   }
 
-  /**
-   * Get plugin performance history
-   */
   async getPluginPerformanceHistory(
     pluginId: string,
     timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
   ): Promise<Array<{ timestamp: string; executionTime: number; memory: number; requests: number; errors: number }>> {
-    return apiClient.get(`/plugins/${pluginId}/performance/history`, { params: { timeRange } });
+    const metrics = await this.getPluginPerformanceMetrics(pluginId, timeRange);
+    return [
+      {
+        timestamp: metrics.timestamp,
+        executionTime: metrics.executionTime.avg,
+        memory: metrics.memory.used,
+        requests: metrics.throughput.requestsPerSecond,
+        errors: metrics.errors.count,
+      },
+    ];
   }
 }
 
-/**
- * Default plugin service instance — always uses the real API.
- */
 export const pluginService = new PluginService();
 
 export default pluginService;

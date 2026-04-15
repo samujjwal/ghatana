@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
 import { qualityService, PIIDetection } from '../../api/quality.service';
@@ -22,20 +22,10 @@ interface PIIDetectionPanelProps {
 
 export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
   const queryClient = useQueryClient();
-  const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
   const { data: detections, isLoading } = useQuery({
     queryKey: ['pii-detections', datasetId],
     queryFn: () => qualityService.getPIIDetections(datasetId),
-  });
-
-  const maskMutation = useMutation({
-    mutationFn: ({ datasetId, fields }: { datasetId: string; fields: string[] }) =>
-      qualityService.maskPII(datasetId, fields),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pii-detections'] });
-      setSelectedFields([]);
-    },
   });
 
   const scanMutation = useMutation({
@@ -44,31 +34,6 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
       queryClient.invalidateQueries({ queryKey: ['pii-detections'] });
     },
   });
-
-  const handleToggleField = (fieldKey: string) => {
-    setSelectedFields((prev) =>
-      prev.includes(fieldKey)
-        ? prev.filter((f) => f !== fieldKey)
-        : [...prev, fieldKey]
-    );
-  };
-
-  const handleMaskSelected = () => {
-    if (selectedFields.length === 0) return;
-
-    const fieldsByDataset = new Map<string, string[]>();
-    selectedFields.forEach((key) => {
-      const [datasetId, fieldName] = key.split(':');
-      if (!fieldsByDataset.has(datasetId)) {
-        fieldsByDataset.set(datasetId, []);
-      }
-      fieldsByDataset.get(datasetId)!.push(fieldName);
-    });
-
-    fieldsByDataset.forEach((fields, datasetId) => {
-      maskMutation.mutate({ datasetId, fields });
-    });
-  };
 
   const getPIITypeColor = (type: string): string => {
     switch (type) {
@@ -121,17 +86,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
               onClick={() => scanMutation.mutate(datasetId)}
               isLoading={scanMutation.isPending}
             >
-              Scan Dataset
-            </Button>
-          )}
-          {selectedFields.length > 0 && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleMaskSelected}
-              isLoading={maskMutation.isPending}
-            >
-              Mask Selected ({selectedFields.length})
+              Refresh Detection
             </Button>
           )}
         </div>
@@ -147,28 +102,12 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
             </h4>
             <div className="space-y-2">
               {unmaskedDetections.map((detection) => {
-                const fieldKey = `${detection.datasetId}:${detection.fieldName}`;
-                const isSelected = selectedFields.includes(fieldKey);
-
                 return (
                   <div
-                    key={fieldKey}
-                    className={`flex items-center justify-between p-3 rounded-lg border-2 transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleToggleField(fieldKey)}
+                    key={`${detection.datasetId}:${detection.fieldName}`}
+                    className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300"
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleToggleField(fieldKey)}
-                        className="h-4 w-4 text-primary-600 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">
@@ -185,7 +124,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           Confidence: {(detection.confidence * 100).toFixed(0)}% •
-                          Samples: {detection.sampleCount}
+                          Samples: {detection.sampleCount} • Registry-derived detection
                         </div>
                       </div>
 
@@ -241,7 +180,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
                 onClick={() => scanMutation.mutate(datasetId)}
                 className="mt-2 text-sm text-primary-600 hover:text-primary-700"
               >
-                Run PII Scan
+                Refresh Detection
               </button>
             )}
           </div>

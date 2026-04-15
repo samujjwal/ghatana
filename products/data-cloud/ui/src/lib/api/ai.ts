@@ -15,6 +15,14 @@
 
 import { apiClient, type ApiResponse } from './client';
 
+function withTenantParams(tenantId: string): { params: { tenantId: string } } {
+    return { params: { tenantId } };
+}
+
+function unsupportedAiOperation<T>(message: string): Promise<ApiResponse<T>> {
+    return Promise.reject(new Error(message));
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -220,8 +228,9 @@ export async function convertNLToSQL(
     request: NLQRequest
 ): Promise<ApiResponse<NLQResponse>> {
     const data = await apiClient.post<NLQResponse>(
-        `/api/${tenantId}/ai/nlq`,
-        request
+        '/analytics/suggest',
+        request,
+        withTenantParams(tenantId),
     );
     return wrapResponse(data);
 }
@@ -234,8 +243,12 @@ export async function getSchemaSuggestions(
     request: SchemaSuggestionRequest
 ): Promise<ApiResponse<SchemaSuggestion[]>> {
     const data = await apiClient.post<SchemaSuggestion[]>(
-        `/api/${tenantId}/ai/schema/suggestions`,
-        request
+        `/entities/${request.collectionName}/suggest`,
+        {
+            currentSchema: request.currentSchema,
+            sampleData: request.sampleData,
+        },
+        withTenantParams(tenantId),
     );
     return wrapResponse(data);
 }
@@ -247,11 +260,11 @@ export async function getEnrichmentSuggestions(
     tenantId: string,
     request: EnrichmentRequest
 ): Promise<ApiResponse<EnrichmentSuggestion[]>> {
-    const data = await apiClient.post<EnrichmentSuggestion[]>(
-        `/api/${tenantId}/entities/${request.collectionName}/${request.entityId}/enrich`,
-        { fields: request.fields }
+    void tenantId;
+    void request;
+    return unsupportedAiOperation<EnrichmentSuggestion[]>(
+        'Entity enrichment suggestions are not exposed by the current Data Cloud launcher API.',
     );
-    return wrapResponse(data);
 }
 
 /**
@@ -261,11 +274,11 @@ export async function semanticSearch(
     tenantId: string,
     request: SemanticSearchRequest
 ): Promise<ApiResponse<SemanticSearchResult[]>> {
-    const data = await apiClient.post<SemanticSearchResult[]>(
-        `/api/${tenantId}/ai/search`,
-        request
+    void tenantId;
+    void request;
+    return unsupportedAiOperation<SemanticSearchResult[]>(
+        'Semantic search is not exposed by the current Data Cloud launcher API through this helper.',
     );
-    return wrapResponse(data);
 }
 
 /**
@@ -276,13 +289,12 @@ export async function getQueryRecommendations(
     collectionName: string,
     partialQuery?: string
 ): Promise<ApiResponse<QueryRecommendation[]>> {
-    const data = await apiClient.get<QueryRecommendation[]>(
-        `/api/${tenantId}/ai/recommendations`,
-        {
-            params: { collectionName, query: partialQuery }
-        }
+    void tenantId;
+    void collectionName;
+    void partialQuery;
+    return unsupportedAiOperation<QueryRecommendation[]>(
+        'Query recommendations are not exposed by the current Data Cloud launcher API through this helper.',
     );
-    return wrapResponse(data);
 }
 
 /**
@@ -292,11 +304,9 @@ export async function explainLineage(
     tenantId: string,
     request: LineageExplanationRequest
 ): Promise<ApiResponse<LineageExplanation>> {
-    const data = await apiClient.post<LineageExplanation>(
-        `/api/${tenantId}/ai/lineage/explain`,
-        request
-    );
-    return wrapResponse(data);
+    void tenantId;
+    void request;
+    throw new Error('Lineage explanation is not exposed by the current Data Cloud launcher API.');
 }
 
 /**
@@ -307,8 +317,9 @@ export async function detectAnomalies(
     request: AnomalyDetectionRequest
 ): Promise<ApiResponse<DetectedAnomaly[]>> {
     const data = await apiClient.post<DetectedAnomaly[]>(
-        `/api/${tenantId}/ai/anomalies/detect`,
-        request
+        `/entities/${request.collectionName}/anomalies`,
+        request,
+        withTenantParams(tenantId),
     );
     return wrapResponse(data);
 }
@@ -320,10 +331,11 @@ export async function assessDataQuality(
     tenantId: string,
     collectionName: string
 ): Promise<ApiResponse<DataQualityAssessment>> {
-    const data = await apiClient.get<DataQualityAssessment>(
-        `/api/${tenantId}/collections/${collectionName}/quality`
+    void tenantId;
+    void collectionName;
+    return unsupportedAiOperation<DataQualityAssessment>(
+        'AI-backed data quality assessment is not exposed by the current Data Cloud launcher API through this helper.',
     );
-    return wrapResponse(data);
 }
 
 /**
@@ -335,8 +347,9 @@ export async function suggestEntity(
     description: string
 ): Promise<ApiResponse<{ suggestion: Record<string, unknown>; confidence: number }>> {
     const data = await apiClient.post<{ suggestion: Record<string, unknown>; confidence: number }>(
-        `/api/${tenantId}/entities/suggest`,
-        { collectionName, description }
+        `/entities/${collectionName}/suggest`,
+        { description },
+        withTenantParams(tenantId),
     );
     return wrapResponse(data);
 }
@@ -350,11 +363,13 @@ export async function findRelatedEntities(
     entityId: string,
     limit = 10
 ): Promise<ApiResponse<SemanticSearchResult[]>> {
-    const data = await apiClient.get<SemanticSearchResult[]>(
-        `/api/${tenantId}/entities/${collectionName}/${entityId}/related`,
-        { params: { limit } }
+    void tenantId;
+    void collectionName;
+    void entityId;
+    void limit;
+    return unsupportedAiOperation<SemanticSearchResult[]>(
+        'Related-entity discovery is not exposed by the current Data Cloud launcher API through this helper.',
     );
-    return wrapResponse(data);
 }
 
 // ============================================================================
@@ -389,7 +404,7 @@ export async function getPipelineOptimisationHints(
     pipelineId: string
 ): Promise<ApiResponse<PipelineOptimisationHintsResponse>> {
     const data = await apiClient.post<PipelineOptimisationHintsResponse>(
-        `/api/v1/pipelines/${pipelineId}/optimise-hint`,
+        `/pipelines/${pipelineId}/optimise-hint`,
         {}
     );
     return wrapResponse(data);

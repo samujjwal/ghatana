@@ -1,0 +1,127 @@
+name: Rust
+versions:
+  - "1.70"
+  - "1.71"
+  - "1.72"
+  - "1.73"
+  - "1.74"
+  - "1.75"
+
+packageManagement:
+  primary: cargo
+  files:
+    - Cargo.toml
+    - Cargo.lock
+  commands:
+    init: "cargo init {{projectName}}"
+    build: "cargo build"
+    test: "cargo test"
+    run: "cargo run"
+    add: "cargo add {{crate}}"
+    update: "cargo update"
+
+buildSystems:
+  cargo:
+    files:
+      - Cargo.toml
+      - Cargo.lock
+    commands:
+      build: "cargo build"
+      release: "cargo build --release"
+      test: "cargo test"
+      run: "cargo run"
+      check: "cargo check"
+      clean: "cargo clean"
+    outputs:
+      - binary
+      - library
+      - cdylib
+      - staticlib
+
+frameworks:
+  actix:
+    templates:
+      - rust-service-actix
+    conventions:
+      - src/
+      - handlers/
+      - models/
+      - routes/
+    testing:
+      - actix-rt
+      - actix-web-test
+    async: true
+
+  axum:
+    templates:
+      - rust-service-axum-cargo
+    conventions:
+      - src/
+      - handlers/
+      - models/
+      - routes/
+    testing:
+      - tokio-test
+      - tower-test
+    async: true
+
+  rocket:
+    templates:
+      - rust-service-rocket
+    conventions:
+      - src/
+      - routes/
+      - models/
+    testing:
+      - rocket-test
+    async: true
+
+  warp:
+    templates:
+      - rust-service-warp
+    conventions:
+      - src/
+      - filters/
+      - handlers/
+    testing:
+      - warp-test
+    async: true
+
+testing:
+  frameworks:
+    - built-in
+    - tokio-test
+    - proptest
+    - quickcheck
+  conventions:
+    - "#[test]"
+    - "#[tokio::test]"
+    - "tests/"
+  coverage:
+    - tarpaulin
+    - cargo-llvm-cov
+
+linting:
+  tools:
+    - clippy
+    - rustfmt
+    - cargo-audit
+    - cargo-deny
+  config:
+    - rustfmt.toml
+    - clippy.toml
+
+conventions:
+  directory:
+    - src
+    - tests
+    - benches
+    - examples
+  naming:
+    - snake_case
+    - PascalCase
+    - SCREAMING_SNAKE_CASE
+  imports:
+    - std-first
+    - external-second
+    - local-last

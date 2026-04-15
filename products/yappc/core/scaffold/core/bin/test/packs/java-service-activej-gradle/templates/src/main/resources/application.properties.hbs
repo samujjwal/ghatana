@@ -1,0 +1,22 @@
+#
+{{serviceName}}
+Configuration service.name={{serviceName}}
+service.version=1.0.0 service.description={{description}}
+
+# HTTP Server Configuration server.port={{port}}
+server.host=0.0.0.0 # Logging Configuration logging.level.root=INFO
+logging.level.{{packageName}}=DEBUG logging.pattern.console=%d{yyyy-MM-dd
+HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} -
+%msg%n
+
+{{#if enableOtel}}
+  # OpenTelemetry Configuration otel.service.name={{serviceName}}
+  otel.resource.attributes=service.name={{serviceName}},service.version=1.0.0
+  otel.exporter.otlp.endpoint=http://localhost:4317
+  otel.exporter.otlp.protocol=grpc otel.traces.exporter=otlp
+  otel.metrics.exporter=otlp otel.logs.exporter=otlp
+{{/if}}
+
+# Application-specific settings app.feature.health-check.enabled=true
+app.feature.metrics.enabled=true app.feature.echo-service.enabled=true

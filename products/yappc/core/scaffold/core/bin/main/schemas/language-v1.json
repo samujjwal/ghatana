@@ -1,0 +1,188 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://yappc.dev/schemas/language/v1.json",
+    "title": "YAPPC Language Definition Schema",
+    "description": "Schema for language definitions",
+    "type": "object",
+    "required": [
+        "name",
+        "versions",
+        "packageManagement"
+    ],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Language name"
+        },
+        "versions": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 1,
+            "description": "Supported versions"
+        },
+        "packageManagement": {
+            "type": "object",
+            "description": "Package management configuration",
+            "oneOf": [
+                {
+                    "required": [
+                        "primary",
+                        "files",
+                        "commands"
+                    ],
+                    "properties": {
+                        "primary": {
+                            "type": "string",
+                            "description": "Primary package manager"
+                        },
+                        "files": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Package manager files"
+                        },
+                        "commands": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "description": "Package manager commands"
+                        }
+                    }
+                },
+                {
+                    "required": [
+                        "options"
+                    ],
+                    "properties": {
+                        "options": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Available package managers"
+                        }
+                    }
+                }
+            ]
+        },
+        "buildSystems": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "commands": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "outputs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "frameworks": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "templates": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "conventions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "testing": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "testing": {
+            "type": "object",
+            "properties": {
+                "frameworks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "conventions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "coverage": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "linting": {
+            "type": "object",
+            "properties": {
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "config": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "conventions": {
+            "type": "object",
+            "properties": {
+                "directory": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "naming": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "imports": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

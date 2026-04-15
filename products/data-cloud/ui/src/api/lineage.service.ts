@@ -8,20 +8,18 @@
  * @doc.layer frontend
  */
 
-import { apiClient } from '../lib/api/client';
-
 export interface LineageNode {
   id: string;
   type: 'DATASET' | 'TRANSFORMATION' | 'QUERY' | 'DASHBOARD' | 'ML_MODEL';
   name: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface LineageEdge {
   source: string;
   target: string;
   type: 'DERIVES_FROM' | 'FEEDS_INTO' | 'TRANSFORMS';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface LineageGraph {
@@ -66,6 +64,10 @@ export interface ExecutionLog {
   error?: string;
 }
 
+function unsupportedOperation<T>(message: string): Promise<T> {
+  return Promise.reject(new Error(message));
+}
+
 /**
  * Lineage Service Client
  */
@@ -78,16 +80,22 @@ export class LineageService {
     direction: 'UPSTREAM' | 'DOWNSTREAM' | 'BOTH' = 'BOTH',
     depth: number = 3
   ): Promise<LineageGraph> {
-    return apiClient.get<LineageGraph>(`/lineage/${datasetId}`, {
-      params: { direction, depth },
-    });
+    void datasetId;
+    void direction;
+    void depth;
+    return unsupportedOperation<LineageGraph>(
+      'Lineage graph APIs are not exposed by the current Data Cloud launcher. Use the Data Explorer lineage preview instead.',
+    );
   }
 
   /**
    * Get impact analysis for a dataset
    */
   async getImpactAnalysis(datasetId: string): Promise<ImpactAnalysis> {
-    return apiClient.get<ImpactAnalysis>(`/lineage/${datasetId}/impact`);
+    void datasetId;
+    return unsupportedOperation<ImpactAnalysis>(
+      'Impact analysis APIs are not exposed by the current Data Cloud launcher.',
+    );
   }
 
   /**
@@ -97,9 +105,11 @@ export class LineageService {
     datasetId: string,
     timestamp: string
   ): Promise<TimeTravelSnapshot> {
-    return apiClient.get<TimeTravelSnapshot>(`/lineage/${datasetId}`, {
-      params: { timestamp },
-    });
+    void datasetId;
+    void timestamp;
+    return unsupportedOperation<TimeTravelSnapshot>(
+      'Time-travel lineage APIs are not exposed by the current Data Cloud launcher.',
+    );
   }
 
   /**
@@ -109,9 +119,11 @@ export class LineageService {
     datasetId: string,
     limit: number = 50
   ): Promise<ExecutionLog[]> {
-    return apiClient.get<ExecutionLog[]>(`/lineage/${datasetId}/executions`, {
-      params: { limit },
-    });
+    void datasetId;
+    void limit;
+    return unsupportedOperation<ExecutionLog[]>(
+      'Lineage execution log APIs are not exposed by the current Data Cloud launcher.',
+    );
   }
 
   /**
@@ -120,7 +132,10 @@ export class LineageService {
   async searchLineage(
     query: string
   ): Promise<{ datasets: LineageNode[]; relationships: LineageEdge[] }> {
-    return apiClient.get('/lineage/search', { params: { q: query } });
+    void query;
+    return unsupportedOperation<{ datasets: LineageNode[]; relationships: LineageEdge[] }>(
+      'Lineage search APIs are not exposed by the current Data Cloud launcher.',
+    );
   }
 
   /**
@@ -130,7 +145,11 @@ export class LineageService {
     datasetId: string,
     columnName: string
   ): Promise<LineageGraph> {
-    return apiClient.get<LineageGraph>(`/lineage/${datasetId}/columns/${columnName}`);
+    void datasetId;
+    void columnName;
+    return unsupportedOperation<LineageGraph>(
+      'Column lineage APIs are not exposed by the current Data Cloud launcher.',
+    );
   }
 }
 

@@ -1,6 +1,7 @@
 plugins {
     id("java-module")
     `maven-publish`
+    alias(libs.plugins.spotbugs)
 }
 
 dependencies {
@@ -66,5 +67,16 @@ tasks.test {
     maxParallelForks = 1
 }
 
-// HTTP endpoint test suites re-enabled as part of DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 3.
-// All handlers have been verified and loadBody().getResult() NPE patterns resolved.
+spotbugs {
+    toolVersion = "4.8.6"
+    ignoreFailures = false
+    effort = com.github.spotbugs.snom.Effort.MAX
+    reportLevel = com.github.spotbugs.snom.Confidence.MEDIUM
+    excludeFilter = file("config/spotbugs-exclude.xml")
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("html") { required = true }
+    reports.create("xml") { required = true }
+}
+

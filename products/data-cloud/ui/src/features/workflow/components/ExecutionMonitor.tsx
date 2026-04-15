@@ -83,6 +83,9 @@ export interface ExecutionMonitorProps {
   className?: string;
 }
 
+export const EXECUTION_MONITOR_BOUNDARY_NOTE =
+  'Execution detail and log streaming are not exposed by the current Data Cloud launcher API.';
+
 function getTenantId(): string {
   return localStorage.getItem('tenantId') || 'default-tenant';
 }
@@ -101,6 +104,26 @@ async function fetchExecutionLogs(executionId: string): Promise<LogEntry[]> {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
+}
+
+function ExecutionMonitorUnavailable({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100',
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <AlertTriangle className="h-4 w-4" />
+        Execution Monitoring Unavailable
+      </div>
+      <p className="text-sm leading-6">{EXECUTION_MONITOR_BOUNDARY_NOTE}</p>
+      <p className="text-xs text-amber-700 dark:text-amber-300">
+        Use pipeline execution summaries and launcher-supported workflow pages instead of per-execution live monitoring.
+      </p>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -304,6 +327,7 @@ export function ExecutionMonitor({
   onCancel,
   className,
 }: ExecutionMonitorProps) {
+  const executionMonitoringSupported = false;
   const queryClient = useQueryClient();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(true);
@@ -314,6 +338,7 @@ export function ExecutionMonitor({
   const { data: execution, isLoading: executionLoading } = useQuery({
     queryKey: ['execution', executionId],
     queryFn: () => fetchExecutionState(executionId),
+    enabled: executionMonitoringSupported,
     refetchInterval: (query) => {
       const data = query.state.data;
       // Stop polling if execution is complete
@@ -328,6 +353,7 @@ export function ExecutionMonitor({
   const { data: logs = [] } = useQuery({
     queryKey: ['execution-logs', executionId],
     queryFn: () => fetchExecutionLogs(executionId),
+    enabled: executionMonitoringSupported,
     refetchInterval: (query) => {
       // Stop polling if execution is complete
       if (execution?.status === 'completed' || execution?.status === 'failed' || execution?.status === 'cancelled') {
@@ -361,6 +387,10 @@ export function ExecutionMonitor({
     queryClient.invalidateQueries({ queryKey: ['execution', executionId] });
     queryClient.invalidateQueries({ queryKey: ['execution-logs', executionId] });
   }, [queryClient, executionId]);
+
+  if (!executionMonitoringSupported) {
+    return <ExecutionMonitorUnavailable className={className} />;
+  }
 
   if (executionLoading || !execution) {
     return <ExecutionSkeleton />;

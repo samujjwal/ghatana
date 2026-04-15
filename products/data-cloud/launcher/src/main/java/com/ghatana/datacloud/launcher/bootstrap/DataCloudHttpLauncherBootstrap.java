@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.bootstrap;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.aiplatform.observability.AiMetricsEmitter;
 import com.ghatana.aiplatform.registry.ModelRegistryService;
@@ -20,14 +21,17 @@ import com.ghatana.datacloud.client.LearningSignalStore;
 import com.ghatana.datacloud.di.DataCloudBrainModule;
 import com.ghatana.datacloud.infrastructure.config.DataCloudDatabaseConfig;
 import com.ghatana.datacloud.launcher.JdbcDatabaseHealthProbe;
+import com.ghatana.datacloud.launcher.EventStoreHealthProbe;
 import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
 import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
+import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 import com.ghatana.platform.observability.clickhouse.ClickHouseTraceStorage;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import com.zaxxer.hikari.HikariDataSource;
@@ -126,6 +130,7 @@ public final class DataCloudHttpLauncherBootstrap {
         // Resolved from CLICKHOUSE_HOST / CLICKHOUSE_PORT / CLICKHOUSE_DATABASE env vars.
         // Nullable — server still generates but discards spans when absent.
         TraceExportService traceExportService = buildTraceExportService(env, log);
+        double traceSamplingRate = resolveTraceSamplingRate(env);
 
         try {
             // B13: optional Trino coordinator URL for federated queries
@@ -139,17 +144,28 @@ public final class DataCloudHttpLauncherBootstrap {
             String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
 
                 boolean isLocalProfile = "local".equalsIgnoreCase(env.get("DATACLOUD_PROFILE"));
+                EventLogStore eventLogStore = client.eventLogStore();
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
                     .withFeatureStoreService(featureStoreService)
                     .withCompletionService(completionService)
                     .withTraceExportService(traceExportService)
+                    .withTraceSamplingRate(traceSamplingRate)
                     .withTrinoUrl(trinoUrl)
                     .withMetricsCollector(MetricsCollectorFactory.create(
                         new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
                             io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)))
-                    .withStrictTenantResolution(!isLocalProfile);
+                    .withStrictTenantResolution(!isLocalProfile)
+                    .withRateLimitConfig(
+                        DataCloudLauncherSettings.resolveRateLimitRequests(env),
+                        DataCloudLauncherSettings.resolveRateLimitWindowSeconds(env));
+
+                if (eventLogStore != null) {
+                    httpServer
+                        .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
+                        .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
+                }
 
                 if (apiKeyResolver != null) {
                     httpServer.withApiKeyResolver(apiKeyResolver);
@@ -322,6 +338,23 @@ public final class DataCloudHttpLauncherBootstrap {
                 .build();
         log.info("Trace export: ClickHouse at {}:{}/{}", host, port, database);
         return new TraceExportService(new ClickHouseTraceExporter(traceStorage), metrics);
+    }
+
+    static double resolveTraceSamplingRate(Map<String, String> env) {
+        String configured = env.get("DATACLOUD_TRACE_SAMPLING_RATIO");
+        if (configured != null && !configured.isBlank()) {
+            double parsed = Double.parseDouble(configured.trim());
+            if (parsed < 0.0 || parsed > 1.0) {
+                throw new IllegalArgumentException("DATACLOUD_TRACE_SAMPLING_RATIO must be between 0.0 and 1.0");
+            }
+            return parsed;
+        }
+
+        String profile = env.getOrDefault("DATACLOUD_PROFILE", "");
+        if ("local".equalsIgnoreCase(profile) || "staging".equalsIgnoreCase(profile)) {
+            return 1.0;
+        }
+        return 0.01;
     }
 
     static DataSource startRequiredDatabaseDataSource(

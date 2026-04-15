@@ -1,0 +1,11 @@
+{ "project": { "name": "{{projectName}}", "description": "{{description}}",
+"version": "1.0.0", "author": "{{author}}", "license": "{{license}}" }, "yappc":
+{ "version": "1.0.0", "generated": "{{genDate}}", "packs": ["base"] }, "build":
+{ "language": "java", "buildTool": "gradle", "javaVersion": "{{#if
+  javaVersion
+}}{{javaVersion}}{{else}}21{{/if}}" }, "features": { "docker":
+{{#if docker}}true{{else}}false{{/if}}, "testing": true, "codeQuality": true,
+"observability": false }, "dependencies": { "managed": true, "versionCatalog":
+true, "dependencyUpdates": true }, "quality": { "spotless": true, "checkstyle":
+true, "pmd": false, "spotbugs": false }, "cache": { "enabled": false,
+"location": ".yappc/cache" } }

@@ -12,24 +12,12 @@ import { BrowserRouter } from 'react-router-dom';
  * @doc.pattern Component Test
  */
 
-// Mock collection service
 const mockGetCollections = vi.fn();
 const mockGetCollection = vi.fn();
 const mockCreateCollection = vi.fn();
 const mockUpdateCollection = vi.fn();
 const mockDeleteCollection = vi.fn();
 const mockValidateCollection = vi.fn();
-
-vi.mock('../services/collections', () => ({
-  CollectionService: {
-    getCollections: mockGetCollections,
-    getCollection: mockGetCollection,
-    createCollection: mockCreateCollection,
-    updateCollection: mockUpdateCollection,
-    deleteCollection: mockDeleteCollection,
-    validateCollection: mockValidateCollection,
-  }
-}));
 
 describe('[M003]: Collections UI', () => {
   beforeEach(() => {

@@ -122,6 +122,19 @@ class DataCloudHttpServerHealthTest {
         assertThat(response.body()).contains("Critical dependencies are not ready");
     }
 
+    @Test
+    @DisplayName("ready returns 503 when event store probe is down")
+    void readyReturns503WhenEventStoreProbeIsDown() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+            .withHealthSubsystem("event_store", () -> Map.of("status", "DOWN", "message", "event store unavailable"));
+        server.start();
+
+        HttpResponse<String> response = get("/ready");
+
+        assertThat(response.statusCode()).isEqualTo(503);
+        assertThat(response.body()).contains("Critical dependencies are not ready");
+    }
+
     private void startServer() throws Exception {
         server = new DataCloudHttpServer(mockClient, port);
         server.start();

@@ -1,0 +1,393 @@
+package com.ghatana.virtualorg.planning;
+
+import com.ghatana.virtualorg.llm.LLMClient;
+import com.ghatana.virtualorg.llm.LLMResponse;
+import com.ghatana.virtualorg.memory.AgentMemory;
+import com.ghatana.virtualorg.planning.impl.LLMTaskPlanner;
+import com.ghatana.virtualorg.v1.TaskProto;
+import com.ghatana.virtualorg.v1.TaskTypeProto;
+import com.ghatana.virtualorg.v1.TaskPriorityProto;
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
+
+/**
+ * E2E tests for LLMTaskPlanner.
+ *
+ * These tests verify that the planner correctly:
+ * - Decomposes tasks into steps
+ * - Validates dependencies
+ * - Estimates effort
+ * - Refines plans based on feedback
+ *
+ * Requires OPENAI_API_KEY environment variable for full E2E testing.
+ */
+@Tag("e2e")
+@DisplayName("LLMTaskPlanner E2E Tests")
+class LLMTaskPlannerTest {
+
+    private Eventloop eventloop;
+    private LLMTaskPlanner planner;
+
+    @Mock
+    private LLMClient llmClient;
+
+    @Mock
+    private AgentMemory memory;
+
+    private Tracer tracer;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        eventloop = Eventloop.builder().build();
+        tracer = TracerProvider.noop().get("test");
+
+        planner = new LLMTaskPlanner(eventloop, llmClient, memory, tracer);
+
+        // Mock memory to return empty context
+        when(memory.retrieveContext(any())).thenReturn(Promise.of(""));
+        when(memory.store(any(TaskProto.class), any())).thenReturn(Promise.of(null));
+    }
+
+    @Test
+    @DisplayName("Should create plan for simple task")
+    void testCreatePlanSimpleTask() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-1")
+            .setTitle("Fix login bug")
+            .setType(TaskTypeProto.TASK_TYPE_BUG_FIX)
+            .setPriority(TaskPriorityProto.TASK_PRIORITY_HIGH)
+            .setDescription("Users cannot login with email addresses")
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "This bug fix requires investigating the login form validation and email parsing logic.",
+            List.of(),
+            500,
+            0.85f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+
+        // When
+        TaskPlan plan = eventloop.submit(() -> planner.createPlan(task))
+            .join();
+
+        // Then
+        assertNotNull(plan);
+        assertFalse(plan.steps().isEmpty());
+        assertEquals(task.getTaskId(), plan.originalTask().getTaskId());
+        assertTrue(plan.confidence() >= 0.0f && plan.confidence() <= 1.0f);
+        assertTrue(plan.totalEstimatedEffort() > 0.0);
+    }
+
+    @Test
+    @DisplayName("Should create multi-step plan for complex task")
+    void testCreatePlanComplexTask() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-2")
+            .setTitle("Implement user authentication")
+            .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+            .setPriority(TaskPriorityProto.TASK_PRIORITY_HIGH)
+            .setDescription("Add complete user authentication with OAuth2")
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "Multi-step implementation: database schema, OAuth setup, login/logout endpoints, tests",
+            List.of(),
+            800,
+            0.75f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+
+        // When
+        TaskPlan plan = eventloop.submit(() -> planner.createPlan(task))
+            .join();
+
+        // Then
+        assertNotNull(plan);
+        assertFalse(plan.steps().isEmpty());
+        assertTrue(plan.totalEstimatedEffort() > 0.0);
+    }
+
+    @Test
+    @DisplayName("Should estimate effort for task")
+    void testEstimateEffort() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-3")
+            .setTitle("Refactor authentication service")
+            .setType(TaskTypeProto.TASK_TYPE_REFACTORING)
+            .setDescription("Clean up authentication service code")
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "Estimated effort: 6 hours for refactoring with tests",
+            List.of(),
+            300,
+            0.80f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+
+        // When
+        Double effort = eventloop.submit(() -> planner.estimateEffort(task))
+            .join();
+
+        // Then
+        assertNotNull(effort);
+        assertTrue(effort > 0.0);
+        assertTrue(effort < 100.0); // Reasonable upper bound
+    }
+
+    @Test
+    @DisplayName("Should validate plan without circular dependencies")
+    void testValidatePlanNoCycles() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-4")
+            .setTitle("Test task")
+            .build();
+
+        PlanStep step1 = new PlanStep(
+            "step-1",
+            "First step",
+            "Description",
+            TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM,
+            List.of(), // No dependencies
+            2.0,
+            List.of("Done"),
+            List.of("git"),
+            java.util.Map.of()
+        );
+
+        PlanStep step2 = new PlanStep(
+            "step-2",
+            "Second step",
+            "Description",
+            TaskTypeProto.TASK_TYPE_CODE_REVIEW,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM,
+            List.of("step-1"), // Depends on step-1
+            1.0,
+            List.of("Reviewed"),
+            List.of("git"),
+            java.util.Map.of()
+        );
+
+        TaskPlan plan = new TaskPlan(
+            task,
+            List.of(step1, step2),
+            3.0,
+            0.9f,
+            "Test plan",
+            List.of()
+        );
+
+        // When
+        Boolean isValid = eventloop.submit(() -> planner.validatePlan(plan))
+            .join();
+
+        // Then
+        assertTrue(isValid);
+    }
+
+    @Test
+    @DisplayName("Should detect circular dependencies")
+    void testValidatePlanWithCycles() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-5")
+            .setTitle("Test task")
+            .build();
+
+        PlanStep step1 = new PlanStep(
+            "step-1",
+            "First step",
+            "Description",
+            TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM,
+            List.of("step-2"), // Circular: depends on step-2
+            2.0,
+            List.of("Done"),
+            List.of("git"),
+            java.util.Map.of()
+        );
+
+        PlanStep step2 = new PlanStep(
+            "step-2",
+            "Second step",
+            "Description",
+            TaskTypeProto.TASK_TYPE_CODE_REVIEW,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM,
+            List.of("step-1"), // Circular: depends on step-1
+            1.0,
+            List.of("Reviewed"),
+            List.of("git"),
+            java.util.Map.of()
+        );
+
+        TaskPlan plan = new TaskPlan(
+            task,
+            List.of(step1, step2),
+            3.0,
+            0.9f,
+            "Test plan",
+            List.of()
+        );
+
+        // When
+        Boolean isValid = eventloop.submit(() -> planner.validatePlan(plan))
+            .join();
+
+        // Then
+        assertFalse(isValid);
+    }
+
+    @Test
+    @DisplayName("Should refine plan based on feedback")
+    void testRefinePlan() {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-6")
+            .setTitle("Complex feature")
+            .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+            .build();
+
+        PlanStep step1 = new PlanStep(
+            "step-1",
+            "Step 1",
+            "Description",
+            TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM,
+            List.of(),
+            2.0,
+            List.of("Done"),
+            List.of("git"),
+            java.util.Map.of()
+        );
+
+        TaskPlan originalPlan = new TaskPlan(
+            task,
+            List.of(step1),
+            2.0,
+            0.8f,
+            "Original plan",
+            List.of()
+        );
+
+        LLMResponse refinementResponse = new LLMResponse(
+            "Refined plan based on feedback: add validation step",
+            List.of(),
+            400,
+            0.85f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(refinementResponse));
+
+        // When
+        TaskPlan refinedPlan = eventloop.submit(() ->
+            planner.refinePlan(originalPlan, List.of("step-1"), "Need more validation")
+        ).join();
+
+        // Then
+        assertNotNull(refinedPlan);
+        assertFalse(refinedPlan.steps().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should track plan progress correctly")
+    void testPlanProgress() {
+        // Given
+        TaskProto task = TaskProto.newBuilder().setTaskId("task-7").build();
+
+        PlanStep step1 = new PlanStep(
+            "step-1", "Step 1", "Desc", TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of(), 2.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        PlanStep step2 = new PlanStep(
+            "step-2", "Step 2", "Desc", TaskTypeProto.TASK_TYPE_CODE_REVIEW,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of("step-1"), 1.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        PlanStep step3 = new PlanStep(
+            "step-3", "Step 3", "Desc", TaskTypeProto.TASK_TYPE_TESTING,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of("step-2"), 1.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        TaskPlan plan = new TaskPlan(
+            task, List.of(step1, step2, step3), 4.0, 0.9f, "Test", List.of()
+        );
+
+        // When/Then
+        assertEquals(0.0, plan.getProgress(List.of()));
+        assertEquals(33.33, plan.getProgress(List.of("step-1")), 0.1);
+        assertEquals(66.66, plan.getProgress(List.of("step-1", "step-2")), 0.1);
+        assertEquals(100.0, plan.getProgress(List.of("step-1", "step-2", "step-3")), 0.1);
+        assertTrue(plan.isComplete(List.of("step-1", "step-2", "step-3")));
+    }
+
+    @Test
+    @DisplayName("Should identify ready steps")
+    void testGetReadySteps() {
+        // Given
+        TaskProto task = TaskProto.newBuilder().setTaskId("task-8").build();
+
+        PlanStep step1 = new PlanStep(
+            "step-1", "Step 1", "Desc", TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of(), 2.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        PlanStep step2 = new PlanStep(
+            "step-2", "Step 2", "Desc", TaskTypeProto.TASK_TYPE_CODE_REVIEW,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of("step-1"), 1.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        PlanStep step3 = new PlanStep(
+            "step-3", "Step 3", "Desc", TaskTypeProto.TASK_TYPE_TESTING,
+            TaskPriorityProto.TASK_PRIORITY_MEDIUM, List.of(), 1.0,
+            List.of("Done"), List.of("git"), java.util.Map.of()
+        );
+
+        TaskPlan plan = new TaskPlan(
+            task, List.of(step1, step2, step3), 4.0, 0.9f, "Test", List.of()
+        );
+
+        // When/Then - Initially, step1 and step3 are ready (no dependencies)
+        List<PlanStep> ready = plan.getReadySteps(List.of());
+        assertEquals(2, ready.size());
+        assertTrue(ready.stream().anyMatch(s -> s.id().equals("step-1")));
+        assertTrue(ready.stream().anyMatch(s -> s.id().equals("step-3")));
+
+        // After step1 completes, step2 becomes ready
+        ready = plan.getReadySteps(List.of("step-1"));
+        assertEquals(2, ready.size());
+        assertTrue(ready.stream().anyMatch(s -> s.id().equals("step-2")));
+        assertTrue(ready.stream().anyMatch(s -> s.id().equals("step-3")));
+    }
+}

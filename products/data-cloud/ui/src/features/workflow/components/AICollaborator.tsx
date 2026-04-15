@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { workflowAtom, nodesAtom } from '@/stores/workflow.store';
 
@@ -59,157 +58,14 @@ export interface AgentRecommendation {
   generatedAt: number;
 }
 
+export const AI_COLLABORATOR_BOUNDARY_MESSAGE =
+  'Workflow recommendation and feedback APIs are not exposed by the current Data Cloud launcher API.';
+
 export function AICollaborator() {
   const [workflow] = useAtom(workflowAtom);
   const [nodes] = useAtom(nodesAtom);
   const [isOpen, setIsOpen] = useState(false);
-  const [_selectedSuggestion, setSelectedSuggestion] = useState<AgentSuggestion | null>(null);
-  const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
-
-  /**
-   * Fetch agent recommendations for current workflow.
-   *
-   * <p>GIVEN: Current workflow state
-   * WHEN: Component mounts or workflow changes
-   * THEN: Fetches recommendations from backend agent
-   */
-  const { data: recommendations, isLoading } = useQuery({
-    queryKey: ['workflow-recommendations', workflow?.id],
-    queryFn: async () => {
-      if (!workflow) return null;
-
-      const response = await fetch(
-        `/api/v1/workflows/${workflow.id}/recommendations`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant-ID': localStorage.getItem('tenantId') || 'default',
-          },
-          body: JSON.stringify({
-            workflow,
-            nodeCount: nodes.length,
-            context: 'workflow_design',
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
-      }
-
-      return (await response.json()) as AgentRecommendation;
-    },
-    enabled: !!workflow,
-    refetchInterval: 5000, // Refetch every 5 seconds
-    staleTime: 2000,
-  });
-
-  React.useEffect(() => {
-    if (recommendations?.suggestions) {
-      setSuggestions(recommendations.suggestions);
-    }
-  }, [recommendations]);
-
-  /**
-   * Handles accepting a suggestion.
-   *
-   * <p>GIVEN: A suggestion
-   * WHEN: User clicks accept
-   * THEN: Applies suggestion and records feedback
-   */
-  const handleAcceptSuggestion = async (suggestion: AgentSuggestion) => {
-    try {
-      // Optimistic update
-      setSuggestions((prev) =>
-        prev.map((s) =>
-          s.id === suggestion.id ? { ...s, status: 'accepted' } : s
-        )
-      );
-
-      // Apply suggestion based on action type
-      applySuggestion(suggestion);
-
-      // Record feedback
-      await recordFeedback(suggestion.id, 'accepted');
-
-      console.log('Suggestion accepted:', suggestion.id);
-    } catch (error) {
-      console.error('Error accepting suggestion:', error);
-      // Revert optimistic update
-      setSuggestions((prev) =>
-        prev.map((s) =>
-          s.id === suggestion.id ? { ...s, status: 'pending' } : s
-        )
-      );
-    }
-  };
-
-  /**
-   * Handles rejecting a suggestion.
-   */
-  const handleRejectSuggestion = async (suggestion: AgentSuggestion) => {
-    try {
-      setSuggestions((prev) =>
-        prev.map((s) =>
-          s.id === suggestion.id ? { ...s, status: 'rejected' } : s
-        )
-      );
-
-      await recordFeedback(suggestion.id, 'rejected');
-
-      console.log('Suggestion rejected:', suggestion.id);
-    } catch (error) {
-      console.error('Error rejecting suggestion:', error);
-    }
-  };
-
-  /**
-   * Applies a suggestion to the workflow.
-   */
-  const applySuggestion = (suggestion: AgentSuggestion) => {
-    switch (suggestion.action) {
-      case 'add_node':
-        // Add node to workflow
-        console.log('Adding node:', suggestion.payload);
-        break;
-      case 'connect_nodes':
-        // Connect nodes
-        console.log('Connecting nodes:', suggestion.payload);
-        break;
-      case 'modify_field':
-        // Modify field
-        console.log('Modifying field:', suggestion.payload);
-        break;
-      case 'apply_template':
-        // Apply template
-        console.log('Applying template:', suggestion.payload);
-        break;
-    }
-  };
-
-  /**
-   * Records feedback for agent learning.
-   */
-  const recordFeedback = async (suggestionId: string, feedback: 'accepted' | 'rejected') => {
-    if (!workflow) return;
-
-    try {
-      await fetch(
-        `/api/v1/workflows/${workflow.id}/recommendations/${suggestionId}/feedback`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Tenant-ID': localStorage.getItem('tenantId') || 'default',
-          },
-          body: JSON.stringify({ feedback }),
-        }
-      );
-    } catch (error) {
-      console.error('Error recording feedback:', error);
-    }
-  };
+  const hasWorkflowContext = workflow !== null || nodes.length > 0;
 
   return (
     <div className="fixed bottom-4 right-4 w-96 max-h-96 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col">
@@ -232,111 +88,21 @@ export function AICollaborator() {
       {/* Content */}
       {isOpen && (
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin">
-                <svg
-                  className="w-5 h-5 text-blue-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-          )}
-
-          {suggestions.length === 0 && !isLoading && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-              No suggestions at this time
-            </p>
-          )}
-
-          {suggestions.map((suggestion) => (
-            <div
-              key={suggestion.id}
-              className={`p-3 rounded-md border transition-colors ${
-                suggestion.status === 'accepted'
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
-                  : suggestion.status === 'rejected'
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
-                    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-              }`}
-            >
-              {/* Suggestion Header */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                    {suggestion.title}
-                  </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {suggestion.description}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    {Math.round(suggestion.confidence * 100)}%
-                  </span>
-                </div>
-              </div>
-
-              {/* Suggestion Type Badge */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                  {suggestion.type}
-                </span>
-                <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                  {suggestion.action}
-                </span>
-              </div>
-
-              {/* Action Buttons */}
-              {suggestion.status === 'pending' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAcceptSuggestion(suggestion)}
-                    className="flex-1 px-2 py-1 text-xs font-medium bg-green-500 hover:bg-green-600 text-white rounded transition-colors"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleRejectSuggestion(suggestion)}
-                    className="flex-1 px-2 py-1 text-xs font-medium bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 rounded transition-colors"
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-
-              {suggestion.status === 'accepted' && (
-                <div className="text-xs text-green-700 dark:text-green-400 font-medium">
-                  ✓ Applied
-                </div>
-              )}
-
-              {suggestion.status === 'rejected' && (
-                <div className="text-xs text-red-700 dark:text-red-400 font-medium">
-                  ✗ Rejected
-                </div>
-              )}
-            </div>
-          ))}
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+            <p className="font-medium">AI collaborator unavailable in launcher mode</p>
+            <p className="mt-1">{AI_COLLABORATOR_BOUNDARY_MESSAGE}</p>
+            {!hasWorkflowContext && (
+              <p className="mt-2 text-xs text-amber-800">
+                Open or create a workflow to prepare recommendation requests once launcher support is added.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-        {recommendations?.confidence && (
-          <span>
-            Overall confidence: {Math.round(recommendations.confidence * 100)}%
-          </span>
-        )}
+        Launcher boundary active for workflow recommendations
       </div>
     </div>
   );

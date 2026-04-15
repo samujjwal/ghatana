@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -336,7 +337,71 @@ class DataCloudHttpServerAnalyticsTest {
             assertThat(resp.statusCode()).isEqualTo(400);
         }
     }
+    @Nested
+    @DisplayName("POST /api/v1/analytics/explain")
+    class ExplainQueryTests {
 
+        @BeforeEach
+        void stubExplain() {
+            QueryPlan plan = QueryPlan.builder()
+                    .queryId("explain-stub")
+                    .queryType(QueryType.SELECT)
+                    .dataSources(List.of("products"))
+                    .estimatedCost(1.5)
+                    .optimized(true)
+                    .build();
+            lenient().when(mockEngine.explainQuery(anyString(), anyString(), any()))
+                    .thenReturn(Promise.of(plan));
+        }
+
+        @Test
+        @DisplayName("valid SELECT query → 200 with plan fields and explain=true")
+        void explain_validSelectQuery_returns200WithPlan() throws Exception {
+            startWithEngine();
+            HttpResponse<String> resp = post("/api/v1/analytics/explain",
+                    "{\"query\":\"SELECT * FROM products\"}");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(resp.body(), Map.class);
+            assertThat(body).containsKey("queryType");
+            assertThat(body).containsKey("dataSources");
+            assertThat(body).containsKey("estimatedCost");
+            assertThat(body).containsKey("optimized");
+            assertThat(body.get("explain")).isEqualTo(Boolean.TRUE);
+            assertThat(body).containsKey("timestamp");
+        }
+
+        @Test
+        @DisplayName("missing 'query' field → 400")
+        void explain_missingQuery_returns400() throws Exception {
+            startWithEngine();
+            HttpResponse<String> resp = post("/api/v1/analytics/explain", "{\"parameters\":{}}");
+            assertThat(resp.statusCode()).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("engine not wired → 503")
+        void explain_noEngine_returns503() throws Exception {
+            startWithoutEngine();
+            HttpResponse<String> resp = post("/api/v1/analytics/explain",
+                    "{\"query\":\"SELECT 1\"}");
+            assertThat(resp.statusCode()).isEqualTo(503);
+        }
+
+        @Test
+        @DisplayName("COUNT query → queryType reflects aggregate planner decision")
+        void explain_countQuery_returnsAggregateQueryType() throws Exception {
+            startWithEngine();
+            HttpResponse<String> resp = post("/api/v1/analytics/explain",
+                    "{\"query\":\"SELECT COUNT(*) FROM orders GROUP BY status\"}");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(resp.body(), Map.class);
+            assertThat(body.get("queryType")).isNotNull();
+        }
+    }
     // ==================== Helpers ====================
 
     private void startWithEngine() throws Exception {

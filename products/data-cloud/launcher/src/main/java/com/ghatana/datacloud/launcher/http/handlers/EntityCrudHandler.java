@@ -6,6 +6,7 @@ import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -43,6 +44,7 @@ public class EntityCrudHandler {
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private final BiConsumer<String, Map<String, Object>> wsBroadcaster;
+    private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
 
     private EntitySchemaValidator schemaValidator;
     private OpenSearchConnector openSearchConnector;
@@ -72,6 +74,11 @@ public class EntityCrudHandler {
         return this;
     }
 
+    public EntityCrudHandler withTraceSupport(TraceSpanSupport traceSupport) {
+        this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
+        return this;
+    }
+
     // ==================== Entity CRUD ====================
 
     @SuppressWarnings("unchecked")
@@ -84,6 +91,13 @@ public class EntityCrudHandler {
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
         Optional<String> collErr = ApiInputValidator.validateCollection(collection);
         if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+            request,
+            resolvedTenantId,
+            "datacloud.http.entity.save",
+            traceSupport.requestSpanId(request),
+            Map.of("collection", collection));
 
         return request.loadBody().then(buf -> {
             try {
@@ -100,7 +114,13 @@ public class EntityCrudHandler {
                     }
                 }
 
-                return client.save(resolvedTenantId, collection, data)
+                return traceSupport.trace(
+                    request,
+                    resolvedTenantId,
+                    "datacloud.entity.store.save",
+                    handlerSpan.spanId(),
+                    Map.of("collection", collection),
+                    () -> client.save(resolvedTenantId, collection, data))
                     .then(entity -> {
                         DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved", Map.of(
                             "collection", entity.collection(),
@@ -108,7 +128,13 @@ public class EntityCrudHandler {
                             "version", entity.version(),
                             "operation", "upsert"
                         ));
-                        return client.appendEvent(resolvedTenantId, cdcEvent)
+                        return traceSupport.trace(
+                            request,
+                            resolvedTenantId,
+                            "datacloud.event.store.append",
+                            handlerSpan.spanId(),
+                            Map.of("collection", entity.collection(), "event.type", "entity.saved"),
+                            () -> client.appendEvent(resolvedTenantId, cdcEvent))
                             .map(ignored -> {
                                 wsBroadcaster.accept("collection.saved", Map.of(
                                     "entityId",  entity.id(),
@@ -129,7 +155,7 @@ public class EntityCrudHandler {
                 log.error("Error saving entity", e);
                 return Promise.of(http.errorResponse(400, "Invalid entity data: " + e.getMessage()));
             }
-        });
+        }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     public Promise<HttpResponse> handleGetEntity(HttpRequest request) {
@@ -144,7 +170,20 @@ public class EntityCrudHandler {
         Optional<String> idErr = ApiInputValidator.validateId(id);
         if (idErr.isPresent()) return Promise.of(http.errorResponse(400, idErr.get()));
 
-        return client.findById(tenantId, collection, id)
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.entity.get",
+                traceSupport.requestSpanId(request),
+                Map.of("collection", collection, "entity.id", id));
+
+        return traceSupport.trace(
+            request,
+            tenantId,
+            "datacloud.entity.store.find_by_id",
+            handlerSpan.spanId(),
+            Map.of("collection", collection, "entity.id", id),
+            () -> client.findById(tenantId, collection, id))
             .map(optEntity -> {
                 if (optEntity.isPresent()) {
                     DataCloudClient.Entity entity = optEntity.get();
@@ -159,7 +198,7 @@ public class EntityCrudHandler {
                 } else {
                     return http.errorResponse(404, "Entity not found: " + id);
                 }
-            });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     public Promise<HttpResponse> handleQueryEntities(HttpRequest request) {
@@ -175,9 +214,22 @@ public class EntityCrudHandler {
         if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
         int limit = limitResult.getValue();
 
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.entity.query",
+                traceSupport.requestSpanId(request),
+                Map.of("collection", collection, "limit", limit));
+
         DataCloudClient.Query query = DataCloudClient.Query.limit(limit);
 
-        return client.query(tenantId, collection, query)
+        return traceSupport.trace(
+            request,
+            tenantId,
+            "datacloud.entity.store.query",
+            handlerSpan.spanId(),
+            Map.of("collection", collection, "limit", limit),
+            () -> client.query(tenantId, collection, query))
             .map(entities -> http.jsonResponse(Map.of(
                 "entities", entities.stream().map(e -> Map.of(
                     "id", e.id(),
@@ -187,7 +239,7 @@ public class EntityCrudHandler {
                 )).toList(),
                 "count", entities.size(),
                 "timestamp", Instant.now().toString()
-            )));
+            ))).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     public Promise<HttpResponse> handleDeleteEntity(HttpRequest request) {
@@ -203,19 +255,44 @@ public class EntityCrudHandler {
         Optional<String> idErr = ApiInputValidator.validateId(id);
         if (idErr.isPresent()) return Promise.of(http.errorResponse(400, idErr.get()));
 
-        return client.findById(resolvedTenantId, collection, id)
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                resolvedTenantId,
+                "datacloud.http.entity.delete",
+                traceSupport.requestSpanId(request),
+                Map.of("collection", collection, "entity.id", id));
+
+        return traceSupport.trace(
+            request,
+            resolvedTenantId,
+            "datacloud.entity.store.find_by_id",
+            handlerSpan.spanId(),
+            Map.of("collection", collection, "entity.id", id),
+            () -> client.findById(resolvedTenantId, collection, id))
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.of(http.errorResponse(404, "Entity not found: " + id));
                 }
-                return client.delete(resolvedTenantId, collection, id)
+                return traceSupport.trace(
+                    request,
+                    resolvedTenantId,
+                    "datacloud.entity.store.delete",
+                    handlerSpan.spanId(),
+                    Map.of("collection", collection, "entity.id", id),
+                    () -> client.delete(resolvedTenantId, collection, id))
                     .then(v -> {
                         DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted", Map.of(
                             "collection", collection,
                             "id", id,
                             "operation", "delete"
                         ));
-                        return client.appendEvent(resolvedTenantId, cdcEvent)
+                        return traceSupport.trace(
+                            request,
+                            resolvedTenantId,
+                            "datacloud.event.store.append",
+                            handlerSpan.spanId(),
+                            Map.of("collection", collection, "event.type", "entity.deleted"),
+                            () -> client.appendEvent(resolvedTenantId, cdcEvent))
                             .map(ignored -> {
                                 wsBroadcaster.accept("collection.deleted", Map.of(
                                     "entityId",  id,
@@ -231,7 +308,7 @@ public class EntityCrudHandler {
                         "collection", collection,
                         "timestamp", Instant.now().toString()
                     )));
-            });
+                    }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     // ==================== Bulk Entity Endpoints ====================

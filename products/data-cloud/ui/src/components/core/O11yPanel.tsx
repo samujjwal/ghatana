@@ -67,32 +67,26 @@ interface O11yPanelProps {
     className?: string;
 }
 
+const EXECUTION_VISIBILITY_NOTE = 'Execution telemetry is not exposed by the standalone launcher API.';
+const SYSTEM_HEALTH_NOTE = 'System health summary is not exposed by the standalone launcher API.';
+
 function getTenantId(): string {
     return localStorage.getItem('tenantId') || 'default-tenant';
 }
 
 async function fetchActiveExecutions(): Promise<Execution[]> {
-    const response = await fetch('/api/v1/executions?status=running,pending', {
-        headers: { 'X-Tenant-ID': getTenantId() },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    void getTenantId();
+    return [];
 }
 
 async function fetchRecentExecutions(): Promise<Execution[]> {
-    const response = await fetch('/api/v1/executions?status=completed,failed&limit=5', {
-        headers: { 'X-Tenant-ID': getTenantId() },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    void getTenantId();
+    return [];
 }
 
-async function fetchSystemMetrics(): Promise<SystemMetrics> {
-    const response = await fetch('/api/v1/metrics/system', {
-        headers: { 'X-Tenant-ID': getTenantId() },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+async function fetchSystemMetrics(): Promise<SystemMetrics | null> {
+    void getTenantId();
+    return null;
 }
 
 const o11yStatusTone: Record<Execution['status'], 'info' | 'success' | 'danger' | 'warning' | 'neutral'> = {
@@ -374,7 +368,7 @@ export function O11yPanel({ collapsed, onExpandExecution, className }: O11yPanel
                             ))
                     ) : (
                         <p className="text-xs text-gray-400 text-center py-3">
-                            No active executions
+                            {EXECUTION_VISIBILITY_NOTE}
                         </p>
                     )}
                 </div>
@@ -399,7 +393,7 @@ export function O11yPanel({ collapsed, onExpandExecution, className }: O11yPanel
                         ))
                     ) : (
                         <p className="text-xs text-gray-400 text-center py-2">
-                            No recent executions
+                            {EXECUTION_VISIBILITY_NOTE}
                         </p>
                     )}
                 </div>
@@ -426,7 +420,7 @@ export function O11yPanel({ collapsed, onExpandExecution, className }: O11yPanel
                     </div>
                 ) : (
                     <p className="text-xs text-gray-400 text-center py-2">
-                        Metrics unavailable
+                        {SYSTEM_HEALTH_NOTE}
                     </p>
                 )}
             </section>

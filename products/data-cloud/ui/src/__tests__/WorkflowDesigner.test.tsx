@@ -12,22 +12,11 @@ import userEvent from '@testing-library/user-event';
  * @doc.pattern Component Test
  */
 
-// Mock workflow service
 const mockGetWorkflow = vi.fn();
 const mockCreateWorkflow = vi.fn();
 const mockUpdateWorkflow = vi.fn();
 const mockValidateWorkflow = vi.fn();
 const mockExecuteWorkflow = vi.fn();
-
-vi.mock('../services/workflows', () => ({
-  WorkflowService: {
-    getWorkflow: mockGetWorkflow,
-    createWorkflow: mockCreateWorkflow,
-    updateWorkflow: mockUpdateWorkflow,
-    validateWorkflow: mockValidateWorkflow,
-    executeWorkflow: mockExecuteWorkflow,
-  }
-}));
 
 describe('[M004]: Workflow Designer', () => {
   beforeEach(() => {

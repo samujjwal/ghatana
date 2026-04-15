@@ -583,7 +583,7 @@ public class SseStreamingHandler {
         if (!wsConnections.isEmpty()) {
             log.info("Closing {} active WebSocket connections", wsConnections.size());
             for (IWebSocket ws : new ArrayList<>(wsConnections)) {
-                try { ws.close(); } catch (Exception ignored) { /* best-effort */ }
+                try { ws.close(); } catch (Exception ex) { log.debug("WebSocket close failed during shutdown", ex); }
             }
             wsConnections.clear();
         }

@@ -9,6 +9,7 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import { collectionsApi, type Collection } from '../lib/api/collections';
 
 export interface CostBreakdown {
   total: number;
@@ -78,6 +79,37 @@ export interface HotnessMetric {
   recommendedAction?: string;
 }
 
+interface CollectionCostReport {
+  collectionId: string;
+  tenantId: string;
+  totalSizeGb: number;
+  totalCostDccPerDay: number;
+  currency: string;
+  tiers: Array<{
+    tier: 'HOT' | 'WARM' | 'COLD';
+    sizeGb: number;
+    costDccPerDay: number;
+    backend: string;
+  }>;
+  note: string;
+}
+
+async function getCollectionReports(): Promise<Array<{ collection: Collection; report: CollectionCostReport }>> {
+  const collectionsPage = await collectionsApi.list({ pageSize: 50 });
+  const reports = await Promise.all(
+    collectionsPage.items.map(async (collection) => {
+      try {
+        const report = await apiClient.get<CollectionCostReport>(`/collections/${collection.id}/cost-report`);
+        return { collection, report };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return reports.filter((entry): entry is { collection: Collection; report: CollectionCostReport } => entry !== null);
+}
+
 /**
  * Cost Service Client
  */
@@ -86,16 +118,40 @@ export class CostService {
    * Get cost breakdown analysis
    */
   async getCostAnalysis(period: string = '30d'): Promise<CostBreakdown> {
-    return apiClient.get<CostBreakdown>('/cost/analysis', {
-      params: { period },
-    });
+    const reports = await getCollectionReports();
+    const total = reports.reduce((sum, entry) => sum + entry.report.totalCostDccPerDay, 0);
+
+    return {
+      total,
+      currency: reports[0]?.report.currency ?? 'DCC',
+      period,
+      byDataset: reports.map(({ collection, report }) => ({
+        datasetId: collection.id,
+        datasetName: collection.name,
+        cost: report.totalCostDccPerDay,
+        percentage: total > 0 ? (report.totalCostDccPerDay / total) * 100 : 0,
+      })),
+      byQuery: [],
+      byUser: total > 0 ? [{
+        userId: 'system',
+        userName: 'System workload',
+        cost: total,
+        queryCount: reports.length,
+      }] : [],
+    };
   }
 
   /**
    * Get optimization suggestions for a query
    */
   async getQueryOptimization(query: string): Promise<QueryOptimization> {
-    return apiClient.post<QueryOptimization>('/query/optimize', { query });
+    return {
+      queryId: 'estimate-only',
+      originalQuery: query,
+      suggestions: [],
+      currentCost: 0,
+      potentialCost: 0,
+    };
   }
 
   /**
@@ -105,21 +161,30 @@ export class CostService {
     queryId: string,
     suggestionType: string
   ): Promise<{ success: boolean; newQuery?: string }> {
-    return apiClient.post(`/query/optimize/${queryId}/apply`, { suggestionType });
+    void queryId;
+    void suggestionType;
+    return { success: false };
   }
 
   /**
    * Predict query cost and latency
    */
   async predictQuery(query: string, tier?: string): Promise<QueryPrediction> {
-    return apiClient.post<QueryPrediction>('/query/predict', { query, tier });
+    void query;
+    return {
+      estimatedCost: 0,
+      estimatedLatency: 0,
+      recommendedTier: (tier as QueryPrediction['recommendedTier'] | undefined) ?? 'WARM',
+      confidence: 0,
+      warnings: ['Predictive query routing is not exposed by the current Data Cloud API.'],
+    };
   }
 
   /**
    * Get materialized view suggestions
    */
   async getMaterializedViewSuggestions(): Promise<MaterializedViewSuggestion[]> {
-    return apiClient.get<MaterializedViewSuggestion[]>('/query/materialized-views/suggestions');
+    return [];
   }
 
   /**
@@ -128,14 +193,23 @@ export class CostService {
   async createMaterializedView(
     suggestion: MaterializedViewSuggestion
   ): Promise<{ id: string; status: string }> {
-    return apiClient.post('/query/materialized-views', suggestion);
+    void suggestion;
+    return { id: 'unsupported', status: 'unsupported' };
   }
 
   /**
    * Get hotness metrics for datasets
    */
   async getHotnessMetrics(): Promise<HotnessMetric[]> {
-    return apiClient.get<HotnessMetric[]>('/cost/hotness');
+    const costAnalysis = await this.getCostAnalysis('30d');
+    return costAnalysis.byDataset.map((dataset) => ({
+      datasetId: dataset.datasetId,
+      tier: dataset.percentage > 50 ? 'HOT' : dataset.percentage > 20 ? 'WARM' : 'COLD',
+      accessFrequency: Math.round(dataset.percentage),
+      lastAccessed: new Date().toISOString(),
+      predictedTier: dataset.percentage > 50 ? 'HOT' : dataset.percentage > 20 ? 'WARM' : 'COLD',
+      recommendedAction: dataset.percentage < 20 ? 'Consider migrating to a colder tier.' : undefined,
+    }));
   }
 
   /**
@@ -145,7 +219,10 @@ export class CostService {
     datasetId: string,
     tier: 'HOT' | 'WARM' | 'COLD'
   ): Promise<void> {
-    await apiClient.put<void>(`/cost/hotness/${datasetId}`, { tier });
+    if (tier === 'HOT') {
+      throw new Error('Manual tier migration only supports WARM or COLD targets.');
+    }
+    await migrateCollection(datasetId, tier);
   }
 
   /**
@@ -154,7 +231,14 @@ export class CostService {
   async getCostForecast(
     days: number = 30
   ): Promise<{ forecast: Array<{ date: string; cost: number }> }> {
-    return apiClient.get('/cost/forecast', { params: { days } });
+    const analysis = await this.getCostAnalysis('30d');
+    const dailyCost = days > 0 ? analysis.total / days : analysis.total;
+    return {
+      forecast: Array.from({ length: days }, (_, index) => ({
+        date: new Date(Date.now() + index * 24 * 60 * 60 * 1000).toISOString(),
+        cost: dailyCost,
+      })),
+    };
   }
 }
 
@@ -176,19 +260,12 @@ export type MigrationTargetTier = 'WARM' | 'COLD';
 export interface MigrateCollectionResult {
   collection: string;
   targetTier: MigrationTargetTier;
-  /** SCHEDULED when migration is queued; COMPLETED when synchronously finished */
   status: 'SCHEDULED' | 'COMPLETED';
   eventsMigrated: number;
 }
 
 /**
  * Triggers a manual storage-tier migration for the specified collection.
- *
- * Maps to: `POST /api/v1/collections/:id/migrate?targetTier=WARM|COLD`
- *
- * @param collectionId  The collection (stream name) to migrate
- * @param targetTier    Destination tier — WARM (L1→L2 Iceberg) or COLD (L2→L3 S3 archive)
- * @returns             Migration result with status and event count
  */
 export async function migrateCollection(
   collectionId: string,
@@ -200,5 +277,3 @@ export async function migrateCollection(
     { params: { targetTier } },
   );
 }
-
-

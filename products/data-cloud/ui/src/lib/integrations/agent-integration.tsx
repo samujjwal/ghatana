@@ -14,6 +14,9 @@ import * as React from 'react';
 import { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+export const BRAIN_INTEGRATION_BOUNDARY_MESSAGE =
+    'Brain agent management and intervention APIs are not exposed by the current Data Cloud launcher API.';
+
 // ============================================
 // BASE TYPES (Local definitions to avoid import issues)
 // ============================================
@@ -169,35 +172,26 @@ export interface BrainIntervention extends InterventionRequest {
 // API SERVICE
 // ============================================
 
-const BRAIN_API_BASE = '/api/brain';
-
 async function fetchBrainAgents(): Promise<BrainAgent[]> {
-    const response = await fetch(`${BRAIN_API_BASE}/agents`);
-    if (!response.ok) throw new Error('Failed to fetch brain agents');
-    return response.json();
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function fetchBrainAgent(agentId: string): Promise<BrainAgent> {
-    const response = await fetch(`${BRAIN_API_BASE}/agents/${agentId}`);
-    if (!response.ok) throw new Error('Failed to fetch brain agent');
-    return response.json();
+    void agentId;
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function updateAgentState(
     agentId: string,
     action: 'pause' | 'resume' | 'terminate' | 'restart'
 ): Promise<BrainAgent> {
-    const response = await fetch(`${BRAIN_API_BASE}/agents/${agentId}/${action}`, {
-        method: 'POST',
-    });
-    if (!response.ok) throw new Error(`Failed to ${action} agent`);
-    return response.json();
+    void agentId;
+    void action;
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function fetchInterventions(): Promise<BrainIntervention[]> {
-    const response = await fetch(`${BRAIN_API_BASE}/interventions`);
-    if (!response.ok) throw new Error('Failed to fetch interventions');
-    return response.json();
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function resolveIntervention(
@@ -205,24 +199,19 @@ async function resolveIntervention(
     decision: 'approve' | 'reject',
     feedback?: string
 ): Promise<void> {
-    const response = await fetch(`${BRAIN_API_BASE}/interventions/${interventionId}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision, feedback }),
-    });
-    if (!response.ok) throw new Error('Failed to resolve intervention');
+    void interventionId;
+    void decision;
+    void feedback;
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function fetchAgentMemory(agentId: string): Promise<AgentMemory> {
-    const response = await fetch(`${BRAIN_API_BASE}/agents/${agentId}/memory`);
-    if (!response.ok) throw new Error('Failed to fetch agent memory');
-    return response.json();
+    void agentId;
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 async function fetchAgentInteractions(): Promise<AgentInteraction[]> {
-    const response = await fetch(`${BRAIN_API_BASE}/interactions`);
-    if (!response.ok) throw new Error('Failed to fetch agent interactions');
-    return response.json();
+    throw new Error(BRAIN_INTEGRATION_BOUNDARY_MESSAGE);
 }
 
 // ============================================

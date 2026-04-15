@@ -1,0 +1,28 @@
+# Build stage FROM openjdk:{{javaVersion}}-jdk-slim as builder WORKDIR /app COPY
+. . # Build the application RUN ./gradlew build --no-daemon # Runtime stage FROM
+gcr.io/distroless/java{{javaVersion}}-debian12:nonroot WORKDIR /app # Copy the
+built JAR COPY --from=builder /app/build/libs/{{projectName}}-*.jar app.jar
+
+{{#if enableOtel}}
+  # Copy OpenTelemetry agent COPY --from=builder
+  /app/build/libs/opentelemetry-javaagent.jar otel-agent.jar
+{{/if}}
+
+# Expose the port EXPOSE
+{{port}}
+
+# Health check HEALTHCHECK --interval=30s --timeout=3s --start-period=10s
+--retries=3 \ CMD wget --no-verbose --tries=1 --spider http://localhost:{{port}}/health
+|| exit 1
+
+{{#if enableOtel}}
+  # Run with OpenTelemetry agent ENTRYPOINT ["java", \
+  "-javaagent:otel-agent.jar", \ "-Dotel.service.name={{serviceName}}", \
+  "-Dotel.resource.attributes=service.name={{serviceName}},service.version=1.0.0",
+  \ "-Dotel.exporter.otlp.endpoint=http://localhost:4317", \ "-jar", "app.jar"]
+{{else}}
+  # Run the application ENTRYPOINT ["java", "-jar", "app.jar"]
+{{/if}}
+
+# Labels LABEL maintainer="{{author}}" LABEL service.name="{{serviceName}}"
+LABEL service.version="1.0.0" LABEL description="{{description}}"

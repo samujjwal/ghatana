@@ -11,15 +11,16 @@
  * @doc.pattern Page
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
+import { collectionsApi } from '../lib/api/collections';
 import { useSelection } from '../hooks/useSelection';
 import { logActivity } from '../lib/api/user-activity';
 import { useSpeechSynthesis } from '@audio-video/ui';
 import { useConsent } from '../components/privacy/ConsentManager';
 import { RBACGuard } from '../components/security/RBACGuard';
-import { Check, Trash2, Mic } from 'lucide-react';
+import { Check, Mic, Trash2 } from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -57,6 +58,23 @@ interface EntityListResponse {
   hasMore: boolean;
 }
 
+interface CanonicalEntity {
+  id?: string;
+  tenantId: string;
+  collectionName: string;
+  data: Record<string, unknown>;
+  version?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface CanonicalEntityListResponse {
+  entities: CanonicalEntity[];
+  total?: number;
+  limit?: number;
+  offset?: number;
+}
+
 /** AI suggestion returned by POST /api/v1/entities/:collection/suggest */
 interface EntitySuggestionItem {
   type: 'explore_related' | 'anomaly_hint' | 'filter_optimization' | 'data_quality' | string;
@@ -83,29 +101,87 @@ interface EntitySuggestResponse {
 // =============================================================================
 
 async function listNamespaces(tenantId?: string): Promise<string[]> {
-  return apiClient.get<string[]>('/dc/entities/namespaces', {
-    params: tenantId ? { tenantId } : {},
-  });
+  const response = await collectionsApi.list({ pageSize: 100 });
+  return response.items.map((collection) => collection.id);
 }
 
 async function listEntities(namespace: string, tenantId?: string, limit = 20): Promise<EntityListResponse> {
-  return apiClient.get<EntityListResponse>(`/dc/entities/${namespace}`, {
+  const response = await apiClient.get<CanonicalEntityListResponse>(`/entities/${namespace}`, {
     params: { ...(tenantId ? { tenantId } : {}), limit },
   });
+
+  const entities: Entity[] = (response.entities ?? []).map((entity, index) => ({
+    id: entity.id ?? `${namespace}-${index}`,
+    tenantId: entity.tenantId,
+    namespace: entity.collectionName,
+    data: entity.data,
+    createdAt: entity.createdAt ?? new Date().toISOString(),
+    updatedAt: entity.updatedAt ?? new Date().toISOString(),
+    version: entity.version ?? 1,
+  }));
+
+  return {
+    entities,
+    total: response.total ?? entities.length,
+    hasMore: (response.offset ?? 0) + entities.length < (response.total ?? entities.length),
+  };
 }
 
-async function getEntitySchema(namespace: string, tenantId?: string): Promise<EntitySchema | null> {
-  try {
-    return await apiClient.get<EntitySchema>(`/dc/schemas/${namespace}`, {
-      params: tenantId ? { tenantId } : {},
-    });
-  } catch {
-    return null;
+function inferFieldType(value: unknown): string {
+  if (Array.isArray(value)) return 'array';
+  if (value === null) return 'null';
+  switch (typeof value) {
+    case 'boolean':
+      return 'boolean';
+    case 'number':
+      return Number.isInteger(value) ? 'integer' : 'number';
+    case 'object':
+      return 'object';
+    case 'string':
+      return 'string';
+    default:
+      return 'unknown';
   }
 }
 
+function deriveEntitySchema(namespace: string, entities: Entity[]): EntitySchema | null {
+  if (entities.length === 0) {
+    return null;
+  }
+
+  const fieldStats = new Map<string, { count: number; type: string }>();
+
+  entities.forEach((entity) => {
+    Object.entries(entity.data).forEach(([fieldName, value]) => {
+      const existing = fieldStats.get(fieldName);
+      const inferredType = inferFieldType(value);
+      if (existing) {
+        fieldStats.set(fieldName, {
+          count: existing.count + 1,
+          type: existing.type === inferredType ? existing.type : 'mixed',
+        });
+        return;
+      }
+
+      fieldStats.set(fieldName, { count: 1, type: inferredType });
+    });
+  });
+
+  return {
+    id: `derived-${namespace}`,
+    name: namespace,
+    namespace,
+    version: 1,
+    fields: Array.from(fieldStats.entries()).map(([name, info]) => ({
+      name,
+      type: info.type,
+      required: info.count === entities.length,
+    })),
+  };
+}
+
 async function deleteEntity(namespace: string, id: string, tenantId?: string): Promise<void> {
-  await apiClient.delete(`/dc/entities/${namespace}/${id}`, {
+  await apiClient.delete(`/entities/${namespace}/${id}`, {
     params: tenantId ? { tenantId } : {},
   });
 }
@@ -409,12 +485,10 @@ export function EntityBrowserPage(): React.ReactElement {
     staleTime: 30_000,
   });
 
-  const { data: schema } = useQuery({
-    queryKey: ['dc', 'schema', namespace],
-    queryFn: () => getEntitySchema(namespace),
-    enabled: !!namespace,
-    staleTime: 120_000,
-  });
+  const schema = useMemo(
+    () => deriveEntitySchema(namespace, entityList?.entities ?? []),
+    [entityList?.entities, namespace],
+  );
 
   // AI suggestions: fetched per-namespace, non-blocking (graceful fallback)
   const { data: suggestResponse, isFetching: suggestLoading } = useQuery({

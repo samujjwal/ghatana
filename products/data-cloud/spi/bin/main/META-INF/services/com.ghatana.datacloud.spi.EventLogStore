@@ -1,0 +1,2 @@
+# In-memory EventLogStore provider intentionally left off the main classpath.
+# Register a durable EventLogStore provider here for production deployments.

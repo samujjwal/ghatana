@@ -24,12 +24,9 @@ vi.mock('react-router', async (importOriginal) => {
 
 vi.mock('../../api/plugin.service', () => ({
     pluginService: {
-        listInstalled: vi.fn().mockResolvedValue([]),
-        listMarketplace: vi.fn().mockResolvedValue([]),
-        install: vi.fn().mockResolvedValue({}),
-        uninstall: vi.fn().mockResolvedValue(undefined),
-        enable: vi.fn().mockResolvedValue({}),
-        disable: vi.fn().mockResolvedValue({}),
+        getInstalledPlugins: vi.fn().mockResolvedValue([]),
+        enablePlugin: vi.fn().mockResolvedValue({}),
+        disablePlugin: vi.fn().mockResolvedValue({}),
     },
 }));
 
@@ -58,7 +55,7 @@ describe('PluginPage — PluginsPage', () => {
     it('displays plugin-related content', () => {
         render(<PluginsPage />, { wrapper: TestWrapper });
         const body = document.body.textContent ?? '';
-        expect(body.toLowerCase()).toMatch(/plugin|extension|marketplace|install|package/i);
+        expect(body.toLowerCase()).toMatch(/plugin|bundled|deployment|package/i);
     });
 
     it('renders with meaningful page structure', () => {

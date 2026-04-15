@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusion filter for products:data-cloud:launcher.
+
+  Exclusions are for known-safe patterns that SpotBugs flags as defects but
+  represent intentional design decisions in this codebase:
+
+  EI_EXPOSE_REP / EI_EXPOSE_REP2
+      Service-layer constructors and builder methods store injected collaborators
+      (DataCloudClient, ObjectMapper, etc.).  These are single-instance, server-side
+      objects; defensive copying would create unnecessary overhead and misrepresent
+      the sharing contract.
+
+  VA_FORMAT_STRING_USES_NEWLINE
+      Text-block format strings used to build LLM prompts and JSON payloads
+      intentionally use \n as the line separator.  Using %n would produce \r\n
+      on Windows, breaking the generated JSON / prompt text.
+
+  SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR
+      Metrics and support classes expose package-visible or public constructors for
+      testing.  The singleton constraint is enforced by the wiring layer, not the
+      constructor visibility.
+
+  REC_CATCH_EXCEPTION
+      EventLogAuditService.decodeEntry uses catch(Exception) as an intentional
+      fallback for untrusted stored event data; a generic catch is the safest
+      choice here to avoid surfacing a degraded audit entry as a hard error.
+
+  CT_CONSTRUCTOR_THROW
+      DataCloudLearningBridge validates its required brain collaborator before
+      allocating any resources, so there is no resource-leak risk.
+-->
+<FindBugsFilter>
+
+  <!-- ── Mutable-reference exposure (injection pattern, not a security concern) ── -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    <Package name="~com\.ghatana\.datacloud\.launcher.*"/>
+  </Match>
+
+  <!-- ── Text-block LLM / JSON prompt new-lines are intentional \n, not %n ── -->
+  <Match>
+    <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    <Class name="com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler"/>
+  </Match>
+  <Match>
+    <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    <Class name="com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler"/>
+  </Match>
+
+  <!-- ── Public/package constructor for testability; singleton enforced by wiring ── -->
+  <Match>
+    <Bug pattern="SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR"/>
+    <Package name="~com\.ghatana\.datacloud\.launcher.*"/>
+  </Match>
+
+  <!-- ── Generic catch for untrusted stored event data in audit fallback ── -->
+  <Match>
+    <Bug pattern="REC_CATCH_EXCEPTION"/>
+    <Class name="com.ghatana.datacloud.launcher.audit.EventLogAuditService"/>
+    <Method name="decodeEntry"/>
+  </Match>
+
+  <!-- ── Null guard precedes all resource allocation — no leak risk ── -->
+  <Match>
+    <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    <Class name="com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge"/>
+  </Match>
+
+</FindBugsFilter>

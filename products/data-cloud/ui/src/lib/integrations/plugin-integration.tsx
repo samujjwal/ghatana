@@ -12,7 +12,13 @@
 
 import * as React from 'react';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export const PLUGIN_INTEGRATION_BOUNDARY_MESSAGE =
+    'Plugin marketplace, health, installation, and configuration integration APIs are not exposed by the current Data Cloud launcher API.';
+
+function createPluginBoundaryError(): Error {
+    return new Error(PLUGIN_INTEGRATION_BOUNDARY_MESSAGE);
+}
 
 // ============================================
 // BASE TYPES (Local definitions to avoid import issues)
@@ -204,92 +210,6 @@ export const DATA_CLOUD_PLUGIN_CATEGORIES: Array<{
     ];
 
 // ============================================
-// API SERVICE
-// ============================================
-
-const PLUGIN_API_BASE = '/api/plugins';
-
-async function fetchInstalledPlugins(): Promise<DataCloudPlugin[]> {
-    const response = await fetch(`${PLUGIN_API_BASE}/installed`);
-    if (!response.ok) throw new Error('Failed to fetch installed plugins');
-    return response.json();
-}
-
-async function fetchMarketplacePlugins(options?: {
-    category?: PluginCategory;
-    search?: string;
-}): Promise<DataCloudPlugin[]> {
-    const params = new URLSearchParams();
-    if (options?.category) params.set('category', options.category);
-    if (options?.search) params.set('search', options.search);
-
-    const response = await fetch(`${PLUGIN_API_BASE}/marketplace?${params}`);
-    if (!response.ok) throw new Error('Failed to fetch marketplace plugins');
-    return response.json();
-}
-
-async function fetchPluginHealth(pluginId: string): Promise<PluginHealth> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/health`);
-    if (!response.ok) throw new Error('Failed to fetch plugin health');
-    return response.json();
-}
-
-async function fetchAllPluginHealth(): Promise<Record<string, PluginHealth>> {
-    const response = await fetch(`${PLUGIN_API_BASE}/health`);
-    if (!response.ok) throw new Error('Failed to fetch plugin health');
-    return response.json();
-}
-
-async function installPlugin(
-    pluginId: string,
-    options?: PluginInstallOptions
-): Promise<PluginInstance> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/install`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options ?? {}),
-    });
-    if (!response.ok) throw new Error('Failed to install plugin');
-    return response.json();
-}
-
-async function uninstallPlugin(pluginId: string): Promise<void> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/uninstall`, {
-        method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to uninstall plugin');
-}
-
-async function enablePlugin(pluginId: string): Promise<PluginInstance> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/enable`, {
-        method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to enable plugin');
-    return response.json();
-}
-
-async function disablePlugin(pluginId: string): Promise<PluginInstance> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/disable`, {
-        method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to disable plugin');
-    return response.json();
-}
-
-async function updatePluginConfig(
-    pluginId: string,
-    config: Record<string, unknown>
-): Promise<PluginInstance> {
-    const response = await fetch(`${PLUGIN_API_BASE}/${pluginId}/config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-    });
-    if (!response.ok) throw new Error('Failed to update plugin config');
-    return response.json();
-}
-
-// ============================================
 // HOOKS
 // ============================================
 
@@ -312,45 +232,17 @@ export function useDataCloudPlugins(options?: {
     search?: string;
     includeMarketplace?: boolean;
 }) {
-    const queryClient = useQueryClient();
-
-    // Fetch installed plugins
-    const {
-        data: installed = [],
-        isLoading: loadingInstalled,
-        error: installedError,
-        refetch: refetchInstalled,
-    } = useQuery({
-        queryKey: ['plugins', 'installed'],
-        queryFn: fetchInstalledPlugins,
-        staleTime: 30000,
-    });
-
-    // Fetch marketplace plugins
-    const {
-        data: marketplace = [],
-        isLoading: loadingMarketplace,
-        error: marketplaceError,
-        refetch: refetchMarketplace,
-    } = useQuery({
-        queryKey: ['plugins', 'marketplace', options?.category, options?.search],
-        queryFn: () => fetchMarketplacePlugins({
-            category: options?.category,
-            search: options?.search,
-        }),
-        staleTime: 60000,
-        enabled: options?.includeMarketplace !== false,
-    });
-
-    // Fetch plugin health
-    const {
-        data: healthMap = {},
-        isLoading: loadingHealth,
-    } = useQuery({
-        queryKey: ['plugins', 'health'],
-        queryFn: fetchAllPluginHealth,
-        refetchInterval: 30000,
-    });
+    void options;
+    const installed: DataCloudPlugin[] = [];
+    const marketplace: DataCloudPlugin[] = [];
+    const healthMap: Record<string, PluginHealth> = {};
+    const error = createPluginBoundaryError();
+    const refetchInstalled = async () => {
+        throw createPluginBoundaryError();
+    };
+    const refetchMarketplace = async () => {
+        throw createPluginBoundaryError();
+    };
 
     // Stats
     const stats = useMemo(() => {
@@ -381,11 +273,11 @@ export function useDataCloudPlugins(options?: {
         dataCloudPlugins: installed,
         healthMap,
         stats,
-        isLoading: loadingInstalled || loadingMarketplace,
-        loadingInstalled,
-        loadingMarketplace,
-        loadingHealth,
-        error: installedError ?? marketplaceError,
+        isLoading: false,
+        loadingInstalled: false,
+        loadingMarketplace: false,
+        loadingHealth: false,
+        error,
         refetchInstalled,
         refetchMarketplace,
     };
@@ -404,51 +296,34 @@ export function useDataCloudPlugins(options?: {
  * ```
  */
 export function usePluginInstallation() {
-    const queryClient = useQueryClient();
-
-    const installMutation = useMutation({
-        mutationFn: ({ pluginId, options }: { pluginId: string; options?: PluginInstallOptions }) =>
-            installPlugin(pluginId, options),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'health'] });
-        },
-    });
-
-    const uninstallMutation = useMutation({
-        mutationFn: (pluginId: string) => uninstallPlugin(pluginId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'health'] });
-        },
-    });
-
-    const enableMutation = useMutation({
-        mutationFn: (pluginId: string) => enablePlugin(pluginId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
-        },
-    });
-
-    const disableMutation = useMutation({
-        mutationFn: (pluginId: string) => disablePlugin(pluginId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
-        },
-    });
+    const rejectUnsupported = async () => {
+        throw createPluginBoundaryError();
+    };
 
     return {
-        install: (pluginId: string, options?: PluginInstallOptions) =>
-            installMutation.mutateAsync({ pluginId, options }),
-        uninstall: uninstallMutation.mutateAsync,
-        enable: enableMutation.mutateAsync,
-        disable: disableMutation.mutateAsync,
-        isInstalling: installMutation.isPending,
-        isUninstalling: uninstallMutation.isPending,
-        isEnabling: enableMutation.isPending,
-        isDisabling: disableMutation.isPending,
-        installError: installMutation.error,
-        uninstallError: uninstallMutation.error,
+        install: (pluginId: string, options?: PluginInstallOptions) => {
+            void pluginId;
+            void options;
+            return rejectUnsupported();
+        },
+        uninstall: (pluginId: string) => {
+            void pluginId;
+            return rejectUnsupported();
+        },
+        enable: (pluginId: string) => {
+            void pluginId;
+            return rejectUnsupported();
+        },
+        disable: (pluginId: string) => {
+            void pluginId;
+            return rejectUnsupported();
+        },
+        isInstalling: false,
+        isUninstalling: false,
+        isEnabling: false,
+        isDisabling: false,
+        installError: createPluginBoundaryError(),
+        uninstallError: createPluginBoundaryError(),
     };
 }
 
@@ -468,48 +343,23 @@ export function usePluginInstallation() {
  * ```
  */
 export function usePluginConfiguration(pluginId: string | undefined) {
-    const queryClient = useQueryClient();
-
-    const {
-        data: plugin,
-        isLoading: loadingPlugin,
-    } = useQuery({
-        queryKey: ['plugins', pluginId],
-        queryFn: async () => {
-            const plugins = await fetchInstalledPlugins();
-            return plugins.find((p) => p.id === pluginId);
-        },
-        enabled: !!pluginId,
-    });
-
-    const {
-        data: health,
-        isLoading: loadingHealth,
-    } = useQuery({
-        queryKey: ['plugins', pluginId, 'health'],
-        queryFn: () => fetchPluginHealth(pluginId!),
-        enabled: !!pluginId,
-        refetchInterval: 30000,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: (config: Record<string, unknown>) =>
-            updatePluginConfig(pluginId!, config),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['plugins', pluginId] });
-            queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] });
-        },
-    });
+    void pluginId;
+    const plugin = undefined as DataCloudPlugin | undefined;
+    const health = undefined as PluginHealth | undefined;
+    const updateConfig = async (config: Record<string, unknown>) => {
+        void config;
+        throw createPluginBoundaryError();
+    };
 
     return {
         plugin,
         config: (plugin?.configSchema ? {} : undefined) as Record<string, unknown> | undefined, // Current config would come from instance
         schema: plugin?.configSchema,
         health,
-        isLoading: loadingPlugin || loadingHealth,
-        updateConfig: updateMutation.mutateAsync,
-        isUpdating: updateMutation.isPending,
-        updateError: updateMutation.error,
+        isLoading: false,
+        updateConfig,
+        isUpdating: false,
+        updateError: createPluginBoundaryError(),
     };
 }
 

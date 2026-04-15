@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Package,
@@ -66,27 +66,10 @@ function getMockDependencies(currentPluginId: string): PluginDependency[] {
 export function PluginDetailsPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const upgradeMutation = useMutation({
-    mutationFn: (pluginId: string) => pluginService.updatePlugin(pluginId, {}),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
-    },
-  });
 
   const { data: plugin, isLoading, error } = useQuery({
     queryKey: ['plugins', 'details', id],
-    queryFn: async () => {
-      // Try to get from installed plugins first
-      const installed = await pluginService.getInstalledPlugins();
-      const found = installed.find((p) => p.id === id);
-      if (found) return found;
-      
-      // If not found, could fetch from marketplace
-      // For now, return null
-      return null;
-    },
+    queryFn: () => pluginService.getPlugin(String(id)),
     enabled: Boolean(id),
   });
 
@@ -211,15 +194,10 @@ export function PluginDetailsPage(): React.ReactElement {
               currentVersion={plugin.metadata.version}
               availableVersion="2.0.0"
               changelog={[
-                'New AI-powered data transformation',
-                'Improved performance by 40%',
-                'Added support for JSON and XML formats',
-                'Fixed memory leak in batch processing',
-                'Enhanced error reporting',
+                'Bundled plugin upgrades require deploying a new launcher build.',
+                'Use the server release notes to review included plugin changes.',
+                'Runtime hot-swap is intentionally unavailable in the standalone launcher.',
               ]}
-              onUpgrade={() => {
-                if (plugin) upgradeMutation.mutate(plugin.id);
-              }}
             />
 
             {/* Capabilities */}
@@ -254,14 +232,11 @@ export function PluginDetailsPage(): React.ReactElement {
                   <h4 className="font-medium text-sm mb-2">Getting Started</h4>
                   <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                     <code className="text-xs">
-                      {`// Install and enable the plugin
-await pluginService.installPlugin({ pluginId: '${plugin.id}' });
+                      {`// Bundled plugins can only be toggled at runtime
 await pluginService.enablePlugin('${plugin.id}');
 
-// Configure the plugin
-await pluginService.updatePluginConfiguration('${plugin.id}', {
-  // your configuration here
-});`}
+// To change plugin contents or version, deploy a new launcher build
+// that bundles the updated plugin artifact.`}
                     </code>
                   </div>
                 </div>

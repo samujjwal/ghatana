@@ -12,7 +12,13 @@
 
 import * as React from 'react';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export const VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE =
+    'Visualization metrics, dashboards, detailed health, and recent-event integration APIs are not exposed by the current Data Cloud launcher API.';
+
+function createVisualizationBoundaryError(): Error {
+    return new Error(VISUALIZATION_INTEGRATION_BOUNDARY_MESSAGE);
+}
 
 // ============================================
 // BASE TYPES (Local definitions to avoid import issues)
@@ -165,84 +171,6 @@ export interface SystemHealth {
 }
 
 // ============================================
-// API FUNCTIONS
-// ============================================
-
-async function fetchMetrics(params: {
-    metricIds: string[];
-    timeRange: TimeRange;
-    entityType?: string;
-    entityId?: string;
-}): Promise<DataCloudMetric[]> {
-    const searchParams = new URLSearchParams();
-    params.metricIds.forEach((id) => searchParams.append('metrics', id));
-    searchParams.set('start', params.timeRange.start.toISOString());
-    searchParams.set('end', params.timeRange.end.toISOString());
-    if (params.entityType) searchParams.set('entityType', params.entityType);
-    if (params.entityId) searchParams.set('entityId', params.entityId);
-
-    const response = await fetch(`/api/metrics?${searchParams.toString()}`);
-    if (!response.ok) throw new Error('Failed to fetch metrics');
-    return response.json();
-}
-
-async function fetchAvailableMetrics(): Promise<
-    { id: string; name: string; description: string; source: string; unit: string }[]
-> {
-    const response = await fetch('/api/metrics/available');
-    if (!response.ok) throw new Error('Failed to fetch available metrics');
-    return response.json();
-}
-
-async function fetchDashboards(): Promise<DashboardConfig[]> {
-    const response = await fetch('/api/dashboards');
-    if (!response.ok) throw new Error('Failed to fetch dashboards');
-    return response.json();
-}
-
-async function fetchDashboard(id: string): Promise<DashboardConfig> {
-    const response = await fetch(`/api/dashboards/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch dashboard');
-    return response.json();
-}
-
-async function saveDashboard(dashboard: Omit<DashboardConfig, 'createdAt' | 'updatedAt'>): Promise<DashboardConfig> {
-    const response = await fetch(`/api/dashboards/${dashboard.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dashboard),
-    });
-    if (!response.ok) throw new Error('Failed to save dashboard');
-    return response.json();
-}
-
-async function deleteDashboard(id: string): Promise<void> {
-    const response = await fetch(`/api/dashboards/${id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('Failed to delete dashboard');
-}
-
-async function fetchSystemHealth(): Promise<SystemHealth> {
-    const response = await fetch('/api/health/detailed');
-    if (!response.ok) throw new Error('Failed to fetch system health');
-    return response.json();
-}
-
-async function fetchRecentEvents(params: {
-    limit?: number;
-    types?: string[];
-    severities?: string[];
-}): Promise<StreamEvent[]> {
-    const searchParams = new URLSearchParams();
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    params.types?.forEach((t) => searchParams.append('types', t));
-    params.severities?.forEach((s) => searchParams.append('severities', s));
-
-    const response = await fetch(`/api/events/recent?${searchParams.toString()}`);
-    if (!response.ok) throw new Error('Failed to fetch recent events');
-    return response.json();
-}
-
-// ============================================
 // HOOKS
 // ============================================
 
@@ -300,20 +228,11 @@ export function useDataCloudMetrics(options: {
         }
         return options.timeRange as TimeRange;
     }, [options.timeRange]);
-
-    const { data: metrics = [], isLoading, error, refetch } = useQuery({
-        queryKey: ['metrics', options.metricIds, timeRange, options.entityType, options.entityId],
-        queryFn: () =>
-            fetchMetrics({
-                metricIds: options.metricIds,
-                timeRange,
-                entityType: options.entityType,
-                entityId: options.entityId,
-            }),
-        staleTime: 30000,
-        refetchInterval: options.refreshInterval ? options.refreshInterval * 1000 : undefined,
-        enabled: options.enabled !== false,
-    });
+    const metrics: DataCloudMetric[] = [];
+    const error = options.enabled === false ? null : createVisualizationBoundaryError();
+    const refetch = async () => {
+        throw createVisualizationBoundaryError();
+    };
 
     // Convert to chart-friendly format
     const chartData = useMemo(
@@ -354,7 +273,7 @@ export function useDataCloudMetrics(options: {
         metrics,
         chartData,
         summaries,
-        isLoading,
+        isLoading: false,
         error,
         refetch,
         timeRange,
@@ -375,11 +294,8 @@ export function useDataCloudMetrics(options: {
  * ```
  */
 export function useAvailableMetrics() {
-    const { data: metrics = [], isLoading, error } = useQuery({
-        queryKey: ['metrics', 'available'],
-        queryFn: fetchAvailableMetrics,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+    const metrics: Array<{ id: string; name: string; description: string; source: string; unit: string }> = [];
+    const error = createVisualizationBoundaryError();
 
     const bySource = useMemo(
         () =>
@@ -397,7 +313,7 @@ export function useAvailableMetrics() {
     return {
         metrics,
         bySource,
-        isLoading,
+        isLoading: false,
         error,
     };
 }
@@ -417,36 +333,25 @@ export function useAvailableMetrics() {
  * ```
  */
 export function useDashboards() {
-    const queryClient = useQueryClient();
-
-    const { data: dashboards = [], isLoading, error } = useQuery({
-        queryKey: ['dashboards'],
-        queryFn: fetchDashboards,
-        staleTime: 60000,
-    });
-
-    const saveMutation = useMutation({
-        mutationFn: saveDashboard,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-        },
-    });
-
-    const deleteMutation = useMutation({
-        mutationFn: deleteDashboard,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-        },
-    });
+    const dashboards: DashboardConfig[] = [];
+    const error = createVisualizationBoundaryError();
+    const save = async (dashboard: Omit<DashboardConfig, 'createdAt' | 'updatedAt'>) => {
+        void dashboard;
+        throw createVisualizationBoundaryError();
+    };
+    const remove = async (id: string) => {
+        void id;
+        throw createVisualizationBoundaryError();
+    };
 
     return {
         dashboards,
-        isLoading,
+        isLoading: false,
         error,
-        save: saveMutation.mutateAsync,
-        isSaving: saveMutation.isPending,
-        remove: deleteMutation.mutateAsync,
-        isDeleting: deleteMutation.isPending,
+        save,
+        isSaving: false,
+        remove,
+        isDeleting: false,
     };
 }
 
@@ -464,51 +369,35 @@ export function useDashboards() {
  * ```
  */
 export function useDashboard(id: string) {
-    const queryClient = useQueryClient();
-
-    const { data: dashboard, isLoading, error } = useQuery({
-        queryKey: ['dashboards', id],
-        queryFn: () => fetchDashboard(id),
-        staleTime: 60000,
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: (updates: Partial<DashboardConfig>) =>
-            saveDashboard({ ...dashboard!, ...updates }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['dashboards', id] });
-            queryClient.invalidateQueries({ queryKey: ['dashboards'] });
-        },
-    });
+    void id;
+    const dashboard: DashboardConfig | undefined = undefined;
+    const error = createVisualizationBoundaryError();
+    const rejectUnsupported = async () => {
+        throw createVisualizationBoundaryError();
+    };
 
     const updatePanel = (panelId: string, updates: Partial<DashboardPanel>) => {
-        if (!dashboard) return;
-
-        const updatedPanels = dashboard.panels.map((p) =>
-            p.id === panelId ? { ...p, ...updates } : p
-        );
-
-        return updateMutation.mutateAsync({ panels: updatedPanels });
+        void panelId;
+        void updates;
+        return rejectUnsupported();
     };
 
     const addPanel = (panel: DashboardPanel) => {
-        if (!dashboard) return;
-        return updateMutation.mutateAsync({ panels: [...dashboard.panels, panel] });
+        void panel;
+        return rejectUnsupported();
     };
 
     const removePanel = (panelId: string) => {
-        if (!dashboard) return;
-        return updateMutation.mutateAsync({
-            panels: dashboard.panels.filter((p) => p.id !== panelId),
-        });
+        void panelId;
+        return rejectUnsupported();
     };
 
     return {
         dashboard,
-        isLoading,
+        isLoading: false,
         error,
-        update: updateMutation.mutateAsync,
-        isUpdating: updateMutation.isPending,
+        update: rejectUnsupported,
+        isUpdating: false,
         updatePanel,
         addPanel,
         removePanel,
@@ -529,16 +418,16 @@ export function useDashboard(id: string) {
  * ```
  */
 export function useSystemHealth(options?: { refreshInterval?: number }) {
-    const { data: health, isLoading, error, refetch } = useQuery({
-        queryKey: ['health', 'detailed'],
-        queryFn: fetchSystemHealth,
-        staleTime: 10000,
-        refetchInterval: options?.refreshInterval ? options.refreshInterval * 1000 : 30000,
-    });
+    void options;
+    const health = undefined as SystemHealth | undefined;
+    const error = createVisualizationBoundaryError();
+    const refetch = async () => {
+        throw createVisualizationBoundaryError();
+    };
 
     return {
         health,
-        isLoading,
+        isLoading: false,
         error,
         refetch,
         isHealthy: health?.overall === 'healthy',
@@ -566,21 +455,16 @@ export function useRecentEvents(options?: {
     severities?: string[];
     refreshInterval?: number;
 }) {
-    const { data: events = [], isLoading, error, refetch } = useQuery({
-        queryKey: ['events', 'recent', options?.types, options?.severities, options?.limit],
-        queryFn: () =>
-            fetchRecentEvents({
-                limit: options?.limit ?? 100,
-                types: options?.types,
-                severities: options?.severities,
-            }),
-        staleTime: 10000,
-        refetchInterval: options?.refreshInterval ? options.refreshInterval * 1000 : undefined,
-    });
+    void options;
+    const events: StreamEvent[] = [];
+    const error = createVisualizationBoundaryError();
+    const refetch = async () => {
+        throw createVisualizationBoundaryError();
+    };
 
     return {
         events,
-        isLoading,
+        isLoading: false,
         error,
         refetch,
     };

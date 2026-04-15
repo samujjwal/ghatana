@@ -221,6 +221,55 @@ public class AnalyticsHandler {
 
     // ==================== Report Endpoints (DC-10) ====================
 
+    /**
+     * {@code POST /api/v1/analytics/explain}
+     *
+     * <p>Returns the query plan for the given query text without executing it.
+     * Callers can use this to inspect data-source routing, estimated cost, and
+     * query type <em>before</em> submitting an expensive query execution.
+     *
+     * @param request HTTP request; body must contain {@code {"query": "..."}}
+     * @return 200 with the estimated {@link com.ghatana.datacloud.analytics.QueryPlan} fields
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleAnalyticsExplain(HttpRequest request) {
+        if (analyticsEngine == null) {
+            return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
+        }
+        String tenantId = http.resolveTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+                String queryText = (String) payload.get("query");
+                if (queryText == null || queryText.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                }
+                Map<String, Object> params = payload.containsKey("parameters")
+                        ? (Map<String, Object>) payload.get("parameters")
+                        : Map.of();
+                return analyticsEngine.explainQuery(tenantId, queryText, params)
+                        .map(plan -> {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> planFields =
+                                    http.objectMapper().convertValue(plan, Map.class);
+                            Map<String, Object> response = new LinkedHashMap<>(planFields);
+                            response.put("explain", true);
+                            response.put("timestamp", Instant.now().toString());
+                            return http.jsonResponse(response);
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[DC-9] analytics explain failed: {}", e.getMessage(), e);
+                            return Promise.of(http.errorResponse(500,
+                                    "Explain failed: " + e.getMessage()));
+                        });
+            } catch (Exception e) {
+                log.error("[DC-9] analytics explain parse error: {}", e.getMessage(), e);
+                return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        });
+    }
+
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreateReport(HttpRequest request) {
         if (reportService == null) {

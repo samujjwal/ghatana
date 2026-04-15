@@ -36,6 +36,9 @@ import { costService } from '../api/cost.service';
 import { brainService } from '../api/brain.service';
 import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
 
+const EXECUTION_BOUNDARY_SUMMARY = 'Execution summary unavailable in the standalone launcher';
+const HEALTH_BOUNDARY_SUMMARY = 'System health summary unavailable in the standalone launcher';
+
 /**
  * Transform quality issues to ambient metrics
  */
@@ -93,7 +96,7 @@ function transformCostToAmbient(data: { optimizations?: { estimatedSavings: numb
       summary: `${optimizations.length} cost optimization${optimizations.length > 1 ? 's' : ''} available${totalSavings > 0 ? ` (~$${totalSavings.toFixed(0)} savings)` : ''}`,
       count: optimizations.length,
       timestamp: new Date().toISOString(),
-      detailPath: '/data?view=cost',
+      detailPath: '/insights',
     },
   ];
 }
@@ -132,8 +135,20 @@ function transformLearningToAmbient(data: { patterns?: number; signals?: number 
 /**
  * Transform execution status to ambient metrics
  */
-function transformExecutionToAmbient(data: { running?: number; failed?: number }): AmbientMetric[] {
+function transformExecutionToAmbient(data: { running?: number; failed?: number; unsupported?: boolean }): AmbientMetric[] {
   const metrics: AmbientMetric[] = [];
+
+  if (data.unsupported) {
+    metrics.push({
+      id: 'executions-unsupported',
+      type: 'execution',
+      severity: 'info',
+      summary: EXECUTION_BOUNDARY_SUMMARY,
+      timestamp: new Date().toISOString(),
+      detailPath: '/pipelines',
+    });
+    return metrics;
+  }
 
   if (data?.running && data.running > 0) {
     metrics.push({
@@ -165,8 +180,19 @@ function transformExecutionToAmbient(data: { running?: number; failed?: number }
 /**
  * Transform system health to ambient metrics
  */
-function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency?: number }): AmbientMetric[] {
+function transformHealthToAmbient(data: { cpu?: number; memory?: number; latency?: number; unsupported?: boolean }): AmbientMetric[] {
   const metrics: AmbientMetric[] = [];
+
+  if (data.unsupported) {
+    metrics.push({
+      id: 'health-unsupported',
+      type: 'health',
+      severity: 'info',
+      summary: HEALTH_BOUNDARY_SUMMARY,
+      timestamp: new Date().toISOString(),
+    });
+    return metrics;
+  }
 
   if (data?.cpu && data.cpu >= 90) {
     metrics.push({
@@ -328,15 +354,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
   const { data: executionData, isLoading: executionLoading } = useQuery({
     queryKey: ['ambient-executions'],
     queryFn: async () => {
-      try {
-        const response = await fetch('/api/executions/summary');
-        if (!response.ok) {
-          return { running: 0, failed: 0 };
-        }
-        return response.json();
-      } catch {
-        return { running: 0, failed: 0 };
-      }
+      return { unsupported: true };
     },
     refetchInterval: 10000, // 10 seconds for executions
     staleTime: CACHE_TIMES.LIVE_STALE_MS,
@@ -346,15 +364,7 @@ export function useAmbientIntelligence(): UseAmbientIntelligenceReturn {
   const { data: healthData, isLoading: healthLoading } = useQuery({
     queryKey: ['ambient-health'],
     queryFn: async () => {
-      try {
-        const response = await fetch('/api/metrics/system');
-        if (!response.ok) {
-          return { cpu: 0, memory: 0, latency: 0 };
-        }
-        return response.json();
-      } catch {
-        return { cpu: 0, memory: 0, latency: 0 };
-      }
+      return { unsupported: true };
     },
     refetchInterval: 30000, // 30 seconds for health
     staleTime: CACHE_TIMES.SHORT_STALE_MS / 2 /* 15 s */,
