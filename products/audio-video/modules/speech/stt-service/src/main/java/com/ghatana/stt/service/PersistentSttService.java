@@ -10,7 +10,6 @@ import com.ghatana.media.common.AudioFormat;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.stt.api.TranscriptionOptions;
 import com.ghatana.media.stt.api.TranscriptionResult;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -19,9 +18,12 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * @doc.type class
@@ -38,6 +40,7 @@ public class PersistentSttService {
     private final AudioFileService audioFileService;
     private final TranscriptionService transcriptionService;
     private final Timer transcribeTimer;
+    private final Executor blockingExecutor;
 
     public PersistentSttService(
             AudioVideoLibrary library,
@@ -50,6 +53,7 @@ public class PersistentSttService {
         this.transcribeTimer = Timer.builder("stt.persistent.transcribe")
             .description("Persistent transcription latency")
             .register(meterRegistry);
+        this.blockingExecutor = ForkJoinPool.commonPool();
     }
 
     /**
@@ -89,7 +93,7 @@ public class PersistentSttService {
                 return performTranscription(audioBytes, sampleRate, language)
                     .then(transcriptionResult -> {
                         // Step 3: Persist transcription result
-                        return persistTranscription(tenantId, audioFile.getId(), transcriptionResult)
+                        return persistTranscription(tenantId, userId, audioFile.getId(), transcriptionResult)
                             .map(transcription -> {
                                 long elapsedMs = System.currentTimeMillis() - startTime;
                                 transcribeTimer.record(Duration.ofMillis(elapsedMs));
@@ -165,12 +169,14 @@ public class PersistentSttService {
             int sampleRate,
             String language) {
 
-        return Promise.ofCallable(() -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             AudioData audio = new AudioData(audioBytes, sampleRate, 1, 16, Duration.ZERO, AudioFormat.PCM);
 
             try (SttEngine stt = library.getSttEngine()) {
                 TranscriptionOptions options = TranscriptionOptions.builder()
-                    .languageHint(Optional.ofNullable(language))
+                    .language(language != null && !language.isBlank()
+                        ? Locale.forLanguageTag(language)
+                        : Locale.getDefault())
                     .build();
                 return stt.transcribe(audio, options);
             }
@@ -179,6 +185,7 @@ public class PersistentSttService {
 
     private Promise<TranscriptionEntity> persistTranscription(
             String tenantId,
+            UUID userId,
             UUID audioFileId,
             TranscriptionResult result) {
 
@@ -186,13 +193,14 @@ public class PersistentSttService {
             UUID.randomUUID(),
             tenantId,
             audioFileId,
+            userId,
             result.text(),
-            result.detectedLanguage() != null ? result.detectedLanguage() : "unknown"
+            result.language() != null ? result.language() : "unknown"
         );
         entity.setConfidence((float) result.confidence());
         entity.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED);
-        entity.setWordCount(result.text().split("\\s+").length);
-        entity.setMetadata("{\"model\":\"" + result.modelId() + "\",\"processingTimeMs\":" + result.processingTime().toMillis() + "}");
+        entity.setModelUsed(result.modelId());
+        entity.setProcessingTimeMs(result.processingTime().toMillis());
         entity.setCreatedAt(Instant.now());
         entity.setUpdatedAt(Instant.now());
 

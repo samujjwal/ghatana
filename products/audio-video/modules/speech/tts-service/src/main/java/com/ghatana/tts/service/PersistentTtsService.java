@@ -1,7 +1,5 @@
 package com.ghatana.tts.service;
 
-import com.ghatana.audio.video.infrastructure.persistence.entity.AudioFileEntity;
-import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.AudioData;
@@ -18,6 +16,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * @doc.type class
@@ -33,6 +33,7 @@ public class PersistentTtsService {
     private final AudioVideoLibrary library;
     private final AudioFileService audioFileService;
     private final Timer synthesizeTimer;
+    private final Executor blockingExecutor;
 
     public PersistentTtsService(
             AudioVideoLibrary library,
@@ -43,6 +44,7 @@ public class PersistentTtsService {
         this.synthesizeTimer = Timer.builder("tts.persistent.synthesize")
             .description("Persistent synthesis latency")
             .register(meterRegistry);
+        this.blockingExecutor = ForkJoinPool.commonPool();
     }
 
     /**
@@ -72,7 +74,7 @@ public class PersistentTtsService {
 
         long startTime = System.currentTimeMillis();
 
-        return Promise.ofCallable(() -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             // Step 1: Perform synthesis
             try (TtsEngine tts = library.getTtsEngine()) {
                 SynthesisOptions options = SynthesisOptions.builder()

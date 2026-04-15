@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -92,7 +93,20 @@ class DataCloudHttpServerJwtAuthTest {
         if (token != null) {
             builder.header("Authorization", "Bearer " + token);
         }
-        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        HttpRequest request = builder.build();
+        int attempts = 0;
+        while (true) {
+            try {
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (ConnectException connectException) {
+                attempts++;
+                if (attempts >= 10) {
+                    throw connectException;
+                }
+                Thread.sleep(50L);
+            }
+        }
     }
 
     private int findFreePort() throws IOException {

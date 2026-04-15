@@ -75,6 +75,23 @@ public final class FinanceAiPersistenceTestSupport {
             long ttlHours,
             int maxRequestsPerMinute,
             boolean sharedRateLimitEnabled) {
+        return createTransactionRuntimeConfig(
+            postgres,
+            poolName,
+            ttlHours,
+            maxRequestsPerMinute,
+            sharedRateLimitEnabled,
+            60L
+        );
+    }
+
+    public static FinanceTransactionRuntimeConfig createTransactionRuntimeConfig(
+            PostgreSQLContainer<?> postgres,
+            String poolName,
+            long ttlHours,
+            int maxRequestsPerMinute,
+            boolean sharedRateLimitEnabled,
+            long rateLimitWindowSeconds) {
         return FinanceTransactionRuntimeConfig.fromContext(new RuntimeConfigKernelContext(
             Map.ofEntries(
                 Map.entry("finance.transaction.idempotency.persistence.enabled", true),
@@ -90,7 +107,7 @@ public final class FinanceAiPersistenceTestSupport {
                 Map.entry("finance.transaction.idempotency.ttl-hours", ttlHours),
                 Map.entry("finance.transaction.rate-limit.shared.enabled", sharedRateLimitEnabled),
                 Map.entry("finance.transaction.rate-limit.max-requests-per-minute", maxRequestsPerMinute),
-                Map.entry("finance.transaction.rate-limit.window-seconds", 60L)
+                Map.entry("finance.transaction.rate-limit.window-seconds", rateLimitWindowSeconds)
             )
         ));
     }

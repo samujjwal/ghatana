@@ -141,9 +141,14 @@ class JpaAudioFileRepositoryTest {
         // THEN
         assertThat(deleted).isTrue();
         var found = repository.findById(tenantId, entity.getId());
-        assertThat(found).isPresent();
-        assertThat(found.get().isDeleted()).isTrue();
-        assertThat(found.get().getDeletedAt()).isNotNull();
+        assertThat(found).isEmpty();
+
+        var includingDeleted = repository.findAllByTenantIdIncludingDeleted(tenantId).stream()
+            .filter(audioFile -> audioFile.getId().equals(entity.getId()))
+            .findFirst();
+        assertThat(includingDeleted).isPresent();
+        assertThat(includingDeleted.get().isDeleted()).isTrue();
+        assertThat(includingDeleted.get().getDeletedAt()).isNotNull();
     }
 
     @Test

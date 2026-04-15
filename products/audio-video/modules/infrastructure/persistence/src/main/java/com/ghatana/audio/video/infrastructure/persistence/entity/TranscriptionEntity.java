@@ -130,7 +130,7 @@ public class TranscriptionEntity implements Serializable {
     // Constructors
     public TranscriptionEntity() {}
 
-    public TranscriptionEntity(UUID id, String tenantId, UUID audioFileId, UUID userId, 
+    public TranscriptionEntity(UUID id, String tenantId, UUID audioFileId, UUID userId,
                                String text, String language) {
         this.id = id;
         this.tenantId = tenantId;

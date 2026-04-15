@@ -5,7 +5,6 @@
 package com.ghatana.aep.security;
 
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpHeaderValue;
 import io.activej.http.HttpRequest;

@@ -20,6 +20,9 @@ dependencies {
     // Multi-tenancy
     implementation(project(":platform:java:governance"))
 
+    // Persistence integration
+    implementation(project(":products:audio-video:modules:infrastructure:persistence"))
+
     // Protobuf
     implementation(libs.protobuf.java)
 

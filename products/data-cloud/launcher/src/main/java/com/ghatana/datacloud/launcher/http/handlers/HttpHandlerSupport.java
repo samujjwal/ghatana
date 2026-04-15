@@ -3,7 +3,6 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import io.activej.http.*;
-import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

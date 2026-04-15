@@ -4,11 +4,7 @@
 
 package com.ghatana.agent.adaptive;
 
-import com.ghatana.agent.AgentDescriptor;
-import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentType;
-import com.ghatana.agent.TypedAgent;
-import com.ghatana.agent.AgentConfig;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;

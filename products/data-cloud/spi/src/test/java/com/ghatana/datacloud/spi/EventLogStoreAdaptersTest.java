@@ -1,9 +1,5 @@
 package com.ghatana.datacloud.spi;
 
-import com.ghatana.platform.domain.eventstore.TenantContext;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
-import com.ghatana.platform.types.identity.Offset;
 import org.junit.jupiter.api.*;
 import java.time.Instant;
 import java.util.*;

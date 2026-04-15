@@ -17,7 +17,3 @@ class EventLogStoreServiceRegistrationTest {
         assertThat(ServiceLoader.load(EventLogStore.class).findFirst()).isEmpty();
     }
 }
-
-
-
-

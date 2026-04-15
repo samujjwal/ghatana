@@ -16,7 +16,6 @@
 
 package com.ghatana.agent.framework.runtime;
 
-import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.AgentConfig;

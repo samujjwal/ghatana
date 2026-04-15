@@ -2,7 +2,7 @@ package com.ghatana.audio.video.infrastructure.persistence.service;
 
 import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity;
 import com.ghatana.audio.video.infrastructure.persistence.repository.TranscriptionRepository;
-import com.ghatana.platform.testing.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.eventloop.Eventloop;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -195,6 +194,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
         return new TranscriptionEntity(
             UUID.randomUUID(),
             tenantId,
+            UUID.randomUUID(),
             UUID.randomUUID(),
             "Hello world transcription",
             "en"

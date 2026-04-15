@@ -13,6 +13,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.sql.DriverManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -45,6 +46,14 @@ class PersistenceIntegrationTest {
 
     @BeforeAll
     void setUpClass() {
+        try (var connection = DriverManager.getConnection(
+            postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+             var statement = connection.createStatement()) {
+            statement.execute("CREATE SCHEMA IF NOT EXISTS audio_video");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create test schema audio_video", e);
+        }
+
         // Configure persistence unit with Testcontainer database
         Map<String, String> properties = new HashMap<>();
         properties.put("jakarta.persistence.jdbc.url", postgres.getJdbcUrl());
@@ -53,6 +62,7 @@ class PersistenceIntegrationTest {
         properties.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver");
         properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         properties.put("hibernate.hbm2ddl.auto", "create-drop");
+        properties.put("hibernate.default_schema", "audio_video");
         properties.put("hibernate.show_sql", "true");
 
         emf = Persistence.createEntityManagerFactory("audio-video-test", properties);
@@ -128,6 +138,7 @@ class PersistenceIntegrationTest {
             UUID.randomUUID(),
             tenantId,
             audioFile.getId(),
+            UUID.randomUUID(),
             "This is a test transcription of the interview.",
             "en"
         );
@@ -142,7 +153,7 @@ class PersistenceIntegrationTest {
         var retrieved = transcriptionRepository.findById(tenantId, saved.getId());
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getAudioFileId()).isEqualTo(audioFile.getId());
-        assertThat(retrieved.get().getTranscriptionText()).contains("test transcription");
+        assertThat(retrieved.get().getText()).contains("test transcription");
         assertThat(retrieved.get().getConfidence()).isEqualTo(0.95f);
     }
 
@@ -274,6 +285,7 @@ class PersistenceIntegrationTest {
         return new TranscriptionEntity(
             UUID.randomUUID(),
             tenantId,
+            UUID.randomUUID(),
             UUID.randomUUID(),
             text,
             "en"

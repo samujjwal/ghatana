@@ -568,7 +568,8 @@ public class AepHttpServer {
             return Promise.of(HttpResponse.ok200()
                 .withHeader(HttpHeaders.CONTENT_TYPE,
                     HttpHeaderValue.of("text/plain; version=0.0.4; charset=utf-8"))
-                .withBody(scrape.getBytes(StandardCharsets.UTF_8)));
+                .withBody(scrape.getBytes(StandardCharsets.UTF_8))
+                .build());
         }
         // Fallback when no Prometheus registry is configured (e.g. tests / embedded mode)
         return Promise.of(jsonResponse(Map.of(

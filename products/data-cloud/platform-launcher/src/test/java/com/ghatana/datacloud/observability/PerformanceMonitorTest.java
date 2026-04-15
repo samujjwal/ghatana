@@ -7,7 +7,6 @@
  */
 package com.ghatana.datacloud.observability;
 
-import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.*;
 

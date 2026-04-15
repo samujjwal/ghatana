@@ -153,5 +153,3 @@ class DataCloudFactoryTest extends EventloopTestBase {
         }
     }
 }
-
-

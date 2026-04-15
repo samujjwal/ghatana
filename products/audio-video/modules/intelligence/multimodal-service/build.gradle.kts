@@ -20,6 +20,9 @@ dependencies {
     // Reuse the existing product video frame extraction utility instead of re-implementing it
     implementation(project(":products:audio-video:modules:vision:vision-service"))
 
+    // Persistence integration
+    implementation(project(":products:audio-video:modules:infrastructure:persistence"))
+
     // gRPC
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)

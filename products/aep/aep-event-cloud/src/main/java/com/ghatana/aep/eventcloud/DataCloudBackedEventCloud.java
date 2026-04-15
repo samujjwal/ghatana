@@ -6,6 +6,7 @@ package com.ghatana.aep.eventcloud;
 
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
+import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.ghatana.platform.domain.eventstore.TenantContext;
@@ -49,17 +50,17 @@ public final class DataCloudBackedEventCloud implements EventCloud {
     /**
      * ServiceLoader-compatible constructor.
      *
-     * <p>Discovers {@link EventLogStore} via {@link ServiceLoader}. Fails fast
-     * if no provider is found on the classpath.
-     *
-     * @throws IllegalStateException if no EventLogStore SPI provider is available
+     * <p>Discovers {@link EventLogStore} via {@link ServiceLoader}. When no
+     * provider is registered on the classpath, uses the in-memory provider as
+     * a safe fallback for local and test environments.
      */
     public DataCloudBackedEventCloud() {
         this(EventLogStoreAdapters.toPlatformStore(
             ServiceLoader.load(com.ghatana.datacloud.spi.EventLogStore.class).findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                    "No EventLogStore SPI provider on classpath. " +
-                    "Add data-cloud:platform or another EventLogStore implementation."))));
+                .orElseGet(() -> {
+                    log.warn("No EventLogStore SPI provider registered; using in-memory fallback");
+                    return new InMemoryEventLogStoreProvider();
+                })));
     }
 
     /**

@@ -53,6 +53,7 @@ class JpaTranscriptionRepositoryTest {
             UUID.randomUUID(),
             tenantId,
             audioFileId,
+            UUID.randomUUID(),
             "Hello world, this is a test transcription.",
             "en"
         );
@@ -94,6 +95,7 @@ class JpaTranscriptionRepositoryTest {
             UUID.randomUUID(),
             tenantId,
             audioFileId,
+            UUID.randomUUID(),
             "Test transcription text",
             "en"
         );
@@ -231,6 +233,7 @@ class JpaTranscriptionRepositoryTest {
             UUID.randomUUID(),
             tenantId,
             audioFileId,
+            UUID.randomUUID(),
             "Test text",
             "en"
         );
@@ -278,6 +281,7 @@ class JpaTranscriptionRepositoryTest {
         return new TranscriptionEntity(
             UUID.randomUUID(),
             tenantId,
+            UUID.randomUUID(),
             UUID.randomUUID(),
             "Test transcription " + UUID.randomUUID(),
             "en"

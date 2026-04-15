@@ -3,7 +3,6 @@ package com.ghatana.datacloud.spi;
 import com.ghatana.datacloud.DataRecord;
 import com.ghatana.datacloud.RecordType;
 import org.junit.jupiter.api.*;
-import org.mockito.Mockito;
 import io.activej.promise.Promise;
 import com.ghatana.datacloud.spi.StoragePlugin.HealthStatus;
 import java.util.*;

@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * @doc.type class
@@ -27,6 +29,7 @@ public class PersistentVoiceService {
     private final AudioFileService audioFileService;
     private final Timer cloneTimer;
     private final Timer enhanceTimer;
+    private final Executor blockingExecutor;
 
     public PersistentVoiceService(
             AudioFileService audioFileService,
@@ -38,6 +41,7 @@ public class PersistentVoiceService {
         this.enhanceTimer = Timer.builder("voice.persistent.enhance")
             .description("Voice enhancement latency with persistence")
             .register(meterRegistry);
+        this.blockingExecutor = ForkJoinPool.commonPool();
     }
 
     /**
@@ -196,7 +200,7 @@ public class PersistentVoiceService {
     }
 
     private Promise<byte[]> performVoiceCloning(byte[] sampleData, String voiceName) {
-        return Promise.ofCallable(() -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             // Placeholder for actual voice cloning ML model
             // In production, this calls the voice cloning engine
             LOG.debug("Cloning voice '{}' from {} bytes of sample data", voiceName, sampleData.length);
@@ -206,7 +210,7 @@ public class PersistentVoiceService {
     }
 
     private Promise<byte[]> performEnhancement(byte[] audioData, EnhancementOptions options) {
-        return Promise.ofCallable(() -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             // Placeholder for actual audio enhancement ML model
             LOG.debug("Enhancing audio with noiseReduction={}, clarityBoost={}",
                 options.noiseReduction(), options.clarityBoost());

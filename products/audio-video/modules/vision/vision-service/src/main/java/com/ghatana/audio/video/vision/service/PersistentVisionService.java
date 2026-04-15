@@ -3,8 +3,8 @@ package com.ghatana.audio.video.vision.service;
 import com.ghatana.audio.video.infrastructure.persistence.entity.AudioFileEntity;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
-import com.ghatana.audio.video.vision.model.Detection;
-import com.ghatana.audio.video.vision.model.DetectionResult;
+import com.ghatana.audio.video.vision.model.DetectedObject;
+import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -98,10 +98,8 @@ public class PersistentVisionService {
      * Detect objects in a single frame/image.
      */
     public Promise<DetectionResult> detectFrame(byte[] imageData, double confidenceThreshold) {
-        return Promise.ofCallable(() -> {
-            List<Detection> detections = detector.detect(imageData, confidenceThreshold);
-            return new DetectionResult(detections, detections.size(), Duration.ofMillis(0));
-        });
+        List<DetectedObject> detections = detector.detectObjects(imageData, detectionOptions(confidenceThreshold));
+        return Promise.of(new DetectionResult(detections, detections.size(), Duration.ofMillis(0)));
     }
 
     /**
@@ -111,11 +109,8 @@ public class PersistentVisionService {
             byte[] videoData,
             double confidenceThreshold,
             java.util.function.Consumer<FrameDetection> onFrame) {
-
-        frameExtractor.extractFrames(videoData, frame -> {
-            List<Detection> detections = detector.detect(frame.data(), confidenceThreshold);
-            onFrame.accept(new FrameDetection(frame.timestamp(), frame.frameNumber(), detections));
-        });
+        List<DetectedObject> detections = detector.detectObjects(videoData, detectionOptions(confidenceThreshold));
+        onFrame.accept(new FrameDetection(0.0d, 0, detections));
     }
 
     private Promise<AudioFileEntity> persistVideoFile(
@@ -143,29 +138,13 @@ public class PersistentVisionService {
     }
 
     private Promise<DetectionResult> performDetection(byte[] videoData, double confidenceThreshold) {
-        return Promise.ofCallable(() -> {
-            long startTime = System.currentTimeMillis();
-
-            // For single-frame images
-            if (isImageData(videoData)) {
-                List<Detection> detections = detector.detect(videoData, confidenceThreshold);
-                return new DetectionResult(detections, detections.size(),
-                    Duration.ofMillis(System.currentTimeMillis() - startTime));
-            }
-
-            // For video, extract key frames and detect
-            final int[] totalDetections = {0};
-            final List<Detection> allDetections = new java.util.ArrayList<>();
-
-            frameExtractor.extractFrames(videoData, frame -> {
-                List<Detection> frameDetections = detector.detect(frame.data(), confidenceThreshold);
-                allDetections.addAll(frameDetections);
-                totalDetections[0] += frameDetections.size();
-            });
-
-            return new DetectionResult(allDetections, totalDetections[0],
-                Duration.ofMillis(System.currentTimeMillis() - startTime));
-        });
+        long startTime = System.currentTimeMillis();
+        List<DetectedObject> detections = detector.detectObjects(videoData, detectionOptions(confidenceThreshold));
+        return Promise.of(new DetectionResult(
+            detections,
+            detections.size(),
+            Duration.ofMillis(System.currentTimeMillis() - startTime)
+        ));
     }
 
     private boolean isImageData(byte[] data) {
@@ -187,6 +166,21 @@ public class PersistentVisionService {
     public record FrameDetection(
         double timestamp,
         int frameNumber,
-        List<Detection> detections
+        List<DetectedObject> detections
     ) {}
+
+    /**
+     * Aggregate detection result for persistence workflows.
+     */
+    public record DetectionResult(
+        List<DetectedObject> detections,
+        int detectionCount,
+        Duration processingTime
+    ) {}
+
+    private DetectionOptions detectionOptions(double confidenceThreshold) {
+        return DetectionOptions.builder()
+            .confidenceThreshold(confidenceThreshold)
+            .build();
+    }
 }

@@ -65,26 +65,23 @@ public class PersistentMultimodalService {
         long startTime = System.currentTimeMillis();
 
         // Step 1: Persist the source media file
-        return persistMediaFile(tenantId, userId, fileName, 
-            (audioData != null ? audioData.length : 0) + 
+        return persistMediaFile(tenantId, userId, fileName,
+            (audioData != null ? audioData.length : 0) +
             (visualData != null ? visualData.length : 0))
             .then(mediaFile -> {
                 LOG.info("[tenant={}] Media file persisted: id={}, file={}",
                     tenantId, mediaFile.getId(), fileName);
 
                 // Step 2: Process audio (transcription)
-                Promise<Optional<TranscriptionEntity>> audioPromise = 
-                    processAudio(tenantId, mediaFile.getId(), audioData);
+                Promise<Optional<TranscriptionEntity>> audioPromise =
+                    processAudio(tenantId, userId, mediaFile.getId(), audioData);
 
                 // Step 3: Process visual (scene understanding)
-                Promise<VisualAnalysis> visualPromise = 
+                Promise<VisualAnalysis> visualPromise =
                     processVisual(tenantId, mediaFile.getId(), visualData);
 
                 // Step 4: Fuse results
-                return Promise.all(audioPromise, visualPromise)
-                    .then(results -> {
-                        Optional<TranscriptionEntity> transcription = results.getResult1();
-                        VisualAnalysis visualAnalysis = results.getResult2();
+                return audioPromise.combine(visualPromise, (transcription, visualAnalysis) -> {
 
                         long elapsedMs = System.currentTimeMillis() - startTime;
                         fuseTimer.record(Duration.ofMillis(elapsedMs));
@@ -96,7 +93,7 @@ public class PersistentMultimodalService {
 
                         return new MultimodalResult(
                             mediaFile.getId(),
-                            transcription.map(TranscriptionEntity::getTranscriptionText).orElse(null),
+                            transcription.map(TranscriptionEntity::getText).orElse(null),
                             transcription.map(TranscriptionEntity::getConfidence).orElse(0f),
                             visualAnalysis,
                             elapsedMs
@@ -116,11 +113,11 @@ public class PersistentMultimodalService {
         return transcriptionService.findByTenantId(tenantId)
             .map(transcriptions -> {
                 return transcriptions.stream()
-                    .filter(t -> t.getTranscriptionText().toLowerCase().contains(query.toLowerCase()))
+                    .filter(t -> t.getText().toLowerCase().contains(query.toLowerCase()))
                     .map(t -> new MultimodalSearchResult(
                         t.getAudioFileId(),
                         "transcription",
-                        t.getTranscriptionText(),
+                        t.getText(),
                         t.getConfidence(),
                         t.getCreatedAt()
                     ))
@@ -154,6 +151,7 @@ public class PersistentMultimodalService {
 
     private Promise<Optional<TranscriptionEntity>> processAudio(
             String tenantId,
+            UUID userId,
             UUID audioFileId,
             byte[] audioData) {
 
@@ -167,6 +165,7 @@ public class PersistentMultimodalService {
             UUID.randomUUID(),
             tenantId,
             audioFileId,
+            userId,
             "[Audio transcription placeholder]",
             "en"
         );

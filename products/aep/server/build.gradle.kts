@@ -87,6 +87,8 @@ dependencies {
 tasks.named<Test>("test") {
     // useJUnitPlatform() already applied by java-module; keep environment override
     environment("AEP_AUTH_DISABLED", "true")
+    environment("AEP_ENV", "test")
+    environment("AEP_JWT_SECRET", "test-jwt-secret-0123456789abcdef")
 }
 
 // All previously-excluded tests are now fully implemented and enabled:

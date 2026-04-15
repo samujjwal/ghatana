@@ -93,7 +93,8 @@ class FinanceTransactionRuntimeServicePersistenceTest extends EventloopTestBase 
             "finance-txn-rate-limit-runtime",
             24L,
             1,
-            true
+            true,
+            3600L
         );
         FinanceTransactionRuntimeTestSupport.StubAiRuntime aiRuntime = new FinanceTransactionRuntimeTestSupport.StubAiRuntime();
         FinanceTransactionRuntimeService firstRuntime = new FinanceTransactionRuntimeService(config, aiRuntime, aiRuntime);

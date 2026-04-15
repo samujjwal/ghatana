@@ -7,7 +7,6 @@
 
 package com.ghatana.agent.migration;
 
-import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;

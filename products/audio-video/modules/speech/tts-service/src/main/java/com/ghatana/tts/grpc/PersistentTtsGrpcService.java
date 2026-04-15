@@ -85,8 +85,9 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
                 responseObserver.onNext(SynthesizeResponse.newBuilder()
                     .setAudioData(com.google.protobuf.ByteString.copyFrom(result.audioData()))
                     .setSampleRate(result.sampleRate())
-                    .setAudioFileId(result.audioFileId().toString())
-                    .setProcessingTimeMs((int) result.processingTimeMs())
+                    .setDurationMs(0L)
+                    .setProcessingTimeMs(result.processingTimeMs())
+                    .setVoiceUsed(voiceId.orElse(""))
                     .build());
                 responseObserver.onCompleted();
             }).whenException(e -> {
@@ -107,7 +108,7 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
     }
 
     @Override
-    public void synthesizeStreaming(SynthesizeRequest request, StreamObserver<AudioChunk> responseObserver) {
+    public void streamSynthesize(SynthesizeRequest request, StreamObserver<AudioChunk> responseObserver) {
         // For streaming, we might want to store the final audio after streaming completes
         // For now, delegate to base implementation without persistence
         responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
@@ -116,14 +117,12 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
     }
 
     private String getTenantId() {
-        // In production, extract from gRPC context or authentication context
-        return io.grpc.Context.current()
-            .getValue(io.grpc.Metadata.Key.of("tenant-id", io.grpc.Metadata.ASCII_STRING_MARSHALLER));
+        String tenantId = MDC.get("tenantId");
+        return tenantId != null && !tenantId.isBlank() ? tenantId : "default";
     }
 
     private String getUserId() {
-        return io.grpc.Context.current()
-            .getValue(io.grpc.Metadata.Key.of("user-id", io.grpc.Metadata.ASCII_STRING_MARSHALLER));
+        return MDC.get("userId");
     }
 
     private String cid() {

@@ -2,9 +2,8 @@ package com.ghatana.audio.video.infrastructure.persistence.service;
 
 import com.ghatana.audio.video.infrastructure.persistence.entity.AudioFileEntity;
 import com.ghatana.audio.video.infrastructure.persistence.repository.AudioFileRepository;
-import com.ghatana.platform.testing.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

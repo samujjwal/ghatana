@@ -25,7 +25,7 @@ import java.util.UUID;
     ),
     @NamedQuery(
         name = "AudioFile.findByIdAndTenantId",
-        query = "SELECT af FROM AudioFileEntity af WHERE af.id = :id AND af.tenantId = :tenantId"
+        query = "SELECT af FROM AudioFileEntity af WHERE af.id = :id AND af.tenantId = :tenantId AND af.deleted = false"
     ),
     @NamedQuery(
         name = "AudioFile.findByUserIdAndTenantId",
@@ -37,7 +37,7 @@ import java.util.UUID;
     ),
     @NamedQuery(
         name = "AudioFile.countByTenantId",
-        query = "SELECT COUNT(af) FROM AudioFileEntity af WHERE af.tenantId = :tenantId"
+        query = "SELECT COUNT(af) FROM AudioFileEntity af WHERE af.tenantId = :tenantId AND af.deleted = false"
     )
 })
 public class AudioFileEntity implements Serializable {
@@ -132,7 +132,7 @@ public class AudioFileEntity implements Serializable {
     // Constructors
     public AudioFileEntity() {}
 
-    public AudioFileEntity(UUID id, String tenantId, UUID userId, String fileName, 
+    public AudioFileEntity(UUID id, String tenantId, UUID userId, String fileName,
                            String storagePath, String format) {
         this.id = id;
         this.tenantId = tenantId;

@@ -152,7 +152,7 @@ class WatchlistManagementTest {
         }
 
         String createSnapshot(String listName) {
-            String version = "v" + System.currentTimeMillis();
+            String version = "v" + System.nanoTime();
             Watchlist list = watchlists.get(listName);
             int entryCount = list != null ? list.entries().size() : 0;
             versionHistory.computeIfAbsent(listName, k -> new ArrayList<>())
