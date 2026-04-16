@@ -27,6 +27,7 @@ public class PipelineCheckpointHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PipelineCheckpointHandler.class);
     private static final String DC_PIPELINES_COLLECTION = "dc_pipelines";
+    private static final String MISSING_TENANT_MESSAGE = "X-Tenant-Id header or tenantId query parameter is required";
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
@@ -39,7 +40,10 @@ public class PipelineCheckpointHandler {
     // ==================== Pipeline Endpoints ====================
 
     public Promise<HttpResponse> handleListPipelines(HttpRequest request) {
-        String tenantId = http.resolveQueryOrHeaderTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         int limit = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 500);
         return client.query(tenantId, DC_PIPELINES_COLLECTION, DataCloudClient.Query.limit(limit))
                 .map(entities -> {
@@ -56,7 +60,10 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSavePipeline(HttpRequest request) {
-        String tenantId = http.resolveQueryOrHeaderTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -71,7 +78,10 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetPipeline(HttpRequest request) {
-        String tenantId = http.resolveQueryOrHeaderTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String pipelineId = request.getPathParameter("pipelineId");
         if (pipelineId == null || pipelineId.isBlank()) {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
@@ -84,7 +94,10 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdatePipeline(HttpRequest request) {
-        String tenantId = http.resolveQueryOrHeaderTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String pipelineId = request.getPathParameter("pipelineId");
         if (pipelineId == null || pipelineId.isBlank()) {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
@@ -104,7 +117,10 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeletePipeline(HttpRequest request) {
-        String tenantId = http.resolveQueryOrHeaderTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String pipelineId = request.getPathParameter("pipelineId");
         if (pipelineId == null || pipelineId.isBlank()) {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
@@ -116,7 +132,10 @@ public class PipelineCheckpointHandler {
     // ==================== Checkpoint Endpoints ====================
 
     public Promise<HttpResponse> handleListCheckpoints(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String limitStr = request.getQueryParameter("limit");
         int limit = limitStr != null ? HttpHandlerSupport.parseIntParam(limitStr, 100) : 100;
         return client.query(tenantId, "dc_checkpoints", DataCloudClient.Query.limit(limit))
@@ -132,7 +151,10 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSaveCheckpoint(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -151,7 +173,10 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetCheckpoint(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String checkpointId = request.getPathParameter("checkpointId");
         if (checkpointId == null || checkpointId.isBlank()) {
             return Promise.of(http.errorResponse(400, "checkpointId path parameter is required"));
@@ -163,7 +188,10 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeleteCheckpoint(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
         String checkpointId = request.getPathParameter("checkpointId");
         if (checkpointId == null || checkpointId.isBlank()) {
             return Promise.of(http.errorResponse(400, "checkpointId path parameter is required"));
@@ -187,5 +215,21 @@ public class PipelineCheckpointHandler {
             result.putAll(e.data());
         }
         return result;
+    }
+
+    private String resolveTenantId(HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId != null && !tenantId.isBlank()) {
+            return tenantId;
+        }
+        return http.requireTenantIdOrFail(request);
+    }
+
+    private HttpResponse missingTenantResponse() {
+        return http.jsonResponse(400, Map.of(
+            "error", "MISSING_TENANT",
+            "message", MISSING_TENANT_MESSAGE,
+            "timestamp", Instant.now().toString()
+        ));
     }
 }

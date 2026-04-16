@@ -6,6 +6,7 @@ import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.entity.storage.StorageProfile;
+import com.ghatana.datacloud.query.QueryExpressionEvaluator;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -308,11 +309,13 @@ public class LakehouseConnector implements StorageConnector {
                     .filter(e -> applyFilter(e, spec.getFilter().orElse(null)))
                     .toList();
 
+                List<Entity> sorted = applySorts(filtered, spec.getSortFields());
+
             // Apply pagination
             int limit = spec.getLimit() > 0 ? spec.getLimit() : 100;
             int offset = spec.getOffset() >= 0 ? spec.getOffset() : 0;
 
-            List<Entity> paginated = filtered.stream()
+                List<Entity> paginated = sorted.stream()
                     .skip(offset)
                     .limit(limit)
                     .toList();
@@ -624,9 +627,32 @@ public class LakehouseConnector implements StorageConnector {
             return true;
         }
 
-        // Simple filter: just check if all keys exist
-        // In production, parse and evaluate the expression properly
-        return true;
+        try {
+            return QueryExpressionEvaluator.matches(entity.getData(), filterExpression);
+        } catch (RuntimeException exception) {
+            log.warn("Lakehouse filter evaluation failed for expression '{}': {}",
+                    filterExpression,
+                    exception.getMessage());
+            return false;
+        }
+    }
+
+    private List<Entity> applySorts(List<Entity> entities, List<QuerySpec.SortField> sortFields) {
+        if (sortFields == null || sortFields.isEmpty()) {
+            return entities;
+        }
+
+        Comparator<Entity> comparator = null;
+        for (QuerySpec.SortField sortField : sortFields) {
+            Comparator<Entity> entityComparator = Comparator.comparing(
+                    Entity::getData,
+                    QueryExpressionEvaluator.comparator(
+                            sortField.fieldName(),
+                            sortField.direction() == QuerySpec.SortDirection.ASC));
+            comparator = comparator == null ? entityComparator : comparator.thenComparing(entityComparator);
+        }
+
+        return entities.stream().sorted(comparator).toList();
     }
 
     private String buildStoreKey(String tenantId) {

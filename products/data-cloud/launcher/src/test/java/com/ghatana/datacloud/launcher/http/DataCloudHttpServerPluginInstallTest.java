@@ -2,7 +2,6 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.datacloud.spi.StoragePluginRegistry;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +38,6 @@ import static org.mockito.Mockito.mock;
 class DataCloudHttpServerPluginInstallTest {
 
     private DataCloudClient mockClient;
-    private StoragePluginRegistry mockRegistry;
     private MetricsCollector mockMetrics;
     private DataCloudHttpServer server;
     private int port;
@@ -49,7 +47,6 @@ class DataCloudHttpServerPluginInstallTest {
     @BeforeEach
     void setUp() throws Exception {
         mockClient   = mock(DataCloudClient.class);
-        mockRegistry = mock(StoragePluginRegistry.class);
         mockMetrics  = mock(MetricsCollector.class);
         port         = findFreePort();
         httpClient   = HttpClient.newBuilder().build();
@@ -183,13 +180,13 @@ class DataCloudHttpServerPluginInstallTest {
     class UpgradePluginTests {
 
         @Test
-        @DisplayName("returns 501 Not Implemented (upgrade not supported in bundled plugin model)")
-        void upgradePlugin_returns501NotImplemented() throws Exception {
+        @DisplayName("reloads runtime plugins without restarting the launcher")
+        void upgradePlugin_reloadRuntimePlugin() throws Exception {
             startServer();
 
-            HttpResponse<String> response = post("/api/v1/plugins/any-plugin/upgrade");
+            HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade");
 
-            assertThat(response.statusCode()).isEqualTo(501);
+            assertThat(response.statusCode()).isEqualTo(200);
         }
     }
 }

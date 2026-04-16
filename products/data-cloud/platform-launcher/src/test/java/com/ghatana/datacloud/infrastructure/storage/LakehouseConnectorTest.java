@@ -144,6 +144,40 @@ class LakehouseConnectorTest extends EventloopTestBase {
         assertThat(result.entities()).hasSize(2);
     }
 
+    @Test
+    void query_appliesFilterExpression() {
+        resolve(connector.create(entity(Map.of("status", "active", "amount", 150))));
+        resolve(connector.create(entity(Map.of("status", "inactive", "amount", 150))));
+        resolve(connector.create(entity(Map.of("status", "active", "amount", 80))));
+
+        QuerySpec spec = QuerySpec.builder()
+            .filter("status = 'active' AND amount >= 100")
+            .build();
+
+        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec));
+
+        assertThat(result.entities()).hasSize(1);
+        assertThat(result.entities().getFirst().getData()).containsEntry("status", "active");
+    }
+
+    @Test
+    void query_appliesSortFieldsBeforePagination() {
+        resolve(connector.create(entity(Map.of("score", 5, "name", "gamma"))));
+        resolve(connector.create(entity(Map.of("score", 20, "name", "alpha"))));
+        resolve(connector.create(entity(Map.of("score", 10, "name", "beta"))));
+
+        QuerySpec spec = QuerySpec.builder()
+            .sort("score", QuerySpec.SortDirection.DESC)
+            .limit(2)
+            .build();
+
+        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec));
+
+        assertThat(result.entities())
+            .extracting(entity -> entity.getData().get("score"))
+            .containsExactly(20, 10);
+    }
+
     // ── count ────────────────────────────────────────────────────────────────
 
     @Test
@@ -152,6 +186,16 @@ class LakehouseConnectorTest extends EventloopTestBase {
         resolve(connector.create(entityWithoutId()));
         long count = resolve(connector.count(COLLECTION_ID, TENANT, null));
         assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    void count_appliesFilterExpression() {
+        resolve(connector.create(entity(Map.of("status", "active"))));
+        resolve(connector.create(entity(Map.of("status", "inactive"))));
+
+        long count = resolve(connector.count(COLLECTION_ID, TENANT, "status = 'active'"));
+
+        assertThat(count).isEqualTo(1);
     }
 
     // ── bulkCreate ───────────────────────────────────────────────────────────
@@ -239,6 +283,14 @@ class LakehouseConnectorTest extends EventloopTestBase {
                 .tenantId(TENANT)
                 .collectionName(COLLECTION)
                 .data(Map.of("field", UUID.randomUUID().toString()))
+                .build();
+    }
+
+    private Entity entity(Map<String, Object> data) {
+        return Entity.builder()
+                .tenantId(TENANT)
+                .collectionName(COLLECTION)
+                .data(data)
                 .build();
     }
 

@@ -138,6 +138,18 @@ class DataCloudHttpServerCheckpointTest {
             // No exception thrown — limit param was accepted
             verify(mockClient).query(anyString(), eq("dc_checkpoints"), any());
         }
+
+        @Test
+        @DisplayName("missing tenant returns 400")
+        void listCheckpoints_missingTenant_returns400() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = getWithoutTenant("/api/v1/checkpoints");
+
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+        }
     }
 
     // ==================== POST /api/v1/checkpoints ====================
@@ -195,6 +207,18 @@ class DataCloudHttpServerCheckpointTest {
             post("/api/v1/checkpoints", cpData);
 
             verify(mockClient).save(anyString(), eq("dc_checkpoints"), any());
+        }
+
+        @Test
+        @DisplayName("missing tenant returns 400")
+        void saveCheckpoint_missingTenant_returns400() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = postRawWithoutTenant("/api/v1/checkpoints", "{}" );
+
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
         }
     }
 
@@ -300,9 +324,22 @@ class DataCloudHttpServerCheckpointTest {
     }
 
     private HttpResponse<String> get(String path) throws Exception {
+        return getWithTenant(path, "default-tenant");
+    }
+
+    private HttpResponse<String> getWithoutTenant(String path) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
             .GET()
             .uri(URI.create("http://127.0.0.1:" + port + path))
+            .build();
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> getWithTenant(String path, String tenantId) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+            .GET()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("X-Tenant-Id", tenantId)
             .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
@@ -313,6 +350,10 @@ class DataCloudHttpServerCheckpointTest {
     }
 
     private HttpResponse<String> postRaw(String path, String body) throws Exception {
+        return postRawWithTenant(path, body, "default-tenant");
+    }
+
+    private HttpResponse<String> postRawWithoutTenant(String path, String body) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .uri(URI.create("http://127.0.0.1:" + port + path))
@@ -321,12 +362,18 @@ class DataCloudHttpServerCheckpointTest {
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
 
-    private HttpResponse<String> delete(String path) throws Exception {
+    private HttpResponse<String> postRawWithTenant(String path, String body, String tenantId) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-            .DELETE()
+            .POST(HttpRequest.BodyPublishers.ofString(body))
             .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", tenantId)
             .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> delete(String path) throws Exception {
+        return deleteWithTenant(path, "default-tenant");
     }
 
     private HttpResponse<String> deleteWithTenant(String path, String tenantId) throws Exception {

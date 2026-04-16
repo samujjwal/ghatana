@@ -15,16 +15,13 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { brainService, type BrainStats } from '../api/brain.service';
-import { costService } from '../api/cost.service';
+import { costService, type CostBreakdown } from '../api/cost.service';
 import { workflowsApi } from '../lib/api/workflows';
 import {
-  executeAnalyticsQuery,
   useCollectionEntityCounts,
   useAnalyticsQuery,
   useAnalyticsAiSuggestions,
   type AnalyticsAiSuggestion,
-  type CollectionStat,
-  type QueryResultData,
 } from '../api/analytics.service';
 import { dataCloudApi } from '../lib/api/data-cloud-api';
 import {
@@ -63,6 +60,70 @@ import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
 
 type TabType = 'overview' | 'brain' | 'analytics' | 'cost';
 
+interface CollectionSummary {
+  id: string;
+  name?: string;
+}
+
+interface OverviewActivity {
+  action: string;
+  target: string;
+  time: string;
+  status: 'success' | 'warning' | 'error';
+}
+
+function toSpotlightItems(suggestions: AnalyticsAiSuggestion[]): AnalyticsAiSuggestion[] {
+  return suggestions.slice(0, 3);
+}
+
+function getDatasetBreakdown(costBreakdown?: Partial<CostBreakdown>): CostBreakdown['byDataset'] {
+  return costBreakdown?.byDataset ?? [];
+}
+
+function toOverviewActivities(costBreakdown?: Partial<CostBreakdown>): OverviewActivity[] {
+  const datasets = getDatasetBreakdown(costBreakdown);
+  if (datasets.length === 0) {
+    return [];
+  }
+
+  return [...datasets]
+    .sort((left, right) => right.cost - left.cost)
+    .slice(0, 3)
+    .map((dataset) => ({
+      action: dataset.percentage >= 50 ? 'Cost hotspot detected' : 'Cost profile refreshed',
+      target: dataset.datasetName,
+      time: `${Math.max(1, Math.round(dataset.percentage))}% of spend`,
+      status: dataset.percentage >= 50 ? 'warning' : 'success',
+    }));
+}
+
+function formatCurrencyValue(amount: number, currency: string): string {
+  const roundedAmount = Math.round(amount * 100) / 100;
+  return `${currency} ${roundedAmount.toLocaleString(undefined, {
+    minimumFractionDigits: roundedAmount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function describeSuggestionType(type: AnalyticsAiSuggestion['type']): 'optimization' | 'warning' | 'insight' {
+  if (type === 'optimization') {
+    return 'optimization';
+  }
+  if (type === 'warning' || type === 'anomaly') {
+    return 'warning';
+  }
+  return 'insight';
+}
+
+function normalizeCollectionsResponse(
+  response: { data: CollectionSummary[] } | CollectionSummary[] | undefined,
+): CollectionSummary[] {
+  if (!response) {
+    return [];
+  }
+  return Array.isArray(response) ? response : response.data;
+}
+
 // =============================================================================
 // TAB NAVIGATION
 // =============================================================================
@@ -100,11 +161,19 @@ function OverviewTab({
   brainStats,
   activePipelines,
   monthlyCost,
+  costBreakdown,
+  aiSuggestions,
 }: {
   brainStats?: BrainStats;
   activePipelines?: number;
   monthlyCost?: number;
+  costBreakdown?: Partial<CostBreakdown>;
+  aiSuggestions: AnalyticsAiSuggestion[];
 }) {
+  const spotlightItems = toSpotlightItems(aiSuggestions);
+  const overviewActivities = toOverviewActivities(costBreakdown);
+  const topDataset = getDatasetBreakdown(costBreakdown)[0];
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -153,21 +222,22 @@ function OverviewTab({
             </span>
           </div>
           <div className="space-y-3">
-            <SpotlightItem
-              title="Query optimization available"
-              description="3 queries could save ~$45/month"
-              type="optimization"
-            />
-            <SpotlightItem
-              title="Data freshness alert"
-              description="'orders' table hasn't updated in 6h"
-              type="warning"
-            />
-            <SpotlightItem
-              title="Pattern detected"
-              description="Weekly sales spike can be pre-cached"
-              type="insight"
-            />
+            {spotlightItems.length > 0 ? (
+              spotlightItems.map((suggestion) => (
+                <SpotlightItem
+                  key={suggestion.key}
+                  title={suggestion.title}
+                  description={suggestion.description}
+                  type={describeSuggestionType(suggestion.type)}
+                />
+              ))
+            ) : (
+              <SpotlightItem
+                title="No active AI insights"
+                description="The analytics suggestion service has no current recommendations for this tenant."
+                type="insight"
+              />
+            )}
           </div>
         </div>
 
@@ -183,24 +253,24 @@ function OverviewTab({
             </button>
           </div>
           <div className="space-y-3">
-            <ActivityItem
-              action="Auto-indexed"
-              target="customer_events.email"
-              time="5m ago"
-              status="success"
-            />
-            <ActivityItem
-              action="Schema validated"
-              target="orders table"
-              time="12m ago"
-              status="success"
-            />
-            <ActivityItem
-              action="Quality check"
-              target="user_profiles"
-              time="1h ago"
-              status="warning"
-            />
+            {overviewActivities.length > 0 ? (
+              overviewActivities.map((activity) => (
+                <ActivityItem
+                  key={`${activity.action}-${activity.target}`}
+                  action={activity.action}
+                  target={activity.target}
+                  time={activity.time}
+                  status={activity.status}
+                />
+              ))
+            ) : (
+              <ActivityItem
+                action="Awaiting telemetry"
+                target="No cost activity available"
+                time="pending"
+                status="warning"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -214,16 +284,22 @@ function OverviewTab({
             </div>
             <div>
               <p className="font-medium text-green-900 dark:text-green-100">
-                $127 saved this month
+                {topDataset
+                  ? `Top cost driver: ${topDataset.datasetName}`
+                  : 'Cost analysis is ready once collection reports are available'}
               </p>
               <p className="text-sm text-green-700 dark:text-green-300">
-                AI optimizations reduced query costs by 12%
+                {topDataset
+                  ? `${Math.round(topDataset.percentage)}% of tenant spend is currently attributed to this dataset.`
+                  : 'Create or hydrate collections so the insights dashboard can compute dataset-level spend.'}
               </p>
             </div>
           </div>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-            View Details
-          </button>
+          {topDataset && (
+            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+              {formatCurrencyValue(topDataset.cost, costBreakdown?.currency ?? 'DCC')}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -513,29 +589,39 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
 // COST TAB
 // =============================================================================
 
-function CostTab() {
+function CostTab({
+  costBreakdown,
+  aiSuggestions,
+}: {
+  costBreakdown?: Partial<CostBreakdown>;
+  aiSuggestions: AnalyticsAiSuggestion[];
+}) {
+  const datasets = getDatasetBreakdown(costBreakdown);
+  const totalCost = costBreakdown?.total ?? 0;
+  const currency = costBreakdown?.currency ?? 'DCC';
+  const topDataset = datasets[0];
+  const optimizationSuggestions = aiSuggestions.filter((suggestion) => suggestion.type === 'optimization');
+
   return (
     <div className="space-y-6">
       {/* Cost Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="Current Month"
-          value="$1,247"
+          value={formatCurrencyValue(totalCost, currency)}
           icon={<DollarSign className="h-5 w-5" />}
-          trend={{ value: 8, direction: 'up' }}
           color="default"
         />
         <StatCard
-          label="Projected"
-          value="$1,890"
+          label="Highest Dataset"
+          value={topDataset ? topDataset.datasetName : '–'}
           icon={<TrendingUp className="h-5 w-5" />}
           color="yellow"
         />
         <StatCard
-          label="AI Savings"
-          value="$127"
+          label="Datasets Tracked"
+          value={datasets.length}
           icon={<Sparkles className="h-5 w-5" />}
-          trend={{ value: 12, direction: 'up' }}
           color="green"
         />
       </div>
@@ -547,37 +633,47 @@ function CostTab() {
           AI-Detected Optimization Opportunities
         </h3>
         <div className="space-y-3">
-          <OptimizationItem
-            title="Consolidate redundant queries"
-            savings="$45/month"
-            effort="Low"
-            impact="Medium"
-          />
-          <OptimizationItem
-            title="Archive cold data to cheaper tier"
-            savings="$89/month"
-            effort="Medium"
-            impact="High"
-          />
-          <OptimizationItem
-            title="Optimize join patterns in daily ETL"
-            savings="$23/month"
-            effort="Low"
-            impact="Low"
-          />
+          {optimizationSuggestions.length > 0 ? (
+            optimizationSuggestions.map((suggestion) => (
+              <OptimizationItem
+                key={suggestion.key}
+                title={suggestion.title}
+                description={suggestion.description}
+                supportingText={`${Math.round(suggestion.confidence * 100)}% confidence`}
+              />
+            ))
+          ) : (
+            <OptimizationItem
+              title="No optimization hints available"
+              description="The AI assistance service has no current cost-saving recommendations for this tenant."
+              supportingText="waiting for signals"
+            />
+          )}
         </div>
       </div>
 
       {/* Cost by Resource */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
         <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-          Cost by Resource
+          Cost by Dataset
         </h3>
         <div className="space-y-3">
-          <CostBar label="Compute" value={540} total={1247} color="blue" />
-          <CostBar label="Storage" value={380} total={1247} color="green" />
-          <CostBar label="Queries" value={210} total={1247} color="purple" />
-          <CostBar label="Egress" value={117} total={1247} color="orange" />
+          {datasets.length > 0 ? (
+            datasets.slice(0, 4).map((dataset, index) => (
+              <CostBar
+                key={dataset.datasetId}
+                label={dataset.datasetName}
+                value={dataset.cost}
+                total={Math.max(totalCost, dataset.cost)}
+                color={index === 0 ? 'blue' : index === 1 ? 'green' : index === 2 ? 'purple' : 'orange'}
+                currency={currency}
+              />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No collection cost reports are available yet.
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -695,14 +791,12 @@ function DashboardCard({
 
 function OptimizationItem({
   title,
-  savings,
-  effort,
-  impact,
+  description,
+  supportingText,
 }: {
   title: string;
-  savings: string;
-  effort: string;
-  impact: string;
+  description: string;
+  supportingText: string;
 }) {
   return (
     <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -710,18 +804,12 @@ function OptimizationItem({
         <p className="text-sm font-medium text-gray-900 dark:text-white">
           {title}
         </p>
-        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-          <span>Effort: {effort}</span>
-          <span>Impact: {impact}</span>
-        </div>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{description}</p>
       </div>
       <div className="text-right">
-        <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-          {savings}
+        <p className="text-xs font-semibold text-green-600 dark:text-green-400">
+          {supportingText}
         </p>
-        <button className="text-xs text-primary-600 dark:text-primary-400 hover:underline">
-          Apply
-        </button>
       </div>
     </div>
   );
@@ -732,11 +820,13 @@ function CostBar({
   value,
   total,
   color,
+  currency,
 }: {
   label: string;
   value: number;
   total: number;
   color: 'blue' | 'green' | 'purple' | 'orange';
+  currency: string;
 }) {
   const percentage = (value / total) * 100;
   const colors = {
@@ -751,7 +841,7 @@ function CostBar({
       <div className="flex items-center justify-between mb-1">
         <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
         <span className="text-sm font-medium text-gray-900 dark:text-white">
-          ${value}
+          {formatCurrencyValue(value, currency)}
         </span>
       </div>
       <div className="quality-bar">
@@ -825,9 +915,9 @@ export function InsightsPage() {
     queryFn: () => dataCloudApi.getCollections(),
     staleTime: 300_000,
   });
-  const collectionNames: string[] = (collectionsData as any[] | undefined)
-    ?.map((c: any) => c.name ?? c.id ?? '')
-    .filter(Boolean) ?? [];
+  const collectionNames = normalizeCollectionsResponse(collectionsData)
+    .map((collection) => collection.name ?? collection.id)
+    .filter((name) => name.length > 0);
 
   // AI sidebar: fetch real suggestions from POST /api/v1/analytics/suggest
   const { data: aiSuggestions, isLoading: aiLoading } = useAnalyticsAiSuggestions();
@@ -910,11 +1000,13 @@ export function InsightsPage() {
             brainStats={brainStats}
             activePipelines={workflowsPage?.total}
             monthlyCost={costData?.total}
+            costBreakdown={costData}
+            aiSuggestions={aiSuggestions ?? []}
           />
         )}
         {activeTab === 'brain' && <BrainTab />}
         {activeTab === 'analytics' && <AnalyticsTab collections={collectionNames} />}
-        {activeTab === 'cost' && <CostTab />}
+        {activeTab === 'cost' && <CostTab costBreakdown={costData} aiSuggestions={aiSuggestions ?? []} />}
       </PageContent>
     </div>
   );

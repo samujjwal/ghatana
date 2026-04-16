@@ -171,11 +171,11 @@ describe('workflowClient', () => {
     });
   });
 
-  it('still executes workflows via the canonical pipeline execute route', async () => {
+  it('executes workflows through the launcher api', async () => {
     mockApiClient.post.mockResolvedValueOnce({
       executionId: 'exec-1',
       workflowId: 'wf-1',
-      status: 'RUNNING',
+      status: 'COMPLETED',
     });
 
     const response = await workflowClient.executeWorkflow('wf-1');
@@ -185,13 +185,45 @@ describe('workflowClient', () => {
       {},
       expect.objectContaining({ headers: expect.any(Object) }),
     );
-    expect(response.executionId).toBe('exec-1');
+    expect(response).toEqual({
+      executionId: 'exec-1',
+      workflowId: 'wf-1',
+      status: 'COMPLETED',
+    });
   });
 
-  it('fails explicitly for unsupported workflow convenience endpoints', async () => {
+  it('keeps unsupported convenience endpoints explicit while using launcher execution detail routes', async () => {
+    mockApiClient.get.mockResolvedValueOnce({
+      id: 'exec-1',
+      pipelineId: 'wf-1',
+      status: 'completed',
+      startTime: '2026-04-16T10:00:00Z',
+      endTime: '2026-04-16T10:00:01Z',
+      completedNodes: 2,
+      totalNodes: 2,
+      nodes: [
+        { id: 'node-1', name: 'Start', status: 'completed', startTime: '2026-04-16T10:00:00Z', endTime: '2026-04-16T10:00:00Z' },
+        { id: 'node-2', name: 'End', status: 'completed', startTime: '2026-04-16T10:00:00Z', endTime: '2026-04-16T10:00:01Z' },
+      ],
+    });
+
     await expect(workflowClient.getTemplates()).rejects.toThrow(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
     await expect(workflowClient.getSuggestions('orders')).rejects.toThrow(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
-    await expect(workflowClient.getExecutionStatus('exec-1')).rejects.toThrow(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
-    await expect(workflowClient.cancelExecution('exec-1')).rejects.toThrow(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
+
+    const execution = await workflowClient.getExecutionStatus('exec-1');
+    expect(mockApiClient.get).toHaveBeenCalledWith('/executions/exec-1', {
+      headers: expect.any(Object),
+    });
+    expect(execution).toMatchObject({
+      id: 'exec-1',
+      workflowId: 'wf-1',
+      progress: 100,
+    });
+
+    mockApiClient.post.mockResolvedValueOnce({ ok: true });
+    await expect(workflowClient.cancelExecution('exec-1')).resolves.toBeUndefined();
+    expect(mockApiClient.post).toHaveBeenCalledWith('/executions/exec-1/cancel', {}, {
+      headers: expect.any(Object),
+    });
   });
 });

@@ -1,10 +1,13 @@
 package com.ghatana.datacloud.application.query;
 
 import com.ghatana.datacloud.entity.MetaCollection;
+import com.ghatana.datacloud.entity.MetaField;
+import com.ghatana.datacloud.query.QueryExpressionEvaluator;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.*;
 
 
@@ -52,6 +55,7 @@ public class AdvancedQueryBuilder {
     private int limit = 100;
     private int offset = 0;
     private QueryPlan cachedPlan;
+    private List<Map<String, Object>> executionDataset = List.of();
 
     /**
      * Creates a new advanced query builder.
@@ -179,6 +183,19 @@ public class AdvancedQueryBuilder {
     }
 
     /**
+     * Provide a dataset for in-memory execution of the built query plan.
+     *
+     * @param rows rows to evaluate and sort
+     * @return this builder
+     */
+    public AdvancedQueryBuilder withExecutionDataset(Collection<Map<String, Object>> rows) {
+        this.executionDataset = rows == null
+                ? List.of()
+                : rows.stream().map(HashMap::new).map(Collections::unmodifiableMap).toList();
+        return this;
+    }
+
+    /**
      * Set result limit.
      *
      * @param limit the maximum number of results
@@ -275,12 +292,18 @@ public class AdvancedQueryBuilder {
      * @return set of potentially indexed fields
      */
     private Set<String> detectIndexedFields() {
-        Set<String> indexed = new HashSet<>();
-        // In production, this would query database metadata
-        // For now, assume common fields are indexed
+        Set<String> indexed = new TreeSet<>();
         indexed.add("id");
-        indexed.add("created_at");
-        indexed.add("updated_at");
+        indexed.add("createdAt");
+        indexed.add("updatedAt");
+        if (collection.getFields() != null) {
+            collection.getFields().stream()
+                .filter(Objects::nonNull)
+                .filter(field -> Boolean.TRUE.equals(field.getUniqueConstraint()) || isLikelyIndexedField(field))
+                .map(MetaField::getName)
+                .filter(Objects::nonNull)
+                .forEach(indexed::add);
+        }
         return indexed;
     }
 
@@ -352,11 +375,63 @@ public class AdvancedQueryBuilder {
     private Promise<QueryResults> executeQuery(QueryPlan plan) {
         try {
             log.info("Executing optimized query: {}", plan.id());
-            // Placeholder - in production this would execute SQL/JSONB query
-            return Promise.of(new QueryResults(plan.id(), Collections.emptyList(), 0, plan.limit));
+            List<Map<String, Object>> filteredRows = executionDataset.stream()
+                .filter(row -> matchesPlan(row, plan.filters()))
+                .toList();
+
+            List<Map<String, Object>> sortedRows = applySorts(filteredRows, plan.sorts());
+            List<Map<String, Object>> paginatedRows = sortedRows.stream()
+                .skip(plan.offset())
+                .limit(plan.limit())
+                .toList();
+
+            return Promise.of(new QueryResults(plan.id(), paginatedRows, filteredRows.size(), plan.limit));
         } catch (Exception e) {
             return Promise.ofException(e);
         }
+    }
+
+    private boolean matchesPlan(Map<String, Object> row, List<FilterExpression> planFilters) {
+        return planFilters.stream().allMatch(filter -> QueryExpressionEvaluator.matchesCondition(
+            row,
+            filter.field,
+            filter.operator,
+            normalizeFilterValue(filter.value)));
+    }
+
+    private Object normalizeFilterValue(Object value) {
+        if (value instanceof Collection<?> collectionValue) {
+            return new ArrayList<>(collectionValue);
+        }
+        if (value instanceof Object[] array) {
+            return array.clone();
+        }
+        return value;
+    }
+
+    private List<Map<String, Object>> applySorts(List<Map<String, Object>> rows, List<SortExpression> planSorts) {
+        if (planSorts.isEmpty()) {
+            return rows;
+        }
+
+        Comparator<Map<String, Object>> comparator = null;
+        for (SortExpression sortExpression : planSorts) {
+            Comparator<Map<String, Object>> currentComparator = QueryExpressionEvaluator.comparator(
+                sortExpression.field,
+                "ASC".equalsIgnoreCase(sortExpression.direction));
+            comparator = comparator == null ? currentComparator : comparator.thenComparing(currentComparator);
+        }
+
+        return rows.stream().sorted(comparator).toList();
+    }
+
+    private boolean isLikelyIndexedField(MetaField field) {
+        String normalizedName = field.getName() == null ? "" : field.getName().toLowerCase(Locale.ROOT);
+        return normalizedName.equals("createdat")
+            || normalizedName.equals("updatedat")
+            || normalizedName.equals("created_at")
+            || normalizedName.equals("updated_at")
+            || field.getType() == com.ghatana.datacloud.entity.DataType.REFERENCE;
     }
 
     /**

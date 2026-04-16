@@ -137,7 +137,8 @@ describe('InsightsPage', () => {
   it('renders AI suggestions and deep-links optimization actions', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
 
-    expect(await screen.findByText('Cache repeated analytics query')).toBeInTheDocument();
+    const matchingSuggestions = await screen.findAllByText('Cache repeated analytics query');
+    expect(matchingSuggestions.length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'View' }));
 

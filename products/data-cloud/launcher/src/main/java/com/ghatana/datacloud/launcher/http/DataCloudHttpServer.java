@@ -56,6 +56,7 @@ import com.ghatana.datacloud.launcher.http.handlers.LearningHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AnalyticsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiModelHandler;
 import com.ghatana.datacloud.launcher.http.handlers.HealthHandler;
+import com.ghatana.datacloud.launcher.http.handlers.WorkflowExecutionHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SseStreamingHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler;
 import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
@@ -71,6 +72,8 @@ import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
+import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
+import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
@@ -96,7 +99,6 @@ public class DataCloudHttpServer {
     private static final Logger log = LoggerFactory.getLogger(DataCloudHttpServer.class);
 
     /** SSE queue capacity — 512 frames before back-pressure kicks in. */
-    private static final int SSE_QUEUE_CAPACITY = 512;
 
     // ==================== CORS Constants ====================
     /**
@@ -120,8 +122,11 @@ public class DataCloudHttpServer {
     private static final long MAX_BODY_BYTES = 10 * 1024 * 1024L;
     private static final String JSON_CONTENT_TYPE = "application/json";
     private static final Set<Pattern> BODYLESS_MUTATION_ROUTES = Set.of(
-        Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable|upgrade)$"),
+        Pattern.compile("^/api/v1/plugins/[^/]+/(enable|disable)$"),
+        Pattern.compile("^/api/v1/plugins/[^/]+/upgrade$"),
         Pattern.compile("^/api/v1/collections/[^/]+/migrate$"),
+        Pattern.compile("^/api/v1/pipelines/[^/]+/executions/[^/]+/cancel$"),
+        Pattern.compile("^/api/v1/executions/[^/]+/cancel$"),
         Pattern.compile("^/api/v1/learning/review/[^/]+/(approve|reject)$"),
         Pattern.compile("^/api/v1/learning/review/completed$"),
         Pattern.compile("^/api/v1/models/[^/]+/promote$")
@@ -139,7 +144,6 @@ public class DataCloudHttpServer {
     private long rateLimitWindowSeconds = DEFAULT_RATE_LIMIT_WINDOW_SECONDS;
 
     /** Heartbeat interval: block this long waiting for the next event before sending a heartbeat. */
-    private static final long SSE_HEARTBEAT_TIMEOUT_SEC = 30L;
 
     private final DataCloudClient client;
     private final int port;
@@ -237,6 +241,7 @@ public class DataCloudHttpServer {
     private MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop();
     private long storageCompactionIntervalSeconds = 300L;
     private int storageCompactionTombstoneThreshold = 25;
+    private AnomalyDetectionTask anomalyDetectionTask;
     private StorageCompactionTask storageCompactionTask;
 
     // ==================== AI, Voice & Security (E3, E4, E1) ====================
@@ -304,6 +309,7 @@ public class DataCloudHttpServer {
     private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
     private PipelineCheckpointHandler pipelineCheckpointHandler;
+    private WorkflowExecutionHandler workflowExecutionHandler;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
     private LearningHandler learningHandler;
@@ -317,6 +323,7 @@ public class DataCloudHttpServer {
     private AutonomyHandler autonomyHandler; // B9: emergency autonomy shutoff
     private AgentCatalogHandler agentCatalogHandler; // B3: agent catalog runtime API
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
+    private DataCloudRuntimePluginManager runtimePluginManager;
     private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
     private DataProductHandler dataProductHandler; // P4.4.1: data products publish/discover/subscribe
@@ -862,13 +869,22 @@ public class DataCloudHttpServer {
         eventHandler = new EventHandler(client, httpSupport);
         eventHandler.withTraceSupport(traceSpanSupport);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
+        runtimePluginManager = new DataCloudRuntimePluginManager();
+        runtimePluginManager.registerWorkflowPlugin(client);
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
 
         analyticsHandler = new AnalyticsHandler(analyticsEngine, httpSupport);
-        if (reportService != null) analyticsHandler.withReportService(reportService);
+        if (reportService != null) {
+            runtimePluginManager.registerReportPlugin(reportService);
+            analyticsHandler.withReportCapability(
+                runtimePluginManager.findCapability(ReportExecutionCapability.class).orElse(null));
+            analyticsHandler.withReportService(reportService);
+        }
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
+
+        workflowExecutionHandler = new WorkflowExecutionHandler(httpSupport, runtimePluginManager);
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
@@ -934,6 +950,7 @@ public class DataCloudHttpServer {
         pluginInstallHandler = new PluginInstallHandler(
                 httpSupport,
                 com.ghatana.datacloud.spi.StoragePluginRegistry.getInstance(),
+            runtimePluginManager,
                 metricsCollector);
 
         // B11: Storage cost estimation handler
@@ -994,6 +1011,10 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleGetPipeline)
             .with(HttpMethod.PUT,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleUpdatePipeline)
             .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleDeletePipeline)
+            .with(HttpMethod.POST,   "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
+            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListExecutions)
+            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetWorkflowExecution)
+            .with(HttpMethod.POST,   "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
 
             // Checkpoint management endpoints (DC-3) — delegated to PipelineCheckpointHandler
             .with(HttpMethod.GET, "/api/v1/checkpoints", pipelineCheckpointHandler::handleListCheckpoints)
@@ -1042,6 +1063,9 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/reports",             analyticsHandler::handleCreateReport)
             .with(HttpMethod.GET,  "/api/v1/reports",             analyticsHandler::handleListReports)
             .with(HttpMethod.GET,  "/api/v1/reports/:reportId",   analyticsHandler::handleGetReport)
+            .with(HttpMethod.GET,  "/api/v1/executions/:executionId", workflowExecutionHandler::handleGetExecution)
+            .with(HttpMethod.GET,  "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
 
             // AI/ML — Model Registry routes (DC-11) — delegated to AiModelHandler
             .with(HttpMethod.GET,  "/api/v1/models",                          aiModelHandler::handleListAiModels)
@@ -1171,8 +1195,8 @@ public class DataCloudHttpServer {
                 log.info("Data-Cloud HTTP Server started on port {}", port);
                 // Start background anomaly detection scanning (P3.6.1) if detector + event store are both available
                 if (anomalyDetector != null && eventLogStore != null) {
-                    AnomalyDetectionTask anomalyTask = new AnomalyDetectionTask(anomalyDetector, anomalyHandler, eventloop);
-                    anomalyTask.start();
+                    anomalyDetectionTask = new AnomalyDetectionTask(anomalyDetector, anomalyHandler, eventloop);
+                    anomalyDetectionTask.start();
                     log.info("[DC-P3.6] Continuous anomaly detection active — scan interval {} min",
                             AnomalyDetectionTask.SCAN_INTERVAL_MINUTES);
                 }
@@ -1205,6 +1229,12 @@ public class DataCloudHttpServer {
         // Delegate SSE + WebSocket cleanup to the extracted streaming handler
         if (sseHandler != null) {
             sseHandler.shutdown();
+        }
+        if (runtimePluginManager != null) {
+            runtimePluginManager.close();
+        }
+        if (anomalyDetectionTask != null) {
+            anomalyDetectionTask.close();
         }
         if (storageCompactionTask != null) {
             storageCompactionTask.close();

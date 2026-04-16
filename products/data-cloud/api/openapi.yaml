@@ -9,14 +9,15 @@ info:
     event-cloud streaming, analytics, reporting, governance, plugin-driven extensibility, feature
     storage, model metadata, and execution persistence surfaces.
 
-    Data-Cloud does not host agentic orchestration or runtime execution endpoints. Agentic
-    processing is executed by AEP, which consumes Data-Cloud public contracts and event-cloud
-    streams and writes results back through Data-Cloud-owned APIs and persistence layers.
+    Data-Cloud now exposes plugin-backed workflow execution endpoints for pipeline execution,
+    execution status inspection, and execution log retrieval inside the standalone launcher.
+    AEP still owns broader agentic orchestration, but Data-Cloud can execute and observe
+    pipeline workflows through its runtime plugin layer.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
     - **Event log** — append-only event stream with push-based SSE subscriptions
-    - **Execution metadata** — store and retrieve pipeline/checkpoint records for external runtimes including AEP
+    - **Execution metadata and runtime** — store and retrieve pipeline/checkpoint records and execute pipeline workflows through runtime plugins
     - **Agent memory plane** — persist, read, and search agent episodic/semantic/procedural memory
     - **Brain API** — salience scoring, attention management, workspace spotlight
     - **Learning API** — policy extraction, human-review queue
@@ -445,6 +446,128 @@ components:
     PipelineMutationRequest:
       type: object
       additionalProperties: true
+
+    WorkflowExecutionLaunchResponse:
+      type: object
+      required: [executionId, workflowId, status, startedAt]
+      properties:
+        executionId:
+          type: string
+        workflowId:
+          type: string
+        status:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+
+    WorkflowExecutionSummary:
+      type: object
+      required: [id, workflowId, status, startedAt]
+      properties:
+        id:
+          type: string
+        workflowId:
+          type: string
+        status:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+
+    WorkflowExecutionListResponse:
+      type: object
+      required: [items, total, page, pageSize, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowExecutionSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        hasMore:
+          type: boolean
+
+    WorkflowExecutionNode:
+      type: object
+      required: [id, name, status, duration, error]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        error:
+          type: string
+
+    WorkflowExecutionDetail:
+      type: object
+      required: [id, pipelineId, pipelineName, status, startTime, completedNodes, totalNodes, nodes]
+      properties:
+        id:
+          type: string
+        pipelineId:
+          type: string
+        pipelineName:
+          type: string
+        status:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        completedNodes:
+          type: integer
+        totalNodes:
+          type: integer
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowExecutionNode"
+        error:
+          type: string
+
+    WorkflowExecutionLogEntry:
+      type: object
+      required: [timestamp, level, message]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+        message:
+          type: string
+        nodeId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
 
     Checkpoint:
       type: object
@@ -1785,6 +1908,88 @@ paths:
         "200":
           description: Pipeline deleted.
 
+  /api/v1/pipelines/{pipelineId}/execute:
+    post:
+      summary: Execute a pipeline through the runtime workflow plugin
+      operationId: apiV1PipelinesPipelineIdExecutePost
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "202":
+          description: Pipeline execution started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionLaunchResponse"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/pipelines/{pipelineId}/executions:
+    get:
+      summary: List executions for a pipeline
+      operationId: apiV1PipelinesPipelineIdExecutionsGet
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Execution summaries for the requested pipeline.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionListResponse"
+
+  /api/v1/pipelines/{pipelineId}/executions/{executionId}:
+    get:
+      summary: Get workflow-scoped execution summary
+      operationId: apiV1PipelinesPipelineIdExecutionsExecutionIdGet
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Execution summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionSummary"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/pipelines/{pipelineId}/executions/{executionId}/cancel:
+    post:
+      summary: Cancel a pipeline execution
+      operationId: apiV1PipelinesPipelineIdExecutionsExecutionIdCancelPost
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Updated execution summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionSummary"
+        "404": { $ref: "#/components/responses/NotFound" }
+
   # ── Checkpoints ────────────────────────────────────────────────────────────
 
   /api/v1/checkpoints:
@@ -2825,6 +3030,67 @@ paths:
       responses:
         "200": { description: Report document }
 
+  /api/v1/executions/{executionId}:
+    get:
+      summary: Get execution detail
+      operationId: apiV1ExecutionsExecutionIdGet
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Execution detail with node-level state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionDetail"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/executions/{executionId}/logs:
+    get:
+      summary: Get execution log entries
+      operationId: apiV1ExecutionsExecutionIdLogsGet
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Execution log entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowExecutionLogEntry"
+
+  /api/v1/executions/{executionId}/cancel:
+    post:
+      summary: Cancel an execution by id
+      operationId: apiV1ExecutionsExecutionIdCancelPost
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Updated execution summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionSummary"
+        "404": { $ref: "#/components/responses/NotFound" }
+
   # ── Pipeline AI hint ─────────────────────────────────────────────────────
 
   /api/v1/pipelines/{pipelineId}/optimise-hint:
@@ -3377,7 +3643,7 @@ paths:
 
   /api/v1/plugins/{id}/upgrade:
     post:
-      summary: Attempt to upgrade a bundled plugin
+      summary: Hot-swap a runtime feature plugin or reload a storage plugin
       operationId: apiV1PluginsIdUpgradePost
       tags: [plugins]
       parameters:
@@ -3385,8 +3651,16 @@ paths:
           in: path
           required: true
           schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
       responses:
-        "501": { description: Upgrade is not implemented for bundled plugins. }
+        "200": { description: Plugin hot-swapped or reloaded. }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ── Entity and event point lookups ──────────────────────────────────────
 

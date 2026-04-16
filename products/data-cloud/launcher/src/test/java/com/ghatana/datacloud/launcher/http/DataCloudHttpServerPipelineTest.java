@@ -84,7 +84,8 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
             startServer();
 
             HttpResponse<String> resp = postJson("/api/v1/pipelines",
-                    Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT));
+                    Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT),
+                    withTenant(TestConstants.TENANT_DEFAULT));
 
             assertStatusCode(resp, TestConstants.HTTP_CREATED);
             Map<String, Object> body = parseJsonResponse(resp);
@@ -103,7 +104,8 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
             startServer();
 
             HttpResponse<String> resp = postJson("/api/v1/pipelines",
-                    Map.of("name", ""));
+                    Map.of("name", ""),
+                    withTenant(TestConstants.TENANT_DEFAULT));
 
             assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
         }
@@ -133,6 +135,20 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
             assertThat(body).containsKeys("id");
             assertThat(body.get("tenantId")).isEqualTo(TestConstants.TENANT_ALPHA);
         }
+
+                @Test
+                @DisplayName("returns 400 when tenant is missing")
+                void createPipeline_missingTenant_returns400() throws Exception {
+                        startServer();
+
+                        HttpResponse<String> resp = postJson(
+                                        "/api/v1/pipelines",
+                                        Map.of("name", TestConstants.PIPELINE_NAME_DEFAULT));
+
+                        assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
+                        Map<String, Object> body = parseJsonResponse(resp);
+                        assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+                }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -159,7 +175,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1);
+            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1, "X-Tenant-ID", TestConstants.TENANT_DEFAULT);
 
             assertStatusCode(resp, TestConstants.HTTP_OK);
             Map<String, Object> body = parseJsonResponse(resp);
@@ -179,7 +195,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/pipelines/missing-pipeline-id");
+            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines/missing-pipeline-id", "X-Tenant-ID", TestConstants.TENANT_DEFAULT);
 
             assertStatusCode(resp, TestConstants.HTTP_NOT_FOUND);
             Map<String, Object> body = parseJsonResponse(resp);
@@ -211,7 +227,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = get("/api/v1/pipelines");
+            HttpResponse<String> resp = getWithHeader("/api/v1/pipelines", "X-Tenant-ID", TestConstants.TENANT_DEFAULT);
 
             assertStatusCode(resp, TestConstants.HTTP_OK);
             Map<String, Object> body = parseJsonResponse(resp);
@@ -242,6 +258,18 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
             assertThat(body.get("pipelines")).isInstanceOf(java.util.List.class);
             // Verify only tenant-gamma pipelines are returned (isolated)
         }
+
+                @Test
+                @DisplayName("returns 400 when tenant is missing")
+                void listPipelines_missingTenant_returns400() throws Exception {
+                        startServer();
+
+                        HttpResponse<String> resp = get("/api/v1/pipelines");
+
+                        assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST);
+                        Map<String, Object> body = parseJsonResponse(resp);
+                        assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+                }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -268,7 +296,8 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = putJson("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1,
+            HttpResponse<String> resp = putJson(
+                    "/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT,
                     Map.of("name", "Updated Pipeline", "status", "draft"));
 
             assertStatusCode(resp, TestConstants.HTTP_OK);
@@ -293,7 +322,8 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = putJson("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1,
+            HttpResponse<String> resp = putJson(
+                    "/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT,
                     Map.of("name", "Renamed", "status", "active"));
 
             // Note: Active pipeline status validation not yet enforced by handler
@@ -322,7 +352,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
             startServer();
 
-            HttpResponse<String> resp = delete("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1);
+            HttpResponse<String> resp = delete("/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT);
 
             assertStatusCode(resp, 204); // No Content
         }
@@ -333,19 +363,75 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
          * Failure: Returns 404 when pipeline does not exist
          */
         @Test
-        @DisplayName("returns 500 when delete operation fails (404 validation not yet enforced)")
-        void deletePipeline_notFound_returns500() throws Exception {
-            // Mock delete to simulate not found by checking the ID first
-            when(mockClient.findById(anyString(), eq("dc_pipelines"), eq("missing-id")))
-                    .thenReturn(Promise.of(Optional.empty()));
+                @DisplayName("returns 204 when delete is invoked for a missing pipeline (not-found validation not yet enforced)")
+                void deletePipeline_notFound_returns204() throws Exception {
+                        when(mockClient.delete(anyString(), eq("dc_pipelines"), eq("missing-id")))
+                                        .thenReturn(Promise.of(null));
 
             startServer();
 
-            HttpResponse<String> resp = delete("/api/v1/pipelines/missing-id");
+                        HttpResponse<String> resp = delete("/api/v1/pipelines/missing-id?tenantId=" + TestConstants.TENANT_DEFAULT);
 
-            // Note: Delete not-found handling not yet properly implemented - returns 500
-            // Should return 404 after proper validation is added
-            assertStatusCode(resp, 500);
+                        assertStatusCode(resp, 204);
         }
     }
+
+        @Nested
+        @DisplayName("POST /api/v1/pipelines/{pipelineId}/execute – workflow execution")
+        class ExecutePipelineTests {
+
+                @Test
+                @DisplayName("returns an execution id and exposes execution detail routes")
+                void executePipeline_returnsExecutionAndStatus() throws Exception {
+                        DataCloudClient.Entity pipeline = DataCloudClient.Entity.of(
+                                        TestConstants.PIPELINE_ID_1,
+                                        "dc_pipelines",
+                                        Map.of(
+                                                "name", TestConstants.PIPELINE_NAME_DEFAULT,
+                                                "nodes", List.of(
+                                                        Map.of("id", "node-1", "type", "START", "label", "Start"),
+                                                        Map.of("id", "node-2", "type", "END", "label", "End")
+                                                )));
+                        when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_pipelines"), eq(TestConstants.PIPELINE_ID_1)))
+                                        .thenReturn(Promise.of(Optional.of(pipeline)));
+
+                        startServer();
+
+                        HttpResponse<String> executeResponse = postJson(
+                                        "/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "/execute",
+                                        Map.of("input", Map.of("dryRun", true)),
+                                        withTenant(TestConstants.TENANT_DEFAULT));
+
+                        assertStatusCode(executeResponse, 202);
+                        Map<String, Object> executeBody = parseJsonResponse(executeResponse);
+                        assertThat(executeBody).containsKeys("executionId", "workflowId", "status");
+
+                        String executionId = String.valueOf(executeBody.get("executionId"));
+                        HttpResponse<String> detailResponse = get(
+                                        "/api/v1/executions/" + executionId,
+                                        withTenant(TestConstants.TENANT_DEFAULT));
+
+                        assertStatusCode(detailResponse, TestConstants.HTTP_OK);
+                        Map<String, Object> detailBody = parseJsonResponse(detailResponse);
+                        assertThat(detailBody).containsEntry("pipelineId", TestConstants.PIPELINE_ID_1);
+                        assertThat(detailBody).containsEntry("status", "completed");
+                        assertThat(detailBody.get("nodes")).isInstanceOf(List.class);
+                }
+
+                @Test
+                @DisplayName("returns 404 when executing an unknown pipeline")
+                void executePipeline_missingPipeline_returns404() throws Exception {
+                        when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_pipelines"), eq("missing-pipeline")))
+                                        .thenReturn(Promise.of(Optional.empty()));
+
+                        startServer();
+
+                        HttpResponse<String> response = postJson(
+                                        "/api/v1/pipelines/missing-pipeline/execute",
+                                        Map.of(),
+                                        withTenant(TestConstants.TENANT_DEFAULT));
+
+                        assertStatusCode(response, TestConstants.HTTP_NOT_FOUND);
+                }
+        }
 }

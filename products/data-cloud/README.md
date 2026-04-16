@@ -1,6 +1,6 @@
 # Data Cloud
 
-Data Cloud is the data foundation product for Ghatana. It owns entity storage, event persistence, analytics, governance, lineage, agent memory persistence, and the HTTP surface other products consume. It does not own agentic orchestration; AEP remains the execution runtime and integrates through Data Cloud contracts and events.
+Data Cloud is the data foundation product for Ghatana. It owns entity storage, event persistence, analytics, governance, lineage, agent memory persistence, plugin-backed pipeline execution, and the HTTP surface other products consume. It does not own broader agentic orchestration; AEP integrates through Data Cloud contracts and events for cross-product agent workflows.
 
 ## Current State
 
@@ -8,7 +8,7 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 | --- | --- | --- |
 | Entity CRUD, batch, history, export, validation | Ready | Active in the launcher HTTP surface |
 | Event append/query | Ready | Includes offset lookup and streaming support |
-| Pipelines and checkpoints | Ready | HTTP APIs are active |
+| Pipelines, checkpoints, and execution state | Ready | CRUD plus plugin-backed execution and execution logs are active |
 | Agent memory persistence | Ready | TTL-aware memory APIs are live |
 | Context layer | Ready | Includes snapshot support and RAG endpoint |
 | Lineage API | Ready | Collection lineage and impact endpoints are live |
@@ -16,7 +16,7 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 | Semantic similarity and RAG | Ready | Auto-index on entity writes, `/similar`, and `/rag` shipped |
 | SDK generation | Ready | Java, TypeScript, and Python SDKs generated from OpenAPI |
 | Analytics, reports, AI models, feature store | Ready with optional dependencies | Some routes degrade when backing services are absent |
-| AI assist, voice, learning, plugin lifecycle | Beta | Available, but quality depends on optional runtime services |
+| AI assist, voice, learning, plugin lifecycle | Beta | Available, with runtime plugin hot-swap and quality dependent on optional services |
 | Sovereign durable profile | Ready | `DATACLOUD_PROFILE=sovereign` runs file-backed H2 entity and event storage with restart persistence |
 | Auto-compaction for embedded durable storage | Ready | Tombstone-based compaction runs on a configurable schedule and can be gated via autonomy |
 
@@ -25,8 +25,8 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 ```text
 Clients and products
     -> Data Cloud HTTP API and plugin runtime
-    -> entities, events, analytics, governance, lineage, memory
-    -> event-backed integration with AEP for agent execution
+    -> entities, events, analytics, governance, lineage, memory, workflow execution
+    -> event-backed integration with AEP for broader agent orchestration
 ```
 
 Operational guidance for validated deployment paths lives in `RUNBOOK.md`.

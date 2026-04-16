@@ -4,6 +4,7 @@ import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.report.ReportDefinition;
 import com.ghatana.datacloud.analytics.report.ReportResult;
 import com.ghatana.datacloud.analytics.report.ReportService;
+import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import io.activej.http.*;
 import io.activej.promise.Promise;
@@ -31,6 +32,7 @@ public class AnalyticsHandler {
     private final AnalyticsQueryEngine analyticsEngine;
     private final HttpHandlerSupport http;
     private ReportService reportService;
+    private ReportExecutionCapability reportCapability;
     private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
 
     public AnalyticsHandler(AnalyticsQueryEngine analyticsEngine, HttpHandlerSupport http) {
@@ -40,6 +42,11 @@ public class AnalyticsHandler {
 
     public AnalyticsHandler withReportService(ReportService service) {
         this.reportService = service;
+        return this;
+    }
+
+    public AnalyticsHandler withReportCapability(ReportExecutionCapability capability) {
+        this.reportCapability = capability;
         return this;
     }
 
@@ -250,7 +257,6 @@ public class AnalyticsHandler {
                         : Map.of();
                 return analyticsEngine.explainQuery(tenantId, queryText, params)
                         .map(plan -> {
-                            @SuppressWarnings("unchecked")
                             Map<String, Object> planFields =
                                     http.objectMapper().convertValue(plan, Map.class);
                             Map<String, Object> response = new LinkedHashMap<>(planFields);
@@ -272,7 +278,7 @@ public class AnalyticsHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleCreateReport(HttpRequest request) {
-        if (reportService == null) {
+        if (reportCapability == null && reportService == null) {
             return Promise.of(http.errorResponse(503, "Report service not available in this deployment"));
         }
         return request.loadBody()
@@ -287,7 +293,7 @@ public class AnalyticsHandler {
                         return Promise.of(http.errorResponse(400, "Invalid report definition: " + e.getMessage()));
                     }
                     String tenantId = http.resolveTenantId(request);
-                    return reportService.generate(tenantId, definition)
+                    return reportExecutor().generate(tenantId, definition)
                         .map(result -> {
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("reportId",       result.getReportId());
@@ -321,19 +327,19 @@ public class AnalyticsHandler {
     }
 
     public Promise<HttpResponse> handleListReports(HttpRequest request) {
-        if (reportService == null) {
+        if (reportCapability == null && reportService == null) {
             return Promise.of(http.errorResponse(503, "Report service not available in this deployment"));
         }
-        Map<String, String> cached = reportService.listCachedReports();
+        Map<String, String> cached = reportExecutor().listCachedReports();
         return Promise.of(http.jsonResponse(Map.of("reports", cached, "count", cached.size())));
     }
 
     public Promise<HttpResponse> handleGetReport(HttpRequest request) {
-        if (reportService == null) {
+        if (reportCapability == null && reportService == null) {
             return Promise.of(http.errorResponse(503, "Report service not available in this deployment"));
         }
         String reportId = request.getPathParameter("reportId");
-        ReportResult result = reportService.getResult(reportId);
+        ReportResult result = reportExecutor().getResult(reportId);
         if (result == null) {
             return Promise.of(http.errorResponse(404, "No cached report found for reportId: " + reportId));
         }
@@ -351,5 +357,27 @@ public class AnalyticsHandler {
             response.put("rows", result.getRows());
         }
         return Promise.of(http.jsonResponse(response));
+    }
+
+    private ReportExecutionCapability reportExecutor() {
+        if (reportCapability != null) {
+            return reportCapability;
+        }
+        return new ReportExecutionCapability() {
+            @Override
+            public Promise<ReportResult> generate(String tenantId, ReportDefinition definition) {
+                return reportService.generate(tenantId, definition);
+            }
+
+            @Override
+            public Map<String, String> listCachedReports() {
+                return reportService.listCachedReports();
+            }
+
+            @Override
+            public ReportResult getResult(String reportId) {
+                return reportService.getResult(reportId);
+            }
+        };
     }
 }

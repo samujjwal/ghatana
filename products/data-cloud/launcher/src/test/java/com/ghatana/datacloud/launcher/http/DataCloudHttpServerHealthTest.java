@@ -119,7 +119,15 @@ class DataCloudHttpServerHealthTest {
         HttpResponse<String> response = get("/ready");
 
         assertThat(response.statusCode()).isEqualTo(503);
-        assertThat(response.body()).contains("Critical dependencies are not ready");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "NOT_READY");
+        assertThat(body).containsEntry("message", "Critical dependencies are not ready");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
+        assertThat(database).containsEntry("status", "DOWN");
     }
 
     @Test
@@ -132,7 +140,15 @@ class DataCloudHttpServerHealthTest {
         HttpResponse<String> response = get("/ready");
 
         assertThat(response.statusCode()).isEqualTo(503);
-        assertThat(response.body()).contains("Critical dependencies are not ready");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "NOT_READY");
+        assertThat(body).containsEntry("message", "Critical dependencies are not ready");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> eventStore = (Map<String, Object>) subsystems.get("event_store");
+        assertThat(eventStore).containsEntry("status", "DOWN");
     }
 
     private void startServer() throws Exception {

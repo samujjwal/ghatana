@@ -492,7 +492,7 @@ const workflowHandlers = [
     });
   }),
 
-  // POST /api/v1/pipelines/:pipelineId/execute  (no backend equivalent; stub for dev)
+  // POST /api/v1/pipelines/:pipelineId/execute
   http.post(`${BASE}/pipelines/:pipelineId/execute`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
     const wf = workflows.find((w) => w.id === params.pipelineId);
@@ -541,12 +541,14 @@ const pluginHandlers = [
     return HttpResponse.json({ success: true });
   }),
 
-  http.post(`${BASE}/plugins/:id/upgrade`, async () => {
+  http.post(`${BASE}/plugins/:id/upgrade`, async ({ params }) => {
     await delay(SIMULATED_DELAY_MS);
-    return HttpResponse.json(
-      { code: 'NOT_IMPLEMENTED', message: 'Bundled plugin upgrades require a new launcher build' },
-      { status: 501 },
+    plugins = plugins.map((plugin) =>
+      plugin.id === params.id
+        ? { ...plugin, version: plugin.version === '1.0.0' ? '1.0.1' : plugin.version }
+        : plugin,
     );
+    return HttpResponse.json({ success: true, reloaded: true });
   }),
 ];
 
@@ -941,6 +943,37 @@ const supportHandlers = [
         ? executions.filter((execution) => statuses.includes(execution.status))
         : executions,
     );
+  }),
+
+  http.get(`${BASE}/executions/:executionId`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      id: params.executionId,
+      pipelineId: 'wf-001',
+      pipelineName: 'Nightly Customer Sync',
+      status: 'completed',
+      startTime: new Date(Date.now() - 60 * 1000).toISOString(),
+      endTime: new Date().toISOString(),
+      completedNodes: 2,
+      totalNodes: 2,
+      nodes: [
+        { id: 'node-1', name: 'Start', status: 'completed', startTime: new Date(Date.now() - 60 * 1000).toISOString(), endTime: new Date(Date.now() - 55 * 1000).toISOString(), duration: 5 },
+        { id: 'node-2', name: 'End', status: 'completed', startTime: new Date(Date.now() - 55 * 1000).toISOString(), endTime: new Date().toISOString(), duration: 55 },
+      ],
+    });
+  }),
+
+  http.get(`${BASE}/executions/:executionId/logs`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json([
+      { timestamp: new Date(Date.now() - 60 * 1000).toISOString(), level: 'info', message: `Execution ${params.executionId} started` },
+      { timestamp: new Date().toISOString(), level: 'info', message: `Execution ${params.executionId} completed` },
+    ]);
+  }),
+
+  http.post(`${BASE}/executions/:executionId/cancel`, async ({ params }) => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({ executionId: params.executionId, cancelled: true });
   }),
 ];
 

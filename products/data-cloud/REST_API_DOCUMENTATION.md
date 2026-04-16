@@ -200,12 +200,19 @@ POST /api/v1/context/tickets/rag
 | GET | `/api/v1/plugins/:id` | Get plugin details |
 | POST | `/api/v1/plugins/:id/enable` | Enable plugin |
 | POST | `/api/v1/plugins/:id/disable` | Disable plugin |
-| POST | `/api/v1/plugins/:id/upgrade` | Upgrade plugin |
+| POST | `/api/v1/plugins/:id/upgrade` | Hot-swap or reload plugin |
 
 ### Operations And Streaming
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| POST | `/api/v1/pipelines/:pipelineId/execute` | Execute a pipeline through the runtime workflow plugin |
+| GET | `/api/v1/pipelines/:pipelineId/executions` | List pipeline executions |
+| GET | `/api/v1/pipelines/:pipelineId/executions/:executionId` | Get workflow-scoped execution summary |
+| POST | `/api/v1/pipelines/:pipelineId/executions/:executionId/cancel` | Cancel a pipeline execution |
+| GET | `/api/v1/executions/:executionId` | Get execution detail |
+| GET | `/api/v1/executions/:executionId/logs` | Get execution logs |
+| POST | `/api/v1/executions/:executionId/cancel` | Cancel an execution by id |
 | GET | `/events/stream` | Global SSE stream |
 | GET | `/api/v1/voice/intents` | List supported voice intents |
 | POST | `/api/v1/voice/intent` | Resolve voice intent |

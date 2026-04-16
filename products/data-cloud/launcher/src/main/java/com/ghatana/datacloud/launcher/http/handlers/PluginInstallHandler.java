@@ -1,7 +1,9 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.datacloud.spi.StoragePluginRegistry;
+import com.ghatana.platform.plugin.Plugin;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -47,6 +49,7 @@ public final class PluginInstallHandler {
 
     private final HttpHandlerSupport http;
     private final StoragePluginRegistry pluginRegistry;
+    private final DataCloudRuntimePluginManager runtimePluginManager;
     private final MetricsCollector metrics;
 
     // Tracks plugins explicitly disabled at runtime via this API
@@ -61,9 +64,11 @@ public final class PluginInstallHandler {
     public PluginInstallHandler(
             HttpHandlerSupport http,
             StoragePluginRegistry pluginRegistry,
+            DataCloudRuntimePluginManager runtimePluginManager,
             MetricsCollector metrics) {
         this.http = Objects.requireNonNull(http, "http");
         this.pluginRegistry = Objects.requireNonNull(pluginRegistry, "pluginRegistry");
+        this.runtimePluginManager = Objects.requireNonNull(runtimePluginManager, "runtimePluginManager");
         this.metrics = Objects.requireNonNull(metrics, "metrics");
     }
 
@@ -77,8 +82,11 @@ public final class PluginInstallHandler {
         metrics.incrementCounter("plugin.list", "tenant", tenantId);
 
         Collection<StoragePlugin<?>> all = pluginRegistry.getAllPlugins();
-        List<Map<String, Object>> items = new ArrayList<>(all.size());
+        List<Map<String, Object>> items = new ArrayList<>(all.size() + runtimePluginManager.getAllPlugins().size());
         for (StoragePlugin<?> plugin : all) {
+            items.add(pluginView(plugin));
+        }
+        for (Plugin plugin : runtimePluginManager.getAllPlugins()) {
             items.add(pluginView(plugin));
         }
 
@@ -100,7 +108,9 @@ public final class PluginInstallHandler {
 
         return pluginRegistry.getPlugin(pluginId)
                 .<Promise<HttpResponse>>map(plugin -> Promise.of(http.jsonResponse(200, pluginView(plugin))))
-                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
+                .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
+                    .<Promise<HttpResponse>>map(plugin -> Promise.of(http.jsonResponse(200, pluginView(plugin))))
+                    .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId))));
     }
 
     // ─── POST /api/v1/plugins/:id/enable ─────────────────────────────────────
@@ -121,7 +131,14 @@ public final class PluginInstallHandler {
                     result.put("status", "enabled");
                     return Promise.of(http.jsonResponse(200, result));
                 })
-                .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId)));
+                .orElseGet(() -> runtimePluginManager.getPlugin(pluginId)
+                    .<Promise<HttpResponse>>map(plugin -> runtimePluginManager.enablePlugin(pluginId)
+                        .map(ignored -> {
+                            Map<String, Object> result = pluginView(plugin);
+                            result.put("status", "enabled");
+                            return http.jsonResponse(200, result);
+                        }))
+                    .orElseGet(() -> Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId))));
     }
 
     // ─── POST /api/v1/plugins/:id/disable ────────────────────────────────────
@@ -135,7 +152,16 @@ public final class PluginInstallHandler {
         metrics.incrementCounter("plugin.disable", "tenant", tenantId, "pluginId", pluginId);
 
         if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
-            return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+            if (runtimePluginManager.getPlugin(pluginId).isEmpty()) {
+                return Promise.of(http.errorResponse(404, "Plugin not found: " + pluginId));
+            }
+            return runtimePluginManager.disablePlugin(pluginId).map(ignored -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put("pluginId", pluginId);
+                result.put("status", "disabled");
+                result.put("message", "Plugin disabled.");
+                return http.jsonResponse(200, result);
+            });
         }
 
         disabledPlugins.add(pluginId);
@@ -151,25 +177,46 @@ public final class PluginInstallHandler {
     // ─── POST /api/v1/plugins/:id/upgrade ────────────────────────────────────
 
     /**
-     * Signals upgrade intent for a plugin. Validates the target version is newer than current
-    /**
-     * {@code POST /api/v1/plugins/:id/upgrade}
-     *
-     * <p>Runtime plugin hot-swap (installing a new version without restarting the process) is not
-     * supported by the Data-Cloud standalone launcher.  Plugins are bundled at build time via the
-     * ServiceLoader mechanism; upgrading requires deploying a new server build.
-     *
-     * <p>Returns {@code 501 Not Implemented} with a clear explanation so callers know this is an
-     * explicit capability boundary rather than a temporary error.
+     * Hot-swaps runtime feature plugins or reloads storage plugins without restarting the launcher.
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
         String tenantId = http.resolveTenantId(request);
-        metrics.incrementCounter("plugin.upgrade.rejected", "tenant", tenantId, "pluginId", pluginId);
-        log.info("[B6] Plugin upgrade requested for {} — returning 501 (not supported, bundled-only)", pluginId);
-        return Promise.of(http.errorResponse(501,
-                "Plugin upgrade is not supported. Data-Cloud plugins are bundled at build time. " +
-                "To upgrade a plugin, deploy a new server version containing the updated plugin JAR."));
+        metrics.incrementCounter("plugin.upgrade", "tenant", tenantId, "pluginId", pluginId);
+
+        return request.loadBody().then(buffer -> {
+            Map<String, Object> payload = parseUpgradePayload(
+                buffer == null || buffer.readRemaining() == 0
+                    ? null
+                    : buffer.getString(java.nio.charset.StandardCharsets.UTF_8));
+
+            if (pluginRegistry.getPlugin(pluginId).isPresent()) {
+                StoragePlugin<?> plugin = pluginRegistry.getPlugin(pluginId).orElseThrow();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> pluginConfig = payload.get("configuration") instanceof Map<?, ?> map
+                    ? (Map<String, Object>) map
+                    : Map.of();
+                return plugin.shutdown()
+                    .then(() -> plugin.initialize(pluginConfig))
+                    .map(ignored -> {
+                        Map<String, Object> result = pluginView(plugin);
+                        result.put("reloaded", true);
+                        result.put("message", "Plugin reloaded without restarting the launcher.");
+                        return http.jsonResponse(200, result);
+                    });
+            }
+
+            return runtimePluginManager.hotSwapPlugin(pluginId, payload)
+                .map(plugin -> {
+                    Map<String, Object> result = pluginView(plugin);
+                    result.put("reloaded", true);
+                    result.put("message", "Plugin hot-swapped without restarting the launcher.");
+                    return http.jsonResponse(200, result);
+                });
+        }).then(
+            response -> Promise.of(response),
+            exception -> Promise.of(http.errorResponse(404, exception.getMessage()))
+        );
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
@@ -185,5 +232,28 @@ public final class PluginInstallHandler {
                         .map(Enum::name)
                         .toList());
         return view;
+    }
+
+    private Map<String, Object> pluginView(Plugin plugin) {
+        Map<String, Object> view = new HashMap<>();
+        view.put("id", plugin.metadata().id());
+        view.put("displayName", plugin.metadata().name());
+        view.put("version", plugin.metadata().version());
+        view.put("status", runtimePluginManager.isEnabled(plugin.metadata().id()) ? "enabled" : "disabled");
+        view.put("supportedRecordTypes", plugin.metadata().capabilities().stream().sorted().toList());
+        return view;
+    }
+
+    private Map<String, Object> parseUpgradePayload(String body) {
+        if (body == null || body.isBlank()) {
+            return Map.of();
+        }
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+            return payload;
+        } catch (Exception exception) {
+            throw new IllegalArgumentException("Invalid plugin upgrade payload: " + exception.getMessage());
+        }
     }
 }

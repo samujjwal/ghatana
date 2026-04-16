@@ -204,9 +204,12 @@ public class HealthHandler {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", criticalDown ? "NOT_READY" : "READY");
         body.put("timestamp", Instant.now().toString());
+        if (criticalDown) {
+            body.put("message", "Critical dependencies are not ready");
+        }
         body.put("subsystems", subsystems);
         HttpResponse response = criticalDown
-                ? httpSupport.errorResponse(503, "Critical dependencies are not ready")
+                ? httpSupport.jsonResponse(503, body)
                 : httpSupport.jsonResponse(body);
         return Promise.of(response);
     }

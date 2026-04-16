@@ -19,6 +19,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
+import { WORKFLOW_EXECUTION_SUPPORTED } from '../../../lib/api/workflow-client';
 import {
   workflowAtom,
   canUndoAtom,
@@ -179,7 +180,7 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
         {/* Execute */}
         <button
           onClick={() => setShowExecuteConfirm(true)}
-          disabled={!workflowId || executing || readOnly}
+          disabled={!workflowId || executing || readOnly || !WORKFLOW_EXECUTION_SUPPORTED}
           title="Execute workflow"
           className="px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >

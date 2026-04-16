@@ -26,15 +26,16 @@ import java.time.Instant;
 import java.time.Period;
 import java.util.Base64;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * HTTP handler for data lifecycle and governance operations (DC-E5).
@@ -95,6 +96,10 @@ public class DataLifecycleHandler {
 
     /** HMAC-SHA256 algorithm identifier. */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final String GOVERNANCE_POLICY_COLLECTION = "_governance_retention_policies";
+    private static final String POLICY_STATUS_CLASSIFIED = "CLASSIFIED";
+    private static final String POLICY_STATUS_DEFAULT = "DEFAULT";
+    private static final String MISSING_TENANT_ERROR = "MISSING_TENANT";
 
     private static final String REDACTED_VALUE = "[REDACTED]";
     private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
@@ -122,15 +127,6 @@ public class DataLifecycleHandler {
     private final HttpHandlerSupport http;
     private final AuditService auditService; // nullable
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
-
-    /**
-     * Per-tenant retention policy store: key = {@code tenantId:collection}.
-     * Populated by {@link #handleClassifyRetention}; read by {@link #handleGetRetentionPolicy}.
-     * In production this map would be backed by the Data-Cloud entity store or a dedicated
-     * configuration database, providing durability across restarts.
-     */
-    private final ConcurrentHashMap<String, Map<String, Object>> retentionPolicies =
-            new ConcurrentHashMap<>();
 
     /**
      * Creates a governance handler.
@@ -176,8 +172,12 @@ public class DataLifecycleHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handleClassifyRetention(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
+
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -213,27 +213,31 @@ public class DataLifecycleHandler {
                 Instant expiresAt = tier.equals("permanent")
                     ? null
                     : Instant.now().plusSeconds(retentionDays * 86_400L);
+                List<String> piiFields = resolveRequestedPiiFields(input.get("piiFields"), collection);
 
-                Map<String, Object> result = new HashMap<>();
+                Map<String, Object> result = new LinkedHashMap<>();
                 result.put("collection",     collection);
                 result.put("tier",           tier);
                 result.put("retentionDays",  retentionDays);
-                result.put("expiresAt",      expiresAt != null ? expiresAt.toString() : null);
+                if (expiresAt != null) {
+                    result.put("expiresAt", expiresAt.toString());
+                }
                 result.put("classifiedAt",   Instant.now().toString());
                 result.put("classifiedBy",   tenantId);
                 result.put("reason",         reason);
+                result.put("piiFields",      piiFields);
+                result.put("status",         POLICY_STATUS_CLASSIFIED);
 
-                // Persist so handleGetRetentionPolicy can serve the live policy.
-                // Use a defensive copy that tolerates null values (e.g. expiresAt for permanent tier).
-                retentionPolicies.put(policyKey(tenantId, collection),
-                        Collections.unmodifiableMap(new HashMap<>(result)));
+                TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+                return saveRetentionPolicy(tenantContext, collection, result)
+                    .map(savedPolicy -> {
+                        emitAudit(tenantId, requestId, "RETENTION_CLASSIFY", collection,
+                              Map.of("tier", tier, "reason", reason, "piiFieldCount", piiFields.size()));
 
-                emitAudit(tenantId, requestId, "RETENTION_CLASSIFY", collection,
-                          Map.of("tier", tier, "reason", reason));
-
-                log.info("[DC-E5] retention classified collection={} tier={} tenant={}", collection, tier, tenantId);
-                return Promise.of(http.envelopeResponse(
-                    ApiResponse.success(result, tenantId, requestId), objectMapper));
+                        log.info("[DC-E5] retention classified collection={} tier={} tenant={}", collection, tier, tenantId);
+                        return http.envelopeResponse(
+                            ApiResponse.success(savedPolicy, tenantId, requestId), objectMapper);
+                    });
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -244,8 +248,11 @@ public class DataLifecycleHandler {
      * effective tier, expiry schedule, and any active holds.
      */
     public Promise<HttpResponse> handleGetRetentionPolicy(HttpRequest request) {
-        String tenantId   = http.resolveTenantId(request);
         String requestId  = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
         String collection = sanitise(request.getQueryParameter("collection"));
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
@@ -261,21 +268,11 @@ public class DataLifecycleHandler {
                 objectMapper)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
         }
 
-        // Look up a previously classified policy; fall back to the well-known default tier
-        // so that unconfigured collections return a predictable, documented baseline.
-        Map<String, Object> stored = retentionPolicies.get(policyKey(tenantId, collection));
-        Map<String, Object> policy = stored != null ? stored : Map.of(
-            "collection",       collection,
-            "tier",             "standard",
-            "retentionDays",    365,
-            "legalHolds",       List.of(),
-            "piiFields",        derivePiiFields(collection),
-            "lastClassifiedAt", Instant.EPOCH.toString(),
-            "status",           "DEFAULT"
-        );
-
-        return Promise.of(http.envelopeResponse(
-            ApiResponse.success(policy, tenantId, requestId), objectMapper))
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        return loadRetentionPolicy(tenantContext, collection)
+            .map(stored -> stored.orElseGet(() -> defaultRetentionPolicy(collection)))
+            .map(policy -> http.envelopeResponse(
+                ApiResponse.success(policy, tenantId, requestId), objectMapper))
             .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -299,8 +296,11 @@ public class DataLifecycleHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handlePurge(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
@@ -323,11 +323,12 @@ public class DataLifecycleHandler {
                 }
 
                 EntityStore entityStore = requireEntityStore();
+                Promise<Optional<Map<String, Object>>> policyPromise = loadRetentionPolicy(tenantContext, collection);
 
                 if (dryRun) {
-                    return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                    return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
                         .map(queryResult -> {
-                            List<EntityStore.Entity> candidates = findPurgeCandidates(tenantId, collection, queryResult.entities());
+                            List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
                             long issuedAtMs = Instant.now().toEpochMilli();
                             String token = buildPurgeToken(tenantId, collection, issuedAtMs);
                             log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
@@ -350,7 +351,7 @@ public class DataLifecycleHandler {
                                 collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
                             return http.envelopeResponse(
                                 ApiResponse.success(result, tenantId, requestId), objectMapper);
-                        });
+                        }));
                 }
 
                 // Execute path: token is mandatory and must pass HMAC verification
@@ -376,9 +377,9 @@ public class DataLifecycleHandler {
                         objectMapper));
                 }
 
-                return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
                     .then(queryResult -> {
-                        List<EntityStore.Entity> candidates = findPurgeCandidates(tenantId, collection, queryResult.entities());
+                        List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
                         List<EntityStore.EntityId> entityIds = candidates.stream()
                             .map(EntityStore.Entity::id)
                             .toList();
@@ -436,7 +437,7 @@ public class DataLifecycleHandler {
                                 return http.envelopeResponse(
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
-                    });
+                    }));
                 }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -457,8 +458,11 @@ public class DataLifecycleHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handleRedact(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
@@ -579,8 +583,11 @@ public class DataLifecycleHandler {
      * plus any tenant-specific additions.
      */
     public Promise<HttpResponse> handleListPiiFields(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -588,14 +595,25 @@ public class DataLifecycleHandler {
                 traceSupport.requestSpanId(request),
                 Map.of("request.id", requestId));
 
-        Map<String, Object> data = Map.of(
-            "globalFields",   GLOBAL_PII_FIELDS.stream().sorted().toList(),
-            "tenantFields",   List.of(),   // production: load from tenant config store
-            "effectiveCount", GLOBAL_PII_FIELDS.size()
-        );
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        return loadRetentionPolicies(tenantContext)
+            .map(policies -> {
+                Set<String> tenantFields = policies.stream()
+                    .flatMap(policy -> readPolicyPiiFields(policy).stream())
+                    .filter(field -> !GLOBAL_PII_FIELDS.contains(field))
+                    .collect(Collectors.toCollection(java.util.TreeSet::new));
 
-        return Promise.of(http.envelopeResponse(
-            ApiResponse.success(data, tenantId, requestId), objectMapper))
+                Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
+                effectiveFields.addAll(tenantFields);
+
+                Map<String, Object> data = Map.of(
+                    "globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList(),
+                    "tenantFields", List.copyOf(tenantFields),
+                    "effectiveCount", effectiveFields.size()
+                );
+                return http.envelopeResponse(
+                    ApiResponse.success(data, tenantId, requestId), objectMapper);
+            })
             .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -607,8 +625,11 @@ public class DataLifecycleHandler {
      * active legal holds, and upcoming retention expirations.
      */
     public Promise<HttpResponse> handleComplianceSummary(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
         String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -616,17 +637,20 @@ public class DataLifecycleHandler {
                 traceSupport.requestSpanId(request),
                 Map.of("request.id", requestId));
 
-        Map<String, Object> summary = buildBaseComplianceSummary(tenantId);
-        if (auditService instanceof AuditSummaryProvider auditSummaryProvider) {
-            return auditSummaryProvider.summarize(tenantId, Instant.now().minusSeconds(30L * 24 * 60 * 60), 500)
-                .map(auditSummary -> enrichComplianceSummary(summary, auditSummary))
-                .map(enrichedSummary -> http.envelopeResponse(
-                    ApiResponse.success(enrichedSummary, tenantId, requestId), objectMapper))
-                .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
-        }
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        return loadRetentionPolicies(tenantContext)
+            .then(policies -> {
+                Map<String, Object> summary = buildBaseComplianceSummary(tenantId, policies);
+                if (auditService instanceof AuditSummaryProvider auditSummaryProvider) {
+                    return auditSummaryProvider.summarize(tenantId, Instant.now().minusSeconds(30L * 24 * 60 * 60), 500)
+                        .map(auditSummary -> enrichComplianceSummary(summary, auditSummary))
+                        .map(enrichedSummary -> http.envelopeResponse(
+                            ApiResponse.success(enrichedSummary, tenantId, requestId), objectMapper));
+                }
 
-        return Promise.of(http.envelopeResponse(
-            ApiResponse.success(summary, tenantId, requestId), objectMapper))
+                return Promise.of(http.envelopeResponse(
+                    ApiResponse.success(summary, tenantId, requestId), objectMapper));
+            })
             .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -645,14 +669,10 @@ public class DataLifecycleHandler {
         return List.of();
     }
 
-    private Map<String, Object> buildBaseComplianceSummary(String tenantId) {
-        long collectionsClassified = retentionPolicies.keySet().stream()
-            .filter(key -> key.startsWith(tenantId + ":"))
-            .count();
+    private Map<String, Object> buildBaseComplianceSummary(String tenantId, List<Map<String, Object>> policies) {
+        long collectionsClassified = policies.size();
         long collectionsTotal = collectionsClassified;
-        long expiringIn30Days = retentionPolicies.entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith(tenantId + ":"))
-            .map(Map.Entry::getValue)
+        long expiringIn30Days = policies.stream()
             .map(policy -> policy.get("expiresAt"))
             .filter(String.class::isInstance)
             .map(String.class::cast)
@@ -660,13 +680,16 @@ public class DataLifecycleHandler {
             .filter(instant -> instant != null && !instant.isBefore(Instant.now())
                 && !instant.isAfter(Instant.now().plusSeconds(30L * 24 * 60 * 60)))
             .count();
+        Set<String> tenantSpecificPiiFields = policies.stream()
+            .flatMap(policy -> readPolicyPiiFields(policy).stream())
+            .collect(Collectors.toCollection(java.util.TreeSet::new));
 
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("tenantId", tenantId);
         summary.put("collectionsTotal", collectionsTotal);
         summary.put("collectionsClassified", collectionsClassified);
         summary.put("collectionsUnclassified", 0L);
-        summary.put("piiFieldsRegistered", GLOBAL_PII_FIELDS.size());
+        summary.put("piiFieldsRegistered", tenantSpecificPiiFields.size());
         summary.put("legalHoldsActive", 0);
         summary.put("retentionExpirationsIn30Days", expiringIn30Days);
         summary.put("lastAuditAt", Instant.EPOCH.toString());
@@ -733,14 +756,95 @@ public class DataLifecycleHandler {
             .build();
     }
 
-    private List<EntityStore.Entity> findPurgeCandidates(String tenantId,
-                                                         String collection,
+    private List<EntityStore.Entity> findPurgeCandidates(Map<String, Object> policy,
                                                          List<EntityStore.Entity> entities) {
-        Map<String, Object> policy = retentionPolicies.get(policyKey(tenantId, collection));
         Instant now = Instant.now();
         Instant policyCutoff = resolvePolicyCutoff(policy, now);
         return entities.stream()
             .filter(entity -> isEntityExpired(entity, policyCutoff, now))
+            .toList();
+    }
+
+    private Promise<Map<String, Object>> saveRetentionPolicy(TenantContext tenantContext,
+                                                             String collection,
+                                                             Map<String, Object> policy) {
+        EntityStore.Entity entity = EntityStore.Entity.builder()
+            .id(policyId(collection))
+            .collection(GOVERNANCE_POLICY_COLLECTION)
+            .data(policy)
+            .build();
+        return requireEntityStore().save(tenantContext, entity)
+            .map(saved -> new LinkedHashMap<>(saved.data()));
+    }
+
+    private Promise<Optional<Map<String, Object>>> loadRetentionPolicy(TenantContext tenantContext,
+                                                                       String collection) {
+        return requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(policyId(collection)))
+            .map(found -> found
+                .filter(entity -> GOVERNANCE_POLICY_COLLECTION.equals(entity.collection()))
+                .map(entity -> new LinkedHashMap<>(entity.data())));
+    }
+
+    private Promise<List<Map<String, Object>>> loadRetentionPolicies(TenantContext tenantContext) {
+        return requireEntityStore().query(tenantContext, EntityStore.QuerySpec.builder()
+                .collection(GOVERNANCE_POLICY_COLLECTION)
+                .limit(PURGE_QUERY_LIMIT)
+                .build())
+            .map(result -> result.entities().stream()
+                .map(entity -> new LinkedHashMap<>(entity.data()))
+                .collect(Collectors.toList()));
+    }
+
+    private Map<String, Object> defaultRetentionPolicy(String collection) {
+        return Map.of(
+            "collection", collection,
+            "tier", "standard",
+            "retentionDays", 365,
+            "legalHolds", List.of(),
+            "piiFields", derivePiiFields(collection),
+            "lastClassifiedAt", Instant.EPOCH.toString(),
+            "status", POLICY_STATUS_DEFAULT
+        );
+    }
+
+    private HttpResponse missingTenantResponse(String requestId) {
+        return http.envelopeResponse(
+            ApiResponse.error(
+                MISSING_TENANT_ERROR,
+                "X-Tenant-Id header or tenantId query parameter is required",
+                "unknown",
+                requestId),
+            objectMapper);
+    }
+
+    private List<String> resolveRequestedPiiFields(Object rawPiiFields, String collection) {
+        if (!(rawPiiFields instanceof List<?> piiFields) || piiFields.isEmpty()) {
+            return derivePiiFields(collection);
+        }
+
+        return piiFields.stream()
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .map(DataLifecycleHandler::sanitise)
+            .filter(field -> !field.isBlank())
+            .distinct()
+            .sorted()
+            .toList();
+    }
+
+    private List<String> readPolicyPiiFields(Map<String, Object> policy) {
+        Object raw = policy.get("piiFields");
+        if (!(raw instanceof List<?> fields)) {
+            return List.of();
+        }
+
+        return fields.stream()
+            .filter(Objects::nonNull)
+            .map(Object::toString)
+            .map(DataLifecycleHandler::sanitise)
+            .filter(field -> !field.isBlank())
+            .distinct()
+            .sorted()
             .toList();
     }
 
@@ -860,9 +964,8 @@ public class DataLifecycleHandler {
         return (rid != null && !rid.isBlank()) ? rid : UUID.randomUUID().toString();
     }
 
-    /** Returns the map key used to store/look up a retention policy. */
-    private static String policyKey(String tenantId, String collection) {
-        return tenantId + ":" + collection;
+    private static String policyId(String collection) {
+        return "retention-policy:" + collection;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

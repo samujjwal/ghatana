@@ -16,9 +16,9 @@ Data-Cloud is an **independent AI/ML-native data product** for Ghatana. It:
 - Supports standalone and integrated deployment modes
 - Exposes public contracts consumed by AEP and other products
 
-**Domain boundary:** Data-Cloud owns data storage, event streaming, analytics, reporting, AI/ML-native assistance, feature engineering, plugin lifecycle, and execution metadata persistence. It does NOT own agentic orchestration or execution; those belong to AEP.
+**Domain boundary:** Data-Cloud owns data storage, event streaming, analytics, reporting, AI/ML-native assistance, feature engineering, plugin lifecycle, execution metadata persistence, and plugin-backed pipeline execution inside the standalone runtime. It does NOT own broader agentic orchestration; that remains an AEP concern.
 
-**AEP integration rule:** Data-Cloud may publish agentic work requests and persist agent definitions, memory, checkpoints, and results, but it must not import AEP modules. AEP depends on Data-Cloud public APIs/contracts and event-cloud to perform agentic processing without creating a circular dependency.
+**AEP integration rule:** Data-Cloud may publish agentic work requests and persist agent definitions, memory, checkpoints, results, and locally executed pipeline state, but it must not import AEP modules. AEP depends on Data-Cloud public APIs/contracts and event-cloud to perform higher-level agentic processing without creating a circular dependency.
 
 ## Key Product-Owned Shared Libraries
 

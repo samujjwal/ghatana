@@ -208,6 +208,23 @@ public class HttpHandlerSupport {
         }
     }
 
+    public HttpResponse jsonBodyResponse(Object data) {
+        try {
+            String json = objectMapper.writeValueAsString(data);
+            return HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(500)
+                .withBody(("{\"error\":\"json serialization failed\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
     /**
      * Returns a blocking executor for async operations.
      *

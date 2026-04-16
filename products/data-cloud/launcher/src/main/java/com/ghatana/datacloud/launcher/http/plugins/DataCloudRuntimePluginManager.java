@@ -1,0 +1,442 @@
+package com.ghatana.datacloud.launcher.http.plugins;
+
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.analytics.report.ReportDefinition;
+import com.ghatana.datacloud.analytics.report.ReportResult;
+import com.ghatana.datacloud.analytics.report.ReportService;
+import com.ghatana.platform.health.HealthStatus;
+import com.ghatana.platform.plugin.Plugin;
+import com.ghatana.platform.plugin.PluginCapability;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
+import com.ghatana.platform.plugin.PluginRegistry;
+import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
+import com.ghatana.platform.plugin.impl.DefaultPluginContext;
+import io.activej.promise.Promise;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * @doc.type class
+ * @doc.purpose Runtime manager for hot-swappable Data Cloud feature plugins
+ * @doc.layer product
+ * @doc.pattern Registry
+ */
+public final class DataCloudRuntimePluginManager implements AutoCloseable {
+
+    private static final Logger log = LoggerFactory.getLogger(DataCloudRuntimePluginManager.class);
+    private static final String WORKFLOW_PLUGIN_ID = "workflow-execution";
+    private static final String REPORT_PLUGIN_ID = "reporting";
+
+    private final PluginRegistry registry = new PluginRegistry();
+    private final PluginContext context = new DefaultPluginContext(registry, Map.of());
+    private final Map<String, ManagedRuntimePluginProvider> providers = new ConcurrentHashMap<>();
+    private final Set<String> disabledPluginIds = ConcurrentHashMap.newKeySet();
+
+    public void registerWorkflowPlugin(DataCloudClient client) {
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return WORKFLOW_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInWorkflowExecutionPlugin(client, config);
+            }
+        });
+    }
+
+    public void registerReportPlugin(ReportService reportService) {
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return REPORT_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInReportPlugin(reportService, config);
+            }
+        });
+    }
+
+    public synchronized void registerProvider(ManagedRuntimePluginProvider provider) {
+        Objects.requireNonNull(provider, "provider");
+        providers.put(provider.pluginId(), provider);
+        if (registry.isRegistered(provider.pluginId())) {
+            return;
+        }
+        Plugin plugin = provider.create(Map.of());
+        registry.register(plugin);
+        initializePlugin(plugin).whenException(exception -> log.error("Failed to initialize plugin {}", provider.pluginId(), exception));
+    }
+
+    public Collection<Plugin> getAllPlugins() {
+        return registry.getAllPlugins();
+    }
+
+    public Optional<Plugin> getPlugin(String pluginId) {
+        return registry.getPlugin(pluginId);
+    }
+
+    public boolean isEnabled(String pluginId) {
+        return !disabledPluginIds.contains(pluginId);
+    }
+
+    public <T extends PluginCapability> Optional<T> findCapability(Class<T> capabilityType) {
+        return registry.getAllPlugins().stream()
+            .filter(plugin -> isEnabled(plugin.metadata().id()))
+            .map(plugin -> plugin.getCapability(capabilityType))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .findFirst();
+    }
+
+    public Promise<Plugin> enablePlugin(String pluginId) {
+        Optional<Plugin> plugin = registry.getPlugin(pluginId);
+        if (plugin.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("Plugin not found: " + pluginId));
+        }
+        disabledPluginIds.remove(pluginId);
+        return plugin.get().start().map(ignored -> plugin.get());
+    }
+
+    public Promise<Plugin> disablePlugin(String pluginId) {
+        Optional<Plugin> plugin = registry.getPlugin(pluginId);
+        if (plugin.isEmpty()) {
+            return Promise.ofException(new IllegalArgumentException("Plugin not found: " + pluginId));
+        }
+        disabledPluginIds.add(pluginId);
+        return plugin.get().stop().map(ignored -> plugin.get());
+    }
+
+    public Promise<Plugin> hotSwapPlugin(String pluginId, Map<String, Object> config) {
+        ManagedRuntimePluginProvider provider = providers.get(pluginId);
+        if (provider == null) {
+            return Promise.ofException(new IllegalArgumentException("Plugin hot-swap is not available for: " + pluginId));
+        }
+        Optional<Plugin> existing = registry.getPlugin(pluginId);
+        Promise<Void> shutdown = existing.map(Plugin::shutdown).orElse(Promise.complete());
+        return shutdown.then(() -> {
+            registry.unregister(pluginId);
+            Plugin replacement = provider.create(config != null ? config : Map.of());
+            registry.register(replacement);
+            disabledPluginIds.remove(pluginId);
+            return initializePlugin(replacement).map(ignored -> replacement);
+        });
+    }
+
+    @Override
+    public void close() {
+        registry.shutdownAll().whenException(exception -> log.warn("Failed to shutdown runtime plugins", exception));
+    }
+
+    private Promise<Void> initializePlugin(Plugin plugin) {
+        return plugin.initialize(context).then(plugin::start);
+    }
+
+    public interface ManagedRuntimePluginProvider {
+        String pluginId();
+
+        Plugin create(Map<String, Object> config);
+    }
+
+    private abstract static class BaseManagedPlugin implements Plugin {
+
+        private volatile PluginState state = PluginState.UNLOADED;
+
+        @Override
+        public PluginState getState() {
+            return state;
+        }
+
+        @Override
+        public Promise<Void> initialize(@NotNull PluginContext context) {
+            state = PluginState.INITIALIZED;
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            state = PluginState.RUNNING;
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            state = PluginState.STOPPED;
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            state = PluginState.STOPPED;
+            return Promise.complete();
+        }
+    }
+
+    private static final class BuiltInReportPlugin extends BaseManagedPlugin implements ReportExecutionCapability {
+
+        private final ReportService reportService;
+        private final PluginMetadata metadata;
+
+        private BuiltInReportPlugin(ReportService reportService, Map<String, Object> config) {
+            this.reportService = Objects.requireNonNull(reportService, "reportService");
+            this.metadata = PluginMetadata.builder()
+                .id(REPORT_PLUGIN_ID)
+                .name("Data Cloud Reporting")
+                .version(versionFrom(config, "1.0.0"))
+                .description("Plugin-backed access to cached report generation and retrieval.")
+                .type(PluginType.ANALYTICS)
+                .capabilities(Set.of("reporting", "report-generation"))
+                .properties(Map.of("feature", "reports"))
+                .build();
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return metadata;
+        }
+
+        @Override
+        public Promise<HealthStatus> healthCheck() {
+            return Promise.of(HealthStatus.ok("Report plugin ready"));
+        }
+
+        @Override
+        public Set<PluginCapability> getCapabilities() {
+            return Set.of(this);
+        }
+
+        @Override
+        public Promise<ReportResult> generate(String tenantId, ReportDefinition definition) {
+            return reportService.generate(tenantId, definition);
+        }
+
+        @Override
+        public Map<String, String> listCachedReports() {
+            return reportService.listCachedReports();
+        }
+
+        @Override
+        public ReportResult getResult(String reportId) {
+            return reportService.getResult(reportId);
+        }
+    }
+
+    private static final class BuiltInWorkflowExecutionPlugin extends BaseManagedPlugin implements WorkflowExecutionCapability {
+
+        private static final String PIPELINES_COLLECTION = "dc_pipelines";
+
+        private final DataCloudClient client;
+        private final PluginMetadata metadata;
+        private final Map<String, ExecutionSnapshot> executions = new ConcurrentHashMap<>();
+        private final Map<String, List<ExecutionLogEntry>> executionLogs = new ConcurrentHashMap<>();
+
+        private BuiltInWorkflowExecutionPlugin(DataCloudClient client, Map<String, Object> config) {
+            this.client = Objects.requireNonNull(client, "client");
+            this.metadata = PluginMetadata.builder()
+                .id(WORKFLOW_PLUGIN_ID)
+                .name("Data Cloud Workflow Executor")
+                .version(versionFrom(config, "1.0.0"))
+                .description("Executes pipeline workflows inside the Data Cloud runtime.")
+                .type(PluginType.PROCESSING)
+                .capabilities(Set.of("workflow-execution", "workflow-orchestration"))
+                .properties(Map.of("feature", "workflows"))
+                .build();
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return metadata;
+        }
+
+        @Override
+        public Promise<HealthStatus> healthCheck() {
+            return Promise.of(HealthStatus.ok("Workflow execution plugin ready"));
+        }
+
+        @Override
+        public Set<PluginCapability> getCapabilities() {
+            return Set.of(this);
+        }
+
+        @Override
+        public Promise<ExecutionSnapshot> execute(String tenantId, String workflowId, Map<String, Object> input) {
+            return client.findById(tenantId, PIPELINES_COLLECTION, workflowId).then(optionalPipeline -> {
+                if (optionalPipeline.isEmpty()) {
+                    return Promise.ofException(new IllegalArgumentException("Pipeline not found: " + workflowId));
+                }
+
+                Map<String, Object> pipelineData = optionalPipeline.get().data();
+                String workflowName = stringValue(pipelineData.get("name"), workflowId);
+                Instant startedAt = Instant.now();
+                List<NodeSnapshot> nodeStatuses = buildNodeStatuses(pipelineData, startedAt);
+                Instant completedAt = startedAt.plusMillis(Math.max(1, nodeStatuses.size()) * 5L);
+
+                ExecutionSnapshot snapshot = new ExecutionSnapshot(
+                    UUID.randomUUID().toString(),
+                    tenantId,
+                    workflowId,
+                    workflowName,
+                    "COMPLETED",
+                    100,
+                    startedAt.toString(),
+                    completedAt.toString(),
+                    (int) Duration.between(startedAt, completedAt).toMillis(),
+                    nodeStatuses,
+                    Map.of(
+                        "input", input != null ? input : Map.of(),
+                        "nodeCount", nodeStatuses.size(),
+                        "workflowId", workflowId
+                    ),
+                    null
+                );
+
+                executions.put(snapshot.id(), snapshot);
+                executionLogs.put(snapshot.id(), buildLogs(snapshot, input));
+                return Promise.of(snapshot);
+            });
+        }
+
+        @Override
+        public Promise<List<ExecutionSnapshot>> listExecutions(String tenantId, String workflowId) {
+            List<ExecutionSnapshot> items = executions.values().stream()
+                .filter(snapshot -> tenantId.equals(snapshot.tenantId()) && workflowId.equals(snapshot.workflowId()))
+                .sorted((left, right) -> right.startedAt().compareTo(left.startedAt()))
+                .toList();
+            return Promise.of(items);
+        }
+
+        @Override
+        public Promise<Optional<ExecutionSnapshot>> getExecution(String tenantId, String executionId) {
+            ExecutionSnapshot snapshot = executions.get(executionId);
+            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
+                return Promise.of(Optional.empty());
+            }
+            return Promise.of(Optional.of(snapshot));
+        }
+
+        @Override
+        public Promise<ExecutionSnapshot> cancelExecution(String tenantId, String executionId) {
+            ExecutionSnapshot snapshot = executions.get(executionId);
+            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
+                return Promise.ofException(new IllegalArgumentException("Execution not found: " + executionId));
+            }
+            if (snapshot.isTerminal()) {
+                return Promise.of(snapshot);
+            }
+
+            Instant completedAt = Instant.now();
+            ExecutionSnapshot cancelled = new ExecutionSnapshot(
+                snapshot.id(),
+                snapshot.tenantId(),
+                snapshot.workflowId(),
+                snapshot.workflowName(),
+                "CANCELLED",
+                snapshot.progress(),
+                snapshot.startedAt(),
+                completedAt.toString(),
+                (int) Duration.between(Instant.parse(snapshot.startedAt()), completedAt).toMillis(),
+                snapshot.nodeStatuses(),
+                snapshot.output(),
+                snapshot.error()
+            );
+            executions.put(executionId, cancelled);
+            executionLogs.computeIfAbsent(executionId, ignored -> new ArrayList<>())
+                .add(new ExecutionLogEntry(completedAt.toString(), "warn", "Execution cancelled", null, Map.of()));
+            return Promise.of(cancelled);
+        }
+
+        @Override
+        public Promise<List<ExecutionLogEntry>> getExecutionLogs(String tenantId, String executionId) {
+            ExecutionSnapshot snapshot = executions.get(executionId);
+            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
+                return Promise.of(List.of());
+            }
+            return Promise.of(executionLogs.getOrDefault(executionId, List.of()));
+        }
+
+        private List<NodeSnapshot> buildNodeStatuses(Map<String, Object> pipelineData, Instant startedAt) {
+            Object rawNodes = pipelineData.get("nodes");
+            if (!(rawNodes instanceof List<?> nodes) || nodes.isEmpty()) {
+                return List.of();
+            }
+            List<NodeSnapshot> statuses = new ArrayList<>(nodes.size());
+            for (int index = 0; index < nodes.size(); index++) {
+                Object rawNode = nodes.get(index);
+                if (!(rawNode instanceof Map<?, ?> nodeMap)) {
+                    continue;
+                }
+                Instant nodeStart = startedAt.plusMillis(index * 2L);
+                Instant nodeEnd = nodeStart.plusMillis(2L);
+                statuses.add(new NodeSnapshot(
+                    stringValue(nodeMap.get("id"), "node-" + index),
+                    stringValue(nodeMap.get("label"), stringValue(nodeMap.get("type"), "Node")),
+                    "COMPLETED",
+                    nodeStart.toString(),
+                    nodeEnd.toString(),
+                    2,
+                    null,
+                    Map.of("result", "ok")
+                ));
+            }
+            return List.copyOf(statuses);
+        }
+
+        private List<ExecutionLogEntry> buildLogs(ExecutionSnapshot snapshot, Map<String, Object> input) {
+            List<ExecutionLogEntry> logs = new ArrayList<>();
+            logs.add(new ExecutionLogEntry(
+                snapshot.startedAt(),
+                "info",
+                "Workflow execution started",
+                null,
+                Map.of("workflowId", snapshot.workflowId(), "input", input != null ? input : Map.of())
+            ));
+            for (NodeSnapshot node : snapshot.nodeStatuses()) {
+                logs.add(new ExecutionLogEntry(
+                    node.completedAt() != null ? node.completedAt() : snapshot.startedAt(),
+                    "info",
+                    "Node completed",
+                    node.nodeId(),
+                    Map.of("nodeName", node.nodeName(), "state", node.state())
+                ));
+            }
+            logs.add(new ExecutionLogEntry(
+                snapshot.completedAt() != null ? snapshot.completedAt() : snapshot.startedAt(),
+                "info",
+                "Workflow execution completed",
+                null,
+                Map.of("status", snapshot.status(), "progress", snapshot.progress())
+            ));
+            return List.copyOf(logs);
+        }
+    }
+
+    private static String versionFrom(Map<String, Object> config, String defaultVersion) {
+        if (config == null) {
+            return defaultVersion;
+        }
+        Object version = config.get("version");
+        return version instanceof String value && !value.isBlank() ? value : defaultVersion;
+    }
+
+    private static String stringValue(Object value, String defaultValue) {
+        return value instanceof String string && !string.isBlank() ? string : defaultValue;
+    }
+}

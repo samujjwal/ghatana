@@ -37,6 +37,7 @@ import type {
   ValidateWorkflowResponse,
 } from '../../features/workflow/types/workflow.types';
 
+export const WORKFLOW_EXECUTION_SUPPORTED = true;
 export const WORKFLOW_CLIENT_BOUNDARY_MESSAGE =
   'Workflow execution detail, template browsing, workflow suggestions, and remote validation are not exposed by the current Data Cloud launcher API.';
 
@@ -245,10 +246,10 @@ export class WorkflowApiClient {
     workflowId: string,
     request: ExecuteWorkflowRequest = {}
   ): Promise<ExecutionCreatedResponse> {
-    return apiClient.post<ExecutionCreatedResponse>(
+    return apiClient.post<ExecutionCreatedResponse, ExecuteWorkflowRequest>(
       `/pipelines/${workflowId}/execute`,
       request,
-      { headers: this.getHeaders() }
+      { headers: this.getHeaders() },
     );
   }
 
@@ -259,8 +260,37 @@ export class WorkflowApiClient {
    * @returns the execution status
    */
   async getExecutionStatus(executionId: string): Promise<WorkflowExecution> {
-    void executionId;
-    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
+    const response = await apiClient.get<Record<string, unknown>>(`/executions/${executionId}`, {
+      headers: this.getHeaders(),
+    });
+    const nodes = Array.isArray(response.nodes) ? response.nodes : [];
+    const totalNodes = Number(response.totalNodes ?? nodes.length);
+    const completedNodes = Number(response.completedNodes ?? totalNodes);
+    return {
+      id: String(response.id ?? executionId),
+      workflowId: String(response.pipelineId ?? ''),
+      tenantId: this.tenantId,
+      status: String(response.status ?? 'PENDING') as WorkflowExecution['status'],
+      progress: totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 100,
+      startedAt: String(response.startTime ?? new Date().toISOString()),
+      completedAt: typeof response.endTime === 'string' ? response.endTime : undefined,
+      duration: typeof response.duration === 'number' ? response.duration : undefined,
+      nodeStatuses: nodes.map((node) => {
+        const typedNode = node as Record<string, unknown>;
+        return {
+          nodeId: String(typedNode.id ?? ''),
+          nodeName: String(typedNode.name ?? typedNode.id ?? ''),
+          state: String(typedNode.status ?? 'PENDING') as WorkflowExecution['nodeStatuses'][number]['state'],
+          startedAt: typeof typedNode.startTime === 'string' ? typedNode.startTime : undefined,
+          completedAt: typeof typedNode.endTime === 'string' ? typedNode.endTime : undefined,
+          duration: typeof typedNode.duration === 'number' ? typedNode.duration : undefined,
+          error: typeof typedNode.error === 'string' && typedNode.error !== '' ? typedNode.error : undefined,
+          output: typedNode.output,
+        };
+      }),
+      error: typeof response.error === 'string' ? response.error : undefined,
+      output: response.output,
+    };
   }
 
   /**
@@ -269,8 +299,9 @@ export class WorkflowApiClient {
    * @param executionId the execution ID
    */
   async cancelExecution(executionId: string): Promise<void> {
-    void executionId;
-    throw new Error(WORKFLOW_CLIENT_BOUNDARY_MESSAGE);
+    await apiClient.post(`/executions/${executionId}/cancel`, {}, {
+      headers: this.getHeaders(),
+    });
   }
 
   /**

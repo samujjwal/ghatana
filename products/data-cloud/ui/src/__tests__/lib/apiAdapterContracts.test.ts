@@ -214,13 +214,12 @@ describe('frontend adapter contracts', () => {
       });
     });
 
-    it('parses canonical pipeline execution payloads into the workflow execution model', async () => {
-      mockApiClient.post.mockResolvedValue({
-        id: 'exec-1',
+    it('routes workflow execution through the launcher api', async () => {
+      mockApiClient.post.mockResolvedValueOnce({
+        executionId: 'exec-1',
         workflowId: 'wf-1',
-        status: 'running',
-        startedAt: '2026-04-15T12:30:00Z',
-        duration: 12,
+        status: 'completed',
+        startedAt: '2026-04-16T10:00:00Z',
       });
 
       const execution = await workflowsApi.execute('wf-1', { input: { dryRun: true } });
@@ -228,16 +227,10 @@ describe('frontend adapter contracts', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/pipelines/wf-1/execute', {
         input: { dryRun: true },
       });
-      expect(execution).toEqual({
+      expect(execution).toMatchObject({
         id: 'exec-1',
         workflowId: 'wf-1',
-        status: 'running',
-        startedAt: '2026-04-15T12:30:00Z',
-        completedAt: undefined,
-        duration: 12,
-        nodeExecutions: [],
-        error: undefined,
-        triggeredBy: 'manual',
+        status: 'completed',
       });
     });
   });

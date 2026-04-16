@@ -165,8 +165,8 @@ export interface WorkflowQueryParams {
  * Workflows API
  *
  * All CRUD routes delegate to /api/v1/pipelines (the real backend pipeline
- * registry).  No execution sub-routes exist; execute/cancel are stubs for
- * forward-compatibility.
+ * registry). Execution and reporting now flow through Data Cloud runtime
+ * plugins exposed by the launcher API.
  */
 export const workflowsApi = {
     /**
@@ -232,39 +232,61 @@ export const workflowsApi = {
     },
 
     /**
-     * Execute workflow — stub; no dedicated execute endpoint in the backend.
-     * Kept for forward-compatibility.
+     * Execute workflow.
      * POST /api/v1/pipelines/:pipelineId/execute
      */
     execute: async (id: string, params?: Record<string, unknown>): Promise<WorkflowExecution> => {
-        const rawResponse = await apiClient.post<BackendExecution>(`/pipelines/${id}/execute`, params);
-        return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
+        const rawResponse = await apiClient.post<BackendExecution, Record<string, unknown>>(
+            `/pipelines/${id}/execute`,
+            params ?? {}
+        );
+        const raw = ExecutionSchema.parse({
+            ...rawResponse,
+            id: rawResponse.id ?? (rawResponse as { executionId?: string }).executionId,
+            workflowId: rawResponse.workflowId ?? id,
+            startedAt: rawResponse.startedAt ?? new Date().toISOString(),
+            status: String(rawResponse.status ?? 'pending').toLowerCase(),
+        });
+        return executionToWorkflowExecution(raw);
     },
 
     /**
-     * Get workflow executions — no dedicated backend route; returns empty list.
-     * Events can be queried via the events API if needed.
+     * Get workflow executions.
+     * GET /api/v1/pipelines/:pipelineId/executions
      */
     getExecutions: async (_id: string, _params?: {
         page?: number;
         pageSize?: number;
         status?: WorkflowExecution['status'];
     }): Promise<PaginatedResponse<WorkflowExecution>> => {
-        return { items: [], total: 0, page: 1, pageSize: 20, hasMore: false };
+        const rawResponse = await apiClient.get<PaginatedResponse<BackendExecution>>(`/pipelines/${_id}/executions`, {
+            params: _params,
+        });
+        return {
+            items: rawResponse.items.map((execution) => executionToWorkflowExecution(ExecutionSchema.parse(execution))),
+            total: rawResponse.total,
+            page: rawResponse.page,
+            pageSize: rawResponse.pageSize,
+            hasMore: rawResponse.hasMore,
+        };
     },
 
     /**
-     * Get execution by ID — no dedicated backend route; stub.
+     * Get execution by ID.
+     * GET /api/v1/pipelines/:pipelineId/executions/:executionId
      */
     getExecution: async (_workflowId: string, _executionId: string): Promise<WorkflowExecution> => {
-        throw new Error('getExecution not supported by the current backend');
+        const rawResponse = await apiClient.get<BackendExecution>(`/pipelines/${_workflowId}/executions/${_executionId}`);
+        return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
     },
 
     /**
-     * Cancel execution — no dedicated backend route; stub.
+     * Cancel execution.
+     * POST /api/v1/pipelines/:pipelineId/executions/:executionId/cancel
      */
     cancelExecution: async (_workflowId: string, _executionId: string): Promise<WorkflowExecution> => {
-        throw new Error('cancelExecution not supported by the current backend');
+        const rawResponse = await apiClient.post<BackendExecution>(`/pipelines/${_workflowId}/executions/${_executionId}/cancel`, {});
+        return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
     },
 
     /**
