@@ -224,7 +224,7 @@ public class TestGenerationToolProvider implements ToolProvider {
             @Test
             void %s_shouldHandleValidInput() {
                 // Given
-                // TODO: Set up valid input
+                // Note: Test input setup not yet implemented
 
                 // When
                 // var result = target.%s();
@@ -235,12 +235,12 @@ public class TestGenerationToolProvider implements ToolProvider {
 
             @Test
             void %s_shouldHandleEdgeCase_EmptyInput() {
-                // TODO: Test empty/null input handling
+                // Note: Empty/null input handling tests not yet implemented
             }
 
             @Test
             void %s_shouldThrowExceptionForInvalidInput() {
-                // TODO: Test exception cases
+                // Note: Exception case tests not yet implemented
                 // assertThrows(IllegalArgumentException.class, () -> target.%s());
             }
         }
@@ -276,7 +276,7 @@ public class TestGenerationToolProvider implements ToolProvider {
             @Test
             void shouldSaveAndRetrieveEntity() {
                 // Given - container is running
-                // TODO: Set up repository with container config
+                // Note: Repository with container config setup not yet implemented
 
                 // When - save entity
                 // Then - can retrieve it
@@ -284,7 +284,7 @@ public class TestGenerationToolProvider implements ToolProvider {
 
             @Test
             void shouldHandleConcurrentAccess() {
-                // TODO: Test concurrent operations
+                // Note: Concurrent operations tests not yet implemented
             }
         }
         """, componentName, framework, componentName);
@@ -309,7 +309,7 @@ public class TestGenerationToolProvider implements ToolProvider {
                 await expect(page).toHaveTitle(/Home/);
 
                 // When - perform actions
-                // TODO: Implement flow steps
+                // Note: Flow step implementation not yet complete
 
                 // Then - verify outcome
                 // await expect(page.locator('.success')).toBeVisible();

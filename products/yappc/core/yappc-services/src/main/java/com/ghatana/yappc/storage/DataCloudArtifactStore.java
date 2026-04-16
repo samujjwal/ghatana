@@ -202,17 +202,19 @@ public class DataCloudArtifactStore implements ArtifactStore {
 
     /**
      * Resolves the current tenant ID from {@link TenantContext}.
-     * Throws {@link SecurityException} if no tenant context is active.
+     * Throws {@link SecurityException} if no tenant context is active or if tenantId is default-tenant.
      */
     private String resolveTenantId() {
         String tenantId = TenantContext.getCurrentTenantId();
-        if (tenantId == null || tenantId.isBlank() || "default-tenant".equals(tenantId)) {
-            // Allow default-tenant in dev mode; strict services should reject this
-            if ("default-tenant".equals(tenantId)) {
-                log.debug("DataCloudArtifactStore operating under default-tenant (dev mode)");
-            } else {
-                throw new SecurityException("DataCloudArtifactStore requires a tenant context");
-            }
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new SecurityException(
+                    "DataCloudArtifactStore requires an active tenant context. " +
+                            "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "DataCloudArtifactStore does not allow default-tenant. " +
+                            "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
         }
         return tenantId;
     }

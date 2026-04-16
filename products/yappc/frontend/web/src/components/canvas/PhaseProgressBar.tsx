@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Phase Progress Bar Component
  * 

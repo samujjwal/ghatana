@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simple Sticky Note Node
  * Basic sticky note for canvas with inline editing

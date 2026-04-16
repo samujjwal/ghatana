@@ -66,7 +66,7 @@ The easiest way to validate Ollama integration:
 ./gradlew :products:yappc:core:sdlc-agents:run
 
 # 2. Send intake request via API
-curl -X POST http://localhost:8080/api/agents/intake \
+curl -X POST http://localhost:8082/api/agents/intake \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": "manual-test-001",
@@ -90,7 +90,7 @@ curl -X POST http://localhost:8080/api/agents/intake \
 
 ```bash
 # 1. Send design request (using requirements from Scenario 1)
-curl -X POST http://localhost:8080/api/agents/design \
+curl -X POST http://localhost:8082/api/agents/design \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": "manual-test-001",
@@ -113,7 +113,7 @@ curl -X POST http://localhost:8080/api/agents/design \
 
 ```bash
 # 1. Send scaffold request
-curl -X POST http://localhost:8080/api/agents/scaffold \
+curl -X POST http://localhost:8082/api/agents/scaffold \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": "manual-test-001",
@@ -121,7 +121,7 @@ curl -X POST http://localhost:8080/api/agents/scaffold \
   }'
 
 # 2. Send implement request
-curl -X POST http://localhost:8080/api/agents/implement \
+curl -X POST http://localhost:8082/api/agents/implement \
   -H "Content-Type: application/json" \
   -d '{
     "projectId": "manual-test-001",
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8080/api/agents/implement \
 
 ```bash
 # Run full YAPPC workflow
-curl -X POST http://localhost:8080/api/projects \
+curl -X POST http://localhost:8082/api/projects \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Todo API",
@@ -171,7 +171,7 @@ curl -X POST http://localhost:8080/api/projects \
   }'
 
 # Monitor workflow progress
-curl http://localhost:8080/api/projects/{projectId}/status
+curl http://localhost:8082/api/projects/{projectId}/status
 ```
 
 **Success Criteria**:

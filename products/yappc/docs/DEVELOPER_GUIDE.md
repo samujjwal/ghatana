@@ -10,7 +10,7 @@ YAPPC follows a modular service architecture aligned with platform standards. Al
 
 | Module | Port | Purpose | Entry Point |
 |:---|:---|:---|:---|
-| `services/api` | 8080 | HTTP/gRPC endpoints, legacy bridge | `YappcApiService` |
+| `services/api` | 8082 | HTTP/gRPC endpoints, legacy bridge | `YappcApiService` |
 | `services/ai` | 8081 | AI agents, model routing, vector search | `YappcAiService` |
 | `services/lifecycle` | 8082 | SDLC phase management | `YappcLifecycleService` |
 | `services/scaffold` | 8083 | Code generation, templates | `YappcScaffoldService` |

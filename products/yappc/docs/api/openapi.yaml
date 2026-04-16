@@ -17,8 +17,8 @@ info:
     name: Proprietary
 
 servers:
-  - url: http://localhost:8080
-    description: Local development
+  - url: http://localhost:8082
+    description: Local development (lifecycle service)
   - url: https://yappc-lifecycle.ghatana.internal
     description: Internal staging
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Bootstrap Feature Node Component
  *

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Command Pattern
  *

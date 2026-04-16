@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Compatibility shim for canvas during incremental migration.
 // Re-export the small public surface expected by the app from canonical packages.
 // Updated: Now uses @ghatana/canvas core library

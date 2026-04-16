@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // ProviderNode - Canvas node for provider connection visualization
 //

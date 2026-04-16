@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Search as SearchIcon } from 'lucide-react';
 import { Alert, Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { InputAdornment, Tab, Tabs, TextField } from '@ghatana/design-system';

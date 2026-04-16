@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // IncidentNode - Canvas node for incident management visualization
 // 

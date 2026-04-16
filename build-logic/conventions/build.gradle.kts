@@ -3,6 +3,11 @@ plugins {
     `java-gradle-plugin`
 }
 
+// Configuration cache compatibility for kotlin-dsl plugin
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    notCompatibleWithConfigurationCache("kotlin-dsl plugin uses task completion listeners not supported by configuration cache")
+}
+
 group = "com.ghatana.build"
 version = "1.0.0"
 

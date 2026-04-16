@@ -72,7 +72,7 @@ export function ReviewCard({ item, isSelected, onClick }: ReviewCardProps) {
       </div>
       {item.confidenceScore !== undefined && (
         <div className="mt-2">
-          <ConfidenceBadge value={item.confidenceScore} />
+          <ConfidenceBadge confidence={item.confidenceScore} />
         </div>
       )}
     </button>

@@ -134,10 +134,10 @@ include(":core:knowledge-graph")
 
 // --- Core: Domain (Phase 2.1: yappc-domain-impl - api split deferred) ---
 // NOTE: yappc-domain-api creation deferred - api/impl split to be done later
+// NOTE: core:yappc-agents removed — consolidated into core:agents
 include(":core:yappc-domain-impl")
 include(":core:yappc-services")
 include(":core:yappc-infrastructure")
-include(":core:yappc-agents")
 include(":core:yappc-api")
 include(":core:yappc-shared")
 
@@ -231,7 +231,7 @@ if (isStandaloneBuild) {
             "core:yappc-domain-impl",
             "core:yappc-services",
             "core:yappc-infrastructure",
-            "core:yappc-agents",
+            // core:yappc-agents removed — consolidated into core:agents
             "core:yappc-api",
             "core:yappc-shared")
 

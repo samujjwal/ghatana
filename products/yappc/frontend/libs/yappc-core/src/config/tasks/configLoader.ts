@@ -23,6 +23,7 @@ import type {
   AuditArtifactType,
   TaskUIConfig,
 } from '../../../types/src/tasks/index.ts';
+import { parse, stringify } from 'yaml';
 
 // ============================================================================
 // YAML Type Definitions (Raw)
@@ -496,9 +497,8 @@ export function createBrowserConfigLoader(basePath: string): TaskConfigLoader {
   return new TaskConfigLoader({
     basePath,
     yamlParser: (content: string) => {
-      // In browser, use a YAML parsing library
-      // This is a placeholder - actual implementation would use js-yaml
-      throw new Error('YAML parser not implemented for browser');
+      // In browser, use the yaml library (works in both browser and Node)
+      return parse(content);
     },
     fileReader: async (path: string) => {
       const response = await fetch(path);
@@ -517,13 +517,13 @@ export function createNodeConfigLoader(basePath: string): TaskConfigLoader {
   return new TaskConfigLoader({
     basePath,
     yamlParser: (content: string) => {
-      // In Node.js, use js-yaml or yaml library
-      // This is a placeholder - actual implementation would import yaml
-      throw new Error('YAML parser not implemented for Node.js');
+      // In Node.js, use the yaml library (works in both browser and Node)
+      return parse(content);
     },
     fileReader: async (path: string) => {
-      // In Node.js, use fs.readFile
-      throw new Error('File reader not implemented for Node.js');
+      // In Node.js, use fs/promises for async file reading
+      const { readFile } = await import('fs/promises');
+      return readFile(path, 'utf-8');
     },
   });
 }

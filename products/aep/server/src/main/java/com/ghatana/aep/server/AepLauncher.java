@@ -3,6 +3,9 @@ package com.ghatana.aep.server;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.catalog.AepOperatorCatalogLoader;
+import com.ghatana.aep.di.AepCoreModule;
+import com.ghatana.aep.di.AepProductionModule;
+import com.ghatana.aep.di.AepRuntimeProfile;
 import com.ghatana.aep.server.grpc.AepGrpcServer;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.agent.learning.review.InMemoryHumanReviewQueue;
@@ -14,12 +17,24 @@ import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.spi.OperatorProviderRegistry;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.incident.GracefulDegradationManager;
+import com.ghatana.platform.incident.KillSwitchService;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.pac.PolicyAsCodeEngine;
+import com.ghatana.platform.security.analytics.EgressMonitor;
+import com.ghatana.platform.security.analytics.PromptInjectionDetector;
+import com.ghatana.platform.toolruntime.change.ChangeApprovalWorkflow;
+import com.ghatana.platform.toolruntime.recertification.RecertificationPipeline;
+import io.activej.inject.Injector;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.JedisPool;
+
+import javax.sql.DataSource;
+import java.util.Map;
 
 /**
  * AEP Standalone Launcher - Entry point for standalone deployment.
@@ -225,8 +240,21 @@ public class AepLauncher {
             DataCloudClient agentDataCloud = createAgentDataCloudClient();
             PrometheusMeterRegistry promRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             MetricsCollector metricsCollector = MetricsCollectorFactory.create(promRegistry);
+            Injector injector = createGovernanceInjector();
+            DataSource dataSource = injector.getInstance(DataSource.class);
+            JedisPool jedisPool = injector.getInstance(JedisPool.class);
             AepHttpServer httpServer = new AepHttpServer(engine, port, agentDataCloud, humanReviewQueue,
-                metricsCollector, null, null, null, null, null, null, null, promRegistry);
+                metricsCollector,
+                injector.getInstance(KillSwitchService.class),
+                injector.getInstance(GracefulDegradationManager.class),
+                injector.getInstance(PolicyAsCodeEngine.class),
+                injector.getInstance(EgressMonitor.class),
+                injector.getInstance(PromptInjectionDetector.class),
+                injector.getInstance(ChangeApprovalWorkflow.class),
+                injector.getInstance(RecertificationPipeline.class),
+                promRegistry,
+                dataSource,
+                jedisPool);
             if (httpServerRef != null) {
                 httpServerRef.set(httpServer);
             }
@@ -243,7 +271,23 @@ public class AepLauncher {
             }));
         } catch (Exception e) {
             log.error("Failed to start HTTP server on port {}", port, e);
+            throw new IllegalStateException("Failed to start AEP HTTP server on port " + port, e);
         }
+    }
+
+    private static Injector createGovernanceInjector() {
+        return createGovernanceInjector(System.getenv());
+    }
+
+    static Injector createGovernanceInjector(Map<String, String> environment) {
+        if (AepRuntimeProfile.isProduction(environment)) {
+            log.info("Initializing AEP governance services with production profile");
+            return Injector.of(new AepProductionModule(environment));
+        }
+
+        log.info("Initializing AEP governance services with non-production profile '{}'",
+            AepRuntimeProfile.resolve(environment));
+        return Injector.of(new AepCoreModule());
     }
 
     /**

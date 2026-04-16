@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Class Diagram Canvas Content
  * 

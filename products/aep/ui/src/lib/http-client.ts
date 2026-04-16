@@ -35,6 +35,9 @@ export interface HttpClient {
   delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }
 
+export const AUTH_TOKEN_STORAGE_KEY = "aep-token";
+export const SESSION_TOKEN_STORAGE_KEY = "aep-session";
+
 /**
  * API base URL.
  *
@@ -47,7 +50,24 @@ export const API_BASE_URL: string = import.meta.env.VITE_AEP_API_URL ?? "";
  * Returns the current auth token from local storage, if present.
  */
 export function getAuthToken(): string | null {
-  return localStorage.getItem("aep-token");
+  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+}
+
+export function getSessionToken(): string | null {
+  return localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
+}
+
+export function setSessionToken(token: string): void {
+  localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, token);
+}
+
+export function clearAuthState(): void {
+  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
 }
 
 /**
@@ -103,6 +123,10 @@ async function request<T>(
   const token = getAuthToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
+  }
+  const sessionToken = getSessionToken();
+  if (sessionToken) {
+    headers.set("X-AEP-Session", sessionToken);
   }
 
   const response = await fetch(buildUrl(path, config.params), {

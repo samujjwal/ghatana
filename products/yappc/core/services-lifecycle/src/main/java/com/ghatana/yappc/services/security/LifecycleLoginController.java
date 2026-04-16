@@ -172,31 +172,35 @@ public final class LifecycleLoginController {
      * Builds a {@link LifecycleLoginController} by loading users from the
      * {@code YAPPC_AUTH_USERS} environment variable (JSON array).
      *
-     * <p>When the env var is absent the controller is seeded with a single
-     * dev-only account ({@code dev@yappc.io} / {@code change-me-in-production})
-     * so the service is not start-blocked in development environments.
+     * <p>The environment variable is required. Service startup will fail if not set,
+     * ensuring no insecure defaults in production environments.
+     *
+     * @throws IllegalStateException if YAPPC_AUTH_USERS is not set or cannot be parsed
      */
     @SuppressWarnings("unchecked")
     public static LifecycleLoginController fromEnvironment(JwtTokenProvider tokenProvider) {
         String raw = System.getenv("YAPPC_AUTH_USERS");
-        List<UserRecord> users;
-
         if (raw == null || raw.isBlank()) {
-            logger.warn("YAPPC_AUTH_USERS env var not set — bootstrapping dev-only user. " +
-                    "DO NOT use this in production.");
-            users = bootstrapDevUser();
-        } else {
-            try {
-                List<Map<String, Object>> parsed = MAPPER.readValue(raw, List.class);
-                users = new ArrayList<>();
-                for (Map<String, Object> entry : parsed) {
-                    users.add(UserRecord.fromMap(entry));
-                }
-                logger.info("Loaded {} user(s) from YAPPC_AUTH_USERS", users.size());
-            } catch (Exception e) {
-                logger.error("Failed to parse YAPPC_AUTH_USERS — falling back to dev user", e);
-                users = bootstrapDevUser();
+            throw new IllegalStateException(
+                "YAPPC_AUTH_USERS environment variable is required. " +
+                "Set it to a JSON array of user objects with email, passwordHash, salt, roles, and tenantId."
+            );
+        }
+
+        List<UserRecord> users;
+        try {
+            List<Map<String, Object>> parsed = MAPPER.readValue(raw, List.class);
+            users = new ArrayList<>();
+            for (Map<String, Object> entry : parsed) {
+                users.add(UserRecord.fromMap(entry));
             }
+            logger.info("Loaded {} user(s) from YAPPC_AUTH_USERS", users.size());
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to parse YAPPC_AUTH_USERS environment variable. " +
+                "Expected JSON array format with required fields: id, email, passwordHash, salt, roles, tenantId",
+                e
+            );
         }
 
         return new LifecycleLoginController(tokenProvider, users);
@@ -250,19 +254,6 @@ public final class LifecycleLoginController {
         return result == 0;
     }
 
-    private static List<UserRecord> bootstrapDevUser() {
-        byte[] salt = generateSalt();
-        String hash = hashPassword("change-me-in-production", salt);
-        UserRecord dev = new UserRecord(
-                "dev-user-1",
-                "dev@yappc.io",
-                hash,
-                Base64.getEncoder().encodeToString(salt),
-                "YAPPC Dev",
-                List.of("admin", "user"),
-                "default-tenant");
-        return List.of(dev);
-    }
 
     private static String asString(Object value) {
         return value instanceof String ? (String) value : null;
@@ -316,6 +307,7 @@ public final class LifecycleLoginController {
                             .toList()
                     : List.of("user");
 
+            String tenantId = requireString(m, "tenantId");
             return new UserRecord(
                     requireString(m, "id"),
                     requireString(m, "email"),
@@ -323,7 +315,7 @@ public final class LifecycleLoginController {
                     requireString(m, "salt"),
                     (String) m.getOrDefault("name", requireString(m, "email")),
                     roles,
-                    (String) m.getOrDefault("tenantId", "default-tenant"));
+                    tenantId);
         }
 
         private static String requireString(Map<String, Object> m, String key) {

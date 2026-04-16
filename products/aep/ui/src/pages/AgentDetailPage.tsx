@@ -308,7 +308,7 @@ function ProceduresSection({ agentId, tenantId }: { agentId: string; tenantId: s
               )}
             </div>
             {policy.confidence != null && (
-              <ConfidenceBadge value={policy.confidence} className="shrink-0" />
+              <ConfidenceBadge confidence={policy.confidence} className="shrink-0" />
             )}
           </div>
           <div className="mt-3 flex items-center gap-4 text-xs text-gray-400">

@@ -2,9 +2,11 @@
 
 **Date**: March 13, 2026  
 **Scope**: Detailed implementation plan addressing all identified gaps in AEP with best practices, avoiding duplicates, ensuring 100% test coverage  
-**Status**: COMPLETE — All identified gaps addressed, tested, and benchmarks passing.
+**Status**: Historical implementation log; not a current production-readiness source of truth.
 **Last Updated**: 2026-03-16 (Status review & Agent Framework validation)
 **Based on**: AEP Product Analysis Report and AEP-Data-Cloud Integration Analysis
+
+> Verification note (2026-04-15): this document contains stale claims. The current repository does not contain a source file at `products/aep/platform/src/main/java/com/ghatana/aep/feature/AepFeatureStoreClient.java`, and production durability remains conditional on configured backing services such as `AEP_DB_URL`. A current `products/aep` scan found 229 `*Test.java` files and 2,613 `@Test` methods. Measured current source sizes: `AepSecurityFilter.java` is 302 lines, `server/query/AepQueryService.java` is 584 lines, and `server/dr/AepDisasterRecoveryService.java` is 492 lines. Historical references to `VisualizationService` and `CapacityPlanner` source files should be revalidated because those source paths do not resolve in this repository snapshot.
 
 ---
 
@@ -36,7 +38,7 @@ This comprehensive implementation plan addresses all identified gaps in AEP thro
 - ✅ **CI/CD Pipeline**: COMPLETE — Gitea `aep-ci.yml` (build + unit tests + static analysis [Checkstyle/PMD/SpotBugs/OWASP] + multi-arch Docker build + Trivy SBOM/CVE scan) and `aep-cd.yml` (staging auto-deploy + production approval gate with Slack notifications)
 - ✅ **Monitoring**: COMPLETE — Prometheus alert rules (11 alerts across 5 groups: availability, pipeline, kafka, jvm, learning), Grafana dashboard (`aep-platform-001`, 23 panels, 6 rows), Alertmanager routes + receivers (`aep-critical`→Slack #aep-oncall+PagerDuty, `aep-warning`→Slack #aep-alerts), alert inhibition rules
 - ✅ **Security**: COMPLETE — `AepSecurityFilter` (CORS, body-size enforcement 16 MiB, per-IP fixed-window rate limiting, 8 security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, X-Request-Id), `AepInputValidator` (schema + type + size + injection guards)
-- ✅ **Testing**: COMPLETE — 1211 total tests (925 platform + 286 launcher; 0 failures, 15 skipped); covers all async paths via `EventloopTestBase`; `AnalyticsEngineDefaultsTest` (40 tests) covering all 7 Default* analytics engine implementations; `AepConfigurationValidatorTest` (38 tests), `AepSecretManagerTest` (20 tests), `AepBackupRecoveryServiceTest` (13 tests); new: `AepQueryServiceTest` (18 tests), `AepDynamicConfigServiceTest` (23 tests), `AepDisasterRecoveryServiceTest` (14 tests), `AepDataExportServiceTest` (17 tests), `AepReportingServiceTest` (16 tests)
+- ⚠️ **Testing**: Historical count is stale. A current repository scan on 2026-04-15 found 229 `*Test.java` files and 2,613 `@Test` methods under `products/aep`. Coverage still requires a fresh build report.
 - ✅ **Input Validation**: COMPLETE — `AepInputValidator` integrated into all ingress paths; validates schema, type safety, size bounds, and injection patterns
 - ✅ **Rate Limiting**: COMPLETE — per-IP fixed-window rate limiting in `AepSecurityFilter` (default 100 req/min, configurable); returns HTTP 429 with `Retry-After` header
 - ✅ **Security Headers**: COMPLETE — `AepSecurityFilter` injects CSP, HSTS (max-age=31536000; includeSubDomains), X-Frame-Options: DENY, X-Content-Type-Options: nosniff, X-XSS-Protection: 1; mode=block, Referrer-Policy: strict-origin-when-cross-origin, X-Request-Id on every response
@@ -44,10 +46,10 @@ This comprehensive implementation plan addresses all identified gaps in AEP thro
 
 **Data-Cloud Integration Gaps:**
 - ✅ **Entity Storage**: COMPLETE — `DataCloudPatternStore` (375 lines, full CRUD + pagination) + `DataCloudPipelineStore` (381 lines) + `DataCloudAgentRegistryClient` via Data-Cloud EntityStore API
-- ✅ **Query Capabilities**: COMPLETE — `AepQueryService` (unified cross-collection querying over patterns/pipelines/anomalies/KPIs; composable filters via `DataCloudClient.Filter`; cursor-based pagination with `PagedResult`; in-memory aggregation: groupBy/sum/avg/min/max/distinct; tenant-scoped `TenantSummary`; Micrometer metrics; 18-test suite)
+- ✅ **Query Capabilities**: COMPLETE — `AepQueryService` now resolves at `products/aep/server/src/main/java/com/ghatana/aep/server/query/AepQueryService.java` (584 lines) and provides unified cross-collection querying over patterns/pipelines/anomalies/KPIs; composable filters via `DataCloudClient.Filter`; cursor-based pagination with `PagedResult`; in-memory aggregation: groupBy/sum/avg/min/max/distinct; tenant-scoped `TenantSummary`; Micrometer metrics; 18-test suite
 - ✅ **Multi-tier Storage**: COMPLETE — `StorageTierManager` (HOT/WARM/COOL/COLD tiering with promote/demote/deleteIfExists), `DataLifecycleManager` (multi-collection lifecycle sweep), `DataCloudAnalyticsStore` (KPI + Anomaly persistence)
 - ✅ **Streaming**: COMPLETE — `StreamingAnalyticsEngine` (push-based anomaly + KPI streaming via `DataCloudClient.tailEvents`; `AnomalyFilter`, `KpiFilter`, subscription lifecycle management, `MetricsCollector` observability; 39 tests)
-- ✅ **Agent Data Integration**: COMPLETE — `DataCloudAgentRegistryClient` provides Data-Cloud-backed agent registry; `AepFeatureStoreClient` provides ML feature storage for agents
+- ⚠️ **Agent Data Integration**: Partially stale. Data-Cloud-backed agent registry code exists, but the referenced `AepFeatureStoreClient` source path is not present in the current repository snapshot.
 
 **Performance & Scalability Gaps:**
 - ✅ **Caching**: COMPLETE — `DataCloudPatternStore` now has 60-second TTL in-process cache (`ConcurrentHashMap<UUID, CacheEntry>`) for `findById` / `findByTenantAndId`; cache invalidated on every mutation (save, updatePattern, updateStatus, delete)
@@ -68,18 +70,18 @@ This comprehensive implementation plan addresses all identified gaps in AEP thro
   - `DefaultIntelligentPredictiveAlerting` (rate-of-change threshold alerting: MEDIUM/HIGH/CRITICAL)
   - `TimeSeriesData.getPoints()` accessor added to `AnalyticsEngine`
   - 40-test suite `AnalyticsEngineDefaultsTest` validates all engines
-- ✅ **Machine Learning**: COMPLETE — `AepFeatureStoreClient` (two-tier Redis+PostgreSQL ML feature storage) + `AepModelRegistryClient` (full model lifecycle: DEVELOPMENT→STAGED→CANARY→PRODUCTION→DEPRECATED→RETIRED), wired via `AepAiModule` DI
+- ⚠️ **Machine Learning**: This claim needs re-validation against the current codebase before being treated as production evidence.
 - ✅ **Forecasting**: COMPLETE — `DefaultAdvancedTimeSeriesForecaster` implements OLS least-squares regression with autocorrelation-based seasonality detection
 - ✅ **Anomaly Detection**: COMPLETE — `DefaultRealTimeAnomalyDetectionEngine` implements z-score sliding-window detection (window=100, threshold=3.0σ, min warmup=10) with per-tenant isolation
-- ✅ **Dashboards**: COMPLETE — `VisualizationService` (489 lines; chart generation, dashboard building, report export; `ChartGenerator`, `DashboardBuilder`, `ReportExporter`, `VisualizationCache` inner types)
+- ⚠️ **Dashboards**: Historical claim needs re-validation. No live `VisualizationService.java` source file resolves in the current `products/aep` snapshot, so this March implementation note should not be treated as current production evidence without a fresh code-path audit.
 - ✅ **Reports**: COMPLETE — `AepReportingService` (structured multi-section reports; KPI_SUMMARY/PATTERN_PERFORMANCE/ANOMALY_SUMMARY/TENANT_USAGE/SYSTEM_HEALTH report types; `Report`/`ReportSection`/`ReportRequest` records; Micrometer metrics; 16-test suite)
-- ✅ **Visualization**: SEE Dashboards above — `VisualizationService` provides data visualization
+- ⚠️ **Visualization**: Historical claim needs re-validation alongside the dashboard implementation note above.
 - ✅ **Export**: COMPLETE — `AepDataExportService` (paginated CSV/JSON/NDJSON export; up to 100K rows in 500-entity pages; RFC 4180 CSV quoting; tenant-isolation filters; `ExportRequest`/`ExportResult`/`ExportFormat` records; Micrometer metrics; 17-test suite)
 
 **Agent Framework Gaps:**
 - ✅ **Advanced Agents**: COMPLETE — Implemented via `AIAgentOrchestrationManagerImpl` and platform agent framework
 - ✅ **Agent Learning**: COMPLETE — Implemented via AI Platform Integration (Feature Store + Model Registry)
-- ✅ **Agent Memory**: COMPLETE — Implemented via `EventLogStore` and `AepFeatureStoreClient` multi-tier storage
+- ⚠️ **Agent Memory**: Multi-tier memory types exist in `aep-agent-runtime`, but production persistence still depends on configured database-backed infrastructure.
 - ✅ **Agent Collaboration**: COMPLETE — Orchestrator chains and `AIAgentOrchestrationManagerImpl.executeChain()`
 - ✅ **Advanced Tools**: COMPLETE — AEP Operator Registry and AI Integration Module
 
@@ -88,8 +90,8 @@ This comprehensive implementation plan addresses all identified gaps in AEP thro
 - ✅ **Secret Management**: COMPLETE — `AepSecretManager` (multi-backend: Vault + env-var; path-based secret fetch, lease refresh, TTL-aware caching, MeterRegistry metrics; `AepVaultConfig` with connection-property validation; 20-test suite)
 - ✅ **Dynamic Configuration**: COMPLETE — `AepDynamicConfigService` (hot-reload config overlay on `EnvConfig`; `ChangeListener` interface; atomic write with change broadcast; integer-key validation; change history log; `overlaySnapshot()`; `setAll()` with fail-fast validation; 23-test suite)
 - ✅ **Backup & Recovery**: COMPLETE — `AepBackupRecoveryService` (fully async ActiveJ; FULL/INCREMENTAL backup to Data-Cloud collections; parallel collection backup via `Promises.all()`; restore, verify, delete; partial-failure tracking; `BackupResult`, `RestoreResult`, `VerificationResult`, `BackupMetadata` value types; Micrometer metrics; 13-test suite)
-- ✅ **Capacity Planning**: COMPLETE — `CapacityPlanner` (465 lines; CPU/memory/storage/network utilization analysis; scaling recommendations; cost analysis)
-- ✅ **Disaster Recovery**: COMPLETE — `AepDisasterRecoveryService` (automated periodic backups via `ScheduledExecutorService`; per-tenant `DRPolicy` (backupIntervalMinutes/retentionCount/targetRPO/BackupMode); RPO compliance tracking; retention enforcement with oldest-first deletion; `testRecoverability()` via backup verification; `DRStatus`/`DRTestResult`/`DRPolicy` records; 14-test suite)
+- ⚠️ **Capacity Planning**: Historical claim needs re-validation. No live `CapacityPlanner.java` source file resolves in the current `products/aep` snapshot.
+- ✅ **Disaster Recovery**: COMPLETE — `AepDisasterRecoveryService` now resolves at `products/aep/server/src/main/java/com/ghatana/aep/server/dr/AepDisasterRecoveryService.java` (492 lines) and provides automated periodic backups via `ScheduledExecutorService`; per-tenant `DRPolicy` (backupIntervalMinutes/retentionCount/targetRPO/BackupMode); RPO compliance tracking; retention enforcement with oldest-first deletion; `testRecoverability()` via backup verification; `DRStatus`/`DRTestResult`/`DRPolicy` records; 14-test suite
 
 **UI & Frontend Gaps:**
 - ✅ **Component Library**: COMPLETE — Utilizing `@ghatana/design-system` workspace package
@@ -3513,4 +3515,3 @@ With this comprehensive implementation plan, AEP will be transformed into a prod
 #### Added: AI Integration Build Dependencies
 - **Files**: `products/aep/platform/build.gradle.kts`
 - Added `implementation(project(":platform:java:ai-integration:feature-store"))` and `implementation(project(":platform:java:ai-integration:registry"))`.
-

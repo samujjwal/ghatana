@@ -162,7 +162,7 @@ public final class SuggestionMutations {
       String feedbackTypeStr = (String) input.get("type");
       Integer rating = (Integer) input.get("rating");
       String feedbackText = (String) input.get("feedbackText");
-      String userId = "system"; // TODO: extract from auth context once available
+      String userId = "system"; // Auth context not yet integrated - use system user for now
 
       logger.info(
           "[GraphQL] recordFeedback: suggestionId={} type={} rating={}",

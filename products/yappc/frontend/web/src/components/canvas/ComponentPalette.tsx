@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useDraggable } from '@dnd-kit/core';
 // Core UI components from @ghatana/yappc-ui
 import {

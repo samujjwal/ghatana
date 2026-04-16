@@ -209,6 +209,17 @@ kubectl top pods -n aep-production
    kubectl exec -n aep-production deployment/aep -- env | grep AEP_
    ```
 
+  Production startup now fails closed unless at least these variables are present:
+  - `AEP_PROFILE=production`
+  - `AEP_DB_URL`
+  - `AEP_JWT_SECRET`
+
+  In production profile, agent identity resolution now depends on the persisted
+  AEP agent-registration tables. If identity-dependent flows fail after startup,
+  verify that the database contains active rows for the expected tenant/agent in:
+  - `agent_registrations`
+  - `agent_capabilities`
+
 ### 2.2 High Latency / Slow Performance
 
 **Symptoms:**
@@ -583,6 +594,31 @@ helm install aep ./helm/aep \
 
 # 4. Verify and switch traffic
 ```
+
+### 6.4 Quarterly Disaster Recovery Drill Schedule
+
+The AEP production-readiness plan left one operational follow-up open after the
+DR service implementation: recurring restore drills. The quarterly cadence is:
+
+| Quarter | Window | Primary Focus | Required Evidence |
+|---------|--------|---------------|-------------------|
+| Q1 | First Tuesday of February | Restore latest production backup into isolated recovery environment | Restore log, RTO measurement, dependency probe results |
+| Q2 | First Tuesday of May | Tenant-scoped recovery and session/auth validation | Recovered tenant sample, auth/session smoke checks, issue log |
+| Q3 | First Tuesday of August | Cross-service dependency validation (`/health/deep`, Redis, Data Cloud, execution history, memory plane) | Deep health capture, recovery checklist, rollback notes |
+| Q4 | First Tuesday of November | Full tabletop plus live restore rehearsal | Incident timeline, communication log, RPO/RTO comparison |
+
+**Execution rules:**
+- Run the drill in a non-production recovery environment using the latest successful backup set.
+- Measure both target and actual RTO/RPO for the tenant or environment under test.
+- Verify `GET /health/deep`, `GET /metrics`, pipeline execution, execution history, and agent memory before closing the drill.
+- Record findings in the AEP weekly review and create follow-up issues for any gap that misses target objectives.
+- Security and platform operations must sign off on the Q2 and Q4 drills because they exercise auth/session reuse and broader incident-response coordination.
+
+**Minimum artifacts to retain:**
+- Recovery environment identifier and backup IDs used.
+- Start/end timestamps for restore and verification.
+- Output from health, metrics, and representative pipeline smoke checks.
+- A short postmortem summarizing failures, operator actions, and remediation owners.
 
 ---
 

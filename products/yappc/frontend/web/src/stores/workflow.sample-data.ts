@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Sample Workflow Data for Development/Demo
  *

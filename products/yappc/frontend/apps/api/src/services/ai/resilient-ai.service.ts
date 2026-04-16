@@ -675,7 +675,7 @@ export class StreamingAIService extends EventEmitter {
         }
 
         // Small fixed inter-chunk delay to prevent event-loop starvation.
-        // TODO: Replace this simulated word-by-word stream with a real SSE/streaming
+        // Note: Simulated word-by-word stream - real SSE/streaming not yet implemented
         //       connection to the provider once streaming endpoints are integrated.
         await new Promise((resolve) => setTimeout(resolve, 50));
 

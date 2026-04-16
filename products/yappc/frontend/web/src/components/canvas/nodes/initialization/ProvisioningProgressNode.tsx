@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // ProvisioningProgressNode - Canvas node for live provisioning progress
 //

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Artifact Node Component
  *

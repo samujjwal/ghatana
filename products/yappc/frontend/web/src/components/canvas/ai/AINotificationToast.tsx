@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AI Notification Toast
  * 

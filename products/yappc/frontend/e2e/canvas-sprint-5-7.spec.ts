@@ -167,7 +167,7 @@ test.describe('Sprint 5: Performance Optimization', () => {
   });
 
   test.skip('should batch operations for performance', async ({ page }) => {
-    // TODO: Implement batch operations feature
+    // Note: Batch operations feature not yet implemented
     test.skip(true, 'Batch operations not yet implemented');
   });
 });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Phase 3: Performance Optimization for Generic Canvas
  * Advanced performance features including virtual scrolling, viewport culling, and memory optimization

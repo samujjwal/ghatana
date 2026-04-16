@@ -77,7 +77,7 @@ spec:
             readOnlyRootFilesystem: true
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8082
               protocol: TCP
             - name: metrics
               containerPort: 9090
@@ -123,7 +123,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 8082
             initialDelaySeconds: 120
             periodSeconds: 30
             timeoutSeconds: 10
@@ -131,7 +131,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 8082
             initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 5
@@ -140,7 +140,7 @@ spec:
           startupProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 8082
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -167,8 +167,8 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 8080
-      targetPort: 8080
+      port: 8082
+      targetPort: 8082
       protocol: TCP
     - name: metrics
       port: 9090
@@ -203,7 +203,7 @@ spec:
               name: ingress-nginx
       ports:
         - protocol: TCP
-          port: 8080
+          port: 8082
     - from:
         - namespaceSelector:
             matchLabels:
@@ -368,7 +368,7 @@ spec:
               service:
                 name: yappc-service
                 port:
-                  number: 8080
+                  number: 8082
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

@@ -5,6 +5,8 @@
 package com.ghatana.yappc.knowledge.di;
 
 import com.ghatana.agent.memory.retrieval.RetrievalPipeline;
+import com.ghatana.ai.embedding.EmbeddingService;
+import com.ghatana.ai.vectorstore.VectorStore;
 import com.ghatana.yappc.knowledge.retrieval.YappcBM25Retriever;
 import com.ghatana.yappc.knowledge.retrieval.YappcDenseVectorRetriever;
 import io.activej.inject.annotation.Named;
@@ -63,19 +65,24 @@ public class KnowledgeModule extends AbstractModule {
     }
 
     /**
-     * Provides dense vector retriever backed by DataCloud vector store.
+     * Provides dense vector retriever backed by platform VectorStore.
      *
      * <p>Implements semantic search using dense embeddings and vector similarity matching.
-     * Framework ready for embedding service + DataCloud vector store integration.</p>
+     * Reuses platform's EmbeddingService and VectorStore for production-ready vector search.</p>
      *
-     * @param executor blocking executor for vector store queries
+     * @param embeddingService Platform embedding service for generating query embeddings
+     * @param vectorStore      Platform vector store for similarity search
+     * @param executor         Blocking executor for vector store queries
      * @return Dense vector retriever implementing RetrievalPipeline
      */
     @Provides
     @Named("dense-vector")
-    RetrievalPipeline denseVectorRetriever(Executor executor) {
-        logger.info("Creating YappcDenseVectorRetriever (DataCloud vector store)");
-        return new YappcDenseVectorRetriever(null, executor); // EntityRepository injected at runtime
+    RetrievalPipeline denseVectorRetriever(
+            EmbeddingService embeddingService,
+            VectorStore vectorStore,
+            Executor executor) {
+        logger.info("Creating YappcDenseVectorRetriever (platform VectorStore)");
+        return new YappcDenseVectorRetriever(embeddingService, vectorStore, executor);
     }
 
     /**

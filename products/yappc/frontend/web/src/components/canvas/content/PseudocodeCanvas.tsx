@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Pseudocode Canvas Content
  * 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Style Tokens Canvas Content
  * 

@@ -558,7 +558,7 @@ export class IDECanvasBridge {
           `  }`,
           ``,
           `  async execute(): Promise<void> {`,
-          `    // TODO: implement`,
+          `    // Note: implement`,
           `  }`,
           `}`,
           ``,

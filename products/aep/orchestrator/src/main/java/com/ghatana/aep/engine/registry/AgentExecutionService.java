@@ -34,14 +34,32 @@ public class AgentExecutionService {
 
     private final AgentRegistry agentRegistry;
     private final LLMGateway llmGateway;
+    private final AgentExecutionHistoryStore historyStore;
+    private final AgentMemoryPlaneClient memoryClient;
 
     /**
      * @param agentRegistry registry used to look up registered agents; never {@code null}
      * @param llmGateway    gateway to the configured LLM provider(s); never {@code null}
      */
     public AgentExecutionService(AgentRegistry agentRegistry, LLMGateway llmGateway) {
+        this(agentRegistry, llmGateway, new NoopAgentExecutionHistoryStore(), new AgentMemoryPlaneClient.Noop());
+    }
+
+    /**
+     * @param agentRegistry registry used to look up registered agents; never {@code null}
+     * @param llmGateway    gateway to the configured LLM provider(s); never {@code null}
+     * @param historyStore  persistent execution history store; never {@code null}
+     * @param memoryClient  memory plane client used to materialize episodic state; never {@code null}
+     */
+    public AgentExecutionService(
+            AgentRegistry agentRegistry,
+            LLMGateway llmGateway,
+            AgentExecutionHistoryStore historyStore,
+            AgentMemoryPlaneClient memoryClient) {
         this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry");
         this.llmGateway    = Objects.requireNonNull(llmGateway,    "llmGateway");
+        this.historyStore  = Objects.requireNonNull(historyStore,  "historyStore");
+        this.memoryClient  = Objects.requireNonNull(memoryClient,  "memoryClient");
     }
 
     /**
@@ -83,11 +101,22 @@ public class AgentExecutionService {
 
             log.debug("[execution] Dispatching LLM request: agentId={} executionId={}", agentId, executionId);
 
-            return llmGateway.complete(request).map((CompletionResult result) -> {
+            return llmGateway.complete(request).then((CompletionResult result) -> {
                 long durationMs = System.currentTimeMillis() - startMs;
                 log.info("[execution] Completed: agentId={} executionId={} durationMs={} tokens={}",
                     agentId, executionId, durationMs, result.getTokensUsed());
-                return new ExecutionResult(executionId, "success", result.getText(), durationMs);
+
+                ExecutionRecord record = new ExecutionRecord(
+                    executionId,
+                    "success",
+                    input,
+                    result.getText(),
+                    durationMs,
+                    Instant.now().toString());
+
+                return historyStore.append(agentId, record)
+                    .then(ignored -> memoryClient.recordExecution(agentId, executionId, input, result.getText(), durationMs))
+                    .map(ignored -> new ExecutionResult(executionId, "success", result.getText(), durationMs));
             });
         }).mapException(e -> {
             log.error("[execution] Failed: agentId={} executionId={}", agentId, executionId, e);
@@ -107,18 +136,17 @@ public class AgentExecutionService {
     }
 
     /**
-     * Returns execution history. Currently returns an empty list;
-     * backed by a run-ledger in full deployments.
+     * Returns execution history from the configured persistent store.
      */
     public Promise<List<ExecutionRecord>> getHistory(String agentId, int limit) {
-        return Promise.of(List.of());
+        return historyStore.getHistory(agentId, limit);
     }
 
     /**
-     * Returns agent memory state. Currently returns an empty placeholder.
+     * Returns agent memory state from the configured memory plane client.
      */
     public Promise<AgentMemory> getMemory(String agentId) {
-        return Promise.of(new AgentMemory(List.of(), Map.of(), Map.of(), Instant.now().toString()));
+        return memoryClient.getMemory(agentId);
     }
 
     // ─── Result types ──────────────────────────────────────────────────────────

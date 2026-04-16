@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * API Topology Canvas Content
  * 

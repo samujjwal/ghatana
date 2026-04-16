@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Node Properties Panel
  * Side panel for editing selected node properties

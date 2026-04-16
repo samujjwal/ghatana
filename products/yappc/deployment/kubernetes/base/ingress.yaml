@@ -51,7 +51,7 @@ spec:
               service:
                 name: yappc-service
                 port:
-                  number: 8080
+                  number: 8082
 ---
 # Cert-Manager ClusterIssuer for Let's Encrypt
 apiVersion: cert-manager.io/v1

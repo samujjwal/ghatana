@@ -12,80 +12,139 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+type RouteAuditCase = {
+    title: string;
+    path: string;
+    requiresAuth?: boolean;
+};
+
+const ROUTE_AUDIT_CASES: RouteAuditCase[] = [
+    { title: 'login', path: '/login', requiresAuth: false },
+    { title: 'monitoring dashboard', path: '/operate' },
+    { title: 'HITL review queue', path: '/operate/reviews' },
+    { title: 'pipeline list', path: '/build/pipelines' },
+    { title: 'pipeline builder', path: '/build/pipelines/new' },
+    { title: 'pattern studio', path: '/build/patterns' },
+    { title: 'learning episodes', path: '/learn/episodes' },
+    { title: 'memory explorer', path: '/learn/memory' },
+    { title: 'governance dashboard', path: '/govern' },
+    { title: 'agent registry', path: '/catalog/agents' },
+    { title: 'workflow catalog', path: '/catalog/workflows' },
+];
+
+const AUTOMATED_A11Y_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+const STRUCTURAL_RULES = ['landmark-one-main', 'region', 'button-name', 'image-alt', 'label', 'color-contrast'];
+
+async function seedAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
+    await page.addInitScript(() => {
+        window.localStorage.setItem('aep-token', 'playwright-jwt-token');
+        window.localStorage.setItem('aep-session', 'playwright-session-token');
+    });
+}
+
+async function clearAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
+    await page.addInitScript(() => {
+        window.localStorage.removeItem('aep-token');
+        window.localStorage.removeItem('aep-session');
+    });
+}
+
+async function suppressViteErrorOverlay(page: import('@playwright/test').Page): Promise<void> {
+    await page.addInitScript(() => {
+        const removeOverlay = () => {
+            document.querySelectorAll('vite-error-overlay').forEach((overlay) => overlay.remove());
+        };
+
+        removeOverlay();
+        new MutationObserver(() => removeOverlay()).observe(document.documentElement, {
+            childList: true,
+            subtree: true,
+        });
+    });
+}
+
+async function navigateForAudit(page: import('@playwright/test').Page, auditCase: RouteAuditCase): Promise<void> {
+    await suppressViteErrorOverlay(page);
+
+    if (auditCase.requiresAuth === false) {
+        await clearAuthenticatedSession(page);
+    } else {
+        await seedAuthenticatedSession(page);
+    }
+
+    await page.goto(auditCase.path);
+    await expect(page.locator('main')).toBeVisible();
+}
+
+async function analyzeCriticalAndSeriousViolations(page: import('@playwright/test').Page) {
+    const results = await new AxeBuilder({ page })
+        .withTags(AUTOMATED_A11Y_TAGS)
+        .analyze();
+
+    const critical = results.violations.filter(v => v.impact === 'critical');
+    const serious = results.violations.filter(v => v.impact === 'serious');
+
+    return { critical, serious };
+}
+
+async function analyzeStructuralRules(page: import('@playwright/test').Page) {
+    return new AxeBuilder({ page })
+        .withRules(STRUCTURAL_RULES)
+        .analyze();
+}
+
 test.describe('AEP UI Accessibility @a11y', () => {
-    test('pipeline builder page has no critical WCAG 2.1 AA violations', async ({ page }) => {
-        await page.goto('/');
+    for (const auditCase of ROUTE_AUDIT_CASES) {
+        test(`${auditCase.title} page has no critical or serious WCAG 2.1 AA violations @a11y`, async ({ page }) => {
+            await navigateForAudit(page, auditCase);
 
-        const results = await new AxeBuilder({ page })
-            .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-            .analyze();
+            const { critical, serious } = await analyzeCriticalAndSeriousViolations(page);
 
-        const critical = results.violations.filter(v => v.impact === 'critical');
-        const serious = results.violations.filter(v => v.impact === 'serious');
+            if (critical.length > 0 || serious.length > 0) {
+                const summary = [...critical, ...serious].map(v =>
+                    `[${v.impact?.toUpperCase()}] ${v.id}: ${v.description}\n` +
+                    v.nodes.slice(0, 2).map(n => `  - ${n.target.join(', ')}`).join('\n')
+                ).join('\n\n');
+                expect(
+                    critical.length + serious.length,
+                    `Found ${critical.length} critical and ${serious.length} serious a11y violations on ${auditCase.path}:\n\n${summary}`
+                ).toBe(0);
+            }
+        });
 
-        if (critical.length > 0 || serious.length > 0) {
-            const summary = [...critical, ...serious].map(v =>
-                `[${v.impact?.toUpperCase()}] ${v.id}: ${v.description}\n` +
-                v.nodes.slice(0, 2).map(n => `  - ${n.target.join(', ')}`).join('\n')
-            ).join('\n\n');
+        test(`${auditCase.title} page passes structural accessibility rules @a11y`, async ({ page }) => {
+            await navigateForAudit(page, auditCase);
+
+            const results = await analyzeStructuralRules(page);
+
             expect(
-                critical.length + serious.length,
-                `Found ${critical.length} critical and ${serious.length} serious a11y violations:\n\n${summary}`
-            ).toBe(0);
-        }
-    });
+                results.violations,
+                `Structural a11y violations on ${auditCase.path}: ${results.violations.map(v => `${v.id}: ${v.description}`).join('; ')}`
+            ).toHaveLength(0);
+        });
 
-    test('pipeline builder toolbar is keyboard navigable @a11y', async ({ page }) => {
-        await page.goto('/');
+        test(`${auditCase.title} page supports keyboard entry into the main interaction model @a11y`, async ({ page }) => {
+            await navigateForAudit(page, auditCase);
 
-        await page.keyboard.press('Tab');
-        const focused = await page.evaluate(() => document.activeElement?.tagName);
-        expect(['BUTTON', 'A', 'INPUT', 'SELECT', '[role="button"]']).toContain(focused?.toUpperCase() ?? '');
-    });
+            await page.keyboard.press('Tab');
+            const focused = await page.evaluate(() => {
+                const active = document.activeElement;
+                if (!active) {
+                    return null;
+                }
 
-    test('pipeline builder has accessible landmarks @a11y', async ({ page }) => {
-        await page.goto('/');
+                return {
+                    tag: active.tagName,
+                    role: active.getAttribute('role'),
+                    ariaLabel: active.getAttribute('aria-label'),
+                };
+            });
 
-        const results = await new AxeBuilder({ page })
-            .withRules(['landmark-one-main', 'region'])
-            .analyze();
-
-        const violations = results.violations.filter(v =>
-            ['landmark-one-main', 'region'].includes(v.id)
-        );
-
-        expect(
-            violations,
-            `Missing required landmark regions: ${violations.map(v => v.id).join(', ')}`
-        ).toHaveLength(0);
-    });
-
-    test('pipeline builder node context menus meet contrast requirements @a11y', async ({ page }) => {
-        await page.goto('/');
-
-        const results = await new AxeBuilder({ page })
-            .withRules(['color-contrast'])
-            .analyze();
-
-        const contrastViolations = results.violations.filter(v => v.id === 'color-contrast');
-
-        if (contrastViolations.length > 0) {
-            const nodes = contrastViolations.flatMap(v => v.nodes).slice(0, 5);
-            const detail = nodes.map(n => `  - ${n.target.join(', ')}: ${n.failureSummary}`).join('\n');
-            expect(contrastViolations, `Color contrast violations:\n${detail}`).toHaveLength(0);
-        }
-    });
-
-    test('pipeline canvas has aria-labels on interactive controls @a11y', async ({ page }) => {
-        await page.goto('/');
-
-        const results = await new AxeBuilder({ page })
-            .withRules(['button-name', 'image-alt', 'label'])
-            .analyze();
-
-        expect(
-            results.violations,
-            `Interactive element a11y violations: ${results.violations.map(v => `${v.id}: ${v.description}`).join('; ')}`
-        ).toHaveLength(0);
-    });
+            expect(focused, `Expected a focusable element after keyboard entry on ${auditCase.path}`).not.toBeNull();
+            expect(
+                ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(focused?.tag ?? '') || focused?.role === 'button',
+                `Unexpected first focus target on ${auditCase.path}: ${JSON.stringify(focused)}`
+            ).toBe(true);
+        });
+    }
 });

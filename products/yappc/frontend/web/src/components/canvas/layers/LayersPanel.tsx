@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Eye as VisibilityIcon, EyeOff as VisibilityOffIcon, Lock as LockIcon, LockOpen as LockOpenIcon, Plus as AddIcon, Trash2 as DeleteIcon, GripVertical as DragIcon } from 'lucide-react';
 import {
   Box,

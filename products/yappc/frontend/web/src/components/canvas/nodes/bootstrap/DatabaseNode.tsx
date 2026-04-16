@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Bootstrap Database Node Component
  *

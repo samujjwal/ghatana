@@ -32,8 +32,8 @@ autoscaling:
 # Service configuration
 service:
   type: ClusterIP
-  port: 8080
-  targetPort: 8080
+  port: 8082
+  targetPort: 8082
   annotations: {}
   labels: {}
 
@@ -87,9 +87,10 @@ resources:
     cpu: "1000m"
 
 # Liveness and readiness probes
+# Note: YappcLifecycleService implements /health (liveness) and /ready (readiness)
 livenessProbe:
   httpGet:
-    path: /health/live
+    path: /health
     port: http
   initialDelaySeconds: 30
   periodSeconds: 10
@@ -98,21 +99,12 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /health/ready
+    path: /ready
     port: http
   initialDelaySeconds: 10
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 2
-
-# Startup probe for slow-starting containers
-startupProbe:
-  httpGet:
-    path: /health/startup
-    port: http
-  initialDelaySeconds: 0
-  periodSeconds: 5
-  failureThreshold: 12 # 60 seconds total
 
 # Affinity rules for pod distribution
 affinity:

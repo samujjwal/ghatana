@@ -4,17 +4,16 @@
  */
 package com.ghatana.yappc.ai.history;
 
-import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,12 +55,11 @@ import java.util.UUID;
 public final class ConversationRepository {
 
     private static final Logger log = LoggerFactory.getLogger(ConversationRepository.class);
-    private static final String COLLECTION = "ai-conversations";
 
-    private final DataCloudClient client;
+    private final YappcDataCloudRepository<Conversation> repository;
 
-    public ConversationRepository(@NotNull DataCloudClient client) {
-        this.client = Objects.requireNonNull(client, "DataCloudClient must not be null");
+    public ConversationRepository(@NotNull YappcDataCloudRepository<Conversation> repository) {
+        this.repository = Objects.requireNonNull(repository, "YappcDataCloudRepository must not be null");
     }
 
     // ── Write operations ─────────────────────────────────────────────────────
@@ -75,23 +73,23 @@ public final class ConversationRepository {
      * @return promise resolving to the new conversation UUID
      */
     public Promise<UUID> createConversation(String userId, String projectId, String feature) {
-        String tenantId        = resolveTenantId();
-        UUID   conversationId  = UUID.randomUUID();
-        String now             = Instant.now().toString();
+        UUID conversationId = UUID.randomUUID();
+        Instant now = Instant.now();
 
-        Map<String, Object> doc = new HashMap<>();
-        doc.put("conversationId", conversationId.toString());
-        doc.put("userId",         userId);
-        doc.put("projectId",      projectId != null ? projectId : "");
-        doc.put("feature",        feature);
-        doc.put("turns",          List.of());
-        doc.put("createdAt",      now);
-        doc.put("updatedAt",      now);
+        Conversation conversation = new Conversation(
+                conversationId,
+                userId,
+                projectId,
+                feature,
+                new ArrayList<>(),
+                now,
+                now
+        );
 
-        return client.save(tenantId, COLLECTION, doc)
-                .map(ignored -> {
-                    log.debug("Created conversation: tenantId={} conversationId={} userId={} feature={}",
-                            tenantId, conversationId, userId, feature);
+        return repository.save(conversation)
+                .map(saved -> {
+                    log.debug("Created conversation: conversationId={} userId={} feature={}",
+                            conversationId, userId, feature);
                     return conversationId;
                 });
     }
@@ -107,35 +105,40 @@ public final class ConversationRepository {
      * @param outputTokens   tokens produced (0 for user turns)
      * @param latencyMs      time taken to generate the response (0 for user turns)
      */
-    @SuppressWarnings("unchecked")
     public Promise<Void> appendTurn(UUID conversationId, String role, String content,
                                      String model, int inputTokens, int outputTokens, long latencyMs) {
-        String tenantId = resolveTenantId();
-        String now      = Instant.now().toString();
+        Instant now = Instant.now();
 
-        Map<String, Object> turn = new HashMap<>();
-        turn.put("role",         role);
-        turn.put("content",      content);
-        turn.put("model",        model != null ? model : "");
-        turn.put("inputTokens",  inputTokens);
-        turn.put("outputTokens", outputTokens);
-        turn.put("latencyMs",    latencyMs);
-        turn.put("timestamp",    now);
+        Conversation.Turn turn = new Conversation.Turn(
+                role,
+                content,
+                model != null ? model : "",
+                inputTokens,
+                outputTokens,
+                latencyMs,
+                now
+        );
 
-        return client.findById(tenantId, COLLECTION, conversationId.toString())
+        return repository.findById(conversationId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(new IllegalArgumentException(
                                 "Conversation not found: " + conversationId));
                     }
-                    Map<String, Object> updated = new HashMap<>(opt.get().data());
-                    List<Object> turns = new java.util.ArrayList<>(
-                            (List<Object>) updated.getOrDefault("turns", List.of()));
-                    turns.add(turn);
-                    updated.put("conversationId", conversationId.toString());
-                    updated.put("turns",      turns);
-                    updated.put("updatedAt",  now);
-                    return client.save(tenantId, COLLECTION, updated).toVoid();
+                    Conversation existing = opt.get();
+                    List<Conversation.Turn> updatedTurns = new ArrayList<>(existing.turns());
+                    updatedTurns.add(turn);
+                    
+                    Conversation updated = new Conversation(
+                            existing.conversationId(),
+                            existing.userId(),
+                            existing.projectId(),
+                            existing.feature(),
+                            updatedTurns,
+                            existing.createdAt(),
+                            now
+                    );
+                    return repository.save(updated).toVoid();
                 })
                 .whenComplete((v, ex) -> {
                     if (ex != null) {
@@ -150,10 +153,8 @@ public final class ConversationRepository {
     /**
      * Returns a conversation record by ID (within the current tenant scope).
      */
-    public Promise<Optional<Map<String, Object>>> findById(@NotNull UUID conversationId) {
-        String tenantId = resolveTenantId();
-        return client.findById(tenantId, COLLECTION, conversationId.toString())
-                .map(opt -> opt.map(DataCloudClient.Entity::data));
+    public Promise<Optional<Conversation>> findById(@NotNull UUID conversationId) {
+        return repository.findById(conversationId);
     }
 
     /**
@@ -162,30 +163,20 @@ public final class ConversationRepository {
      * @param userId user to query
      * @param limit  maximum number of records to return
      */
-    public Promise<List<Map<String, Object>>> findByUser(String userId, int limit) {
-        String tenantId = resolveTenantId();
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("userId", userId))
-                .limit(limit)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .map(entities -> entities.stream()
-                        .map(DataCloudClient.Entity::data)
+    public Promise<List<Conversation>> findByUser(String userId, int limit) {
+        return repository.findByField("userId", userId)
+                .map(conversations -> conversations.stream()
+                        .limit(limit)
                         .collect(java.util.stream.Collectors.toList()));
     }
 
     /**
      * Lists conversations for a project, most-recently-updated first.
      */
-    public Promise<List<Map<String, Object>>> findByProject(String projectId, int limit) {
-        String tenantId = resolveTenantId();
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("projectId", projectId))
-                .limit(limit)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .map(entities -> entities.stream()
-                        .map(DataCloudClient.Entity::data)
+    public Promise<List<Conversation>> findByProject(String projectId, int limit) {
+        return repository.findByField("projectId", projectId)
+                .map(conversations -> conversations.stream()
+                        .limit(limit)
                         .collect(java.util.stream.Collectors.toList()));
     }
 
@@ -196,30 +187,21 @@ public final class ConversationRepository {
      * @return count of deleted records
      */
     public Promise<Integer> deleteOlderThan(@NotNull Instant before) {
-        String tenantId = resolveTenantId();
+        String tenantId = TenantContext.getCurrentTenantId();
         log.info("Purging AI conversation records before {} for tenant {}", before, tenantId);
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.lt("updatedAt", before.toString()))
-                .limit(1000)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .then(entities -> {
-                    List<Promise<Void>> deletes = entities.stream()
-                            .map(entity -> client.delete(tenantId, COLLECTION, entity.id()))
+        
+        // Note: YappcDataCloudRepository doesn't support lt filters in findByFilter
+        // We'll need to load all and filter in memory for now, or add support for comparison filters
+        return repository.findAll()
+                .then(conversations -> {
+                    List<Promise<Void>> deletes = conversations.stream()
+                            .filter(c -> c.updatedAt().isBefore(before))
+                            .map(c -> repository.deleteById(c.conversationId()))
                             .collect(java.util.stream.Collectors.toList());
                     return io.activej.promise.Promises.all(deletes)
-                            .map(ignored -> entities.size());
+                            .map(ignored -> (int) conversations.stream()
+                                    .filter(c -> c.updatedAt().isBefore(before))
+                                    .count());
                 });
-    }
-
-    // ── Internal ─────────────────────────────────────────────────────────────
-
-    private static String resolveTenantId() {
-        String tenantId = TenantContext.getCurrentTenantId();
-        if (tenantId == null || tenantId.isBlank() || "default-tenant".equals(tenantId)) {
-            throw new SecurityException(
-                    "ConversationRepository requires an active tenant context.");
-        }
-        return tenantId;
     }
 }

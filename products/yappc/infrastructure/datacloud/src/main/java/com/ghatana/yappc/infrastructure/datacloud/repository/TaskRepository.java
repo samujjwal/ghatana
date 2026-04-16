@@ -176,21 +176,6 @@ public class TaskRepository {
     return delegate.findByFilter(filter, "retryCount ASC", 100, 0);
   }
 
-  /**
-   * Finds tasks with deadlines approaching.
-   *
-   * @param before deadline threshold
-   * @return tasks due before threshold
-   */
-  @NotNull
-  public Promise<List<TaskEntity>> findDueBefore(@NotNull java.time.Instant before) {
-    Map<String, Object> filter = Map.of(
-        "deadlineAt", Map.of("$lte", before.toString()),
-        "status", Map.of("$nin", List.of("COMPLETED", "CANCELLED"))
-    );
-    return delegate.findByFilter(filter, "deadlineAt ASC", 100, 0);
-  }
-
   // Factory
 
   /**

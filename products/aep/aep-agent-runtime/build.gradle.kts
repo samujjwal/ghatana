@@ -81,6 +81,10 @@ dependencies {
     testImplementation("com.tngtech.archunit:archunit:1.3.0")
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hikaricp)
 
     // ── JMH Benchmarks ─────────────────────────────────────────────────────────
     testImplementation(libs.jmh.core)

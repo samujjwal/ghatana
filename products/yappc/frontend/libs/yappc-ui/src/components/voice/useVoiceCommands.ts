@@ -2,8 +2,11 @@
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC UI - Voice Command Handler
  *
- * Integrates with audio-video speech services (STT/TTS) to provide
- * voice control capabilities for YAPPC without duplicating speech infrastructure.
+ * ⚠️ DEPRECATED / NOT AVAILABLE: Voice commands are currently disabled because
+ * the required backend speech endpoints (/api/v1/speech/stt, /api/v1/tts) do not exist.
+ * This functionality requires integration with products/audio-video speech services.
+ *
+ * TODO: Enable voice commands after audio-video service integration is complete.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -172,6 +175,10 @@ function parseIntent(text: string): VoiceCommand {
  * });
  * ```
  */
+/**
+ * Voice commands hook - currently disabled pending backend integration.
+ * @deprecated Voice functionality requires products/audio-video service integration
+ */
 export function useVoiceCommands(options: {
   onCommand: (command: VoiceCommand) => void;
   onError?: (error: Error) => void;
@@ -184,221 +191,46 @@ export function useVoiceCommands(options: {
   startListening: () => Promise<void>;
   stopListening: () => void;
 } {
-  const { onCommand, onError, config = {} } = options;
-  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+  const { onError } = options;
 
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [feedback, setFeedback] = useState<string>('');
-  const [lastCommand, setLastCommand] = useState<VoiceCommand | null>(null);
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const wakeWordDetectedRef = useRef(false);
-
-  // Request microphone permission
-  const requestMicrophoneAccess = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      return stream;
-    } catch (err) {
-      throw new Error('Microphone access denied', { cause: err });
-    }
-  }, []);
-
-  // Send audio to STT service
-  const transcribeAudio = useCallback(
-    async (audioBlob: Blob): Promise<string> => {
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'voice-command.wav');
-      formData.append('language', mergedConfig.language);
-
-      const response = await fetch(mergedConfig.sttEndpoint, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('STT service error');
-      }
-
-      const data = (await response.json()) as { text: string };
-      return data.text;
-    },
-    [mergedConfig.sttEndpoint, mergedConfig.language]
+  // Voice commands are disabled - backend endpoints do not exist
+  const error = new Error(
+    'Voice commands are not available. ' +
+    'Required speech endpoints (/api/v1/speech/stt, /api/v1/speech/tts) are not implemented. ' +
+    'This feature requires integration with products/audio-video speech services.'
   );
 
-  // Speak feedback using TTS service
-  const speakFeedback = useCallback(
-    async (text: string) => {
-      if (!mergedConfig.enableFeedback) return;
+  // Report error immediately if handler provided
+  if (onError) {
+    onError(error);
+  }
 
-      setFeedback(text);
-
-      try {
-        const response = await fetch(mergedConfig.ttsEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text,
-            language: mergedConfig.language,
-          }),
-        });
-
-        if (!response.ok) return;
-
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        await audio.play();
-
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          setFeedback('');
-        };
-      } catch {
-        // Silent fail - feedback is optional
-        setFeedback('');
-      }
-    },
-    [
-      mergedConfig.ttsEndpoint,
-      mergedConfig.language,
-      mergedConfig.enableFeedback,
-    ]
-  );
-
-  // Process recorded audio
-  const processAudio = useCallback(async () => {
-    if (audioChunksRef.current.length === 0) return;
-
-    setIsProcessing(true);
-
-    try {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      audioChunksRef.current = [];
-
-      const transcribedText = await transcribeAudio(audioBlob);
-
-      if (!transcribedText) {
-        await speakFeedback("I didn't catch that. Could you try again?");
-        return;
-      }
-
-      const command = parseIntent(transcribedText);
-      setLastCommand(command);
-
-      if (command.intent === 'unknown') {
-        await speakFeedback(
-          `I heard: "${transcribedText}". I'm not sure what to do with that.`
-        );
-      } else {
-        await speakFeedback(`Processing: ${command.intent.replace('_', ' ')}`);
-        onCommand(command);
-      }
-    } catch (err) {
-      onError?.(err instanceof Error ? err : new Error('Processing failed'));
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [transcribeAudio, speakFeedback, onCommand, onError]);
-
-  // Stop listening
-  const stopListening = useCallback(() => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-
-    mediaRecorderRef.current?.stop();
-    setIsListening(false);
-  }, []);
-
-  // Start listening for voice commands
-  const startListening = useCallback(async () => {
-    if (isListening) return;
-
-    try {
-      const stream = await requestMicrophoneAccess();
-
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        if (wakeWordDetectedRef.current) {
-          void processAudio();
-        }
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start(100); // Collect data every 100ms
-      setIsListening(true);
-      wakeWordDetectedRef.current = false;
-
-      // For now, auto-detect wake word in transcription
-      // In production, would use wake word detection before starting full transcription
-      wakeWordDetectedRef.current = true;
-
-      // Auto-stop after silence threshold
-      silenceTimerRef.current = setTimeout(() => {
-        void stopListening();
-      }, mergedConfig.silenceThreshold + 5000);
-    } catch (err) {
-      onError?.(
-        err instanceof Error ? err : new Error('Failed to start listening')
-      );
-    }
-  }, [
-    isListening,
-    requestMicrophoneAccess,
-    processAudio,
-    mergedConfig.silenceThreshold,
-    onError,
-    stopListening,
-  ]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopListening();
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-      }
-    };
-  }, [stopListening]);
-
+  // Return disabled state
   return {
-    isListening,
-    isProcessing,
-    feedback,
-    lastCommand,
-    startListening,
-    stopListening,
+    isListening: false,
+    isProcessing: false,
+    feedback: '',
+    lastCommand: null,
+    startListening: async () => {
+      console.warn('[VoiceCommands] Attempted to start listening but voice commands are disabled:', error.message);
+      throw error;
+    },
+    stopListening: () => {
+      // No-op when disabled
+    },
   };
 }
 
 /**
- * Voice command help text
+ * Voice command help text - disabled pending backend integration
+ * @deprecated Voice functionality requires products/audio-video service integration
  */
 export const VOICE_COMMAND_HELP = `
-Voice Commands:
-- "Create project [name]" - Create a new project
-- "Open project [name]" - Open an existing project
-- "Advance to next stage" - Move to next lifecycle stage
-- "Go back" - Return to previous stage
-- "Create task [title]" - Add a new task
-- "Assign [task] to [agent]" - Assign task to agent
-- "Complete task [name]" - Mark task as done
-- "Show tasks" - List all tasks
-- "Show metrics" - View project metrics
-- "Help" - Show this help
-- "Cancel" - Cancel current operation
+Voice Commands (Not Available):
+Voice command functionality is currently disabled.
+
+Required: Integration with products/audio-video speech services
+Endpoints needed:
+- POST /api/v1/speech/stt (Speech-to-Text)
+- POST /api/v1/speech/tts (Text-to-Speech)
 `;

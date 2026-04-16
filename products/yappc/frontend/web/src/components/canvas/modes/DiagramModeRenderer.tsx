@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Diagram Mode Renderer
  * 

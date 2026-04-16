@@ -102,7 +102,8 @@ public class PatternRecommender {
             if (relevance > 0) {
                 // Boost with popularity
                 double popularity = getPopularityScore(pattern.patternId);
-                double finalScore = (relevance * 0.7) + (popularity * 0.3);
+                double feedback = getFeedbackScore(pattern.patternId);
+                double finalScore = (relevance * 0.6) + (popularity * 0.2) + (feedback * 0.2);
 
                 recommendations.add(new Recommendation(
                     pattern.patternId,
@@ -157,6 +158,27 @@ public class PatternRecommender {
     private double getPopularityScore(String patternId) {
         int count = patternPopularity.getOrDefault(patternId, 0);
         return Math.min(count / 100.0, 1.0);  // Normalize to 0-1
+    }
+
+    /**
+     * Get feedback-derived ranking score for pattern.
+     *
+     * <p>Recommendations with consistently accepted, high-quality feedback receive
+     * a measurable boost, while repeated rejections lower the score. Unknown
+     * patterns remain neutral so cold-start recommendations still surface.
+     *
+     * @param patternId Pattern identifier
+     * @return Feedback score in the range [0, 1]
+     */
+    private double getFeedbackScore(String patternId) {
+        UserFeedback feedback = userFeedback.get(patternId);
+        if (feedback == null) {
+            return 0.5;
+        }
+
+        double acceptanceRate = feedback.getAcceptanceRate();
+        double qualityBoost = feedback.getAverageScore();
+        return Math.max(0.0, Math.min(1.0, (acceptanceRate * 0.6) + (qualityBoost * 0.4)));
     }
 
     /**
@@ -222,6 +244,10 @@ public class PatternRecommender {
         double getAcceptanceRate() {
             int total = acceptanceCount + rejectionCount;
             return total == 0 ? 0 : (double) acceptanceCount / total;
+        }
+
+        double getAverageScore() {
+            return avgScore;
         }
     }
 

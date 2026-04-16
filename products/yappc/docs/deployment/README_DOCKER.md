@@ -18,7 +18,7 @@ docker-compose -f docker-compose.yappc.yml logs -f ollama-loader
 docker-compose -f docker-compose.yappc.yml ps
 
 # 5. Access services
-# - YAPPC API: http://localhost:8080
+# - YAPPC API: http://localhost:8082
 # - Ollama: http://localhost:11434
 # - Prometheus: http://localhost:9091
 # - Grafana: http://localhost:3000 (admin/yappc_admin)
@@ -34,7 +34,7 @@ docker-compose -f docker-compose.yappc.yml ps
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │ YAPPC Agents │  │   Ollama     │  │  Prometheus  │  │
 │  │  (27 agents) │←→│  (llama3.2)  │  │  (metrics)   │  │
-│  │   Port 8080  │  │  Port 11434  │  │  Port 9091   │  │
+│  │   Port 8082  │  │  Port 11434  │  │  Port 9091   │  │
 │  └──────┬───────┘  └──────────────┘  └──────┬───────┘  │
 │         │                                     │          │
 │         └─────────────────┬──────────────────┘          │
@@ -59,7 +59,7 @@ docker-compose -f docker-compose.yappc.yml ps
 
 ### 1. YAPPC Agents
 - **Container**: `yappc-agents`
-- **Port**: 8080 (API), 9090 (metrics)
+- **Port**: 8082 (API), 9090 (metrics)
 - **Resources**: 2 CPU, 3GB RAM
 - **Agents**: 27 (Architecture: 7, Implementation: 7, Testing: 6, Operations: 7)
 
@@ -149,7 +149,7 @@ Default dashboards:
 docker-compose -f docker-compose.yappc.yml ps
 
 # Test YAPPC API
-curl http://localhost:8080/health
+curl http://localhost:8082/health
 
 # Test Ollama
 curl http://localhost:11434/api/tags
@@ -165,7 +165,7 @@ curl http://localhost:3000/api/health
 
 ```bash
 # Extract requirements (architecture.intake agent)
-curl -X POST http://localhost:8080/api/agents/architecture.intake \
+curl -X POST http://localhost:8082/api/agents/architecture.intake \
   -H "Content-Type: application/json" \
   -d '{
     "input": "Build a REST API for todo management with authentication"

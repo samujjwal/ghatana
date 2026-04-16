@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mode Renderer Type Definitions
  * 

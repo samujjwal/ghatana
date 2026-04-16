@@ -1,25 +1,20 @@
 /**
  * Authentication API Routes
  *
- * Complete JWT-based authentication endpoints for production
+ * Proxies all authentication to the canonical Java lifecycle service.
+ * The Node.js API is no longer the auth authority - it delegates to Java.
  *
  * @doc.type route
- * @doc.purpose Authentication API endpoints
+ * @doc.purpose Authentication API endpoints (proxy to Java service)
  * @doc.layer api
- * @doc.pattern REST API
+ * @doc.pattern REST API / Proxy
  */
 
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { AuthService } from '../services/auth/auth.service';
+import { proxyAuthService } from '../services/auth/proxy-auth.service';
 
-// Initialize auth service
-const authService = new AuthService();
-
-type RegisterRequestBody = {
-  email: string;
-  password: string;
-  name: string;
-};
+// Use proxy auth service that delegates to Java lifecycle service
+const authService = proxyAuthService;
 
 type LoginRequestBody = {
   email: string;
@@ -35,52 +30,6 @@ type RefreshRequestBody = {
 // ============================================================================
 
 export async function authRoutes(fastify: unknown) {
-  // Register endpoint
-  fastify.post(
-    '/auth/register',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['email', 'password', 'name'],
-          properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 8 },
-            name: { type: 'string', minLength: 2 },
-          },
-        },
-        response: {
-          201: {
-            type: 'object',
-            properties: {
-              user: { $ref: '#/schemas/User' },
-              tokens: { $ref: '#/schemas/AuthTokens' },
-            },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const { email, password, name } = request.body as RegisterRequestBody;
-
-        const result = await authService.register({
-          email,
-          password,
-          name,
-        });
-
-        reply.code(201).send(result);
-      } catch (error: unknown) {
-        reply.code(400).send({
-          error: 'Registration failed',
-          message:
-            error instanceof Error ? error.message : 'Registration failed',
-        });
-      }
-    }
-  );
-
   // Login endpoint
   fastify.post(
     '/auth/login',
@@ -186,97 +135,6 @@ export async function authRoutes(fastify: unknown) {
     }
   );
 
-  // Password reset request
-  fastify.post(
-    '/auth/forgot-password',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['email'],
-          properties: {
-            email: { type: 'string', format: 'email' },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const { email } = request.body as unknown;
-
-        await authService.requestPasswordReset(email);
-
-        reply.send({ message: 'Password reset email sent' });
-      } catch (error) {
-        reply.code(400).send({
-          error: 'Password reset request failed',
-          message: error.message,
-        });
-      }
-    }
-  );
-
-  // Password reset confirmation
-  fastify.post(
-    '/auth/reset-password',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['token', 'newPassword'],
-          properties: {
-            token: { type: 'string' },
-            newPassword: { type: 'string', minLength: 8 },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const { token, newPassword } = request.body as unknown;
-
-        await authService.resetPassword(token, newPassword);
-
-        reply.send({ message: 'Password reset successfully' });
-      } catch (error) {
-        reply.code(400).send({
-          error: 'Password reset failed',
-          message: error.message,
-        });
-      }
-    }
-  );
-
-  // Verify email
-  fastify.post(
-    '/auth/verify-email',
-    {
-      schema: {
-        body: {
-          type: 'object',
-          required: ['token'],
-          properties: {
-            token: { type: 'string' },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const { token } = request.body as unknown;
-
-        await authService.verifyEmail(token);
-
-        reply.send({ message: 'Email verified successfully' });
-      } catch (error) {
-        reply.code(400).send({
-          error: 'Email verification failed',
-          message: error.message,
-        });
-      }
-    }
-  );
-
   // Get current user
   fastify.get(
     '/auth/me',
@@ -299,38 +157,6 @@ export async function authRoutes(fastify: unknown) {
     }
   );
 
-  // Change password
-  fastify.post(
-    '/auth/change-password',
-    {
-      preHandler: [authenticateToken],
-      schema: {
-        body: {
-          type: 'object',
-          required: ['currentPassword', 'newPassword'],
-          properties: {
-            currentPassword: { type: 'string' },
-            newPassword: { type: 'string', minLength: 8 },
-          },
-        },
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const { currentPassword, newPassword } = request.body as unknown;
-        const userId = (request as unknown).user.userId;
-
-        await authService.changePassword(userId, currentPassword, newPassword);
-
-        reply.send({ message: 'Password changed successfully' });
-      } catch (error) {
-        reply.code(400).send({
-          error: 'Password change failed',
-          message: error.message,
-        });
-      }
-    }
-  );
 }
 
 // ============================================================================

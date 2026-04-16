@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Node Types Index
  *

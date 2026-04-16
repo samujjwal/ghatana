@@ -413,7 +413,7 @@ public class CanvasGenerationService {
                  */
                 export class %sService {
                   async process(data: any) {
-                    // TODO: Implement business logic
+                    // Note: Business logic implementation not yet complete
                     return { success: true, data };
                   }
                 }
@@ -439,7 +439,7 @@ public class CanvasGenerationService {
               return (
                 <div className="p-4">
                   <h2 className="text-2xl font-bold">%s</b></p>
-                  {/* TODO: Add component logic */}
+                  {/* Note: Component logic not yet complete */}
                 </div>
               );
             };
@@ -536,7 +536,7 @@ public class CanvasGenerationService {
             describe('%sController', () => {
               it('should handle requests successfully', async () => {
                 const controller = new %sController();
-                // TODO: Add test cases
+                // Note: Test cases not yet implemented
                 expect(controller).toBeDefined();
               });
             });

@@ -35,11 +35,13 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import io.activej.promise.Promises;
 import com.ghatana.platform.health.HealthStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -152,6 +154,7 @@ public class AepGrpcServer {
                 .agentId(agentId)
                 .name(name)
                 .version(version)
+                .description(metadata.getDescription())
                 .type(AgentType.PROBABILISTIC)
                 .build();
 
@@ -193,7 +196,7 @@ public class AepGrpcServer {
             registry.resolve(agentId)
                 .whenResult(optAgent -> {
                     if (optAgent.isPresent()) {
-                        responseObserver.onNext(AgentManifestProto.getDefaultInstance());
+                        responseObserver.onNext(toManifest(optAgent.get()));
                         responseObserver.onCompleted();
                     } else {
                         responseObserver.onError(Status.NOT_FOUND
@@ -208,9 +211,16 @@ public class AepGrpcServer {
         public void listAgents(ListAgentsRequestProto request,
                                StreamObserver<ListAgentsResponseProto> responseObserver) {
             registry.listAgentIds()
-                .whenResult(ids -> {
+                .then(ids -> Promises.toList(ids.stream()
+                    .sorted()
+                    .map(id -> registry.resolve(id)
+                        .map(optAgent -> optAgent.map(AgentManagementService::toManifest).orElse(null)))
+                    .toList()))
+                .whenResult(manifests -> {
                     ListAgentsResponseProto.Builder builder = ListAgentsResponseProto.newBuilder();
-                    ids.forEach(id -> builder.addAgents(AgentManifestProto.getDefaultInstance()));
+                    manifests.stream()
+                        .filter(Objects::nonNull)
+                        .forEach(builder::addAgents);
                     responseObserver.onNext(builder.build());
                     responseObserver.onCompleted();
                 })
@@ -228,6 +238,28 @@ public class AepGrpcServer {
                 })
                 .whenException(e -> responseObserver.onError(
                     Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException()));
+        }
+
+        private static AgentManifestProto toManifest(TypedAgent<?, ?> agent) {
+            AgentDescriptor descriptor = agent.descriptor();
+            MetadataProto.Builder metadata = MetadataProto.newBuilder()
+                .setId(defaultString(descriptor.getAgentId()))
+                .setName(defaultString(descriptor.getName()))
+                .setVersion(defaultString(descriptor.getVersion()));
+
+            if (descriptor.getDescription() != null) {
+                metadata.setDescription(descriptor.getDescription());
+            }
+
+            return AgentManifestProto.newBuilder()
+                .setApiVersion("ghatana.contracts/agent/v1")
+                .setKind("AgentManifest")
+                .setMetadata(metadata)
+                .build();
+        }
+
+        private static String defaultString(String value) {
+            return value == null ? "" : value;
         }
     }
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Right Panel Host Component
  *

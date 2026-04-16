@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // AlertNode - Canvas node for alert visualization
 // 

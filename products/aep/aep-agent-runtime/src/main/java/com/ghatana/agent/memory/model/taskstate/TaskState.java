@@ -3,6 +3,7 @@ package com.ghatana.agent.memory.model.taskstate;
 import com.ghatana.agent.memory.model.*;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ import java.util.Map;
  */
 @Value
 @Builder
+@Jacksonized
 public class TaskState implements MemoryItem {
 
     @Builder.Default @NotNull String id = "";

@@ -2,6 +2,7 @@ package com.ghatana.agent.memory.model;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @Value
 @Builder
+@Jacksonized
 public class Provenance {
 
     /**

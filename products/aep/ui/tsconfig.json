@@ -15,6 +15,9 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@ghatana/canvas/plugins": [
+        "../../../platform/typescript/canvas/src/plugins/index.ts"
+      ],
       "@ghatana/design-system": [
         "../../../platform/typescript/design-system/src/index.ts"
       ],
@@ -25,6 +28,15 @@
       "@ghatana/tokens": ["../../../platform/typescript/tokens/src"],
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils/src/index.ts"
+      ],
+      "@ghatana/realtime": [
+        "../../../platform/typescript/realtime/src/index.ts"
+      ],
+      "@ghatana/platform-events": [
+        "../../../platform/typescript/platform-events/src/index.ts"
+      ],
+      "@audio-video/ui": [
+        "../../../products/audio-video/libs/audio-video-ui/src/index.tsx"
       ],
       "@ghatana/privacy-ui": [
         "../../../platform/typescript/privacy-ui/src"
@@ -47,6 +59,7 @@
       "clsx": ["./node_modules/clsx/clsx.d.ts"],
       "tailwind-merge": ["./node_modules/tailwind-merge/dist/types.d.ts"]
     },
+    "ignoreDeprecations": "6.0",
     "baseUrl": "."
   },
   "include": ["src"]

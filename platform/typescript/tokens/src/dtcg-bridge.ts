@@ -146,7 +146,7 @@ export function validateTokenRegistryDTCG(
     return { success: true };
   }
 
-  const errors = result.error.errors.map((issue) => {
+  const errors = result.error.issues.map((issue: z.ZodIssue) => {
     const path = issue.path.join('.');
     return path ? `${path}: ${issue.message}` : issue.message;
   });

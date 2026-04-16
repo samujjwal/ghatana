@@ -1,10 +1,8 @@
-// @ts-nocheck
 /**
  * Component Registry - Central registry for all canvas components
  */
 
-// @ts-nocheck
-import { RegistryComparator } from '@yappc/core/types';
+import type { RegistryComparator } from '@yappc/core/types';
 
 import type { ComponentDefinition, RegistryEntry, RegistryFilter } from '@yappc/core/types';
 

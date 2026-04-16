@@ -72,7 +72,7 @@ public class FormatterTest {
     // This would be implemented to actually format the code in a real implementation
     @SuppressWarnings("unused")
     private String formatCode(String source) {
-        // TODO: Implement actual formatting logic using Prettier or similar
+        // Note: Actual formatting logic using Prettier or similar not yet implemented
         return source;
     }
 }

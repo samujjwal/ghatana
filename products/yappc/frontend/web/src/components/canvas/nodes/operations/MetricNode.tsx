@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // MetricNode - Canvas node for metric visualization
 // 

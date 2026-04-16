@@ -133,6 +133,10 @@ PORT=3001
 
 **Java Server**:
 ```env
+AEP_PROFILE=production              # Enables fail-fast production bindings
+AEP_DB_URL=jdbc:postgresql://postgres:5432/aep
+AEP_DB_USER=aep
+AEP_DB_PASSWORD=change-me
 AEP_JWT_SECRET=your-jwt-secret-here  # Required for auth in prod
 AEP_CORS_ORIGINS=http://localhost:3000
 SERVER_PORT=8090
@@ -183,7 +187,9 @@ Authorization: Bearer <jwt-token>
 - `exp`: Expiration timestamp
 - `iat`: Issued at timestamp
 
-**Dev Mode**: If `AEP_JWT_SECRET` is not set, auth is disabled with warning log.
+**Development Mode**: Outside the production profile, missing `AEP_JWT_SECRET` disables HTTP auth with a warning log.
+
+**Production Mode**: `AEP_PROFILE=production` requires `AEP_DB_URL` and `AEP_JWT_SECRET` at startup. Agent identity resolution is backed by the persisted AEP agent-registration tables in PostgreSQL rather than the in-memory fallback.
 
 ---
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Compliance Control Repository
  *
@@ -15,7 +14,6 @@ export interface IComplianceControlRepository {
   findById(id: string): Promise<ComplianceControl | null>;
   findByFramework(framework: ComplianceFramework): Promise<ComplianceControl[]>;
   findByStatus(status: ControlStatus): Promise<ComplianceControl[]>;
-// @ts-nocheck
   findOverdueAssessments(): Promise<ComplianceControl[]>;
   findAll(): Promise<ComplianceControl[]>;
   update(control: ComplianceControl): Promise<void>;

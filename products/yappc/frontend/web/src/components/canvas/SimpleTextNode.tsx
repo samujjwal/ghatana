@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simple Text Node
  * Basic text element for canvas with inline editing

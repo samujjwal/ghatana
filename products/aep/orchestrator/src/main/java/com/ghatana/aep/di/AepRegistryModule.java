@@ -8,12 +8,20 @@ import com.ghatana.aep.config.EnvConfig;
 import com.ghatana.aep.engine.controller.AepAgentRegistryController;
 import com.ghatana.aep.engine.controller.HttpHandlerUtils;
 import com.ghatana.aep.engine.registry.AepCentralRegistryService;
+import com.ghatana.aep.engine.registry.AgentExecutionHistoryStore;
+import com.ghatana.aep.engine.registry.AgentMemoryPlaneClient;
 import com.ghatana.aep.engine.registry.AgentExecutionService;
+import com.ghatana.aep.engine.registry.NoopAgentExecutionHistoryStore;
+import com.ghatana.aep.engine.registry.RunLedgerBackedHistory;
 import com.ghatana.aep.integration.registry.CatalogRegistryContractAdapter;
 import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
 import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.aep.registry.AgentRegistryContracts;
 import com.ghatana.agent.catalog.CatalogRegistry;
+import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
+import com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository;
+import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
+import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
 import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
@@ -21,6 +29,9 @@ import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.util.concurrent.Executor;
 
 /**
  * ActiveJ DI module for AEP registry bindings (v2.5+).
@@ -116,6 +127,56 @@ public class AepRegistryModule extends AbstractModule {
     }
 
     /**
+     * Provides the durable execution history store when database-backed mode is enabled.
+     *
+     * @param dataSource the JDBC data source from the core module; may be {@code null}
+     * @param executor blocking executor used for JDBC offloading
+     * @return database-backed history store when configured, otherwise a no-op store
+     *
+     * @doc.type method
+     * @doc.purpose Provides AgentExecutionHistoryStore with database-backed fallback behavior
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    AgentExecutionHistoryStore agentExecutionHistoryStore(DataSource dataSource, Executor executor) {
+        if (dataSource == null) {
+            log.info("AEP execution history running without database-backed persistence");
+            return new NoopAgentExecutionHistoryStore();
+        }
+        return new RunLedgerBackedHistory(dataSource, executor);
+    }
+
+    /**
+     * Provides the agent memory client backed by the existing memory-plane infrastructure.
+     *
+     * @param dataSource the JDBC data source from the core module; may be {@code null}
+     * @return database-backed memory client when configured, otherwise a no-op client
+     *
+     * @doc.type method
+     * @doc.purpose Provides AgentMemoryPlaneClient backed by the AEP memory plane
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    AgentMemoryPlaneClient agentMemoryPlaneClient(DataSource dataSource) {
+        if (dataSource == null) {
+            log.info("AEP agent memory running without database-backed persistence");
+            return new AgentMemoryPlaneClient.Noop();
+        }
+
+        PersistentMemoryPlane memoryPlane = new PersistentMemoryPlane(
+            new JdbcMemoryItemRepository(dataSource),
+            new com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore(
+                new JdbcTaskStateRepository(dataSource)),
+            WorkingMemoryConfig.builder().build(),
+            null,
+            dataSource);
+
+        return new AgentMemoryPlaneClient(memoryPlane);
+    }
+
+    /**
      * Provides the {@link AgentExecutionService} used by {@link AepAgentRegistryController}.
      *
      * @return default agent execution service
@@ -126,8 +187,12 @@ public class AepRegistryModule extends AbstractModule {
      * @doc.pattern Factory
      */
     @Provides
-    AgentExecutionService agentExecutionService(AgentRegistry agentRegistry, LLMGateway llmGateway) {
-        return new AgentExecutionService(agentRegistry, llmGateway);
+    AgentExecutionService agentExecutionService(
+            AgentRegistry agentRegistry,
+            LLMGateway llmGateway,
+            AgentExecutionHistoryStore historyStore,
+            AgentMemoryPlaneClient memoryClient) {
+        return new AgentExecutionService(agentRegistry, llmGateway, historyStore, memoryClient);
     }
 
     /**

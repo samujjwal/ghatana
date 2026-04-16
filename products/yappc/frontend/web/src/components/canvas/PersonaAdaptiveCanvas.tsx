@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Persona-Adaptive Canvas Component
  *

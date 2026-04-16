@@ -61,6 +61,9 @@ public final class OkHttpAdapter {
         return Promise.ofBlocking(executor, () -> {
             rateLimiter.acquire(); // enforce rate limit
 
+            // Record connection pool metrics
+            recordPoolMetrics();
+
             Request.Builder rb = new Request.Builder()
                 .url(url)
                 .post(RequestBody.create(jsonBody, JSON));
@@ -86,6 +89,17 @@ public final class OkHttpAdapter {
                 return response.body() != null ? response.body().string() : "";
             }
         });
+    }
+
+    /**
+     * Record connection pool metrics for monitoring.
+     */
+    private void recordPoolMetrics() {
+        okhttp3.ConnectionPool pool = client.connectionPool();
+        if (pool != null) {
+            metrics.recordGauge("http.client.pool.total_connections", pool.connectionCount());
+            metrics.recordGauge("http.client.pool.idle_connections", pool.idleConnectionCount());
+        }
     }
 
 

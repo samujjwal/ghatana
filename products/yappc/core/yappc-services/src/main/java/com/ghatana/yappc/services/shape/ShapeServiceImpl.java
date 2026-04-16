@@ -270,11 +270,20 @@ public class ShapeServiceImpl implements ShapeService {
         );
     }
 
+    /**
+     * Extracts C4 diagrams from text.
+     *
+     * <p><b>Note:</b> C4 diagram extraction not yet implemented.
+     * Returns placeholder strings for diagram types.
+     *
+     * @param text the text to extract diagrams from
+     * @return map of diagram type to placeholder content
+     */
     private Map<String, String> extractDiagrams(String text) {
         return Map.of(
-            "context", "C4 Context Diagram placeholder",
-            "container", "C4 Container Diagram placeholder",
-            "component", "C4 Component Diagram placeholder"
+            "context", "C4 Context Diagram - not yet implemented",
+            "container", "C4 Container Diagram - not yet implemented",
+            "component", "C4 Component Diagram - not yet implemented"
         );
     }
 

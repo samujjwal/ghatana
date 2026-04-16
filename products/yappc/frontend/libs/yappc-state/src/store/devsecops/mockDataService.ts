@@ -2,6 +2,8 @@
  * Mock Data Service for DevSecOps
  *
  * Provides realistic test data for development and testing.
+ * This is a legitimate mock service for UI development when the real backend is unavailable.
+ * For production, use the real DevSecOps service implementations.
  *
  * @module state/devsecops/mockDataService
  */

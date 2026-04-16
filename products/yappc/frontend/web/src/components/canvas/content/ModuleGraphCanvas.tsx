@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Module Graph Canvas Content
  * 

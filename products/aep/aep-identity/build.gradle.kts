@@ -16,10 +16,13 @@ dependencies {
     api(project(":platform:java:identity"))
     api(project(":products:aep:aep-engine"))
     api(libs.activej.promise)
+    implementation(project(":platform:java:security"))
     implementation(libs.slf4j.api)
 
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

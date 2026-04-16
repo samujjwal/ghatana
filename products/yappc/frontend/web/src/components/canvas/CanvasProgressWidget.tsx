@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Display project phase progress in canvas view

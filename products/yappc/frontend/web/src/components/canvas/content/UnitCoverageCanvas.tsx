@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unit Coverage Canvas Content
  * 

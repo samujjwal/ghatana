@@ -4,12 +4,17 @@
  * Unified WebSocket service for YAPPC.
  * Handles Canvas Collaboration, Notifications, and Activity Streams.
  *
+ * <p>Redis-backed storage enables horizontal scaling. Canvas room state and
+ * collaborator metadata are persisted in Redis, while WebSocket connections
+ * remain local to each instance for efficient broadcasting.</p>
+ *
  * @doc.type service
- * @doc.purpose Real-time communication
+ * @doc.purpose Real-time communication with Redis-backed state
  * @doc.layer implementation
  */
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { WebSocket } from 'ws';
+import { redisCanvasRoomStore, type CollaboratorInfo as RedisCollaboratorInfo } from './RedisCanvasRoomStore';
 
 // =============================================================================
 // Canvas Types (Legacy + Enhanced)
@@ -63,7 +68,8 @@ export type ServerMessage =
 // =============================================================================
 
 export class RealTimeService {
-  private canvasRooms = new Map<string, CanvasRoom>();
+  // Local WebSocket connections (cannot be serialized to Redis)
+  private canvasConnections = new Map<string, Map<string, WebSocket>>();
   private notificationClients = new Set<WebSocket>();
 
   // Config
@@ -83,6 +89,11 @@ export class RealTimeService {
   ];
 
   constructor() {
+    // Initialize Redis connection
+    redisCanvasRoomStore.connect().catch((err) => {
+      console.error('[RealTimeService] Failed to connect to Redis:', err);
+    });
+
     // Start heartbeat monitoring (every 30s)
     this.heartbeatInterval = setInterval(() => this.checkHeartbeats(), 30000);
     // Start cleanup (every 5m)
@@ -92,11 +103,12 @@ export class RealTimeService {
     );
   }
 
-  public shutdown() {
+  public async shutdown() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.cleanupInterval) clearInterval(this.cleanupInterval);
-    this.canvasRooms.clear();
+    this.canvasConnections.clear();
     this.notificationClients.clear();
+    await redisCanvasRoomStore.disconnect();
   }
 
   /**
@@ -180,7 +192,7 @@ export class RealTimeService {
 
           case 'join':
             userId = message.userId;
-            room = this.joinCanvasRoom(
+            room = await this.joinCanvasRoom(
               projectId,
               message.userId,
               message.userName,
@@ -204,7 +216,7 @@ export class RealTimeService {
             break;
 
           case 'leave':
-            if (userId && room) this.leaveCanvasRoom(room, userId);
+            if (userId && room) await this.leaveCanvasRoom(room, userId);
             break;
 
           case 'cursor-update':
@@ -214,6 +226,12 @@ export class RealTimeService {
               if (user) {
                 user.cursor = { x: message.x, y: message.y };
                 user.lastActive = Date.now();
+                // Sync to Redis
+                await redisCanvasRoomStore.updateCursor(
+                  projectId,
+                  userId,
+                  { x: message.x, y: message.y }
+                );
                 // Broadcast (throttle?)
                 this.broadcastToRoom(
                   room,
@@ -230,6 +248,12 @@ export class RealTimeService {
               if (user) {
                 user.selectedNodeIds = message.nodeIds;
                 user.lastActive = Date.now();
+                // Sync to Redis
+                await redisCanvasRoomStore.updateSelection(
+                  projectId,
+                  userId,
+                  message.nodeIds
+                );
                 this.broadcastToRoom(
                   room,
                   {
@@ -292,36 +316,41 @@ export class RealTimeService {
       }
     });
 
-    ws.on('close', () => {
-      if (userId && room) this.leaveCanvasRoom(room, userId);
+    ws.on('close', async () => {
+      if (userId && room) await this.leaveCanvasRoom(room, userId);
     });
   }
 
-  private joinCanvasRoom(
+  private async joinCanvasRoom(
     projectId: string,
     userId: string,
     name: string,
     email: string,
     ws: WebSocket
-  ): CanvasRoom {
-    let room = this.canvasRooms.get(projectId);
-    if (!room) {
-      room = { projectId, collaborators: new Map(), lastActivity: Date.now() };
-      this.canvasRooms.set(projectId, room);
+  ): Promise<CanvasRoom> {
+    // Get or create local WebSocket connection map for this project
+    if (!this.canvasConnections.has(projectId)) {
+      this.canvasConnections.set(projectId, new Map());
     }
+    const connections = this.canvasConnections.get(projectId)!;
+    connections.set(userId, ws);
 
-    // Pick color
-    const existingColors = Array.from(room.collaborators.values()).map(
-      (c) => c.color
-    );
+    // Get current room state from Redis
+    const roomData = await redisCanvasRoomStore.getRoom(projectId);
+    
+    // Pick color based on existing collaborators
+    const existingColors = roomData
+      ? Object.values(roomData.collaborators).map((c) => c.color)
+      : [];
     const availableColors = this.colorPalette.filter(
       (c) => !existingColors.includes(c)
     );
     const color =
       availableColors[0] ||
-      this.colorPalette[room.collaborators.size % this.colorPalette.length];
+      this.colorPalette[(existingColors.length) % this.colorPalette.length];
 
-    room.collaborators.set(userId, {
+    // Create collaborator info
+    const collaborator: RedisCollaboratorInfo = {
       id: userId,
       name,
       email,
@@ -329,21 +358,51 @@ export class RealTimeService {
       cursor: null,
       selectedNodeIds: [],
       lastActive: Date.now(),
-      ws,
-    });
+    };
 
-    room.lastActivity = Date.now();
+    // Update Redis with new collaborator
+    await redisCanvasRoomStore.addCollaborator(projectId, collaborator);
+
+    // Return in-memory room structure for local operations
+    const room: CanvasRoom = {
+      projectId,
+      collaborators: new Map(),
+      lastActivity: Date.now(),
+    };
+
+    // Populate collaborators from Redis
+    if (roomData) {
+      for (const [id, info] of Object.entries(roomData.collaborators)) {
+        // Add WebSocket connection if user is connected to this instance
+        const userWs = connections.get(id);
+        room.collaborators.set(id, {
+          ...info,
+          ws: userWs || (new WebSocket('') as any), // Placeholder for users on other instances
+        });
+      }
+    }
+    
+    // Add current user with their WebSocket
+    room.collaborators.set(userId, { ...collaborator, ws });
+
     return room;
   }
 
-  private leaveCanvasRoom(room: CanvasRoom, userId: string) {
-    if (room.collaborators.delete(userId)) {
-      this.broadcastToRoom(room, { type: 'user-left', userId });
-      if (room.collaborators.size === 0) {
-        // Keep room for a bit? Or delete immediately?
-        // Cleanup interval handles it.
+  private async leaveCanvasRoom(room: CanvasRoom, userId: string) {
+    // Remove from local connections
+    const connections = this.canvasConnections.get(room.projectId);
+    if (connections) {
+      connections.delete(userId);
+      if (connections.size === 0) {
+        this.canvasConnections.delete(room.projectId);
       }
     }
+
+    // Remove from Redis
+    await redisCanvasRoomStore.removeCollaborator(room.projectId, userId);
+
+    // Broadcast to remaining local connections
+    this.broadcastToRoom(room, { type: 'user-left', userId });
   }
 
   // =========================================================================
@@ -467,12 +526,18 @@ export class RealTimeService {
     // Ping logic...
   }
 
-  private cleanupInactiveRooms() {
+  private async cleanupInactiveRooms() {
+    // Clean up inactive rooms in Redis (older than 1 hour)
+    const deleted = await redisCanvasRoomStore.cleanupInactiveRooms(3600000);
+    if (deleted > 0) {
+      console.info(`[RealTimeService] Cleaned up ${deleted} inactive rooms from Redis`);
+    }
+
+    // Clean up local connection maps for projects with no local connections
     const now = Date.now();
-    for (const [projectId, room] of this.canvasRooms) {
-      if (room.collaborators.size === 0 && now - room.lastActivity > 3600000) {
-        // 1 hour inactive
-        this.canvasRooms.delete(projectId);
+    for (const [projectId, connections] of this.canvasConnections) {
+      if (connections.size === 0) {
+        this.canvasConnections.delete(projectId);
       }
     }
   }

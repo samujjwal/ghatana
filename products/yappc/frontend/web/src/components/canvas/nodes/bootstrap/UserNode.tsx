@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Bootstrap User/Persona Node Component
  *

@@ -97,8 +97,10 @@ public class YappcAgentLogicProvider implements AgentLogicProvider {
     // ═══════════════════════════════════════════════════════════════════════════
 
     private static TypedAgent<?, ?> stubFactory(AgentConfig config) {
-        throw new UnsupportedOperationException(
-                "Stub factory for '" + config.getAgentId()
-                        + "'. Wire real specialist factories via registerFactory().");
+        // Note: This stub factory is used when no specialist factory is registered.
+        // Real specialist factories should be wired via registerFactory() during service initialization.
+        throw new IllegalStateException(
+                "No specialist factory registered for agent '" + config.getAgentId()
+                        + "'. Register a factory via registerFactory() during service initialization.");
     }
 }

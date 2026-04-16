@@ -18,7 +18,7 @@ import java.net.UnknownHostException;
  *
  * <p><b>Key Settings:</b>
  * <ul>
- *   <li>{@code SERVER_PORT} - HTTP server port (default: 8080)
+ *   <li>{@code SERVER_PORT} - HTTP server port (default: 8082)
  *   <li>{@code SERVER_HOST} - Bind address (default: 0.0.0.0)
  *   <li>{@code DB_URL} - PostgreSQL JDBC URL
  *   <li>{@code OPENAI_API_KEY} - OpenAI API key
@@ -63,7 +63,7 @@ public final class RequirementsConfig {
    * Create configuration from environment and system properties.
    */
   public RequirementsConfig() {
-    this.serverPort = getIntConfig("SERVER_PORT", 8080);
+    this.serverPort = getIntConfig("SERVER_PORT", 8082);
     this.serverHost = getStringConfig("SERVER_HOST", "0.0.0.0");
     this.serverAddress = resolveAddress(serverHost);
 

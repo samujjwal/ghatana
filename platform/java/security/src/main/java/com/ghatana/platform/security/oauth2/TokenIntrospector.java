@@ -61,22 +61,15 @@ public class TokenIntrospector {
     public Promise<User> introspect(String token) {
         return Promise.ofBlocking(executorService, () -> {
             try {
-                // First try to parse as JWT
-                JWT jwt = JWTParser.parse(token);
+                if (isJwt(token)) {
+                    JWT jwt = JWTParser.parse(token);
 
-                if (jwt instanceof SignedJWT) {
-                    SignedJWT signedJwt = (SignedJWT) jwt;
-
-                    // Create user from JWT claims
-                    Map<String, Object> claims = signedJwt.getJWTClaimsSet().getClaims();
-                    return User.builder()
-                        .userId((String) claims.get("sub"))
-                        .email((String) claims.get("email"))
-                        .username((String) claims.get("name"))
-                        .build();
+                    if (jwt instanceof SignedJWT signedJwt) {
+                        return createUserFromJwt(signedJwt);
+                    }
                 }
 
-                // If not a JWT, try OAuth2 introspection
+                // Opaque access tokens must fall back to RFC 7662 introspection.
                 TokenIntrospectionRequest introspectionRequest =
                     new TokenIntrospectionRequest(
                         config.getTokenEndpoint(),

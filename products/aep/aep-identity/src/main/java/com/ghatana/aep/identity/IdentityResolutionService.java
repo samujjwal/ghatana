@@ -13,6 +13,7 @@ import io.activej.promise.Promise;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -43,7 +44,7 @@ public final class IdentityResolutionService {
      * @param identityService the platform identity service to delegate to
      */
     public IdentityResolutionService(IdentityService identityService) {
-        this.identityService = identityService;
+        this.identityService = Objects.requireNonNull(identityService, "identityService");
     }
 
     /**
@@ -54,16 +55,31 @@ public final class IdentityResolutionService {
      * @return a new, fully-initialised service
      */
     public static IdentityResolutionService withResolvers(List<IdentityResolver> resolvers) {
+        return new IdentityResolutionService(identityServiceWithResolvers(resolvers));
+    }
+
+    /**
+     * Build a platform {@link IdentityService} backed by the supplied resolvers.
+     *
+     * <p>The first resolver that returns a value wins. This keeps the product-level
+     * resolver ordering explicit so AEP can prefer local or federated identity
+     * sources without introducing a second identity-service abstraction.
+     *
+     * @param resolvers ordered list of resolvers to consult
+     * @return identity service backed by the ordered resolver chain
+     */
+    public static IdentityService identityServiceWithResolvers(List<IdentityResolver> resolvers) {
         if (resolvers == null || resolvers.isEmpty()) {
             throw new IllegalArgumentException("At least one IdentityResolver is required");
         }
         if (resolvers.size() == 1) {
-            return new IdentityResolutionService(new DefaultIdentityService(resolvers.get(0)));
+            return new DefaultIdentityService(resolvers.get(0));
         }
-        // Composite: try each resolver in order, return the first non-empty result.
-        IdentityResolver composite = (tenantId, agentId) ->
-            chainResolvers(resolvers, 0, tenantId, agentId);
-        return new IdentityResolutionService(new DefaultIdentityService(composite));
+        return new DefaultIdentityService(compositeResolver(resolvers));
+    }
+
+    private static IdentityResolver compositeResolver(List<IdentityResolver> resolvers) {
+        return (tenantId, agentId) -> chainResolvers(resolvers, 0, tenantId, agentId);
     }
 
     private static Promise<Optional<AgentIdentity>> chainResolvers(

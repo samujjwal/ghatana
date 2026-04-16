@@ -13,36 +13,19 @@ import org.apache.logging.log4j.Logger;
  * thread-local storage.
  *
  * This filter should run AFTER authentication filters (like JwtAuthFilter) so
- * the tenant context
+ * the tenant context is already attached to the request.
  *
- * is already attached to the request.
- *
- *
- *
- * <p>
- * Tenant ID extraction priority:
- *
+ * <p>Tenant ID extraction priority:
  * 1. Already attached TenantContext (from JWT or other auth filter) - preferred
- *
  * 2. X-Tenant-ID header - fallback for requests without JWT
  *
- *
- *
- * <p>
- * If no tenant ID is found, a default tenant is used (typically
- * "default-tenant").
- *
- *
+ * <p>If no tenant ID is found, the request is rejected with a 400 error.
+ * This ensures proper tenant isolation and prevents cross-tenant data access.
  *
  * @doc.type class
- *
- * @doc.purpose Apply tenant context concerns before requests reach the REST
- * controllers.
- *
+ * @doc.purpose Apply tenant context concerns before requests reach the REST controllers.
  * @doc.layer product
- *
  * @doc.pattern Filter
- *
  */
 public final class TenantContextFilter implements AsyncServlet {
 
@@ -65,19 +48,21 @@ public final class TenantContextFilter implements AsyncServlet {
             // Extract tenant ID with priority: attached context > X-Tenant-ID header
             Optional<String> tenantId = extractTenantId(request);
 
-            tenantId.ifPresentOrElse(
-                    tid -> {
-                        logger.debug("Extracted tenant ID: {}", tid);
-                        com.ghatana.platform.governance.security.TenantContext.setCurrentTenantId(tid);
-                    },
-                    () -> {
-                        logger.debug("No tenant ID found in request, using default");
-                        com.ghatana.platform.governance.security.TenantContext.setCurrentTenantId("default-tenant");
-                    }
-            );
+            if (tenantId.isPresent()) {
+                logger.debug("Extracted tenant ID: {}", tenantId.get());
+                com.ghatana.platform.governance.security.TenantContext.setCurrentTenantId(tenantId.get());
+            } else {
+                // No tenant ID found - reject request
+                logger.error("No tenant ID found in request - rejecting");
+                com.ghatana.platform.governance.security.TenantContext.clear();
+                return Promise.of(HttpResponse.ofCode(400)
+                        .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withJson("{\"error\":\"MISSING_TENANT_ID\",\"message\":\"X-Tenant-ID header or authenticated tenant context is required\"}")
+                        .build());
+            }
 
             // Serve request and ensure cleanup on completion
-        return next.serve(request)
+            return next.serve(request)
                     .whenComplete((response, exception) -> com.ghatana.platform.governance.security.TenantContext.clear());
 
         } catch (Exception e) {

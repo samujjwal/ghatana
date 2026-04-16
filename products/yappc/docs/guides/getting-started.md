@@ -43,14 +43,14 @@ This tutorial walks you through creating a new project and reaching the SHAPE ph
 
 ### Prerequisites
 
-- Access to a YAPPC instance (local: `http://localhost:8080`)
+- Access to a YAPPC instance (local: `http://localhost:8082`)
 - An API key (ask your admin) or a valid user account
 
 ### Step 1 — Authenticate
 
 ```bash
 # Request a token
-curl -s -X POST http://localhost:8080/api/auth/login \
+curl -s -X POST http://localhost:8082/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"yourpassword"}' \
   | jq .token
@@ -67,7 +67,7 @@ export YAPPC_TOKEN="<token from above>"
 Describe your product idea in plain language. YAPPC accepts free-form text and uses AI to enrich it.
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/yappc/intent/capture \
+curl -s -X POST http://localhost:8082/api/v1/yappc/intent/capture \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -84,7 +84,7 @@ A **Suggestion Panel** will also appear in the frontend UI with AI recommendatio
 Send the captured intent through the LLM pipeline for decomposition:
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/yappc/intent/analyze \
+curl -s -X POST http://localhost:8082/api/v1/yappc/intent/analyze \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"intentId": "<id from previous response>"}' \
@@ -99,7 +99,7 @@ Before advancing, YAPPC runs three gate checks:
 3. **Required artefacts** for INTENT are present
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/lifecycle/advance \
+curl -s -X POST http://localhost:8082/api/v1/lifecycle/advance \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -118,7 +118,7 @@ If a blocker exists the response is HTTP 409 with a `blockers` array explaining 
 ### Step 5 — Derive System Shape
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/yappc/shape/derive \
+curl -s -X POST http://localhost:8082/api/v1/yappc/shape/derive \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"intentId": "<intent-id>"}' \
@@ -136,7 +136,7 @@ The `SuggestionPanel` (accessible in the YAPPC frontend `ui/core/SuggestionPanel
 ### Triggering Suggestions via the API
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/projects/my-first-project/suggestions \
+curl -s -X POST http://localhost:8082/api/v1/projects/my-first-project/suggestions \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -162,7 +162,7 @@ curl -s -X POST http://localhost:8080/api/v1/projects/my-first-project/suggestio
 
 ```bash
 curl -s -X DELETE \
-  http://localhost:8080/api/v1/projects/my-first-project/suggestions/<suggestion-id> \
+  http://localhost:8082/api/v1/projects/my-first-project/suggestions/<suggestion-id> \
   -H "Authorization: Bearer $YAPPC_TOKEN"
 ```
 
@@ -177,7 +177,7 @@ Certain phase transitions require explicit approval from a designated reviewer (
 The lifecycle service submits approval requests automatically when a gate requires human signoff. The request appears in the approver's queue:
 
 ```bash
-curl -s http://localhost:8080/api/v1/approvals/pending \
+curl -s http://localhost:8082/api/v1/approvals/pending \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "X-Tenant-Id: my-tenant" \
   | jq .
@@ -186,7 +186,7 @@ curl -s http://localhost:8080/api/v1/approvals/pending \
 ### Approve a Request
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/approvals/<approval-id>/approve \
+curl -s -X POST http://localhost:8082/api/v1/approvals/<approval-id>/approve \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "X-Tenant-Id: my-tenant" \
   -H "Content-Type: application/json" \
@@ -197,7 +197,7 @@ curl -s -X POST http://localhost:8080/api/v1/approvals/<approval-id>/approve \
 ### Reject a Request
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/approvals/<approval-id>/reject \
+curl -s -X POST http://localhost:8082/api/v1/approvals/<approval-id>/reject \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "X-Tenant-Id: my-tenant" \
   -H "Content-Type: application/json" \
@@ -213,7 +213,7 @@ You can call the gate validator independently without attempting a phase advance
 
 ```bash
 # Example: check whether VALIDATE → GENERATE gate is open
-curl -s -X POST http://localhost:8080/api/v1/lifecycle/advance \
+curl -s -X POST http://localhost:8082/api/v1/lifecycle/advance \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -237,7 +237,7 @@ YAPPC ships several durable workflow templates for common coordination patterns.
 ### List Available Templates
 
 ```bash
-curl -s http://localhost:8080/api/v1/workflows/templates \
+curl -s http://localhost:8082/api/v1/workflows/templates \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   | jq .
 ```
@@ -245,7 +245,7 @@ curl -s http://localhost:8080/api/v1/workflows/templates \
 ### Start a Workflow
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/workflows/lifecycle-advance/start \
+curl -s -X POST http://localhost:8082/api/v1/workflows/lifecycle-advance/start \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   -H "X-Tenant-Id: my-tenant" \
   -H "Content-Type: application/json" \
@@ -258,7 +258,7 @@ curl -s -X POST http://localhost:8080/api/v1/workflows/lifecycle-advance/start \
 ### Poll for Completion
 
 ```bash
-curl -s http://localhost:8080/api/v1/workflows/<run-id>/status \
+curl -s http://localhost:8082/api/v1/workflows/<run-id>/status \
   -H "Authorization: Bearer $YAPPC_TOKEN" \
   | jq '{status, completedAt, error}'
 ```

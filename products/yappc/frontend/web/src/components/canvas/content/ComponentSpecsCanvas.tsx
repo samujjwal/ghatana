@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Component Specs Canvas Content
  * 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { WorkspacePanelConfig } from './types';
 import { PanelDock } from './PanelDock';

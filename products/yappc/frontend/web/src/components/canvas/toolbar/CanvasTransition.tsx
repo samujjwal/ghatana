@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Transition Component
  * 

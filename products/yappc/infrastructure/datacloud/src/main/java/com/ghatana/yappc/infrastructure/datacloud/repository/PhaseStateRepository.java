@@ -149,26 +149,6 @@ public class PhaseStateRepository {
   }
 
   /**
-   * Finds phases that entered within a time range.
-   *
-   * @param start start time
-   * @param end end time
-   * @return phases entered in range
-   */
-  @NotNull
-  public Promise<List<PhaseStateEntity>> findByEntryTimeRange(
-      @NotNull java.time.Instant start,
-      @NotNull java.time.Instant end) {
-    Map<String, Object> filter = Map.of(
-        "enteredAt", Map.of(
-            "$gte", start.toString(),
-            "$lte", end.toString()
-        )
-    );
-    return delegate.findByFilter(filter, "enteredAt DESC", 1000, 0);
-  }
-
-  /**
    * Gets the current phase for a project.
    *
    * @param projectId project identifier

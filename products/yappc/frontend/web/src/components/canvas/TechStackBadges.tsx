@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Display tech stack badges with categories

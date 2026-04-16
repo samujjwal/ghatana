@@ -19,7 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link NaiveForecastingEngine}, {@link LinearTrendForecastingEngine},
- * and {@link StatisticalForecastingEngine}.
+ * {@link StatisticalForecastingEngine}, {@link OnlineRegressionForecastingEngine},
+ * and {@link AdaptiveForecastingEngine}.
  *
  * @doc.type test
  * @doc.purpose Verify forecasting strategy implementations
@@ -319,6 +320,101 @@ class ForecastingEngineTest extends EventloopTestBase {
             assertThatThrownBy(() -> new StatisticalForecastingEngine(0.3, 1.0, 5, 3600L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("beta");
+        }
+    }
+
+    @Nested
+    @DisplayName("AdaptiveForecastingEngine")
+    class AdaptiveTests {
+
+        private final AdaptiveForecastingEngine engine = new AdaptiveForecastingEngine(
+            new NaiveForecastingEngine(3, 3600L),
+            new LinearTrendForecastingEngine(3, 3600L),
+            new StatisticalForecastingEngine(0.3, 0.1, 3, 3600L, Executors.newSingleThreadExecutor()),
+            new OnlineRegressionForecastingEngine(3, 3600L, 200, 0.05, Runnable::run),
+            2
+        );
+
+        @Test
+        @DisplayName("selects a non-naive model for a stable linear trend")
+        void selectsBestModelForTrend() {
+            List<AepEngine.DataPoint> pts = List.of(
+                new AepEngine.DataPoint(T0, 10.0),
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0),
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0),
+                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0),
+                new AepEngine.DataPoint(T0.plusSeconds(14400), 50.0),
+                new AepEngine.DataPoint(T0.plusSeconds(18000), 60.0)
+            );
+            AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", new AepEngine.TimeSeriesData("m", pts)));
+
+            assertThat(result.metadata()).containsEntry("algorithm", "adaptive");
+            assertThat(result.metadata()).containsKey("selectedAlgorithm");
+            assertThat(result.metadata()).containsKey("candidateRmse");
+            assertThat(result.metadata().get("selectedAlgorithm")).isNotEqualTo("naive");
+        }
+
+        @Test
+        @DisplayName("falls back to linear selection when history is too short")
+        void shortHistoryFallsBack() {
+            List<AepEngine.DataPoint> pts = List.of(
+                new AepEngine.DataPoint(T0, 10.0),
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 12.0),
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 14.0)
+            );
+            AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", new AepEngine.TimeSeriesData("m", pts)));
+
+            assertThat(result.metadata()).containsEntry("algorithm", "adaptive");
+            assertThat(result.metadata()).containsEntry("selectedAlgorithm", "insufficient-history");
+        }
+    }
+
+    @Nested
+    @DisplayName("OnlineRegressionForecastingEngine")
+    class OnlineRegressionTests {
+
+        private final OnlineRegressionForecastingEngine engine = new OnlineRegressionForecastingEngine(
+            3,
+            3600L,
+            200,
+            0.05,
+            Runnable::run
+        );
+
+        @Test
+        @DisplayName("learns an upward trend from historical series")
+        void learnsUpwardTrend() {
+            List<AepEngine.DataPoint> pts = List.of(
+                new AepEngine.DataPoint(T0, 15.0),
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 25.0),
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 35.0),
+                new AepEngine.DataPoint(T0.plusSeconds(10800), 45.0),
+                new AepEngine.DataPoint(T0.plusSeconds(14400), 55.0)
+            );
+
+            AepEngine.Forecast result = runPromise(() -> engine.forecast("tenant-a", new AepEngine.TimeSeriesData("m", pts)));
+
+            assertThat(result.metadata()).containsEntry("algorithm", "online-regression");
+            assertThat(result.metadata()).containsEntry("warmStarted", false);
+            assertThat((Double) result.metadata().get("slope")).isPositive();
+            assertThat(result.predictions()).hasSize(3);
+            assertThat(result.predictions().get(2).value()).isGreaterThan(result.predictions().get(0).value());
+        }
+
+        @Test
+        @DisplayName("reuses learned state for the same tenant and metric")
+        void reusesWarmState() {
+            List<AepEngine.DataPoint> pts = List.of(
+                new AepEngine.DataPoint(T0, 10.0),
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0),
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0),
+                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0)
+            );
+
+            runPromise(() -> engine.forecast("tenant-a", new AepEngine.TimeSeriesData("throughput", pts)));
+            AepEngine.Forecast second = runPromise(() -> engine.forecast("tenant-a", new AepEngine.TimeSeriesData("throughput", pts)));
+
+            assertThat(second.metadata()).containsEntry("warmStarted", true);
         }
     }
 }

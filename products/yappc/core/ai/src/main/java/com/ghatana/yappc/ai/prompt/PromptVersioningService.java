@@ -4,8 +4,8 @@
  */
 package com.ghatana.yappc.ai.prompt;
 
-import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -14,10 +14,9 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,12 +58,11 @@ import java.util.UUID;
 public final class PromptVersioningService {
 
     private static final Logger log = LoggerFactory.getLogger(PromptVersioningService.class);
-    private static final String COLLECTION = "prompt-versions";
 
-    private final DataCloudClient client;
+    private final YappcDataCloudRepository<PromptVersion> repository;
 
-    public PromptVersioningService(@NotNull DataCloudClient client) {
-        this.client = Objects.requireNonNull(client, "DataCloudClient must not be null");
+    public PromptVersioningService(@NotNull YappcDataCloudRepository<PromptVersion> repository) {
+        this.repository = Objects.requireNonNull(repository, "YappcDataCloudRepository must not be null");
     }
 
     // ── Write operations ─────────────────────────────────────────────────────
@@ -83,37 +81,36 @@ public final class PromptVersioningService {
      */
     public Promise<UUID> saveVersion(String promptName, String content,
                                      String description, String author) {
-        String tenantId    = resolveTenantId();
         String contentHash = sha256(content);
 
         // Deduplicate: if same content already exists, return existing versionId
-        return findByHash(tenantId, promptName, contentHash)
+        return findByHash(promptName, contentHash)
                 .then(existing -> {
                     if (existing.isPresent()) {
                         log.debug("Prompt version already exists (no-op): name={} hash={}",
                                 promptName, contentHash);
-                        return Promise.of(UUID.fromString(
-                                existing.get().get("versionId").toString()));
+                        return Promise.of(existing.get().versionId());
                     }
 
                     // Mark prior active version as inactive
-                    return deactivateCurrent(tenantId, promptName)
+                    return deactivateCurrent(promptName)
                             .then(ignored -> {
                                 UUID versionId = UUID.randomUUID();
-                                String now     = Instant.now().toString();
+                                Instant now = Instant.now();
 
-                                Map<String, Object> doc = new HashMap<>();
-                                doc.put("versionId",   versionId.toString());
-                                doc.put("promptName",  promptName);
-                                doc.put("content",     content);
-                                doc.put("contentHash", contentHash);
-                                doc.put("description", description != null ? description : "");
-                                doc.put("author",      author != null ? author : "system");
-                                doc.put("active",      true);
-                                doc.put("createdAt",   now);
+                                PromptVersion promptVersion = new PromptVersion(
+                                        versionId,
+                                        promptName,
+                                        content,
+                                        contentHash,
+                                        description != null ? description : "",
+                                        author != null ? author : "system",
+                                        true,
+                                        now
+                                );
 
-                                return client.save(tenantId, COLLECTION, doc)
-                                        .map(ignored2 -> {
+                                return repository.save(promptVersion)
+                                        .map(saved -> {
                                             log.info("Saved prompt version: name={} versionId={} hash={}",
                                                     promptName, versionId, contentHash);
                                             return versionId;
@@ -127,26 +124,18 @@ public final class PromptVersioningService {
     /**
      * Returns the currently active prompt version for the given prompt name.
      */
-    public Promise<Optional<Map<String, Object>>> findActive(String promptName) {
-        String tenantId = resolveTenantId();
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("promptName", promptName))
-                .filter(DataCloudClient.Filter.eq("active", true))
-                .limit(1)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .map(entities -> entities.isEmpty()
-                        ? Optional.empty()
-                        : Optional.of(entities.get(0).data()));
+    public Promise<Optional<PromptVersion>> findActive(String promptName) {
+        return repository.findByField("promptName", promptName)
+                .map(versions -> versions.stream()
+                        .filter(PromptVersion::active)
+                        .findFirst());
     }
 
     /**
      * Returns a specific prompt version by its UUID.
      */
-    public Promise<Optional<Map<String, Object>>> findById(@NotNull UUID versionId) {
-        String tenantId = resolveTenantId();
-        return client.findById(tenantId, COLLECTION, versionId.toString())
-                .map(opt -> opt.map(DataCloudClient.Entity::data));
+    public Promise<Optional<PromptVersion>> findById(@NotNull UUID versionId) {
+        return repository.findById(versionId);
     }
 
     /**
@@ -154,15 +143,10 @@ public final class PromptVersioningService {
      *
      * @param limit maximum number of versions to return
      */
-    public Promise<List<Map<String, Object>>> listVersions(String promptName, int limit) {
-        String tenantId = resolveTenantId();
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("promptName", promptName))
-                .limit(limit)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .map(entities -> entities.stream()
-                        .map(DataCloudClient.Entity::data)
+    public Promise<List<PromptVersion>> listVersions(String promptName, int limit) {
+        return repository.findByField("promptName", promptName)
+                .map(versions -> versions.stream()
+                        .limit(limit)
                         .collect(java.util.stream.Collectors.toList()));
     }
 
@@ -170,19 +154,26 @@ public final class PromptVersioningService {
      * Activates a specific version by ID, deactivating the current active version.
      */
     public Promise<Void> activate(@NotNull UUID versionId) {
-        String tenantId = resolveTenantId();
-        return client.findById(tenantId, COLLECTION, versionId.toString())
+        return repository.findById(versionId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(
                                 new IllegalArgumentException("Version not found: " + versionId));
                     }
-                    String promptName = opt.get().data().get("promptName").toString();
-                    return deactivateCurrent(tenantId, promptName)
+                    PromptVersion promptVersion = opt.get();
+                    return deactivateCurrent(promptVersion.promptName())
                             .then(ignored -> {
-                                Map<String, Object> updated = new HashMap<>(opt.get().data());
-                                updated.put("active", true);
-                                return client.save(tenantId, COLLECTION, updated).toVoid();
+                                PromptVersion updated = new PromptVersion(
+                                        promptVersion.versionId(),
+                                        promptVersion.promptName(),
+                                        promptVersion.content(),
+                                        promptVersion.contentHash(),
+                                        promptVersion.description(),
+                                        promptVersion.author(),
+                                        true,
+                                        promptVersion.createdAt()
+                                );
+                                return repository.save(updated).toVoid();
                             });
                 })
                 .whenResult(() -> log.info("Activated prompt version: {}", versionId));
@@ -190,33 +181,34 @@ public final class PromptVersioningService {
 
     // ── Internal helpers ─────────────────────────────────────────────────────
 
-    private Promise<Optional<Map<String, Object>>> findByHash(String tenantId,
-                                                               String promptName,
-                                                               String hash) {
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("promptName", promptName))
-                .filter(DataCloudClient.Filter.eq("contentHash", hash))
-                .limit(1)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .map(entities -> entities.isEmpty()
-                        ? Optional.empty()
-                        : Optional.of(entities.get(0).data()));
+    private Promise<Optional<PromptVersion>> findByHash(String promptName, String hash) {
+        return repository.findByField("promptName", promptName)
+                .map(versions -> versions.stream()
+                        .filter(v -> v.contentHash().equals(hash))
+                        .findFirst());
     }
 
-    private Promise<Void> deactivateCurrent(String tenantId, String promptName) {
-        DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("promptName", promptName))
-                .filter(DataCloudClient.Filter.eq("active", true))
-                .limit(1)
-                .build();
-        return client.query(tenantId, COLLECTION, query)
-                .then(entities -> {
-                    if (entities.isEmpty()) return Promise.complete();
-                    DataCloudClient.Entity current = entities.get(0);
-                    Map<String, Object> updated = new HashMap<>(current.data());
-                    updated.put("active", false);
-                    return client.save(tenantId, COLLECTION, updated).toVoid();
+    private Promise<Void> deactivateCurrent(String promptName) {
+        return repository.findByField("promptName", promptName)
+                .then(versions -> {
+                    Optional<PromptVersion> active = versions.stream()
+                            .filter(PromptVersion::active)
+                            .findFirst();
+                    if (active.isEmpty()) {
+                        return Promise.complete();
+                    }
+                    PromptVersion current = active.get();
+                    PromptVersion deactivated = new PromptVersion(
+                            current.versionId(),
+                            current.promptName(),
+                            current.content(),
+                            current.contentHash(),
+                            current.description(),
+                            current.author(),
+                            false,
+                            current.createdAt()
+                    );
+                    return repository.save(deactivated).toVoid();
                 });
     }
 
@@ -228,14 +220,5 @@ public final class PromptVersioningService {
         } catch (Exception e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
-    }
-
-    private static String resolveTenantId() {
-        String tenantId = TenantContext.getCurrentTenantId();
-        if (tenantId == null || tenantId.isBlank() || "default-tenant".equals(tenantId)) {
-            throw new SecurityException(
-                    "PromptVersioningService requires an active tenant context.");
-        }
-        return tenantId;
     }
 }

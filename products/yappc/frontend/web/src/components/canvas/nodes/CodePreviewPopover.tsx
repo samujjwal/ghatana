@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Code Preview Popover Component
  * 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Bootstrap Service Node Component
  *

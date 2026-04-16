@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Traceability Panel Component
  *

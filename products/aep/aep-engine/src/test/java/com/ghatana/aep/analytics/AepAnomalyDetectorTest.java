@@ -79,6 +79,13 @@ class AepAnomalyDetectorTest {
     }
 
     @Test
+    @DisplayName("Low relative deviation does not trigger anomaly in low-variance series")
+    void lowRelativeDeviationReturnsNull() {
+        List<Double> history = List.of(10.0, 10.1, 9.9, 10.0, 10.2, 9.8, 10.1, 10.0, 9.9, 10.3);
+        assertThat(detector.evaluate("low-relative-delta", history, 9.9)).isNull();
+    }
+
+    @Test
     @DisplayName("detectedAnomalies accumulates across multiple evaluations")
     void detectedAnomaliesAccumulate() {
         List<Double> history = List.of(10.0, 10.2, 9.8, 10.1, 10.0);
@@ -100,5 +107,12 @@ class AepAnomalyDetectorTest {
     void builderRejectsWindowSizeLessThan2() {
         assertThatThrownBy(() -> AepAnomalyDetector.builder().rollingWindowSize(1))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Builder rejects minRelativeDeviation outside [0,1]")
+    void builderRejectsInvalidRelativeDeviation() {
+        assertThatThrownBy(() -> AepAnomalyDetector.builder().minRelativeDeviation(1.5))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 }

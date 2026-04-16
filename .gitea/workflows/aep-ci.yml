@@ -94,6 +94,22 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: "true"
         continue-on-error: false
 
+      - name: Run server verification tests
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: |
+          ./gradlew :products:aep:server:test \
+            --no-daemon \
+            --info \
+            --tests com.ghatana.aep.server.grpc.AepGrpcServerTest \
+            --tests com.ghatana.aep.server.http.AepHttpServerObservabilityTest \
+            --tests com.ghatana.aep.server.http.AepHttpServerSessionIntegrationTest \
+            --tests com.ghatana.aep.server.http.controllers.HealthControllerTest \
+            --tests com.ghatana.aep.server.dr.AepDisasterRecoveryServiceTest \
+            --tests com.ghatana.aep.server.integration.IntegrationTestSuite
+
       - name: Run integration tests (if present)
         env:
           DOCKER_HOST: tcp://docker:2376
@@ -103,6 +119,38 @@ jobs:
           ./gradlew :products:aep:launcher:integrationTest \
             --no-daemon \
             --info || echo "No integration tests configured, skipping."
+
+      - name: Generate AEP coverage reports
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: |
+          ./gradlew \
+            :products:aep:server:test \
+            :products:aep:server:jacocoTestReport \
+            :products:aep:aep-security:test \
+            :products:aep:aep-security:jacocoTestReport \
+            :products:aep:aep-scaling:test \
+            :products:aep:aep-scaling:jacocoTestReport \
+            :products:aep:aep-identity:test \
+            :products:aep:aep-identity:jacocoTestReport \
+            :products:aep:aep-compliance:test \
+            :products:aep:aep-compliance:jacocoTestReport \
+            :products:aep:aep-event-cloud:test \
+            :products:aep:aep-event-cloud:jacocoTestReport \
+            :products:aep:aep-api:test \
+            :products:aep:aep-api:jacocoTestReport \
+            --no-daemon \
+            --info
+
+      - name: Publish coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aep-jacoco-coverage
+          path: products/aep/**/build/reports/jacoco/test/
+          retention-days: 7
 
       - name: Publish test results
         uses: actions/upload-artifact@v4
@@ -237,7 +285,7 @@ jobs:
             type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image (multi-arch: amd64 + arm64)
+      - name: 'Build and push Docker image (multi-arch: amd64 + arm64)'
         uses: docker/build-push-action@v6
         with:
           context: .

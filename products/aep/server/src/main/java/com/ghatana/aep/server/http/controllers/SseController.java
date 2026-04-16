@@ -35,6 +35,7 @@ public class SseController {
     private final Map<String, List<ChannelBuffer<ByteBuf>>> sseSubscribers = new java.util.HashMap<>();
     @Nullable
     private Eventloop eventloop;
+    private volatile boolean shutdown = false;
 
     /**
      * Initializes the SSE controller with the event loop reference and starts the heartbeat.
@@ -147,8 +148,9 @@ public class SseController {
     }
 
     private void scheduleHeartbeat() {
-        if (eventloop == null) return;
+        if (eventloop == null || shutdown) return;
         eventloop.delay(30_000L, () -> {
+            if (shutdown) return;
             byte[] heartbeat = ("event: heartbeat\ndata: {\"ts\":\"" + Instant.now() + "\"}\n\n")
                 .getBytes(StandardCharsets.UTF_8);
             sseSubscribers.forEach((tenant, queues) -> {
@@ -170,5 +172,12 @@ public class SseController {
             });
             scheduleHeartbeat();
         });
+    }
+
+    /**
+     * Shuts down the SSE controller, stopping heartbeat scheduling.
+     */
+    public void shutdown() {
+        shutdown = true;
     }
 }

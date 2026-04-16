@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Abstraction level navigator with breadcrumbs and controls

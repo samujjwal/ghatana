@@ -190,6 +190,36 @@ class AepRemediationTest extends EventloopTestBase {
 
             assertThat(anomalies).isEmpty();
         }
+
+        @Test
+        @DisplayName("detectAnomalies() uses model-backed scoring for numeric series without explicit score")
+        void shouldUseModelBackedScoringForNumericSeries() {
+            engine = Aep.forTesting();
+
+            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies(
+                TENANT_ID,
+                List.of(
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.2), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.8), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.3), Map.of(), Instant.now()),
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 75.0), Map.of(), Instant.now())
+                )
+            ));
+
+            assertThat(anomalies).hasSize(1);
+            assertThat(anomalies.get(0).anomalyType()).isEqualTo("MODEL_DETECTED");
+            assertThat(anomalies.get(0).score()).isGreaterThan(3.0);
+            assertThat(anomalies.get(0).details())
+                .containsEntry("event_type", "sensor.cpu")
+                .containsEntry("detector", "z-score");
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

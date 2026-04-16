@@ -19,9 +19,10 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { NavLink, type NavLinkRenderProps } from 'react-router';
+import { NavLink, type NavLinkRenderProps, useNavigate } from 'react-router';
 import { TenantSelector } from './TenantSelector';
 import { SseStatus } from './SseStatus';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavItem {
   label: string;
@@ -134,6 +135,9 @@ function navLinkClass({ isActive }: NavLinkRenderProps) {
  * Sidebar navigation containing outcome-grouped AEP route links, tenant selector, and SSE indicator.
  */
 export function NavBar() {
+  const navigate = useNavigate();
+  const { isAuthenticated, isBootstrappingSession, sessionToken, logout } = useAuth();
+
   return (
     <nav
       aria-label="AEP navigation"
@@ -176,6 +180,32 @@ export function NavBar() {
 
       {/* Bottom section: tenant selector + SSE indicator */}
       <div className="mt-auto flex flex-col gap-1 pb-2 pt-4">
+        <div className="mx-3 mb-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+            Access
+          </p>
+          <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+            {isAuthenticated
+              ? sessionToken
+                ? 'Session active'
+                : isBootstrappingSession
+                  ? 'Starting session…'
+                  : 'Token only'
+              : 'Signed out'}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (isAuthenticated) {
+                logout();
+              }
+              navigate('/login', { replace: !isAuthenticated });
+            }}
+            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-950 dark:hover:bg-white"
+          >
+            {isAuthenticated ? 'Sign out' : 'Sign in'}
+          </button>
+        </div>
         <TenantSelector />
         <SseStatus />
       </div>

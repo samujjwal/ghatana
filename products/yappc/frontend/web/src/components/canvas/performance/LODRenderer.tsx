@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useMemo } from 'react';
 
 import type { CanvasElement } from '../../../components/canvas/workspace/canvasAtoms';

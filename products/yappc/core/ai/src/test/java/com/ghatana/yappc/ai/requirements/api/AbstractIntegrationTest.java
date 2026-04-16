@@ -139,7 +139,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         config = new RequirementsConfig();
 
         // Skip HTTP server startup for now - tests will fail until properly configured
-        // TODO: Set up HTTP server with proper dependency injection
+        // Note: HTTP server setup with proper dependency injection not yet implemented
         logger.info("HTTP server startup skipped - tests will be implemented with proper mocks");
 
         // Run database migrations

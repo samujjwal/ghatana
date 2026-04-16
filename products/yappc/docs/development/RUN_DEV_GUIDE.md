@@ -108,7 +108,7 @@ JAVA_BACKEND_PORT=7003   # YAPPC Java Backend
 
 **No longer used**:
 
-- 8080 (AEP API - now internal)
+- 8082 (AEP API - now internal)
 - 8086 (separate launcher - now internal)
 - 50051 (Canvas AI - not in dev scope)
 - 7001 (AEP UI - not needed)

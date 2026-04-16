@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Observe Mode Renderer
  * 

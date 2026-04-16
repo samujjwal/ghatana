@@ -24,13 +24,16 @@
  * ```
  */
 
+import { createElement, type ComponentProps } from "react";
 import { StageNode } from "../components/pipeline/nodes/StageNode.js";
 import { ConnectorNode } from "../components/pipeline/nodes/ConnectorNode.js";
 import type {
   CanvasPlugin,
   PluginManifest,
+  PluginContext,
   NodeTypeDefinition,
-} from "@ghatana/canvas";
+  NodeComponentProps,
+} from "@ghatana/canvas/plugins";
 
 // ---------------------------------------------------------------------------
 // Manifest
@@ -56,7 +59,13 @@ const nodeTypes: readonly NodeTypeDefinition[] = [
     type: "stage",
     label: "Pipeline Stage",
     category: "Pipeline",
-    component: StageNode,
+    component: function StagePluginNode(props: NodeComponentProps) {
+      // The platform plugin contract exposes a smaller prop surface than ReactFlow.
+      return createElement(
+        StageNode,
+        props as unknown as ComponentProps<typeof StageNode>,
+      );
+    },
     defaultData: {
       label: "Stage",
       kind: "sequential",
@@ -68,7 +77,12 @@ const nodeTypes: readonly NodeTypeDefinition[] = [
     type: "connector",
     label: "Pipeline Connector",
     category: "Pipeline",
-    component: ConnectorNode,
+    component: function ConnectorPluginNode(props: NodeComponentProps) {
+      return createElement(
+        ConnectorNode,
+        props as unknown as ComponentProps<typeof ConnectorNode>,
+      );
+    },
     defaultData: {
       label: "Connector",
       connectorId: "",
@@ -86,13 +100,13 @@ export const aepPipelinePlugin: CanvasPlugin = {
   manifest,
   nodeTypes,
 
-  onActivate(ctx) {
+  onActivate(ctx: PluginContext) {
     ctx.logger.info(
       `[${manifest.id}] activated — registered ${nodeTypes.length} node types`,
     );
   },
 
-  onDeactivate(ctx) {
+  onDeactivate(ctx: PluginContext) {
     ctx.logger.info(`[${manifest.id}] deactivated`);
   },
 };
@@ -103,7 +117,7 @@ export const aepPipelinePlugin: CanvasPlugin = {
  */
 export async function registerAepPipelinePlugin(): Promise<void> {
   // Lazy import to avoid pulling PluginManager into every AEP module bundle
-  const { PluginManager } = await import("@ghatana/canvas");
+  const { PluginManager } = await import("@ghatana/canvas/plugins");
   const pm = PluginManager.getInstance();
 
   // Guard against double-registration (e.g. HMR in dev)

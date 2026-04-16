@@ -255,8 +255,8 @@ public final class YappcEnvironmentConfig {
     private static void validateTenantId(Map<String, String> env, List<String> errors) {
         String tenantId = env.get(TENANT_ID_ENV);
         if (tenantId == null || tenantId.isBlank()) {
-            log.warn("YappcEnvironmentConfig: {} not set — using default-tenant for service-to-service calls. " +
-                    "Set this variable to enable proper tenant isolation.", TENANT_ID_ENV);
+            log.warn("YappcEnvironmentConfig: {} not set — tenant ID must be provided via X-Tenant-ID header or JWT claims. " +
+                    "Set this variable for service-to-service calls that require a default tenant context.", TENANT_ID_ENV);
         }
     }
 

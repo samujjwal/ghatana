@@ -1,5 +1,11 @@
 package com.ghatana.agent.memory.model;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.ghatana.agent.memory.model.episode.EnhancedEpisode;
+import com.ghatana.agent.memory.model.fact.EnhancedFact;
+import com.ghatana.agent.memory.model.taskstate.TaskState;
+import com.ghatana.agent.memory.model.working.WorkingMemoryEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +27,13 @@ import java.util.Map;
  * @doc.layer agent-memory
  * @doc.pattern Sealed Interface Hierarchy
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = EnhancedEpisode.class, name = "EPISODE"),
+    @JsonSubTypes.Type(value = EnhancedFact.class, name = "FACT"),
+    @JsonSubTypes.Type(value = TaskState.class, name = "TASK_STATE"),
+    @JsonSubTypes.Type(value = WorkingMemoryEntry.class, name = "WORKING")
+})
 public interface MemoryItem {
 
     /** Unique identifier for this memory item. */

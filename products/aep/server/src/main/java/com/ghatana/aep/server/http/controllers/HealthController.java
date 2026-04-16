@@ -38,6 +38,8 @@ public class HealthController implements AepController {
     private final String version;
     /** Synchronous dependency-status checks registered at startup. */
     private final List<Map.Entry<String, Supplier<String>>> componentChecks = new CopyOnWriteArrayList<>();
+    /** Deeper startup/runtime checks used by {@code /health/deep}. */
+    private final List<Map.Entry<String, Supplier<String>>> deepComponentChecks = new CopyOnWriteArrayList<>();
 
     public HealthController(String version) {
         this.version = version != null ? version : "unknown";
@@ -57,6 +59,19 @@ public class HealthController implements AepController {
         componentChecks.add(Map.entry(name, check));
     }
 
+    /**
+     * Registers a deeper dependency probe exposed only through {@code /health/deep}.
+     *
+     * <p>Deep checks may inspect durable-storage backing services or configuration shape.
+     * They still must remain fast and non-blocking because they execute on the request path.
+     *
+     * @param name  component label
+     * @param check status supplier — returns "ok" or a short status description
+     */
+    public void addDeepDependencyCheck(String name, Supplier<String> check) {
+        deepComponentChecks.add(Map.entry(name, check));
+    }
+
     @Override
     public String getBasePath() {
         return "/";
@@ -69,32 +84,20 @@ public class HealthController implements AepController {
         }
 
         if ("health".equals(path)) return handleHealth();
+        if ("health/deep".equals(path)) return handleDeepHealth();
         if ("ready".equals(path)) return handleReady();
         if ("live".equals(path)) return handleLive();
         return Promise.of(HttpHelper.errorResponse(404, "Not found"));
     }
 
     private Promise<HttpResponse> handleHealth() {
-        Map<String, Object> components = new LinkedHashMap<>();
-        boolean allHealthy = true;
-        for (Map.Entry<String, Supplier<String>> entry : componentChecks) {
-            try {
-                String status = entry.getValue().get();
-                components.put(entry.getKey(), status);
-                if (!"ok".equals(status)) allHealthy = false;
-            } catch (Exception e) {
-                components.put(entry.getKey(), "error: " + e.getMessage());
-                allHealthy = false;
-            }
-        }
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", allHealthy ? "healthy" : "degraded");
-        response.put("version", version);
-        response.put("timestamp", Instant.now().toString());
-        if (!components.isEmpty()) {
-            response.put("components", components);
-        }
-        return Promise.of(HttpHelper.jsonResponse(response));
+        return Promise.of(healthResponse(componentChecks, "shallow"));
+    }
+
+    private Promise<HttpResponse> handleDeepHealth() {
+        List<Map.Entry<String, Supplier<String>>> checks = new java.util.ArrayList<>(componentChecks);
+        checks.addAll(deepComponentChecks);
+        return Promise.of(healthResponse(checks, "deep"));
     }
 
     private Promise<HttpResponse> handleReady() {
@@ -127,5 +130,32 @@ public class HealthController implements AepController {
      */
     public void markNotReady() {
         this.ready = false;
+    }
+
+    private HttpResponse healthResponse(List<Map.Entry<String, Supplier<String>>> checks, String probeType) {
+        Map<String, Object> components = new LinkedHashMap<>();
+        boolean allHealthy = true;
+        for (Map.Entry<String, Supplier<String>> entry : checks) {
+            try {
+                String status = entry.getValue().get();
+                components.put(entry.getKey(), status);
+                if (!"ok".equals(status)) {
+                    allHealthy = false;
+                }
+            } catch (Exception e) {
+                components.put(entry.getKey(), "error: " + e.getMessage());
+                allHealthy = false;
+            }
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", allHealthy ? "healthy" : "degraded");
+        response.put("probe", probeType);
+        response.put("version", version);
+        response.put("timestamp", Instant.now().toString());
+        if (!components.isEmpty()) {
+            response.put("components", components);
+        }
+        return HttpHelper.jsonResponse(response);
     }
 }

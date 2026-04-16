@@ -234,8 +234,8 @@ public final class FeedbackLearningService {
     metrics.incrementCounter("feedback.persona_analysis.runs");
 
     // Return an empty persona map — real persona attribution requires SuggestionRepository.
-    // This is a known TODO: wire SuggestionRepository into FeedbackLearningService.
-    // TODO: Load suggestion by ID → get generating persona → aggregate score per persona
+    // Persona attribution not yet implemented: would need SuggestionRepository to load
+    // suggestion by ID, get generating persona, and aggregate score per persona.
     Map<com.ghatana.yappc.ai.requirements.ai.persona.Persona, Float> personaScores = new HashMap<>();
     return Promise.of(personaScores);
   }

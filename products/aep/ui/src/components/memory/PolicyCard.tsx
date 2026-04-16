@@ -63,7 +63,7 @@ export function PolicyCard({ policy, onApprove, onReject, isSubmitting = false, 
           >
             {policy.status.replace('_', ' ')}
           </span>
-          <ConfidenceBadge value={policy.confidenceScore} showValue />
+          <ConfidenceBadge confidence={policy.confidenceScore} showPercentage />
         </div>
       </div>
 

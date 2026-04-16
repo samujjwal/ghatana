@@ -22,7 +22,7 @@ spec:
         component: lifecycle-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
+        prometheus.io/port: "8082"
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: yappc-lifecycle
@@ -39,15 +39,15 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8082
               protocol: TCP
             - name: metrics
-              containerPort: 8080
+              containerPort: 8082
               protocol: TCP
 
           env:
             - name: YAPPC_LIFECYCLE_PORT
-              value: "8080"
+              value: "8082"
             - name: YAPPC_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:

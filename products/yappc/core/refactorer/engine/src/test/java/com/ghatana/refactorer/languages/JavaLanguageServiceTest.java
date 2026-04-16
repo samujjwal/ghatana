@@ -109,7 +109,7 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
         List<FixAction> fixes = runPromise(
                 () -> javaService.planFixes(diagnostic, projectContext));
         assertNotNull(fixes);
-        // TODO: Add more specific assertions once fix planning is implemented
+        // Note: More specific assertions will be added once fix planning is implemented
     }
 
     @Test

@@ -10,16 +10,25 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { z, ZodSchema, ZodError } from 'zod';
+import { z, ZodSchema, ZodError, ZodObject, ZodRawShape } from 'zod';
 
 /**
  * Use form validation hook
  */
-export function useFormValidation<T extends z.ZodType>(
-  schema: T,
-  initialValues: z.infer<T>
-) {
-  type FormValues = z.infer<T>;
+export function useFormValidation<S extends ZodObject<ZodRawShape>>(
+  schema: S,
+  initialValues: z.infer<S>
+): {
+  values: z.infer<S>;
+  errors: Record<string, string>;
+  touched: Record<string, boolean>;
+  handleChange: (field: keyof z.infer<S>) => (value: unknown) => void;
+  handleBlur: (field: keyof z.infer<S>) => () => void;
+  reset: () => void;
+  submit: (onSubmit: (values: z.infer<S>) => void | Promise<void>) => () => Promise<void>;
+  isValid: boolean;
+} {
+  type FormValues = z.infer<S>;
 
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -47,7 +56,10 @@ export function useFormValidation<T extends z.ZodType>(
 
   const handleChange = useCallback(
     (field: keyof FormValues) => (value: unknown) => {
-      setValues((prev) => Object.assign({}, prev, { [field]: value as FormValues[keyof FormValues] }));
+      setValues((prev: FormValues) => ({
+        ...prev,
+        [field]: value as FormValues[keyof FormValues],
+      }));
       setTouched((prev) => Object.assign({}, prev, { [field as string]: true }));
     },
     []
@@ -103,7 +115,8 @@ export function useSchemaValidation<T>(schema: ZodSchema<T>) {
         return true;
       } catch (error) {
         if (error instanceof ZodError) {
-          setError(error.issues[0]?.message ?? 'Invalid value');
+          const firstIssue = error.issues[0];
+          setError(firstIssue?.message ?? 'Invalid value');
           setIsValid(false);
           return false;
         }
@@ -147,7 +160,8 @@ export function useDebouncedValidation<T>(
           setIsValid(true);
         } catch (error) {
           if (error instanceof ZodError) {
-            setError(error.issues[0]?.message ?? 'Invalid value');
+            const firstIssue = error.issues[0];
+            setError(firstIssue?.message ?? 'Invalid value');
             setIsValid(false);
           } else {
             setError('Validation failed');

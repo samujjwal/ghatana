@@ -11,6 +11,7 @@ import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.aep.security.AepAuthFilter;
+import com.ghatana.aep.security.SessionFilter;
 import com.ghatana.aep.server.http.controllers.AgentController;
 import com.ghatana.aep.server.http.controllers.AnalyticsController;
 import com.ghatana.aep.server.http.controllers.CapabilitiesController;
@@ -64,17 +65,21 @@ import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import javax.sql.DataSource;
 
 /**
  * HTTP Server for AEP Standalone deployment.
@@ -105,6 +110,7 @@ public class AepHttpServer {
     private final DataCloudClient agentDataCloud;
     private HttpServer server;
     private Eventloop eventloop;
+    private Thread serverThread;
 
     // Controllers (new architecture - Week 3 decomposition)
     private final HealthController healthController;
@@ -148,6 +154,10 @@ public class AepHttpServer {
      */
     @Nullable
     private final PrometheusMeterRegistry prometheusRegistry;
+    @Nullable
+    private final DataSource dataSource;
+    @Nullable
+    private final JedisPool jedisPool;
 
     /**
      * Whether pipelines are backed by Data-Cloud durable storage.
@@ -293,7 +303,33 @@ public class AepHttpServer {
                          @Nullable ChangeApprovalWorkflow changeApprovalWorkflow,
                          @Nullable RecertificationPipeline recertificationPipeline,
                          @Nullable PrometheusMeterRegistry prometheusRegistry) {
+        this(engine, port, agentDataCloud, humanReviewQueue, metricsCollector,
+            killSwitchService, degradationManager, policyEngine,
+            egressMonitor, injectionDetector, changeApprovalWorkflow,
+            recertificationPipeline, prometheusRegistry, null, null);
+    }
+
+    /**
+     * Full constructor with Prometheus registry and infrastructure probes.
+     */
+    @SuppressWarnings("java:S107") // large constructor is intentional for full DI wiring
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable DataCloudClient agentDataCloud,
+                         @Nullable HumanReviewQueue humanReviewQueue,
+                         MetricsCollector metricsCollector,
+                         @Nullable KillSwitchService killSwitchService,
+                         @Nullable GracefulDegradationManager degradationManager,
+                         @Nullable PolicyAsCodeEngine policyEngine,
+                         @Nullable EgressMonitor egressMonitor,
+                         @Nullable PromptInjectionDetector injectionDetector,
+                         @Nullable ChangeApprovalWorkflow changeApprovalWorkflow,
+                         @Nullable RecertificationPipeline recertificationPipeline,
+                         @Nullable PrometheusMeterRegistry prometheusRegistry,
+                         @Nullable DataSource dataSource,
+                         @Nullable JedisPool jedisPool) {
         this.prometheusRegistry = prometheusRegistry;
+        this.dataSource = dataSource;
+        this.jedisPool = jedisPool;
         this.engine = engine;
         this.port = port;
         this.agentDataCloud = agentDataCloud;
@@ -337,10 +373,27 @@ public class AepHttpServer {
             () -> this.humanReviewQueue != null ? "ok" : "disabled");
         this.healthController.addDependencyCheck("run-ledger",
             () -> this.agentDataCloud != null ? "ok" : "disabled");
+        this.healthController.addDependencyCheck("database",
+            this::databaseHealthStatus);
+        this.healthController.addDependencyCheck("redis",
+            this::redisHealthStatus);
         this.healthController.addDependencyCheck("governance",
             () -> "ok");
         this.healthController.addDependencyCheck("lifecycle",
             () -> "ok");
+        this.healthController.addDeepDependencyCheck("data-cloud.entity-store",
+            () -> this.agentDataCloud == null ? "disabled"
+                : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
+        this.healthController.addDeepDependencyCheck("data-cloud.event-log",
+            () -> this.agentDataCloud == null ? "disabled"
+                : (this.agentDataCloud.eventLogStore() != null ? "ok" : "misconfigured"));
+        this.healthController.addDeepDependencyCheck("pipeline-storage",
+            () -> this.durablePipelines ? "ok" : "in-memory");
+        this.healthController.addDeepDependencyCheck("memory-store",
+            () -> this.agentDataCloud == null ? "disabled"
+                : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
+        this.healthController.addDeepDependencyCheck("execution-history",
+            () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
         this.pipelineController = new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
         this.patternController = new PatternController(this.engine, this.patternStore);
@@ -384,6 +437,7 @@ public class AepHttpServer {
         RoutingServlet router = RoutingServlet.builder(eventloop)
             // Health endpoints (delegated to HealthController)
             .with(HttpMethod.GET, "/health", request -> healthController.handle(request, "health"))
+            .with(HttpMethod.GET, "/health/deep", request -> healthController.handle(request, "health/deep"))
             .with(HttpMethod.GET, "/ready", request -> healthController.handle(request, "ready"))
             .with(HttpMethod.GET, "/live", request -> healthController.handle(request, "live"))
 
@@ -509,10 +563,11 @@ public class AepHttpServer {
         // Wrap the router with the OWASP security filter (headers, CORS, rate limiting, payload size)
         String allowedOrigins = System.getenv().getOrDefault("AEP_CORS_ORIGINS", "*");
         AepSecurityFilter securityFilter = new AepSecurityFilter(router, allowedOrigins);
+        SessionFilter sessionFilter = new SessionFilter(securityFilter);
 
         // Wrap with authentication filter - enforces JWT auth when AEP_JWT_SECRET is set
         // Public endpoints (/health, /ready, /live, /info, /metrics, /events/stream) bypass auth
-        AepAuthFilter authFilter = new AepAuthFilter(securityFilter);
+        AepAuthFilter authFilter = new AepAuthFilter(sessionFilter);
 
         server = HttpServer.builder(eventloop, authFilter)
             .withListenPort(port)
@@ -520,7 +575,7 @@ public class AepHttpServer {
 
         // Initialize SSE heartbeat via SseController before the event loop starts.
         sseController.init(eventloop);
-        CompletableFuture.runAsync(() -> {
+        serverThread = new Thread(() -> {
             try {
                 server.listen();
                 log.info("AEP HTTP Server started on port {}", port);
@@ -528,26 +583,22 @@ public class AepHttpServer {
             } catch (Exception e) {
                 log.error("Failed to start HTTP server", e);
             }
-        });
+        }, "aep-http-server");
+        serverThread.start();
     }
 
     /**
      * Stops the HTTP server.
      */
     public void stop() {
-        if (eventloop != null) {
-            // server.close() must be called from the reactor thread;
-            // schedule it there and then break the eventloop.
-            eventloop.execute(() -> {
-                if (server != null) {
-                    server.close();
-                }
-                eventloop.breakEventloop();
-            });
-        } else if (server != null) {
-            // eventloop was never started — safe to call directly
+        sseController.shutdown();
+        if (server != null) {
             server.close();
         }
+        if (eventloop != null) {
+            eventloop.breakEventloop();
+        }
+        
         log.info("AEP HTTP Server stopped");
     }
 
@@ -588,6 +639,28 @@ public class AepHttpServer {
         body.put("metricsLink", "/metrics");
         body.put("timestamp", Instant.now().toString());
         return Promise.of(jsonResponse(body));
+    }
+
+    private String databaseHealthStatus() {
+        if (dataSource == null) {
+            return "disabled";
+        }
+        try (Connection connection = dataSource.getConnection()) {
+            return connection.isValid(1) ? "ok" : "unhealthy";
+        } catch (Exception e) {
+            return "error: " + e.getMessage();
+        }
+    }
+
+    private String redisHealthStatus() {
+        if (jedisPool == null) {
+            return "disabled";
+        }
+        try (Jedis jedis = jedisPool.getResource()) {
+            return "PONG".equalsIgnoreCase(jedis.ping()) ? "ok" : "unhealthy";
+        } catch (Exception e) {
+            return "error: " + e.getMessage();
+        }
     }
 
     // ==================== Event Processing Endpoints ====================

@@ -2,13 +2,17 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.platform.resilience.CircuitBreaker;
+import com.ghatana.platform.resilience.RetryPolicy;
 import com.ghatana.products.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.yappc.infrastructure.cache.EntityCache;
 import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginatedResult;
 import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginationConfig;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,13 +48,17 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     private final String collectionName;
     private final Class<T> entityClass;
     private final EntityCache<T> cache;
+    private final com.ghatana.yappc.infrastructure.cache.RedisEntityCacheAdapter<T> redisCache;
+    private final RetryPolicy retryPolicy;
+    private final CircuitBreaker circuitBreaker;
+    private final Eventloop eventloop;
 
     public YappcDataCloudRepository(
             @NotNull DataCloudClient client,
             @NotNull YappcEntityMapper mapper,
             @NotNull String collectionName,
             @NotNull Class<T> entityClass) {
-        this(client, mapper, collectionName, entityClass, null);
+        this(client, mapper, collectionName, entityClass, null, null, null, null);
     }
 
     public YappcDataCloudRepository(
@@ -59,11 +67,66 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
             @NotNull String collectionName,
             @NotNull Class<T> entityClass,
             EntityCache<T> cache) {
+        this(client, mapper, collectionName, entityClass, cache, null, null, null);
+    }
+
+    public YappcDataCloudRepository(
+            @NotNull DataCloudClient client,
+            @NotNull YappcEntityMapper mapper,
+            @NotNull String collectionName,
+            @NotNull Class<T> entityClass,
+            com.ghatana.yappc.infrastructure.cache.RedisEntityCacheAdapter<T> redisCache) {
+        this(client, mapper, collectionName, entityClass, null, redisCache, null, null);
+    }
+
+    public YappcDataCloudRepository(
+            @NotNull DataCloudClient client,
+            @NotNull YappcEntityMapper mapper,
+            @NotNull String collectionName,
+            @NotNull Class<T> entityClass,
+            @Nullable EntityCache<T> cache,
+            @Nullable com.ghatana.yappc.infrastructure.cache.RedisEntityCacheAdapter<T> redisCache,
+            @Nullable RetryPolicy retryPolicy,
+            @Nullable CircuitBreaker circuitBreaker) {
         this.client = client;
         this.mapper = mapper;
         this.collectionName = collectionName;
         this.entityClass = entityClass;
-        this.cache = cache != null ? cache : new EntityCache<>(DEFAULT_CACHE_TTL, DEFAULT_CACHE_SIZE);
+        this.cache = cache != null ? cache : (redisCache == null ? new EntityCache<>(DEFAULT_CACHE_TTL, DEFAULT_CACHE_SIZE) : null);
+        this.redisCache = redisCache;
+        this.retryPolicy = retryPolicy != null ? retryPolicy : createDefaultRetryPolicy();
+        this.circuitBreaker = circuitBreaker != null ? circuitBreaker : createDefaultCircuitBreaker();
+        this.eventloop = Eventloop.getCurrentEventloop();
+    }
+
+    /**
+     * Creates default retry policy for Data Cloud operations.
+     * Uses exponential backoff with jitter for transient failures.
+     */
+    private static RetryPolicy createDefaultRetryPolicy() {
+        return RetryPolicy.builder()
+                .maxRetries(3)
+                .initialDelay(Duration.ofMillis(100))
+                .maxDelay(Duration.ofSeconds(10))
+                .multiplier(2.0)
+                .jitter(0.1)
+                .retryOn(RuntimeException.class, IllegalStateException.class)
+                .maxDuration(Duration.ofSeconds(30))
+                .build();
+    }
+
+    /**
+     * Creates default circuit breaker for Data Cloud operations.
+     * Opens after 5 consecutive failures, resets after 30 seconds.
+     */
+    private static CircuitBreaker createDefaultCircuitBreaker() {
+        return CircuitBreaker.builder("data-cloud-" + System.identityHashCode(Thread.currentThread()))
+                .failureThreshold(5)
+                .successThreshold(2)
+                .resetTimeout(Duration.ofSeconds(30))
+                .maxBackoff(Duration.ofMinutes(5))
+                .backoffMultiplier(2.0)
+                .build();
     }
 
     /**
@@ -91,20 +154,42 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         String tenantId = resolveTenantId();
         String cacheKey = buildCacheKey(tenantId, id);
 
-        // Check cache first
-        Optional<T> cached = cache.get(cacheKey);
-        if (cached.isPresent()) {
-            LOG.debug("Cache hit for {}:{}", collectionName, id);
-            return Promise.of(cached);
+        // Check Redis cache first if available
+        if (redisCache != null) {
+            Optional<T> cached = redisCache.get(id.toString());
+            if (cached.isPresent()) {
+                LOG.debug("Redis cache hit for {}:{}", collectionName, id);
+                return Promise.of(cached);
+            }
         }
 
-        // Load from Data-Cloud
-        return client.findById(tenantId, collectionName, id.toString())
-                .map(opt -> opt.map(entity -> mapper.fromEntity(entity, entityClass)))
-                .whenResult(opt -> opt.ifPresent(entity -> {
-                    cache.put(cacheKey, entity);
-                    LOG.debug("Cached {}:{}", collectionName, id);
-                }));
+        // Check in-memory cache if available
+        if (cache != null) {
+            Optional<T> cached = cache.get(cacheKey);
+            if (cached.isPresent()) {
+                LOG.debug("In-memory cache hit for {}:{}", collectionName, id);
+                return Promise.of(cached);
+            }
+        }
+
+        // Load from Data-Cloud with retry and circuit breaker
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.findById(tenantId, collectionName, id.toString())
+                    .map(opt -> opt.map(entity -> mapper.fromEntity(entity, entityClass)))
+                    .whenResult(opt -> opt.ifPresent(entity -> {
+                        // Cache in Redis if available
+                        if (redisCache != null) {
+                            redisCache.put(id.toString(), entity);
+                        }
+                        // Cache in memory if available
+                        if (cache != null) {
+                            cache.put(cacheKey, entity);
+                        }
+                        LOG.debug("Cached {}:{}", collectionName, id);
+                    }))
+            )
+        );
     }
 
     /**
@@ -115,14 +200,24 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         String tenantId = resolveTenantId();
         Map<String, Object> data = mapper.toEntityData(domainEntity);
 
-        return client.save(tenantId, collectionName, data)
-                .map(saved -> {
-                    T result = mapper.fromEntity(saved, entityClass);
-                    // Update cache with saved entity
-                    String cacheKey = buildCacheKey(tenantId, result.getId());
-                    cache.put(cacheKey, result);
-                    return result;
-                });
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.save(tenantId, collectionName, data)
+                    .map(saved -> {
+                        T result = mapper.fromEntity(saved, entityClass);
+                        // Update Redis cache with saved entity
+                        if (redisCache != null) {
+                            redisCache.put(result.getId().toString(), result);
+                        }
+                        // Update in-memory cache with saved entity
+                        if (cache != null) {
+                            String cacheKey = buildCacheKey(tenantId, result.getId());
+                            cache.put(cacheKey, result);
+                        }
+                        return result;
+                    })
+            )
+        );
     }
 
     /**
@@ -132,8 +227,22 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     public Promise<Void> deleteById(@NotNull UUID id) {
         String tenantId = resolveTenantId();
         String cacheKey = buildCacheKey(tenantId, id);
-        cache.invalidate(cacheKey);
-        return client.delete(tenantId, collectionName, id.toString());
+
+        // Invalidate Redis cache if available
+        if (redisCache != null) {
+            redisCache.invalidate(id.toString());
+        }
+
+        // Invalidate in-memory cache if available
+        if (cache != null) {
+            cache.invalidate(cacheKey);
+        }
+
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.delete(tenantId, collectionName, id.toString())
+            )
+        );
     }
 
     private String buildCacheKey(String tenantId, UUID id) {
@@ -146,20 +255,32 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
     @NotNull
     public Promise<List<T>> findAll() {
         String tenantId = resolveTenantId();
-        return client.query(tenantId, collectionName, DataCloudClient.Query.limit(1000))
-                .map(entities -> entities.stream()
-                        .map(entity -> mapper.fromEntity(entity, entityClass))
-                        .collect(Collectors.toList()));
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.query(tenantId, collectionName, DataCloudClient.Query.limit(1000))
+                    .map(entities -> entities.stream()
+                            .map(entity -> mapper.fromEntity(entity, entityClass))
+                            .collect(Collectors.toList()))
+            )
+        );
     }
 
     /**
      * Finds entities by filter criteria, scoped to the current tenant.
      *
-     * @param filter the filter criteria (field name -&gt; value)
-     * @param sort   ignored (reserved for future use)
+     * <p><b>Limitations:</b> This method only supports equality filters.
+     * Comparison operators ($gte, $gt, $lte, $lt) are not supported.
+     * Sorting is not implemented.
+     *
+     * <p><b>Note:</b> Full query operators are not supported by the current Data Cloud adapter.
+     * Use explicit equality methods (findByFieldEquals) instead.
+     *
+     * @param filter the filter criteria (field name -&gt; value) - equality only
+     * @param sort   ignored - sorting not implemented
      * @param limit  maximum results to return
      * @param offset offset for pagination
      * @return Promise of list of matching entities
+     * @deprecated Use explicit equality methods (findByFieldEquals) instead
      */
     @NotNull
     public Promise<List<T>> findByFilter(
@@ -176,10 +297,14 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                 .offset(offset)
                 .limit(limit > 0 ? limit : 1000)
                 .build();
-        return client.query(tenantId, collectionName, query)
-                .map(entities -> entities.stream()
-                        .map(entity -> mapper.fromEntity(entity, entityClass))
-                        .collect(Collectors.toList()));
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.query(tenantId, collectionName, query)
+                    .map(entities -> entities.stream()
+                            .map(entity -> mapper.fromEntity(entity, entityClass))
+                            .collect(Collectors.toList()))
+            )
+        );
     }
 
     /**
@@ -268,7 +393,9 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         // Capture offset as final for lambda
         final int currentOffset = offset;
 
-        return client.query(tenantId, collectionName, query)
+        return circuitBreaker.execute(eventloop, () ->
+            retryPolicy.execute(eventloop, () ->
+                client.query(tenantId, collectionName, query)
                 .map(entities -> {
                     boolean hasMore = entities.size() > validatedPageSize;
                     List<T> items = entities.stream()

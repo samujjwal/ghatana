@@ -132,20 +132,6 @@ public class ProjectRepository {
     return delegate.findByField("createdBy", createdBy);
   }
 
-  /**
-   * Finds projects with recent activity.
-   *
-   * @param since timestamp for last activity
-   * @return recently active projects
-   */
-  @NotNull
-  public Promise<List<ProjectEntity>> findRecentlyActive(@NotNull java.time.Instant since) {
-    Map<String, Object> filter = Map.of(
-        "lastActivityAt", Map.of("$gte", since.toString())
-    );
-    return delegate.findByFilter(filter, "lastActivityAt DESC", 100, 0);
-  }
-
   // Factory
 
   /**

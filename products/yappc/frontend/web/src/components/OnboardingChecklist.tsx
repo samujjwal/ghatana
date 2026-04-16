@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ChevronDown as ExpandMoreIcon, CheckCircle, Circle as RadioButtonUnchecked, Play as PlayArrow, RefreshCw as Refresh, Trophy as EmojiEvents, Rocket as RocketLaunch, Zap as Bolt, GraduationCap as School } from 'lucide-react';
 // Core UI components from @ghatana/yappc-ui
 import {

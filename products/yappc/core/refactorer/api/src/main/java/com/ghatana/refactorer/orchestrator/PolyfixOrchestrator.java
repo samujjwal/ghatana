@@ -446,8 +446,9 @@ public final class PolyfixOrchestrator {
      * associated fix action (i.e., the fix can be attempted). The actual text transformation
      * is delegated to the language-specific fix provider via {@code applyFixes}.
      *
-     * <p>TODO: Replace with real language-service fix application once per-language
-     * fix providers are registered in {@link PolyfixProjectContext}.
+     * <p><b>Note:</b> Currently uses simulated fix application. Real language-service fix
+     * application will be implemented once per-language fix providers are registered in
+     * {@link PolyfixProjectContext}.
      */
     private boolean simulateFixApplication(PolyfixProjectContext ctx, UnifiedDiagnostic diagnostic) {
         if (diagnostic.file() == null) {

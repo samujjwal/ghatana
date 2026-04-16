@@ -9,6 +9,7 @@
  */
 package com.ghatana.agent.dispatch.tier;
 
+import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentResultStatus;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
@@ -45,6 +46,8 @@ import java.util.Map;
 public class DefaultLlmExecutionPlan implements LlmExecutionPlan {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultLlmExecutionPlan.class);
+    private static final double DEFAULT_INPUT_COST_PER_1K_USD = 0.01;
+    private static final double DEFAULT_OUTPUT_COST_PER_1K_USD = 0.03;
 
     private final LlmProvider llmProvider;
 
@@ -87,22 +90,16 @@ public class DefaultLlmExecutionPlan implements LlmExecutionPlan {
                     stepConfig.model(),
                     prompt,
                     stepConfig.temperature(),
-                    stepConfig.maxTokens()
-            ).map(llmResponse -> {
+                    stepConfig.maxTokens(),
+                    ctx
+            ).then(completionResult -> {
                 Duration elapsed = Duration.between(start, Instant.now());
-                return AgentResult.builder()
-                        .output(llmResponse)
-                        .confidence(0.85)
-                        .status(AgentResultStatus.SUCCESS)
-                        .agentId(agentId)
-                        .explanation("LLM execution completed via " + stepConfig.provider() + "/" + stepConfig.model())
-                        .processingTime(elapsed)
-                        .metrics(Map.of(
-                                "tier", "LLM_EXECUTED",
-                                "provider", stepConfig.provider(),
-                                "model", stepConfig.model()
-                        ))
-                        .build();
+                try {
+                    return Promise.of(buildSuccessResult(agentId, ctx, stepConfig, completionResult, elapsed));
+                } catch (AgentContext.BudgetExceededException e) {
+                    log.warn("Tier-L execution exceeded budget for agent '{}': {}", agentId, e.getMessage());
+                    return Promise.of(AgentResult.failure(e, agentId, elapsed));
+                }
             });
 
         } catch (Exception e) {
@@ -163,6 +160,72 @@ public class DefaultLlmExecutionPlan implements LlmExecutionPlan {
         if (value instanceof Number n) return n.intValue();
         try { return Integer.parseInt(String.valueOf(value)); }
         catch (NumberFormatException e) { return 2000; }
+    }
+
+    private AgentResult<Object> buildSuccessResult(
+            String agentId,
+            AgentContext ctx,
+            LlmStepConfig stepConfig,
+            CompletionResult completionResult,
+            Duration elapsed) throws AgentContext.BudgetExceededException {
+        double actualCost = calculateActualCost(ctx, stepConfig.model(), completionResult);
+        String resolvedModel = completionResult.getModelUsed() != null
+                ? completionResult.getModelUsed()
+                : stepConfig.model();
+
+        ctx.addTraceTag("llm.provider", stepConfig.provider());
+        ctx.addTraceTag("llm.model", resolvedModel);
+        ctx.recordMetric("llm.cost", actualCost);
+        ctx.recordMetric("llm.tokens.input", completionResult.getPromptTokens());
+        ctx.recordMetric("llm.tokens.output", completionResult.getCompletionTokens());
+        ctx.recordMetric("llm.tokens.total", completionResult.getTokensUsed());
+        ctx.recordMetric("llm.latency", completionResult.getLatencyMs());
+        ctx.deductCost(actualCost);
+
+        return AgentResult.builder()
+                .output(completionResult.getText())
+                .confidence(0.85)
+                .status(AgentResultStatus.SUCCESS)
+                .agentId(agentId)
+                .explanation("LLM execution completed via " + stepConfig.provider() + "/" + resolvedModel)
+                .processingTime(elapsed)
+                .metrics(Map.of(
+                        "tier", "LLM_EXECUTED",
+                        "provider", stepConfig.provider(),
+                        "model", resolvedModel,
+                        "prompt_tokens", completionResult.getPromptTokens(),
+                        "completion_tokens", completionResult.getCompletionTokens(),
+                        "total_tokens", completionResult.getTokensUsed(),
+                        "latency_ms", completionResult.getLatencyMs(),
+                        "cost_usd", actualCost
+                ))
+                .build();
+    }
+
+    private double calculateActualCost(AgentContext ctx, String model, CompletionResult completionResult) {
+        double promptCostPer1k = resolveCostPer1k(ctx, model, "input", DEFAULT_INPUT_COST_PER_1K_USD);
+        double completionCostPer1k = resolveCostPer1k(ctx, model, "output", DEFAULT_OUTPUT_COST_PER_1K_USD);
+        return (completionResult.getPromptTokens() / 1000.0) * promptCostPer1k
+                + (completionResult.getCompletionTokens() / 1000.0) * completionCostPer1k;
+    }
+
+    private double resolveCostPer1k(AgentContext ctx, String model, String direction, double defaultValue) {
+        String normalizedModel = normalizeModelKey(model);
+        Object modelOverride = ctx.getConfig("llm.cost." + normalizedModel + "." + direction + "Per1kUsd");
+        if (modelOverride != null) {
+            return parseDouble(modelOverride);
+        }
+
+        Object globalOverride = ctx.getConfig("llm.cost." + direction + "Per1kUsd");
+        if (globalOverride != null) {
+            return parseDouble(globalOverride);
+        }
+
+        return defaultValue;
+    }
+
+    private String normalizeModelKey(String model) {
+        return model.toLowerCase().replaceAll("[^a-z0-9]+", "-");
     }
 
     private record LlmStepConfig(

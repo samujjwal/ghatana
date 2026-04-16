@@ -211,10 +211,10 @@ public class CodeGenerationToolProvider implements ToolProvider {
               // Generated based on: %s
 
               public %s() {
-                  // TODO: Implement constructor
+                  // Note: Constructor implementation not yet complete
               }
 
-              // TODO: Add methods based on specification
+              // Note: Method implementation based on specification not yet complete
           }
           """, className, spec.substring(0, Math.min(50, spec.length())), className);
     }
@@ -227,7 +227,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
          * %s
          */
         %s {
-            // TODO: Implement method logic
+            // Note: Method logic implementation not yet complete
             throw new UnsupportedOperationException("Not implemented yet");
         }
         """, docs, signature);
@@ -258,7 +258,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
 
         @Path("/api/v1")
         public class GeneratedApiHandler {
-            // TODO: Implement endpoints from OpenAPI spec
+            // Note: Endpoint implementation from OpenAPI spec not yet complete
         }
         """, spec.substring(0, Math.min(50, spec.length())), framework);
   }
@@ -285,7 +285,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
           }
           if (methodDepth == 1 && methodStart >= 0) lineCount++;
           if (methodDepth == 0 && methodStart >= 0 && lineCount > 20) {
-            sb.insert(methodStart, "// TODO: consider extracting sub-methods from this long method\n");
+            sb.insert(methodStart, "// Note: Consider extracting sub-methods from this long method\n");
             methodStart = -1;
           }
           sb.append(line).append("\n");

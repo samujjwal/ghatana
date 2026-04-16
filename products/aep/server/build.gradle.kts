@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.log4j.slf4j.impl)
     implementation(libs.log4j.core)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.postgresql)
 
     // Micrometer Prometheus registry — for /metrics scrape endpoint
     implementation(libs.micrometer.registry.prometheus)
@@ -80,6 +82,10 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.bundles.testing.core)
+    testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.kafka.clients)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation("org.junit.platform:junit-platform-suite:1.11.4")
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.platform.launcher)
 }

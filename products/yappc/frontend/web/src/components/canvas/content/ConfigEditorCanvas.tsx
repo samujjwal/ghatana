@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Config Editor Canvas Content
  * 

@@ -6,7 +6,11 @@ package com.ghatana.aep.server.http;
 
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +27,8 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * Integration tests for Phase-6 observability endpoints.
@@ -43,20 +49,20 @@ class AepHttpServerObservabilityTest {
     private int port;
     private HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper();
+    private PrometheusMeterRegistry prometheusRegistry;
 
     @BeforeEach
     void setUp() throws Exception {
         engine = Aep.forTesting();
         port = findFreePort();
         httpClient = HttpClient.newBuilder().build();
-        server = new AepHttpServer(engine, port);
-        server.start();
-        waitForServerReady(port);
+        startServer(false);
     }
 
     @AfterEach
     void tearDown() {
         if (server != null) server.stop();
+        if (prometheusRegistry != null) prometheusRegistry.close();
         if (engine != null) engine.close();
     }
 
@@ -92,9 +98,32 @@ class AepHttpServerObservabilityTest {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> components = (Map<String, Object>) body.get("components");
                 assertThat(components).containsKey("data-cloud");
+                assertThat(components).containsKey("database");
+                assertThat(components).containsKey("redis");
                 assertThat(components).containsKey("review-queue");
                 assertThat(components).containsKey("run-ledger");
             }
+        }
+
+        @Test
+        @DisplayName("deep health probe includes deeper dependency detail")
+        void deepHealthProbeIncludesDeepDependencyDetail() throws Exception {
+            HttpResponse<String> resp = get("/health/deep");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body).containsEntry("probe", "deep");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
+            assertThat(components).containsKeys(
+                "database",
+                "redis",
+                "data-cloud.entity-store",
+                "data-cloud.event-log",
+                "pipeline-storage",
+                "memory-store",
+                "execution-history");
         }
     }
 
@@ -176,6 +205,57 @@ class AepHttpServerObservabilityTest {
             assertThat(body).containsKey("service");
             assertThat(body).containsKey("memory_used_mb");
         }
+
+        @Test
+        @DisplayName("returns Prometheus text format when registry is configured")
+        void returnsPrometheusTextFormatWhenRegistryConfigured() throws Exception {
+            restartServerWithPrometheus();
+            Counter.builder("aep_test_counter")
+                .description("test counter for metrics scrape verification")
+                .register(prometheusRegistry)
+                .increment();
+
+            HttpResponse<String> resp = get("/metrics");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            assertThat(resp.headers().firstValue("content-type")).hasValueSatisfying(value ->
+                assertThat(value).startsWith("text/plain; version=0.0.4"));
+            assertThat(resp.body()).contains("# TYPE aep_test_counter_total counter");
+            assertThat(resp.body()).contains("aep_test_counter_total 1.0");
+        }
+
+        @Test
+        @DisplayName("invokes PrometheusMeterRegistry.scrape when serving /metrics")
+        void invokesPrometheusRegistryScrape() throws Exception {
+            if (server != null) {
+                server.stop();
+            }
+            if (prometheusRegistry != null) {
+                prometheusRegistry.close();
+            }
+            prometheusRegistry = spy(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+            server = new AepHttpServer(
+                engine,
+                port,
+                null,
+                null,
+                MetricsCollectorFactory.create(prometheusRegistry),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                prometheusRegistry);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/metrics");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            verify(prometheusRegistry).scrape();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -197,6 +277,38 @@ class AepHttpServerObservabilityTest {
             .header("Content-Type", "application/json")
             .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private void restartServerWithPrometheus() throws Exception {
+        if (server != null) {
+            server.stop();
+        }
+        if (prometheusRegistry != null) {
+            prometheusRegistry.close();
+        }
+        startServer(true);
+    }
+
+    private void startServer(boolean withPrometheus) throws Exception {
+        prometheusRegistry = withPrometheus ? new PrometheusMeterRegistry(PrometheusConfig.DEFAULT) : null;
+        server = withPrometheus
+            ? new AepHttpServer(
+                engine,
+                port,
+                null,
+                null,
+                MetricsCollectorFactory.create(prometheusRegistry),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                prometheusRegistry)
+            : new AepHttpServer(engine, port);
+        server.start();
+        waitForServerReady(port);
     }
 
     private static int findFreePort() throws IOException {

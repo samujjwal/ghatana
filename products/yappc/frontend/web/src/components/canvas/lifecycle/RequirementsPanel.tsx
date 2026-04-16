@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Requirements Panel Component
  *

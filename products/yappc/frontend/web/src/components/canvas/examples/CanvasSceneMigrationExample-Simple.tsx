@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simplified Canvas Scene Migration Example
  * Demonstrates Phase 2 registry concepts without complex dependencies

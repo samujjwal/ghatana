@@ -10,6 +10,7 @@ import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -28,10 +29,20 @@ class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
 
     private static final String DEV_KEY = "dev-key";
 
+    @BeforeAll
+    static void setUpEnvironment() {
+        // No environment variables needed - using test-friendly overload
+    }
+
     private static AsyncServlet outerRouterLikeServlet() {
         AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(
                 request -> HttpResponse.ok200().withPlainText("metrics").toPromise(),
-                "yappc:lifecycle-metrics");
+                "yappc:lifecycle-metrics",
+                "dev-key,test-key",
+                "dev-key=tenant-1;test-key=tenant-2",
+                "dev-key=admin",
+                100,
+                60L);
 
         return request -> {
             String path = request.getPath();

@@ -221,9 +221,15 @@ public final class AgentStateRepository {
 
     private static String resolveTenantId() {
         String tenantId = TenantContext.getCurrentTenantId();
-        if (tenantId == null || tenantId.isBlank() || "default-tenant".equals(tenantId)) {
+        if (tenantId == null || tenantId.isBlank()) {
             throw new SecurityException(
-                    "AgentStateRepository requires an active tenant context.");
+                    "AgentStateRepository requires an active tenant context. " +
+                            "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "AgentStateRepository does not allow default-tenant. " +
+                            "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
         }
         return tenantId;
     }

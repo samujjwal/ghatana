@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Container Orchestration Canvas Content
  * 

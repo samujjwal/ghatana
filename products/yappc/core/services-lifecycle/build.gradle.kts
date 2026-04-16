@@ -46,7 +46,7 @@ dependencies {
 
     // Absorbed from services:ai (merged)
     implementation(project(":products:yappc:core:ai"))
-    implementation(project(":products:yappc:core:yappc-agents"))
+    implementation(project(":products:yappc:core:agents"))
     implementation("dev.langchain4j:langchain4j:0.25.0")
 
     // Absorbed from services:scaffold (merged)
@@ -135,3 +135,4 @@ spotbugs {
     reportLevel = com.github.spotbugs.snom.Confidence.DEFAULT
     excludeFilter.set(file("config/spotbugs-exclude.xml"))
 }
+

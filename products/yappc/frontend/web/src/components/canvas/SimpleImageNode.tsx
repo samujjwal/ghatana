@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simple Image Node
  * Basic image element for canvas

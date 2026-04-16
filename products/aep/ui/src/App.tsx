@@ -42,10 +42,13 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
   useParams,
 } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
+import { AuthProvider } from '@/context/AuthContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,6 +93,9 @@ const AgentDetailPage = lazy(() =>
 const WorkflowCatalogPage = lazy(() =>
   import('@/pages/WorkflowCatalogPage').then((m) => ({ default: m.WorkflowCatalogPage })),
 );
+const LoginPage = lazy(() =>
+  import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
 
 // ─── Redirect helpers ──────────────────────────────────────────────────
 
@@ -120,6 +126,16 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ProtectedShell() {
+  return (
+    <ProtectedRoute>
+      <PageShell>
+        <Outlet />
+      </PageShell>
+    </ProtectedRoute>
+  );
+}
+
 // ─── App ─────────────────────────────────────────────────────────────
 
 /**
@@ -128,44 +144,55 @@ function PageShell({ children }: { children: React.ReactNode }) {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <PageShell>
-          <Routes>
-            {/* ── Canonical routes ─────────────────────────── */}
-            <Route path="/operate" element={<MonitoringDashboardPage />} />
-            <Route path="/operate/reviews" element={<HitlReviewPage />} />
-            <Route path="/operate/runs/:runId" element={<RunDetailPage />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Suspense
+            fallback={
+              <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-400 dark:bg-gray-950">
+                Loading…
+              </div>
+            }
+          >
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
 
-            <Route path="/build/pipelines" element={<PipelineListPage />} />
-            <Route path="/build/pipelines/new" element={<PipelineBuilderPage />} />
-            <Route path="/build/patterns" element={<PatternStudioPage />} />
+              <Route element={<ProtectedShell />}>
+                {/* ── Canonical routes ─────────────────────────── */}
+                <Route path="/operate" element={<MonitoringDashboardPage />} />
+                <Route path="/operate/reviews" element={<HitlReviewPage />} />
+                <Route path="/operate/runs/:runId" element={<RunDetailPage />} />
 
-            <Route path="/learn/episodes" element={<LearningPage />} />
-            <Route path="/learn/memory" element={<MemoryExplorerPage />} />
+                <Route path="/build/pipelines" element={<PipelineListPage />} />
+                <Route path="/build/pipelines/new" element={<PipelineBuilderPage />} />
+                <Route path="/build/patterns" element={<PatternStudioPage />} />
 
-            <Route path="/govern" element={<GovernancePage />} />
+                <Route path="/learn/episodes" element={<LearningPage />} />
+                <Route path="/learn/memory" element={<MemoryExplorerPage />} />
 
-            <Route path="/catalog/agents" element={<AgentRegistryPage />} />
-            <Route path="/catalog/agents/:agentId" element={<AgentDetailPage />} />
-            <Route path="/catalog/workflows" element={<WorkflowCatalogPage />} />
+                <Route path="/govern" element={<GovernancePage />} />
 
-            {/* ── Backward-compat redirects ─────────────────── */}
-            <Route index element={<Navigate to="/operate" replace />} />
-            <Route path="/pipelines/list" element={<Navigate to="/build/pipelines" replace />} />
-            <Route path="/pipelines" element={<Navigate to="/build/pipelines/new" replace />} />
-            <Route path="/agents" element={<Navigate to="/catalog/agents" replace />} />
-            <Route path="/agents/:agentId" element={<AgentDetailRedirect />} />
-            <Route path="/monitoring" element={<Navigate to="/operate" replace />} />
-            <Route path="/patterns" element={<Navigate to="/build/patterns" replace />} />
-            <Route path="/hitl" element={<Navigate to="/operate/reviews" replace />} />
-            <Route path="/learning" element={<Navigate to="/learn/episodes" replace />} />
-            <Route path="/workflows" element={<Navigate to="/catalog/workflows" replace />} />
-            <Route path="/memory" element={<Navigate to="/learn/memory" replace />} />
+                <Route path="/catalog/agents" element={<AgentRegistryPage />} />
+                <Route path="/catalog/agents/:agentId" element={<AgentDetailPage />} />
+                <Route path="/catalog/workflows" element={<WorkflowCatalogPage />} />
 
-            <Route path="*" element={<Navigate to="/operate" replace />} />
-          </Routes>
-        </PageShell>
-      </BrowserRouter>
+                {/* ── Backward-compat redirects ─────────────────── */}
+                <Route index element={<Navigate to="/operate" replace />} />
+                <Route path="/pipelines/list" element={<Navigate to="/build/pipelines" replace />} />
+                <Route path="/pipelines" element={<Navigate to="/build/pipelines/new" replace />} />
+                <Route path="/agents" element={<Navigate to="/catalog/agents" replace />} />
+                <Route path="/agents/:agentId" element={<AgentDetailRedirect />} />
+                <Route path="/monitoring" element={<Navigate to="/operate" replace />} />
+                <Route path="/patterns" element={<Navigate to="/build/patterns" replace />} />
+                <Route path="/hitl" element={<Navigate to="/operate/reviews" replace />} />
+                <Route path="/learning" element={<Navigate to="/learn/episodes" replace />} />
+                <Route path="/workflows" element={<Navigate to="/catalog/workflows" replace />} />
+                <Route path="/memory" element={<Navigate to="/learn/memory" replace />} />
+                <Route path="*" element={<Navigate to="/operate" replace />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

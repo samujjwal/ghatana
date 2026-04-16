@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Log Viewer Canvas Content
  * 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Handle, Position } from '@xyflow/react';
 import { Box, Surface as Paper } from '@ghatana/design-system';
 import React from 'react';

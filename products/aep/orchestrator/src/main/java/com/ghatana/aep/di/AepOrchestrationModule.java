@@ -12,6 +12,7 @@ import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
+import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
@@ -247,7 +248,7 @@ public class AepOrchestrationModule extends AbstractModule {
         // Default provider is the first one registered.
         String defaultProvider = services.keySet().iterator().next();
 
-        return (provider, model, prompt, temperature, maxTokens) -> {
+        return (provider, model, prompt, temperature, maxTokens, context) -> {
             String key = provider != null ? provider.toLowerCase() : defaultProvider;
             CompletionService service = services.getOrDefault(key, services.get(defaultProvider));
             CompletionRequest req = CompletionRequest.builder()
@@ -255,8 +256,12 @@ public class AepOrchestrationModule extends AbstractModule {
                     .model(model)
                     .temperature(temperature)
                     .maxTokens(maxTokens)
+                    .metadata(Map.of(
+                    "tenantId", context.getTenantId(),
+                    "traceId", context.getTraceId() != null ? context.getTraceId() : context.getTurnId(),
+                    "agentId", context.getAgentId()))
                     .build();
-            return service.complete(req).map(result -> (Object) result.getText());
+            return service.complete(req);
         };
     }
 

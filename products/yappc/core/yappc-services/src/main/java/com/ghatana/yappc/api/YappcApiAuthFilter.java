@@ -79,9 +79,25 @@ public final class YappcApiAuthFilter {
     }
 
     private static ApiKeyResolver buildApiKeyResolver() {
-        Set<String> allowedKeys = parseCsvSet(System.getenv().getOrDefault(API_KEYS_ENV, ""));
+        String keysEnv = System.getenv(API_KEYS_ENV);
+        if (keysEnv == null || keysEnv.isBlank()) {
+            throw new IllegalStateException(
+                "YAPPC_API_KEYS environment variable is required. " +
+                "Set it to a comma-separated list of API keys for production."
+            );
+        }
+        
+        String tenantMapEnv = System.getenv(API_KEY_TENANT_MAP_ENV);
+        if (tenantMapEnv == null || tenantMapEnv.isBlank()) {
+            throw new IllegalStateException(
+                "YAPPC_API_KEY_TENANT_MAP environment variable is required. " +
+                "Set it with format: key1=tenant1;key2=tenant2"
+            );
+        }
+
+        Set<String> allowedKeys = parseCsvSet(keysEnv);
         Map<String, List<String>> roleMap = parseRoleMap(System.getenv(API_KEY_ROLE_MAP_ENV));
-        Map<String, String> tenantMap = parseSimpleMap(System.getenv(API_KEY_TENANT_MAP_ENV));
+        Map<String, String> tenantMap = parseSimpleMap(tenantMapEnv);
         List<String> defaultRoles = parseCsvList(System.getenv().getOrDefault(API_DEFAULT_ROLES_ENV, "admin"));
 
         return apiKey -> {
@@ -89,7 +105,13 @@ public final class YappcApiAuthFilter {
                 return Optional.empty();
             }
             List<String> roles = roleMap.getOrDefault(apiKey, defaultRoles);
-            String tenantId = tenantMap.getOrDefault(apiKey, "default-tenant");
+            String tenantId = tenantMap.get(apiKey);
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalStateException(
+                    "No tenant mapping found for API key. " +
+                    "Set YAPPC_API_KEY_TENANT_MAP with format: key1=tenant1;key2=tenant2"
+                );
+            }
             String principalName = "api-key-" + Integer.toUnsignedString(apiKey.hashCode(), 16);
             return Optional.of(new Principal(principalName, roles, tenantId));
         };

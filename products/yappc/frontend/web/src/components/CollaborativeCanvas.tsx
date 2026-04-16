@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Collaborative Canvas Wrapper
  * 

@@ -19,8 +19,8 @@ AEP is the canonical home for the `Operator`, `OperatorCatalog`, and `Pipeline` 
 
 Data Cloud and AEP are tightly integrated but intentionally asymmetric:
 
-- **Data Cloud owns** data management, events, analytics, reporting, feature storage, model metadata, plugin-driven data capabilities, memory persistence, and execution metadata persistence
-- **AEP owns** agentic processing, planning, orchestration, tool use, and long-running multi-step execution
+- **Data Cloud owns** data management, events, analytics, reporting, feature storage, model metadata, and plugin-driven data capabilities
+- **AEP owns** agentic processing, planning, orchestration, tool use, long-running multi-step execution, and the AEP-owned durable execution-history and agent-memory/task-state persistence paths when DB-backed runtime services are configured
 - **Dependency direction** is one-way at compile time: AEP may depend on Data Cloud public contracts and APIs; Data Cloud must not import AEP modules
 - **Runtime integration** happens through event-cloud and Data Cloud-owned persistence surfaces: AEP consumes requests and data from Data Cloud, then writes results, telemetry, checkpoints, and memory updates back
 
@@ -52,6 +52,15 @@ Data Cloud events / intents  →  AEP Server  →  PipelineExecutionEngine  → 
 - Docker (for local infrastructure)
 - Access to `data-cloud` event stream
 
+## Production Notes
+
+- Set `AEP_PROFILE=production` for production deployments.
+- In production, `AEP_DB_URL` and `AEP_JWT_SECRET` are mandatory and startup now fails fast when either is missing.
+- Durable governance, execution history, and memory persistence require the database-backed path; without `AEP_DB_URL`, AEP remains suitable only for non-production or reduced-scope deployments.
+- `GET /metrics` serves Prometheus text format when the launcher wires a `PrometheusMeterRegistry`; otherwise embedded and fixture-backed modes return a JSON fallback payload.
+- `GET /health` is the shallow liveness-style aggregate, while `GET /health/deep` exposes deeper dependency state for the injected database, Redis, Data Cloud backing stores, pipeline durability, memory storage, and execution-history persistence.
+- `POST /api/v1/session` is now wired into the HTTP server chain through `SessionFilter`; in authenticated environments it sits behind JWT auth and issues short-lived `X-AEP-Session` tokens for repeated requests.
+
 ## Local Development
 
 ```bash
@@ -66,6 +75,16 @@ Data Cloud events / intents  →  AEP Server  →  PipelineExecutionEngine  → 
 
 # Run locally (requires Kafka/Redis)
 ./gradlew :products:aep:server:run
+```
+
+## Integration Tests
+
+Phase-1 integration coverage is grouped under `IntegrationTestSuite` in the server module. Local execution requires Docker because the suite uses Testcontainers for PostgreSQL, Redis, and Kafka.
+
+Measured repository inventory on 2026-04-15: `products/aep` currently contains 229 `*Test.java` files and 2,613 `@Test` methods. Coverage percentage still requires a fresh CI/build report.
+
+```bash
+./gradlew :products:aep:server:test --tests com.ghatana.aep.server.integration.IntegrationTestSuite
 ```
 
 ## Key Design Decisions

@@ -67,10 +67,6 @@ sourceSets.test {
         "com/ghatana/aep/config/ConfigurationPipelineIntegrationTest.java",
         "com/ghatana/aep/config/PipelineMaterializerTest.java",
 
-        // ── DefaultAdvancedTimeSeriesForecaster and other analytics Default* ──
-        // classes not yet implemented in aep-analytics module
-        "com/ghatana/aep/analytics/AnalyticsEngineDefaultsTest.java",
-
         // ── HttpIngressStrategy not present in aep-connectors ────────────────
         "com/ghatana/aep/connector/strategy/ConnectorConfigTest.java",
 

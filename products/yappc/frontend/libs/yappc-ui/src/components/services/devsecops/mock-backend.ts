@@ -3,6 +3,8 @@
  *
  * Provides a complete mock backend for DevSecOps Canvas development.
  * Simulates realistic API responses with configurable delays.
+ * This is a legitimate development tool for UI development when the real backend is unavailable.
+ * For production, use the real DevSecOps backend service.
  *
  * @module services/devsecops/mock-backend
  */

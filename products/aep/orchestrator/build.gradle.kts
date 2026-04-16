@@ -90,6 +90,7 @@ dependencies {
 
     testImplementation(libs.h2)
     testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
 
     compileOnly(libs.lombok)

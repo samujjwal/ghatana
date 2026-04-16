@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Registry System
  * Consolidates ComponentRegistry and SchemaRegistry into a single, type-safe system
@@ -13,7 +12,6 @@
  * @doc.pattern Registry
  */
 
-// @ts-nocheck
 import type {
   ComponentDefinition,
   RegistryEntry,

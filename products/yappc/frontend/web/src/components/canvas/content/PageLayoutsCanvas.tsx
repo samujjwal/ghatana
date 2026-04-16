@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Page Layouts Canvas Content
  * 

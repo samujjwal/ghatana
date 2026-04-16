@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Plugin System Examples
  * Shows how to create reusable plugins for canvas functionality

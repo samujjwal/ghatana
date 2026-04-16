@@ -1,0 +1,291 @@
+# YAPPC Platform - Simple Kubernetes Deployment for Kind
+#
+# Quick Start:
+#   kind create cluster --name yappc
+#   kubectl apply -f k8s-deployment.yml
+#   kubectl port-forward svc/yappc-backend 8082:8082
+#
+# This deployment includes:
+# - PostgreSQL database
+# - Redis cache
+# - YAPPC backend service
+# - YAPPC web application
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yappc
+
+---
+# PostgreSQL StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: yappc
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_USER
+          value: yappc
+        - name: POSTGRES_PASSWORD
+          value: yappc123
+        - name: POSTGRES_DB
+          value: yappc
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U yappc
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U yappc
+          initialDelaySeconds: 5
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: yappc
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  clusterIP: None
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: yappc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --requirepass
+        - redis123
+        ports:
+        - containerPort: 6379
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - redis123
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - redis123
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: yappc
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+# YAPPC Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yappc-backend
+  namespace: yappc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yappc-backend
+  template:
+    metadata:
+      labels:
+        app: yappc-backend
+    spec:
+      containers:
+      - name: yappc-backend
+        image: yappc-backend:latest
+        env:
+        - name: DATABASE_URL
+          value: postgresql://yappc:yappc123@postgres:5432/yappc
+        - name: DATABASE_USERNAME
+          value: yappc
+        - name: DATABASE_PASSWORD
+          value: yappc123
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          value: redis123
+        - name: SERVER_PORT
+          value: "8082"
+        - name: METRICS_ENABLED
+          value: "true"
+        - name: TRACING_ENABLED
+          value: "false"
+        - name: LOG_LEVEL
+          value: INFO
+        - name: JVM_OPTS
+          value: "-Xmx1g -Xms512m"
+        ports:
+        - containerPort: 8082
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+# YAPPC Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: yappc-backend
+  namespace: yappc
+spec:
+  selector:
+    app: yappc-backend
+  ports:
+  - port: 8082
+    targetPort: 8082
+  type: LoadBalancer
+
+---
+# YAPPC Web Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yappc-web
+  namespace: yappc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yappc-web
+  template:
+    metadata:
+      labels:
+        app: yappc-web
+    spec:
+      containers:
+      - name: yappc-web
+        image: yappc-web:latest
+        env:
+        - name: VITE_API_URL
+          value: http://yappc-backend:8082
+        - name: PORT
+          value: "5173"
+        ports:
+        - containerPort: 5173
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5173
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+---
+# YAPPC Web Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: yappc-web
+  namespace: yappc
+spec:
+  selector:
+    app: yappc-web
+  ports:
+  - port: 5173
+    targetPort: 5173
+  type: LoadBalancer

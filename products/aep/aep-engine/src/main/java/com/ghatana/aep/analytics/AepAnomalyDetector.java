@@ -34,6 +34,7 @@ public final class AepAnomalyDetector {
     private static final Logger LOG = LoggerFactory.getLogger(AepAnomalyDetector.class);
 
     private final double zScoreThreshold;
+    private final double minRelativeDeviation;
     private final int rollingWindowSize;
 
     private final CopyOnWriteArrayList<Consumer<AnomalyEvent>> listeners = new CopyOnWriteArrayList<>();
@@ -44,6 +45,7 @@ public final class AepAnomalyDetector {
 
     private AepAnomalyDetector(Builder builder) {
         this.zScoreThreshold   = builder.zScoreThreshold;
+        this.minRelativeDeviation = builder.minRelativeDeviation;
         this.rollingWindowSize  = builder.rollingWindowSize;
     }
 
@@ -88,8 +90,9 @@ public final class AepAnomalyDetector {
         if (stdDev == 0) return null; // constant series — no detection possible
 
         double zScore = Math.abs(newValue - mean) / stdDev;
+        double relativeDeviation = Math.abs(newValue - mean) / Math.max(Math.abs(mean), 1.0d);
 
-        if (zScore >= zScoreThreshold) {
+        if (zScore >= zScoreThreshold && relativeDeviation >= minRelativeDeviation) {
             AnomalyEvent event = new AnomalyEvent(
                     seriesId, Instant.now(), newValue, mean, stdDev, zScore,
                     zScore > zScoreThreshold * 1.5
@@ -165,6 +168,7 @@ public final class AepAnomalyDetector {
      */
     public static final class Builder {
         private double zScoreThreshold = 3.0;
+        private double minRelativeDeviation = 0.05;
         private int rollingWindowSize   = 20;
 
         private Builder() {}
@@ -190,6 +194,21 @@ public final class AepAnomalyDetector {
         public Builder rollingWindowSize(int size) {
             if (size < 2) throw new IllegalArgumentException("rollingWindowSize must be >= 2");
             this.rollingWindowSize = size;
+            return this;
+        }
+
+        /**
+         * Minimum relative deviation from the rolling mean required before a
+         * high z-score is treated as a real anomaly.
+         *
+         * @param minRelativeDeviation fraction in [0, 1], e.g. 0.05 for 5%
+         * @return this builder
+         */
+        public Builder minRelativeDeviation(double minRelativeDeviation) {
+            if (minRelativeDeviation < 0 || minRelativeDeviation > 1) {
+                throw new IllegalArgumentException("minRelativeDeviation must be in [0, 1]");
+            }
+            this.minRelativeDeviation = minRelativeDeviation;
             return this;
         }
 

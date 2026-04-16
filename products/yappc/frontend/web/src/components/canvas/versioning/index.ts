@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Versioning Components Index
  * 

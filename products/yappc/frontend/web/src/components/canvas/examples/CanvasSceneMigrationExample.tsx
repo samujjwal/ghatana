@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Example: Migrating CanvasScene to use Generic Canvas
  * This demonstrates Phase 2 migration of an existing canvas implementation

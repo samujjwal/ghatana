@@ -2,6 +2,7 @@ package com.ghatana.aep;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.aep.analytics.AepAnomalyDetector;
 import com.ghatana.aep.async.AepAsyncUtils;
 import com.ghatana.aep.cache.AepConsentCache;
 import com.ghatana.aep.cache.AepPatternCache;
@@ -675,17 +676,50 @@ public final class Aep {
             checkNotClosed();
             requireTenantId(tenantId);
             List<AepEngine.Anomaly> anomalies = new ArrayList<>();
+            Map<String, List<Double>> historyBySeries = new HashMap<>();
+            AepAnomalyDetector detector = AepAnomalyDetector.builder().build();
             for (AepEngine.Event event : events) {
-                if (isAnomalous(event, anomalyThreshold.get())) {
-                    double score = ((Number) event.payload().getOrDefault(
-                        "anomaly_score", anomalyThreshold.get())).doubleValue();
+                Double explicitScore = extractNumeric(event.payload(), "anomaly_score");
+                if (explicitScore != null && explicitScore >= anomalyThreshold.get()) {
                     anomalies.add(new AepEngine.Anomaly(
                         UUID.randomUUID().toString(),
                         "THRESHOLD_EXCEEDED",
-                        score,
+                        explicitScore,
                         Map.of("event_type", event.type())
                     ));
+                    appendHistory(historyBySeries, event.type(), explicitScore);
+                    continue;
                 }
+
+                Double signal = extractNumeric(event.payload(), "value");
+                if (signal == null) {
+                    signal = explicitScore;
+                }
+                if (signal == null) {
+                    continue;
+                }
+
+                List<Double> history = historyBySeries.computeIfAbsent(event.type(), ignored -> new ArrayList<>());
+                if (explicitScore == null) {
+                    AepAnomalyDetector.AnomalyEvent detected = detector.evaluate(event.type(), history, signal);
+                    if (detected != null) {
+                        anomalies.add(new AepEngine.Anomaly(
+                            UUID.randomUUID().toString(),
+                            "MODEL_DETECTED",
+                            detected.zScore(),
+                            Map.of(
+                                "event_type", event.type(),
+                                "detector", "z-score",
+                                "severity", detected.severity().name(),
+                                "mean", detected.meanValue(),
+                                "stddev", detected.stdDev(),
+                                "observed_value", detected.observedValue()
+                            )
+                        ));
+                    }
+                }
+
+                appendHistory(historyBySeries, event.type(), signal);
             }
             return Promise.of(anomalies);
         }
@@ -1283,6 +1317,17 @@ public final class Aep {
         private boolean isAnomalous(AepEngine.Event event, double threshold) {
             Number score = asNumber(event.payload().get("anomaly_score"));
             return score != null && score.doubleValue() > threshold;
+        }
+
+        private static Double extractNumeric(Map<String, Object> payload, String key) {
+            Number value = asNumber(payload.get(key));
+            return value != null ? value.doubleValue() : null;
+        }
+
+        private static void appendHistory(Map<String, List<Double>> historyBySeries,
+                                          String seriesId,
+                                          double value) {
+            historyBySeries.computeIfAbsent(seriesId, ignored -> new ArrayList<>()).add(value);
         }
 
         private List<String> allowedPurposes(AepEngine.Event event) {

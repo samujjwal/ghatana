@@ -212,10 +212,10 @@ kubectl rollout restart deployment/yappc-lifecycle -n yappc
 kubectl rollout status deployment/yappc-lifecycle -n yappc
 
 # Force immediate circuit breaker metric scrape
-curl -s http://<pod-ip>:8080/metrics | grep yappc_ai_circuit_breaker
+curl -s http://<pod-ip>:8082/metrics | grep yappc_ai_circuit_breaker
 
 # Health check
-curl http://<pod-ip>:8080/health/readiness
+curl http://<pod-ip>:8082/health/readiness
 ```
 
 ## 9. Release Rollout And Rollback Checks

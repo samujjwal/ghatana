@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mermaid Diagram Renderer
  * 

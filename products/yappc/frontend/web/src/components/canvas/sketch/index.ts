@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Sketch Components - Re-exports from @ghatana/yappc-sketch + App-specific integrations
  *

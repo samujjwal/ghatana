@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { atom } from 'jotai';
 
 import { activePersonaAtom as activeWorkspacePersonaAtom } from '@/stores/user.store';

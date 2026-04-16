@@ -3,6 +3,7 @@ package com.ghatana.agent.memory.model.episode;
 import com.ghatana.agent.memory.model.*;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,7 @@ import java.util.Map;
  */
 @Value
 @Builder
+@Jacksonized
 public class EnhancedEpisode implements MemoryItem {
 
     @NotNull String id;
@@ -62,6 +64,7 @@ public class EnhancedEpisode implements MemoryItem {
      */
     @Value
     @Builder
+    @Jacksonized
     public static class ToolExecution {
         @NotNull String toolName;
         @NotNull String input;

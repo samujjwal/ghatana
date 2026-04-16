@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================================
 // ConfigurationWizardNode - Canvas node for multi-step initialization wizard
 //

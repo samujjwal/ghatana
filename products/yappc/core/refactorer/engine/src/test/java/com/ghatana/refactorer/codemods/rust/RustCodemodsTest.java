@@ -127,7 +127,7 @@ class RustCodemodsTest {
 
     @Test
     @Disabled(
-            "TODO: Implement clippy::single_match fix - test disabled until implementation is"
+            "Note: clippy::single_match fix not yet implemented - test disabled"
                     + " complete. See RustCodemods.fixSingleMatch() for details.")
     void testFixSingleMatch() {
         Logger logger = LogManager.getLogger(RustCodemodsTest.class);

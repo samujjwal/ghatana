@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Test File List Canvas Content
  * 

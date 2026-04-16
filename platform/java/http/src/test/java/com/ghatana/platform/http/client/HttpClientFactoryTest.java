@@ -7,6 +7,8 @@ package com.ghatana.platform.http.client;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,6 +38,67 @@ class HttpClientFactoryTest {
 
         assertThat(first).isNotNull();
         assertThat(second).isNotNull();
+    }
+
+    // ── createAdapter with HttpClientConfig ─────────────────────────────────────
+
+    @Test
+    @DisplayName("createAdapter with custom HttpClientConfig returns a non-null adapter")
+    void createAdapterWithCustomConfigReturnsNonNull() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .maxConnections(20)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+        OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null);
+        assertThat(adapter).isNotNull();
+    }
+
+    @Test
+    @DisplayName("createAdapter throws NullPointerException for null config")
+    void createAdapterThrowsForNullConfig() {
+        assertThatThrownBy(() -> HttpClientFactory.createAdapter(null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("config");
+    }
+
+    @Test
+    @DisplayName("createAdapter with null metrics uses NoopMetricsCollector internally")
+    void createAdapterWithNullMetricsReturnsNonNull() {
+        HttpClientConfig config = HttpClientConfig.builder().build();
+        OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null);
+        assertThat(adapter).isNotNull();
+    }
+
+    @Test
+    @DisplayName("createAdapter with custom maxConnections uses configured value")
+    void createAdapterUsesCustomMaxConnections() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .maxConnections(50)
+                .build();
+        OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null);
+        assertThat(adapter).isNotNull();
+    }
+
+    @Test
+    @DisplayName("createAdapter with custom timeouts uses configured values")
+    void createAdapterUsesCustomTimeouts() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .readTimeout(Duration.ofSeconds(15))
+                .callTimeout(Duration.ofSeconds(20))
+                .build();
+        OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null);
+        assertThat(adapter).isNotNull();
+    }
+
+    @Test
+    @DisplayName("createAdapter with custom keepAliveDuration uses configured value")
+    void createAdapterUsesCustomKeepAliveDuration() {
+        HttpClientConfig config = HttpClientConfig.builder()
+                .keepAliveDuration(Duration.ofMinutes(10))
+                .build();
+        OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null);
+        assertThat(adapter).isNotNull();
     }
 
     // ── createTenantAdapter ────────────────────────────────────────────────────

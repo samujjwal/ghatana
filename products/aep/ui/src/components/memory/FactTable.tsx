@@ -147,7 +147,7 @@ export function FactTable({ facts, isLoading = false, isError = false }: FactTab
                     {fact.object ?? <span className="text-gray-300 italic">—</span>}
                   </td>
                   <td className="px-4 py-2.5">
-                    <ConfidenceBadge value={fact.confidence} />
+                    <ConfidenceBadge confidence={fact.confidence} />
                   </td>
                   <td className="px-4 py-2.5">
                     <ValidityBadge status={fact.validityStatus} />

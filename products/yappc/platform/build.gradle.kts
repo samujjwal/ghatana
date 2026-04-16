@@ -18,7 +18,7 @@ dependencies {
     // YAPPC framework modules
     implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:ai"))
-    implementation(project(":products:yappc:core:yappc-agents"))
+    implementation(project(":products:yappc:core:agents"))
 
     // ActiveJ Framework - Use version catalog for consistency
     implementation(libs.activej.common)

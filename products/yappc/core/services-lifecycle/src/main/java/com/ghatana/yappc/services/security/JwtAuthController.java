@@ -59,12 +59,15 @@ public final class JwtAuthController {
         String userId = userIdOpt.get();
         List<String> roles = tokenProvider.getRolesFromToken(token);
 
+        String tenantId = stringClaim(claims, "tenantId")
+                .orElseThrow(() -> new IllegalStateException("tenantId claim is required in JWT token"));
+        
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", userId);
         response.put("name", stringClaim(claims, "name").orElse(userId));
         response.put("email", stringClaim(claims, "email").orElse(""));
         response.put("roles", roles);
-        response.put("tenantId", stringClaim(claims, "tenantId").orElse("default-tenant"));
+        response.put("tenantId", tenantId);
 
         return Promise.of(json(200, response));
     }
@@ -81,12 +84,14 @@ public final class JwtAuthController {
             return Promise.of(unauthorized("Invalid or expired token"));
         }
 
+        String tenantId = tokenProvider.extractClaims(token)
+                .flatMap(c -> stringClaim(c, "tenantId"))
+                .orElseThrow(() -> new IllegalStateException("tenantId claim is required in JWT token"));
+        
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("valid", true);
         payload.put("userId", tokenProvider.getUserIdFromToken(token).orElse("unknown"));
-        payload.put("tenantId", tokenProvider.extractClaims(token)
-                .flatMap(c -> stringClaim(c, "tenantId"))
-                .orElse("default-tenant"));
+        payload.put("tenantId", tenantId);
 
         return Promise.of(json(200, payload));
     }

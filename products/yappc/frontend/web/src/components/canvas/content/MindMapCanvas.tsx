@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mind Map Canvas Content
  * 

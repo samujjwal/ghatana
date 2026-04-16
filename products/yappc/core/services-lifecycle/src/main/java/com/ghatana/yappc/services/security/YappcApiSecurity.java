@@ -79,18 +79,81 @@ public final class YappcApiSecurity {
         return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
     }
 
+    /**
+     * Test-friendly overload that accepts API key configuration as parameters.
+     *
+     * @param endpoint servlet to secure
+     * @param resource RBAC resource name
+     * @param apiKeys comma-separated list of valid API keys
+     * @param tenantMap API key to tenant mapping (key1=tenant1;key2=tenant2)
+     * @param roleMap API key to role mapping (key1=role1|role2)
+     * @param rateLimitMax maximum requests per window
+     * @param rateLimitWindow window duration in seconds
+     * @return endpoint secured with API key auth, RBAC read permission, and rate limiting
+     */
+    public static AsyncServlet secureReadEndpoint(
+            AsyncServlet endpoint,
+            String resource,
+            String apiKeys,
+            String tenantMap,
+            String roleMap,
+            int rateLimitMax,
+            long rateLimitWindow) {
+        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
+        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(
+                buildApiKeyResolver(apiKeys, tenantMap, roleMap, "admin"));
+        PolicyService policyService = buildPolicyService(resource);
+        RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
+
+        return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
+    }
+
     private static ApiKeyResolver buildApiKeyResolver() {
-        Set<String> allowedKeys = parseCsvSet(System.getenv().getOrDefault(API_KEYS_ENV, "dev-key"));
+        String keysEnv = System.getenv(API_KEYS_ENV);
+        if (keysEnv == null || keysEnv.isBlank()) {
+            throw new IllegalStateException(
+                "YAPPC_API_KEYS environment variable is required. " +
+                "Set it to a comma-separated list of API keys for production."
+            );
+        }
+        Set<String> allowedKeys = parseCsvSet(keysEnv);
         Map<String, List<String>> roleMap = parseRoleMap(System.getenv(API_KEY_ROLE_MAP_ENV));
         Map<String, String> tenantMap = parseSimpleMap(System.getenv(API_KEY_TENANT_MAP_ENV));
         List<String> defaultRoles = parseCsvList(System.getenv().getOrDefault(API_DEFAULT_ROLES_ENV, "admin"));
 
+        return buildApiKeyResolver(allowedKeys, tenantMap, roleMap, defaultRoles);
+    }
+
+    private static ApiKeyResolver buildApiKeyResolver(
+            String apiKeys,
+            String tenantMap,
+            String roleMap,
+            String defaultRoles) {
+        Set<String> allowedKeys = parseCsvSet(apiKeys);
+        Map<String, List<String>> parsedRoleMap = parseRoleMap(roleMap);
+        Map<String, String> parsedTenantMap = parseSimpleMap(tenantMap);
+        List<String> parsedDefaultRoles = parseCsvList(defaultRoles);
+
+        return buildApiKeyResolver(allowedKeys, parsedTenantMap, parsedRoleMap, parsedDefaultRoles);
+    }
+
+    private static ApiKeyResolver buildApiKeyResolver(
+            Set<String> allowedKeys,
+            Map<String, String> tenantMap,
+            Map<String, List<String>> roleMap,
+            List<String> defaultRoles) {
         return apiKey -> {
             if (!allowedKeys.contains(apiKey)) {
                 return Optional.empty();
             }
             List<String> roles = roleMap.getOrDefault(apiKey, defaultRoles);
-            String tenantId = tenantMap.getOrDefault(apiKey, "default-tenant");
+            String tenantId = tenantMap.get(apiKey);
+            if (tenantId == null || tenantId.isBlank()) {
+                throw new IllegalStateException(
+                    "No tenant mapping found for API key. " +
+                    "Set YAPPC_API_KEY_TENANT_MAP with format: key1=tenant1;key2=tenant2"
+                );
+            }
             String principalName = "api-key-" + Integer.toUnsignedString(apiKey.hashCode(), 16);
             return Optional.of(new Principal(principalName, roles, tenantId));
         };

@@ -94,11 +94,15 @@ public class SecurityServiceAdapter {
     }
 
     /**
-     * Generates a basic SBOM stub (full SBOM generation requires build tool integration
-     * such as CycloneDX Maven/Gradle plugin — this placeholder records the intent).
+     * Generates a basic SBOM placeholder.
+     *
+     * <p><b>Note:</b> Full SBOM generation requires build tool integration
+     * such as CycloneDX Maven/Gradle plugin. This method returns a minimal
+     * CycloneDX-compliant stub for compatibility. Use build tool plugins for
+     * production SBOM generation.
      *
      * @param projectPath the root of the project
-     * @return Promise of SBOM JSON string
+     * @return Promise of SBOM JSON string (minimal CycloneDX format)
      */
     public Promise<String> generateSbom(Path projectPath) {
         LOG.debug("generateSbom({}): SBOM generation deferred to build tool plugin", projectPath);

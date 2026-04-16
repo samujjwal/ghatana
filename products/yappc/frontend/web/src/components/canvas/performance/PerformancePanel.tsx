@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Core UI components from @ghatana/yappc-ui
 import {
   Box,

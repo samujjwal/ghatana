@@ -10,7 +10,7 @@
  * @doc.pattern UI Component
  */
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -37,7 +37,7 @@ interface CanvasOutlinePanelProps {
   getViewport: () => { x: number; y: number; zoom: number };
 }
 
-export function CanvasOutlinePanel({
+export const CanvasOutlinePanel = memo(function CanvasOutlinePanel({
   nodes,
   selectedNodeIds,
   selectNodes,
@@ -110,4 +110,4 @@ export function CanvasOutlinePanel({
       </Box>
     </Box>
   );
-}
+});

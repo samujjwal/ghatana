@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simple Shape Node
  * Basic shapes (rectangle, circle, diamond) for canvas

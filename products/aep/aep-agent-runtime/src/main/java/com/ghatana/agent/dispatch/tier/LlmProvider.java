@@ -9,6 +9,8 @@
  */
 package com.ghatana.agent.dispatch.tier;
 
+import com.ghatana.ai.llm.CompletionResult;
+import com.ghatana.agent.framework.api.AgentContext;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,13 +38,15 @@ public interface LlmProvider {
      * @param prompt      the fully-hydrated prompt text
      * @param temperature sampling temperature [0.0, 1.0]
      * @param maxTokens   maximum output tokens
-     * @return a Promise of the LLM response as a parsed Object (typically Map or String)
+         * @param context     execution context used for tenant-aware metadata and accounting
+         * @return a Promise of the raw completion result including token usage metadata
      */
     @NotNull
-    Promise<Object> invoke(
+        Promise<CompletionResult> invoke(
             @NotNull String provider,
             @NotNull String model,
             @NotNull String prompt,
             double temperature,
-            int maxTokens);
+            int maxTokens,
+            @NotNull AgentContext context);
 }

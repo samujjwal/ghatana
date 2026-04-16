@@ -118,6 +118,28 @@ class HealthControllerTest {
 
             assertThat(getHealth().get("status")).isEqualTo("healthy");
         }
+
+        @Test
+        @DisplayName("deep probe includes deep-only checks and probe marker")
+        void deepProbeIncludesDeepChecks() throws Exception {
+            controller.addDependencyCheck("dep-a", () -> "ok");
+            controller.addDeepDependencyCheck("dep-deep", () -> "misconfigured");
+
+            HttpRequest request = mock(HttpRequest.class);
+            when(request.getMethod()).thenReturn(HttpMethod.GET);
+
+            HttpResponse response = controller.handle(request, "health/deep").getResult();
+            String body = response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
+            Map<String, Object> parsed = MAPPER.readValue(body,
+                new com.fasterxml.jackson.core.type.TypeReference<>() {});
+
+            assertThat(parsed.get("status")).isEqualTo("degraded");
+            assertThat(parsed.get("probe")).isEqualTo("deep");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) parsed.get("components");
+            assertThat(components).containsEntry("dep-a", "ok");
+            assertThat(components).containsEntry("dep-deep", "misconfigured");
+        }
     }
 
     @Nested

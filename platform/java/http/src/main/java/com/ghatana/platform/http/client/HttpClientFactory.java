@@ -58,17 +58,34 @@ public final class HttpClientFactory {
      * @return OkHttpAdapter configured with default settings
      */
     public static OkHttpAdapter createDefaultAdapter(MetricsCollector metrics) {
+        return createAdapter(HttpClientConfig.builder().build(), metrics);
+    }
+
+    /**
+     * Create an OkHttpAdapter with custom HttpClientConfig.
+     *
+     * @param config HttpClientConfig with custom pool and timeout settings
+     * @param metrics MetricsCollector to record HTTP metrics (may be null)
+     * @return OkHttpAdapter configured with custom settings
+     */
+    public static OkHttpAdapter createAdapter(HttpClientConfig config, MetricsCollector metrics) {
+        Objects.requireNonNull(config, "config is required");
         MetricsCollector m = metrics != null ? metrics : new NoopMetricsCollector();
 
         OkHttpClient client = new OkHttpClient.Builder()
-                .callTimeout(Duration.ofSeconds(30))
-                .connectTimeout(Duration.ofSeconds(10))
-                .retryOnConnectionFailure(true)
-                .connectionPool(new ConnectionPool(10, 5, TimeUnit.MINUTES))
+                .callTimeout(config.getCallTimeout())
+                .connectTimeout(config.getConnectTimeout())
+                .readTimeout(config.getReadTimeout())
+                .retryOnConnectionFailure(config.isRetryOnConnectionFailure())
+                .connectionPool(new ConnectionPool(
+                        config.getMaxConnections(),
+                        config.getKeepAliveDuration().toMinutes(),
+                        TimeUnit.MINUTES))
                 .build();
 
-        // Default global rate limiter: 10 requests per second (tunable)
-        RateLimiter rateLimiter = RateLimiter.create(10.0);
+        // Use configured requests per second or default to 10
+        double rps = config.getRequestsPerSecond() > 0 ? config.getRequestsPerSecond() : 10.0;
+        RateLimiter rateLimiter = RateLimiter.create(rps);
 
         return new OkHttpAdapter(client, rateLimiter, m, DEFAULT_EXECUTOR);
     }

@@ -84,8 +84,8 @@ Access YAPPC at **http://localhost:3000**
 **Available Services:**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
-- Domain Service: http://localhost:8080
-- AI Requirements: http://localhost:8081
+- Domain Service: http://localhost:8082
+- AI Requirements: http://localhost:8082
 - Lifecycle API: http://localhost:8082
 
 For detailed setup, see [docs/guides/DEPLOYMENT_GUIDE.md](docs/guides/DEPLOYMENT_GUIDE.md)

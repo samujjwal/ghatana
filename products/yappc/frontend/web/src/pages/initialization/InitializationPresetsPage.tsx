@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * InitializationPresetsPage
  *
@@ -14,7 +13,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PresetCard, type InitializationPreset, type PresetCategory } from '@yappc/initialization-ui';
 
-// @ts-nocheck
 // ============================================================================
 // Types
 // ============================================================================

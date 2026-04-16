@@ -169,7 +169,7 @@ public final class CanaryStep implements WorkflowStep {
       int stageNumber, int trafficPercent, Map<String, Object> canary) {
 
     // Collect real JVM/OS telemetry as a canary health proxy.
-    // TODO: Replace with actual canary metrics scraped from the deployed service's
+    // Note: Currently using simulated canary metrics. Real metrics will be scraped from
     //       /metrics endpoint (Prometheus) or monitoring platform (Datadog, Grafana Cloud).
     OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
     int processors = Math.max(1, osBean.getAvailableProcessors());

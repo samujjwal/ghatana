@@ -19,6 +19,7 @@ dependencies {
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
+    implementation(project(":platform:java:database"))
     // implementation(project(":libs:types")) - path needs verification
 
     // ActiveJ for async
@@ -39,6 +40,10 @@ dependencies {
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
+
+    // JMH benchmarks
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
 

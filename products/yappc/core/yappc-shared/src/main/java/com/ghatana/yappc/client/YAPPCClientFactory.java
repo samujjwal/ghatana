@@ -37,13 +37,13 @@ import com.ghatana.yappc.client.impl.RemoteYAPPCClient;
  * <pre>{@code
  * // Create remote client with default options
  * YAPPCClient yappc = YAPPCClientFactory.remote(
- *     "http://localhost:8080",
+ *     "http://localhost:8082",
  *     YAPPCConfig.builder().build()
  * );
  *
  * // Or with custom options
  * YAPPCClient yappc = YAPPCClientFactory.remote(
- *     "http://localhost:8080",
+ *     "http://localhost:8082",
  *     YAPPCConfig.builder().build(),
  *     ClientOptions.builder()
  *         .timeout(30000)

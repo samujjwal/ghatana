@@ -3,6 +3,7 @@
 **Date**: March 13, 2026  
 **Scope**: Comprehensive analysis of AEP (Agentic Event Processor) product and related libraries  
 **Status**: DRAFT - Analysis Complete  
+**Verification Note (2026-04-15)**: Several March 2026 statements below are now stale. The current repository contains 229 `*Test.java` files and 2,613 `@Test` methods under `products/aep`, and production durability remains conditional on configured backing infrastructure such as `AEP_DB_URL`.
 
 ---
 
@@ -14,7 +15,7 @@ AEP is a sophisticated event processing platform with excellent architectural fo
 - ✅ **Strong Architecture**: Clean event-driven architecture with agent framework integration
 - ✅ **Comprehensive Agent System**: Well-designed agent catalog and execution framework
 - ✅ **Advanced Analytics**: Sophisticated analytics engine with anomaly detection and forecasting
-- ⚠️ **Production Gaps**: Missing deployment infrastructure and operational tooling
+- ⚠️ **Production Gaps**: Production hardening still depends on real backing infrastructure; durable governance, memory, and history storage are conditional on configured services such as `AEP_DB_URL`
 - ⚠️ **Test Coverage**: Limited integration and end-to-end testing
 - ✅ **API Surface**: Well-designed interfaces with proper abstraction
 
@@ -121,33 +122,33 @@ aep/
 
 ### 3.1 Deployment Infrastructure
 
-**Missing Critical Components:**
-- ❌ **Docker Configuration**: No Dockerfile or containerization
-- ❌ **Kubernetes Manifests**: No K8s deployment configs
-- ❌ **Helm Charts**: No package management for deployment
-- ❌ **CI/CD Pipeline**: No automated build/deployment
-- ❌ **Environment Configs**: No production/staging configurations
-- ❌ **Infrastructure as Code**: No Terraform or CloudFormation
+**Current State (revalidated 2026-04-15):**
+- ✅ **Docker Configuration**: Multi-stage Dockerfile is present under `products/aep/Dockerfile`
+- ✅ **Kubernetes Manifests**: Product-local deployment manifests are present under `products/aep/k8s`
+- ✅ **Helm Charts**: Helm packaging is present under `products/aep/helm`
+- ✅ **CI/CD Pipeline**: Repository CI/CD definitions are present and no longer absent by default
+- ✅ **Environment Configs**: Production-oriented deployment/config assets exist in the product tree
+- ⚠️ **Infrastructure as Code**: Kubernetes and Helm assets exist; separate Terraform/CloudFormation validation was not re-run in this pass
 
 ### 3.2 Monitoring & Observability
 
-**Partially Implemented:**
-- ✅ **Metrics Collection**: Proper integration with platform observability
-- ✅ **Analytics Monitoring**: Built-in performance monitoring
-- ✅ **Health Checks**: Basic health check capabilities
-- ⚠️ **Distributed Tracing**: Limited tracing implementation
-- ❌ **Alerting**: No comprehensive alerting system
-- ❌ **Dashboard**: No operational dashboards
+**Current State (revalidated 2026-04-15):**
+- ✅ **Metrics Collection**: Proper integration with platform observability remains in place
+- ✅ **Analytics Monitoring**: Built-in performance monitoring remains present
+- ✅ **Health Checks**: `/health` and `/health/deep` now expose shallow and dependency-aware checks
+- ⚠️ **Distributed Tracing**: Tracing still needs a fresh operational validation pass
+- ✅ **Alerting**: Alerting assets are present in the monitored deployment stack
+- ✅ **Dashboard**: Operational dashboard assets are present rather than absent
 
 ### 3.3 Security & Compliance
 
 **Security Framework Present:**
 - ✅ **Multi-tenant**: Proper tenant isolation
 - ✅ **Platform Security**: Integration with platform security modules
-- ✅ **Agent Security**: Agent execution sandboxing
-- ❌ **Security Hardening**: No comprehensive security controls
-- ❌ **Compliance**: No GDPR, CCPA, or SOC2 controls
-- ❌ **Secret Management**: Limited secret management
+- ⚠️ **Agent Security**: Tool execution is policy-gated and now circuit-breaker-protected, but still intentionally fails closed until a concrete runtime sandbox is provisioned
+- ✅ **Security Hardening**: `AepSecurityFilter` and `AepInputValidator` provide the hardening layer that was missing in March
+- ⚠️ **Compliance**: GDPR/CCPA/SOC2-oriented code paths exist, but formal audit evidence was not re-run in this pass
+- ✅ **Secret Management**: Secret-management support is no longer merely limited in code
 
 ---
 
@@ -155,12 +156,12 @@ aep/
 
 ### 4.1 Unit Testing
 
-**Current State:**
+**Current State (measured on 2026-04-15):**
 - ✅ **Core Logic**: Comprehensive test coverage for AEP engine
 - ✅ **Test Framework**: Proper JUnit 5 + AssertJ setup
 - ✅ **Mock Support**: Mockito for dependency mocking
 - ✅ **Integration Tests**: Some integration testing present
-- ⚠️ **Coverage**: Estimated 70-80% coverage (needs verification)
+- ⚠️ **Coverage**: Raw inventory is verified at 229 test classes and 2,613 `@Test` methods under `products/aep`; percentage coverage still needs a fresh CI report
 
 **Test Areas:**
 - AEP engine functionality
@@ -309,30 +310,30 @@ record AepConfig(
 ### 7.1 Critical Missing Features
 
 **Deployment Infrastructure:**
-- ❌ **Containerization**: No Docker or Kubernetes support
-- ❌ **CI/CD Pipeline**: No automated deployment
-- ❌ **Monitoring**: No comprehensive monitoring
-- ❌ **Alerting**: No alerting system
+- ✅ **Containerization**: Dockerfile, Kubernetes manifests, and Helm support are present
+- ✅ **CI/CD Pipeline**: CI/CD assets are present rather than absent
+- ✅ **Monitoring**: Monitoring assets are present in the current repo snapshot
+- ✅ **Alerting**: Alerting configuration is present rather than absent
 
 **Operational Features:**
-- ❌ **Backup & Recovery**: No data protection strategies
-- ❌ **Performance Tuning**: No performance optimization
-- ❌ **Capacity Planning**: No scaling strategies
-- ❌ **Disaster Recovery**: No disaster recovery procedures
+- ✅ **Backup & Recovery**: Recovery-oriented code paths are present in the current codebase
+- ✅ **Performance Tuning**: Performance-oriented code exists; benchmark publication still remains a separate production-readiness task
+- ⚠️ **Capacity Planning**: The March claim needs re-validation against current source paths before it is used as production evidence
+- ✅ **Disaster Recovery**: Disaster-recovery code is present rather than absent
 
 ### 7.2 Framework-Only Implementations
 
 **Analytics Features:**
-- ❌ **Advanced Analytics**: Framework present but limited implementations
-- ❌ **Machine Learning**: Basic ML framework only
-- ❌ **Forecasting**: Limited forecasting capabilities
-- ❌ **Anomaly Detection**: Basic detection only
+- ✅ **Advanced Analytics**: Analytics implementation is substantially beyond framework-only status in the current snapshot
+- ⚠️ **Machine Learning**: ML-specific production evidence still needs targeted re-validation
+- ✅ **Forecasting**: Forecasting implementation is no longer merely limited in code
+- ✅ **Anomaly Detection**: Anomaly detection implementation is no longer merely basic in code
 
 **Agent Features:**
-- ❌ **Advanced Agents**: Basic agent framework only
-- ❌ **Agent Learning**: Limited learning capabilities
-- ❌ **Agent Memory**: Basic memory management only
-- ❌ **Agent Collaboration**: Limited collaboration features
+- ✅ **Advanced Agents**: Current code goes beyond a basic framework-only state
+- ⚠️ **Agent Learning**: Learning claims should be treated carefully where they depend on stale feature-store references
+- ⚠️ **Agent Memory**: Durable memory exists, but it remains conditional on configured database-backed runtime infrastructure
+- ✅ **Agent Collaboration**: Collaboration/orchestration support is present beyond the previously limited state
 
 ---
 
@@ -340,27 +341,27 @@ record AepConfig(
 
 ### 8.1 Containerization
 
-**Missing:**
-- ❌ **Dockerfile**: No container image definition
-- ❌ **Multi-stage Builds**: No optimized production images
-- ❌ **Health Checks**: No container health checks
-- ❌ **Security Scanning**: No vulnerability scanning
+**Current State (revalidated 2026-04-15):**
+- ✅ **Dockerfile**: Container image definition is present
+- ✅ **Multi-stage Builds**: Production-oriented container build assets are present
+- ✅ **Health Checks**: Runtime health endpoints are present
+- ⚠️ **Security Scanning**: CI-integrated security scanning should be treated as present in repo assets, but not re-audited in this pass
 
 ### 8.2 Orchestration
 
-**Missing:**
-- ❌ **Kubernetes Manifests**: No deployment configurations
-- ❌ **Service Mesh**: No service discovery
-- ❌ **Ingress**: No external access configuration
-- ❌ **Auto-scaling**: No horizontal pod autoscaling
+**Current State (revalidated 2026-04-15):**
+- ✅ **Kubernetes Manifests**: Deployment configurations are present
+- ⚠️ **Service Mesh**: Service-mesh coverage still needs a targeted deployment review
+- ✅ **Ingress**: External-access configuration assets are present
+- ✅ **Auto-scaling**: Auto-scaling configuration assets are present in the deployment manifests
 
 ### 8.3 CI/CD Pipeline
 
-**Missing:**
-- ❌ **Build Pipeline**: No automated build process
-- ❌ **Test Automation**: No automated test execution
-- ❌ **Deployment Pipeline**: No automated deployment
-- ❌ **Release Management**: No version control
+**Current State (revalidated 2026-04-15):**
+- ✅ **Build Pipeline**: Automated build assets are present
+- ✅ **Test Automation**: Automated test execution assets are present
+- ✅ **Deployment Pipeline**: Automated deployment assets are present
+- ⚠️ **Release Management**: Release-process effectiveness still needs a fresh operational review
 
 ---
 
