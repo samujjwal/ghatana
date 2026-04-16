@@ -13,10 +13,12 @@ import './styles/globals.css';
  */
 
 async function bootstrap() {
+  const shouldUseMsw = import.meta.env.DEV && import.meta.env.VITE_USE_MSW !== 'false';
+
   // Enable MSW in development so the UI works without a running backend.
   // The worker is tree-shaken out of production builds (`import.meta.env.DEV`
   // is replaced with `false` by Vite at build time).
-  if (import.meta.env.DEV) {
+  if (shouldUseMsw) {
     const { startMswBrowser } = await import('./mocks/browser');
     await startMswBrowser();
   }

@@ -90,7 +90,7 @@ const componentLibrary: ComponentDef[] = [
     label: 'Backend API',
     description: 'Backend API service (alias for tests)',
     icon: 'API',
-    defaultData: { label: 'Backend API', method: 'REST', port: 8080 },
+    defaultData: { label: 'Backend API', method: 'REST', port: 7002 },
     tags: ['backend', 'api'],
     testId: 'backend-api',
   },

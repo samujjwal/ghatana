@@ -8,8 +8,8 @@ import io.activej.dns.DnsClient;
 import io.activej.dns.IDnsClient;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
+import io.activej.inject.Injector;
 import io.activej.inject.annotation.Provides;
-import io.activej.inject.annotation.Inject;
 import io.activej.inject.module.AbstractModule;
 import io.activej.launcher.Launcher;
 import io.grpc.Server;
@@ -40,12 +40,12 @@ public class CanvasAIServer extends Launcher {
 
     private Server server;
 
-    @Inject
-    private CanvasAIServiceImpl canvasAIService;
-
     @Override
     protected void run() throws Exception {
         logger.info("Starting Canvas AI Server on port {}", PORT);
+
+        CanvasAIServiceImpl canvasAIService =
+            Injector.of(getModule()).getInstance(CanvasAIServiceImpl.class);
 
         // Build gRPC server with injected service
         server = ServerBuilder.forPort(PORT)

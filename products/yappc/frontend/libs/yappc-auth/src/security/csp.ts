@@ -16,6 +16,9 @@ import fp from 'fastify-plugin';
 // ============================================================================
 
 export interface CSPConfig {
+  // Directives (legacy support)
+  directives?: Record<string, string[]>;
+  
   // Directives
   defaultSrc?: string[];
   scriptSrc?: string[];
@@ -88,7 +91,7 @@ const defaultCSPConfig: CSPConfig = {
  * Build CSP header string from configuration
  * @doc.purpose Generate CSP directive string
  */
-function buildCSPHeader(config: CSPConfig): string {
+export function buildCSPHeader(config: CSPConfig): string {
   const directives: string[] = [];
 
   if (config.defaultSrc) {
@@ -162,7 +165,7 @@ function buildCSPHeader(config: CSPConfig): string {
  * Generate cryptographically secure nonce
  * @doc.purpose Create nonce for inline script/style CSP
  */
-function generateNonce(): string {
+export function generateNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');

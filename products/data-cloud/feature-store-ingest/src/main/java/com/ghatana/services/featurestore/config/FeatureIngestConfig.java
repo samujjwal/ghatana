@@ -76,7 +76,7 @@ public final class FeatureIngestConfig {
             .mode(env(ENV_MODE, "inmemory"))
             .dbUrl(env(ENV_DB_URL, null))
             .dbUser(env(ENV_DB_USER, "featureingest"))
-            .dbPassword(env(ENV_DB_PASSWORD, ""))
+            .dbPassword(env(ENV_DB_PASSWORD, null))
             .tenants(env(ENV_TENANTS, "default"))
             .batchSize(Integer.parseInt(env(ENV_BATCH_SIZE, "100")))
             .retryDelayMs(Long.parseLong(env(ENV_RETRY_DELAY_MS, "5000")))
@@ -98,6 +98,10 @@ public final class FeatureIngestConfig {
         if ("postgres".equalsIgnoreCase(mode) && (dbUrl == null || dbUrl.isBlank())) {
             throw new IllegalStateException(
                 "FEATURE_INGEST_MODE=postgres requires FEATURE_INGEST_DB_URL to be set.");
+        }
+        if ("postgres".equalsIgnoreCase(mode) && (dbPassword == null || dbPassword.isBlank())) {
+            throw new IllegalStateException(
+                "FEATURE_INGEST_MODE=postgres requires FEATURE_INGEST_DB_PASSWORD to be set.");
         }
         if (batchSize <= 0) {
             throw new IllegalStateException("FEATURE_INGEST_BATCH_SIZE must be positive, got: " + batchSize);

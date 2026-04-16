@@ -9,13 +9,7 @@
  * @doc.layer presentation
  */
 
-import {
-  useQuery,
-  useLazyQuery,
-  useMutation,
-  useSubscription,
-  useApolloClient,
-} from '@apollo/client';
+import { useQuery, useLazyQuery, useMutation, useSubscription } from "@apollo/client/react";
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
@@ -79,7 +73,7 @@ import {
   type AISuggestionContext,
   type RegenerateOptions,
   type BootstrapSessionFilter,
-} from '@yappc/core/api';
+} from '../graphql/operations/bootstrapping.operations';
 
 // =============================================================================
 // Session Hooks

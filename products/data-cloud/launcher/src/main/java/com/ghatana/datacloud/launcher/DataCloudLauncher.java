@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  *   # Minimal local-dev invocation
  *   DATACLOUD_PROFILE=local \
  *   DATACLOUD_HTTP_ENABLED=true \
- *   ./gradlew :products:data-cloud:launcher:run
+ *   ./gradlew :products:data-cloud:launcher:runLauncher
  * </pre>
  *
  * @doc.type class

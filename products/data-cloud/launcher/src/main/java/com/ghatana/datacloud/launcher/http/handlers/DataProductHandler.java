@@ -51,7 +51,10 @@ public final class DataProductHandler {
     }
 
     public Promise<HttpResponse> handlePublishDataProduct(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
 
         return request.loadBody().then(body -> {
@@ -84,7 +87,10 @@ public final class DataProductHandler {
     }
 
     public Promise<HttpResponse> handleListDataProducts(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
         int limit = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 100);
 
@@ -101,7 +107,10 @@ public final class DataProductHandler {
     }
 
     public Promise<HttpResponse> handleSubscribe(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
         String productId = request.getPathParameter("productId");
 

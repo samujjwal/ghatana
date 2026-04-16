@@ -147,7 +147,9 @@ public class SettlementInterventionService {
                         bestVal = val;
                         best = kv[0].trim();
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                    // Expected fallback: ignore malformed SHAP values and continue ranking valid features.
+                }
             }
         }
         return best;

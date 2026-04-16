@@ -243,7 +243,7 @@ public class YamlConfigSource implements ConfigSource {
 
             String json = yamlMapper.writeValueAsString(value);
             return Optional.of(yamlMapper.readValue(json, type));
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.warn("Cannot convert value to type {} for key: {}", type.getSimpleName(), key, e);
             return Optional.empty();
         }

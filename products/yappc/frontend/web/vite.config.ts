@@ -215,9 +215,11 @@ export default defineConfig({
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
       '@yappc/api': path.resolve(__dirname, '../libs/api/src'),
+      '@yappc/core': path.resolve(__dirname, '../libs/yappc-core/src'),
+      '@yappc/core/api': path.resolve(__dirname, '../libs/yappc-core/src/api'),
       '@yappc/devsecops': path.resolve(__dirname, '../libs/yappc-devsecops/src'),
-      '@yappc/auth': path.resolve(__dirname, '../libs/yappc-auth/src'),
-      '@yappc/auth/rbac': path.resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
+      '@yappc/auth': path.resolve(__dirname, '../libs/yappc-auth/dist'),
+      '@yappc/auth/rbac': path.resolve(__dirname, '../libs/yappc-auth/dist/auth/rbac'),
       '@yappc/chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
       '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
       '@yappc/initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
@@ -230,10 +232,8 @@ export default defineConfig({
         __dirname,
         'src/shims/ghatana-design-system.ts'
       ),
-      '@ghatana/theme': path.resolve(
-        __dirname,
-        'src/theme/index.ts'
-      ),
+      '@ghatana/theme': path.resolve(__dirname, 'src/theme/index.ts'),
+      '@ghatana/theme/provider': path.resolve(__dirname, 'src/theme/provider.ts'),
       '@ghatana/charts': path.resolve(
         __dirname,
         '../../../../platform/typescript/charts/src/index.ts'
@@ -246,12 +246,13 @@ export default defineConfig({
         __dirname,
         '../../../../platform/typescript/accessibility/src/index.ts'
       ),
-
-      // Legacy compatibility
-      '@ghatana/canvas': path.resolve(
+      '@ghatana/state': path.resolve(
         __dirname,
-        '../../../../platform/typescript/canvas/src'
+        '../../../../platform/typescript/state/src/index.ts'
       ),
+
+      // Legacy compatibility - using shim to avoid complex cross-package resolution
+      '@ghatana/canvas': path.resolve(__dirname, 'src/shims/ghatana-canvas.ts'),
       '@ghatana/types': path.resolve(__dirname, '../libs/types/src'),
 
       // Capacitor shims for web builds (native-only packages → no-op stubs)
@@ -286,6 +287,7 @@ export default defineConfig({
       openai: path.resolve(__dirname, 'src/shims/openai.ts'),
       '@anthropic-ai/sdk': path.resolve(__dirname, 'src/shims/anthropic.ts'),
       'react-colorful': path.resolve(__dirname, 'src/shims/react-colorful.tsx'),
+      '@base-ui/react/tabs': path.resolve(__dirname, 'src/shims/base-ui-tabs.tsx'),
       '@ghatana/tokens': path.resolve(
         __dirname,
         '../../../../platform/typescript/tokens/src/index.ts'

@@ -1,5 +1,8 @@
 package com.ghatana.audio.video.infrastructure.messaging;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.platform.messaging.strategy.QueueConsumerStrategy;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
@@ -30,6 +33,7 @@ public class TranscriptionJobConsumer {
     private final String queueName;
     private final QueueConsumerStrategy consumerStrategy;
     private final MetricsCollector metricsCollector;
+    private final ObjectMapper objectMapper;
     private final ExecutorService processingExecutor;
     private final AtomicReference<ConsumerState> state = new AtomicReference<>(ConsumerState.CREATED);
     private Function<TranscriptionJobProducer.TranscriptionJobMessage, Promise<Void>> jobProcessor;
@@ -37,7 +41,17 @@ public class TranscriptionJobConsumer {
     public TranscriptionJobConsumer(String queueName,
                                     QueueConsumerStrategy consumerStrategy,
                                     MetricsCollector metricsCollector) {
-        this(queueName, consumerStrategy, metricsCollector, 
+        this(queueName, consumerStrategy, metricsCollector,
+            createDefaultObjectMapper(),
+            Executors.newVirtualThreadPerTaskExecutor());
+    }
+
+    public TranscriptionJobConsumer(String queueName,
+                                    QueueConsumerStrategy consumerStrategy,
+                                    MetricsCollector metricsCollector,
+                                    ObjectMapper objectMapper) {
+        this(queueName, consumerStrategy, metricsCollector,
+            objectMapper,
             Executors.newVirtualThreadPerTaskExecutor());
     }
     
@@ -45,10 +59,27 @@ public class TranscriptionJobConsumer {
                                     QueueConsumerStrategy consumerStrategy,
                                     MetricsCollector metricsCollector,
                                     ExecutorService processingExecutor) {
+        this(queueName, consumerStrategy, metricsCollector,
+            createDefaultObjectMapper(),
+            processingExecutor);
+    }
+
+    public TranscriptionJobConsumer(String queueName,
+                                    QueueConsumerStrategy consumerStrategy,
+                                    MetricsCollector metricsCollector,
+                                    ObjectMapper objectMapper,
+                                    ExecutorService processingExecutor) {
         this.queueName = Objects.requireNonNull(queueName, "queueName cannot be null");
         this.consumerStrategy = Objects.requireNonNull(consumerStrategy, "consumerStrategy cannot be null");
         this.metricsCollector = Objects.requireNonNull(metricsCollector, "metricsCollector cannot be null");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
         this.processingExecutor = Objects.requireNonNull(processingExecutor, "processingExecutor cannot be null");
+    }
+
+    private static ObjectMapper createDefaultObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
     
     /**
@@ -145,9 +176,12 @@ public class TranscriptionJobConsumer {
     }
     
     private TranscriptionJobProducer.TranscriptionJobMessage parseJob(String payload) {
-        // Simple parsing - in production use Jackson
-        // This is a simplified version for demonstration
-        throw new UnsupportedOperationException("JSON parsing not implemented - use Jackson ObjectMapper");
+        try {
+            return objectMapper.readValue(payload, TranscriptionJobProducer.TranscriptionJobMessage.class);
+        } catch (JsonProcessingException e) {
+            LOG.error("Failed to deserialize TranscriptionJobMessage — payload may be malformed: {}", e.getMessage());
+            throw new IllegalArgumentException("Malformed transcription job message: " + e.getMessage(), e);
+        }
     }
     
     /**

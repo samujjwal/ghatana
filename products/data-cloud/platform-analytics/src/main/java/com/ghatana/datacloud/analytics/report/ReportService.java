@@ -383,7 +383,6 @@ public final class ReportService implements AutoCloseable {
      * Parses a NDJSON string into a list of string-keyed maps.
      * Lines that cannot be parsed are silently skipped.
      */
-    @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> parseNdjson(String ndjson) {
         if (ndjson == null || ndjson.isBlank()) return List.of();
         List<Map<String, Object>> result = new ArrayList<>();
@@ -440,8 +439,12 @@ public final class ReportService implements AutoCloseable {
         if (v.startsWith("\"") && v.endsWith("\"")) {
             return v.substring(1, v.length() - 1).replace("\\\"", "\"");
         }
-        try { return Long.parseLong(v); }   catch (NumberFormatException ignored) {}
-        try { return Double.parseDouble(v); } catch (NumberFormatException ignored) {}
+        try { return Long.parseLong(v); } catch (NumberFormatException ignored) {
+            // Expected fallback: non-integral JSON scalars are parsed by later branches.
+        }
+        try { return Double.parseDouble(v); } catch (NumberFormatException ignored) {
+            // Expected fallback: preserve non-numeric values as strings.
+        }
         return v;
     }
 

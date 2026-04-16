@@ -47,8 +47,23 @@ export async function authRoutes(fastify: unknown) {
           200: {
             type: 'object',
             properties: {
-              user: { $ref: '#/schemas/User' },
-              tokens: { $ref: '#/schemas/AuthTokens' },
+              user: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  email: { type: 'string' },
+                  name: { type: 'string' },
+                  role: { type: 'string' },
+                },
+              },
+              tokens: {
+                type: 'object',
+                properties: {
+                  accessToken: { type: 'string' },
+                  refreshToken: { type: 'string' },
+                  expiresIn: { type: 'number' },
+                },
+              },
             },
           },
         },

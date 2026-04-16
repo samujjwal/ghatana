@@ -2,7 +2,8 @@ package com.ghatana.platform.cache.events;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.platform.cache.DistributedCacheService.CacheBackend;
-import com.ghatana.platform.observability.structured.StructuredLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.activej.async.function.AsyncFunction;
 import io.activej.promise.Promise;
 
@@ -39,7 +40,7 @@ import java.util.UUID;
  * Thread-safe: Uses async/promise-based approach.
  */
 public final class CacheInvalidationEventPublisher {
-    private static final StructuredLogger log = StructuredLogger.create(CacheInvalidationEventPublisher.class);
+    private static final Logger log = LoggerFactory.getLogger(CacheInvalidationEventPublisher.class);
 
     private final AsyncMessageBus messageBus;
     private final String serviceSource;
@@ -307,7 +308,7 @@ interface AsyncMessageBus {
  * Thread-safe: Uses async/promise-based approach.
  */
 class CacheInvalidationEventSubscriber {
-    private static final StructuredLogger log = StructuredLogger.create(CacheInvalidationEventSubscriber.class);
+    private static final Logger log = LoggerFactory.getLogger(CacheInvalidationEventSubscriber.class);
 
     private final AsyncMessageBus messageBus;
     private final CacheBackend cacheBackend;

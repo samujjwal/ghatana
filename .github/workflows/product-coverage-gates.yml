@@ -1,0 +1,109 @@
+name: Product Coverage Gates
+
+on:
+  pull_request:
+    paths:
+      - 'products/finance/**'
+      - 'products/phr/**'
+      - 'products/security-gateway/**'
+      - '.github/workflows/product-coverage-gates.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'products/finance/**'
+      - 'products/phr/**'
+      - 'products/security-gateway/**'
+  workflow_dispatch:
+
+env:
+  GRADLE_OPTS: -Xmx2g -XX:MaxMetaspaceSize=512m
+
+jobs:
+  coverage-gates:
+    name: Coverage Gate (${{ matrix.product }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - product: Finance
+            taskPrefix: ':products:finance'
+            reportPath: 'products/finance/**/build/reports/jacoco/test/jacocoTestReport.xml'
+          - product: PHR
+            taskPrefix: ':products:phr'
+            reportPath: 'products/phr/**/build/reports/jacoco/test/jacocoTestReport.xml'
+          - product: Security Gateway
+            taskPrefix: ':products:security-gateway:platform:java'
+            reportPath: 'products/security-gateway/**/build/reports/jacoco/test/jacocoTestReport.xml'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run tests for ${{ matrix.product }}
+        run: |
+          ./gradlew \
+            ${{ matrix.taskPrefix }}:test \
+            --continue \
+            --no-daemon \
+            -q
+
+      - name: Generate JaCoCo report for ${{ matrix.product }}
+        run: |
+          ./gradlew \
+            ${{ matrix.taskPrefix }}:jacocoTestReport \
+            --no-daemon \
+            -q
+
+      - name: Verify coverage thresholds for ${{ matrix.product }}
+        id: coverage_verify
+        run: |
+          ./gradlew \
+            ${{ matrix.taskPrefix }}:jacocoTestCoverageVerification \
+            --no-daemon \
+            -q
+        continue-on-error: true
+
+      - name: Upload JaCoCo XML for ${{ matrix.product }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ matrix.reportPath }}
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage artifacts for ${{ matrix.product }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.product }}-coverage-reports
+          path: ${{ matrix.reportPath }}
+          retention-days: 7
+
+      - name: Write coverage summary for ${{ matrix.product }}
+        if: always()
+        run: |
+          {
+            echo "## ${{ matrix.product }} Coverage Gate"
+            echo
+            echo "- Test task: ${{ matrix.taskPrefix }}:test"
+            echo "- Report task: ${{ matrix.taskPrefix }}:jacocoTestReport"
+            echo "- Verification task: ${{ matrix.taskPrefix }}:jacocoTestCoverageVerification"
+            echo "- Verification outcome: ${{ steps.coverage_verify.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if coverage thresholds are violated for ${{ matrix.product }}
+        if: steps.coverage_verify.outcome == 'failure'
+        run: |
+          echo "Coverage gate failed for ${{ matrix.product }}."
+          exit 1

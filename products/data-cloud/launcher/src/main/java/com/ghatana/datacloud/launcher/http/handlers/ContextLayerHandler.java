@@ -97,7 +97,10 @@ public final class ContextLayerHandler {
      * object is returned when no entries have been set yet.
      */
     public Promise<HttpResponse> handleGetContext(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
 
         Map<String, Object> entries = currentEntries(tenantId);
@@ -145,7 +148,10 @@ public final class ContextLayerHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handlePutContext(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
 
         return request.loadBody(64 * 1024)
@@ -186,7 +192,10 @@ public final class ContextLayerHandler {
      * Returns {@code 204 No Content} on success. Returns {@code 404} if the key is unknown.
      */
     public Promise<HttpResponse> handleDeleteContextKey(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String rawKey = request.getPathParameter("key");
 
         if (rawKey == null || rawKey.isBlank()) {
@@ -226,7 +235,10 @@ public final class ContextLayerHandler {
      * }</pre>
      */
     public Promise<HttpResponse> handleGetSnapshot(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = http.resolveCorrelationId(request);
 
         Map<String, Object> entries = currentEntries(tenantId);

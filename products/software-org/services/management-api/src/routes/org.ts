@@ -20,7 +20,115 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Prisma } from '../../generated/prisma-client/index.js';
+import { z } from 'zod';
 import { prisma } from '../db/client.js';
+
+const organizationQuerySchema = z.object({
+    organizationId: z.string().min(1).optional(),
+});
+
+const createDepartmentSchema = z.object({
+    name: z.string().min(1),
+    type: z.string().min(1),
+    description: z.string().min(1).optional(),
+    organizationId: z.string().min(1).optional(),
+    status: z.string().min(1).optional(),
+});
+
+const addDepartmentAgentSchema = z.object({
+    id: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    role: z.string().min(1).optional(),
+    status: z.enum(['ONLINE', 'OFFLINE', 'BUSY']).optional(),
+    capabilities: z.array(z.string()).optional(),
+    configuration: z.record(z.string(), z.unknown()).optional(),
+});
+
+const updateAgentSchema = z.object({
+    name: z.string().min(1).optional(),
+    role: z.string().min(1).optional(),
+    status: z.enum(['ONLINE', 'OFFLINE', 'BUSY']).optional(),
+    capabilities: z.array(z.string()).optional(),
+    configuration: z.record(z.string(), z.unknown()).optional(),
+});
+
+const moveAgentSchema = z.object({
+    agentId: z.string().min(1),
+    fromDeptId: z.string().min(1),
+    toDeptId: z.string().min(1),
+});
+
+const generatedAgentSchema = z.object({
+    name: z.string().min(1),
+    role: z.string().min(1),
+    description: z.string().min(1).optional(),
+});
+
+const generatedDepartmentSchema = z.object({
+    name: z.string().min(1),
+    type: z.string().min(1),
+    description: z.string().min(1),
+    agents: z.array(generatedAgentSchema).optional(),
+});
+
+const generateGenesisSchema = z.object({
+    name: z.string().min(1),
+    vision: z.string().min(1),
+    template: z.string().min(1),
+    departments: z.array(generatedDepartmentSchema).optional(),
+    options: z.record(z.string(), z.unknown()).optional(),
+});
+
+const materializeGenesisSchema = z.object({
+    name: z.string().min(1),
+    namespace: z.string().min(1),
+    vision: z.string().min(1),
+    template: z.string().min(1).optional(),
+    norms: z.array(z.string()).optional(),
+    departments: z.array(generatedDepartmentSchema),
+});
+
+type OrganizationQuery = z.infer<typeof organizationQuerySchema>;
+type CreateDepartmentBody = z.infer<typeof createDepartmentSchema>;
+type AddDepartmentAgentBody = z.infer<typeof addDepartmentAgentSchema>;
+type UpdateAgentBody = z.infer<typeof updateAgentSchema>;
+type MoveAgentBody = z.infer<typeof moveAgentSchema>;
+type GenerateGenesisBody = z.infer<typeof generateGenesisSchema>;
+type MaterializeGenesisBody = z.infer<typeof materializeGenesisSchema>;
+
+type PrismaErrorLike = {
+    code?: string;
+};
+
+function getValidationMessage(error: z.ZodError): string {
+    return error.issues
+        .map(issue => `${issue.path.join('.') || 'request'}: ${issue.message}`)
+        .join('; ');
+}
+
+function parsePayload<T>(schema: z.ZodType<T>, payload: unknown, reply: FastifyReply): T | null {
+    const parsed = schema.safeParse(payload);
+    if (!parsed.success) {
+        void reply.status(400).send({
+            error: getValidationMessage(parsed.error),
+            success: false,
+        });
+        return null;
+    }
+    return parsed.data;
+}
+
+function getErrorCode(error: unknown): string | undefined {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+        return (error as PrismaErrorLike).code;
+    }
+    return undefined;
+}
+
+function toInputJsonValue(value: Record<string, unknown> | string[]): Prisma.InputJsonValue {
+    return value as Prisma.InputJsonValue;
+}
 
 /**
  * Helper: Get or create default organization
@@ -54,10 +162,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * GET /api/v1/org/departments
      * List all departments
      */
-    fastify.get('/departments', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get<{ Querystring: OrganizationQuery }>('/departments', async (request: FastifyRequest<{ Querystring: OrganizationQuery }>, reply: FastifyReply) => {
         try {
-            // Get organization ID from query params or use default
-            const { organizationId } = request.query as any;
+            const query = parsePayload(organizationQuerySchema, request.query, reply);
+            if (!query) {
+                return;
+            }
+            const { organizationId } = query;
             let resolvedOrgId = organizationId;
 
             if (!resolvedOrgId) {
@@ -101,7 +212,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error fetching departments:', error);
+            fastify.log.error({ err: error }, 'Error fetching departments');
             return reply.status(500).send({
                 error: 'Failed to fetch departments',
                 success: false,
@@ -113,17 +224,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * POST /api/v1/org/departments
      * Create a new department
      */
-    fastify.post<{
-        Body: {
-            name: string;
-            type: string;
-            description?: string;
-            organizationId?: string;
-            status?: string;
-        };
-    }>('/departments', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post<{ Body: CreateDepartmentBody }>('/departments', async (request: FastifyRequest<{ Body: CreateDepartmentBody }>, reply: FastifyReply) => {
         try {
-            const { name, type, description, organizationId, status = 'active' } = request.body as any;
+            const body = parsePayload(createDepartmentSchema, request.body, reply);
+            if (!body) {
+                return;
+            }
+            const { name, type, description, organizationId, status = 'active' } = body;
 
             fastify.log.info({ name, type, organizationId }, 'Creating department');
 
@@ -217,7 +324,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error creating department:', error);
+            fastify.log.error({ err: error }, 'Error creating department');
             return reply.status(500).send({
                 error: 'Failed to create department',
                 success: false,
@@ -274,7 +381,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                     timestamp: new Date().toISOString(),
                 });
             } catch (error) {
-                fastify.log.error('Error fetching department:', error);
+                fastify.log.error({ err: error }, 'Error fetching department');
                 return reply.status(500).send({
                     error: 'Failed to fetch department',
                     success: false,
@@ -291,9 +398,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * GET /api/v1/org/agents
      * List all agents
      */
-    fastify.get('/agents', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get<{ Querystring: OrganizationQuery }>('/agents', async (request: FastifyRequest<{ Querystring: OrganizationQuery }>, reply: FastifyReply) => {
         try {
-            const { organizationId } = request.query as any;
+            const query = parsePayload(organizationQuerySchema, request.query, reply);
+            if (!query) {
+                return;
+            }
+            const { organizationId } = query;
             const org = organizationId ?
                 await prisma.organization.findUnique({ where: { id: organizationId } }) :
                 await getDefaultOrganization();
@@ -336,7 +447,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error fetching agents:', error);
+            fastify.log.error({ err: error }, 'Error fetching agents');
             return reply.status(500).send({
                 error: 'Failed to fetch agents',
                 success: false,
@@ -386,7 +497,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                     timestamp: new Date().toISOString(),
                 });
             } catch (error) {
-                fastify.log.error('Error fetching agent:', error);
+                fastify.log.error({ err: error }, 'Error fetching agent');
                 return reply.status(500).send({
                     error: 'Failed to fetch agent',
                     success: false,
@@ -401,18 +512,14 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      */
     fastify.post<{
         Params: { id: string };
-        Body: {
-            id?: string; // If provided, reassign existing agent
-            name?: string; // Required for new agent
-            role?: string; // Required for new agent
-            status?: 'ONLINE' | 'OFFLINE' | 'BUSY';
-            capabilities?: string[];
-            configuration?: Record<string, unknown>;
-        };
-    }>('/departments/:id/agents', async (request: FastifyRequest, reply: FastifyReply) => {
+        Body: AddDepartmentAgentBody;
+    }>('/departments/:id/agents', async (request: FastifyRequest<{ Params: { id: string }; Body: AddDepartmentAgentBody }>, reply: FastifyReply) => {
         try {
-            const { id: departmentId } = request.params as { id: string };
-            const agentData = request.body as any;
+            const { id: departmentId } = request.params;
+            const agentData = parsePayload(addDepartmentAgentSchema, request.body, reply);
+            if (!agentData) {
+                return;
+            }
 
             fastify.log.info({ departmentId, agentData }, 'Adding agent to department');
 
@@ -503,14 +610,14 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                         name: agentData.name,
                         role: agentData.role,
                         status: agentData.status || 'ONLINE',
-                        capabilities: agentData.capabilities || [],
-                        configuration: agentData.configuration || {},
+                        capabilities: toInputJsonValue(agentData.capabilities || []),
+                        configuration: toInputJsonValue(agentData.configuration || {}),
                     },
-                    include: {
-                        department: {
-                            select: { id: true, name: true, type: true },
-                        },
-                    },
+                });
+
+                const departmentSummary = await prisma.department.findUnique({
+                    where: { id: newAgent.departmentId },
+                    select: { id: true, name: true, type: true },
                 });
 
                 return reply.status(201).send({
@@ -523,7 +630,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                         status: newAgent.status,
                         capabilities: newAgent.capabilities,
                         configuration: newAgent.configuration,
-                        department: newAgent.department,
+                        department: departmentSummary,
                         createdAt: newAgent.createdAt.toISOString(),
                         updatedAt: newAgent.updatedAt.toISOString(),
                     },
@@ -535,7 +642,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
             fastify.log.error({ err: error, body: request.body, params: request.params }, 'Error adding agent to department');
 
             // Handle Prisma unique constraint violations
-            if ((error as any).code === 'P2002') {
+            if (getErrorCode(error) === 'P2002') {
                 return reply.status(409).send({
                     error: 'Agent with this name already exists',
                     success: false,
@@ -556,47 +663,51 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      */
     fastify.put<{
         Params: { id: string };
-        Body: {
-            name?: string;
-            role?: string;
-            status?: 'ONLINE' | 'OFFLINE' | 'BUSY';
-            capabilities?: string[];
-            configuration?: Record<string, unknown>;
-        };
-    }>('/agents/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+        Body: UpdateAgentBody;
+    }>('/agents/:id', async (request: FastifyRequest<{ Params: { id: string }; Body: UpdateAgentBody }>, reply: FastifyReply) => {
         try {
-            const { id } = request.params as { id: string };
-            const updates = request.body as any;
+            const { id } = request.params;
+            const updates = parsePayload(updateAgentSchema, request.body, reply);
+            if (!updates) {
+                return;
+            }
 
             fastify.log.info({ id, updates }, 'Updating agent');
 
-            // Build update data
-            const updateData: any = {};
+            const updateData: {
+                name?: string;
+                role?: string;
+                status?: 'ONLINE' | 'OFFLINE' | 'BUSY';
+                capabilities?: Prisma.InputJsonValue;
+                configuration?: Prisma.InputJsonValue;
+                updatedAt: Date;
+            } = {
+                updatedAt: new Date(),
+            };
             if (updates.name !== undefined) updateData.name = updates.name;
             if (updates.role !== undefined) updateData.role = updates.role;
             if (updates.status !== undefined) updateData.status = updates.status;
-            if (updates.capabilities !== undefined) updateData.capabilities = updates.capabilities;
+            if (updates.capabilities !== undefined) updateData.capabilities = toInputJsonValue(updates.capabilities);
             if (updates.configuration !== undefined) {
                 // Merge with existing configuration
                 const existing = await prisma.agent.findUnique({
                     where: { id },
                     select: { configuration: true },
                 });
-                updateData.configuration = {
+                updateData.configuration = toInputJsonValue({
                     ...(existing?.configuration as Record<string, unknown> || {}),
                     ...updates.configuration,
-                };
+                });
             }
-            updateData.updatedAt = new Date();
 
             const agent = await prisma.agent.update({
                 where: { id },
                 data: updateData,
-                include: {
-                    department: {
-                        select: { id: true, name: true, type: true },
-                    },
-                },
+            });
+
+            const departmentSummary = await prisma.department.findUnique({
+                where: { id: agent.departmentId },
+                select: { id: true, name: true, type: true },
             });
 
             return reply.send({
@@ -609,16 +720,16 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                     status: agent.status,
                     capabilities: agent.capabilities,
                     configuration: agent.configuration,
-                    department: agent.department,
+                    department: departmentSummary,
                     createdAt: agent.createdAt.toISOString(),
                     updatedAt: agent.updatedAt.toISOString(),
                 },
                 success: true,
                 timestamp: new Date().toISOString(),
             });
-        } catch (error: any) {
-            fastify.log.error('Error updating agent:', error);
-            if (error.code === 'P2025') {
+        } catch (error: unknown) {
+            fastify.log.error({ err: error }, 'Error updating agent');
+            if (getErrorCode(error) === 'P2025') {
                 return reply.status(404).send({
                     error: 'Agent not found',
                     success: false,
@@ -660,9 +771,9 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                     success: true,
                     timestamp: new Date().toISOString(),
                 });
-            } catch (error: any) {
-                fastify.log.error('Error deleting agent:', error);
-                if (error.code === 'P2025') {
+            } catch (error: unknown) {
+                fastify.log.error({ err: error }, 'Error deleting agent');
+                if (getErrorCode(error) === 'P2025') {
                     return reply.status(404).send({
                         error: 'Agent not found',
                         success: false,
@@ -684,9 +795,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * GET /api/v1/org/hierarchy
      * Get organization hierarchy
      */
-    fastify.get('/hierarchy', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get<{ Querystring: OrganizationQuery }>('/hierarchy', async (request: FastifyRequest<{ Querystring: OrganizationQuery }>, reply: FastifyReply) => {
         try {
-            const { organizationId } = request.query as any;
+            const query = parsePayload(organizationQuerySchema, request.query, reply);
+            if (!query) {
+                return;
+            }
+            const { organizationId } = query;
             const org = organizationId ?
                 await prisma.organization.findUnique({ where: { id: organizationId } }) :
                 await getDefaultOrganization();
@@ -736,7 +851,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error fetching hierarchy:', error);
+            fastify.log.error({ err: error }, 'Error fetching hierarchy');
             return reply.status(500).send({ error: 'Failed to fetch hierarchy', success: false });
         }
     });
@@ -745,15 +860,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * POST /api/v1/org/hierarchy/move
      * Move agent between departments
      */
-    fastify.post<{
-        Body: {
-            agentId: string;
-            fromDeptId: string;
-            toDeptId: string;
-        };
-    }>('/hierarchy/move', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post<{ Body: MoveAgentBody }>('/hierarchy/move', async (request: FastifyRequest<{ Body: MoveAgentBody }>, reply: FastifyReply) => {
         try {
-            const { agentId, fromDeptId, toDeptId } = request.body as any;
+            const body = parsePayload(moveAgentSchema, request.body, reply);
+            if (!body) {
+                return;
+            }
+            const { agentId, fromDeptId, toDeptId } = body;
 
             fastify.log.info({ agentId, fromDeptId, toDeptId }, 'Moving agent between departments');
 
@@ -820,7 +933,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error moving agent:', error);
+            fastify.log.error({ err: error }, 'Error moving agent');
             return reply.status(500).send({
                 error: 'Failed to move agent',
                 success: false,
@@ -850,9 +963,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * GET /api/v1/org/config
      * Get organization configuration
      */
-    fastify.get('/config', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get<{ Querystring: OrganizationQuery }>('/config', async (request: FastifyRequest<{ Querystring: OrganizationQuery }>, reply: FastifyReply) => {
         try {
-            const { organizationId } = request.query as any;
+            const query = parsePayload(organizationQuerySchema, request.query, reply);
+            if (!query) {
+                return;
+            }
+            const { organizationId } = query;
             const org = organizationId ?
                 await prisma.organization.findUnique({ where: { id: organizationId } }) :
                 await getDefaultOrganization();
@@ -889,7 +1006,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error fetching config:', error);
+            fastify.log.error({ err: error }, 'Error fetching config');
             return reply.status(500).send({
                 error: 'Failed to fetch organization config',
                 success: false,
@@ -901,9 +1018,13 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * GET /api/v1/org/graph
      * Get organization graph for visualization
      */
-    fastify.get('/graph', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get<{ Querystring: OrganizationQuery }>('/graph', async (request: FastifyRequest<{ Querystring: OrganizationQuery }>, reply: FastifyReply) => {
         try {
-            const { organizationId } = request.query as any;
+            const query = parsePayload(organizationQuerySchema, request.query, reply);
+            if (!query) {
+                return;
+            }
+            const { organizationId } = query;
             const org = organizationId ?
                 await prisma.organization.findUnique({ where: { id: organizationId } }) :
                 await getDefaultOrganization();
@@ -959,7 +1080,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 timestamp: new Date().toISOString(),
             });
         } catch (error) {
-            fastify.log.error('Error fetching graph:', error);
+            fastify.log.error({ err: error }, 'Error fetching graph');
             return reply.status(500).send({
                 error: 'Failed to fetch organization graph',
                 success: false,
@@ -975,14 +1096,18 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * POST /api/v1/org/genesis/generate
      * Generate organization structure proposal based on vision and template
      */
-    fastify.post('/genesis/generate', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post<{ Body: GenerateGenesisBody }>('/genesis/generate', async (request: FastifyRequest<{ Body: GenerateGenesisBody }>, reply: FastifyReply) => {
         try {
-            const { name, vision, template, departments: requestedDepts, options } = request.body as any;
+            const body = parsePayload(generateGenesisSchema, request.body, reply);
+            if (!body) {
+                return;
+            }
+            const { name, vision, template, departments: requestedDepts, options } = body;
 
             fastify.log.info({ name, template }, 'Generating organization proposal');
 
             // 1. Deterministic Base: Select template structure
-            let proposedDepartments: any[] = [];
+            let proposedDepartments: Array<z.infer<typeof generatedDepartmentSchema>> = [];
 
             if (template === 'startup') {
                 proposedDepartments = [
@@ -1095,7 +1220,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
 
             if (visionKeywords.includes('mobile') || visionKeywords.includes('app')) {
                 const engDept = proposedDepartments.find(d => d.type === 'ENGINEERING');
-                if (engDept) {
+                if (engDept?.agents) {
                     engDept.agents.push({ name: 'Mobile Engineer', role: 'engineer', description: 'iOS/Android development' });
                 }
             }
@@ -1112,6 +1237,10 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 });
             }
 
+            if (requestedDepts && requestedDepts.length > 0) {
+                proposedDepartments = requestedDepts;
+            }
+
             // 3. Construct Response
             const generatedOrg = {
                 id: 'gen-' + Date.now(),
@@ -1119,6 +1248,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
                 namespace: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
                 vision: vision,
                 departments: proposedDepartments,
+                options,
                 norms: [
                     'Focus on customer value',
                     'Continuous improvement',
@@ -1130,7 +1260,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
             return reply.send(generatedOrg);
 
         } catch (error) {
-            fastify.log.error('Error generating organization:', error);
+            fastify.log.error({ err: error }, 'Error generating organization');
             return reply.status(500).send({
                 error: 'Failed to generate organization',
                 success: false,
@@ -1142,9 +1272,12 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
      * POST /api/v1/org/genesis/materialize
      * Create the generated organization in the database
      */
-    fastify.post('/genesis/materialize', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post<{ Body: MaterializeGenesisBody }>('/genesis/materialize', async (request: FastifyRequest<{ Body: MaterializeGenesisBody }>, reply: FastifyReply) => {
         try {
-            const orgData = request.body as any;
+            const orgData = parsePayload(materializeGenesisSchema, request.body, reply);
+            if (!orgData) {
+                return;
+            }
 
             fastify.log.info({ orgName: orgData.name }, 'Materializing organization');
 
@@ -1193,7 +1326,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
 
                 if (dept.agents && dept.agents.length > 0) {
                     await prisma.agent.createMany({
-                        data: dept.agents.map((agent: any) => ({
+                        data: dept.agents.map(agent => ({
                             organizationId: organization.id,
                             departmentId: department.id,
                             name: agent.name,
@@ -1218,7 +1351,7 @@ export default async function orgRoutes(fastify: FastifyInstance): Promise<void>
             });
 
         } catch (error) {
-            fastify.log.error('Error materializing organization:', error);
+            fastify.log.error({ err: error }, 'Error materializing organization');
             return reply.status(500).send({
                 error: 'Failed to materialize organization',
                 success: false,

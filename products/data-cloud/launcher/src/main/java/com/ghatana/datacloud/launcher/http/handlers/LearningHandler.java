@@ -39,7 +39,10 @@ public class LearningHandler {
         if (learningBridge == null) {
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String correlationId = http.resolveCorrelationId(request);
         return Promise.ofBlocking(http.blockingExecutor(), () -> {
             try {

@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public final class StorageCostHandler {
 
     private static final Logger log = LoggerFactory.getLogger(StorageCostHandler.class);
+    private static final String COLLECTION_ID_PATTERN = "[A-Za-z0-9_-]+";
 
     // Pricing per GB/day per tier (DCC = Data Cloud Credits)
     private static final double HOT_DCC_PER_GB_DAY = 1.0;
@@ -83,7 +84,10 @@ public final class StorageCostHandler {
         if (sql == null || sql.isBlank()) {
             return Promise.of(http.errorResponse(400, "Missing required query parameter: sql"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("cost.estimate.query", "tenant", tenantId);
 
         // Submit a dry-run query — the engine builds a plan synchronously and caches it.
@@ -116,7 +120,15 @@ public final class StorageCostHandler {
      */
     public Promise<HttpResponse> handleCollectionCostReport(HttpRequest request) {
         String collectionId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        if (!isValidCollectionId(collectionId)) {
+            log.warn("Rejected invalid collection ID for storage cost report: {}", collectionId);
+            return Promise.of(http.errorResponse(400,
+                    "Invalid collection ID. Allowed characters: letters, numbers, underscore, hyphen."));
+        }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("cost.report.collection", "tenant", tenantId, "collection", collectionId);
 
         return analyticsEngine
@@ -162,5 +174,9 @@ public final class StorageCostHandler {
         tier.put("costDccPerDay", costDcc);
         tier.put("backend", backend);
         return tier;
+    }
+
+    private static boolean isValidCollectionId(String collectionId) {
+        return collectionId != null && !collectionId.isBlank() && collectionId.matches(COLLECTION_ID_PATTERN);
     }
 }

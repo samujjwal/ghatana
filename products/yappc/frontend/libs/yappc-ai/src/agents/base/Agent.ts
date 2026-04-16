@@ -332,9 +332,14 @@ export abstract class BaseAgent<
       if (!task || task.status !== 'pending') continue;
 
       // Execute task in background
-      this.executeTaskWithRetry(task).then(() => {
-        this.processQueue(); // Continue processing
-      });
+      void this.executeTaskWithRetry(task)
+        .then(() => {
+          this.processQueue(); // Continue processing
+        })
+        .catch((error: unknown) => {
+          console.error(`Agent ${this.name} task execution failed`, error);
+          this.processQueue();
+        });
     }
 
     this._isProcessingQueue = false;

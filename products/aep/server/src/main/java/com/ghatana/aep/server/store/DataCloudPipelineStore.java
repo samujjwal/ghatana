@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -428,6 +429,6 @@ public final class DataCloudPipelineStore implements PipelineRepository {
     private static Instant parseInstant(Object value) {
         if (value == null) return Instant.now();
         try { return Instant.parse(value.toString()); }
-        catch (Exception e) { return Instant.now(); }
+        catch (DateTimeParseException e) { return Instant.now(); }
     }
 }

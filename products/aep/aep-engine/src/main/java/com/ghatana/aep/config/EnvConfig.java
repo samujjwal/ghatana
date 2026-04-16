@@ -311,10 +311,10 @@ public class EnvConfig {
     /**
      * Gets the Data-Cloud base URL.
      *
-     * @return Data-Cloud base URL (default: http://localhost:8085)
+     * @return Data-Cloud base URL, or {@code null} when not configured
      */
     public String aepDcBaseUrl() {
-        return get("dc.base.url", System.getenv().getOrDefault("AEP_DC_BASE_URL", "http://localhost:8085"));
+        return get("dc.base.url", System.getenv("AEP_DC_BASE_URL"));
     }
 
     @Override

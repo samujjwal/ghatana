@@ -82,7 +82,7 @@ disruptor = "4.0.0"
 opensearch = "2.18.0"
 trino = "449"
 archunit = "1.3.0"
-lettuce = "6.3.2"
+lettuce = "6.5.3.RELEASE"
 kafka = "3.8.1"
 
 # Additional Libraries for YAPPC

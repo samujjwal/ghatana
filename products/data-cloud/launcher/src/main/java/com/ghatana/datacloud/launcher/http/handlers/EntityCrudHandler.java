@@ -90,7 +90,10 @@ public class EntityCrudHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSaveEntity(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         final String resolvedTenantId = tenantId;
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
@@ -171,7 +174,10 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleGetEntity(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -213,7 +219,10 @@ public class EntityCrudHandler {
 
     public Promise<HttpResponse> handleQueryEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -255,7 +264,10 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleDeleteEntity(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         final String resolvedTenantId = tenantId;
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
@@ -330,7 +342,10 @@ public class EntityCrudHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchSaveEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -411,7 +426,10 @@ public class EntityCrudHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchDeleteEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -503,7 +521,10 @@ public class EntityCrudHandler {
         Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
         if (qErr.isPresent()) return Promise.of(http.errorResponse(400, qErr.get()));
 
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
@@ -573,7 +594,10 @@ public class EntityCrudHandler {
     public Promise<HttpResponse> handleGetEntityAsOf(HttpRequest request) {
         String collection = request.getPathParameter("collection");
         String id = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String asOfParam = request.getQueryParameter("asOf");
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
@@ -628,7 +652,6 @@ public class EntityCrudHandler {
                         })
                         .toList();
 
-                Instant snapshotTime = asOf;
                 long version = current.version();
                 int appliedEvents = 0;
                 for (DataCloudClient.Event ev : sorted) {

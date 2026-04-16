@@ -8,7 +8,6 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,7 +39,6 @@ public final class LineageHandler {
     public static final int DEFAULT_GRAPH_DEPTH = -1; // unlimited
 
     private final HttpHandlerSupport http;
-    private final ObjectMapper objectMapper;
 
     /** Optional lineage plugin — null when lineage-plugin is not configured. */
     private final LineagePlugin lineagePlugin;
@@ -54,7 +52,6 @@ public final class LineageHandler {
      */
     public LineageHandler(HttpHandlerSupport http, ObjectMapper objectMapper, LineagePlugin lineagePlugin) {
         this.http = http;
-        this.objectMapper = objectMapper;
         this.lineagePlugin = lineagePlugin;
     }
 
@@ -76,7 +73,10 @@ public final class LineageHandler {
             return Promise.of(http.errorResponse(400, "Missing path parameter: collection"));
         }
 
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String direction = request.getQueryParameter("direction");
         if (direction == null) {
             direction = "BOTH";
@@ -167,7 +167,10 @@ public final class LineageHandler {
             return Promise.of(http.errorResponse(400, "Missing path parameter: collection"));
         }
 
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         log.debug("[P3.9.1] impact analysis request: tenant={} collection={}", tenantId, collection);
 

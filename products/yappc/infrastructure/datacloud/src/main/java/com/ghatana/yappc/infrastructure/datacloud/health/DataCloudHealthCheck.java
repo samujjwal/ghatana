@@ -99,39 +99,37 @@ public class DataCloudHealthCheck implements HealthCheck {
 
         // Execute a lightweight query to test connectivity
         return client.query(tenantId, "health-check", DataCloudClient.Query.limit(1))
-                .then(entities -> {
-                    Duration duration = Duration.between(start, Instant.now());
-
-                    Map<String, Object> details = Map.of(
-                            "queryExecuted", true,
-                            "latencyMs", duration.toMillis(),
-                            "tenantId", tenantId,
-                            "resultCount", entities.size()
-                    );
-
-                    return Promise.of(HealthCheckResult.healthy(
-                            "Data Cloud connection successful",
-                            details,
-                            duration
-                    ));
-                })
-                .whenException(error -> {
-                    Duration duration = Duration.between(start, Instant.now());
-
-                    Map<String, Object> details = Map.of(
-                            "error", error.getClass().getSimpleName(),
-                            "message", error.getMessage() != null ? error.getMessage() : "Unknown error",
-                            "latencyMs", duration.toMillis(),
-                            "tenantId", tenantId
-                    );
-
-                    return Promise.of(HealthCheckResult.unhealthy(
-                            "Data Cloud health check failed",
-                            details,
-                            duration,
-                            error
-                    ));
-                });
+                .map(
+                    entities -> {
+                        Duration duration = Duration.between(start, Instant.now());
+                        Map<String, Object> details = Map.of(
+                                "queryExecuted", true,
+                                "latencyMs", duration.toMillis(),
+                                "tenantId", tenantId,
+                                "resultCount", entities.size()
+                        );
+                        return HealthCheckResult.healthy(
+                                "Data Cloud connection successful",
+                                details,
+                                duration
+                        );
+                    },
+                    error -> {
+                        Duration duration = Duration.between(start, Instant.now());
+                        Map<String, Object> details = Map.of(
+                                "error", error.getClass().getSimpleName(),
+                                "message", error.getMessage() != null ? error.getMessage() : "Unknown error",
+                                "latencyMs", duration.toMillis(),
+                                "tenantId", tenantId
+                        );
+                        return HealthCheckResult.unhealthy(
+                                "Data Cloud health check failed",
+                                details,
+                                duration,
+                                error
+                        );
+                    }
+                );
     }
 
     @Override

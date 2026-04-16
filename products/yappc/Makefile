@@ -118,7 +118,7 @@ start-backend:
 	@docker compose --profile backend up -d
 	@echo "$(GREEN)✓ Backend services started!$(NC)"
 	@echo "$(YELLOW)Services available at:$(NC)"
-	@echo "  • Domain API:         http://localhost:8080"
+	@echo "  • Domain API:         http://localhost:8082"
 	@echo "  • AI Requirements:    http://localhost:8081"
 	@echo "  • Lifecycle API:      http://localhost:8082"
 	@echo "  • Backend API:        http://localhost:8000"
@@ -171,8 +171,8 @@ ps:
 ## health: Check health of all services
 health:
 	@echo "$(BLUE)═══ Checking service health ═══$(NC)"
-	@echo "Domain API (8080):"
-	@curl -s http://localhost:8080/health || echo "$(RED)✗ Not responding$(NC)"
+	@echo "Domain API (8082):"
+	@curl -s http://localhost:8082/health || echo "$(RED)✗ Not responding$(NC)"
 	@echo ""
 	@echo "AI Requirements API (8081):"
 	@curl -s http://localhost:8081/health || echo "$(RED)✗ Not responding$(NC)"
@@ -223,7 +223,7 @@ ports:
 	@echo "$(BLUE)═══ YAPPC Port Allocation ═══$(NC)"
 	@echo "  3000 - Frontend (React)"
 	@echo "  8000 - Backend API (Node.js)"
-	@echo "  8080 - Domain Service (Java)"
+	@echo "  8082 - Domain Service (Java)"
 	@echo "  8081 - AI Requirements API (Java)"
 	@echo "  8082 - Lifecycle API (Java)"
 	@echo "  8083 - Canvas AI Service (Java)"
@@ -233,7 +233,7 @@ ports:
 	@echo "$(YELLOW)Checking port availability...$(NC)"
 	@lsof -i:3000 2>&1 | grep LISTEN || echo "  3000 - $(GREEN)Available$(NC)"
 	@lsof -i:8000 2>&1 | grep LISTEN || echo "  8000 - $(GREEN)Available$(NC)"
-	@lsof -i:8080 2>&1 | grep LISTEN || echo "  8080 - $(GREEN)Available$(NC)"
+	@lsof -i:8082 2>&1 | grep LISTEN || echo "  8082 - $(GREEN)Available$(NC)"
 	@lsof -i:8081 2>&1 | grep LISTEN || echo "  8081 - $(GREEN)Available$(NC)"
 	@lsof -i:8082 2>&1 | grep LISTEN || echo "  8082 - $(GREEN)Available$(NC)"
 

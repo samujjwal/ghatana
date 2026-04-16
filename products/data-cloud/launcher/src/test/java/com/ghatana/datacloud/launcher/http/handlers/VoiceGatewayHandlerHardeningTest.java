@@ -7,6 +7,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog;
 import com.ghatana.datacloud.launcher.http.VoiceIntentCatalog.VoiceIntent;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,7 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -32,14 +37,16 @@ import static org.mockito.Mockito.when;
 class VoiceGatewayHandlerHardeningTest {
 
     private VoiceGatewayHandler handler;
+    private HttpHandlerSupport http;
 
     @BeforeEach
     void setUp() {
+        http = mock(HttpHandlerSupport.class);
         // Minimal constructor — no LLM, no STT, no audit
         handler = new VoiceGatewayHandler(
                 null, null,
                 new ObjectMapper(),
-                mock(HttpHandlerSupport.class),
+                http,
                 Runnable::run,
                 null, null,
                 null);
@@ -176,6 +183,52 @@ class VoiceGatewayHandlerHardeningTest {
         void keywordHeuristic_matchesListIntent() {
             var candidates = VoiceIntentCatalog.findCandidates("list all pipelines");
             assertThat(candidates).isNotEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("tenant enforcement")
+    class TenantEnforcementTests {
+
+        @Test
+        @DisplayName("handleListIntents returns 400 when tenant header is missing")
+        void handleListIntents_returns400WhenTenantMissing() {
+            HttpRequest request = mock(HttpRequest.class);
+            HttpResponse badRequest = mock(HttpResponse.class);
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+            HttpResponse response = handler.handleListIntents(request).getResult();
+
+            assertThat(response).isSameAs(badRequest);
+        }
+
+        @Test
+        @DisplayName("handleVoiceIntent returns 400 when tenant header is missing before reading body")
+        void handleVoiceIntent_returns400WhenTenantMissing() {
+            HttpRequest request = mock(HttpRequest.class);
+            HttpResponse badRequest = mock(HttpResponse.class);
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+            HttpResponse response = handler.handleVoiceIntent(request).getResult();
+
+            assertThat(response).isSameAs(badRequest);
+            verify(request, never()).loadBody(any(int.class));
+        }
+
+        @Test
+        @DisplayName("handleClassifyOnly returns 400 when tenant header is missing before reading body")
+        void handleClassifyOnly_returns400WhenTenantMissing() {
+            HttpRequest request = mock(HttpRequest.class);
+            HttpResponse badRequest = mock(HttpResponse.class);
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+            HttpResponse response = handler.handleClassifyOnly(request).getResult();
+
+            assertThat(response).isSameAs(badRequest);
+            verify(request, never()).loadBody(any(int.class));
         }
     }
 }

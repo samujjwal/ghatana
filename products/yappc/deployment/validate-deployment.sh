@@ -78,7 +78,7 @@ else
     # Check Docker Compose services
     check_service "PostgreSQL" "http://localhost:5432" 2 || echo "  (PostgreSQL check may fail - this is expected)"
     check_service "Redis" "http://localhost:6379" 2 || echo "  (Redis check may fail - this is expected)"
-    check_service "YAPPC Backend" "http://localhost:8080/health"
+    check_service "YAPPC Backend" "http://localhost:8082/health"
     check_service "AI Requirements" "http://localhost:8081/health"
     check_service "Lifecycle API" "http://localhost:8082/health"
     check_service "YAPPC Web" "http://localhost:5173"

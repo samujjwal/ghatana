@@ -109,7 +109,11 @@ public final class ResilienceFactory {
         Object val = config.getProperties().get(key);
         if (val instanceof Number n) return n.intValue();
         if (val instanceof String s) {
-            try { return Integer.parseInt(s); } catch (NumberFormatException ignored) {}
+            try {
+                return Integer.parseInt(s);
+            } catch (NumberFormatException ignored) {
+                // Preserve the resilience default when a numeric property is malformed.
+            }
         }
         return defaultValue;
     }
@@ -117,7 +121,11 @@ public final class ResilienceFactory {
     private static Duration getDurationProperty(AgentConfig config, String key, Duration defaultValue) {
         Object val = config.getProperties().get(key);
         if (val instanceof String s) {
-            try { return Duration.parse(s); } catch (Exception ignored) {}
+            try {
+                return Duration.parse(s);
+            } catch (Exception ignored) {
+                // Preserve the resilience default when a duration property is malformed.
+            }
         }
         return defaultValue;
     }

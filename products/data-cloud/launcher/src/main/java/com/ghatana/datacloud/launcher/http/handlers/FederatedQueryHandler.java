@@ -99,7 +99,10 @@ public final class FederatedQueryHandler {
      * <p>Response (JSON): same shape as the direct analytics query result.
      */
     public Promise<HttpResponse> handleFederatedQuery(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("query.federated", "tenant", tenantId);
 
         return request.loadBody().then(body -> {

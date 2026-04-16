@@ -4,6 +4,8 @@ import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,6 +30,7 @@ import java.util.concurrent.Executor;
 public class TradingAnomalyDetectionService {
 
     private static final double HIGH_ANOMALY_THRESHOLD = 0.80;
+    private static final Logger log = LoggerFactory.getLogger(TradingAnomalyDetectionService.class);
 
     private final DataSource dataSource;
     private final Executor         executor;
@@ -167,7 +170,12 @@ public class TradingAnomalyDetectionService {
         }
         List<TradingFeatures> all = new ArrayList<>();
         for (String[] pair : pairs) {
-            try { all.add(buildFeatures(pair[0], pair[1], runDate)); } catch (Exception ignored) {}
+            try {
+                all.add(buildFeatures(pair[0], pair[1], runDate));
+            } catch (Exception e) {
+                log.warn("loadAllFeatures: skipping client={} instrument={} runDate={} due to feature build failure",
+                    pair[0], pair[1], runDate, e);
+            }
         }
         return all;
     }

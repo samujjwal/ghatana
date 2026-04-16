@@ -42,7 +42,7 @@ public class DeploymentHttpAdapter {
      * @param request deployment request
      * @return deployment response
      */
-    public DeploymentResponse handleDeploymentRequest(DeploymentRequest request) {
+    public Promise<DeploymentResponse> handleDeploymentRequest(DeploymentRequest request) {
         MDC.put("operation", "deployment");
         MDC.put("pipelineId", request.getPipelineId());
         MDC.put("tenantId", request.getTenantId());
@@ -53,11 +53,14 @@ public class DeploymentHttpAdapter {
                     request.getPipelineId(),
                     request.getTenantId());
 
-            return awaitOrThrow(orchestrator.requestDeployment(request), "deployment");
+            return orchestrator.requestDeployment(request)
+                    .mapException(error -> new IllegalStateException("Deployment deployment failed", error))
+                    .whenComplete(() -> {
+                        MDC.remove("operation");
+                        MDC.remove("pipelineId");
+                        MDC.remove("tenantId");
+                    });
         } finally {
-            MDC.remove("operation");
-            MDC.remove("pipelineId");
-            MDC.remove("tenantId");
         }
     }
 
@@ -68,7 +71,7 @@ public class DeploymentHttpAdapter {
      * @param request update request
      * @return deployment response
      */
-    public DeploymentResponse handleUpdateRequest(String deploymentId, DeploymentRequest request) {
+    public Promise<DeploymentResponse> handleUpdateRequest(String deploymentId, DeploymentRequest request) {
         MDC.put("operation", "update");
         MDC.put("deploymentId", deploymentId);
         MDC.put("pipelineId", request.getPipelineId());
@@ -81,12 +84,15 @@ public class DeploymentHttpAdapter {
                     request.getPipelineId(),
                     request.getTenantId());
 
-            return awaitOrThrow(orchestrator.requestUpdate(deploymentId, request), "update");
+            return orchestrator.requestUpdate(deploymentId, request)
+                    .mapException(error -> new IllegalStateException("Deployment update failed", error))
+                    .whenComplete(() -> {
+                        MDC.remove("operation");
+                        MDC.remove("deploymentId");
+                        MDC.remove("pipelineId");
+                        MDC.remove("tenantId");
+                    });
         } finally {
-            MDC.remove("operation");
-            MDC.remove("deploymentId");
-            MDC.remove("pipelineId");
-            MDC.remove("tenantId");
         }
     }
 
@@ -97,7 +103,7 @@ public class DeploymentHttpAdapter {
      * @param tenantId tenant for isolation
      * @return deployment response
      */
-    public DeploymentResponse handleUndeployRequest(String deploymentId, String tenantId) {
+    public Promise<DeploymentResponse> handleUndeployRequest(String deploymentId, String tenantId) {
         MDC.put("operation", "undeploy");
         MDC.put("deploymentId", deploymentId);
         MDC.put("tenantId", tenantId);
@@ -105,11 +111,14 @@ public class DeploymentHttpAdapter {
         try {
             log.info("Undeploy request received for deployment {} (tenant={})", deploymentId, tenantId);
 
-            return awaitOrThrow(orchestrator.requestUndeploy(deploymentId, tenantId), "undeploy");
+            return orchestrator.requestUndeploy(deploymentId, tenantId)
+                    .mapException(error -> new IllegalStateException("Deployment undeploy failed", error))
+                    .whenComplete(() -> {
+                        MDC.remove("operation");
+                        MDC.remove("deploymentId");
+                        MDC.remove("tenantId");
+                    });
         } finally {
-            MDC.remove("operation");
-            MDC.remove("deploymentId");
-            MDC.remove("tenantId");
         }
     }
 
@@ -132,13 +141,5 @@ public class DeploymentHttpAdapter {
         }
 
         return true;
-    }
-
-    private static DeploymentResponse awaitOrThrow(Promise<DeploymentResponse> promise, String operation) {
-        Throwable error = promise.getException();
-        if (error != null) {
-            throw new IllegalStateException("Deployment " + operation + " failed", error);
-        }
-        return promise.getResult();
     }
 }

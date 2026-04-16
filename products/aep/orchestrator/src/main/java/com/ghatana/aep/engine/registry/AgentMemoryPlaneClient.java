@@ -174,11 +174,11 @@ public class AgentMemoryPlaneClient {
     private static final class NoopTaskStateStore implements TaskStateStore {
         @Override public Promise<TaskState> createTask(@NotNull TaskState task) { return Promise.of(task); }
         @Override public Promise<@Nullable TaskState> getTask(@NotNull String taskId) { return Promise.of(null); }
-        @Override public Promise<TaskState> updatePhase(@NotNull String taskId, @NotNull String phaseId, @NotNull String status) { return Promise.ofException(new UnsupportedOperationException("No task state store configured")); }
+        @Override public Promise<TaskState> updatePhase(@NotNull String taskId, @NotNull String phaseId, @NotNull String status) { return Promise.ofException(new IllegalStateException("No persistent TaskStateStore is configured — wire a DataCloud-backed TaskStateStore implementation via AgentMemoryPlane")); }
         @Override public Promise<TaskCheckpoint> addCheckpoint(@NotNull String taskId, @NotNull TaskCheckpoint checkpoint) { return Promise.of(checkpoint); }
         @Override public Promise<TaskBlocker> reportBlocker(@NotNull String taskId, @NotNull TaskBlocker blocker) { return Promise.of(blocker); }
-        @Override public Promise<TaskBlocker> resolveBlocker(@NotNull String taskId, @NotNull String blockerId, @NotNull String resolution) { return Promise.ofException(new UnsupportedOperationException("No task state store configured")); }
-        @Override public Promise<ReconcileResult> reconcileOnResume(@NotNull String taskId) { return Promise.ofException(new UnsupportedOperationException("No task state store configured")); }
+        @Override public Promise<TaskBlocker> resolveBlocker(@NotNull String taskId, @NotNull String blockerId, @NotNull String resolution) { return Promise.ofException(new IllegalStateException("No persistent TaskStateStore is configured — wire a DataCloud-backed TaskStateStore implementation via AgentMemoryPlane")); }
+        @Override public Promise<ReconcileResult> reconcileOnResume(@NotNull String taskId) { return Promise.ofException(new IllegalStateException("No persistent TaskStateStore is configured — wire a DataCloud-backed TaskStateStore implementation via AgentMemoryPlane")); }
         @Override public Promise<Void> archiveTask(@NotNull String taskId) { return Promise.complete(); }
         @Override public Promise<List<TaskState>> listActiveTasks(@NotNull String agentId) { return Promise.of(List.of()); }
         @Override public Promise<Integer> garbageCollect(@NotNull Instant inactiveSince) { return Promise.of(0); }

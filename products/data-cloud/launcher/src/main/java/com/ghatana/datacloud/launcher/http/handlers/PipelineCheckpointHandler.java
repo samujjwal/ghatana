@@ -40,7 +40,7 @@ public class PipelineCheckpointHandler {
     // ==================== Pipeline Endpoints ====================
 
     public Promise<HttpResponse> handleListPipelines(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -60,7 +60,7 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSavePipeline(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -78,7 +78,7 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetPipeline(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -94,7 +94,7 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleUpdatePipeline(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -117,7 +117,7 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeletePipeline(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -132,7 +132,7 @@ public class PipelineCheckpointHandler {
     // ==================== Checkpoint Endpoints ====================
 
     public Promise<HttpResponse> handleListCheckpoints(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -151,7 +151,7 @@ public class PipelineCheckpointHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleSaveCheckpoint(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -173,7 +173,7 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleGetCheckpoint(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -188,7 +188,7 @@ public class PipelineCheckpointHandler {
     }
 
     public Promise<HttpResponse> handleDeleteCheckpoint(HttpRequest request) {
-        String tenantId = resolveTenantId(request);
+        String tenantId = resolveExplicitTenantId(request);
         if (tenantId == null) {
             return Promise.of(missingTenantResponse());
         }
@@ -217,7 +217,7 @@ public class PipelineCheckpointHandler {
         return result;
     }
 
-    private String resolveTenantId(HttpRequest request) {
+    private String resolveExplicitTenantId(HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId != null && !tenantId.isBlank()) {
             return tenantId;

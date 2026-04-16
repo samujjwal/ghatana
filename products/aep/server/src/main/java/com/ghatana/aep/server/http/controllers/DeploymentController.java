@@ -8,7 +8,6 @@ import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.security.AepInputValidator;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.orchestrator.deployment.contract.DeploymentRequest;
-import com.ghatana.orchestrator.deployment.contract.DeploymentResponse;
 import com.ghatana.orchestrator.deployment.http.DeploymentHttpAdapter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.activej.http.HttpRequest;
@@ -55,9 +54,8 @@ public class DeploymentController {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 DeploymentRequest deploymentRequest = parseDeploymentRequest(body);
                 validateDeploymentRequest(deploymentRequest);
-                DeploymentResponse response =
-                    deploymentAdapter.handleDeploymentRequest(deploymentRequest);
-                return Promise.of(HttpHelper.jsonResponse(toMap(response)));
+                return deploymentAdapter.handleDeploymentRequest(deploymentRequest)
+                    .map(response -> HttpHelper.jsonResponse(toMap(response)));
             } catch (Exception e) {
                 log.error("Error creating deployment", e);
                 return Promise.of(HttpHelper.errorResponse(400,
@@ -82,9 +80,8 @@ public class DeploymentController {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 DeploymentRequest deploymentRequest = parseDeploymentRequest(body);
                 validateDeploymentRequest(deploymentRequest);
-                DeploymentResponse response =
-                    deploymentAdapter.handleUpdateRequest(deploymentId, deploymentRequest);
-                return Promise.of(HttpHelper.jsonResponse(toMap(response)));
+                return deploymentAdapter.handleUpdateRequest(deploymentId, deploymentRequest)
+                    .map(response -> HttpHelper.jsonResponse(toMap(response)));
             } catch (Exception e) {
                 log.error("Error updating deployment", e);
                 return Promise.of(HttpHelper.errorResponse(400,
@@ -111,9 +108,8 @@ public class DeploymentController {
                     "tenantId query parameter is required"));
             }
             AepInputValidator.validateTenantId(tenantId);
-            DeploymentResponse response =
-                deploymentAdapter.handleUndeployRequest(deploymentId, tenantId);
-            return Promise.of(HttpHelper.jsonResponse(toMap(response)));
+            return deploymentAdapter.handleUndeployRequest(deploymentId, tenantId)
+                .map(response -> HttpHelper.jsonResponse(toMap(response)));
         } catch (Exception e) {
             log.error("Error deleting deployment", e);
             return Promise.of(HttpHelper.errorResponse(400,

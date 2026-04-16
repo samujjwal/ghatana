@@ -69,12 +69,12 @@ docker compose -f products/yappc/docker-compose.dev.yml up -d   # Postgres
 ./gradlew :products:yappc:services:run
 ```
 
-The service starts on port **8080** by default.
+The service starts on port **8082** by default.
 
 ### 3. Health check
 
 ```bash
-curl http://localhost:8080/health/readiness
+curl http://localhost:8082/health/readiness
 # → {"status":"UP"}
 ```
 

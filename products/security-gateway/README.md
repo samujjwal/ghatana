@@ -47,13 +47,13 @@ Webhooks       →  WebhookSignatureValidator
 
 ```bash
 # Build
-./gradlew :products:security-gateway:build
+./gradlew :products:security-gateway:platform:java:build
 
 # Test
-./gradlew :products:security-gateway:test
+./gradlew :products:security-gateway:platform:java:test
 
-# Run locally (uses InMemoryTokenStore by default)
-./gradlew :products:security-gateway:run
+# Run locally
+./gradlew :products:security-gateway:launcher:run
 ```
 
 ## Configuration

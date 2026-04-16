@@ -123,9 +123,8 @@ async function seedTenantAndOrg(users: any[]) {
             },
             settings: {
                 defaultTimezone: 'UTC',
-                events: true,
-                hitl: true,
-                ai: true,
+                workingHours: '09:00-17:00',
+                workWeek: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             },
         },
     });
@@ -135,20 +134,16 @@ async function seedTenantAndOrg(users: any[]) {
     return { tenant, org };
 }
 
-// ============================================================================
-// Seed Departments and Teams
-// ============================================================================
-
 async function seedDepartments(org: any) {
-    console.log('🏗️ Seeding departments...');
+    console.log('🏬 Seeding departments...');
 
-    const departments = await prisma.department.createMany({
+    await prisma.department.createMany({
         data: [
             {
                 organizationId: org.id,
                 name: 'Engineering',
                 type: 'ENGINEERING',
-                description: 'Software engineering and development',
+                description: 'Software engineering and delivery',
                 status: 'ACTIVE',
             },
             {
@@ -427,43 +422,45 @@ async function seedMlModels(users: any[]) {
 
     const owner = users.find((u) => u.email === 'engineer@company.com');
 
-    const models = await prisma.mlModel.createMany({
-        data: [
-            {
-                key: 'churn-predictor',
-                name: 'Customer Churn Predictor',
-                type: 'classification',
-                status: 'deployed',
-                ownerUserId: owner!.id,
-                team: 'Data Science',
-                useCase: 'Predict customer churn',
-            },
-            {
-                key: 'demand-forecaster',
-                name: 'Demand Forecaster',
-                type: 'regression',
-                status: 'training',
-                ownerUserId: owner!.id,
-                team: 'Data Science',
-                useCase: 'Forecast demand',
-            },
-            {
-                key: 'anomaly-detector',
-                name: 'Anomaly Detector',
-                type: 'unsupervised',
-                status: 'deployed',
-                ownerUserId: owner!.id,
-                team: 'Platform',
-                useCase: 'Detect system anomalies',
-            },
-        ],
+    const modelSeeds = [
+        {
+            key: 'churn-predictor',
+            name: 'Customer Churn Predictor',
+            type: 'classification',
+            status: 'deployed',
+            ownerUserId: owner!.id,
+            team: 'Data Science',
+            useCase: 'Predict customer churn',
+        },
+        {
+            key: 'demand-forecaster',
+            name: 'Demand Forecaster',
+            type: 'regression',
+            status: 'training',
+            ownerUserId: owner!.id,
+            team: 'Data Science',
+            useCase: 'Forecast demand',
+        },
+        {
+            key: 'anomaly-detector',
+            name: 'Anomaly Detector',
+            type: 'unsupervised',
+            status: 'deployed',
+            ownerUserId: owner!.id,
+            team: 'Platform',
+            useCase: 'Detect system anomalies',
+        },
+    ];
+
+    await prisma.mlModel.createMany({
+        data: modelSeeds,
         skipDuplicates: true,
     });
 
     console.log(`✅ Created ML models`);
 
     // Create model versions
-    for (const model of models.data || []) {
+    for (const model of modelSeeds) {
         const actualModel = await prisma.mlModel.findUnique({
             where: { key: model.key },
         });

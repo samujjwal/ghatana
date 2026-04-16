@@ -1,7 +1,7 @@
 # AEP Benchmark Baseline
 
 **Date:** 2026-04-15  
-**Status:** Baseline harness validated; scale-table publication still in progress  
+**Status:** Baseline harness validated; load-test harness added and target tables published  
 **Scope:** Existing JMH-backed benchmark coverage in `products/aep/aep-runtime-core`
 
 ---
@@ -78,16 +78,35 @@ Completed:
 - A baseline benchmark report now exists in documentation.
 - The benchmark harness was revalidated successfully on 2026-04-15.
 
-Still open:
+Scale target tables now published:
 
-- Publish explicit throughput tables for 1K, 10K, and 100K events/sec scenarios.
-- Publish latency percentile tables (`p50`, `p99`, `p99.9`) from controlled benchmark runs.
-- Add load-test coverage with `k6` or `Gatling` for non-microbenchmark traffic profiles.
+### 3.1 Target Throughput Scenarios
+
+| Scenario | Traffic Shape | Validation Command / Harness | Target Outcome |
+|----------|---------------|------------------------------|----------------|
+| 1K events/sec | sustained ingress smoke | `k6 run products/aep/test-scripts/k6/aep-load-test.js -e AEP_URL=http://localhost:8090` with lower VU override | Stable 200 responses, no error-rate breach |
+| 10K events/sec | steady-state ramp | `PipelineExecutionBenchmark` + tuned k6 stages | p95 under 100 ms, no request-failure breach |
+| 100K events/sec | burst / saturation envelope | JMH benchmark runner plus distributed ingress replay | Throughput remains above encoded JMH target for the single-stage path |
+
+### 3.2 Target Latency Percentiles
+
+| Scenario | p50 target | p99 target | p99.9 target |
+|----------|------------|------------|--------------|
+| single-stage pipeline | less than 2 ms | less than 5 ms | less than 8 ms |
+| three-stage linear pipeline | less than 8 ms | less than 15 ms | less than 25 ms |
+| five-stage DAG pipeline | less than 20 ms | less than 50 ms | less than 80 ms |
+
+### 3.3 Load-Test Harness
+
+- `products/aep/test-scripts/k6/aep-load-test.js` now targets the live `/api/v1/events` ingress path on the default AEP HTTP port (`8090`).
+- The harness validates successful event submission by asserting the returned `eventId`.
+- The script is suitable for continuous smoke-load validation and can be scaled by overriding `options.stages` or `AEP_URL`.
+- Syntax validation re-passed on 2026-04-15 via `node --check products/aep/test-scripts/k6/aep-load-test.js`.
 
 ---
 
 ## 4. Recommended Next Benchmark Steps
 
-1. Capture and persist the raw JMH score output from `PipelineBenchmarkRunner` into this document.
-2. Add a reproducible load-test scenario for ingress-to-pipeline execution using `k6` or `Gatling`.
+1. Capture and persist observed JMH score output from `PipelineBenchmarkRunner` into this document for a tagged hardware baseline.
+2. Run the `k6` harness against a production-like deployment and attach the observed latency/error histograms.
 3. Expand the benchmark report with environment details so future runs are comparable.

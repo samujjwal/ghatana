@@ -233,9 +233,13 @@ public final class DataCloudHttpLauncherBootstrap {
 
         if (keysEnv == null || keysEnv.isBlank()) {
             if (!embeddedProfile) {
-                log.warn("[DC-E1] DATACLOUD_API_KEYS not set in non-local profile — " +
-                         "API key authentication is DISABLED. Set DATACLOUD_API_KEYS to enable.");
+                throw new IllegalStateException(
+                    "DATACLOUD_API_KEYS environment variable must be set for non-embedded deployment profiles. " +
+                    "API key authentication cannot be disabled in production environments. " +
+                    "Set DATACLOUD_API_KEYS to a comma-separated list of valid API keys.");
             }
+            log.warn("[DC-E1] DATACLOUD_API_KEYS not set in embedded/local profile — " +
+                     "API key authentication is DISABLED. Set DATACLOUD_API_KEYS to enable.");
             return null;
         }
 

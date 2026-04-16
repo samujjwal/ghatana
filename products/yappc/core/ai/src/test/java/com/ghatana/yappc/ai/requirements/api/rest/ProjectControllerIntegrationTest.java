@@ -40,7 +40,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
     private ObjectMapper objectMapper;
     private User testUser;
-    private static final String BASE_URL = "http://localhost:8080";
+    private static final String BASE_URL = "http://localhost:8082";
 
     private static String url(String path) {
         return BASE_URL + path;

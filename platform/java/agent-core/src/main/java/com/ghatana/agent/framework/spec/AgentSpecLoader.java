@@ -674,7 +674,9 @@ public final class AgentSpecLoader {
         if (raw != null && !raw.isBlank()) {
             try {
                 return DeterminismGuarantee.valueOf(raw.toUpperCase().replace('-', '_'));
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {
+                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+            }
         }
         // Sensible defaults per type
         return switch (type) {
@@ -691,7 +693,9 @@ public final class AgentSpecLoader {
         if (raw != null && !raw.isBlank()) {
             try {
                 return StateMutability.valueOf(raw.toUpperCase().replace('-', '_'));
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {
+                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+            }
         }
         return switch (type) {
             case DETERMINISTIC, REACTIVE, PROBABILISTIC -> StateMutability.STATELESS;
@@ -707,7 +711,9 @@ public final class AgentSpecLoader {
         if (raw != null && !raw.isBlank()) {
             try {
                 return FailureMode.valueOf(raw.toUpperCase().replace('-', '_'));
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {
+                // Fall back to the type-based default when legacy YAML contains an unknown alias.
+            }
         }
         return switch (type) {
             case DETERMINISTIC, REACTIVE -> FailureMode.FAIL_FAST;
@@ -729,7 +735,6 @@ public final class AgentSpecLoader {
     }
 
     @NotNull
-    @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> nvl3(@Nullable List<?> l) {
         if (l == null) return List.of();
         List<Map<String, Object>> out = new ArrayList<>();
@@ -744,7 +749,6 @@ public final class AgentSpecLoader {
     }
 
     @NotNull
-    @SuppressWarnings("unchecked")
     private static List<Map<String, String>> nvlMaps(@Nullable List<?> l) {
         if (l == null) return List.of();
         List<Map<String, String>> out = new ArrayList<>();

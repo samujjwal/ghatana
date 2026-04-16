@@ -11,12 +11,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import {
-  useQuery,
-  useLazyQuery,
-  useMutation,
-  useSubscription,
-} from '@apollo/client';
+import { useQuery, useLazyQuery, useMutation, useSubscription } from "@apollo/client/react";
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
@@ -108,7 +103,7 @@ import {
   type PullRequestFilter,
   type FeatureFlagFilter,
   type EpicFilter,
-} from '@yappc/core/api';
+} from '../graphql/operations/development.operations';
 
 // =============================================================================
 // Sprint Hooks

@@ -57,7 +57,7 @@ public class AepOperatorCatalogLoader {
 
                 try {
                     loaded += loadOperatorsFromUrl(resourceUrl);
-                } catch (Exception e) {
+                } catch (IOException | InvalidPathException e) {
                     log.warn("Failed to load operators from {}: {}", resourceUrl, e.getMessage());
                 }
             }
@@ -94,12 +94,8 @@ public class AepOperatorCatalogLoader {
                     .toList();
 
             for (Path yamlFile : yamlFiles) {
-                try {
-                    log.debug("Loading operator definition: {}", yamlFile.getFileName());
-                    count++;
-                } catch (Exception e) {
-                    log.warn("Failed to load operator from {}: {}", yamlFile, e.getMessage());
-                }
+                log.debug("Loading operator definition: {}", yamlFile.getFileName());
+                count++;
             }
         }
         return count;

@@ -63,7 +63,7 @@ export interface UseAICopilotOptions {
 
   /**
    * API base URL
-   * @default 'http://localhost:8080'
+    * @default 'http://localhost:7002'
    */
   baseUrl?: string;
 

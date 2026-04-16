@@ -47,6 +47,10 @@ export interface AgentConfig {
     role: string;
     department: string;
     capabilities: string[];
+    description?: string;
+    version?: string;
+    owner?: string;
+    integrations?: string[];
     personality?: {
         temperature: number;
         creativity: number;
@@ -245,6 +249,29 @@ export interface OrgConfig {
     interactions: InteractionConfig[];
     flows: FlowConfig[];
     operators: OperatorConfig[];
+    policies?: {
+        compliance?: Array<{
+            id?: string;
+            name: string;
+            description?: string;
+            enforcement?: string;
+            severity?: string;
+        }>;
+        security?: Array<{
+            id?: string;
+            name: string;
+            description?: string;
+            enforcement?: string;
+            severity?: string;
+        }>;
+        hr?: Array<{
+            id?: string;
+            name: string;
+            description?: string;
+            enforcement?: string;
+            severity?: string;
+        }>;
+    };
     metadata: {
         loaded_at: string;
         config_path: string;

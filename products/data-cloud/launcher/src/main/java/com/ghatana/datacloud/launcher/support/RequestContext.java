@@ -21,7 +21,7 @@ import java.util.Set;
  * <h2>Usage</h2>
  * <pre>{@code
  * String correlationId = http.resolveCorrelationId(request);
- * String tenantId      = http.resolveTenantId(request);
+ * String tenantId      = http.requireTenantIdOrFail(request);
  *
  * try (RequestContext ctx = RequestContext.bind(correlationId, tenantId)) {
  *     return someService.handle(request)

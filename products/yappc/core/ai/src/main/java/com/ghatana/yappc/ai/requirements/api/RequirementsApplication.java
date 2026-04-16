@@ -43,7 +43,7 @@ import java.util.concurrent.Executors;
  *   <li>{@code DB_PASSWORD} - Database password
  *   <li>{@code OPENAI_API_KEY} - OpenAI API key
  *   <li>{@code JWT_SECRET} - JWT signing secret
- *   <li>{@code SERVER_PORT} - HTTP server port (default: 8080)
+ *   <li>{@code SERVER_PORT} - HTTP server port (default: 8082)
  * </ul>
  *
  * @doc.type class
@@ -98,9 +98,9 @@ public final class RequirementsApplication extends UnifiedApplicationLauncher {
   protected void onApplicationStarted() {
     logger.info("AI Requirements service started successfully");
     logger.info("Available endpoints:");
-    logger.info("  - REST API: http://localhost:8080/api/v1/*");
-    logger.info("  - GraphQL: http://localhost:8080/graphql");
-    logger.info("  - Health Check: http://localhost:8080/health");
+    logger.info("  - REST API: http://localhost:8082/api/v1/*");
+    logger.info("  - GraphQL: http://localhost:8082/graphql");
+    logger.info("  - Health Check: http://localhost:8082/health");
   }
 
   @Override

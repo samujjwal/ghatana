@@ -4,6 +4,8 @@ import com.ghatana.platform.audit.AuditBusPort;
 import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
@@ -22,6 +24,8 @@ import java.util.concurrent.Executor;
  * STORY-T01-006: Position reconciliation integrity test suite
  */
 public class PositionReconciliationIntegrityTestSuiteService {
+
+    private static final Logger log = LoggerFactory.getLogger(PositionReconciliationIntegrityTestSuiteService.class);
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
@@ -252,7 +256,9 @@ public class PositionReconciliationIntegrityTestSuiteService {
             ps.setString(1, runId); ps.setString(2, step); ps.setString(3, assertion);
             ps.setString(4, expected); ps.setString(5, String.valueOf(actual)); ps.setBoolean(6, passed);
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to persist reconciliation step assertion: runId={}, step={}, assertion={}", runId, step, assertion, e);
+        }
         if (!passed) throw new AssertionError("FAIL [" + step + "] " + assertion + " expected=" + expected + " actual=" + actual);
     }
 
@@ -271,7 +277,9 @@ public class PositionReconciliationIntegrityTestSuiteService {
              PreparedStatement ps = c.prepareStatement(
                  "UPDATE e2e_test_runs SET status=? WHERE run_id=?"
              )) { ps.setString(1, status); ps.setString(2, runId); ps.executeUpdate(); }
-        catch (SQLException ignored) {}
+        catch (SQLException e) {
+            log.warn("Failed to update reconciliation run status: runId={}, status={}", runId, status, e);
+        }
     }
 
     @FunctionalInterface interface ThrowingConsumer<T> { void accept(T t) throws Exception; }

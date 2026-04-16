@@ -1,16 +1,22 @@
 package com.ghatana.aep.di;
 
+import com.ghatana.aep.config.EnvConfig;
 import com.ghatana.aep.engine.registry.AgentExecutionHistoryStore;
 import com.ghatana.aep.engine.registry.AgentMemoryPlaneClient;
 import com.ghatana.aep.engine.registry.NoopAgentExecutionHistoryStore;
+import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
+import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
+import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -49,6 +55,37 @@ class AepRegistryModuleTest {
         assertThat(memoryClient).isNotInstanceOf(AgentMemoryPlaneClient.Noop.class);
         assertThat(readMemoryPlaneField(memoryClient, "memoryPlane").getSimpleName())
             .isEqualTo("PersistentMemoryPlane");
+    }
+
+    @Test
+    @DisplayName("uses no-op pipeline registry when noop mode is selected")
+    void usesNoopPipelineRegistryInNoopMode() {
+        PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient(
+            EnvConfig.fromMap(Map.of()),
+            "noop"
+        );
+
+        assertThat(client).isInstanceOf(NoOpPipelineRegistryClient.class);
+    }
+
+    @Test
+    @DisplayName("fails fast when datacloud mode is selected without a base URL")
+    void failsFastWhenDatacloudModeMissingBaseUrl() {
+        assertThatIllegalStateException()
+            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "datacloud"))
+            .withMessageContaining("AEP_DC_BASE_URL")
+            .withMessageContaining("AEP_PIPELINE_REGISTRY_MODE=noop");
+    }
+
+    @Test
+    @DisplayName("creates Data Cloud pipeline registry client when base URL is configured")
+    void createsDataCloudPipelineRegistryClientWhenConfigured() {
+        PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient(
+            EnvConfig.fromMap(Map.of("dc.base.url", "https://datacloud.internal")),
+            "datacloud"
+        );
+
+        assertThat(client).isInstanceOf(DataCloudPipelineRegistryClientImpl.class);
     }
 
     private static Class<?> readMemoryPlaneField(AgentMemoryPlaneClient client, String fieldName)

@@ -209,29 +209,25 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             public void onError(Throwable t) {
                 LOG.error("[{}] Client stream error: {}", sessionId, t.getMessage());
                 isCompleted.set(true);
-                cleanup();
+                shutdownProcessor();
+                closeSession();
             }
 
             @Override
             public void onCompleted() {
                 LOG.info("[{}] Client stream completed: {} chunks total", sessionId, chunkCount.get());
                 isCompleted.set(true);
-                cleanup();
 
                 try {
-                    while (!buffer.isEmpty()) {
-                        Thread.sleep(50);
-                    }
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    shutdownProcessor();
+                    session.endStream();
+                    responseObserver.onCompleted();
+                } finally {
+                    closeSession();
                 }
-
-                session.endStream();
-                responseObserver.onCompleted();
             }
 
-            private void cleanup() {
+            private void shutdownProcessor() {
                 processor.shutdown();
                 try {
                     if (!processor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -241,7 +237,9 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                     Thread.currentThread().interrupt();
                     processor.shutdownNow();
                 }
+            }
 
+            private void closeSession() {
                 try {
                     session.close();
                 } catch (Exception ignored) {
@@ -295,7 +293,6 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             stt.loadModel(modelId);
             long loadTimeMs = System.currentTimeMillis() - start;
 
-            com.ghatana.media.stt.api.ModelInfo active = stt.getActiveModel();
             long memoryBytes = stt.getMetrics().memoryUsageBytes();
 
             LOG.info("STT model loaded: {} in {}ms", modelId, loadTimeMs);

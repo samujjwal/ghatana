@@ -401,7 +401,7 @@ pg_restore -d yappc_production backup.dump
 journalctl -u yappc-backend -n 100
 
 # Check port
-netstat -tlnp | grep 8080
+netstat -tlnp | grep 8082
 
 # Check Java process
 ps aux | grep java

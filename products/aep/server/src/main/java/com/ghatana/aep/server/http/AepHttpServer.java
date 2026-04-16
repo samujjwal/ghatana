@@ -1,5 +1,6 @@
 package com.ghatana.aep.server.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.compliance.AepSoc2ControlFramework;
 import com.ghatana.aep.server.compliance.AepComplianceService;
@@ -13,9 +14,11 @@ import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.security.SessionFilter;
 import com.ghatana.aep.server.http.controllers.AgentController;
+import com.ghatana.aep.server.http.controllers.AgentMarketplaceController;
 import com.ghatana.aep.server.http.controllers.AnalyticsController;
 import com.ghatana.aep.server.http.controllers.CapabilitiesController;
 import com.ghatana.aep.server.http.controllers.ComplianceController;
+import com.ghatana.aep.server.http.controllers.CostController;
 import com.ghatana.aep.server.http.controllers.DeploymentController;
 import com.ghatana.aep.server.http.controllers.GovernanceController;
 import com.ghatana.aep.server.http.controllers.LifecycleController;
@@ -78,7 +81,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import javax.sql.DataSource;
 
 /**
@@ -114,10 +116,11 @@ public class AepHttpServer {
 
     // Controllers (new architecture - Week 3 decomposition)
     private final HealthController healthController;
-    private final PipelineController pipelineController;
     private final AgentController agentController;
+    private final AgentMarketplaceController marketplaceController;
     private final PatternController patternController;
     private final AnalyticsController analyticsController;
+    private final CostController costController;
     private final DeploymentController deploymentController;
     private final HitlController hitlController;
     private final LearningController learningController;
@@ -394,8 +397,9 @@ public class AepHttpServer {
                 : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
         this.healthController.addDeepDependencyCheck("execution-history",
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
-        this.pipelineController = new PipelineController(this.pipelineRepository, this.objectMapper);
+        new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
+        this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
         this.patternController = new PatternController(this.engine, this.patternStore);
         this.sseController = new SseController();
         this.analyticsController = new AnalyticsController(
@@ -405,6 +409,10 @@ public class AepHttpServer {
             this.queryService,
             this.reportingService,
             (tenantId, eventType, payload) -> this.sseController.broadcastSseEvent(tenantId, eventType, payload));
+        this.costController = new CostController(
+            this.analyticsStore,
+            this.agentDataCloud,
+            () -> new ArrayList<>(this.recentRuns));
         this.deploymentController = new DeploymentController(this.deploymentAdapter);
         this.hitlController = new HitlController(this.humanReviewQueue,
             (tenantId, data) -> sseController.publishSseTo(tenantId, "hitl.update", data));
@@ -502,11 +510,19 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/policies", agentController::handleGetAgentPolicies)
             .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", agentController::handleDeregisterAgent)
 
+            // Marketplace endpoints (Phase 3 foundation)
+            .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents", marketplaceController::handleListAgents)
+            .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents", marketplaceController::handlePublishAgent)
+            .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId", marketplaceController::handleGetAgent)
+            .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleListReviews)
+            .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleCreateReview)
+
             // Pipeline run & metrics endpoints (AEP-P7)
             .with(HttpMethod.GET, "/api/v1/runs", this::handleListPipelineRuns)
             .with(HttpMethod.GET, "/api/v1/runs/:runId", this::handleGetRunDetail)
             .with(HttpMethod.POST, "/api/v1/runs/:runId/cancel", this::handleCancelRun)
             .with(HttpMethod.GET, "/api/v1/metrics/pipelines", this::handleGetPipelineMetrics)
+            .with(HttpMethod.GET, "/api/v1/costs/summary", costController::handleGetCostSummary)
 
             // HITL (Human-in-the-Loop) endpoints (delegated to HitlController)
             .with(HttpMethod.GET, "/api/v1/hitl/pending", hitlController::handleListPending)
@@ -677,9 +693,7 @@ public class AepHttpServer {
                     (String) eventData.getOrDefault("tenantId", "default"));
                 String eventType = AepInputValidator.validateEventType(
                     (String) eventData.getOrDefault("type", "unknown"));
-                @SuppressWarnings("unchecked")
-                Map<String, Object> rawPayload =
-                    (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                Map<String, Object> rawPayload = rawObjectMap(eventData.get("payload"));
                 Map<String, Object> payload = AepInputValidator.validatePayload(rawPayload);
 
                 AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
@@ -715,9 +729,7 @@ public class AepHttpServer {
                     body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
                 String tenantId = (String) batchData.getOrDefault("tenantId", "default");
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> eventsData =
-                    (List<Map<String, Object>>) batchData.getOrDefault("events", List.of());
+                List<Map<String, Object>> eventsData = rawMapList(batchData.get("events"));
 
                 AepInputValidator.validateBatchSize(eventsData.size());
                 if (eventsData.isEmpty()) {
@@ -1175,7 +1187,7 @@ public class AepHttpServer {
     private Object parseJsonObject(String json) {
         try {
             return objectMapper.readValue(json, Object.class);
-        } catch (Exception ignored) {
+        } catch (JsonProcessingException ignored) {
             return json;
         }
     }
@@ -1388,6 +1400,26 @@ public class AepHttpServer {
 
     private String asString(Object value) {
         return value != null ? String.valueOf(value) : null;
+    }
+
+    private Map<String, Object> rawObjectMap(Object value) {
+        if (!(value instanceof Map<?, ?> rawMap)) {
+            return Map.of();
+        }
+        Map<String, Object> converted = new java.util.HashMap<>();
+        rawMap.forEach((key, item) -> converted.put(String.valueOf(key), item));
+        return converted;
+    }
+
+    private List<Map<String, Object>> rawMapList(Object value) {
+        if (!(value instanceof List<?> rawList)) {
+            return List.of();
+        }
+        List<Map<String, Object>> converted = new ArrayList<>();
+        for (Object item : rawList) {
+            converted.add(rawObjectMap(item));
+        }
+        return converted;
     }
 
     private HttpResponse jsonResponse(Map<String, Object> data) {

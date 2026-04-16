@@ -13,16 +13,11 @@ dependencies {
     implementation(project(":platform:java:observability"))
     
     // gRPC for interceptors
-    implementation(libs.grpc.api)
+    implementation("io.grpc:grpc-api:1.79.0")
     implementation(libs.grpc.stub)
     
     // ActiveJ for HTTP security filter (if needed)
     implementation(libs.activej.http)
-    
-    // JWT
-    implementation(libs.jjwt.api)
-    runtimeOnly(libs.jjwt.impl)
-    runtimeOnly(libs.jjwt.jackson)
     
     // Logging
     implementation(libs.slf4j.api)

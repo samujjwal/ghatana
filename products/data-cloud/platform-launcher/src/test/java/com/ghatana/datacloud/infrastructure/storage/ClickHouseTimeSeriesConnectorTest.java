@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Integration tests for {@link ClickHouseTimeSeriesConnector}.
@@ -45,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("ClickHouseTimeSeriesConnector Integration Tests")
 class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
 
+    @SuppressWarnings("resource")
     @Container
     static final ClickHouseContainer CLICK_HOUSE = new ClickHouseContainer(
             DockerImageName.parse("clickhouse/clickhouse-server:24.3-alpine"))
@@ -245,6 +247,15 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
 
             // THEN
             assertThat(page).hasSize(3);
+        }
+
+        @Test
+        @DisplayName("count should reject tenant identifiers with SQL injection payloads")
+        void shouldRejectInjectedTenantIdentifier() {
+            assertThatThrownBy(() -> runPromise(() ->
+                    connector.count(COLLECTION_ID, "tenant' OR 1=1 --", null)))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("tenantId contains illegal characters");
         }
     }
 

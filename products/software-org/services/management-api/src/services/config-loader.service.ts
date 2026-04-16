@@ -29,7 +29,6 @@ import {
     PersonaConfig,
     PhaseConfig,
     StageMapping,
-    AgentConfig,
     WorkflowConfig,
     KpiConfig,
     ServiceConfig,
@@ -37,21 +36,14 @@ import {
     FlowConfig,
     OperatorConfig,
     InteractionConfig,
-    EnvironmentConfig,
-    FlowStep,
-    MetricConfig,
-    OperatorMode,
-    OperatorInput,
-    OperatorOutput,
-    QuickAction,
-    WorkflowStep
+    AgentConfig,
 } from '../types/config.types.js';
-import { ConfigLoader } from './spi/config-loader.spi.js';
+import type { ConfigLoader } from './spi/config-loader.spi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export interface ConfigLoaderOptions {
+interface ConfigLoaderOptions {
     basePath: string;
     watchForChanges?: boolean;
 }
@@ -328,32 +320,35 @@ export class FileSystemConfigLoader implements ConfigLoader {
      */
     async loadInteractions(): Promise<InteractionConfig[]> {
         const files = this.loadYamlDirectory<any>('interactions');
-        return files
-            .map(file => {
-                if (file.kind === 'Interaction' && file.spec) {
-                    return {
-                        id: file.metadata?.name || file.spec.displayName || '',
-                        name: file.metadata?.name || file.spec.displayName || '',
-                        displayName: file.spec.displayName,
-                        description: file.spec.description,
-                        type: file.spec.type || 'handoff',
-                        status: file.spec.status || 'active',
-                        sourceDepartment: file.spec.participants?.source?.department,
-                        targetDepartment: file.spec.participants?.target?.department,
-                        sourceTeam: file.spec.participants?.source?.team,
-                        targetTeam: file.spec.participants?.target?.team,
-                        sourcePersona: file.spec.participants?.source?.persona,
-                        targetPersona: file.spec.participants?.target?.persona,
-                        trigger: file.spec.trigger,
-                        protocol: file.spec.protocol,
-                        handoff: file.spec.handoff,
-                        actions: file.spec.actions,
-                        metadata: file.spec.metadata || {},
-                    };
-                }
-                return null;
-            })
-            .filter((file): file is InteractionConfig => file !== null);
+        const interactions: InteractionConfig[] = [];
+
+        for (const file of files) {
+            if (file.kind !== 'Interaction' || !file.spec) {
+                continue;
+            }
+
+            interactions.push({
+                id: file.metadata?.name || file.spec.displayName || '',
+                name: file.metadata?.name || file.spec.displayName || '',
+                displayName: file.spec.displayName,
+                description: file.spec.description,
+                type: file.spec.type || 'handoff',
+                status: file.spec.status || 'active',
+                sourceDepartment: file.spec.participants?.source?.department,
+                targetDepartment: file.spec.participants?.target?.department,
+                sourceTeam: file.spec.participants?.source?.team,
+                targetTeam: file.spec.participants?.target?.team,
+                sourcePersona: file.spec.participants?.source?.persona,
+                targetPersona: file.spec.participants?.target?.persona,
+                trigger: file.spec.trigger,
+                protocol: file.spec.protocol,
+                handoff: file.spec.handoff,
+                actions: file.spec.actions,
+                metadata: file.spec.metadata || {},
+            });
+        }
+
+        return interactions;
     }
 
     /**

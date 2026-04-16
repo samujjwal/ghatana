@@ -78,10 +78,23 @@ public class AepRegistryModule extends AbstractModule {
     PipelineRegistryClient pipelineRegistryClient() {
         EnvConfig env = EnvConfig.fromSystem();
         String mode = System.getenv().getOrDefault("AEP_PIPELINE_REGISTRY_MODE", "datacloud");
+        return createPipelineRegistryClient(env, mode);
+    }
+
+    static PipelineRegistryClient createPipelineRegistryClient(EnvConfig env, String mode) {
         if ("noop".equalsIgnoreCase(mode)) {
             return new NoOpPipelineRegistryClient();
         }
-        return new DataCloudPipelineRegistryClientImpl(env.aepDcBaseUrl());
+
+        String dcBaseUrl = env.aepDcBaseUrl();
+        if (dcBaseUrl == null || dcBaseUrl.isBlank()) {
+            throw new IllegalStateException(
+                "AEP_PIPELINE_REGISTRY_MODE=datacloud requires AEP_DC_BASE_URL (or AEP_DC_BASE_URL-backed config) to be set. "
+                    + "Set AEP_PIPELINE_REGISTRY_MODE=noop to disable Data-Cloud pipeline lookups."
+            );
+        }
+
+        return new DataCloudPipelineRegistryClientImpl(dcBaseUrl);
     }
 
     /**

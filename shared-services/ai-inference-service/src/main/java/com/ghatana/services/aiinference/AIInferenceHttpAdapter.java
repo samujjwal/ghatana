@@ -107,7 +107,9 @@ public class AIInferenceHttpAdapter {
         try {
             String envLimit = System.getenv("AI_RATE_LIMIT_RPM");
             if (envLimit != null) rateLimit = Integer.parseInt(envLimit);
-        } catch (NumberFormatException ignored) { }
+        } catch (NumberFormatException ignored) {
+            // Preserve the default rate limit when the environment override is malformed.
+        }
         this.rateLimiter = DefaultRateLimiter.create(
             RateLimiterConfig.builder()
                 .maxRequestsPerMinute(rateLimit)

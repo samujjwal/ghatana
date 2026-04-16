@@ -268,5 +268,9 @@ function Header({ monitoringActive }: HeaderProps) {
 // Mount the component only if we're not in a test environment
 if (typeof document !== 'undefined' && document.getElementById('root') && !(import.meta as any).env?.VITEST) {
     const root = ReactDOM.createRoot(document.getElementById('root')!);
-    root.render(<Popup />);
+    root.render(
+        <ErrorBoundary>
+            <Popup />
+        </ErrorBoundary>
+    );
 }

@@ -4,6 +4,10 @@
  */
 package com.ghatana.datacloud.plugin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
@@ -24,9 +28,19 @@ import java.util.Map;
 public class PluginController implements AsyncServlet {
 
     private final PluginRegistry pluginRegistry;
+    private final ObjectMapper objectMapper;
 
     public PluginController(PluginRegistry pluginRegistry) {
+        this(pluginRegistry, createDefaultObjectMapper());
+    }
+
+    public PluginController(PluginRegistry pluginRegistry, ObjectMapper objectMapper) {
         this.pluginRegistry = pluginRegistry;
+        this.objectMapper = objectMapper;
+    }
+
+    private static ObjectMapper createDefaultObjectMapper() {
+        return new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     @Override
@@ -149,25 +163,20 @@ public class PluginController implements AsyncServlet {
         return tenantId != null ? tenantId : "default-tenant";
     }
 
-    private PluginRegistry.PluginMetadata parsePlugin(String json) {
-        // Simplified parsing - in production use Jackson
-        return new PluginRegistry.PluginMetadata(
-            "new-plugin", "New Plugin", "", "1.0.0", "tenant-alpha",
-            PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
-            java.util.List.of(), java.util.List.of(), java.util.Map.of(),
-            java.time.Instant.now(), null, "user"
-        );
+    private PluginRegistry.PluginMetadata parsePlugin(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, PluginRegistry.PluginMetadata.class);
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> parseJson(String json) {
-        // Simplified - in production use Jackson
-        return java.util.Map.of();
+    private Map<String, Object> parseJson(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     private String toJson(Object obj) {
-        // Simplified - in production use Jackson
-        return "{}";
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize response to JSON", e);
+        }
     }
 
     private Promise<HttpResponse> okJson(Object payload) {

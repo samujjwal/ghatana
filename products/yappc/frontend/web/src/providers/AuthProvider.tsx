@@ -26,15 +26,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    fetchAuthSession().then((user) => {
-      if (cancelled) return;
-      if (user) {
-        setCurrentUser(mapAuthSessionToUser(user));
-        return;
-      }
+    const initializeSession = async (): Promise<void> => {
+      try {
+        const user = await fetchAuthSession();
+        if (cancelled) return;
+        if (user) {
+          setCurrentUser(mapAuthSessionToUser(user));
+          return;
+        }
 
-      setCurrentUser(null);
-    });
+        setCurrentUser(null);
+      } catch (error) {
+        if (cancelled) return;
+        console.warn('Failed to initialize auth session', error);
+        setCurrentUser(null);
+      }
+    };
+
+    void initializeSession();
 
     return () => {
       cancelled = true;

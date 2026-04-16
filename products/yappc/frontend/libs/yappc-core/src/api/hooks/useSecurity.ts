@@ -11,11 +11,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import {
-  useQuery,
-  useMutation,
-  useSubscription,
-} from '@apollo/client';
+import { useQuery, useLazyQuery, useMutation, useSubscription } from "@apollo/client/react";
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -32,16 +28,16 @@ import {
 } from '@yappc/state';
 import {
   GET_VULNERABILITY,
-  GET_VULNERABILITIES,
-  GET_VULNERABILITY_STATS,
+  LIST_VULNERABILITIES as GET_VULNERABILITIES,
+  GET_VULNERABILITY_TRENDS as GET_VULNERABILITY_STATS,
   UPDATE_VULNERABILITY,
   ASSIGN_VULNERABILITY,
-  SUPPRESS_VULNERABILITY,
+  MARK_VULNERABILITY_FALSE_POSITIVE as SUPPRESS_VULNERABILITY,
   BULK_UPDATE_VULNERABILITIES,
-  TRIGGER_SECURITY_SCAN,
+  START_SECURITY_SCAN as TRIGGER_SECURITY_SCAN,
   CANCEL_SECURITY_SCAN,
   UPDATE_COMPLIANCE_CONTROL,
-  UPLOAD_COMPLIANCE_EVIDENCE,
+  ADD_COMPLIANCE_EVIDENCE as UPLOAD_COMPLIANCE_EVIDENCE,
   CREATE_SECRET,
   UPDATE_SECRET,
   DELETE_SECRET,
@@ -49,15 +45,8 @@ import {
   CREATE_SECURITY_POLICY,
   UPDATE_SECURITY_POLICY,
   DELETE_SECURITY_POLICY,
-  CREATE_POLICY_EXCEPTION,
   ACKNOWLEDGE_SECURITY_ALERT,
-  VULNERABILITY_UPDATES_SUBSCRIPTION,
-  SCAN_PROGRESS_SUBSCRIPTION,
-  SECURITY_ALERT_SUBSCRIPTION,
-  type Vulnerability,
-  type VulnerabilityInput,
-  type VulnerabilityFilters,
-} from '@yappc/core/api';
+} from '../graphql/operations/security.operations';
 
 // =============================================================================
 // Vulnerability Hooks

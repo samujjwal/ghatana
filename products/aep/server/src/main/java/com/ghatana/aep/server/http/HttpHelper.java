@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.http.*;
@@ -38,7 +39,7 @@ public final class HttpHelper {
                 .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
-        } catch (Exception e) {
+            } catch (JsonProcessingException e) {
             return HttpResponse.ofCode(500)
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -64,7 +65,7 @@ public final class HttpHelper {
                 .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             return HttpResponse.ofCode(code)
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();

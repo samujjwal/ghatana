@@ -4,6 +4,10 @@
  */
 package com.ghatana.datacloud.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
@@ -25,10 +29,20 @@ public class SecurityController implements AsyncServlet {
 
     private final AuditLogService auditLogService;
     private final RBACService rbacService;
+    private final ObjectMapper objectMapper;
 
     public SecurityController(AuditLogService auditLogService, RBACService rbacService) {
+        this(auditLogService, rbacService, createDefaultObjectMapper());
+    }
+
+    public SecurityController(AuditLogService auditLogService, RBACService rbacService, ObjectMapper objectMapper) {
         this.auditLogService = auditLogService;
         this.rbacService = rbacService;
+        this.objectMapper = objectMapper;
+    }
+
+    private static ObjectMapper createDefaultObjectMapper() {
+        return new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     @Override
@@ -206,22 +220,20 @@ public class SecurityController implements AsyncServlet {
         return tenantId != null ? tenantId : "default-tenant";
     }
 
-    private RBACService.Role parseRole(String json) {
-        // Simplified parsing - in production use Jackson
-        return new RBACService.Role(
-            "new-role", "New Role", "", "tenant-alpha",
-            java.util.Set.of(), java.util.List.of(), false, 0
-        );
+    private RBACService.Role parseRole(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, RBACService.Role.class);
     }
 
-    private Map<String, Object> parseJson(String json) {
-        // Simplified - in production use Jackson
-        return Map.of();
+    private Map<String, Object> parseJson(String json) throws JsonProcessingException {
+        return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     private String toJson(Object obj) {
-        // Simplified - in production use Jackson
-        return "{}";
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize response to JSON", e);
+        }
     }
 
     private Promise<HttpResponse> okJson(Object payload) {

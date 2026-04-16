@@ -49,7 +49,7 @@ class LineageHandlerP391Test {
         handler = new LineageHandler(http, objectMapper, lineagePlugin);
         handlerNoPlugin = new LineageHandler(http, objectMapper, null);
 
-        lenient().when(http.resolveTenantId(any())).thenReturn("tenant-1");
+        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-1");
 
         HttpResponse errorResponse = mock(HttpResponse.class);
         lenient().when(http.errorResponse(eq(501), any())).thenReturn(errorResponse);
@@ -92,7 +92,7 @@ class LineageHandlerP391Test {
                     .thenReturn(Promise.of(Set.of("analytics")));
 
             HttpResponse ok = mock(HttpResponse.class);
-            lenient().when(http.jsonResponse(any(Map.class))).thenReturn(ok);
+            lenient().when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(ok);
         }
 
         @Test
@@ -103,6 +103,19 @@ class LineageHandlerP391Test {
             when(http.errorResponse(eq(400), any())).thenReturn(mock400);
 
             HttpResponse result = handler.handleGetLineage(request).getResult();
+            assertThat(result).isSameAs(mock400);
+        }
+
+        @Test
+        @DisplayName("returns 400 when tenant header is missing")
+        void returns400WhenTenantMissing() throws Exception {
+            HttpResponse mock400 = mock(HttpResponse.class);
+            when(request.getPathParameter("collection")).thenReturn("orders");
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(mock400);
+
+            HttpResponse result = handler.handleGetLineage(request).getResult();
+
             assertThat(result).isSameAs(mock400);
         }
 
@@ -159,7 +172,7 @@ class LineageHandlerP391Test {
             HttpResponse expected = mock(HttpResponse.class);
             when(request.getPathParameter("collection")).thenReturn("orders");
             when(request.getQueryParameter("direction")).thenReturn("BOTH");
-            when(http.jsonResponse(any(Map.class))).thenReturn(expected);
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(expected);
 
             HttpResponse result = handler.handleGetLineage(request).getResult();
             assertThat(result).isSameAs(expected);
@@ -208,7 +221,7 @@ class LineageHandlerP391Test {
 
             when(request.getPathParameter("collection")).thenReturn("orders");
             when(lineagePlugin.analyzeImpact("tenant-1", "orders")).thenReturn(Promise.of(analysis));
-            when(http.jsonResponse(any(Map.class))).thenReturn(mock(HttpResponse.class));
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenReturn(mock(HttpResponse.class));
 
             handler.handleGetImpact(request).getResult();
             verify(lineagePlugin).analyzeImpact("tenant-1", "orders");
@@ -230,7 +243,7 @@ class LineageHandlerP391Test {
             @SuppressWarnings("unchecked")
             Map<String, Object>[] capturedMap = new Map[1];
             HttpResponse expected = mock(HttpResponse.class);
-            when(http.jsonResponse(any(Map.class))).thenAnswer(inv -> {
+            when(http.jsonResponse(org.mockito.ArgumentMatchers.<Map<String, Object>>any())).thenAnswer(inv -> {
                 capturedMap[0] = inv.getArgument(0);
                 return expected;
             });

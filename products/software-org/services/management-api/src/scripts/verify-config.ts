@@ -12,11 +12,12 @@ async function verifyConfig() {
     try {
         console.log('Loading Org Config...');
         const orgConfig = await configLoader.loadOrgConfig();
+        const agents = await configLoader.loadAllAgents();
         console.log('Org Config Loaded:', orgConfig ? 'Success' : 'Failed');
         
         if (orgConfig) {
             console.log(`Loaded ${orgConfig.departments.length} departments.`);
-            console.log(`Loaded ${orgConfig.agents.length} agents.`);
+            console.log(`Loaded ${agents.length} agents.`);
             
             if (orgConfig.departments.length > 0) {
                 console.log('First Department:', orgConfig.departments[0].name);

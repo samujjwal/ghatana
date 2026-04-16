@@ -3,6 +3,7 @@
  */
 package com.ghatana.yappc.services.security;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import io.activej.bytebuf.ByteBuf;
@@ -49,8 +50,8 @@ import java.util.Optional;
  * ]
  * }</pre>
  *
- * <p>If the env var is absent a single dev-only user is bootstrapped automatically with
- * email {@code dev@yappc.io} and password {@code change-me-in-production}.
+ * <p>The environment variable is mandatory. Service startup fails fast when
+ * {@code YAPPC_AUTH_USERS} is missing or blank.
  *
  * <p><b>Password hashing</b></p>
  * <p>Passwords are verified using PBKDF2WithHmacSHA256 (65 536 iterations, 256-bit key).
@@ -177,7 +178,6 @@ public final class LifecycleLoginController {
      *
      * @throws IllegalStateException if YAPPC_AUTH_USERS is not set or cannot be parsed
      */
-    @SuppressWarnings("unchecked")
     public static LifecycleLoginController fromEnvironment(JwtTokenProvider tokenProvider) {
         String raw = System.getenv("YAPPC_AUTH_USERS");
         if (raw == null || raw.isBlank()) {
@@ -189,7 +189,10 @@ public final class LifecycleLoginController {
 
         List<UserRecord> users;
         try {
-            List<Map<String, Object>> parsed = MAPPER.readValue(raw, List.class);
+            List<Map<String, Object>> parsed = MAPPER.readValue(
+                raw,
+                new TypeReference<List<Map<String, Object>>>() {}
+            );
             users = new ArrayList<>();
             for (Map<String, Object> entry : parsed) {
                 users.add(UserRecord.fromMap(entry));
@@ -297,7 +300,6 @@ public final class LifecycleLoginController {
             List<String> roles,
             String tenantId) {
 
-        @SuppressWarnings("unchecked")
         static UserRecord fromMap(Map<String, Object> m) {
             Object rolesRaw = m.get("roles");
             List<String> roles = rolesRaw instanceof List<?>

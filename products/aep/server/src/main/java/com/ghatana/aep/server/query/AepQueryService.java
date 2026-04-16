@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -307,7 +308,9 @@ public final class AepQueryService {
     private static double toDouble(Object value) {
         if (value instanceof Number n) return n.doubleValue();
         if (value instanceof String s) {
-            try { return Double.parseDouble(s); } catch (NumberFormatException ignored) {}
+            try { return Double.parseDouble(s); } catch (NumberFormatException ignored) {
+                // Expected fallback: non-numeric strings map to the aggregate default.
+            }
         }
         return 0.0;
     }
@@ -376,14 +379,22 @@ public final class AepQueryService {
     private static int numInt(Map<String, Object> d, String key) {
         Object v = d.get(key);
         if (v instanceof Number n) return n.intValue();
-        if (v instanceof String s) { try { return Integer.parseInt(s); } catch (NumberFormatException ignored) {} }
+        if (v instanceof String s) {
+            try { return Integer.parseInt(s); } catch (NumberFormatException ignored) {
+                // Expected fallback: absent or malformed numeric fields use the summary default.
+            }
+        }
         return 0;
     }
 
     private static double numDouble(Map<String, Object> d, String key) {
         Object v = d.get(key);
         if (v instanceof Number n) return n.doubleValue();
-        if (v instanceof String s) { try { return Double.parseDouble(s); } catch (NumberFormatException ignored) {} }
+        if (v instanceof String s) {
+            try { return Double.parseDouble(s); } catch (NumberFormatException ignored) {
+                // Expected fallback: absent or malformed numeric fields use the summary default.
+            }
+        }
         return 0.0;
     }
 
@@ -391,7 +402,11 @@ public final class AepQueryService {
         Object v = d.get(key);
         if (v == null) return null;
         if (v instanceof Instant i) return i;
-        try { return Instant.parse(v.toString()); } catch (Exception ignored) { return null; }
+        try {
+            return Instant.parse(v.toString());
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 
     // =========================================================================

@@ -6,6 +6,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for P3.2.1 enhancements in {@link FederatedQueryHandler}:
@@ -38,6 +45,9 @@ class FederatedQueryHandlerEnhancementTest {
 
     @Mock
     private MetricsCollector metrics;
+
+    @Mock
+    private HttpRequest request;
 
     // ── Default timeout constant ──────────────────────────────────────────────
 
@@ -135,6 +145,27 @@ class FederatedQueryHandlerEnhancementTest {
             String result = FederatedQueryHandler.buildTenantUrl(
                     "jdbc:trino://localhost:8080/base", expectedCatalog);
             assertThat(result).endsWith("/" + expectedCatalog);
+        }
+    }
+
+    @Nested
+    @DisplayName("handleFederatedQuery() tenant enforcement")
+    class TenantEnforcementTests {
+
+        @Test
+        @DisplayName("returns 400 when tenant header is missing")
+        void returns400WhenTenantMissing() {
+            FederatedQueryHandler handler = new FederatedQueryHandler(
+                    http, analyticsEngine, metrics, null);
+            HttpResponse badRequest = mock(HttpResponse.class);
+
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+            HttpResponse response = handler.handleFederatedQuery(request).getResult();
+
+            assertThat(response).isSameAs(badRequest);
+            verify(metrics, never()).incrementCounter("query.federated", "tenant", "default");
         }
     }
 }

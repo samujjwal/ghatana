@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import { featureFlagsAtom } from './atoms';
 
 export type BootstrapPhase =
   | 'discover'
@@ -116,7 +117,7 @@ export const sprintsAtom = atom<Record<string, unknown>[]>([]);
 export const storiesMapAtom = atom<Record<string, Record<string, unknown>>>({});
 export const boardColumnsAtom = atom<Record<string, unknown>[]>([]);
 export const pullRequestsAtom = atom<Record<string, unknown>[]>([]);
-export const featureFlagsAtom = atom<Record<string, boolean>>({});
+// Note: featureFlagsAtom is defined in atoms.ts
 export const deploymentsAtom = atom<Record<string, unknown>[]>([]);
 export const epicsAtom = atom<Record<string, unknown>[]>([]);
 export const velocityDataAtom = atom<Record<string, unknown> | null>(null);

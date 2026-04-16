@@ -112,7 +112,7 @@ public final class DataCloudMiddleware {
 
             // --- 1. Per-tenant rate limit (applied before per-IP) ---
             if (rateLimitTenantRequests > 0) {
-                String tenantId = resolveTenantId(request);
+                String tenantId = extractTenantId(request);
                 if (tenantId != null) {
                     long[] tenantState = tenantRateLimitState.compute(tenantId, (key, existing) -> {
                         if (existing == null || (now - existing[1]) >= rateLimitTenantWindowMs) {
@@ -196,7 +196,7 @@ public final class DataCloudMiddleware {
      * @param request the incoming HTTP request
      * @return tenant ID string, or {@code null} if not present
      */
-    private static String resolveTenantId(HttpRequest request) {
+    private static String extractTenantId(HttpRequest request) {
         String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
         if (header != null && !header.isBlank()) {
             return header.strip();

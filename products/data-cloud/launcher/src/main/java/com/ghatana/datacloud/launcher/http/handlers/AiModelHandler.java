@@ -56,7 +56,10 @@ public class AiModelHandler {
         if (aiModelManager == null) {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         long start = System.currentTimeMillis();
         return aiModelManager.getAllModels(tenantId)
             .map(models -> {
@@ -80,14 +83,16 @@ public class AiModelHandler {
         if (aiModelManager == null) {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         long start = System.currentTimeMillis();
         return request.loadBody()
             .then(buf -> {
                 try {
                     String bodyStr = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
-
-                    String tenantId = http.resolveTenantId(request);
                     String name = (String) payload.get("name");
                     String version = (String) payload.get("version");
                     if (name == null || name.isBlank()) {
@@ -150,7 +155,10 @@ public class AiModelHandler {
         if (aiModelManager == null) {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String modelName = request.getPathParameter("modelName");
         return aiModelManager.getActiveModel(tenantId, modelName)
             .map(model -> http.jsonResponse(modelMetadataToMap(model)))
@@ -169,12 +177,15 @@ public class AiModelHandler {
         if (aiModelManager == null) {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return request.loadBody()
             .then(buf -> {
                 try {
                     String bodyStr = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
-                    String tenantId = http.resolveTenantId(request);
                     String modelName = request.getPathParameter("modelName");
                     String version = (String) payload.get("version");
                     if (version == null || version.isBlank()) {
@@ -207,12 +218,15 @@ public class AiModelHandler {
         if (featureStoreService == null) {
             return Promise.of(http.errorResponse(503, "Feature store not available in this deployment"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return request.loadBody()
             .then(buf -> {
                 try {
                     String bodyStr = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> payload = http.objectMapper().readValue(bodyStr, Map.class);
-                    String tenantId = http.resolveTenantId(request);
 
                     String entityId = (String) payload.get("entityId");
                     String name = (String) payload.get("name");
@@ -274,7 +288,10 @@ public class AiModelHandler {
         if (featureStoreService == null) {
             return Promise.of(http.errorResponse(503, "Feature store not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String entityId = request.getPathParameter("entityId");
         String featuresParam = request.getQueryParameter("features");
         if (featuresParam == null || featuresParam.isBlank()) {

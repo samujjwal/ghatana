@@ -57,6 +57,11 @@ export const NAV_GROUPS: NavGroup[] = [
         path: '/operate/reviews',
         icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
       },
+      {
+        label: 'Costs',
+        path: '/operate/costs',
+        icon: 'M12 8c-2.21 0-4 .895-4 2s1.79 2 4 2 4 .895 4 2-1.79 2-4 2m0-8V4m0 12v4m-7-8h14',
+      },
     ],
   },
   {
@@ -117,6 +122,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Workflows',
         path: '/catalog/workflows',
         icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
+      },
+      {
+        label: 'Marketplace',
+        path: '/catalog/marketplace',
+        icon: 'M3 7l1.664 8.32A2 2 0 006.625 17h10.75a2 2 0 001.96-1.68L21 7M8 7V5a4 4 0 118 0v2M9 11h6',
       },
     ],
   },

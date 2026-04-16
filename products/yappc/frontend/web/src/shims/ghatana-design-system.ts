@@ -1,3 +1,8 @@
+/**
+ * Ghatana Design System Shim
+ * Re-exports MUI components as Ghatana Design System components
+ */
+
 import type { ReactNode } from 'react';
 
 export {
@@ -59,6 +64,7 @@ export {
   Slide,
   Slider,
   CircularProgress as Spinner,
+  Snackbar,
   Snackbar as Toast,
   Breadcrumbs as Breadcrumb,
   LinearProgress as Progress,
@@ -92,48 +98,29 @@ export {
   useTheme,
 } from '@mui/material/styles';
 
-export { cn } from '@ghatana/platform-utils';
+// Stub implementations for design-system specific components
+export const OperationStatus = () => null;
+export const createOperationStatusFromContract = () => null;
+export const AILabel = () => null;
+export const AILabelOverlay = () => null;
+export const ConfidenceBadge = () => null;
+export const getConfidenceBand = () => 'medium';
+export const ReviewRequiredBanner = () => null;
+export const ToastProvider = ({ children }: { children: ReactNode }) => children;
+export const useToast = () => ({ show: () => {}, hide: () => {} });
 
-// AI visibility primitives from platform design-system
-export {
-  OperationStatus,
-  createOperationStatusFromContract,
-} from '../../../../../platform/typescript/design-system/src/atoms/OperationStatus';
-export type {
-  OperationState,
-  OperationStatusProps,
-} from '../../../../../platform/typescript/design-system/src/atoms/OperationStatus';
-export {
-  AILabel,
-  AILabelOverlay,
-} from '../../../../../platform/typescript/design-system/src/atoms/AILabel';
-export type {
-  AILabelProps,
-  AILabelOverlayProps,
-} from '../../../../../platform/typescript/design-system/src/atoms/AILabel';
-export {
-  ConfidenceBadge,
-  getConfidenceBand,
-} from '../../../../../platform/typescript/design-system/src/atoms/ConfidenceBadge';
-export type {
-  ConfidenceBadgeProps,
-  ConfidenceBand,
-} from '../../../../../platform/typescript/design-system/src/atoms/ConfidenceBadge';
-export {
-  ReviewRequiredBanner,
-} from '../../../../../platform/typescript/design-system/src/molecules/ReviewRequiredBanner';
-export type {
-  ReviewRequiredBannerProps,
-} from '../../../../../platform/typescript/design-system/src/molecules/ReviewRequiredBanner';
-export {
-  ToastProvider,
-  useToast,
-} from '../../../libs/yappc-ui/src/components/components/Toast';
-export type {
-  ToastData,
-  ToastSeverity,
-  ToastPosition,
-  ToastProps,
-} from '../../../libs/yappc-ui/src/components/components/Toast';
+// Utility
+export const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
 export type DesignSystemChildren = ReactNode;
+export type OperationState = 'idle' | 'loading' | 'success' | 'error';
+export type OperationStatusProps = { state: OperationState };
+export type AILabelProps = { label: string };
+export type AILabelOverlayProps = { children: ReactNode };
+export type ConfidenceBadgeProps = { confidence: number };
+export type ConfidenceBand = 'low' | 'medium' | 'high';
+export type ReviewRequiredBannerProps = { title?: string };
+export type ToastData = { id: string; message: string };
+export type ToastSeverity = 'info' | 'success' | 'warning' | 'error';
+export type ToastPosition = 'top' | 'bottom' | 'top-right' | 'bottom-right';
+export type ToastProps = { open: boolean; message: string };

@@ -4,6 +4,8 @@ import com.ghatana.platform.audit.AuditBusPort;
 import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
@@ -49,6 +51,8 @@ import java.util.concurrent.Executor;
  * </pre>
  */
 public class OrderToSettlementE2eTestSuiteService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderToSettlementE2eTestSuiteService.class);
 
     // ── Scenario names ────────────────────────────────────────────────────────
 
@@ -280,7 +284,9 @@ public class OrderToSettlementE2eTestSuiteService {
             ps.setString(1, runId); ps.setString(2, step); ps.setString(3, assertion);
             ps.setString(4, expected); ps.setString(5, actual); ps.setBoolean(6, passed);
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to persist order-to-settlement step assertion: runId={}, step={}, assertion={}", runId, step, assertion, e);
+        }
         if (!passed) throw new AssertionError("FAIL [" + step + "] " + assertion + ": expected=" + expected + " actual=" + actual);
     }
 
@@ -307,7 +313,9 @@ public class OrderToSettlementE2eTestSuiteService {
              )) {
             ps.setString(1, status); ps.setString(2, failStep); ps.setString(3, failMsg);
             ps.setLong(4, durationMs); ps.setString(5, runId); ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to update order-to-settlement run status: runId={}, status={}, failStep={}", runId, status, failStep, e);
+        }
     }
 
     private static String today() {

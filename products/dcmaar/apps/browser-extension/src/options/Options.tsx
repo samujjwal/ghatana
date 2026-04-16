@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { Settings } from '../components/Settings/Settings';
 import '../styles/globals.css';
 
@@ -13,7 +14,11 @@ const container = document.getElementById('root');
 
 if (container) {
     const root = createRoot(container);
-    root.render(<Settings />);
+    root.render(
+        <ErrorBoundary>
+            <Settings />
+        </ErrorBoundary>
+    );
 }
 
 export { };

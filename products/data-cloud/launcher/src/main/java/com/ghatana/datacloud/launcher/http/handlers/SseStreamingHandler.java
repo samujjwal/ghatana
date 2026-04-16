@@ -31,8 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -74,9 +72,6 @@ public class SseStreamingHandler {
     private final DataCloudLearningBridge learningBridge;
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
-
-    /** Virtual-thread executor for blocking tail/poll operations. */
-    private final Executor blockingExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     /** Active SSE subscriptions — cancelled on {@link #shutdown()}. */
     private final CopyOnWriteArrayList<EventLogStore.Subscription> sseSubscriptions =
@@ -146,7 +141,10 @@ public class SseStreamingHandler {
      * @doc.pattern SSE Adapter, CDC, Event Tailing
      */
     public Promise<HttpResponse> handleEntityCdcStream(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String collection = request.getPathParameter("collection");
 
         if (collection == null || collection.isBlank()) {
@@ -242,7 +240,10 @@ public class SseStreamingHandler {
      * @doc.pattern SSE Adapter, Event Tailing
      */
     public Promise<HttpResponse> handleSseStream(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         long fromOffsetVal = HttpHandlerSupport.parseLongParam(request.getQueryParameter("fromOffset"), 0L);
         List<String> eventTypesFilter = parseEventTypeFilter(request.getQueryParameter("eventType"));
 
@@ -313,12 +314,15 @@ public class SseStreamingHandler {
         if (brain == null) {
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         Optional<GlobalWorkspace> wsOpt = brain.getWorkspace();
         if (wsOpt.isEmpty()) {
             return Promise.of(http.errorResponse(503, "Workspace stream not available for this brain implementation"));
         }
         GlobalWorkspace workspace = wsOpt.get();
-        String tenantId = http.resolveTenantId(request);
 
         LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
         workspace.getByTenant(tenantId).forEach(item -> queue.offer(Optional.of(buildWorkspaceSseFrame(item))));
@@ -329,7 +333,7 @@ public class SseStreamingHandler {
         ))));
 
         GlobalWorkspace.Subscription subscription = workspace.subscribe(item -> {
-            if (!"default".equals(tenantId) && !tenantId.equals(item.getTenantId())) return;
+            if (!tenantId.equals(item.getTenantId())) return;
             try {
                 if (!queue.offer(Optional.of(buildWorkspaceSseFrame(item)), 100L, TimeUnit.MILLISECONDS)) {
                     log.warn("[SSE-WS] queue full for tenant={}, dropping item", tenantId);
@@ -378,7 +382,10 @@ public class SseStreamingHandler {
         if (learningBridge == null) {
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
         queue.offer(Optional.of(buildSseFrame("connected", Map.of(
             "service",   "data-cloud-learning",
@@ -454,7 +461,10 @@ public class SseStreamingHandler {
         Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
         if (qErr.isPresent()) return Promise.of(http.errorResponse(400, qErr.get()));
 
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 

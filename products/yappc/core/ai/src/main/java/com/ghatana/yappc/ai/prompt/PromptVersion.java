@@ -19,50 +19,16 @@ import java.util.UUID;
  * @doc.layer product
  * @doc.pattern Entity
  */
-public record PromptVersion implements Identifiable<UUID> {
-
-    /** Unique version identifier */
-    private final UUID versionId;
-
-    /** Logical prompt identifier (e.g. "requirement-generation") */
-    private final String promptName;
-
-    /** Full prompt text with {{varName}} placeholders */
-    private final String content;
-
-    /** SHA-256 hex of content (deduplication key) */
-    private final String contentHash;
-
-    /** Human-readable change description */
-    private final String description;
-
-    /** Who created this version */
-    private final String author;
-
-    /** Whether this version is the current default */
-    private final boolean active;
-
-    /** When this version was created */
-    private final Instant createdAt;
-
-    public PromptVersion(
-            UUID versionId,
-            String promptName,
-            String content,
-            String contentHash,
-            String description,
-            String author,
-            boolean active,
-            Instant createdAt) {
-        this.versionId = versionId;
-        this.promptName = promptName;
-        this.content = content;
-        this.contentHash = contentHash;
-        this.description = description;
-        this.author = author;
-        this.active = active;
-        this.createdAt = createdAt;
-    }
+public record PromptVersion(
+        /** Unique version identifier */ UUID versionId,
+        /** Logical prompt identifier (e.g. "requirement-generation") */ String promptName,
+        /** Full prompt text with {{varName}} placeholders */ String content,
+        /** SHA-256 hex of content (deduplication key) */ String contentHash,
+        /** Human-readable change description */ String description,
+        /** Who created this version */ String author,
+        /** Whether this version is the current default */ boolean active,
+        /** When this version was created */ Instant createdAt
+) implements Identifiable<UUID> {
 
     @Override
     public UUID getId() {

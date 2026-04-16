@@ -13,7 +13,7 @@ dependencies {
     implementation(project(":platform:java:core"))
     
     // RabbitMQ client
-    implementation(libs.rabbitmq.client)
+    implementation("com.rabbitmq:amqp-client:5.18.0")
     
     // JSON serialization
     implementation(libs.jackson.databind)
@@ -29,7 +29,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.testcontainers.rabbitmq)
+    testImplementation(libs.testcontainers.core)
     testImplementation(project(":platform:java:testing"))
 }
 

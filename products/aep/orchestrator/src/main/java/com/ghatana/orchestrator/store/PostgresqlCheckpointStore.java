@@ -61,13 +61,7 @@ public class PostgresqlCheckpointStore implements CheckpointStore {
 
         // If the initial state contains a configured totalSteps, apply it to the entity
         if (initialState != null && initialState.containsKey("totalSteps")) {
-            try {
-                Object ts = initialState.get("totalSteps");
-                int total = ts instanceof Number ? ((Number) ts).intValue() : Integer.parseInt(ts.toString());
-                entity.setTotalSteps(total);
-            } catch (Exception e) {
-                logger.warn("Unable to parse totalSteps from initial state: {}", initialState.get("totalSteps"));
-            }
+            applyTotalSteps(entity, initialState.get("totalSteps"), "initial state");
         }
 
         // Save to database
@@ -113,13 +107,7 @@ public class PostgresqlCheckpointStore implements CheckpointStore {
 
         // If the updated state includes totalSteps, update it on the entity (tests rely on this)
         if (state != null && state.containsKey("totalSteps")) {
-            try {
-                Object ts = state.get("totalSteps");
-                int total = ts instanceof Number ? ((Number) ts).intValue() : Integer.parseInt(ts.toString());
-                entity.setTotalSteps(total);
-            } catch (Exception e) {
-                logger.warn("Unable to parse totalSteps from state: {}", state.get("totalSteps"));
-            }
+            applyTotalSteps(entity, state.get("totalSteps"), "state");
         }
 
         // Save updated checkpoint
@@ -182,6 +170,22 @@ public class PostgresqlCheckpointStore implements CheckpointStore {
         List<PipelineCheckpointEntity> entities = pipelineRepository.findStaleExecutions(staleBefore);
 
         return entities.stream().map(PipelineCheckpointEntity::toDomainObject).collect(Collectors.toList());
+    }
+
+    private void applyTotalSteps(PipelineCheckpointEntity entity, Object totalStepsValue, String source) {
+        if (totalStepsValue == null) {
+            logger.warn("Unable to parse totalSteps from {}: null", source);
+            return;
+        }
+        if (totalStepsValue instanceof Number number) {
+            entity.setTotalSteps(number.intValue());
+            return;
+        }
+        try {
+            entity.setTotalSteps(Integer.parseInt(totalStepsValue.toString()));
+        } catch (NumberFormatException e) {
+            logger.warn("Unable to parse totalSteps from {}: {}", source, totalStepsValue);
+        }
     }
 
     @Override

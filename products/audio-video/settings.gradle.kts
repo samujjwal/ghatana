@@ -101,12 +101,13 @@ fileTree("libs") {
 
 // Plugin management - use version catalog from root
 pluginManagement {
+    includeBuild(File(rootDir.parentFile.parentFile, "build-logic"))
     repositories {
         mavenCentral()
         gradlePluginPortal()
     }
     plugins {
-        id("com.google.protobuf").version(libs.versions.protobuf.plugin.get())
+        id("com.google.protobuf").version("0.9.4")
     }
 }
 

@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -324,7 +325,6 @@ public final class DataCloudPatternStore implements PatternRepository {
      * <p>The entity's UUID is stored under the {@code "id"} key so that
      * {@code DataCloudClient.save()} uses it as the entity key (upsert semantics).
      */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> toEntityData(UUID id, PatternSpecification spec) {
         Map<String, Object> data = new HashMap<>();
         data.put("id",          id.toString());
@@ -343,7 +343,7 @@ public final class DataCloudPatternStore implements PatternRepository {
         try {
             Map<String, Object> specMap = MAPPER.convertValue(spec, MAP_TYPE);
             data.put("spec", specMap);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.warn("[pattern-store] Could not serialize spec for id={}: {}", id, e.getMessage());
         }
         return data;
@@ -387,10 +387,13 @@ public final class DataCloudPatternStore implements PatternRepository {
     }
 
     private static UUID parseUuid(Object value, String fallback) {
+        String candidate = value instanceof String str ? str : fallback;
+        if (candidate == null || candidate.isBlank()) {
+            return UUID.randomUUID();
+        }
         try {
-            String s = value instanceof String str ? str : fallback;
-            return UUID.fromString(s);
-        } catch (Exception e) {
+            return UUID.fromString(candidate);
+        } catch (IllegalArgumentException e) {
             return UUID.randomUUID();
         }
     }
@@ -398,16 +401,15 @@ public final class DataCloudPatternStore implements PatternRepository {
     private static Instant parseInstant(Object value) {
         if (value == null) return Instant.now();
         try { return Instant.parse(value.toString()); }
-        catch (Exception e) { return Instant.now(); }
+        catch (DateTimeParseException e) { return Instant.now(); }
     }
 
     private static PatternStatus parseStatus(Object value) {
         if (value == null) return PatternStatus.DRAFT;
         try { return PatternStatus.valueOf(value.toString()); }
-        catch (Exception e) { return PatternStatus.DRAFT; }
+        catch (IllegalArgumentException e) { return PatternStatus.DRAFT; }
     }
 
-    @SuppressWarnings("unchecked")
     private static List<String> parseStringList(Object value) {
         if (value instanceof List<?> list) {
             return list.stream()

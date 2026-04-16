@@ -49,11 +49,11 @@ RUN chown -R yappc:yappc /app
 USER yappc
 
 # Expose application port
-EXPOSE 8080
+EXPOSE 8082
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD curl -f http://localhost:8082/health || exit 1
 
 # JVM optimization for containerized environments
 ENV JAVA_OPTS="-XX:+UseContainerSupport \

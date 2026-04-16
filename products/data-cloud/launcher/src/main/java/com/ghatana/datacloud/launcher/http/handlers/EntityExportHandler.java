@@ -67,7 +67,10 @@ public class EntityExportHandler {
         }
 
         String collection = request.getPathParameter("collection");
-        String tenantId   = http.resolveTenantId(request);
+        String tenantId   = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));

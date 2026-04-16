@@ -177,8 +177,8 @@ get_urls() {
     # Port-forward instructions
     echo ""
     echo "For local access (port-forward):"
-    echo -e "  ${BLUE}kubectl port-forward svc/yappc-service 8080:8080 -n yappc${NC}"
-    echo -e "  Access: http://localhost:8080"
+    echo -e "  ${BLUE}kubectl port-forward svc/yappc-service 8082:8082 -n yappc${NC}"
+    echo -e "  Access: http://localhost:8082"
     echo ""
     
     # Monitoring URLs

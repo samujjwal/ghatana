@@ -1,0 +1,71 @@
+package com.ghatana.datacloud.launcher.http.handlers;
+
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * @doc.type class
+ * @doc.purpose Regression tests for AgentCatalogHandler tenant enforcement
+ * @doc.layer product
+ * @doc.pattern Test
+ */
+@DisplayName("AgentCatalogHandler")
+@ExtendWith(MockitoExtension.class)
+class AgentCatalogHandlerTest extends EventloopTestBase {
+
+    @Mock
+    private HttpHandlerSupport http;
+
+    @Mock
+    private MetricsCollector metrics;
+
+    @Mock
+    private HttpRequest request;
+
+    @Mock
+    private HttpResponse errorResponse;
+
+    private AgentCatalogHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        handler = new AgentCatalogHandler(http, metrics);
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse);
+    }
+
+    @Test
+    @DisplayName("list rejects missing tenant before metrics or catalog work")
+    void listRejectsMissingTenant() {
+        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+
+        HttpResponse response = runPromise(() -> handler.handleListCatalog(request));
+
+        assertThat(response).isSameAs(errorResponse);
+        verify(metrics, never()).incrementCounter("agent.catalog.list", "tenant", "default");
+    }
+
+    @Test
+    @DisplayName("get rejects missing tenant before metrics or catalog work")
+    void getRejectsMissingTenant() {
+        when(request.getPathParameter("id")).thenReturn("agent-1");
+        when(http.requireTenantIdOrFail(request)).thenReturn(null);
+
+        HttpResponse response = runPromise(() -> handler.handleGetAgent(request));
+
+        assertThat(response).isSameAs(errorResponse);
+        verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1");
+    }
+}

@@ -137,7 +137,9 @@ public final class ResilienceDecorator {
         Object val = config.getProperties().get(key);
         if (val instanceof Number n) return n.intValue();
         if (val instanceof String s) {
-            try { return Integer.parseInt(s); } catch (NumberFormatException ignored) {}
+            try { return Integer.parseInt(s); } catch (NumberFormatException ignored) {
+                // Expected fallback: malformed config values should preserve the configured default.
+            }
         }
         return defaultValue;
     }

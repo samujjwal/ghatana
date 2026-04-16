@@ -97,7 +97,7 @@ public final class AepSloMetrics {
             meterRegistry.gauge("aep.slo.run.failure.rate",
                     failedRuns, ref -> totalRuns.get() == 0
                             ? 0.0 : (double) ref.get() / totalRuns.get());
-        } catch (Exception e) {
+                } catch (IllegalArgumentException e) {
             log.debug("Could not register failure-rate gauge (test environment?): {}", e.getMessage());
         }
     }

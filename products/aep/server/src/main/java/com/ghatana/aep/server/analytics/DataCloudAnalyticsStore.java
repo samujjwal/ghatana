@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -498,7 +499,11 @@ public final class DataCloudAnalyticsStore {
 
     private static Instant parseInstant(Object v) {
         if (v == null) return Instant.now();
-        try { return Instant.parse(v.toString()); } catch (Exception e) { return Instant.now(); }
+        try {
+            return Instant.parse(v.toString());
+        } catch (DateTimeParseException e) {
+            return Instant.now();
+        }
     }
 
     private static List<String> splitTags(String raw) {

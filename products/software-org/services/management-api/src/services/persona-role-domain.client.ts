@@ -62,6 +62,16 @@ export class ValidationError extends Error {
     }
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+    if (axios.isAxiosError(error)) {
+        return error.message;
+    }
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return fallback;
+}
+
 /**
  * HTTP client for Java persona role service
  */
@@ -116,7 +126,7 @@ export class PersonaRoleDomainClient {
                 if (error.response?.status === 404) {
                     return null; // Role not found
                 }
-                throw new Error(`Failed to fetch role ${roleId}: ${error.message}`);
+                throw new Error(`Failed to fetch role ${roleId}: ${getErrorMessage(error, 'Unknown error')}`);
             }
             throw error;
         }
@@ -145,11 +155,12 @@ export class PersonaRoleDomainClient {
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 if (error.response?.status === 400) {
+                    const responseData = error.response.data as { error?: string } | undefined;
                     throw new ValidationError(
-                        error.response.data?.error || 'Invalid role combination'
+                        responseData?.error || 'Invalid role combination'
                     );
                 }
-                throw new Error(`Failed to validate roles: ${error.message}`);
+                throw new Error(`Failed to validate roles: ${getErrorMessage(error, 'Unknown error')}`);
             }
             throw error;
         }
@@ -183,11 +194,12 @@ export class PersonaRoleDomainClient {
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 if (error.response?.status === 400) {
+                    const responseData = error.response.data as { error?: string } | undefined;
                     throw new ValidationError(
-                        error.response.data?.error || 'Invalid role IDs'
+                        responseData?.error || 'Invalid role IDs'
                     );
                 }
-                throw new Error(`Failed to resolve permissions: ${error.message}`);
+                throw new Error(`Failed to resolve permissions: ${getErrorMessage(error, 'Unknown error')}`);
             }
             throw error;
         }

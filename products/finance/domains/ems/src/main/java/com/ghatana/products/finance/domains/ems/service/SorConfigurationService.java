@@ -1,6 +1,8 @@
 package com.ghatana.products.finance.domains.ems.service;
 
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,6 +21,8 @@ import javax.sql.DataSource;
  * @doc.pattern Configuration/policy service; all routing rules sourced from DB (no hard-coding)
  */
 public class SorConfigurationService {
+
+    private static final Logger log = LoggerFactory.getLogger(SorConfigurationService.class);
 
     public enum RouteScheme { BEST_PRICE, SEQUENTIAL, SPLIT, DIRECT }
 
@@ -104,7 +108,9 @@ public class SorConfigurationService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Double.parseDouble(rs.getString("value"));
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.warn("loadSystemSetting: using fallback for key={}", key, e);
+        }
         return fallback;
     }
 }

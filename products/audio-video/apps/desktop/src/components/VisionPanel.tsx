@@ -6,12 +6,13 @@
  */
 
 import React from 'react';
-import { Card, Button, Loading } from '@audio-video/ui';
+import { Card, Button } from '@audio-video/ui';
+
+const VISION_STATUS_MESSAGE =
+  'Computer Vision analysis is disabled until the desktop app is integrated with the production vision service.';
 
 const VisionPanel: React.FC = () => {
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = React.useState(false);
-  const [detections, setDetections] = React.useState<any[]>([]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -22,28 +23,15 @@ const VisionPanel: React.FC = () => {
     }
   };
 
-  const handleProcess = async () => {
-    if (!selectedImage) return;
-    
-    setIsProcessing(true);
-    try {
-      // TODO: Call actual Vision service
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      setDetections([
-        { class: 'person', confidence: 0.92, bbox: { x: 100, y: 100, width: 200, height: 300 } },
-        { class: 'car', confidence: 0.87, bbox: { x: 300, y: 200, width: 150, height: 100 } }
-      ]);
-    } catch (error) {
-      console.error('Vision processing failed:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Card title="Computer Vision" subtitle="Analyze images with AI">
         <div className="space-y-6">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100">
+            <p className="font-medium">Unavailable in this build</p>
+            <p className="mt-1">{VISION_STATUS_MESSAGE}</p>
+          </div>
+
           {/* Image Upload */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -72,31 +60,11 @@ const VisionPanel: React.FC = () => {
           {/* Process Button */}
           {selectedImage && (
             <Button
-              onClick={handleProcess}
-              disabled={isProcessing}
+              disabled
               className="w-full"
             >
-              {isProcessing ? (
-                <Loading size="sm" text="Analyzing image..." />
-              ) : (
-                'Analyze Image'
-              )}
+              Vision Analysis Coming Soon
             </Button>
-          )}
-
-          {/* Results */}
-          {detections.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Detections</h3>
-              <div className="space-y-2">
-                {detections.map((detection, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <span className="font-medium">{detection.class}</span>
-                    <span className="text-sm text-gray-500">{(detection.confidence * 100).toFixed(1)}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       </Card>

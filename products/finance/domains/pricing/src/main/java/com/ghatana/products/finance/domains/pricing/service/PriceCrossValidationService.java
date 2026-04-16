@@ -4,6 +4,8 @@ import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +32,7 @@ import java.util.concurrent.Executor;
 public class PriceCrossValidationService {
 
     private static final double DEFAULT_THRESHOLD = 0.02; // 2%
+    private static final Logger log = LoggerFactory.getLogger(PriceCrossValidationService.class);
 
     private final DataSource    dataSource;
     private final Executor            executor;
@@ -86,7 +89,9 @@ public class PriceCrossValidationService {
         for (String id : instruments) {
             try {
                 results.add(crossValidateInstrument(id, runDate));
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.warn("crossValidate: skipping instrument={} runDate={} due to validation failure", id, runDate, e);
+            }
         }
         return results;
     }
@@ -118,8 +123,6 @@ public class PriceCrossValidationService {
 
         if (flagged) {
             flaggedCounter.increment();
-            CrossValResult cv = new CrossValResult(instrumentId, runDate, sources,
-                    selectedPrice, selectedSource, true, maxDev, null);
             // Trigger challenge
             var ch = challengeService.manualFlag(instrumentId, runDate, "MODEL_DEVIATION", "SYSTEM").getResult();
             challengeId = ch.challengeId();

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 /**
  * ClickHouse-backed {@link StorageConnector} implementation for time-series data.
@@ -91,6 +92,8 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     private static final Logger log = LoggerFactory.getLogger(ClickHouseTimeSeriesConnector.class);
 
     private static final String TABLE = "datacloud_timeseries";
+    private static final int MAX_TENANT_ID_LENGTH = 128;
+    private static final Pattern SAFE_TENANT_ID = Pattern.compile("^[a-zA-Z0-9._\\-:]{1,128}$");
 
     /** Warn when a query takes longer than this threshold in milliseconds. */
     private static final long SLOW_QUERY_THRESHOLD_MS = 500L;
@@ -120,6 +123,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
 
     private final ClickHouseNode server;
     private final MetricsCollector metrics;
+    @SuppressWarnings("unused")
     private final Executor executor;
     // =========================================================================
 
@@ -238,7 +242,9 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                          .query("SELECT 1")
                          .execute().get()) {
                 // Consume the response to validate the round-trip
-                for (ClickHouseRecord ignored : resp.records()) { /* no-op */ }
+                resp.records().forEach(record -> {
+                    // No-op: iterating the response validates the round-trip.
+                });
             }
             log.debug("ClickHouse healthCheck OK (host={})", server.getHost());
             return Promise.of(null);
@@ -254,13 +260,13 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Entity> create(Entity entity) {
         Objects.requireNonNull(entity, "entity must not be null");
-        Objects.requireNonNull(entity.getTenantId(), "entity.tenantId must not be null");
+        String tenantId = requireValidTenantId(entity.getTenantId());
 
         UUID id = entity.getId() != null ? entity.getId() : UUID.randomUUID();
         Entity toCreate = entity.getId() != null ? entity
                 : Entity.builder()
                         .id(id)
-                        .tenantId(entity.getTenantId())
+                .tenantId(tenantId)
                         .collectionName(entity.getCollectionName())
                         .data(entity.getData())
                         .build();
@@ -268,16 +274,16 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         try {
             String dataJson = mapToJson(toCreate.getData());
             String sql = String.format(
-                    "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES ('%s','%s','%s','%s', now())",
-                    TABLE,
-                    escapeIdentifier(id.toString()),
-                    escapeIdentifier(toCreate.getTenantId()),
-                    escapeIdentifier(toCreate.getCollectionName() != null ? toCreate.getCollectionName() : ""),
-                    escapeValue(dataJson));
-            executeUpdate(sql);
+                "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES (:id, :tenantId, :collectionName, :dataJson, now())",
+                tableName());
+            executeUpdate(sql,
+                id.toString(),
+                tenantId,
+                toCreate.getCollectionName() != null ? toCreate.getCollectionName() : "",
+                dataJson != null ? dataJson : "{}");
             metrics.incrementCounter("connector.clickhouse.create",
-                    "tenant", toCreate.getTenantId());
-            log.debug("Inserted entity id={} tenant={}", id, toCreate.getTenantId());
+                "tenant", tenantId);
+            log.debug("Inserted entity id={} tenant={}", id, tenantId);
             return Promise.of(toCreate);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -288,26 +294,25 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     public Promise<Entity> update(Entity entity) {
         Objects.requireNonNull(entity, "entity must not be null");
         Objects.requireNonNull(entity.getId(), "entity.id must not be null");
+        String tenantId = requireValidTenantId(entity.getTenantId());
         // ClickHouse MergeTree is append-only; updates are modelled as deletions + re-insert
         try {
             String deleteSql = String.format(
-                    "ALTER TABLE %s DELETE WHERE id = '%s' AND tenant_id = '%s'",
-                    TABLE,
-                    escapeIdentifier(entity.getId().toString()),
-                    escapeIdentifier(entity.getTenantId()));
-            executeUpdate(deleteSql);
+                "ALTER TABLE %s DELETE WHERE id = :entityId AND tenant_id = :tenantId",
+                tableName());
+            executeUpdate(deleteSql, entity.getId().toString(), tenantId);
 
             String dataJson = mapToJson(entity.getData());
             String insertSql = String.format(
-                    "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES ('%s','%s','%s','%s', now())",
-                    TABLE,
-                    escapeIdentifier(entity.getId().toString()),
-                    escapeIdentifier(entity.getTenantId()),
-                    escapeIdentifier(entity.getCollectionName() != null ? entity.getCollectionName() : ""),
-                    escapeValue(dataJson));
-            executeUpdate(insertSql);
+                "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES (:id, :tenantId, :collectionName, :dataJson, now())",
+                tableName());
+            executeUpdate(insertSql,
+                entity.getId().toString(),
+                tenantId,
+                entity.getCollectionName() != null ? entity.getCollectionName() : "",
+                dataJson != null ? dataJson : "{}");
             metrics.incrementCounter("connector.clickhouse.update",
-                    "tenant", entity.getTenantId());
+                "tenant", tenantId);
             return Promise.of(entity);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -317,19 +322,17 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
         Objects.requireNonNull(entityId, "entityId must not be null");
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         try {
             String sql = String.format(
                     // mutations_sync=1: block until ClickHouse applies the mutation on THIS
                     // node before returning — required for test correctness and for callers
                     // who immediately re-read after delete.  In a replicated cluster, use 2.
-                    "ALTER TABLE %s DELETE WHERE id = '%s' AND tenant_id = '%s'" +
+                    "ALTER TABLE %s DELETE WHERE id = :entityId AND tenant_id = :tenantId" +
                     " SETTINGS mutations_sync=1",
-                    TABLE,
-                    escapeIdentifier(entityId.toString()),
-                    escapeIdentifier(tenantId));
-            executeUpdate(sql);
-            metrics.incrementCounter("connector.clickhouse.delete", "tenant", tenantId);
+                    tableName());
+            executeUpdate(sql, entityId.toString(), validatedTenantId);
+            metrics.incrementCounter("connector.clickhouse.delete", "tenant", validatedTenantId);
             return Promise.of(null);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -343,19 +346,17 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
         Objects.requireNonNull(entityId, "entityId must not be null");
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         try {
             // PREWHERE on primary key columns (tenant_id, id) for MergeTree efficiency.
             // The engine evaluates PREWHERE before reading non-key columns (data, created_at),
             // dramatically reducing I/O for point-lookup queries.
             String sql = String.format(
                     "SELECT id, tenant_id, collection_name, data, created_at FROM %s" +
-                    " PREWHERE tenant_id = '%s' WHERE id = '%s' LIMIT 1" +
+                    " PREWHERE tenant_id = :tenantId WHERE id = :entityId LIMIT 1" +
                     querySettings,
-                    TABLE,
-                    escapeIdentifier(tenantId),
-                    escapeIdentifier(entityId.toString()));
-            List<Entity> results = executeSelect(sql);
+                    tableName());
+            List<Entity> results = executeSelect(sql, validatedTenantId, entityId.toString());
             return Promise.of(results.isEmpty() ? Optional.empty() : Optional.of(results.get(0)));
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -364,51 +365,54 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         Objects.requireNonNull(spec, "spec must not be null");
         try {
             long start = System.currentTimeMillis();
-            metrics.incrementCounter("connector.clickhouse.query", "tenant", tenantId);
+            metrics.incrementCounter("connector.clickhouse.query", "tenant", validatedTenantId);
 
             // PREWHERE on tenant_id (part of the ORDER BY KEY) filters data parts
             // before reading any non-key columns — typically 10-100× fewer bytes read
             // for multi-tenant tables compared to a plain WHERE clause.
             StringBuilder sql = new StringBuilder(String.format(
                     "SELECT id, tenant_id, collection_name, data, created_at FROM %s" +
-                    " PREWHERE tenant_id = '%s'",
-                    TABLE, escapeIdentifier(tenantId)));
+                    " PREWHERE tenant_id = :tenantId",
+                    tableName()));
+            List<Object> params = new ArrayList<>();
+            params.add(validatedTenantId);
 
             // Secondary WHERE predicates for time-window (non-key columns)
             boolean hasWhere = false;
             if (spec.getTimeWindowStart().isPresent()) {
                 sql.append(hasWhere ? " AND" : " WHERE");
-                sql.append(String.format(" created_at >= '%s'",
-                        formatTimestamp(spec.getTimeWindowStart().get())));
+                sql.append(" created_at >= :timeWindowStart");
+                params.add(formatTimestamp(spec.getTimeWindowStart().get()));
                 hasWhere = true;
             }
             if (spec.getTimeWindowEnd().isPresent()) {
                 sql.append(hasWhere ? " AND" : " WHERE");
-                sql.append(String.format(" created_at < '%s'",
-                        formatTimestamp(spec.getTimeWindowEnd().get())));
+                sql.append(" created_at < :timeWindowEnd");
+                params.add(formatTimestamp(spec.getTimeWindowEnd().get()));
             }
 
             // ORDER BY matches the table ORDER BY key — enables optimize_read_in_order
             int limit = spec.getLimit() > 0 ? spec.getLimit() : 1000;
             int offset = spec.getOffset() > 0 ? spec.getOffset() : 0;
-            sql.append(String.format(" ORDER BY (tenant_id, collection_name, created_at) ASC" +
-                    " LIMIT %d OFFSET %d", limit, offset));
+            sql.append(" ORDER BY (tenant_id, collection_name, created_at) ASC LIMIT :limit OFFSET :offset");
+            params.add(limit);
+            params.add(offset);
             sql.append(querySettings);
 
             String finalSql = sql.toString();
-            List<Entity> entities = executeSelect(finalSql);
+            List<Entity> entities = executeSelect(finalSql, params.toArray());
             long duration = System.currentTimeMillis() - start;
 
             if (duration > SLOW_QUERY_THRESHOLD_MS) {
                 log.warn("[ClickHouse] Slow query detected ({} ms) for tenant={}: {}",
-                        duration, tenantId, finalSql);
+                        duration, validatedTenantId, finalSql);
             }
             metrics.recordTimer("connector.clickhouse.duration", duration,
-                    "operation", "query", "tenant", tenantId);
+                    "operation", "query", "tenant", validatedTenantId);
 
             return Promise.of(new QueryResult(entities, entities.size(), limit, offset, duration));
         } catch (Exception e) {
@@ -418,7 +422,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
 
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId, String filterExpression, int limit, int offset) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         try {
             int effectiveLimit = limit > 0 ? limit : 1000;
             int effectiveOffset = offset > 0 ? offset : 0;
@@ -426,21 +430,21 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             // PREWHERE on tenant_id; ORDER BY matches table key for optimized sequential scan
             String sql = String.format(
                     "SELECT id, tenant_id, collection_name, data, created_at FROM %s" +
-                    " PREWHERE tenant_id = '%s'" +
+                    " PREWHERE tenant_id = :tenantId" +
                     " ORDER BY (tenant_id, collection_name, created_at) ASC" +
-                    " LIMIT %d OFFSET %d" +
+                    " LIMIT :limit OFFSET :offset" +
                     querySettings,
-                    TABLE, escapeIdentifier(tenantId), effectiveLimit, effectiveOffset);
+                    tableName());
 
             long start = System.currentTimeMillis();
-            List<Entity> result = executeSelect(sql);
+            List<Entity> result = executeSelect(sql, validatedTenantId, effectiveLimit, effectiveOffset);
             long duration = System.currentTimeMillis() - start;
 
             if (duration > SLOW_QUERY_THRESHOLD_MS) {
-                log.warn("[ClickHouse] Slow scan ({} ms) for tenant={} limit={}", duration, tenantId, effectiveLimit);
+                log.warn("[ClickHouse] Slow scan ({} ms) for tenant={} limit={}", duration, validatedTenantId, effectiveLimit);
             }
             metrics.recordTimer("connector.clickhouse.duration", duration,
-                    "operation", "scan", "tenant", tenantId);
+                    "operation", "scan", "tenant", validatedTenantId);
             return Promise.of(result);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -467,22 +471,12 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         try {
             String sql = String.format(
-                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + querySettings,
-                    TABLE, escapeIdentifier(tenantId));
-            // count() returns a single row with one column; use the raw value
-            long count = 0L;
-            try (ClickHouseClient client = ClickHouseClient.newInstance(ClickHouseProtocol.HTTP);
-                 ClickHouseResponse resp = client.read(server)
-                         .format(ClickHouseFormat.TabSeparatedWithNamesAndTypes)
-                         .query(sql).execute().get()) {
-                for (ClickHouseRecord row : resp.records()) {
-                    count = row.getValue(0).asLong();
-                }
-            }
-            return Promise.of(count);
+                    "SELECT count() FROM %s PREWHERE tenant_id = :tenantId" + querySettings,
+                    tableName());
+            return Promise.of(executeScalarLong(sql, validatedTenantId));
         } catch (Exception e) {
             return Promise.ofException(e);
         }
@@ -505,7 +499,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         Objects.requireNonNull(entities, "entities must not be null");
         if (entities.isEmpty()) {
             return Promise.of(List.of());
@@ -523,18 +517,18 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
                                 .build();
                 String dataJson = mapToJson(toCreate.getData());
                 String sql = String.format(
-                        "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES ('%s','%s','%s','%s', now())",
-                        TABLE,
-                        escapeIdentifier(id.toString()),
-                        escapeIdentifier(tenantId),
-                        escapeIdentifier(toCreate.getCollectionName() != null ? toCreate.getCollectionName() : ""),
-                        escapeValue(dataJson));
-                executeUpdate(sql);
+                    "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES (:id, :tenantId, :collectionName, :dataJson, now())",
+                    tableName());
+                executeUpdate(sql,
+                    id.toString(),
+                    validatedTenantId,
+                    toCreate.getCollectionName() != null ? toCreate.getCollectionName() : "",
+                    dataJson != null ? dataJson : "{}");
                 created.add(toCreate);
             }
             metrics.incrementCounter("connector.clickhouse.bulkCreate",
-                    "tenant", tenantId, "count", String.valueOf(created.size()));
-            log.debug("[ClickHouse] bulk-created {} entities for tenant={}", created.size(), tenantId);
+                    "tenant", validatedTenantId, "count", String.valueOf(created.size()));
+                log.debug("[ClickHouse] bulk-created {} entities for tenant={}", created.size(), validatedTenantId);
             return Promise.of(created);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -557,7 +551,7 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<List<Entity>> bulkUpdate(UUID collectionId, String tenantId, List<Entity> entities) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         Objects.requireNonNull(entities, "entities must not be null");
         if (entities.isEmpty()) {
             return Promise.of(List.of());
@@ -567,24 +561,24 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
             for (Entity entity : entities) {
                 Objects.requireNonNull(entity.getId(), "entity.id must not be null for update");
                 String deleteSql = String.format(
-                        "ALTER TABLE %s DELETE WHERE id = '%s' AND tenant_id = '%s'",
-                        TABLE, escapeIdentifier(entity.getId().toString()), escapeIdentifier(tenantId));
-                executeUpdate(deleteSql);
+                    "ALTER TABLE %s DELETE WHERE id = :entityId AND tenant_id = :tenantId",
+                    tableName());
+                executeUpdate(deleteSql, entity.getId().toString(), validatedTenantId);
 
                 String dataJson = mapToJson(entity.getData());
                 String insertSql = String.format(
-                        "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES ('%s','%s','%s','%s', now())",
-                        TABLE,
-                        escapeIdentifier(entity.getId().toString()),
-                        escapeIdentifier(tenantId),
-                        escapeIdentifier(entity.getCollectionName() != null ? entity.getCollectionName() : ""),
-                        escapeValue(dataJson));
-                executeUpdate(insertSql);
+                    "INSERT INTO %s (id, tenant_id, collection_name, data, created_at) VALUES (:id, :tenantId, :collectionName, :dataJson, now())",
+                    tableName());
+                executeUpdate(insertSql,
+                    entity.getId().toString(),
+                    validatedTenantId,
+                    entity.getCollectionName() != null ? entity.getCollectionName() : "",
+                    dataJson != null ? dataJson : "{}");
                 updated.add(entity);
             }
             metrics.incrementCounter("connector.clickhouse.bulkUpdate",
-                    "tenant", tenantId, "count", String.valueOf(updated.size()));
-            log.debug("[ClickHouse] bulk-updated {} entities for tenant={}", updated.size(), tenantId);
+                    "tenant", validatedTenantId, "count", String.valueOf(updated.size()));
+                log.debug("[ClickHouse] bulk-updated {} entities for tenant={}", updated.size(), validatedTenantId);
             return Promise.of(updated);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -607,14 +601,29 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     //  ClickHouse helpers
     // =========================================================================
 
-    private void executeUpdate(String sql) throws Exception {
+    private void executeUpdate(String sql, Object... params) throws Exception {
         try (ClickHouseClient client = ClickHouseClient.newInstance(ClickHouseProtocol.HTTP);
-             ClickHouseResponse resp = client.read(server).query(sql).execute().get()) {
+             ClickHouseResponse resp = client.read(server).query(sql).params(params).execute().get()) {
             // mutation — no rows expected
         }
     }
 
-    private List<Entity> executeSelect(String sql) throws Exception {
+    private long executeScalarLong(String sql, Object... params) throws Exception {
+        long result = 0L;
+        try (ClickHouseClient client = ClickHouseClient.newInstance(ClickHouseProtocol.HTTP);
+             ClickHouseResponse resp = client.read(server)
+                     .format(ClickHouseFormat.TabSeparatedWithNamesAndTypes)
+                     .query(sql)
+                     .params(params)
+                     .execute().get()) {
+            for (ClickHouseRecord row : resp.records()) {
+                result = row.getValue(0).asLong();
+            }
+        }
+        return result;
+    }
+
+    private List<Entity> executeSelect(String sql, Object... params) throws Exception {
         List<Entity> results = new ArrayList<>();
         // Force TabSeparatedWithNamesAndTypes to get plain-text column values — avoids
         // binary UUID/String encoding issues present in ClickHouse Java client 0.6.x
@@ -622,7 +631,9 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
         try (ClickHouseClient client = ClickHouseClient.newInstance(ClickHouseProtocol.HTTP);
              ClickHouseResponse resp = client.read(server)
                      .format(ClickHouseFormat.TabSeparatedWithNamesAndTypes)
-                     .query(sql).execute().get()) {
+                     .query(sql)
+                     .params(params)
+                     .execute().get()) {
             for (ClickHouseRecord row : resp.records()) {
                 Entity entity = rowToEntity(row);
                 results.add(entity);
@@ -693,23 +704,28 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
-        Objects.requireNonNull(tenantId,   "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         Objects.requireNonNull(entityIds,  "entityIds must not be null");
         if (entityIds.isEmpty()) {
             return Promise.of(0L);
         }
         try {
             StringBuilder inClause = new StringBuilder();
+            List<Object> params = new ArrayList<>();
+            params.add(validatedTenantId);
             for (int i = 0; i < entityIds.size(); i++) {
-                if (i > 0) inClause.append(',');
-                inClause.append('\'').append(escapeIdentifier(entityIds.get(i).toString())).append('\'');
+                if (i > 0) {
+                    inClause.append(',');
+                }
+                inClause.append(":entityId").append(i);
+                params.add(entityIds.get(i).toString());
             }
             String sql = String.format(
-                    "ALTER TABLE %s DELETE WHERE tenant_id = '%s' AND id IN (%s)",
-                    TABLE, escapeIdentifier(tenantId), inClause);
-            executeUpdate(sql);
-            metrics.incrementCounter("connector.clickhouse.bulkDelete", "tenant", tenantId);
-            log.info("[ClickHouse] bulk-deleted {} entities for tenant={}", entityIds.size(), tenantId);
+                    "ALTER TABLE %s DELETE WHERE tenant_id = :tenantId AND id IN (%s)",
+                    tableName(), inClause);
+            executeUpdate(sql, params.toArray());
+            metrics.incrementCounter("connector.clickhouse.bulkDelete", "tenant", validatedTenantId);
+            log.info("[ClickHouse] bulk-deleted {} entities for tenant={}", entityIds.size(), validatedTenantId);
             return Promise.of((long) entityIds.size());
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -735,24 +751,23 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String validatedTenantId = requireValidTenantId(tenantId);
         try {
             // Count before delete (best-effort — ClickHouse count is O(1) for MergeTree)
             String countSql = String.format(
-                    "SELECT count() FROM %s PREWHERE tenant_id = '%s'" + querySettings,
-                    TABLE, escapeIdentifier(tenantId));
-            List<Entity> countResult = executeSelect(countSql);
-            long countBefore = countResult.size();
+                "SELECT count() FROM %s PREWHERE tenant_id = :tenantId" + querySettings,
+                tableName());
+            long countBefore = executeScalarLong(countSql, validatedTenantId);
 
             // Lightweight mutation: ClickHouse will asynchronously purge matching parts
             String deleteSql = String.format(
-                    "ALTER TABLE %s DELETE WHERE tenant_id = '%s'",
-                    TABLE, escapeIdentifier(tenantId));
-            executeUpdate(deleteSql);
+                "ALTER TABLE %s DELETE WHERE tenant_id = :tenantId",
+                tableName());
+            executeUpdate(deleteSql, validatedTenantId);
 
-            metrics.incrementCounter("connector.clickhouse.truncate", "tenant", tenantId);
+            metrics.incrementCounter("connector.clickhouse.truncate", "tenant", validatedTenantId);
             log.info("[ClickHouse] truncated tenant={} (approx {} rows scheduled for deletion)",
-                    tenantId, countBefore);
+                validatedTenantId, countBefore);
             return Promise.of(countBefore);
         } catch (Exception e) {
             return Promise.ofException(e);
@@ -780,8 +795,29 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
     }
 
     // =========================================================================
-    //  SQL injection prevention — delegate to EntityDocumentMapper
+    //  SQL safety helpers
     // =========================================================================
+
+    static String requireValidTenantId(String tenantId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        String normalizedTenantId = tenantId.trim();
+        if (normalizedTenantId.isEmpty()) {
+            throw new IllegalArgumentException("tenantId must not be blank");
+        }
+        if (normalizedTenantId.length() > MAX_TENANT_ID_LENGTH) {
+            throw new IllegalArgumentException(
+                    "tenantId must not exceed " + MAX_TENANT_ID_LENGTH + " characters");
+        }
+        if (!SAFE_TENANT_ID.matcher(normalizedTenantId).matches()) {
+            throw new IllegalArgumentException(
+                    "tenantId contains illegal characters; only [a-zA-Z0-9._-:] are allowed");
+        }
+        return normalizedTenantId;
+    }
+
+    private static String tableName() {
+        return escapeIdentifier(TABLE);
+    }
 
     /**
      * Escapes a string for safe embedding in a ClickHouse SQL string literal.
@@ -789,13 +825,5 @@ public class ClickHouseTimeSeriesConnector implements StorageConnector {
      */
     private static String escapeIdentifier(String value) {
         return EntityDocumentMapper.escapeIdentifier(value);
-    }
-
-    /**
-     * Escapes a JSON value string for safe embedding in a ClickHouse SQL literal.
-     * Delegates to {@link EntityDocumentMapper#escapeValue}.
-     */
-    private static String escapeValue(String value) {
-        return value == null ? "{}" : EntityDocumentMapper.escapeValue(value);
     }
 }

@@ -37,6 +37,7 @@ dependencies {
     api(platform("com.fasterxml.jackson:jackson-bom:2.18.2"))
     api(libs.jackson.databind)
     api(libs.jackson.annotations)
+    api(libs.jackson.datatype.jsr310)
     api("jakarta.validation:jakarta.validation-api:3.0.2")
     api(libs.micrometer.core)
     implementation("io.swagger.core.v3:swagger-annotations:2.2.28")

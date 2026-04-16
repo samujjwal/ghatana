@@ -138,7 +138,10 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handleEntitySuggest(HttpRequest request) {
         String collection = request.getPathParameter("collection");
-        String tenantId   = http.resolveTenantId(request);
+        String tenantId   = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -188,7 +191,10 @@ public class AiAssistHandler {
      * @return 200 with recommended queries and AI confidence metadata
      */
     public Promise<HttpResponse> handleAnalyticsSuggest(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
+        String tenantId  = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
@@ -236,7 +242,10 @@ public class AiAssistHandler {
      */
     public Promise<HttpResponse> handlePipelineOptimiseHint(HttpRequest request) {
         String pipelineId = request.getPathParameter("pipelineId");
-        String tenantId   = http.resolveTenantId(request);
+        String tenantId   = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
@@ -283,7 +292,10 @@ public class AiAssistHandler {
      * @return 200 with explanation, remediation hints, and AI confidence metadata
      */
     public Promise<HttpResponse> handleBrainExplain(HttpRequest request) {
-        String tenantId  = http.resolveTenantId(request);
+        String tenantId  = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 

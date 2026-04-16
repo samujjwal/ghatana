@@ -79,14 +79,14 @@ pnpm dev:web
 docker compose --profile full up -d
 ```
 
-Access YAPPC at **http://localhost:3000**
+Access YAPPC in unified local development at **http://localhost:7001**
 
 **Available Services:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- Domain Service: http://localhost:8082
-- AI Requirements: http://localhost:8082
-- Lifecycle API: http://localhost:8082
+- Frontend: http://localhost:7001
+- API Gateway: http://localhost:7002
+- GraphQL API: http://localhost:7002/graphql
+- Java Backend: http://localhost:7003
+- Standalone service/OpenAPI flows: http://localhost:8082
 
 For detailed setup, see [docs/guides/DEPLOYMENT_GUIDE.md](docs/guides/DEPLOYMENT_GUIDE.md)
 

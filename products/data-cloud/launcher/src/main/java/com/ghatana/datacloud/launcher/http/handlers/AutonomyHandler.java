@@ -39,7 +39,6 @@ public final class AutonomyHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AutonomyHandler.class);
 
-    private static final String GLOBAL_ACTION_TYPE = "*";
     private static final String REASON_OPERATOR_OVERRIDE = "Operator emergency shutoff";
 
     private final AutonomyController autonomyController;
@@ -77,6 +76,10 @@ public final class AutonomyHandler {
         if (autonomyController == null) {
             return Promise.of(http.errorResponse(503, "Autonomy controller not available"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return request.loadBody()
             .then(body -> {
                 try {
@@ -98,7 +101,6 @@ public final class AutonomyHandler {
                         ? (String) payload.get("reason")
                         : REASON_OPERATOR_OVERRIDE;
 
-                    String tenantId = http.resolveTenantId(request);
                     final AutonomyLevel targetLevel = level;
 
                     // forceDowngrade all known domains to target level
@@ -156,7 +158,10 @@ public final class AutonomyHandler {
         if (autonomyController == null) {
             return Promise.of(http.errorResponse(503, "Autonomy controller not available"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return autonomyController.listAllStates(tenantId)
             .map(states -> http.jsonResponse(Map.of(
                 "globalLevel", globalOverride != null ? globalOverride.name() : "NONE",
@@ -177,7 +182,10 @@ public final class AutonomyHandler {
         if (autonomyController == null) {
             return Promise.of(http.errorResponse(503, "Autonomy controller not available"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return autonomyController.listAllStates(tenantId)
             .map(states -> http.jsonResponse(Map.of(
                 "domains", states,

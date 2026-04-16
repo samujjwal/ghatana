@@ -11,11 +11,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import {
-  useQuery,
-  useMutation,
-  useSubscription,
-} from '@apollo/client';
+import { useQuery, useLazyQuery, useMutation, useSubscription } from "@apollo/client/react";
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback } from 'react';
 
@@ -32,34 +28,28 @@ import {
 } from '@yappc/state';
 import {
   GET_INCIDENT,
-  GET_INCIDENTS,
+  LIST_INCIDENTS as GET_INCIDENTS,
   GET_DASHBOARD,
-  GET_DASHBOARDS,
-  GET_SERVICE_HEALTH,
+  LIST_DASHBOARDS as GET_DASHBOARDS,
+  GET_SERVICE_MAP as GET_SERVICE_HEALTH,
   GET_ON_CALL_SCHEDULE,
-  GET_METRICS,
+  QUERY_METRICS as GET_METRICS,
   CREATE_INCIDENT,
   UPDATE_INCIDENT,
   ACKNOWLEDGE_INCIDENT,
   RESOLVE_INCIDENT,
-  ESCALATE_INCIDENT,
-  ADD_INCIDENT_TIMELINE_ENTRY,
+  ASSIGN_INCIDENT_COMMANDER as ESCALATE_INCIDENT,
+  ADD_INCIDENT_TIMELINE_EVENT as ADD_INCIDENT_TIMELINE_ENTRY,
   ACKNOWLEDGE_ALERT,
-  SNOOZE_ALERT,
+  SILENCE_ALERT as SNOOZE_ALERT,
   CREATE_DASHBOARD,
   UPDATE_DASHBOARD,
   DELETE_DASHBOARD,
   ADD_DASHBOARD_WIDGET,
   UPDATE_DASHBOARD_WIDGET,
-  REMOVE_DASHBOARD_WIDGET,
+  DELETE_DASHBOARD_WIDGET as REMOVE_DASHBOARD_WIDGET,
   EXECUTE_RUNBOOK,
-  INCIDENT_UPDATES_SUBSCRIPTION,
-  ALERT_STREAM_SUBSCRIPTION,
-  METRICS_STREAM_SUBSCRIPTION,
-  LOG_STREAM_SUBSCRIPTION,
-  type Incident,
-  type IncidentInput,
-} from '@yappc/core/api';
+} from '../graphql/operations/operations.operations';
 
 // =============================================================================
 // Incident Hooks

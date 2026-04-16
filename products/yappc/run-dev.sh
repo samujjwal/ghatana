@@ -37,7 +37,7 @@ trap cleanup SIGINT SIGTERM
 
 # Cleanup existing processes on critical ports
 echo -e "${BLUE}Cleaning up existing processes on critical ports...${NC}"
-for port in 8086 8080 7001 7002 7003; do
+for port in $WEB_PORT $API_PORT $JAVA_BACKEND_PORT; do
     # Find PID using lsof (macOS/Linux)
     if command -v lsof >/dev/null 2>&1; then
         pid=$(lsof -ti :$port 2>/dev/null)
@@ -52,7 +52,7 @@ done
 # Verify ports are actually free
 echo -e "${BLUE}Verifying ports are free...${NC}"
 sleep 3
-for port in 8086 8080 7001 7003; do
+for port in $WEB_PORT $API_PORT $JAVA_BACKEND_PORT; do
     if command -v lsof >/dev/null 2>&1; then
         pid=$(lsof -ti :$port 2>/dev/null)
         if [ ! -z "$pid" ]; then
@@ -135,9 +135,9 @@ cd "$REPO_ROOT"
 ./gradlew :launcher-unified:run :products:yappc:backend:api:classes --console=plain > /tmp/unified-launcher.log 2>&1 &
 UNIFIED_PID=$!
 echo -e "${BLUE}Unified Launcher started with PID: $UNIFIED_PID${NC}"
-echo -e "${BLUE}  • AEP API:    http://localhost:8080${NC}"
-echo -e "${BLUE}  • YAPPC API:  http://localhost:8086${NC}"
-echo -e "${BLUE}  • AEP UI:     http://localhost:7001 (dev mode)${NC}"
+echo -e "${BLUE}  • AEP runtime: embedded in unified JVM${NC}"
+echo -e "${BLUE}  • YAPPC API:   http://localhost:$JAVA_BACKEND_PORT${NC}"
+echo -e "${BLUE}  • Web UI:      http://localhost:$WEB_PORT${NC}"
 
 # Wait for services to be ready with health checks
 echo -e "${BLUE}Waiting for Unified Launcher to initialize (max 60 seconds)...${NC}"
@@ -158,7 +158,7 @@ while [ $STARTUP_ELAPSED -lt $STARTUP_TIMEOUT ]; do
     fi
     
     # Check for successful startup messages
-    if grep -q "io.activej.http.HttpServer.*listening\|HttpServer.*0.0.0.0:8086\|HttpServer.*0.0.0.0:8080" /tmp/unified-launcher.log 2>/dev/null; then
+    if grep -q "io.activej.http.HttpServer.*listening\|HttpServer.*0.0.0.0:$JAVA_BACKEND_PORT" /tmp/unified-launcher.log 2>/dev/null; then
         echo -e "${GREEN}✓ Unified Launcher is ready${NC}"
         STARTUP_SUCCESS=true
         break
@@ -345,10 +345,9 @@ echo -e "${GREEN}🚀 Development Environment is ready!${NC}"
 echo -e "${GREEN}📱 Web UI (App Creator):     http://localhost:$WEB_PORT${NC}"
 echo -e "${GREEN}⚛️  GraphQL API:            http://localhost:$API_PORT/graphql${NC}"
 echo -e "${GREEN}🔌 REST API (Workspace):    http://localhost:$API_PORT/api${NC}"
-echo -e "${GREEN}☕ AEP API:                 http://localhost:8080${NC}"
-echo -e "${GREEN}🔌 YAPPC Backend API:       http://localhost:8086${NC}"
+echo -e "${GREEN}☕ AEP Runtime:             embedded in Java backend${NC}"
+echo -e "${GREEN}🔌 YAPPC Backend API:       http://localhost:$JAVA_BACKEND_PORT${NC}"
 echo -e "${GREEN}🤖 Canvas AI Service:       localhost:50051 (gRPC)${NC}"
-echo -e "${GREEN}🎨 AEP UI (dev):            http://localhost:7001${NC}"
 echo -e "${GREEN}🗄️  Database & Cache:       PostgreSQL, Redis, MinIO (seeded)${NC}"
 echo ""
 echo -e "${BLUE}💡 HMR (Hot Module Replacement) is enabled for the Web UI${NC}"

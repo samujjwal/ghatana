@@ -35,10 +35,6 @@ import java.util.Set;
  * If the variable is absent the interceptor throws {@link IllegalStateException}
  * at construction time to prevent silent permissive-mode startup in production.
  *
- * <p>To allow unauthenticated access for local development, set
- * {@code AV_JWT_PERMISSIVE_MODE=true} explicitly. This flag must never be set
- * in production deployments.
- *
  * <p>Validated subject is stored in {@link #CTX_SUBJECT} so downstream handlers can
  * retrieve the authenticated principal:
  * <pre>{@code
@@ -65,25 +61,15 @@ public class JwtServerInterceptor implements ServerInterceptor {
     ));
 
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
-    private final boolean permissive;
     private final TokenValidator tokenValidator;
 
     public JwtServerInterceptor() {
         this.tokenValidator = fromAuthGatewayClient(AuthGatewayClient.getInstance());
         String secret = System.getenv("AV_JWT_SECRET");
         if (secret == null || secret.isBlank()) {
-            String permissiveFlag = System.getenv("AV_JWT_PERMISSIVE_MODE");
-            if ("true".equalsIgnoreCase(permissiveFlag)) {
-                LOG.warn("AV_JWT_PERMISSIVE_MODE=true — JWT interceptor in PERMISSIVE mode. " +
-                         "Do NOT use in production.");
-                this.jwtProcessor = null;
-                this.permissive = true;
-            } else {
-                throw new IllegalStateException(
-                        "AV_JWT_SECRET is not set. The Audio-Video JWT interceptor requires a " +
-                        "signing secret. Set AV_JWT_SECRET in the environment, or set " +
-                        "AV_JWT_PERMISSIVE_MODE=true explicitly for local development only.");
-            }
+            throw new IllegalStateException(
+                    "AV_JWT_SECRET is not set. The Audio-Video JWT interceptor requires a " +
+                    "signing secret and does not support permissive bypass mode.");
         } else {
             SecretKey key = new SecretKeySpec(
                     secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
@@ -96,18 +82,15 @@ public class JwtServerInterceptor implements ServerInterceptor {
                     new JWTClaimsSet.Builder().build(),
                     new HashSet<>(Arrays.asList("sub", "exp"))));
             this.jwtProcessor = processor;
-            this.permissive = false;
             LOG.info("JWT interceptor initialised (HMAC-SHA256, strict mode)");
         }
     }
 
     JwtServerInterceptor(
             ConfigurableJWTProcessor<SecurityContext> jwtProcessor,
-            boolean permissive,
             TokenValidator tokenValidator
     ) {
         this.jwtProcessor = jwtProcessor;
-        this.permissive = permissive;
         this.tokenValidator = Objects.requireNonNull(tokenValidator, "tokenValidator must not be null");
     }
 
@@ -121,13 +104,6 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
         if (EXEMPT_METHODS.contains(fullMethod)) {
             return next.startCall(call, headers);
-        }
-
-        if (permissive) {
-            Context ctx = Context.current()
-                    .withValue(CTX_SUBJECT, "anonymous")
-                    .withValue(CTX_TENANT, "dev-tenant");
-            return Contexts.interceptCall(ctx, call, headers, next);
         }
 
         String authHeader = headers.get(AUTHORIZATION_KEY);

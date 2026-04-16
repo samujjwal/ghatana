@@ -30,6 +30,7 @@ dependencies {
 
     // Data-Cloud SPI (for ConversationRepository and PromptVersioningService)
     implementation(project(":products:data-cloud:spi"))
+    implementation(project(":products:yappc:infrastructure:datacloud"))
 
     // ActiveJ
     implementation(libs.activej.promise)

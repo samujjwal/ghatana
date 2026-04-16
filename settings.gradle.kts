@@ -126,7 +126,8 @@ include(":platform:java:identity")
 include(":platform:java:data-governance")
 include(":platform:java:tool-runtime")
 include(":platform:java:policy-as-code")
-include(":platform:java:ds-cli")              // Design System CLI - DTCG token build, validate, audit
+include(":platform:java:ds-cli")
+include(":platform:java:cache")              // Distributed caching infrastructure
 // platform:java:incident-response DEPRECATED: Migrated to shared-services:incident-service per Phase 3.2
 
 // =============================================================================
@@ -277,15 +278,19 @@ include(":products:virtual-org:launcher")
 // Product: Security-Gateway
 // =============================================================================
 include(":products:security-gateway:platform:java")
+include(":products:security-gateway:launcher")
 
 // =============================================================================
 // Product: PHR
 // =============================================================================
 include(":products:phr")
+include(":products:phr:launcher")
 
 // =============================================================================
 // Product: Finance
 // =============================================================================
+include(":products:finance")
+include(":products:finance:launcher")
 include(":products:finance:platform-sdk")
 include(":products:finance:operator-workflows")
 include(":products:finance:regulator-portal")

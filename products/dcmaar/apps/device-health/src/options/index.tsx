@@ -8,6 +8,7 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { ErrorBoundary } from '@ghatana/design-system';
 import 'webextension-polyfill';
 
 import { ConnectorConfig } from './ConnectorConfig';
@@ -18,7 +19,9 @@ if (container) {
     const root = createRoot(container);
     root.render(
         <React.StrictMode>
-            <ConnectorConfig />
+            <ErrorBoundary>
+                <ConnectorConfig />
+            </ErrorBoundary>
         </React.StrictMode>
     );
 } else {

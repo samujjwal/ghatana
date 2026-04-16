@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import '../styles/globals.css';
 import { Dashboard } from './Dashboard';
 
@@ -13,7 +14,11 @@ const container =
 
 if (container && !(import.meta as any).env?.VITEST) {
     const root = ReactDOM.createRoot(container as HTMLElement);
-    root.render(React.createElement(Dashboard));
+    root.render(
+        <ErrorBoundary>
+            <Dashboard />
+        </ErrorBoundary>
+    );
 }
 
 // Dashboard (simplified UX) - canonical export

@@ -44,6 +44,20 @@ class FeatureIngestConfigTest {
                 .withMessageContaining("FEATURE_INGEST_DB_URL");
     }
 
+            @Test
+            @DisplayName("validate rejects postgres mode without DB password")
+            void validateRejectsMissingDbPasswordInPostgresMode() {
+            FeatureIngestConfig config = new FeatureIngestConfig.Builder()
+                .mode("postgres")
+                .dbUrl("jdbc:postgresql://localhost:5432/feature_ingest")
+                .dbPassword(" ")
+                .build();
+
+            assertThatIllegalStateException()
+                .isThrownBy(config::validate)
+                .withMessageContaining("FEATURE_INGEST_DB_PASSWORD");
+            }
+
     @Test
     @DisplayName("validate rejects non-positive batch size")
     void validateRejectsNonPositiveBatchSize() {

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aep-service-manager
+  annotations:
+    external-dns.alpha.kubernetes.io/set-identifier: aep-eastus
+    external-dns.alpha.kubernetes.io/aws-weight: "100"
+spec:
+  rules:
+    - host: eastus.api.aep.ghatana.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aep-service-manager
+                port:
+                  number: 8090
+  tls:
+    - secretName: aep-eastus-tls
+      hosts:
+        - eastus.api.aep.ghatana.io

@@ -128,7 +128,7 @@ export type StateChangeHandler = (
  * @example
  * ```ts
  * const client = new WebSocketClient({
- *   endpoint: 'ws://localhost:8080/ws',
+ *   endpoint: 'ws://localhost:7002/ws',
  *   authToken: 'jwt-token',
  *   tenantId: 'tenant-123',
  *   userId: 'user-456',

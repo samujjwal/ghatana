@@ -63,7 +63,7 @@ class AnalyticsHandlerMetricsTest {
 
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.of(queryResult));
-        when(httpSupport.resolveTenantId(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class);
         when(successResponse.getCode()).thenReturn(200);
@@ -99,7 +99,7 @@ class AnalyticsHandlerMetricsTest {
     void handleAnalyticsQueryShouldEmitErrorMetricWhenEngineFails() {
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap()))
                 .thenReturn(Promise.ofException(new RuntimeException("engine down")));
-        when(httpSupport.resolveTenantId(any())).thenReturn("tenant-dc");
+        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
         when(httpSupport.errorResponse(anyInt(), anyString()))
                 .thenReturn(mock(io.activej.http.HttpResponse.class));
@@ -118,6 +118,22 @@ class AnalyticsHandlerMetricsTest {
                 eq(DataCloudHttpMetrics.TAG_ERROR_TYPE), eq("RuntimeException")
         );
     }
+
+        @Test
+        @DisplayName("handleAnalyticsQuery rejects missing tenant header")
+        void handleAnalyticsQueryRejectsMissingTenantHeader() {
+                io.activej.http.HttpResponse badRequest = mock(io.activej.http.HttpResponse.class);
+                when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null);
+                when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+                io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class);
+
+                handler.handleAnalyticsQuery(request).getResult();
+
+                verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required");
+                verifyNoInteractions(metricsCollector);
+                verifyNoInteractions(analyticsEngine);
+        }
 
     @Test
     @DisplayName("withMetrics(noop) does not emit any metrics")

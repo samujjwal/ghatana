@@ -48,7 +48,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleStoreMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(http.errorResponse(400, "agentId path parameter is required"));
@@ -76,12 +79,10 @@ public class MemoryPlaneHandler {
                     Instant now = Instant.now();
                     Instant expiresAt = ttlSeconds > 0 ? now.plusSeconds(ttlSeconds) : now.plus(Duration.ofDays(30));
 
-                    @SuppressWarnings("unchecked")
                     List<String> tags = payload.get("tags") instanceof List<?> rawTags
                         ? rawTags.stream().filter(Objects::nonNull).map(String::valueOf).toList()
                         : List.of();
 
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> metadata = payload.get("metadata") instanceof Map<?, ?> rawMetadata
                         ? rawMetadata.entrySet().stream().collect(java.util.stream.Collectors.toMap(
                             entry -> String.valueOf(entry.getKey()),
@@ -120,7 +121,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleListMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId = request.getQueryParameter("agentId");
         String rawType = request.getQueryParameter("type");
         String queryText = Optional.ofNullable(request.getQueryParameter("query")).orElse("").trim();
@@ -159,7 +163,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(http.errorResponse(400, "agentId path parameter is required"));
@@ -216,7 +223,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleGetAgentMemoryByTier(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId = request.getPathParameter("agentId");
         String rawTier = request.getPathParameter("tier");
 
@@ -274,7 +284,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleSearchAgentMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId = request.getPathParameter("agentId");
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(http.errorResponse(400, "agentId path parameter is required"));
@@ -333,7 +346,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleDeleteMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId  = request.getPathParameter("agentId");
         String memoryId = request.getPathParameter("memoryId");
         if (agentId == null || agentId.isBlank()) {
@@ -357,7 +373,10 @@ public class MemoryPlaneHandler {
     }
 
     public Promise<HttpResponse> handleRetainMemory(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String agentId  = request.getPathParameter("agentId");
         String memoryId = request.getPathParameter("memoryId");
         if (agentId == null || agentId.isBlank()) {

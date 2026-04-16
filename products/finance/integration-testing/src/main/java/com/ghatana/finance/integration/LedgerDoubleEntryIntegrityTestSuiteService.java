@@ -6,6 +6,8 @@ import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
@@ -25,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * STORY-T01-005: Ledger double-entry integrity test suite
  */
 public class LedgerDoubleEntryIntegrityTestSuiteService {
+
+    private static final Logger log = LoggerFactory.getLogger(LedgerDoubleEntryIntegrityTestSuiteService.class);
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
@@ -253,7 +257,9 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
             ps.setString(1, runId); ps.setString(2, step); ps.setString(3, assertion);
             ps.setString(4, expected); ps.setString(5, String.valueOf(actual)); ps.setBoolean(6, passed);
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to persist ledger integrity step assertion: runId={}, step={}, assertion={}", runId, step, assertion, e);
+        }
         if (!passed) throw new AssertionError("FAIL [" + step + "] " + assertion + " expected=" + expected + " actual=" + actual);
     }
 
@@ -272,7 +278,9 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
              PreparedStatement ps = c.prepareStatement(
                  "UPDATE e2e_test_runs SET status=? WHERE run_id=?"
              )) { ps.setString(1, status); ps.setString(2, runId); ps.executeUpdate(); }
-        catch (SQLException ignored) {}
+        catch (SQLException e) {
+            log.warn("Failed to update ledger integrity run status: runId={}, status={}", runId, status, e);
+        }
     }
 
     @FunctionalInterface interface ThrowingConsumer<T> { void accept(T t) throws Exception; }

@@ -26,7 +26,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.testcontainers.redis)
+    testImplementation(libs.testcontainers.core)
     testImplementation(project(":platform:java:testing"))
 }
 

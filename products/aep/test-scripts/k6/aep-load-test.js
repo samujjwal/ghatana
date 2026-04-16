@@ -14,34 +14,31 @@ export const options = {
     },
 };
 
-const BASE_URL = __ENV.AEP_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.AEP_URL || 'http://localhost:8090';
 
 export default function () {
     const payload = JSON.stringify({
+        tenantId: 'simulation-tenant-1',
         type: 'event.ingestion.realtime',
         payload: {
             source: 'k6-load-testing',
             timestamp: Date.now(),
             value: Math.random() * 1000
-        },
-        headers: {
-            tenantId: 'simulation-tenant-1'
         }
     });
 
     const params = {
         headers: {
             'Content-Type': 'application/json',
-            'X-Ghatana-Tenant': 'simulation-tenant-1'
+            'X-Tenant-Id': 'simulation-tenant-1'
         },
     };
 
-    // Assuming an HTTP entrypoint bound to PipelineExecutionEngine
-    const res = http.post(`${BASE_URL}/api/v1/events/ingest`, payload, params);
+    const res = http.post(`${BASE_URL}/api/v1/events`, payload, params);
 
     check(res, {
-        'status is 200 or 202': (r) => r.status === 200 || r.status === 202,
-        'has tracking id': (r) => JSON.parse(r.body).hasOwnProperty('executionId'),
+        'status is 200': (r) => r.status === 200,
+        'has event id': (r) => JSON.parse(r.body).hasOwnProperty('eventId'),
     });
 
     sleep(0.1); // Small think time to mimic high volume streams

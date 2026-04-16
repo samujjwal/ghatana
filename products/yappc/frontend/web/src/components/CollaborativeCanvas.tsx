@@ -153,7 +153,7 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
   readOnly = false,
   onNodeSelect,
   onArchitectureChange,
-  wsEndpoint = process.env.REACT_APP_WS_ENDPOINT || 'ws://localhost:8080/ws',
+  wsEndpoint = process.env.REACT_APP_WS_ENDPOINT || 'ws://localhost:7002/ws',
   debug = false,
   currentPhase = LifecyclePhase.SHAPE,
   fowStage = FOWStage.FOUNDATION,

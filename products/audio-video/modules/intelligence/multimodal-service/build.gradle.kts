@@ -85,3 +85,6 @@ tasks.named<Tar>("distTar") {
 tasks.named<Zip>("distZip") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+tasks.named<Sync>("installDist") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

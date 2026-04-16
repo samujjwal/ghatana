@@ -158,7 +158,7 @@ public class DataCloudTransactionManager {
                 })
                 .whenException(ex -> {
                     LOG.error("Operation failed in transaction {}: {}", context.transactionId(), ex.getMessage());
-                    return Promise.ofException(ex);
+                    // Exception will be propagated automatically
                 });
     }
 

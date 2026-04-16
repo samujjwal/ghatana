@@ -96,7 +96,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         this.redisCache = redisCache;
         this.retryPolicy = retryPolicy != null ? retryPolicy : createDefaultRetryPolicy();
         this.circuitBreaker = circuitBreaker != null ? circuitBreaker : createDefaultCircuitBreaker();
-        this.eventloop = Eventloop.getCurrentEventloop();
+        this.eventloop = Eventloop.create();
     }
 
     /**
@@ -417,7 +417,9 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                             .hasMore(hasMore)
                             .totalCount(-1)
                             .build();
-                });
+                })
+        )
+    );
     }
 
     /**

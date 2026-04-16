@@ -8,6 +8,7 @@ import com.ghatana.media.common.ModelLoadingError;
 import com.ghatana.media.common.ValidationError;
 import com.ghatana.media.stt.api.ModelInfo;
 import com.ghatana.media.stt.api.SttEngine;
+import com.ghatana.media.stt.api.StreamingSession;
 import com.ghatana.media.stt.api.TranscriptionOptions;
 import com.ghatana.media.stt.api.TranscriptionResult;
 import com.ghatana.media.stt.api.UserProfile;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -195,10 +198,7 @@ class SttGrpcServiceTest {
     @Test
     @DisplayName("loadModel: valid modelId → success response with timing")
     void loadModel_validId_succeeds() throws Exception {
-        ModelInfo activeInfo = new ModelInfo("whisper-base", "Whisper Base", "1.0",
-            new Locale[]{Locale.ENGLISH}, 150_000_000L, false);
         doNothing().when(mockEngine).loadModel("whisper-base");
-        when(mockEngine.getActiveModel()).thenReturn(activeInfo);
         when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1L, 0L, 0.0, 0L, 150_000_000L));
 
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>();
@@ -508,6 +508,38 @@ class SttGrpcServiceTest {
 
         assertThat(observer.hasError()).isFalse();
         assertThat(observer.getValue().getAccepted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("streamAudio: completion ends stream before closing session")
+    void streamAudio_completionEndsStreamBeforeClosingSession() throws Exception {
+        StreamingSession streamingSession = mock(StreamingSession.class);
+        when(mockEngine.createStreamingSession()).thenReturn(streamingSession);
+
+        AtomicBoolean completed = new AtomicBoolean(false);
+        StreamObserver<Transcription> responseObserver = new StreamObserver<>() {
+            @Override
+            public void onNext(Transcription value) {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+                completed.set(true);
+            }
+        };
+
+        StreamObserver<AudioChunk> requestObserver = service.streamTranscribe(responseObserver);
+
+        requestObserver.onCompleted();
+
+        assertThat(completed.get()).isTrue();
+        InOrder inOrder = inOrder(streamingSession);
+        inOrder.verify(streamingSession).endStream();
+        inOrder.verify(streamingSession).close();
     }
 
     // ─────────────────────────────────────────────────────────────

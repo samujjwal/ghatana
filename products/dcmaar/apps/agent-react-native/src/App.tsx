@@ -2,7 +2,8 @@
  * Guardian Agent App
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, type ErrorInfo, type ReactNode } from 'react';
+import { SafeAreaView, StyleSheet, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { QueryClient, QueryClientProvider } from 'react-query';
@@ -30,6 +31,34 @@ import DeviceSettings from './screens/DeviceSettings';
 
 const Stack = createStackNavigator();
 const queryClient = new QueryClient();
+
+class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('Guardian Agent mobile boundary caught an error', error, errorInfo);
+  }
+
+  override render(): ReactNode {
+    if (this.state.hasError) {
+      return (
+        <SafeAreaView style={styles.errorScreen}>
+          <Text style={styles.errorTitle}>Guardian Agent</Text>
+          <Text style={styles.errorMessage}>Something went wrong. Restart the app to continue.</Text>
+        </SafeAreaView>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function AgentConnectorBootstrap() {
   const auth = useAtomValue(authAtom);
@@ -108,40 +137,63 @@ function AgentConnectorBootstrap() {
 
 export default function App() {
   return (
-    <JotaiProvider>
-      <AgentConnectorBootstrap />
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Dashboard"
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: '#6366f1',
-              },
-              headerTintColor: '#fff',
-              headerTitleStyle: {
-                fontWeight: 'bold',
-              },
-            }}
-          >
-            <Stack.Screen
-              name="Dashboard"
-              component={Dashboard}
-              options={{ title: 'Guardian Agent' }}
-            />
-            <Stack.Screen
-              name="PolicyEditor"
-              component={PolicyEditor}
-              options={{ title: 'Policies' }}
-            />
-            <Stack.Screen
-              name="DeviceSettings"
-              component={DeviceSettings}
-              options={{ title: 'Device Settings' }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </QueryClientProvider>
-    </JotaiProvider>
+    <AppErrorBoundary>
+      <JotaiProvider>
+        <AgentConnectorBootstrap />
+        <QueryClientProvider client={queryClient}>
+          <NavigationContainer>
+            <Stack.Navigator
+              initialRouteName="Dashboard"
+              screenOptions={{
+                headerStyle: {
+                  backgroundColor: '#6366f1',
+                },
+                headerTintColor: '#fff',
+                headerTitleStyle: {
+                  fontWeight: 'bold',
+                },
+              }}
+            >
+              <Stack.Screen
+                name="Dashboard"
+                component={Dashboard}
+                options={{ title: 'Guardian Agent' }}
+              />
+              <Stack.Screen
+                name="PolicyEditor"
+                component={PolicyEditor}
+                options={{ title: 'Policies' }}
+              />
+              <Stack.Screen
+                name="DeviceSettings"
+                component={DeviceSettings}
+                options={{ title: 'Device Settings' }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </QueryClientProvider>
+      </JotaiProvider>
+    </AppErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  errorScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#f8fafc',
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  errorMessage: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+});

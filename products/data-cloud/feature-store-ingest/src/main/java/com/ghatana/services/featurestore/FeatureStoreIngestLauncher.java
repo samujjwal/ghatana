@@ -294,7 +294,9 @@ public class FeatureStoreIngestLauncher {
                         String rawOff = entry.headers().get("_x_dc_offset");
                         if (rawOff != null) {
                             try { maxOffset = Math.max(maxOffset, Long.parseLong(rawOff)); }
-                            catch (NumberFormatException ignored) {}
+                            catch (NumberFormatException ignored) {
+                                // Expected fallback: malformed legacy offsets should not stop ingest advancement.
+                            }
                         }
                     }
                     // Fall back to size-based advancement (in-memory provider / legacy).

@@ -43,7 +43,10 @@ public class EventHandler {
 
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAppendEvent(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -64,7 +67,6 @@ public class EventHandler {
                 if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
 
                 String eventType = (String) eventData.getOrDefault("type", "unknown");
-                @SuppressWarnings("unchecked")
                 Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
 
                 DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
@@ -89,7 +91,10 @@ public class EventHandler {
     }
 
     public Promise<HttpResponse> handleQueryEvents(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -156,7 +161,10 @@ public class EventHandler {
     }
 
     public Promise<HttpResponse> handleGetEventByOffset(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));

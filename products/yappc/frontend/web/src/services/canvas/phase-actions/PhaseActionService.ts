@@ -14,7 +14,7 @@ import type { ActionContext } from '@ghatana/canvas';
 
 // API base URL - uses VITE_API_ORIGIN for single-port architecture
 const API_BASE_URL = import.meta.env.DEV
-  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:8082'}/api/v1`
+  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api/v1`
   : '/api/v1';
 
 class APIError extends Error {

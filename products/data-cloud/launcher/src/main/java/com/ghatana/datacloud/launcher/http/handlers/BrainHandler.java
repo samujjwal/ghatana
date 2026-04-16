@@ -87,7 +87,10 @@ public class BrainHandler {
         if (brain == null) {
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         BrainContext ctx = BrainContext.forTenant(tenantId);
         return brain.getStats(ctx)
             .map(s -> http.jsonResponse(Map.of(
@@ -124,13 +127,16 @@ public class BrainHandler {
         if (brain == null) {
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         Optional<AttentionManager> amOpt = brain.getAttentionManager();
         if (amOpt.isEmpty()) {
             return Promise.of(http.errorResponse(503,
                 "Attention manager not available for this brain implementation"));
         }
         AttentionManager am = amOpt.get();
-        String tenantId = http.resolveTenantId(request);
 
         return request.loadBody()
             .then(body -> {
@@ -220,7 +226,10 @@ public class BrainHandler {
         if (brain == null) {
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         int limit = Math.min(HttpHandlerSupport.parseLimitParam(request.getQueryParameter("limit"), 100), 1000);
         BrainContext ctx = BrainContext.forTenant(tenantId);
 
@@ -259,7 +268,10 @@ public class BrainHandler {
         if (brain == null) {
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         BrainContext ctx = BrainContext.forTenant(tenantId);
 
         return request.loadBody()

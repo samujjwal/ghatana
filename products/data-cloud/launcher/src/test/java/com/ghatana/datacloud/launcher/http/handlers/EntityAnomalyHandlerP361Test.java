@@ -7,7 +7,6 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.Anomaly;
-import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.Severity;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
@@ -194,7 +193,7 @@ class EntityAnomalyHandlerP361Test {
         @BeforeEach
         void setUp() {
             handlerWithStore = new EntityAnomalyHandler(anomalyDetector, http, eventLogStore, objectMapper);
-            lenient().when(http.resolveTenantId(any())).thenReturn("tenant42");
+            lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant42");
             // No 'since' param — return null to trigger 24h default
             lenient().when(sharedRequest.getQueryParameter("since")).thenReturn(null);
             lenient().when(sharedRequest.getQueryParameter("limit")).thenReturn(null);
@@ -226,6 +225,19 @@ class EntityAnomalyHandlerP361Test {
             verify(eventLogStore).readByTimeRange(
                     argThat(ctx -> "tenant42".equals(ctx.tenantId())),
                     any(Instant.class), any(Instant.class), any(int.class));
+        }
+
+        @Test
+        @DisplayName("returns 400 when tenant header is missing")
+        void returns400WhenTenantMissing() {
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+            HttpResponse badRequest = HttpResponse.ofCode(400).build();
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest);
+
+            HttpResponse response = handlerWithStore.handleQueryAnomalies(sharedRequest).getResult();
+
+            assertThat(response).isSameAs(badRequest);
+            verify(eventLogStore, never()).readByTimeRange(any(), any(), any(), any(int.class));
         }
 
         @Test

@@ -48,7 +48,7 @@ export type ClientMode = 'http' | 'mock';
  * Usage:
  * ```typescript
  * const client = new AIServiceClient({
- *   baseUrl: 'http://localhost:8080/api/ml',
+ *   baseUrl: 'http://localhost:7002/api/ml',
  *   maxRetries: 3,
  * });
  * 
@@ -613,7 +613,7 @@ export function createAIServiceClient(
  */
 export function createMockAIServiceClient(): AIServiceClient {
   return new AIServiceClient(
-    { baseUrl: 'http://localhost:8080/api/ml' },
+    { baseUrl: 'http://localhost:7002/api/ml' },
     'mock'
   );
 }

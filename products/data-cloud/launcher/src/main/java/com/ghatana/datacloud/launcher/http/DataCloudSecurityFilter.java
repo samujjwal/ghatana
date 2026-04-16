@@ -145,7 +145,7 @@ public final class DataCloudSecurityFilter {
             return authenticate(request, tenantWrapped, sensitivity)
                 .then(response -> {
                     Principal authenticatedPrincipal = request.getAttachment(Principal.class);
-                    String tenantId = resolveTenantId(request, authenticatedPrincipal);
+                    String tenantId = extractTenantId(request, authenticatedPrincipal);
                     String principalName = resolvePrincipalName(authenticatedPrincipal);
                     return handlePostAuth(
                             request,
@@ -395,7 +395,7 @@ public final class DataCloudSecurityFilter {
         return requestId;
     }
 
-    private static String resolveTenantId(
+    private static String extractTenantId(
             io.activej.http.HttpRequest request,
             Principal authenticatedPrincipal) {
         if (authenticatedPrincipal != null && authenticatedPrincipal.getTenantId() != null) {

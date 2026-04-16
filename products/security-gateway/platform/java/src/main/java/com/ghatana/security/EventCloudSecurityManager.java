@@ -30,10 +30,6 @@ public class EventCloudSecurityManager {
 
     // Security operation constants for metrics
     private static final String METRIC_PREFIX = "security.";
-    private static final String OP_ENCRYPT = "encrypt";
-    private static final String OP_DECRYPT = "decrypt";
-    private static final String OP_STORE = "store";
-    private static final String OP_RETRIEVE = "retrieve";
 
     private final KeyManager keyManager;
     private final EncryptionService encryptionService;
@@ -147,25 +143,21 @@ public class EventCloudSecurityManager {
      */
     public Promise<Void> rotateEncryptionKey() {
         long startTime = System.nanoTime();
-        return Promise.ofBlocking(executor, () -> {
-            try {
-                // Generate a new key
-                String newKeyId = keyManager.rotateKey().getResult();
-                logger.info("Rotated to new encryption key: {}", newKeyId);
+        return keyManager.rotateKey()
+                .map(newKeyId -> {
+                    logger.info("Rotated to new encryption key: {}", newKeyId);
 
-                // In a real implementation, we would re-encrypt all data here
-                // For now, we'll just log a message
-                logger.warn("Automatic re-encryption of existing data is not implemented");
+                    // In a real implementation, we would re-encrypt all data here.
+                    logger.warn("Automatic re-encryption of existing data is not implemented");
 
-                recordKeyRotationMetrics(System.nanoTime() - startTime, true);
-
-                return null;
-            } catch (Exception e) {
-                recordKeyRotationMetrics(System.nanoTime() - startTime, false);
-                logger.error("Failed to rotate encryption key", e);
-                throw new SecurityException("Key rotation failed: " + e.getMessage(), e);
-            }
-        });
+                    recordKeyRotationMetrics(System.nanoTime() - startTime, true);
+                    return (Void) null;
+                })
+                .mapException(e -> {
+                    recordKeyRotationMetrics(System.nanoTime() - startTime, false);
+                    logger.error("Failed to rotate encryption key", e);
+                    return new SecurityException("Key rotation failed: " + e.getMessage(), e);
+                });
     }
 
     /**

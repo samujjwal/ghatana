@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
@@ -23,9 +24,7 @@ import java.util.concurrent.Executor;
 public class EncryptedStorageService {
     private static final Logger logger = LoggerFactory.getLogger(EncryptedStorageService.class);
 
-    private final KeyManager keyManager;
     private final EncryptionService encryptionService;
-    private final Executor executor;
     private final Map<String, byte[]> storage;
 
     /**
@@ -40,9 +39,9 @@ public class EncryptedStorageService {
             EncryptionService encryptionService,
             Executor executor) {
 
-        this.keyManager = keyManager;
-        this.encryptionService = encryptionService;
-        this.executor = executor;
+        Objects.requireNonNull(keyManager, "keyManager must not be null");
+        this.encryptionService = Objects.requireNonNull(encryptionService, "encryptionService must not be null");
+        Objects.requireNonNull(executor, "executor must not be null");
         this.storage = new ConcurrentHashMap<>();
 
         logger.info("Initialized EncryptedStorageService with key manager: {}",
@@ -118,15 +117,11 @@ public class EncryptedStorageService {
      * @param key The key under which to store the data
      * @param data The data to store
      */
-    public void storeSecurely(String key, byte[] data) {
-        try {
-            byte[] encrypted = encryptionService.encryptAsync(data).getResult();
-            storage.put(key, encrypted);
-            logger.debug("Stored encrypted data for key: {}", key);
-        } catch (Exception e) {
+    public Promise<Void> storeSecurely(String key, byte[] data) {
+        return store(key, data).mapException(e -> {
             logger.error("Failed to store data securely for key: {}", key, e);
-            throw new RuntimeException("Failed to store data securely", e);
-        }
+            return new RuntimeException("Failed to store data securely", e);
+        });
     }
 
     /**

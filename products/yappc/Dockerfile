@@ -97,10 +97,10 @@ USER yappc
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8082/health || exit 1
 
 # Expose ports
-EXPOSE 8080 8081 3000
+EXPOSE 8082 8081 3000
 
 # Default environment
 ENV JAVA_OPTS="-Xmx2G -Xms512M" \

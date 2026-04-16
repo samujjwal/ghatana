@@ -6,33 +6,24 @@
  */
 
 import React from 'react';
-import { Card, Button, Input, Loading } from '@audio-video/ui';
+import { Card, Button } from '@audio-video/ui';
+
+const AI_VOICE_STATUS_MESSAGE =
+  'This panel is intentionally disabled until the desktop client is wired to a real AI Voice backend.';
 
 const AIVoicePanel: React.FC = () => {
   const [inputText, setInputText] = React.useState('');
   const [task, setTask] = React.useState('enhance');
-  const [isProcessing, setIsProcessing] = React.useState(false);
-  const [result, setResult] = React.useState('');
-
-  const handleProcess = async () => {
-    if (!inputText.trim()) return;
-    
-    setIsProcessing(true);
-    try {
-      // TODO: Call actual AI Voice service
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setResult(`Enhanced: ${inputText}`);
-    } catch (error) {
-      console.error('AI Voice processing failed:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
       <Card title="AI Voice" subtitle="Enhance and transform voice content">
         <div className="space-y-6">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100">
+            <p className="font-medium">Unavailable in this build</p>
+            <p className="mt-1">{AI_VOICE_STATUS_MESSAGE}</p>
+          </div>
+
           {/* Task Selection */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -66,26 +57,11 @@ const AIVoicePanel: React.FC = () => {
 
           {/* Process Button */}
           <Button
-            onClick={handleProcess}
-            disabled={!inputText.trim() || isProcessing}
+            disabled
             className="w-full"
           >
-            {isProcessing ? (
-              <Loading size="sm" text="Processing..." />
-            ) : (
-              'Process Text'
-            )}
+            AI Voice Coming Soon
           </Button>
-
-          {/* Result */}
-          {result && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Result</h3>
-              <div className="text-display">
-                {result}
-              </div>
-            </div>
-          )}
         </div>
       </Card>
     </div>

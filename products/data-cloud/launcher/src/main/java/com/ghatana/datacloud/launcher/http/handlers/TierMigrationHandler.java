@@ -107,7 +107,10 @@ public class TierMigrationHandler {
      */
     public Promise<HttpResponse> handleMigrateCollection(HttpRequest request) {
         String collectionId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String targetTier = request.getQueryParameter("targetTier");
 
         if (collectionId == null || collectionId.isBlank()) {

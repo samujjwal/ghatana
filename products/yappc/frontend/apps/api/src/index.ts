@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import { createYoga, createSchema } from 'graphql-yoga';
 import fastify from 'fastify';
 import cors from '@fastify/cors';

@@ -108,10 +108,10 @@ JAVA_BACKEND_PORT=7003   # YAPPC Java Backend
 
 **No longer used**:
 
-- 8082 (AEP API - now internal)
-- 8086 (separate launcher - now internal)
+- 8082 (standalone YAPPC service port, not used by unified dev)
+- 8086 (legacy launcher port, removed from current dev flow)
 - 50051 (Canvas AI - not in dev scope)
-- 7001 (AEP UI - not needed)
+- separate AEP UI ports in local dev (AEP now runs embedded behind the unified flow)
 
 ---
 

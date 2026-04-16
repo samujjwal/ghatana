@@ -2,7 +2,9 @@ package com.ghatana.platform.cache.backend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.DistributedCacheService.CacheBackend;
-import com.ghatana.platform.observability.structured.StructuredLogger;
+import com.ghatana.platform.cache.DistributedCacheService.CacheStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -46,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  * - REDIS_MAX_RETRIES (default: 3)
  */
 public final class RedisDistributedCacheBackend implements CacheBackend {
-    private static final StructuredLogger log = StructuredLogger.create(RedisDistributedCacheBackend.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisDistributedCacheBackend.class);
 
     // Lua script for atomic pattern-based key deletion
     // Returns count of deleted keys

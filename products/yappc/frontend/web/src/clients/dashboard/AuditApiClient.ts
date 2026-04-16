@@ -29,7 +29,7 @@ import type {
  * @example
  * ```typescript
  * const client = new AuditApiClient({
- *   baseUrl: 'http://localhost:8080/api',
+ *   baseUrl: 'http://localhost:7002/api',
  *   tenantId: 'tenant-123',
  *   authToken: 'jwt-token',
  * });

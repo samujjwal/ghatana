@@ -104,7 +104,7 @@ const DEFAULT_CONFIG: Partial<YappcConfig> = {
     logLevel: 'info',
   },
   server: {
-    port: 8080,
+    port: 8082,
     host: '0.0.0.0',
     cors: {
       origins: ['http://localhost:3000', 'http://localhost:5173'],

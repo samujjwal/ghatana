@@ -4,6 +4,15 @@ import com.ghatana.audio.video.infrastructure.persistence.entity.AudioFileEntity
 import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEntity;
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.audio.video.infrastructure.persistence.service.TranscriptionService;
+import com.ghatana.media.common.AudioData;
+import com.ghatana.media.common.AudioFormat;
+import com.ghatana.media.common.ImageData;
+import com.ghatana.media.common.ImageFormat;
+import com.ghatana.media.common.ColorSpace;
+import com.ghatana.media.stt.api.SttEngine;
+import com.ghatana.media.stt.api.TranscriptionResult;
+import com.ghatana.media.vision.api.VisionEngine;
+import com.ghatana.media.vision.api.DetectionResult;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -27,16 +36,36 @@ public class PersistentMultimodalService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistentMultimodalService.class);
 
+    /** Default sample rate assumed for raw PCM audio data passed to this service. */
+    private static final int DEFAULT_SAMPLE_RATE_HZ = 16_000;
+
     private final AudioFileService audioFileService;
     private final TranscriptionService transcriptionService;
+    private final SttEngine sttEngine;
+    private final VisionEngine visionEngine;
     private final Timer fuseTimer;
 
+    /**
+     * Convenience constructor — engines not yet wired; audio and visual processing will
+     * throw {@link UnsupportedOperationException} until real engines are supplied.
+     */
     public PersistentMultimodalService(
             AudioFileService audioFileService,
             TranscriptionService transcriptionService,
             MeterRegistry meterRegistry) {
+        this(audioFileService, transcriptionService, null, null, meterRegistry);
+    }
+
+    public PersistentMultimodalService(
+            AudioFileService audioFileService,
+            TranscriptionService transcriptionService,
+            SttEngine sttEngine,
+            VisionEngine visionEngine,
+            MeterRegistry meterRegistry) {
         this.audioFileService = Objects.requireNonNull(audioFileService, "audioFileService cannot be null");
         this.transcriptionService = Objects.requireNonNull(transcriptionService, "transcriptionService cannot be null");
+        this.sttEngine = sttEngine;   // nullable — checked at call time
+        this.visionEngine = visionEngine; // nullable — checked at call time
         this.fuseTimer = Timer.builder("multimodal.persistent.fuse")
             .description("Multimodal fusion latency with persistence")
             .register(meterRegistry);
@@ -159,17 +188,30 @@ public class PersistentMultimodalService {
             return Promise.of(Optional.empty());
         }
 
-        // In production, this would call the STT service
-        // For now, create a placeholder transcription
+        if (sttEngine == null) {
+            return Promise.ofException(new UnsupportedOperationException(
+                "SttEngine is not configured. Inject a real SttEngine implementation " +
+                "(e.g. WhisperTranscriptionEngine) to enable audio transcription."));
+        }
+
+        AudioData audio = new AudioData(audioData, DEFAULT_SAMPLE_RATE_HZ, 1, 16);
+        TranscriptionResult result;
+        try {
+            result = sttEngine.transcribe(audio);
+        } catch (Exception e) {
+            LOG.error("[tenant={}] STT transcription failed for audioFileId={}: {}", tenantId, audioFileId, e.getMessage(), e);
+            return Promise.ofException(new RuntimeException("Transcription failed: " + e.getMessage(), e));
+        }
+
         TranscriptionEntity entity = new TranscriptionEntity(
             UUID.randomUUID(),
             tenantId,
             audioFileId,
             userId,
-            "[Audio transcription placeholder]",
-            "en"
+            result.text(),
+            result.language() != null ? result.language() : "en"
         );
-        entity.setConfidence(0.85f);
+        entity.setConfidence((float) result.confidence());
         entity.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED);
         entity.setCreatedAt(Instant.now());
         entity.setUpdatedAt(Instant.now());
@@ -183,13 +225,39 @@ public class PersistentMultimodalService {
             return Promise.of(new VisualAnalysis(false, 0, java.util.List.of()));
         }
 
-        // In production, this would call the Vision service
-        // For now, return placeholder analysis
-        return Promise.of(new VisualAnalysis(
-            true,
-            3, // placeholder detection count
-            java.util.List.of("person", "object", "scene")
-        ));
+        if (visionEngine == null) {
+            return Promise.ofException(new UnsupportedOperationException(
+                "VisionEngine is not configured. Inject a real VisionEngine implementation " +
+                "to enable visual analysis."));
+        }
+
+        // Image dimensions must be known for correct inference; if the caller supplies
+        // raw encoded bytes (JPEG/PNG) the engine is expected to handle them via the
+        // declared ImageFormat.  We use a nominal sentinel (width=0, height=0 signals
+        // "unknown") which requires the engine to decode dimensions from the header.
+        // Use the overload processVisual(tenantId, mediaFileId, visualData, width, height)
+        // when the caller can supply explicit dimensions for higher accuracy.
+        ImageData image = ImageData.builder()
+            .data(visualData)
+            .width(1)   // minimal valid value; engine decodes actual dimensions from header
+            .height(1)  // minimal valid value
+            .format(ImageFormat.JPEG)
+            .colorSpace(ColorSpace.RGB)
+            .build();
+
+        return visionEngine.detectAsync(image, com.ghatana.media.vision.api.DetectionOptions.defaults())
+            .map(detection -> {
+                java.util.List<String> labels = detection.objects().stream()
+                    .map(com.ghatana.media.vision.api.DetectedObject::className)
+                    .toList();
+                LOG.debug("[tenant={}] Visual detection for mediaId={}: {} objects detected",
+                    tenantId, mediaFileId, detection.count());
+                return new VisualAnalysis(detection.count() > 0, detection.count(), labels);
+            })
+            .whenException(e ->
+                LOG.error("[tenant={}] Vision detection failed for mediaId={}: {}",
+                    tenantId, mediaFileId, e.getMessage(), e)
+            );
     }
 
     private String getExtension(String fileName) {

@@ -269,7 +269,7 @@ public class ConfigManager implements ConfigSource {
         if (configFilePath != null && !configFilePath.isEmpty()) {
             try {
                 manager.addSource(new FileConfigSource(configFilePath));
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 log.warn("Failed to load configuration file: {}", configFilePath, e);
             }
         }

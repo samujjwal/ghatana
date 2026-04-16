@@ -118,9 +118,13 @@ export default function Component() {
 
       // Check initial network status if available
       if (Network && typeof Network.getStatus === 'function') {
-        Network.getStatus().then((status: unknown) => {
-          setIsOffline(!status.connected);
-        });
+        void Network.getStatus()
+          .then((status: unknown) => {
+            setIsOffline(!status.connected);
+          })
+          .catch((error: unknown) => {
+            console.warn('Failed to resolve initial mobile network status', error);
+          });
       }
     } catch (e) {
       // In web/test environments Capacitor may be stubbed or unavailable - ignore

@@ -115,6 +115,90 @@ export interface LearnedPolicy {
   updatedAt: string;
 }
 
+export interface MarketplaceAgentListing {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  domain: string;
+  level: string;
+  capabilities: string[];
+  tags: string[];
+  source: string;
+  owner: string;
+  publishedAt?: string;
+  updatedAt?: string;
+  averageRating: number;
+  reviewCount: number;
+}
+
+export interface MarketplaceReview {
+  id: string;
+  agentId: string;
+  tenantId: string;
+  reviewer: string;
+  rating: number;
+  title: string;
+  comment: string;
+  createdAt: string;
+}
+
+export interface MarketplaceAgentDetail {
+  listing: MarketplaceAgentListing;
+  reviews: MarketplaceReview[];
+}
+
+export interface PublishMarketplaceAgentInput {
+  id?: string;
+  name: string;
+  description?: string;
+  version?: string;
+  domain?: string;
+  level?: string;
+  capabilities: string[];
+  tags: string[];
+  owner?: string;
+}
+
+export interface CreateMarketplaceReviewInput {
+  reviewer?: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+}
+
+export interface CostBreakdown {
+  id: string;
+  name: string;
+  costUsd: number;
+  sharePercent: number;
+  runCount: number;
+  lastSeenAt?: string;
+}
+
+export interface CostAlert {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  description: string;
+  currentValue: number;
+  thresholdValue: number;
+}
+
+export interface CostSummary {
+  tenantId: string;
+  windowStart: string;
+  windowEnd: string;
+  totalCostUsd: number;
+  projectedMonthlyCostUsd: number;
+  averageCostPerRunUsd: number;
+  perPipeline: CostBreakdown[];
+  perAgent: CostBreakdown[];
+  alerts: CostAlert[];
+  dataSource: string;
+  allocationModel: string;
+}
+
 interface AgentListResponse {
   agents?: AgentRegistration[];
 }
@@ -161,6 +245,23 @@ interface PoliciesResponse {
 
 interface ReflectionResponse {
   triggered: boolean;
+}
+
+interface MarketplaceAgentsResponse {
+  agents?: MarketplaceAgentListing[];
+}
+
+interface MarketplaceAgentResponse {
+  listing: MarketplaceAgentListing;
+  reviews?: MarketplaceReview[];
+}
+
+interface MarketplaceReviewsResponse {
+  reviews?: MarketplaceReview[];
+}
+
+interface CostSummaryResponse {
+  summary: CostSummary;
 }
 
 interface WorkflowTemplatesResponse {
@@ -351,6 +452,87 @@ export async function getRunDetail(
     params: { tenantId },
   });
   return normalizePipelineRun(data);
+}
+
+export async function listMarketplaceAgents(
+  tenantId = "default",
+  search?: string,
+  capability?: string,
+): Promise<MarketplaceAgentListing[]> {
+  const { data } = await client.get<MarketplaceAgentsResponse>(
+    "/api/v1/catalog/marketplace/agents",
+    {
+      params: { tenantId, search, capability },
+    },
+  );
+  return data.agents ?? [];
+}
+
+export async function getMarketplaceAgent(
+  agentId: string,
+  tenantId = "default",
+): Promise<MarketplaceAgentDetail> {
+  const { data } = await client.get<MarketplaceAgentResponse>(
+    `/api/v1/catalog/marketplace/agents/${agentId}`,
+    {
+      params: { tenantId },
+    },
+  );
+  return {
+    listing: data.listing,
+    reviews: data.reviews ?? [],
+  };
+}
+
+export async function publishMarketplaceAgent(
+  input: PublishMarketplaceAgentInput,
+  tenantId = "default",
+): Promise<MarketplaceAgentListing> {
+  const { data } = await client.post<{ agent: MarketplaceAgentListing }>(
+    "/api/v1/catalog/marketplace/agents",
+    {
+      ...input,
+      tenantId,
+    },
+  );
+  return data.agent;
+}
+
+export async function listMarketplaceReviews(
+  agentId: string,
+  tenantId = "default",
+): Promise<MarketplaceReview[]> {
+  const { data } = await client.get<MarketplaceReviewsResponse>(
+    `/api/v1/catalog/marketplace/agents/${agentId}/reviews`,
+    {
+      params: { tenantId },
+    },
+  );
+  return data.reviews ?? [];
+}
+
+export async function createMarketplaceReview(
+  agentId: string,
+  input: CreateMarketplaceReviewInput,
+  tenantId = "default",
+): Promise<MarketplaceReview> {
+  const { data } = await client.post<{ review: MarketplaceReview }>(
+    `/api/v1/catalog/marketplace/agents/${agentId}/reviews`,
+    {
+      ...input,
+      tenantId,
+    },
+  );
+  return data.review;
+}
+
+export async function getCostSummary(
+  tenantId = "default",
+): Promise<CostSummary> {
+  const { data } = await client.get<CostSummaryResponse>("/api/v1/costs/summary", {
+    params: { tenantId },
+  });
+  return data.summary;
 }
 
 // ─── HITL Queue ──────────────────────────────────────────────────────

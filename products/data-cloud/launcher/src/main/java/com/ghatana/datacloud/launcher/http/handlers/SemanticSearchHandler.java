@@ -28,7 +28,6 @@ public final class SemanticSearchHandler {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
 
     private final VectorMemoryPlugin vectorPlugin;
-    private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private final ObjectMapper objectMapper;
 
@@ -37,7 +36,7 @@ public final class SemanticSearchHandler {
                                  HttpHandlerSupport http,
                                  ObjectMapper objectMapper) {
         this.vectorPlugin = Objects.requireNonNull(vectorPlugin, "vectorPlugin");
-        this.client = Objects.requireNonNull(client, "client");
+        Objects.requireNonNull(client, "client");
         this.http = Objects.requireNonNull(http, "http");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     }
@@ -72,7 +71,10 @@ public final class SemanticSearchHandler {
     }
 
     public Promise<HttpResponse> handleSimilarEntities(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String collection = request.getPathParameter("collection");
         String entityId = request.getQueryParameter("id");
         int count = Math.max(1, HttpHandlerSupport.parseIntParam(request.getQueryParameter("k"), 5));
@@ -98,7 +100,10 @@ public final class SemanticSearchHandler {
     }
 
     public Promise<HttpResponse> handleCollectionRag(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String collection = request.getPathParameter("collection");
         String requestId = http.resolveCorrelationId(request);
 

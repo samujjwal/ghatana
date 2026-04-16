@@ -38,7 +38,10 @@ public final class CapabilityRegistryHandler {
     }
 
     public Promise<HttpResponse> handleCapabilities(HttpRequest request) {
-        String tenantId = httpSupport.resolveTenantId(request);
+        String tenantId = httpSupport.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String requestId = httpSupport.resolveCorrelationId(request);
 
         Map<String, Object> response = new LinkedHashMap<>();

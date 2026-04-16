@@ -57,12 +57,8 @@ public final class AppConfig {
         List<ConfigSource> sources = new ArrayList<>();
         sources.add(new EnvironmentConfigSource());
         sources.add(new SystemPropertiesConfigSource());
-        // YAML file if present
-        try {
-            sources.add(new YamlConfigSource(Path.of("application.yml")));
-        } catch (Exception ignored) {
-            log.debug("No application.yml found on classpath — using env/sysprops only");
-        }
+        // YamlConfigSource already handles a missing file internally without failing startup.
+        sources.add(new YamlConfigSource(Path.of("application.yml")));
         return new AppConfig(sources);
     }
 

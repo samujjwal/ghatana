@@ -186,6 +186,12 @@ export function useDialog() {
             confirmed: actionIndex === 1,
             actionIndex: actionIndex ?? undefined,
           });
+        }).catch((error: unknown) => {
+          console.warn('Dialog confirmation flow failed', error);
+          resolve({
+            confirmed: false,
+            actionIndex: undefined,
+          });
         });
       });
     },
@@ -262,6 +268,9 @@ export function useDialog() {
           ],
         }).then((actionIndex) => {
           resolve(actionIndex === 1 ? inputValue : null);
+        }).catch((error: unknown) => {
+          console.warn('Dialog prompt flow failed', error);
+          resolve(null);
         });
       });
     },

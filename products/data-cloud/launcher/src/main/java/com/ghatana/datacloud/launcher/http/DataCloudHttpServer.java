@@ -101,18 +101,8 @@ public class DataCloudHttpServer {
     /** SSE queue capacity — 512 frames before back-pressure kicks in. */
 
     // ==================== CORS Constants ====================
-    /**
-     * Allowed CORS origin(s). Defaults to the value of {@code DATACLOUD_CORS_ALLOWED_ORIGINS}
-     * environment variable. Falls back to {@code "http://localhost:5173"} (Vite dev server)
-     * so that local development works out-of-the-box without opening access to all origins.
-     * <p>
-     * In production, set to the actual frontend origin (e.g. {@code "https://app.ghatana.com"}).
-     */
-    private static final String CORS_ALLOW_ORIGIN;
-    static {
-        String env = System.getenv("DATACLOUD_CORS_ALLOWED_ORIGINS");
-        CORS_ALLOW_ORIGIN = (env != null && !env.isBlank()) ? env : "http://localhost:5173";
-    }
+    /** Local-only CORS origin fallback used when the launcher is explicitly running in local mode. */
+    private static final String DEFAULT_LOCAL_CORS_ALLOW_ORIGIN = "http://localhost:5173";
     private static final String CORS_ALLOW_METHODS = "GET, POST, PUT, DELETE, OPTIONS, PATCH";
     private static final String CORS_ALLOW_HEADERS = "Content-Type, Authorization, X-Tenant-ID, X-Request-ID";
     private static final String CORS_MAX_AGE       = "86400";
@@ -300,6 +290,7 @@ public class DataCloudHttpServer {
 
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
+    private String corsAllowOrigin = DEFAULT_LOCAL_CORS_ALLOW_ORIGIN;
     private boolean strictTenantResolution = false;
     private EntityCrudHandler entityHandler;
     private EntityExportHandler exportHandler;
@@ -823,6 +814,24 @@ public class DataCloudHttpServer {
         logger.warn("Running without authentication — LOCAL profile only.");
     }
 
+    static String resolveCorsAllowOrigin(String configuredOrigins,
+                                         boolean strictTenantResolution,
+                                         Logger logger) {
+        requireNonNull(logger, "logger");
+
+        if (configuredOrigins != null && !configuredOrigins.isBlank()) {
+            return configuredOrigins;
+        }
+
+        if (strictTenantResolution) {
+            throw new IllegalStateException(
+                "DATACLOUD_CORS_ALLOWED_ORIGINS must be configured for non-local profiles.");
+        }
+
+        logger.warn("Running with default localhost CORS origin — LOCAL profile only.");
+        return DEFAULT_LOCAL_CORS_ALLOW_ORIGIN;
+    }
+
     /**
      * Starts the HTTP server.
      *
@@ -830,6 +839,7 @@ public class DataCloudHttpServer {
      */
     public void start() throws Exception {
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
+        corsAllowOrigin = resolveCorsAllowOrigin(System.getenv("DATACLOUD_CORS_ALLOWED_ORIGINS"), strictTenantResolution, log);
 
         platformRateLimiter = new RateLimitFilter(
                 rateLimitRequests,
@@ -839,7 +849,7 @@ public class DataCloudHttpServer {
         eventloop = Eventloop.create();
 
         // ---- Instantiate extracted handler delegates ----
-        httpSupport = new HttpHandlerSupport(objectMapper, CORS_ALLOW_ORIGIN, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution);
+        httpSupport = new HttpHandlerSupport(objectMapper, corsAllowOrigin, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution);
         DataCloudBusinessMetrics businessMetrics = new DataCloudBusinessMetrics(metricsCollector);
         TraceSpanSupport traceSpanSupport = new TraceSpanSupport(traceExportService);
 
@@ -1358,7 +1368,7 @@ public class DataCloudHttpServer {
         return request -> {
             if (request.getMethod() == HttpMethod.OPTIONS) {
                 return Promise.of(HttpResponse.ok200()
-                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(CORS_ALLOW_METHODS))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(CORS_ALLOW_HEADERS))
                     .withHeader(HttpHeaders.of("Access-Control-Max-Age"),      HttpHeaderValue.of(CORS_MAX_AGE))
@@ -1405,7 +1415,7 @@ public class DataCloudHttpServer {
                     .withHeader(HttpHeaders.of("Retry-After"),
                             HttpHeaderValue.of(String.valueOf(rateLimitWindowSeconds)))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
-                            HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                            HttpHeaderValue.of(corsAllowOrigin))
                     .withBody(body.getBytes(StandardCharsets.UTF_8))
                     .build();
         });
@@ -1455,7 +1465,7 @@ public class DataCloudHttpServer {
                         .withHeader(HttpHeaders.CONTENT_TYPE,
                             HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                         .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
-                            HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                            HttpHeaderValue.of(corsAllowOrigin))
                         .withBody(("{\"error\":\"Content-Type must be application/json\"}").getBytes(StandardCharsets.UTF_8))
                         .build());
                 }
@@ -1503,7 +1513,7 @@ public class DataCloudHttpServer {
                             .withHeader(HttpHeaders.CONTENT_TYPE,
                                 HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
-                                HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                                HttpHeaderValue.of(corsAllowOrigin))
                             .withBody(msg.getBytes(StandardCharsets.UTF_8))
                             .build());
                     }

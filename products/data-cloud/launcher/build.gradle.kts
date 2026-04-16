@@ -4,6 +4,14 @@ plugins {
     alias(libs.plugins.spotbugs)
 }
 
+val runLauncher by tasks.registering(JavaExec::class) {
+    group = "application"
+    description = "Runs the Data Cloud standalone launcher"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.ghatana.datacloud.launcher.DataCloudLauncher")
+    standardInput = System.`in`
+}
+
 dependencies {
     // Platform modules
     implementation(project(":products:data-cloud:platform-launcher"))

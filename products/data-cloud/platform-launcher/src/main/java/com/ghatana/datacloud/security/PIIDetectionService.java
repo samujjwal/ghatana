@@ -50,15 +50,16 @@ public class PIIDetectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(PIIDetectionService.class);
 
-    @Inject
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     private final ExecutorService blockingExecutor;
 
     // PII Detection Patterns
     private final Map<String, Pattern> piiPatterns = new HashMap<>();
 
-    public PIIDetectionService() {
+    @Inject
+    public PIIDetectionService(DataSource dataSource) {
+        this.dataSource = dataSource;
         this.blockingExecutor = JpaThreadPoolConfig.fromEnvironment().createExecutorService();
         initializePatterns();
     }

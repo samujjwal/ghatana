@@ -495,30 +495,48 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
     // Fetch AI suggestions when entering workspace step
     useEffect(() => {
         if (currentStep === 1 && !suggestedWorkspaceName) {
-            setIsLoadingWorkspaceSuggestion(true);
-            suggestWorkspace().then((name) => {
-                setSuggestedWorkspaceName(name);
-                setIsLoadingWorkspaceSuggestion(false);
-                // Auto-fill if empty
-                if (!workspaceName) {
-                    setWorkspaceName(name);
+            const loadWorkspaceSuggestion = async (): Promise<void> => {
+                setIsLoadingWorkspaceSuggestion(true);
+
+                try {
+                    const name = await suggestWorkspace();
+                    setSuggestedWorkspaceName(name);
+                    // Auto-fill if empty
+                    if (!workspaceName) {
+                        setWorkspaceName(name);
+                    }
+                } catch (error) {
+                    console.warn('Failed to load workspace suggestion', error);
+                } finally {
+                    setIsLoadingWorkspaceSuggestion(false);
                 }
-            });
+            };
+
+            void loadWorkspaceSuggestion();
         }
     }, [currentStep, suggestedWorkspaceName, suggestWorkspace, workspaceName]);
 
     // Fetch AI suggestions when entering project step or changing type
     useEffect(() => {
         if (currentStep === 2) {
-            setIsLoadingProjectSuggestion(true);
-            suggestProject('temp-workspace', projectType).then((name) => {
-                setSuggestedProjectName(name);
-                setIsLoadingProjectSuggestion(false);
-                // Auto-fill if empty
-                if (!projectName) {
-                    setProjectName(name);
+            const loadProjectSuggestion = async (): Promise<void> => {
+                setIsLoadingProjectSuggestion(true);
+
+                try {
+                    const name = await suggestProject('temp-workspace', projectType);
+                    setSuggestedProjectName(name);
+                    // Auto-fill if empty
+                    if (!projectName) {
+                        setProjectName(name);
+                    }
+                } catch (error) {
+                    console.warn('Failed to load project suggestion', error);
+                } finally {
+                    setIsLoadingProjectSuggestion(false);
                 }
-            });
+            };
+
+            void loadProjectSuggestion();
         }
     }, [currentStep, projectType, suggestProject, projectName]);
 

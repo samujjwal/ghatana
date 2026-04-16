@@ -59,7 +59,7 @@ class RequirementControllerTest extends EventloopTestBase {
   private RequirementController controller;
     private RequirementService requirementService;
   private ObjectMapper objectMapper;
-  private static final String BASE_URL = "http://localhost:8080";
+  private static final String BASE_URL = "http://localhost:8082";
 
   private static String url(String path) {
     return BASE_URL + path;

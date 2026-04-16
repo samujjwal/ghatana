@@ -172,7 +172,9 @@ public class BeneficialOwnershipDisclosureService {
                             rs.getTimestamp("created_at").toInstant());
                 }
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("findOpenDisclosure: failed to load open disclosure client={} instrument={}", clientId, instrumentId, e);
+        }
         return null;
     }
 

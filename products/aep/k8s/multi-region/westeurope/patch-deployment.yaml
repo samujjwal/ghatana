@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aep-service-manager
+spec:
+  template:
+    metadata:
+      labels:
+        topology.kubernetes.io/region: westeurope
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: aep-service-manager
+      containers:
+        - name: service-manager
+          env:
+            - name: AEP_REGION
+              value: westeurope
+            - name: AEP_REGION_ROLE
+              value: secondary
+            - name: AEP_DATA_CLOUD_REPLICA_MODE
+              value: active-active

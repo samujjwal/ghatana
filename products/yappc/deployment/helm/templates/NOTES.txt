@@ -16,8 +16,8 @@ Version: {{ .Chart.AppVersion }}
 {{- else }}
    
    # Forward pod traffic locally:
-   kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 8080:{{ .Values.service.port }}
-   echo "YAPPC API available at: http://localhost:8080"
+   kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 8082:{{ .Values.service.port }}
+   echo "YAPPC API available at: http://localhost:8082"
    
    # Frontend port:
    kubectl port-forward -n {{ .Values.namespace }} svc/{{ include "yappc.fullname" . }} 3000:3000

@@ -108,7 +108,10 @@ public class EntityAnomalyHandler {
         }
 
         String collection = request.getPathParameter("collection");
-        String tenantId   = http.resolveTenantId(request);
+        String tenantId   = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
@@ -198,7 +201,10 @@ public class EntityAnomalyHandler {
                     "Anomaly event store not configured — durable persistence unavailable"));
         }
 
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         String collection = request.getPathParameter("collection");
         if (collection == null || collection.isBlank()) {
             collection = request.getQueryParameter("collection");

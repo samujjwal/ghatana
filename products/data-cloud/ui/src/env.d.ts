@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
   readonly VITE_WS_URL: string;
   readonly VITE_GRAFANA_URL: string;
+  readonly VITE_USE_MSW: string;
   // Add other environment variables here as needed
 }
 

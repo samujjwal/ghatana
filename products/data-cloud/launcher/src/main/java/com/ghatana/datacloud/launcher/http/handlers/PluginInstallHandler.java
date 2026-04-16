@@ -78,7 +78,10 @@ public final class PluginInstallHandler {
      * Lists all registered plugins.
      */
     public Promise<HttpResponse> handleListPlugins(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("plugin.list", "tenant", tenantId);
 
         Collection<StoragePlugin<?>> all = pluginRegistry.getAllPlugins();
@@ -103,7 +106,10 @@ public final class PluginInstallHandler {
      */
     public Promise<HttpResponse> handleGetPlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("plugin.get", "tenant", tenantId, "pluginId", pluginId);
 
         return pluginRegistry.getPlugin(pluginId)
@@ -120,7 +126,10 @@ public final class PluginInstallHandler {
      */
     public Promise<HttpResponse> handleEnablePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("plugin.enable", "tenant", tenantId, "pluginId", pluginId);
 
         return pluginRegistry.getPlugin(pluginId)
@@ -148,7 +157,10 @@ public final class PluginInstallHandler {
      */
     public Promise<HttpResponse> handleDisablePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("plugin.disable", "tenant", tenantId, "pluginId", pluginId);
 
         if (pluginRegistry.getPlugin(pluginId).isEmpty()) {
@@ -181,7 +193,10 @@ public final class PluginInstallHandler {
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
         String pluginId = request.getPathParameter("id");
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         metrics.incrementCounter("plugin.upgrade", "tenant", tenantId, "pluginId", pluginId);
 
         return request.loadBody().then(buffer -> {

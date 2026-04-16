@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,40 @@ class DataCloudHttpServerSecurityConfigurationTest {
 
         assertThatCode(() -> DataCloudHttpServer.validateSecurityConfiguration(true, true, logger))
             .doesNotThrowAnyException();
+
+        verifyNoInteractions(logger);
+    }
+
+    @Test
+    @DisplayName("fails fast when CORS origins are missing in non-local profiles")
+    void failsFastWhenCorsOriginsMissingInNonLocalProfile() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.resolveCorsAllowOrigin(null, true, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("DATACLOUD_CORS_ALLOWED_ORIGINS must be configured for non-local profiles.");
+
+        verifyNoInteractions(logger);
+    }
+
+    @Test
+    @DisplayName("uses localhost CORS fallback only in local profile")
+    void usesLocalhostCorsFallbackOnlyInLocalProfile() {
+        Logger logger = mock(Logger.class);
+
+        assertThat(DataCloudHttpServer.resolveCorsAllowOrigin(null, false, logger))
+            .isEqualTo("http://localhost:5173");
+
+        verify(logger).warn("Running with default localhost CORS origin — LOCAL profile only.");
+    }
+
+    @Test
+    @DisplayName("uses configured CORS origins when provided")
+    void usesConfiguredCorsOriginsWhenProvided() {
+        Logger logger = mock(Logger.class);
+
+        assertThat(DataCloudHttpServer.resolveCorsAllowOrigin("https://app.ghatana.com", true, logger))
+            .isEqualTo("https://app.ghatana.com");
 
         verifyNoInteractions(logger);
     }

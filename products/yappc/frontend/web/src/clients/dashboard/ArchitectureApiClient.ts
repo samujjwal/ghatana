@@ -38,7 +38,7 @@ export interface SimulateImpactRequest {
  * @example
  * ```typescript
  * const client = new ArchitectureApiClient({
- *   baseUrl: 'http://localhost:8080/api',
+ *   baseUrl: 'http://localhost:7002/api',
  *   tenantId: 'tenant-123',
  *   authToken: 'jwt-token',
  * });

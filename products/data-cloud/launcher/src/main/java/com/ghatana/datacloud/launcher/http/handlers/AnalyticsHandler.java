@@ -62,7 +62,10 @@ public class AnalyticsHandler {
         if (analyticsEngine == null) {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         long start = System.currentTimeMillis();
         return request.loadBody().then(buf -> {
             try {
@@ -170,7 +173,10 @@ public class AnalyticsHandler {
         if (analyticsEngine == null) {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         long start = System.currentTimeMillis();
         return request.loadBody()
             .then(
@@ -243,7 +249,10 @@ public class AnalyticsHandler {
         if (analyticsEngine == null) {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
-        String tenantId = http.resolveTenantId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -292,7 +301,10 @@ public class AnalyticsHandler {
                     } catch (IllegalArgumentException e) {
                         return Promise.of(http.errorResponse(400, "Invalid report definition: " + e.getMessage()));
                     }
-                    String tenantId = http.resolveTenantId(request);
+                    String tenantId = http.requireTenantIdOrFail(request);
+                    if (tenantId == null) {
+                        return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+                    }
                     return reportExecutor().generate(tenantId, definition)
                         .map(result -> {
                             Map<String, Object> response = new LinkedHashMap<>();

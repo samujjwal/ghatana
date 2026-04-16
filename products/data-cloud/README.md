@@ -31,6 +31,18 @@ Clients and products
 
 Operational guidance for validated deployment paths lives in `RUNBOOK.md`.
 
+## Manuals
+
+Use the manual set below depending on your goal:
+
+| Document | Audience | Purpose |
+| --- | --- | --- |
+| `DEVELOPER_MANUAL.md` | developers and integrators | local setup, module map, API-first development, SDK and UI workflows |
+| `TEST_MANUAL.md` | engineers and QA | test layers, commands, durable load verification, contract checks |
+| `USER_MANUAL.md` | operators, analysts, and consumers | UI navigation, common workflows, API usage recipes |
+| `RUNBOOK.md` | operators and SREs | deployment, durability, recovery, and operational checks |
+| `REST_API_DOCUMENTATION.md` | API consumers | human-readable route inventory |
+
 ## Key Modules
 
 | Module | Purpose |
@@ -59,7 +71,13 @@ Run the server:
 ```bash
 DATACLOUD_PROFILE=local \
 DATACLOUD_HTTP_ENABLED=true \
-./gradlew :products:data-cloud:launcher:run
+./gradlew :products:data-cloud:launcher:runLauncher
+```
+
+Run backend and UI together with one command:
+
+```bash
+bash products/data-cloud/scripts/run-local-stack.sh
 ```
 
 The default HTTP port is `8082`.
@@ -140,3 +158,5 @@ Useful commands during development:
 ./gradlew :products:data-cloud:sdk:build
 ./gradlew :products:data-cloud:build
 ```
+
+For richer day-to-day guidance, use `DEVELOPER_MANUAL.md` and `TEST_MANUAL.md` instead of treating this README as the only source of setup and verification steps.

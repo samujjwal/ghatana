@@ -225,7 +225,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws InterruptedException if request is interrupted
      */
     protected HttpResponse performGet(String path) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.get("http://localhost:8080" + path).build()));
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.get("http://localhost:8082" + path).build()));
     }
 
     /**
@@ -238,7 +238,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws InterruptedException if request is interrupted
      */
     protected HttpResponse performPost(String path, String body) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.post("http://localhost:8080" + path)
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.post("http://localhost:8082" + path)
             .withBody(body)
             .build()));
     }
@@ -253,7 +253,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws InterruptedException if request is interrupted
      */
     protected HttpResponse performPut(String path, String body) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.put("http://localhost:8080" + path)
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.put("http://localhost:8082" + path)
             .withBody(body)
             .build()));
     }
@@ -267,6 +267,6 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      * @throws InterruptedException if request is interrupted
      */
     protected HttpResponse performDelete(String path) throws ExecutionException, InterruptedException {
-        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost:8080" + path).build()));
+        return runPromise(() -> httpClient.request(io.activej.http.HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost:8082" + path).build()));
     }
 }

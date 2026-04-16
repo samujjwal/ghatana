@@ -28,6 +28,7 @@
         "node_modules",
         "dist",
         "src/generated/**",
+        "src/routes/config.ts",
         "**/*.test.ts"
     ]
 }

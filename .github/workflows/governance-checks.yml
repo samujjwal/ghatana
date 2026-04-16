@@ -23,6 +23,28 @@ jobs:
       - name: Validate package README contracts and dependency direction
         run: node ./scripts/check-platform-package-governance.js
 
+  typescript-strict-enforcement:
+    name: TypeScript Strict Enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce strict tsconfig policy
+        run: pnpm run check:tsconfig-strict
+
   # ─────────────────────────────────────────────
   # SBOM Generation
   # ─────────────────────────────────────────────

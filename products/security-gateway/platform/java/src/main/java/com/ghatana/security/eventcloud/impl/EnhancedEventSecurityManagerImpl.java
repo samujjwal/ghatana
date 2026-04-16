@@ -67,6 +67,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
                     return size() > MAX_PRINCIPAL_CACHE_SIZE;
                 }
             });
+    @SuppressWarnings("unused")
     private final Map<String, Set<String>> userPermissionsCache = Collections.synchronizedMap(
             new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
@@ -126,7 +127,6 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
         }).then(resultArr -> {
             Object[] arr = (Object[]) resultArr;
             byte[] eventData = (byte[]) arr[0];
-            String keyId = (String) arr[1];
             long startTime = (long) arr[2];
 
             return encryptionService.encryptAsync(eventData)
@@ -374,31 +374,24 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
     @Override
     public Promise<Void> auditEventAccess(String userId, AccessOperation operation, String eventId,
                                          boolean success, Map<String, Object> additionalInfo) {
-        return Promise.ofBlocking(securityExecutor, () -> {
-            try {
-                Map<String, Object> auditData = new HashMap<>();
-                auditData.put("userId", userId);
-                auditData.put("operation", operation.name());
-                auditData.put("eventId", eventId);
-                auditData.put("success", success);
-                auditData.put("timestamp", System.currentTimeMillis());
+        Map<String, Object> auditData = new HashMap<>();
+        auditData.put("userId", userId);
+        auditData.put("operation", operation.name());
+        auditData.put("eventId", eventId);
+        auditData.put("success", success);
+        auditData.put("timestamp", System.currentTimeMillis());
 
-                if (additionalInfo != null) {
-                    auditData.putAll(additionalInfo);
-                }
+        if (additionalInfo != null) {
+            auditData.putAll(additionalInfo);
+        }
 
-                // Store audit log (implementation depends on audit storage)
-                storageService.storeSecurely("audit_log", JSON_MAPPER.writeValueAsBytes(auditData));
-
-                incrementOperationMetric("auditLogEntries");
-
-                return null;
-
-            } catch (Exception e) {
-                log.error("Error recording audit log for user {}: {}", userId, e.getMessage(), e);
-                throw new RuntimeException("Audit logging failed", e);
-            }
-        });
+        return Promise.ofBlocking(securityExecutor, () -> JSON_MAPPER.writeValueAsBytes(auditData))
+                .then(payload -> storageService.storeSecurely("audit_log", payload))
+                .whenResult(() -> incrementOperationMetric("auditLogEntries"))
+                .mapException(e -> {
+                    log.error("Error recording audit log for user {}: {}", userId, e.getMessage(), e);
+                    return new RuntimeException("Audit logging failed", e);
+                });
     }
 
     @Override
@@ -428,7 +421,7 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
     public Promise<Void> rotateKeys(String tenantId) {
         return Promise.ofBlocking(securityExecutor, () -> {
             try {
-                String keyId = getTenantKeyId(tenantId);
+                getTenantKeyId(tenantId);
                 keyManager.rotateKey();
 
                 log.info("Rotated encryption keys for tenant: {}", tenantId);

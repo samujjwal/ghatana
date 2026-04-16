@@ -35,8 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests for {@link JwtServerInterceptor} — covering startup validation, permissive-mode
- * opt-in, token rejection, and health-method exemption.
+ * Tests for {@link JwtServerInterceptor} — covering startup validation, token rejection,
+ * and health-method exemption.
  *
  * @doc.type class
  * @doc.purpose JWT interceptor startup-fail and token validation tests (Day 6 / ADR-019)
@@ -50,34 +50,24 @@ class JwtServerInterceptorTest {
     private static final String SECURE_METHOD = "/com.ghatana.tts.grpc.TtsService/Synthesize";
 
     /**
-     * Env variables cannot be set at runtime in Java, so we test startup
-     * behavior by reading the actual env values (expected to be absent in CI).
-     *
-     * Permissive mode is tested via the env flag check in the constructor.
+    * Env variables cannot be set at runtime in Java, so we test startup
+    * behavior by reading the actual env values (expected to be absent in CI).
      */
     @Nested
     @DisplayName("Startup validation")
     class StartupValidation {
 
         @Test
-        @DisplayName("Constructor throws when AV_JWT_SECRET is absent and AV_JWT_PERMISSIVE_MODE is not set")
-        void constructorThrowsWhenSecretAbsentAndNoPermissiveFlag() {
-            // In CI / default builds, neither env var is set.
+        @DisplayName("Constructor throws when AV_JWT_SECRET is absent")
+        void constructorThrowsWhenSecretAbsent() {
             String secret = System.getenv("AV_JWT_SECRET");
-            String permissive = System.getenv("AV_JWT_PERMISSIVE_MODE");
             if (secret != null && !secret.isBlank()) {
-                // Real secret is set: this path is not testable in this env; skip
                 return;
             }
-            if ("true".equalsIgnoreCase(permissive)) {
-                // Permissive mode enabled: this path is not testable in this env; skip
-                return;
-            }
-            // Both absent — constructor MUST throw
             assertThatThrownBy(JwtServerInterceptor::new)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("AV_JWT_SECRET")
-                    .hasMessageContaining("AV_JWT_PERMISSIVE_MODE");
+                    .hasMessageContaining("does not support permissive bypass mode");
         }
     }
 
@@ -85,26 +75,19 @@ class JwtServerInterceptorTest {
     @DisplayName("Health method exemption")
     class HealthMethodExemption {
 
-        @SuppressWarnings("unchecked")
         @Test
-        @DisplayName("Health Check method bypasses JWT validation even without permissive mode set")
+        @DisplayName("Health Check method bypasses JWT validation")
         void healthCheckBypassesValidation() {
-            // We need a permissive instance for this structural test
-            // (we cannot set env vars at runtime, so we exercise through permissive mode
-            //  or a real secret; this test verifies the exemption path exists).
-            String secret = System.getenv("AV_JWT_SECRET");
-            String permissiveFlag = System.getenv("AV_JWT_PERMISSIVE_MODE");
-            if ((secret == null || secret.isBlank()) && !"true".equalsIgnoreCase(permissiveFlag)) {
-                // Cannot instantiate without secret/permissive — skip structural path
-                return;
-            }
-
-            JwtServerInterceptor interceptor = new JwtServerInterceptor();
+            @SuppressWarnings("unchecked")
+            ConfigurableJWTProcessor<SecurityContext> processor = mock(ConfigurableJWTProcessor.class);
+            JwtServerInterceptor interceptor = new JwtServerInterceptor(processor, disabledTokenValidator());
 
             ServerCall<Object, Object> call = mockCall(HEALTH_METHOD);
             @SuppressWarnings("unchecked")
             ServerCallHandler<Object, Object> handler = mock(ServerCallHandler.class);
-            when(handler.startCall(any(), any())).thenReturn(mock(ServerCall.Listener.class));
+            @SuppressWarnings("unchecked")
+            ServerCall.Listener<Object> listener = mock(ServerCall.Listener.class);
+            when(handler.startCall(any(), any())).thenReturn(listener);
 
             interceptor.interceptCall(call, new Metadata(), handler);
 
@@ -118,7 +101,6 @@ class JwtServerInterceptorTest {
     @DisplayName("Missing token rejection")
     class MissingTokenRejection {
 
-        @SuppressWarnings("unchecked")
         @Test
         @DisplayName("Strict mode rejects requests with no Authorization header")
         void strictModeRejectsMissingAuthorizationHeader() {
@@ -155,7 +137,6 @@ class JwtServerInterceptorTest {
 
             JwtServerInterceptor interceptor = new JwtServerInterceptor(
                     processor,
-                    false,
                     disabledTokenValidator()
             );
 
@@ -190,7 +171,6 @@ class JwtServerInterceptorTest {
 
             JwtServerInterceptor interceptor = new JwtServerInterceptor(
                     processor,
-                    false,
                     disabledTokenValidator()
             );
 

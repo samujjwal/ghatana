@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ErrorInfo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { mobileDashboard } from './data/mockData';
 import { DashboardScreen } from './screens/DashboardScreen';
@@ -23,6 +23,34 @@ const tabs: Array<{ key: ScreenKey; label: string }> = [
   { key: 'emergency', label: 'Emergency' },
   { key: 'settings', label: 'Settings' },
 ];
+
+class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('PHR mobile app boundary caught an error', error, errorInfo);
+  }
+
+  override render(): ReactNode {
+    if (this.state.hasError) {
+      return (
+        <SafeAreaView style={styles.loadingContainer}>
+          <Text style={styles.header}>PHR Nepal mobile</Text>
+          <Text style={styles.errorText}>Something went wrong. Restart the app to continue.</Text>
+        </SafeAreaView>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 export default function App(): React.ReactElement {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
@@ -83,19 +111,21 @@ export default function App(): React.ReactElement {
   };
 
   return (
-    <SafeAreaView style={styles.page}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.header}>PHR Nepal mobile</Text>
-        {renderScreen()}
-      </ScrollView>
-      <View style={styles.tabBar}>
-        {tabs.map((tab) => (
-          <Pressable key={tab.key} onPress={() => setActiveScreen(tab.key)} style={[styles.tab, activeScreen === tab.key && styles.tabActive]}>
-            <Text style={[styles.tabLabel, activeScreen === tab.key && styles.tabLabelActive]}>{tab.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </SafeAreaView>
+    <AppErrorBoundary>
+      <SafeAreaView style={styles.page}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.header}>PHR Nepal mobile</Text>
+          {renderScreen()}
+        </ScrollView>
+        <View style={styles.tabBar}>
+          {tabs.map((tab) => (
+            <Pressable key={tab.key} onPress={() => setActiveScreen(tab.key)} style={[styles.tab, activeScreen === tab.key && styles.tabActive]}>
+              <Text style={[styles.tabLabel, activeScreen === tab.key && styles.tabLabelActive]}>{tab.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </SafeAreaView>
+    </AppErrorBoundary>
   );
 }
 
@@ -120,6 +150,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '700',
     color: '#0b1b35',
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#0b1b35',
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
   tabBar: {
     flexDirection: 'row',

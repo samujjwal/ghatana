@@ -75,12 +75,12 @@ class DeploymentControllerTest extends EventloopTestBase {
     @DisplayName("create deployment accepts authorized valid requests")
     void createDeploymentAcceptsAuthorizedValidRequest() {
         when(deploymentAdapter.handleDeploymentRequest(any()))
-            .thenReturn(DeploymentResponse.builder()
+            .thenReturn(io.activej.promise.Promise.of(DeploymentResponse.builder()
                 .deploymentId("dep-1")
                 .pipelineId("pipeline-1")
                 .tenantId("tenant-a")
                 .status("DEPLOYED")
-                .build());
+                .build()));
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/deployments")
             .withBody(ByteBuf.wrapForReading(validDeploymentJson().getBytes(StandardCharsets.UTF_8)))

@@ -6,6 +6,8 @@ import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
@@ -24,6 +26,8 @@ import java.util.concurrent.Executor;
  * STORY-T01-008: Implement order processing performance baseline
  */
 public class OrderProcessingPerformanceBaselineService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderProcessingPerformanceBaselineService.class);
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
@@ -241,7 +245,9 @@ public class OrderProcessingPerformanceBaselineService {
             ps.setString(1, runId); ps.setString(2, "OrderProcessingBaseline");
             ps.setString(3, scenario); ps.setInt(4, count); ps.setLong(5, p99Ms); ps.setInt(6, errors);
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to persist performance baseline: runId={}, scenario={}", runId, scenario, e);
+        }
     }
 
     private Long queryPreviousP99(String suite) {
@@ -277,7 +283,9 @@ public class OrderProcessingPerformanceBaselineService {
             ps.setString(1, runId); ps.setString(2, step); ps.setString(3, assertion);
             ps.setString(4, expected); ps.setString(5, String.valueOf(actual)); ps.setBoolean(6, passed);
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            log.warn("Failed to persist performance baseline step assertion: runId={}, step={}, assertion={}", runId, step, assertion, e);
+        }
         if (!passed) throw new AssertionError("FAIL [" + step + "] " + assertion + " expected=" + expected + " actual=" + actual);
     }
 
@@ -301,7 +309,9 @@ public class OrderProcessingPerformanceBaselineService {
              PreparedStatement ps = c.prepareStatement(
                  "UPDATE e2e_test_runs SET status=? WHERE run_id=?"
              )) { ps.setString(1, status); ps.setString(2, runId); ps.executeUpdate(); }
-        catch (SQLException ignored) {}
+        catch (SQLException e) {
+            log.warn("Failed to update performance baseline run status: runId={}, status={}", runId, status, e);
+        }
     }
 
     @FunctionalInterface interface ThrowingConsumer<T> { void accept(T t) throws Exception; }

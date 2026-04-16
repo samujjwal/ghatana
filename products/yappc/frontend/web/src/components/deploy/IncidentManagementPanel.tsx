@@ -199,9 +199,13 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
     // Reload detail when artifact list updates (e.g., after creation)
     useEffect(() => {
         if (selectedSummary) {
-            void service.getArtifact(selectedSummary.id).then((full) => {
-                if (full) setSelectedArtifact(full);
-            });
+            void service.getArtifact(selectedSummary.id)
+                .then((full) => {
+                    if (full) setSelectedArtifact(full);
+                })
+                .catch((error: unknown) => {
+                    console.warn('Failed to reload incident artifact details', error);
+                });
         }
     }, [artifacts, selectedSummary, service]);
 

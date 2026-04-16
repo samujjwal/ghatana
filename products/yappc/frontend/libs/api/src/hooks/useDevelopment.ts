@@ -16,7 +16,7 @@ import {
   useLazyQuery,
   useMutation,
   useSubscription,
-} from '@apollo/client';
+} from '@apollo/client/react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo } from 'react';
 

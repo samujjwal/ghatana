@@ -64,11 +64,15 @@ public final class AgentCatalogHandler {
      * Returns the full list of agent definitions.
      */
     public Promise<HttpResponse> handleListCatalog(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
         return Promise.ofBlocking(
                 http.blockingExecutor(),
                 this::loadCatalog
         ).then(catalog -> {
-            String tenantId = http.resolveTenantId(request);
             metrics.incrementCounter("agent.catalog.list", "tenant", tenantId);
             Map<String, Object> response = new HashMap<>();
             response.put("agents", catalog);
@@ -87,12 +91,15 @@ public final class AgentCatalogHandler {
     public Promise<HttpResponse> handleGetAgent(HttpRequest request) {
         String rawId = request.getPathParameter("id");
         String agentId = URLDecoder.decode(rawId, StandardCharsets.UTF_8);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
 
         return Promise.ofBlocking(
                 http.blockingExecutor(),
                 this::loadCatalog
         ).then(catalog -> {
-            String tenantId = http.resolveTenantId(request);
             metrics.incrementCounter("agent.catalog.get", "tenant", tenantId, "agentId", agentId);
 
             return catalog.stream()
@@ -105,7 +112,6 @@ public final class AgentCatalogHandler {
 
     // ─── YAML loading ─────────────────────────────────────────────────────────
 
-    @SuppressWarnings("unchecked")
     private List<Map<String, Object>> loadCatalog() throws Exception {
         if (catalogCache != null) {
             return catalogCache;

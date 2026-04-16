@@ -6,29 +6,21 @@
  */
 
 import React from 'react';
-import { Card, Button, Loading } from '@audio-video/ui';
+import { Card, Button } from '@audio-video/ui';
+
+const MULTIMODAL_STATUS_MESSAGE =
+  'Multimodal analysis remains disabled until the desktop app is connected to a real orchestration backend.';
 
 const MultimodalPanel: React.FC = () => {
-  const [isProcessing, setIsProcessing] = React.useState(false);
-  const [result, setResult] = React.useState('');
-
-  const handleProcess = async () => {
-    setIsProcessing(true);
-    try {
-      // TODO: Call actual Multimodal service
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setResult('Multimodal processing completed successfully. Combined analysis of audio, video, and text data provides comprehensive insights.');
-    } catch (error) {
-      console.error('Multimodal processing failed:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <Card title="Multimodal Processing" subtitle="Combine multiple modalities for comprehensive analysis">
         <div className="space-y-6">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100">
+            <p className="font-medium">Unavailable in this build</p>
+            <p className="mt-1">{MULTIMODAL_STATUS_MESSAGE}</p>
+          </div>
+
           {/* Input Areas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -57,26 +49,11 @@ const MultimodalPanel: React.FC = () => {
 
           {/* Process Button */}
           <Button
-            onClick={handleProcess}
-            disabled={isProcessing}
+            disabled
             className="w-full"
           >
-            {isProcessing ? (
-              <Loading size="sm" text="Processing..." />
-            ) : (
-              'Process Multimodal Data'
-            )}
+            Multimodal Processing Coming Soon
           </Button>
-
-          {/* Results */}
-          {result && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Analysis Results</h3>
-              <div className="text-display">
-                {result}
-              </div>
-            </div>
-          )}
         </div>
       </Card>
     </div>

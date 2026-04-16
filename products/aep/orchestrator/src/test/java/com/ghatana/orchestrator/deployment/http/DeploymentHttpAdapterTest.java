@@ -35,7 +35,7 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
                 .environment("prod")
                 .build();
 
-        DeploymentResponse response = adapter.handleDeploymentRequest(request);
+        DeploymentResponse response = runPromise(() -> adapter.handleDeploymentRequest(request));
 
         assertThat(response.getStatus()).isEqualTo("DEPLOYED");
         assertThat(response.getPipelineId()).isEqualTo("pipeline-a");
@@ -57,7 +57,7 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
                 .environment("prod")
                 .build();
 
-        DeploymentResponse response = adapter.handleUpdateRequest("deploy-123", request);
+        DeploymentResponse response = runPromise(() -> adapter.handleUpdateRequest("deploy-123", request));
 
         assertThat(response.getStatus()).isEqualTo("UPDATED");
         assertThat(response.getDeploymentId()).isEqualTo("deploy-123");
@@ -71,7 +71,7 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
         DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(publisher, new NoopMetricsCollector());
         DeploymentHttpAdapter adapter = new DeploymentHttpAdapter(orchestrator);
 
-        DeploymentResponse response = adapter.handleUndeployRequest("deploy-456", "tenant-c");
+        DeploymentResponse response = runPromise(() -> adapter.handleUndeployRequest("deploy-456", "tenant-c"));
 
         assertThat(response.getStatus()).isEqualTo("UNDEPLOYED");
         assertThat(response.getDeploymentId()).isEqualTo("deploy-456");

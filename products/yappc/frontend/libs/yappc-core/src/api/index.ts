@@ -64,6 +64,7 @@ export * from './graphql/operations/development.operations';
 export * from './graphql/operations/operations.operations';
 export * from './graphql/operations/collaboration.operations';
 export * from './graphql/operations/security.operations';
+// Aliases removed - using direct operation exports
 
 // ─── Apollo Client Hooks (re-exported for convenience) ───────────────────────
 export {

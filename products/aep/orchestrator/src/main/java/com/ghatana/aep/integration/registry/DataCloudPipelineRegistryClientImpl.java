@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <h2>Configuration</h2>
- * <p>The Data-Cloud base URL defaults to {@code http://localhost:8085} and is
- * overridden via the {@code AEP_DC_BASE_URL} environment variable.
+ * <p>The Data-Cloud base URL must be provided explicitly by the caller, typically via
+ * the {@code AEP_DC_BASE_URL} environment variable resolved by AEP DI wiring.
  *
  * @doc.type class
  * @doc.purpose HTTP-based PipelineRegistryClient backed by Data-Cloud pipeline storage
@@ -69,7 +69,7 @@ public final class DataCloudPipelineRegistryClientImpl implements PipelineRegist
     /**
      * Creates a pipeline registry client bound to the given Data-Cloud base URL.
      *
-     * @param dcBaseUrl Data-Cloud service base URL (e.g., {@code http://localhost:8085})
+    * @param dcBaseUrl Data-Cloud service base URL
      */
     public DataCloudPipelineRegistryClientImpl(String dcBaseUrl) {
         this.dcBaseUrl = Objects.requireNonNull(dcBaseUrl, "dcBaseUrl required")

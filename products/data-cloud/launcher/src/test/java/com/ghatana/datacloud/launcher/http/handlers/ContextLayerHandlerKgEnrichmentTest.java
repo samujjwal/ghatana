@@ -64,8 +64,9 @@ class ContextLayerHandlerKgEnrichmentTest {
     @BeforeEach
     void setUpCommon() {
         objectMapper = new ObjectMapper();
-        lenient().when(http.resolveTenantId(any())).thenReturn("tenant-kg-test");
+        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-kg-test");
         lenient().when(http.resolveCorrelationId(any())).thenReturn("req-123");
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(null);
         // Return null by default — tests that need to inspect the map provide their own Answer
         lenient().doAnswer(inv -> null).when(http).jsonResponse(any(), any());
     }
@@ -83,6 +84,18 @@ class ContextLayerHandlerKgEnrichmentTest {
 
             assertThatCode(() -> handler.handleGetContext(request).getResult())
                     .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("handleGetContext returns 400 when tenant header is missing")
+        void missingTenant_returns400() {
+            ContextLayerHandler handler = new ContextLayerHandler(http, objectMapper);
+            when(http.requireTenantIdOrFail(any())).thenReturn(null);
+
+            assertThatCode(() -> handler.handleGetContext(request).getResult())
+                    .doesNotThrowAnyException();
+
+            org.mockito.Mockito.verify(http).errorResponse(400, "X-Tenant-Id header is required");
         }
     }
 

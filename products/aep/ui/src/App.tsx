@@ -7,6 +7,7 @@
  *
  * Canonical routes:
  *   /operate              → MonitoringDashboardPage (runs, alerts, failures)
+ *   /operate/costs        → CostDashboardPage (tenant spend and budget visibility)
  *   /operate/reviews      → HitlReviewPage (human review queue)
  *   /operate/runs/:runId  → RunDetailPage (unified run detail + lineage + decisions)
  *   /build/pipelines      → PipelineListPage
@@ -17,6 +18,7 @@
  *   /govern               → GovernancePage (policies, compliance, audit)
  *   /catalog/agents       → AgentRegistryPage
  *   /catalog/agents/:id   → AgentDetailPage
+ *   /catalog/marketplace  → AgentMarketplacePage
  *   /catalog/workflows    → WorkflowCatalogPage
  *
  * Backward-compat redirects (old noun-based routes → canonical paths):
@@ -63,6 +65,9 @@ const MonitoringDashboardPage = lazy(() =>
 const HitlReviewPage = lazy(() =>
   import('@/pages/HitlReviewPage').then((m) => ({ default: m.HitlReviewPage })),
 );
+const CostDashboardPage = lazy(() =>
+  import('@/pages/CostDashboardPage').then((m) => ({ default: m.CostDashboardPage })),
+);
 const RunDetailPage = lazy(() =>
   import('@/pages/RunDetailPage').then((m) => ({ default: m.RunDetailPage })),
 );
@@ -92,6 +97,9 @@ const AgentDetailPage = lazy(() =>
 );
 const WorkflowCatalogPage = lazy(() =>
   import('@/pages/WorkflowCatalogPage').then((m) => ({ default: m.WorkflowCatalogPage })),
+);
+const AgentMarketplacePage = lazy(() =>
+  import('@/pages/AgentMarketplacePage').then((m) => ({ default: m.AgentMarketplacePage })),
 );
 const LoginPage = lazy(() =>
   import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
@@ -159,6 +167,7 @@ export function App() {
               <Route element={<ProtectedShell />}>
                 {/* ── Canonical routes ─────────────────────────── */}
                 <Route path="/operate" element={<MonitoringDashboardPage />} />
+                <Route path="/operate/costs" element={<CostDashboardPage />} />
                 <Route path="/operate/reviews" element={<HitlReviewPage />} />
                 <Route path="/operate/runs/:runId" element={<RunDetailPage />} />
 
@@ -173,6 +182,7 @@ export function App() {
 
                 <Route path="/catalog/agents" element={<AgentRegistryPage />} />
                 <Route path="/catalog/agents/:agentId" element={<AgentDetailPage />} />
+                <Route path="/catalog/marketplace" element={<AgentMarketplacePage />} />
                 <Route path="/catalog/workflows" element={<WorkflowCatalogPage />} />
 
                 {/* ── Backward-compat redirects ─────────────────── */}

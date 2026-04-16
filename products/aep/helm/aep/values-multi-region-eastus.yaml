@@ -1,0 +1,31 @@
+replicaCount: 3
+
+ingress:
+  enabled: true
+  hosts:
+    - host: eastus.api.aep.ghatana.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: aep-eastus-tls
+      hosts:
+        - eastus.api.aep.ghatana.io
+
+extraEnv:
+  - name: AEP_REGION
+    value: eastus
+  - name: AEP_REGION_ROLE
+    value: primary
+  - name: AEP_DATA_CLOUD_REPLICA_MODE
+    value: active-active
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: topology.kubernetes.io/zone
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: aep

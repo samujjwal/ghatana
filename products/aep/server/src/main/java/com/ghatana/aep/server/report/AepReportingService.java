@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -383,7 +384,11 @@ public final class AepReportingService {
         Object v = data.get(key);
         if (v == null) return null;
         if (v instanceof Instant i) return i;
-        try { return Instant.parse(v.toString()); } catch (Exception ignored) { return null; }
+        try {
+            return Instant.parse(v.toString());
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

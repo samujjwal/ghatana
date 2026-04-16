@@ -27,7 +27,7 @@ import type {
 export interface AIAgentClientConfig {
   /**
    * Base URL for the Java AI backend
-   * @default 'http://localhost:8080'
+  * @default 'http://localhost:7002'
    */
   baseUrl: string;
 
