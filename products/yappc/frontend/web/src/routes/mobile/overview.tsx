@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Capacitor } from '@capacitor/core';
 import { TrendingUp, TrendingDown, Hammer as Build, Rocket, Bug as BugReport, Users as Group, Clock as Schedule, CheckCircle, AlertTriangle as Warning, AlertCircle as Error, RefreshCw as Refresh, ChevronDown as ExpandMore, Bell as Notifications, Gauge as Speed } from 'lucide-react';
 // Core UI components from @ghatana/yappc-ui
@@ -255,7 +254,7 @@ export default function Component() {
             <Grid item xs={6}>
               <Card
                 className="cursor-pointer active:scale-[0.98]"
-                onClick={() => navigate('/app/projects')}
+                onClick={() => navigate('/projects')}
               >
                 <CardContent className="p-4 text-center">
                   <Box className="mb-2" >
@@ -274,7 +273,7 @@ export default function Component() {
             <Grid item xs={6}>
               <Card
                 className="cursor-pointer active:scale-[0.98]"
-                onClick={() => navigate('/app/builds')}
+                onClick={() => navigate('/projects')}
               >
                 <CardContent className="p-4 text-center">
                   <Box className="mb-2" style={{ color: (theme) => theme.palette.warning.main }} >

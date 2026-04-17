@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Network } from '@capacitor/network';
@@ -431,7 +430,7 @@ export default function Component() {
             <Fab
               variant="extended"
               tone="primary"
-              onClick={() => navigate('/app/projects/new')}
+              onClick={() => navigate('/projects')}
             >
               <Add className="mr-2" />
               Create Project
@@ -488,7 +487,7 @@ export default function Component() {
       <Fab
         tone="primary"
         className="fixed bottom-[88px] right-[16px] z-[1000]"
-        onClick={() => navigate('/app/projects/new')}
+        onClick={() => navigate('/projects')}
       >
         <Add />
       </Fab>

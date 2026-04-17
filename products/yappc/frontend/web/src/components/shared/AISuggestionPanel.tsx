@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AI Suggestion Panel
  * 

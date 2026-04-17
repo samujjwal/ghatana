@@ -49,10 +49,6 @@ const API_BASE = import.meta.env.DEV
   ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api`
   : '/api';
 
-const DEMO_FIXTURES_ENABLED =
-  import.meta.env.DEV &&
-  import.meta.env.VITE_ENABLE_DEMO_WORKSPACE_FIXTURES === 'true';
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -105,26 +101,7 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
 
     throw new Error('Unexpected response shape for workspaces');
   } catch (error) {
-    if (DEMO_FIXTURES_ENABLED) {
-      console.warn(
-        'Backend API not available, using demo workspace fixtures:',
-        error
-      );
-      return [
-        {
-          id: 'demo-workspace-1',
-          name: 'Demo Workspace',
-          description: 'A sample workspace for demonstrating the IDE',
-          ownerId: 'demo-owner',
-          isDefault: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          aiSummary: 'Demo workspace for testing IDE features',
-          aiTags: ['demo', 'testing', 'ide'],
-        },
-      ];
-    }
-
+    // Surface real backend failures to the UI; do not silently fall back.
     throw error;
   }
 }
@@ -159,26 +136,6 @@ async function fetchWorkspace(
       throw error;
     }
 
-    if (DEMO_FIXTURES_ENABLED) {
-      console.warn(
-        'Backend API not available, using demo workspace detail fixture:',
-        error
-      );
-      return {
-        id: workspaceId,
-        name: 'Demo Workspace',
-        description: 'A sample workspace for demonstrating the IDE',
-        ownerId: 'demo-owner',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiSummary: 'Demo workspace for testing IDE features',
-        aiTags: ['demo', 'testing', 'ide'],
-        ownedProjects: [],
-        includedProjects: [],
-      };
-    }
-
     throw error;
   }
 }
@@ -194,17 +151,6 @@ async function fetchProjects(
       included: payload.included as Project[],
     };
   } catch (error) {
-    if (DEMO_FIXTURES_ENABLED) {
-      console.warn(
-        'Backend API not available, using empty demo project fixtures:',
-        error
-      );
-      return {
-        owned: [],
-        included: [],
-      };
-    }
-
     throw error;
   }
 }
@@ -389,14 +335,6 @@ async function fetchAvailableForInclusion(
       return data.projects as Project[];
     throw new Error('Unexpected response shape for available projects');
   } catch (error) {
-    if (DEMO_FIXTURES_ENABLED) {
-      console.warn(
-        'Backend API not available, using empty inclusion fixtures:',
-        error
-      );
-      return [];
-    }
-
     throw error;
   }
 }

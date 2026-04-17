@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AI Assistant Hook for Canvas
  *
@@ -35,6 +34,33 @@ export interface AISuggestion {
   confidence: number; // 0-1
   priority: 'low' | 'medium' | 'high' | 'critical';
   data?: unknown;
+}
+
+interface CanvasNodeLike {
+  id: string;
+  type?: string;
+  position?: { x: number; y: number };
+  data?: Record<string, unknown>;
+}
+
+interface CanvasEdgeLike {
+  source: string;
+  target: string;
+}
+
+interface ServiceValidationIssue {
+  id?: string;
+  type?: unknown;
+  title?: string;
+  message?: string;
+  description?: string;
+  confidence?: number;
+  severity?: AISuggestion['priority'];
+  data?: Record<string, unknown>;
+}
+
+interface ServiceValidationReport {
+  issues?: ServiceValidationIssue[];
 }
 
 export interface GhostNode {
@@ -92,6 +118,8 @@ export interface UseAIAssistantResult {
   requestSuggestions: () => void;
   /** Whether AI is currently analyzing */
   isAnalyzing: boolean;
+  /** Last request-level error, if any */
+  error: string | null;
 }
 
 /**
@@ -111,15 +139,26 @@ export function useAIAssistant(
 
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const abortRef = useRef<AbortController | null>(null);
+
+  const nodes = useMemo(
+    () => (canvasState.elements as unknown[]).filter(isCanvasNodeLike),
+    [canvasState.elements]
+  );
+
+  const edges = useMemo(
+    () => (canvasState.connections as unknown[]).filter(isCanvasEdgeLike),
+    [canvasState.connections]
+  );
 
   // Build a CanvasState payload compatible with CanvasAIService.validateCanvas
   const buildServicePayload = useCallback(
     () => ({
       canvasState: {
-        nodes: canvasState.elements ?? [],
-        edges: canvasState.connections ?? [],
+        nodes,
+        edges,
         phase: lifecyclePhase,
       } as Parameters<
         Awaited<ReturnType<typeof getCanvasAIService>>['validateCanvas']
@@ -127,7 +166,7 @@ export function useAIAssistant(
       phase: lifecyclePhase,
       options: { validateRisks: true },
     }),
-    [canvasState, lifecyclePhase]
+    [edges, lifecyclePhase, nodes]
   );
 
   // Map a ValidationReport into our AISuggestion shape
@@ -140,12 +179,22 @@ export function useAIAssistant(
       >
     ): AISuggestion[] => {
       const mapped: AISuggestion[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyReport = report as unknown;
-      for (const issue of anyReport?.issues ?? []) {
+      const typedReport = report as unknown as ServiceValidationReport;
+      for (const issue of typedReport.issues ?? []) {
+        const candidateType = issue.type;
+        const suggestionType: AISuggestion['type'] =
+          candidateType === 'node' ||
+          candidateType === 'connection' ||
+          candidateType === 'pattern' ||
+          candidateType === 'gap' ||
+          candidateType === 'risk' ||
+          candidateType === 'optimization'
+            ? candidateType
+            : 'gap';
+
         mapped.push({
-          id: issue.id ?? `ai-${Date.now()}-${Math.random()}`,
-          type: (issue.type as AISuggestion['type']) ?? 'gap',
+          id: issue.id ?? `ai-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          type: suggestionType,
           title: issue.title ?? issue.message ?? 'AI suggestion',
           description: issue.description ?? issue.message ?? '',
           confidence: issue.confidence ?? 0.8,
@@ -158,120 +207,7 @@ export function useAIAssistant(
     []
   );
 
-  // Local heuristics — used as offline fallback when AI service unavailable
-  const buildLocalSuggestions = useCallback((): AISuggestion[] => {
-    const local: AISuggestion[] = [];
-
-    if (lifecyclePhase === LifecyclePhase.SHAPE) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const standaloneNodes = canvasState.elements.filter((el: unknown) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const hasConn = canvasState.connections.some(
-          (c: unknown) => c.source === el.id || c.target === el.id
-        );
-        return !hasConn && el.type === 'api';
-      });
-      if (standaloneNodes.length > 0) {
-        local.push({
-          id: `gap-standalone-${Date.now()}`,
-          type: 'gap',
-          title: 'Unconnected API nodes detected',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          description: `${standaloneNodes.length} API node(s) have no connections.`,
-          confidence: 0.8,
-          priority: 'medium',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: { nodes: standaloneNodes.map((n: unknown) => n.id) },
-        });
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasApi = canvasState.elements.some(
-        (el: unknown) => el.type === 'api'
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasData = canvasState.elements.some(
-        (el: unknown) => el.type === 'data'
-      );
-      if (hasApi && !hasData) {
-        local.push({
-          id: `node-database-${Date.now()}`,
-          type: 'node',
-          title: 'Add Database',
-          description: 'Your API likely needs a database.',
-          confidence: 0.9,
-          priority: 'high',
-          data: {
-            nodeType: 'data',
-            suggestedPosition: findEmptyPosition(canvasState),
-          },
-        });
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasAuth = canvasState.elements.some(
-        (el: unknown) =>
-          el.data?.name?.toLowerCase().includes('auth') ||
-          el.data?.label?.toLowerCase().includes('auth')
-      );
-      if (canvasState.elements.length >= 3 && !hasAuth) {
-        local.push({
-          id: `pattern-auth-${Date.now()}`,
-          type: 'pattern',
-          title: 'Add Authentication',
-          description:
-            'Consider adding authentication to secure your application.',
-          confidence: 0.7,
-          priority: 'medium',
-          data: { pattern: 'authentication' },
-        });
-      }
-    }
-
-    if (lifecyclePhase === LifecyclePhase.VALIDATE) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const criticalNodes = canvasState.elements.filter((el: unknown) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const conns = canvasState.connections.filter(
-          (c: unknown) => c.source === el.id || c.target === el.id
-        );
-        return conns.length > 3;
-      });
-      if (criticalNodes.length > 0) {
-        local.push({
-          id: `risk-spof-${Date.now()}`,
-          type: 'risk',
-          title: 'Potential Single Point of Failure',
-          description: `${criticalNodes.length} node(s) have high connectivity.`,
-          confidence: 0.75,
-          priority: 'high',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: { nodes: criticalNodes.map((n: unknown) => n.id) },
-        });
-      }
-    }
-
-    if (lifecyclePhase === LifecyclePhase.IMPROVE) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const apiNodes = canvasState.elements.filter(
-        (el: unknown) => el.type === 'api'
-      );
-      if (apiNodes.length >= 3) {
-        local.push({
-          id: `optimization-cache-${Date.now()}`,
-          type: 'optimization',
-          title: 'Add Caching Layer',
-          description:
-            'Multiple API nodes detected. Consider adding a caching layer.',
-          confidence: 0.65,
-          priority: 'medium',
-          data: { suggestedType: 'redis' },
-        });
-      }
-    }
-
-    return local;
-  }, [canvasState, lifecyclePhase]);
-
-  // Core: call real CanvasAIService; fall back to local heuristics
+  // Core: call server-backed CanvasAIService only
   const generateSuggestions = useCallback(() => {
     if (!enabled) return;
 
@@ -281,29 +217,34 @@ export function useAIAssistant(
     abortRef.current = controller;
 
     setIsAnalyzing(true);
+    setError(null);
 
     void (async () => {
-      let newSuggestions;
-
       try {
         const service = await getCanvasAIService();
         if (!service.isAvailable()) {
-          throw new Error('CanvasAIService unavailable');
+          setSuggestions([]);
+          setError('Canvas AI service unavailable');
+          return;
         }
 
         const report = await service.validateCanvas(buildServicePayload());
         if (controller.signal.aborted) return;
-        newSuggestions = mapReportToSuggestions(report);
-      } catch {
-        // Service unavailable or error — use local heuristics
-        if (controller.signal.aborted) return;
-        newSuggestions = buildLocalSuggestions();
-      }
-
-      if (controller.signal.aborted || !newSuggestions) return;
-        if (controller.signal.aborted || !newSuggestions) return;
+        const newSuggestions = mapReportToSuggestions(report);
         const filtered = newSuggestions.filter((s) => !dismissedIds.has(s.id));
         setSuggestions(filtered);
+      } catch (serviceError) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const message =
+          serviceError instanceof Error
+            ? serviceError.message
+            : 'Canvas AI analysis failed';
+        setSuggestions([]);
+        setError(message);
+      }
     })()
       .finally(() => {
         if (!controller.signal.aborted) setIsAnalyzing(false);
@@ -312,7 +253,6 @@ export function useAIAssistant(
     enabled,
     buildServicePayload,
     mapReportToSuggestions,
-    buildLocalSuggestions,
     dismissedIds,
   ]);
 
@@ -346,8 +286,12 @@ export function useAIAssistant(
       .map((sugg) => ({
         id: `ghost-${sugg.id}`,
         suggestionId: sugg.id,
-        type: sugg.data?.nodeType || 'component',
-        position: sugg.data?.suggestedPosition || { x: 100, y: 100 },
+        type: getRecordValue<string>(sugg.data, 'nodeType') ?? 'component',
+        position:
+          getRecordValue<{ x: number; y: number }>(
+            sugg.data,
+            'suggestedPosition'
+          ) ?? findEmptyPosition(nodes),
         data: {
           label: sugg.title,
           isGhost: true,
@@ -368,11 +312,12 @@ export function useAIAssistant(
       .map((sugg) => ({
         id: `ghost-conn-${sugg.id}`,
         suggestionId: sugg.id,
-        source: sugg.data?.source,
-        target: sugg.data?.target,
-        type: sugg.data?.connectionType || 'default',
+        source: getRecordValue<string>(sugg.data, 'source') ?? '',
+        target: getRecordValue<string>(sugg.data, 'target') ?? '',
+        type: getRecordValue<string>(sugg.data, 'connectionType') ?? 'default',
         animated: true,
-      }));
+      }))
+      .filter((connection) => connection.source.length > 0 && connection.target.length > 0);
   }, [suggestions]);
 
   // Accept a suggestion
@@ -423,6 +368,7 @@ export function useAIAssistant(
     dismissAll,
     requestSuggestions,
     isAnalyzing,
+    error,
   };
 }
 
@@ -433,14 +379,15 @@ export function useAIAssistant(
 /**
  * Find empty position on canvas for new node
  */
-function findEmptyPosition(canvasState: CanvasState): { x: number; y: number } {
-  const positions = canvasState.elements.map((el: unknown) => el.position);
+function findEmptyPosition(nodes: CanvasNodeLike[]): { x: number; y: number } {
+  const positions = nodes
+    .map((node) => node.position)
+    .filter((position): position is { x: number; y: number } =>
+      Boolean(position && Number.isFinite(position.x) && Number.isFinite(position.y))
+    );
 
   // Simple grid-based positioning
   const gridSize = 200;
-  let x = 100;
-  let y = 100;
-
   // Find first empty grid cell
   for (let row = 0; row < 10; row++) {
     for (let col = 0; col < 10; col++) {
@@ -448,7 +395,7 @@ function findEmptyPosition(canvasState: CanvasState): { x: number; y: number } {
       const candidateY = row * gridSize + 100;
 
       const isOccupied = positions.some(
-        (pos: unknown) =>
+        (pos) =>
           Math.abs(pos.x - candidateX) < gridSize / 2 &&
           Math.abs(pos.y - candidateY) < gridSize / 2
       );
@@ -459,5 +406,35 @@ function findEmptyPosition(canvasState: CanvasState): { x: number; y: number } {
     }
   }
 
-  return { x, y };
+  return { x: 100, y: 100 };
+}
+
+function isCanvasNodeLike(value: unknown): value is CanvasNodeLike {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<CanvasNodeLike>;
+  return typeof candidate.id === 'string';
+}
+
+function isCanvasEdgeLike(value: unknown): value is CanvasEdgeLike {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<CanvasEdgeLike>;
+  return typeof candidate.source === 'string' && typeof candidate.target === 'string';
+}
+
+function getRecordValue<T>(
+  value: unknown,
+  key: string
+): T | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (record[key] as T | undefined) ?? null;
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mobile Shell Layout
  * 
@@ -142,7 +141,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </button>
           <div style={{ marginTop: "1rem" }}>
             <ul style={{ listStyle: "none", padding: 0 }}>
-              <li><a data-testid="mobile-project-card" href="/app/projects" style={{ color: "var(--primary-color)" }}>Projects</a></li>
+              <li><a data-testid="mobile-project-card" href="/projects" style={{ color: "var(--primary-color)" }}>Projects</a></li>
               <li><a data-testid="mobile-dashboard" href="/" style={{ color: "var(--primary-color)" }}>Dashboard</a></li>
             </ul>
           </div>

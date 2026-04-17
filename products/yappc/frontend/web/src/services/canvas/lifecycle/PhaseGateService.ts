@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Phase Gate Service
  *
@@ -128,6 +127,195 @@ function canUseStorage(): boolean {
 
 function phaseStateStorageKey(projectId: string): string {
   return `yappc.lifecycle.phase-state.${projectId}`;
+}
+
+const LIFECYCLE_API_BASE = import.meta.env.DEV
+  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api`
+  : '/api';
+
+interface LifecycleCurrentPhaseResponse {
+  currentPhase?: LifecyclePhase | { id?: LifecyclePhase };
+}
+
+interface LifecycleEvidenceEntry {
+  metadata?: {
+    fromPhase?: string;
+    toPhase?: string;
+    bypassed?: boolean;
+    bypassReason?: string;
+  };
+  timestamp?: string;
+}
+
+function isLifecyclePhase(value: unknown): value is LifecyclePhase {
+  return (
+    typeof value === 'string' &&
+    Object.values(LifecyclePhase).includes(value as LifecyclePhase)
+  );
+}
+
+function getAuthToken(): string | null {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  const rawSession = window.localStorage.getItem('auth-session');
+  if (!rawSession) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawSession) as { token?: string };
+    return parsed.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * API-backed phase repository with browser-storage fallback.
+ */
+export class ApiBackedProjectPhaseRepository implements IProjectPhaseRepository {
+  constructor(
+    private readonly fallback: IProjectPhaseRepository =
+      new LocalStorageProjectPhaseRepository()
+  ) {}
+
+  async getState(projectId: string): Promise<ProjectPhaseState | null> {
+    const fallbackState = await this.fallback.getState(projectId);
+
+    try {
+      const phaseResponse = await this.request<LifecycleCurrentPhaseResponse>(
+        `/projects/${encodeURIComponent(projectId)}/current`
+      );
+
+      const remotePhaseRaw = phaseResponse.currentPhase;
+      const remotePhase = isLifecyclePhase(remotePhaseRaw)
+        ? remotePhaseRaw
+        : isLifecyclePhase(remotePhaseRaw?.id)
+          ? remotePhaseRaw.id
+          : LifecyclePhase.INTENT;
+
+      const history = await this.fetchTransitionHistory(projectId);
+
+      const merged: ProjectPhaseState = {
+        projectId,
+        currentPhase: remotePhase,
+        phaseHistory: history.length > 0 ? history : fallbackState?.phaseHistory ?? [],
+        gateStatuses: fallbackState?.gateStatuses ?? {},
+        lastUpdated: new Date().toISOString(),
+      };
+
+      await this.fallback.saveState(merged);
+      return merged;
+    } catch {
+      return fallbackState;
+    }
+  }
+
+  async saveState(state: ProjectPhaseState): Promise<void> {
+    await this.fallback.saveState(state);
+  }
+
+  async updatePhase(
+    projectId: string,
+    phase: LifecyclePhase,
+    record: PhaseTransitionRecord
+  ): Promise<void> {
+    await this.fallback.updatePhase(projectId, phase, record);
+
+    try {
+      await this.request(`/projects/${encodeURIComponent(projectId)}/transition`, {
+        method: 'POST',
+        body: JSON.stringify({
+          targetPhase: phase,
+          userId: record.userId,
+          reason:
+            record.bypassed && record.bypassReason
+              ? `Gate bypassed: ${record.bypassReason}`
+              : 'Phase transition',
+        }),
+      });
+    } catch {
+      // Keep local state to avoid blocking the user when backend is unavailable.
+    }
+  }
+
+  private async fetchTransitionHistory(
+    projectId: string
+  ): Promise<PhaseTransitionRecord[]> {
+    try {
+      const evidence = await this.request<LifecycleEvidenceEntry[]>(
+        `/projects/${encodeURIComponent(projectId)}/evidence`
+      );
+
+      const history = evidence
+        .map((entry): PhaseTransitionRecord | null => {
+          const fromPhase = entry.metadata?.fromPhase;
+          const toPhase = entry.metadata?.toPhase;
+
+          if (!isLifecyclePhase(fromPhase) || !isLifecyclePhase(toPhase)) {
+            return null;
+          }
+
+          const transition: PhaseTransitionRecord = {
+            fromPhase,
+            toPhase,
+            gateId: undefined,
+            bypassed: Boolean(entry.metadata?.bypassed),
+            bypassReason: entry.metadata?.bypassReason,
+            userId: 'system',
+            timestamp: entry.timestamp ?? new Date().toISOString(),
+          };
+
+          return transition;
+        })
+        .filter((record): record is PhaseTransitionRecord => record !== null)
+        .sort(
+          (left, right) =>
+            new Date(left.timestamp).getTime() -
+            new Date(right.timestamp).getTime()
+        );
+
+      return history;
+    } catch {
+      return [];
+    }
+  }
+
+  private async request<T = unknown>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const token = getAuthToken();
+    const response = await fetch(`${LIFECYCLE_API_BASE}${endpoint}`, {
+      ...options,
+      headers: {
+        Accept: 'application/json',
+        ...(options.body
+          ? {
+              'Content-Type': 'application/json',
+            }
+          : {}),
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Lifecycle API request failed (${response.status})`);
+    }
+
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return (await response.json()) as T;
+  }
 }
 
 // ============================================================================
@@ -586,7 +774,7 @@ import React from 'react';
  */
 export function usePhaseGates(projectId: string) {
   const [service] = React.useState(
-    () => new PhaseGateService(new LocalStorageProjectPhaseRepository())
+    () => new PhaseGateService(new ApiBackedProjectPhaseRepository())
   );
   const [currentPhase, setCurrentPhase] = React.useState<LifecyclePhase>(
     LifecyclePhase.INTENT

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Feature Discovery Component
  * 
@@ -11,8 +10,9 @@
  * @doc.pattern Onboarding Component
  */
 
-import React, { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useFeatureFlag } from '@yappc/core/config/features/feature-flags';
+import type { ReactNode } from 'react';
 
 interface FeatureHighlight {
     id: string;
@@ -170,12 +170,12 @@ interface FeatureDiscoveryContextValue {
     showFeature: (featureId: string) => void;
 }
 
-const FeatureDiscoveryContext = React.createContext<FeatureDiscoveryContextValue | undefined>(
+const FeatureDiscoveryContext = createContext<FeatureDiscoveryContextValue | undefined>(
     undefined
 );
 
 export function useFeatureDiscovery() {
-    const context = React.useContext(FeatureDiscoveryContext);
+    const context = useContext(FeatureDiscoveryContext);
     if (!context) {
         throw new Error('useFeatureDiscovery must be used within FeatureDiscoveryProvider');
     }

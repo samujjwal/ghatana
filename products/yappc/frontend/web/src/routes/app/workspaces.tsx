@@ -19,6 +19,7 @@ import {
 import { useSetAtom } from "jotai";
 import { setWorkspaceBreadcrumbAtom } from "../../state/atoms/breadcrumbAtom";
 import { ApiUnavailableFallback } from "../../components/route/ApiUnavailableFallback";
+import { LoadingContainer, SkeletonProjectList } from "../../components/route/Skeleton";
 import { CreateWorkspaceDialog } from "../../components/workspace/CreateWorkspaceDialog";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -109,12 +110,13 @@ export default function Component() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-[80vh]">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                    <p className="text-text-secondary">Loading workspaces...</p>
+            <LoadingContainer message="Loading workspaces...">
+                <div className="min-h-[80vh] p-8">
+                    <div className="mx-auto max-w-6xl">
+                        <SkeletonProjectList />
+                    </div>
                 </div>
-            </div>
+            </LoadingContainer>
         );
     }
 
@@ -229,13 +231,11 @@ export default function Component() {
                         ))}
                     </div>
                 ) : isAutoCreatingStarter || createWorkspace.isPending ? (
-                    <div className="text-center py-12" data-testid="starter-workspace-creation">
-                        <div className="mb-4 flex justify-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+                    <LoadingContainer message="Creating your starter workspace...">
+                        <div className="py-4" data-testid="starter-workspace-creation">
+                            <SkeletonProjectList />
                         </div>
-                        <h2 className="text-xl font-semibold text-text-primary mb-2">Creating your starter workspace</h2>
-                        <p className="text-text-secondary">Preparing a default workspace and starter project for you.</p>
-                    </div>
+                    </LoadingContainer>
                 ) : (
                     <div className="text-center py-12">
                         <div className="mb-4">

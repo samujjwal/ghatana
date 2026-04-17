@@ -1,7 +1,7 @@
-// @ts-nocheck
-import React, { useState, useRef, useEffect, ReactNode } from 'react';
-import { Box, Surface as Paper, Typography, IconButton, Card, CardHeader } from '@ghatana/design-system';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Surface as Paper, Typography, IconButton, useTheme } from '@ghatana/design-system';
 import { GripVertical as DragIndicator, X as Close, Minimize2 as Minimize, Maximize as OpenInFull } from 'lucide-react';
+import type { MouseEvent, ReactNode } from 'react';
 
 export interface DraggablePanelProps {
     title?: string;
@@ -14,7 +14,7 @@ export interface DraggablePanelProps {
     className?: string;
 }
 
-export const DraggablePanel: React.FC<DraggablePanelProps> = ({
+export function DraggablePanel({
     title,
     children,
     defaultPosition = { x: 20, y: 20 },
@@ -22,13 +22,13 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
     onClose,
     id,
     elevation = 4,
-}) => {
+}: DraggablePanelProps): React.JSX.Element {
     // Load position from localStorage or use default
     const [position, setPosition] = useState(() => {
         try {
             const saved = localStorage.getItem(`panel-pos-${id}`);
             if (saved) return JSON.parse(saved);
-        } catch (e) {
+        } catch {
             // ignore
         }
         return defaultPosition;
@@ -95,7 +95,7 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
         };
     }, [isDragging, dragOffset, id, position]);
 
-    const handleDragStart = (e: React.MouseEvent) => {
+    const handleDragStart = (e: MouseEvent) => {
         if (e.target instanceof HTMLButtonElement || e.target instanceof SVGElement) return; // Don't drag if clicking buttons
 
         setIsDragging(true);
@@ -153,4 +153,4 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
             )}
         </Paper>
     );
-};
+}

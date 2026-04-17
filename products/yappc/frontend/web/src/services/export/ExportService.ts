@@ -2,7 +2,6 @@
  * Export Service - Handle canvas exports to various formats
  */
 
-import { palette } from '@yappc/ui';
 import { ExportFormat } from './types';
 
 import type { ExportOptions, ExportResult } from './types';

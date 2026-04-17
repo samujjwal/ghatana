@@ -203,7 +203,7 @@ export function canTransitionToPhase(
  * Get lifecycle phase from route path
  */
 export function getPhaseFromRoute(pathname: string): LifecyclePhase | null {
-    // Extract phase from route like /app/p/{projectId}/canvas
+    // Extract phase from route like /p/{projectId}/canvas
     if (pathname.includes('/canvas')) return LifecyclePhase.SHAPE;
     if (pathname.includes('/validate')) return LifecyclePhase.VALIDATE;
     if (pathname.includes('/generate')) return LifecyclePhase.GENERATE;
@@ -212,7 +212,7 @@ export function getPhaseFromRoute(pathname: string): LifecyclePhase | null {
     if (pathname.includes('/improve')) return LifecyclePhase.IMPROVE;
 
     // Default to INTENT for root project page
-    if (pathname.includes('/app/p/') && !pathname.includes('/settings')) {
+    if (pathname.includes('/p/') && !pathname.includes('/settings')) {
         return LifecyclePhase.INTENT;
     }
 
@@ -223,7 +223,7 @@ export function getPhaseFromRoute(pathname: string): LifecyclePhase | null {
  * Get route path for a lifecycle phase
  */
 export function getRouteForPhase(projectId: string, phase: LifecyclePhase): string {
-    const base = `/app/p/${projectId}`;
+    const base = `/p/${projectId}`;
 
     switch (phase) {
         case LifecyclePhase.INTENT:

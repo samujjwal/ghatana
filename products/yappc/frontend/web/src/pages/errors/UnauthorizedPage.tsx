@@ -1,11 +1,9 @@
-// @ts-nocheck
 /**
  * Unauthorized Page (403)
  *
  * @description Page displayed when user lacks permission.
  */
 
-import React from 'react';
 import { NavLink } from 'react-router';
 import { motion } from 'framer-motion';
 import { ShieldOff, Home, ArrowLeft, Lock, Mail } from 'lucide-react';
@@ -13,7 +11,7 @@ import { ShieldOff, Home, ArrowLeft, Lock, Mail } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-const UnauthorizedPage: React.FC = () => {
+function UnauthorizedPage(): JSX.Element {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
       <motion.div
@@ -87,6 +85,6 @@ const UnauthorizedPage: React.FC = () => {
       </motion.div>
     </div>
   );
-};
+}
 
 export default UnauthorizedPage;

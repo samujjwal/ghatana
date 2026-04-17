@@ -13,8 +13,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Box, Surface as Paper, Typography, IconButton, Tooltip, TextField, Button } from '@ghatana/design-system';
-import { styled } from '@mui/material/styles';
+import { Box, Surface as Paper, Typography, IconButton, Tooltip, TextField, Button, styled } from '@ghatana/design-system';
 import { Pencil as Edit, Trash2 as Delete, GripVertical as DragIndicator, X as Close, Check } from 'lucide-react';
 
 // Simple data interface that extends Record<string, unknown>

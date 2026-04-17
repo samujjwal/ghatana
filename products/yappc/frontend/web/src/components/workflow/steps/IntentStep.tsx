@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * IntentStep - UI for the Intent step of the workflow
  *

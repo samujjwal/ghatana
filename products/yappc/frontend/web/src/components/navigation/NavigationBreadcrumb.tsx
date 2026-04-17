@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Navigation Breadcrumb Component
  * 
@@ -92,7 +91,8 @@ export function NavigationBreadcrumb({
     };
 
     const handleWorkspaceSelect = (workspaceId: string) => {
-        navigate(`/app/w/${workspaceId}`);
+        void workspaceId;
+        navigate('/workspaces');
         setWorkspaceMenuAnchor(null);
     };
 
@@ -103,7 +103,7 @@ export function NavigationBreadcrumb({
     };
 
     const handleProjectSelect = (projectId: string) => {
-        navigate(`/app/p/${projectId}`);
+        navigate(`/p/${projectId}`);
         setProjectMenuAnchor(null);
     };
 
@@ -204,7 +204,7 @@ export function NavigationBreadcrumb({
                             <MenuItem disabled>No projects available</MenuItem>
                         )}
                         <Divider />
-                        <MenuItem onClick={() => navigate('/app')}>
+                        <MenuItem onClick={() => navigate('/projects')}>
                             <ListItemText>View all projects</ListItemText>
                         </MenuItem>
                     </Menu>

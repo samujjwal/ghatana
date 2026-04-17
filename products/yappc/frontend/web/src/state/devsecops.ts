@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { atom, useAtom, useAtomValue } from 'jotai';
 import type {
   Item,

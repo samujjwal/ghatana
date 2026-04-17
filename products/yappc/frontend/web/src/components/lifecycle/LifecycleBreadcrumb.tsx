@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lifecycle Breadcrumb Component
  * 
@@ -11,14 +10,15 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
+import { Fragment } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import type { ReactNode } from 'react';
 
 export interface BreadcrumbItem {
     label: string;
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     onClick?: () => void;
     active?: boolean;
 }
@@ -87,7 +87,7 @@ export function LifecycleBreadcrumb({
     return (
         <nav className="flex items-center gap-2 text-sm text-text-secondary mb-4 px-4 py-2 bg-bg-subtle rounded-lg border border-divider">
             {breadcrumbs.map((item, index) => (
-                <React.Fragment key={index}>
+                <Fragment key={index}>
                     {index > 0 && (
                         <ChevronRight className="w-4 h-4 text-text-tertiary" />
                     )}
@@ -104,7 +104,7 @@ export function LifecycleBreadcrumb({
                         {item.icon}
                         <span>{item.label}</span>
                     </button>
-                </React.Fragment>
+                </Fragment>
             ))}
         </nav>
     );

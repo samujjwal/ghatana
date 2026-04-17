@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lifecycle Navigation Component
  * 
@@ -12,8 +11,21 @@
  */
 
 import { useNavigate, useLocation } from 'react-router';
-import { Drawer, InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Typography, Divider, BottomNavigation, BottomNavigationAction } from '@ghatana/design-system';
+import {
+    Drawer,
+    InteractiveList as List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Box,
+    BottomNavigation,
+    BottomNavigationAction,
+    useTheme,
+    useMediaQuery,
+} from '@ghatana/design-system';
 import { Home as HomeIcon, Activity as TimelineIcon, PenLine as CanvasIcon, ClipboardList as AssignmentIcon, Lightbulb as InsightsIcon, Shield as AuditIcon, Settings as SettingsIcon } from 'lucide-react';
+import type { ReactElement, SyntheticEvent } from 'react';
 
 // ============================================================================
 // Types
@@ -22,7 +34,7 @@ import { Home as HomeIcon, Activity as TimelineIcon, PenLine as CanvasIcon, Clip
 interface NavItem {
     id: string;
     label: string;
-    icon: React.ReactElement;
+    icon: ReactElement;
     path: string;
     description?: string;
 }
@@ -148,7 +160,7 @@ function MobileBottomNav() {
     // Find current active tab
     const activeIndex = NAV_ITEMS.findIndex(item => location.pathname.startsWith(item.path));
 
-    const handleChange = (_: React.SyntheticEvent, newValue: number) => {
+    const handleChange = (_: SyntheticEvent, newValue: number) => {
         navigate(NAV_ITEMS[newValue].path);
     };
 

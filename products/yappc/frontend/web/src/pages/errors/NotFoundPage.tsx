@@ -1,11 +1,9 @@
-// @ts-nocheck
 /**
  * Not Found Page (404)
  *
  * @description Page displayed when a route doesn't exist.
  */
 
-import React from 'react';
 import { NavLink } from 'react-router';
 import { motion } from 'framer-motion';
 import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
@@ -13,7 +11,7 @@ import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-const NotFoundPage: React.FC = () => {
+function NotFoundPage(): JSX.Element {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
       <motion.div
@@ -76,6 +74,6 @@ const NotFoundPage: React.FC = () => {
       </motion.div>
     </div>
   );
-};
+}
 
 export default NotFoundPage;

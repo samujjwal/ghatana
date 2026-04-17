@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Action Registry Service
  *

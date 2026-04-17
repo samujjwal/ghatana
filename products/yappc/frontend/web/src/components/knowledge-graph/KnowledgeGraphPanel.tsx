@@ -27,14 +27,14 @@ import {
   Card,
   CardContent,
   Tooltip,
-} from '@mui/material';
+} from '@ghatana/design-system';
 import {
   Search as SearchIcon,
-  Refresh as RefreshIcon,
-  AccountTree as GraphIcon,
+  RefreshCw as RefreshIcon,
+  GitBranch as GraphIcon,
   Link as LinkIcon,
   Lightbulb as InsightIcon,
-} from '@mui/icons-material';
+} from 'lucide-react';
 
 // Knowledge Graph API client
 import { knowledgeGraphApi } from './knowledgeGraphApi';
@@ -166,7 +166,7 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
           severity="error"
           action={
             <IconButton size="small" onClick={handleRefresh}>
-              <RefreshIcon />
+              <RefreshIcon size={16} />
             </IconButton>
           }
         >
@@ -181,10 +181,10 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <GraphIcon sx={{ mr: 1 }} />
+          <GraphIcon size={18} style={{ marginRight: 8 }} />
           <Typography variant="h6">Knowledge Graph</Typography>
           <IconButton size="small" sx={{ ml: 'auto' }} onClick={handleRefresh}>
-            <RefreshIcon />
+            <RefreshIcon size={16} />
           </IconButton>
         </Box>
 
@@ -196,7 +196,9 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
           value={searchQuery}
           onChange={handleSearch}
           InputProps={{
-            startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+            startAdornment: (
+              <SearchIcon size={16} style={{ marginRight: 8, color: 'currentColor', opacity: 0.65 }} />
+            ),
           }}
         />
       </Box>
@@ -242,7 +244,7 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
         {graphData?.insights && graphData.insights.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-              <InsightIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+              <InsightIcon size={14} style={{ marginRight: 4 }} />
               AI Insights
             </Typography>
             {graphData.insights.map((insight, index) => (
@@ -274,7 +276,7 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
               {graphData?.edges && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    <LinkIcon sx={{ mr: 0.5, fontSize: '0.9rem' }} />
+                    <LinkIcon size={13} style={{ marginRight: 4 }} />
                     Relationships
                   </Typography>
                   {graphData.edges
@@ -319,7 +321,7 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
         {/* Empty State */}
         {!searchQuery && (!graphData?.nodes || graphData.nodes.length === 0) && (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <GraphIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+            <GraphIcon size={48} style={{ color: 'currentColor', opacity: 0.4, marginBottom: 8 }} />
             <Typography variant="body2" color="text.secondary">
               {projectId
                 ? 'No knowledge graph data available for this project yet.'

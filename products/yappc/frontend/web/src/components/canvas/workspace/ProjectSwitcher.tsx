@@ -54,7 +54,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
 
     const handleSelectProject = (projectId: string) => {
         if (projectId !== currentProjectId) {
-            navigate(`/app/p/${projectId}`);
+            navigate(`/p/${projectId}`);
         }
         onClose();
     };
@@ -63,7 +63,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
         // In a real app this might open another dialog or navigate to creation wizard
         // For now, let's just create a new ID and go there
         const newId = `new_proj_${Date.now()}`;
-        navigate(`/app/p/${newId}`);
+        navigate(`/p/${newId}`);
         onClose();
     };
 

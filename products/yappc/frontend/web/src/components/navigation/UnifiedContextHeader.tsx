@@ -30,7 +30,6 @@
  * @doc.layer components
  */
 
-// @ts-nocheck
 import React from 'react';
 import { Link } from 'react-router';
 import { Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, Button, Chip } from '@ghatana/design-system';

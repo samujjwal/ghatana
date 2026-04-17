@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Tool API
  *
@@ -6,8 +5,12 @@
  * Provides a plugin architecture for custom tools and interactions.
  */
 
-import type { CanvasState } from '../components/canvas/workspace/canvasAtoms';
-import type React from 'react';
+import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  ReactNode,
+} from 'react';
 
 /**
  *
@@ -70,18 +73,18 @@ export interface CanvasTool {
   cleanup?(): void;
 
   // UI
-  renderToolbar?(context: CanvasContext): React.ReactNode;
-  renderPanel?(context: CanvasContext): React.ReactNode;
-  renderOverlay?(context: CanvasContext): React.ReactNode;
+  renderToolbar?(context: CanvasContext): ReactNode;
+  renderPanel?(context: CanvasContext): ReactNode;
+  renderOverlay?(context: CanvasContext): ReactNode;
 
   // Event handlers
   onActivate?(context: CanvasContext): void;
   onDeactivate?(context: CanvasContext): void;
-  onPointerDown?(event: React.PointerEvent, context: CanvasContext): boolean;
-  onPointerMove?(event: React.PointerEvent, context: CanvasContext): boolean;
-  onPointerUp?(event: React.PointerEvent, context: CanvasContext): boolean;
-  onKeyDown?(event: React.KeyboardEvent, context: CanvasContext): boolean;
-  onKeyUp?(event: React.KeyboardEvent, context: CanvasContext): boolean;
+  onPointerDown?(event: ReactPointerEvent, context: CanvasContext): boolean;
+  onPointerMove?(event: ReactPointerEvent, context: CanvasContext): boolean;
+  onPointerUp?(event: ReactPointerEvent, context: CanvasContext): boolean;
+  onKeyDown?(event: ReactKeyboardEvent, context: CanvasContext): boolean;
+  onKeyUp?(event: ReactKeyboardEvent, context: CanvasContext): boolean;
   onSelectionChange?(selection: string[], context: CanvasContext): void;
   onElementsChange?(changes: ElementChange[], context: CanvasContext): void;
   onConnectionsChange?(
@@ -165,6 +168,10 @@ export class ToolRegistry {
   private tools = new Map<string, CanvasTool>();
   private activeTool: string | null = null;
   private context: CanvasContext | null = null;
+
+  private getContext(): CanvasContext | null {
+    return this.context;
+  }
 
   /**
    *
@@ -253,41 +260,46 @@ export class ToolRegistry {
   /**
    *
    */
-  handlePointerDown(event: React.PointerEvent): boolean {
+  handlePointerDown(event: ReactPointerEvent): boolean {
     const tool = this.getActiveTool();
-    return tool?.onPointerDown?.(event, this.context!) || false;
+    const context = this.getContext();
+    return tool && context ? tool.onPointerDown?.(event, context) || false : false;
   }
 
   /**
    *
    */
-  handlePointerMove(event: React.PointerEvent): boolean {
+  handlePointerMove(event: ReactPointerEvent): boolean {
     const tool = this.getActiveTool();
-    return tool?.onPointerMove?.(event, this.context!) || false;
+    const context = this.getContext();
+    return tool && context ? tool.onPointerMove?.(event, context) || false : false;
   }
 
   /**
    *
    */
-  handlePointerUp(event: React.PointerEvent): boolean {
+  handlePointerUp(event: ReactPointerEvent): boolean {
     const tool = this.getActiveTool();
-    return tool?.onPointerUp?.(event, this.context!) || false;
+    const context = this.getContext();
+    return tool && context ? tool.onPointerUp?.(event, context) || false : false;
   }
 
   /**
    *
    */
-  handleKeyDown(event: React.KeyboardEvent): boolean {
+  handleKeyDown(event: ReactKeyboardEvent): boolean {
     const tool = this.getActiveTool();
-    return tool?.onKeyDown?.(event, this.context!) || false;
+    const context = this.getContext();
+    return tool && context ? tool.onKeyDown?.(event, context) || false : false;
   }
 
   /**
    *
    */
-  handleKeyUp(event: React.KeyboardEvent): boolean {
+  handleKeyUp(event: ReactKeyboardEvent): boolean {
     const tool = this.getActiveTool();
-    return tool?.onKeyUp?.(event, this.context!) || false;
+    const context = this.getContext();
+    return tool && context ? tool.onKeyUp?.(event, context) || false : false;
   }
 
   /**
@@ -295,7 +307,10 @@ export class ToolRegistry {
    */
   handleSelectionChange(selection: string[]): void {
     const tool = this.getActiveTool();
-    tool?.onSelectionChange?.(selection, this.context!);
+    const context = this.getContext();
+    if (tool && context) {
+      tool.onSelectionChange?.(selection, context);
+    }
   }
 
   /**
@@ -303,7 +318,10 @@ export class ToolRegistry {
    */
   handleElementsChange(changes: ElementChange[]): void {
     const tool = this.getActiveTool();
-    tool?.onElementsChange?.(changes, this.context!);
+    const context = this.getContext();
+    if (tool && context) {
+      tool.onElementsChange?.(changes, context);
+    }
   }
 
   /**
@@ -311,7 +329,10 @@ export class ToolRegistry {
    */
   handleConnectionsChange(changes: ConnectionChange[]): void {
     const tool = this.getActiveTool();
-    tool?.onConnectionsChange?.(changes, this.context!);
+    const context = this.getContext();
+    if (tool && context) {
+      tool.onConnectionsChange?.(changes, context);
+    }
   }
 }
 

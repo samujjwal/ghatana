@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Additional Skeleton Components
  * 
@@ -11,7 +10,6 @@
  * @doc.pattern Component
  */
 
-import React from 'react';
 import { Skeleton } from './SkeletonLoaders';
 
 /**

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Icon Component
  * 
@@ -10,16 +9,27 @@
  * @doc.layer design-system
  */
 
-import React from 'react';
+import { cloneElement, isValidElement } from 'react';
 import { cn } from '../../lib/utils';
+import type {
+    ComponentType,
+    CSSProperties,
+    ReactElement,
+    ReactNode,
+} from 'react';
+import type { LucideProps } from 'lucide-react';
 
 export type IconSize = 'sm' | 'md' | 'lg' | 'xl';
 
-export interface IconProps extends Omit<SvgIconProps, 'fontSize'> {
+export interface IconProps extends Omit<LucideProps, 'size'> {
     /** Size of the icon */
     size?: IconSize;
     /** Additional CSS classes */
     className?: string;
+    /** Icon element */
+    children?: ReactNode;
+    /** Optional inline style override */
+    style?: CSSProperties;
 }
 
 const sizeMap: Record<IconSize, { fontSize: string; className: string }> = {
@@ -46,16 +56,16 @@ export function Icon({
     size = 'md',
     className,
     children,
+    style,
     ...props
 }: IconProps) {
     const sizeConfig = sizeMap[size];
 
     // Clone the child element and pass the fontSize prop
-    const iconElement = React.isValidElement(children)
-        ? React.cloneElement(children as React.ReactElement<SvgIconProps>, {
-            fontSize: 'inherit',
+    const iconElement = isValidElement(children)
+        ? cloneElement(children as ReactElement<LucideProps>, {
             className: cn(sizeConfig.className, className),
-            style: { fontSize: sizeConfig.fontSize },
+            style: { fontSize: sizeConfig.fontSize, ...style },
             ...props,
         })
         : children;
@@ -76,7 +86,7 @@ export function Icon({
  */
 export interface IconWrapperProps extends IconProps {
     /** MUI Icon component */
-    icon: React.ComponentType<SvgIconProps>;
+    icon: ComponentType<LucideProps>;
 }
 
 export function IconWrapper({
@@ -89,7 +99,6 @@ export function IconWrapper({
 
     return (
         <IconComponent
-            size={undefined}
             className={cn(sizeConfig.className, className)}
             style={{ fontSize: sizeConfig.fontSize }}
             {...props}

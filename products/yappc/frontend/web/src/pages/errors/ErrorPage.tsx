@@ -1,22 +1,22 @@
-// @ts-nocheck
 /**
  * Error Page
  *
  * @description Generic error page for unexpected errors.
  */
 
-import React from 'react';
 import { NavLink, useRouteError } from 'react-router';
 import { motion } from 'framer-motion';
 import { Home, RefreshCw, AlertTriangle, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
 
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-const ErrorPage: React.FC = () => {
-  const error = useRouteError() as Error | null;
-  const [showDetails, setShowDetails] = React.useState(false);
-  const [copied, setCopied] = React.useState(false);
+function ErrorPage(): JSX.Element {
+  const rawError = useRouteError();
+  const error = rawError instanceof Error ? rawError : null;
+  const [showDetails, setShowDetails] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleCopyError = async () => {
     if (error) {
@@ -135,6 +135,6 @@ const ErrorPage: React.FC = () => {
       </motion.div>
     </div>
   );
-};
+}
 
 export default ErrorPage;

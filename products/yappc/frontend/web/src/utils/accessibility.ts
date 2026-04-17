@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Accessibility Utilities
  * 
@@ -9,6 +8,8 @@
  * @doc.layer product
  * @doc.pattern Utility Module
  */
+
+import type { KeyboardEvent } from 'react';
 
 /**
  * Focus ring class for keyboard navigation
@@ -104,7 +105,7 @@ export const landmarkProps = {
  * Default keyboard handler for escape key
  */
 export function handleEscapeKey(
-  event: React.KeyboardEvent,
+  event: KeyboardEvent,
   onEscape: () => void
 ): void {
   if (event.key === 'Escape') {
@@ -123,7 +124,7 @@ export function createArrowKeyHandler(
 ): (event: React.KeyboardEvent) => number | null {
   const { wrap = true, orientation = 'vertical' } = options;
   
-  return (event: React.KeyboardEvent): number | null => {
+  return (event: KeyboardEvent): number | null => {
     const isVertical = orientation === 'vertical';
     const prevKey = isVertical ? 'ArrowUp' : 'ArrowLeft';
     const nextKey = isVertical ? 'ArrowDown' : 'ArrowRight';

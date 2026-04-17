@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Built-in Canvas Tools
  *
@@ -8,6 +7,68 @@
 import React from 'react';
 
 import type { CanvasTool, CanvasContext } from './ToolAPI';
+
+interface ElementProperties {
+  componentType?: string;
+  alt?: string;
+  level?: number;
+}
+
+interface ToolElementView {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  data: Record<string, unknown>;
+  style?: Record<string, unknown>;
+}
+
+function asToolElement(value: unknown): ToolElementView | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const candidate = value as Partial<ToolElementView>;
+  if (
+    typeof candidate.id !== 'string' ||
+    typeof candidate.type !== 'string' ||
+    !candidate.position ||
+    typeof candidate.position.x !== 'number' ||
+    typeof candidate.position.y !== 'number' ||
+    !candidate.data ||
+    typeof candidate.data !== 'object'
+  ) {
+    return null;
+  }
+
+  return candidate as ToolElementView;
+}
+
+function getElementProperties(element: ToolElementView): ElementProperties {
+  const properties = element.data.properties;
+  if (!properties || typeof properties !== 'object') {
+    return {};
+  }
+  return properties as ElementProperties;
+}
+
+function getElementName(element: ToolElementView): string {
+  const name = element.data.name;
+  return typeof name === 'string' && name.length > 0 ? name : element.id;
+}
+
+function getStyleValue(
+  element: ToolElementView,
+  key: string
+): string | number | undefined {
+  if (!element.style) {
+    return undefined;
+  }
+
+  const value = element.style[key];
+  return typeof value === 'string' || typeof value === 'number'
+    ? value
+    : undefined;
+}
 
 // Selection Tool
 export const SelectionTool: CanvasTool = {
@@ -44,7 +105,10 @@ export const SelectionTool: CanvasTool = {
       description: 'Select all elements',
       action: (context) => {
         const state = context.getCanvasState();
-        const elementIds = state.elements.map((el) => el.id);
+        const elementIds = state.elements
+          .map(asToolElement)
+          .filter((element): element is ToolElementView => element !== null)
+          .map((element) => element.id);
         context.setSelection(elementIds);
       },
     },
@@ -62,48 +126,44 @@ export const AccessibilityTool: CanvasTool = {
   renderPanel(context: CanvasContext) {
     const state = context.getCanvasState();
     const selection = context.getSelection();
+    const stateElements = state.elements
+      .map(asToolElement)
+      .filter((element): element is ToolElementView => element !== null);
     const elementsToCheck =
       selection.length > 0
-        ? state.elements.filter((el) => selection.includes(el.id))
-        : state.elements;
+        ? stateElements.filter((element) => selection.includes(element.id))
+        : stateElements;
 
     const issues = elementsToCheck.flatMap((element) => {
-      const issues = [];
+      const issues: string[] = [];
+      const properties = getElementProperties(element);
 
       // Check for missing alt text on images
-      if (
-        element.data.properties?.componentType === 'image' &&
-        !element.data.properties?.alt
-      ) {
-        issues.push(`${element.data.name || element.id}: Missing alt text`);
+      if (properties.componentType === 'image' && !properties.alt) {
+        issues.push(`${getElementName(element)}: Missing alt text`);
       }
 
       // Check for proper heading hierarchy
-      if (
-        element.data.properties?.componentType === 'heading' &&
-        (element.data.properties?.level as number) > 1
-      ) {
-        const prevHeadings = state.elements.filter(
-          (el) =>
-            el.data.properties?.componentType === 'heading' &&
-            el.position.y < element.position.y
-        );
-        if (prevHeadings.length === 0) {
-          issues.push(
-            `${element.data.name || element.id}: Should start with H1`
+      if (properties.componentType === 'heading' && (properties.level ?? 0) > 1) {
+        const prevHeadings = stateElements.filter((candidate) => {
+          const candidateProps = getElementProperties(candidate);
+          return (
+            candidateProps.componentType === 'heading' &&
+            candidate.position.y < element.position.y
           );
+        });
+        if (prevHeadings.length === 0) {
+          issues.push(`${getElementName(element)}: Should start with H1`);
         }
       }
 
       // Check color contrast (simplified)
-      if (element.style?.backgroundColor && element.style?.textColor) {
+      const bgColor = getStyleValue(element, 'backgroundColor');
+      const textColor = getStyleValue(element, 'textColor');
+      if (bgColor && textColor) {
         // This is a simplified check - real implementation would use WCAG algorithms
-        const bgColor = element.style.backgroundColor;
-        const textColor = element.style.textColor;
         if (bgColor === textColor) {
-          issues.push(
-            `${element.data.name || element.id}: Poor color contrast`
-          );
+          issues.push(`${getElementName(element)}: Poor color contrast`);
         }
       }
 
@@ -175,9 +235,12 @@ export const CodeExportTool: CanvasTool = {
   renderPanel(context: CanvasContext) {
     const generateCode = () => {
       const state = context.getCanvasState();
+      const stateElements = state.elements
+        .map(asToolElement)
+        .filter((element): element is ToolElementView => element !== null);
 
       // Generate React JSX code
-      const components = state.elements
+      const components = stateElements
         .map((element) => {
           const props = Object.entries(element.data)
             .filter(([key, value]) => key !== 'name' && value !== undefined)
@@ -297,10 +360,13 @@ export const LayoutTool: CanvasTool = {
     const applyGridLayout = () => {
       const state = context.getCanvasState();
       const selection = context.getSelection();
+      const stateElements = state.elements
+        .map(asToolElement)
+        .filter((element): element is ToolElementView => element !== null);
       const elements =
         selection.length > 0
-          ? state.elements.filter((el) => selection.includes(el.id))
-          : state.elements;
+          ? stateElements.filter((element) => selection.includes(element.id))
+          : stateElements;
 
       const cols = Math.ceil(Math.sqrt(elements.length));
       const cellSize = 150;
@@ -317,10 +383,13 @@ export const LayoutTool: CanvasTool = {
     const applyCircularLayout = () => {
       const state = context.getCanvasState();
       const selection = context.getSelection();
+      const stateElements = state.elements
+        .map(asToolElement)
+        .filter((element): element is ToolElementView => element !== null);
       const elements =
         selection.length > 0
-          ? state.elements.filter((el) => selection.includes(el.id))
-          : state.elements;
+          ? stateElements.filter((element) => selection.includes(element.id))
+          : stateElements;
 
       const centerX = 300;
       const centerY = 300;

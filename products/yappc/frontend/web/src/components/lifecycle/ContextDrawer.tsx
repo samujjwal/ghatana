@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Context Drawer Component
  * 
@@ -15,8 +14,8 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { Drawer, Box, IconButton, Tooltip, Typography, Chip, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
 import { ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon, Sparkles as AIIcon, Folder as FolderIcon, Shield as SecurityIcon } from 'lucide-react';
-import { TabNavigation } from '@yappc/ui/navigation-ui';
-import type { TabNavigationItem } from '@yappc/ui/navigation-ui';
+import { TabNavigation } from '../ui';
+import type { TabNavigationItem } from '../ui';
 import { useEvidence, useAIInsights, useAuditEvents } from '@/hooks/useLifecycleData';
 import { FOWStage } from '@/types/fow-stages';
 import { LifecyclePhase } from '@/types/lifecycle';

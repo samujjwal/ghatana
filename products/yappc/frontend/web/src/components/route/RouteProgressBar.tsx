@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Route Progress Bar Component
  * 
@@ -47,8 +46,8 @@ export function RouteProgressBar({
 }: RouteProgressBarProps) {
     const [progress, setProgress] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
-    const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const cleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const startTimeRef = useRef<number>(0);
 
     useEffect(() => {

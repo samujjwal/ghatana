@@ -675,17 +675,43 @@ function UnifiedCanvasInner() {
   // CONTEXT ACTIONS & HEADER SYNC
   // =========================================================================
 
+  const shareEnabled = import.meta.env.VITE_FEATURE_PROJECT_SHARE === 'true';
+  const exportEnabled = import.meta.env.VITE_FEATURE_PROJECT_EXPORT === 'true';
+
   const contextActions = useMemo(
-    () => [
-      { id: 'undo', label: 'Undo', icon: Undo, onClick: () => canvas.undo(), disabled: !canvas.canUndo, tooltip: 'Undo', shortcut: '⌘Z' },
-      { id: 'redo', label: 'Redo', icon: Redo, onClick: () => canvas.redo(), disabled: !canvas.canRedo, tooltip: 'Redo', shortcut: '⌘⇧Z' },
-      { id: 'share', label: 'Share', icon: Share, onClick: () => console.log('Share project'), tooltip: 'Share with others' },
-      { id: 'zoom-in', label: 'Zoom In', icon: ZoomIn, onClick: () => reactFlowInstance.zoomIn(), tooltip: 'Zoom in', shortcut: '⌘+' },
-      { id: 'zoom-out', label: 'Zoom Out', icon: ZoomOut, onClick: () => reactFlowInstance.zoomOut(), tooltip: 'Zoom out', shortcut: '⌘-' },
-      { id: 'settings', label: 'Settings', icon: Settings, onClick: () => navigate(`/app/p/${projectId}/settings`), tooltip: 'Project settings' },
-      { id: 'export', label: 'Export', icon: FileDownload, onClick: () => setExportMenuAnchor(document.getElementById('root')), tooltip: 'Export canvas', divider: true },
-    ],
-    [canvas, reactFlowInstance, projectId, navigate]
+    () => {
+      const actions = [
+        { id: 'undo', label: 'Undo', icon: Undo, onClick: () => canvas.undo(), disabled: !canvas.canUndo, tooltip: 'Undo', shortcut: '⌘Z' },
+        { id: 'redo', label: 'Redo', icon: Redo, onClick: () => canvas.redo(), disabled: !canvas.canRedo, tooltip: 'Redo', shortcut: '⌘⇧Z' },
+        { id: 'zoom-in', label: 'Zoom In', icon: ZoomIn, onClick: () => reactFlowInstance.zoomIn(), tooltip: 'Zoom in', shortcut: '⌘+' },
+        { id: 'zoom-out', label: 'Zoom Out', icon: ZoomOut, onClick: () => reactFlowInstance.zoomOut(), tooltip: 'Zoom out', shortcut: '⌘-' },
+        { id: 'settings', label: 'Settings', icon: Settings, onClick: () => navigate(`/p/${projectId}/settings`), tooltip: 'Project settings' },
+      ];
+
+      if (shareEnabled) {
+        actions.splice(2, 0, {
+          id: 'share',
+          label: 'Share',
+          icon: Share,
+          onClick: () => console.log('Share project'),
+          tooltip: 'Share with others',
+        });
+      }
+
+      if (exportEnabled) {
+        actions.push({
+          id: 'export',
+          label: 'Export',
+          icon: FileDownload,
+          onClick: () => setExportMenuAnchor(document.getElementById('root')),
+          tooltip: 'Export canvas',
+          divider: true,
+        });
+      }
+
+      return actions;
+    },
+    [canvas, reactFlowInstance, projectId, navigate, shareEnabled, exportEnabled]
   );
 
   useEffect(() => {

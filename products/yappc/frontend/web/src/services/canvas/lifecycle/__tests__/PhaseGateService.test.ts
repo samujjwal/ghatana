@@ -139,7 +139,7 @@ describe('InMemoryProjectPhaseRepository', () => {
         userId: 'user-1',
         timestamp: new Date().toISOString(),
       })
-    ).rejects.toThrow('Project state not found: unknown');
+    ).rejects.toMatchObject({ message: 'Project state not found: unknown' });
   });
 });
 
@@ -247,7 +247,7 @@ describe('PhaseGateService - gate operations', () => {
   it('checkGateStatus throws for an unknown gate ID', async () => {
     await expect(
       service.checkGateStatus(PROJECT_ID, 'gate:bad-id')
-    ).rejects.toThrow('Gate not found: gate:bad-id');
+    ).rejects.toMatchObject({ message: 'Gate not found: gate:bad-id' });
   });
 
   it('checkGateStatus returns blocked status when no artifacts exist', async () => {

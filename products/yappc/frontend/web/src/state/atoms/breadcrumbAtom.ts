@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Breadcrumb State Atom
  *
@@ -63,7 +62,7 @@ export const breadcrumbItemsAtom = atom((get) => {
   if (ctx.workspaceName) {
     items.push({
       label: ctx.workspaceName,
-      href: '/app',
+      href: '/workspaces',
       aiTooltip: 'Your current workspace',
     });
   }
@@ -72,7 +71,7 @@ export const breadcrumbItemsAtom = atom((get) => {
   if (ctx.projectName && ctx.projectId) {
     items.push({
       label: ctx.projectName,
-      href: `/app/project/${ctx.projectId}`,
+      href: `/p/${ctx.projectId}`,
       aiTooltip: ctx.projectIsOwned
         ? 'You own this project (full access)'
         : 'Included project (read-only)',

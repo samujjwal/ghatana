@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ContextStep - UI for the Context step of the workflow
  *

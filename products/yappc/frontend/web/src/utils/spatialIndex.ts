@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Spatial Index - Simple implementation for hit-testing and alignment guides
  * This is a simplified version that doesn't require rbush dependency
