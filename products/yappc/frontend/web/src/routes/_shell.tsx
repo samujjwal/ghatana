@@ -1,3 +1,4 @@
+import { authService } from '../services/auth/AuthService';
 /**
  * App Shell Layout
  *
@@ -364,10 +365,14 @@ function ShellContent({
           }}
           onThemeToggle={toggleTheme}
           onProfile={() => navigate('/profile')}
-          onLogout={() => navigate('/logout')}
+          onLogout={() => {
+            void authService.logout().finally(() => {
+              navigate('/login');
+            });
+          }}
           onCreateWorkspace={() => setShowCreateWorkspace(true)}
-          onCreateProject={() => navigate('/app/new')}
-          onCreateWorkflow={() => navigate('/app/workflows/new')}
+          onNew={() => navigate('/projects')}
+          onCreateProject={() => navigate('/projects')}
         />
       )}
 

@@ -1,10 +1,18 @@
 // @ts-nocheck
 /**
  * Canvas Persistence Service
- * Handles localStorage with project/canvas namespacing and conflict resolution
+ * Compatibility layer for older canvas callers.
+ *
+ * The active project canvas route persists through
+ * `services/canvas/CanvasPersistence`. This wrapper delegates save/load to that
+ * authority so legacy hooks do not diverge from the mounted canvas behavior.
  */
 
 import type { CanvasState } from '../components/canvas/workspace/canvasAtoms';
+import {
+  CanvasPersistence,
+  type CanvasSnapshot as AuthoritativeCanvasSnapshot,
+} from './canvas/CanvasPersistence';
 import { logger } from '../utils/Logger';
 
 /**
@@ -26,6 +34,31 @@ export interface CanvasSnapshot {
 export class CanvasPersistenceService {
   private static readonly STORAGE_PREFIX = 'yappc-canvas';
   private static readonly VERSION = '1.0.0';
+  private static readonly authoritativePersistence = new CanvasPersistence({
+    storage: 'localStorage',
+    autoSave: {
+      enabled: true,
+      interval: 30000,
+      maxSnapshots: 10,
+    },
+  });
+
+  private static toLegacySnapshot(
+    snapshot: AuthoritativeCanvasSnapshot
+  ): CanvasSnapshot {
+    return {
+      id: snapshot.id,
+      projectId: snapshot.projectId,
+      canvasId: snapshot.canvasId,
+      version: String(snapshot.version ?? this.VERSION),
+      timestamp:
+        typeof snapshot.timestamp === 'number'
+          ? new Date(snapshot.timestamp).toISOString()
+          : String(snapshot.timestamp),
+      data: snapshot.data,
+      checksum: snapshot.checksum,
+    };
+  }
 
   /**
    * Defensive normalizer for persisted CanvasState shapes.
@@ -104,23 +137,16 @@ export class CanvasPersistenceService {
     canvasState: CanvasState
   ): Promise<{ success: boolean; snapshot?: CanvasSnapshot; error?: string }> {
     try {
-      const snapshot: CanvasSnapshot = {
-        id: `snapshot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      const snapshot = await this.authoritativePersistence.save(
         projectId,
         canvasId,
-        version: this.VERSION,
-        timestamp: new Date().toISOString(),
-        data: canvasState,
-        checksum: this.generateChecksum(canvasState),
+        canvasState
+      );
+
+      return {
+        success: true,
+        snapshot: this.toLegacySnapshot(snapshot),
       };
-
-      const key = this.getStorageKey(projectId, canvasId);
-      localStorage.setItem(key, JSON.stringify(snapshot));
-
-      // Also save to history for undo/redo
-      this.saveToHistory(projectId, canvasId, snapshot);
-
-      return { success: true, snapshot };
     } catch (error) {
       logger.error('Failed to save canvas', 'persistence', { error: error instanceof Error ? error.message : String(error) });
       return {
@@ -138,50 +164,19 @@ export class CanvasPersistenceService {
     canvasId: string
   ): Promise<{ success: boolean; snapshot?: CanvasSnapshot; error?: string }> {
     try {
-      const key = this.getStorageKey(projectId, canvasId);
-      const stored = localStorage.getItem(key);
+      const snapshot = await this.authoritativePersistence.load(
+        projectId,
+        canvasId
+      );
 
-      if (!stored) {
+      if (!snapshot) {
         return { success: false, error: 'Canvas not found' };
       }
 
-      const snapshot: CanvasSnapshot = JSON.parse(stored);
-
-      // Validate version compatibility
-      if (snapshot.version !== this.VERSION) {
-        logger.warn('Canvas version mismatch', 'persistence', {
-          snapshotVersion: snapshot.version,
-          currentVersion: this.VERSION
-        });
-        // Could run migrations here in the future
-      }
-
-      // Defensive normalization: ensure snapshot.data has required shapes
-      try {
-        snapshot.data = this.normalizeCanvasState(snapshot.data as CanvasState);
-      } catch (e) {
-        logger.warn('Failed to normalize canvas snapshot data, falling back to empty canvas', 'persistence', {
-          error: e instanceof Error ? e.message : String(e)
-        });
-        snapshot.data = this.normalizeCanvasState(undefined);
-      }
-
-      // Debug: expose a compact summary of the loaded snapshot for E2E traces
-      try {
-        // normalized data guarantees arrays
-        logger.debug('loadCanvas summary', 'persistence', {
-          projectId,
-          canvasId,
-          version: snapshot.version,
-          elements: snapshot.data.elements.length,
-          connections: snapshot.data.connections.length,
-          checksum: snapshot.checksum,
-        });
-      } catch (e) {
-        // swallow logging errors
-      }
-
-      return { success: true, snapshot };
+      return {
+        success: true,
+        snapshot: this.toLegacySnapshot(snapshot),
+      };
     } catch (error) {
       logger.error('Failed to load canvas', 'persistence', { error: error instanceof Error ? error.message : String(error) });
       return {

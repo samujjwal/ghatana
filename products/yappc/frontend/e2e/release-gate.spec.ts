@@ -39,6 +39,12 @@ test.skip(!REAL_BACKEND, 'Skipped: REAL_BACKEND=true is required');
 const SMOKE_USER = process.env.E2E_SMOKE_USER ?? '';
 const SMOKE_PASSWORD = process.env.E2E_SMOKE_PASSWORD ?? '';
 
+type StoredSession = {
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function loginAs(
@@ -46,12 +52,38 @@ async function loginAs(
   email: string,
   password: string,
 ): Promise<void> {
-  await page.goto('/auth/login');
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /sign in|log in/i }).click();
+  await page.goto('/login');
+  await page.getByTestId('email-input').fill(email);
+  await page.getByTestId('password-input').fill(password);
+  await page.getByTestId('login-submit').click();
   // Wait for redirect away from login page
-  await expect(page).not.toHaveURL(/\/auth\/login/, { timeout: 15_000 });
+  await expect(page).not.toHaveURL(/\/login$/, { timeout: 15_000 });
+}
+
+async function readStoredSession(
+  page: Parameters<Parameters<typeof test>[1]>[0]['page'],
+): Promise<StoredSession | null> {
+  return page.evaluate(() => {
+    const raw = window.localStorage.getItem('auth-session');
+    return raw ? (JSON.parse(raw) as StoredSession) : null;
+  });
+}
+
+async function writeStoredSession(
+  page: Parameters<Parameters<typeof test>[1]>[0]['page'],
+  session: StoredSession,
+): Promise<void> {
+  await page.evaluate((nextSession) => {
+    window.localStorage.setItem('auth-session', JSON.stringify(nextSession));
+  }, session);
+}
+
+async function logoutFromUserMenu(
+  page: Parameters<Parameters<typeof test>[1]>[0]['page'],
+): Promise<void> {
+  await page.getByLabel('User menu').click();
+  await page.getByRole('menuitem', { name: /logout/i }).click();
+  await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 15_000 });
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -66,10 +98,8 @@ test.describe('@release-gate Real backend smoke tests', () => {
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
-    // After a successful login the user lands on the dashboard or workspaces page
-    await expect(
-      page.getByRole('navigation').first(),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/(workspaces|projects)$/);
+    await expect(page.locator('[data-testid="workspaces-page"], h1')).toBeVisible({ timeout: 10_000 });
   });
 
   // 2. Workspace dashboard ────────────────────────────────────────────────────
@@ -79,98 +109,104 @@ test.describe('@release-gate Real backend smoke tests', () => {
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
-    await page.goto('/app/workspaces');
-    await expect(
-      page.getByRole('heading', { name: /workspace/i, level: 1 }),
-    ).toBeVisible({ timeout: 10_000 });
-
-    // At least one workspace link should be visible
-    await expect(page.locator('a[href*="/app/w/"]').first()).toBeVisible();
+    await page.goto('/workspaces');
+    await expect(page.getByTestId('workspaces-page')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: /workspaces/i, level: 1 })).toBeVisible();
+    await expect(page.locator('[data-testid="workspace-card"]').first()).toBeVisible();
   });
 
   // 3. Project creation ───────────────────────────────────────────────────────
 
-  test('@release-gate — user can create a project and it appears in the list', async ({
+  test('@release-gate — user can create a project, reload, sign out, and still see it after re-authentication', async ({
     page,
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
     const projectName = `smoke-${Date.now()}`;
 
-    // Navigate to the workspace page and open the first workspace
-    await page.goto('/app/workspaces');
-    await page.locator('a[href*="/app/w/"]').first().click();
-    await page.waitForURL(/\/app\/w\//);
+    await page.goto('/projects');
+    await expect(page.getByRole('heading', { name: /projects/i, level: 1 })).toBeVisible({ timeout: 10_000 });
 
-    // Click "New Project" or equivalent CTA
-    const newProjectBtn = page.getByRole('button', {
-      name: /new project|create project/i,
-    });
-    await expect(newProjectBtn).toBeVisible({ timeout: 8_000 });
-    await newProjectBtn.click();
+    await page.getByTestId('create-project-button').click();
+    await page.getByTestId('project-name-input').fill(projectName);
+    await page.getByTestId('project-description-input').fill('Release-gate browser proof');
+    await page.getByTestId('create-project-submit').click();
 
-    // Fill in the project name
-    const nameInput = page.getByLabel(/project name/i);
-    await expect(nameInput).toBeVisible({ timeout: 5_000 });
-    await nameInput.fill(projectName);
-    await page.getByRole('button', { name: /create|save/i }).click();
+    await page.waitForURL(/\/p\/[^/]+\/canvas/, { timeout: 15_000 });
 
-    // The new project should appear in the project list
+    await page.goto('/projects');
+    await expect(page.getByText(projectName)).toBeVisible({ timeout: 10_000 });
+
+    await page.reload();
+    await expect(page.getByText(projectName)).toBeVisible({ timeout: 10_000 });
+
+    await logoutFromUserMenu(page);
+    await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
+    await page.goto('/projects');
     await expect(page.getByText(projectName)).toBeVisible({ timeout: 10_000 });
   });
 
   // 4. Navigate into a project ────────────────────────────────────────────────
 
-  test('@release-gate — navigating into a project opens the canvas or editor view', async ({
+  test('@release-gate — navigating into a project opens the active canvas view', async ({
     page,
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
-    await page.goto('/app/workspaces');
-    await page.locator('a[href*="/app/w/"]').first().click();
-    await page.waitForURL(/\/app\/w\//);
-
-    // Click the first project link
-    const projectLink = page.locator('a[href*="/projects/"]').first();
-    await expect(projectLink).toBeVisible({ timeout: 8_000 });
-    await projectLink.click();
-    await page.waitForURL(/\/projects\//);
-
-    // Should render the editor or canvas area
-    const editorArea =
-      page.locator('[data-testid="canvas"]').or(
-        page.locator('[data-testid="editor"]'),
-      ).or(
-        page.getByRole('main'),
-      );
-    await expect(editorArea.first()).toBeVisible({ timeout: 10_000 });
+    await page.goto('/projects');
+    await page.locator('main .grid button, main tbody tr').first().click();
+    await page.waitForURL(/\/p\/[^/]+\/(canvas)?/, { timeout: 15_000 });
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
   });
 
-  // 5. Logout invalidates session ─────────────────────────────────────────────
+  // 5. Token refresh recovery ────────────────────────────────────────────────
+
+  test('@release-gate — expired access tokens are recovered through the refresh token on the active app shell', async ({
+    page,
+  }) => {
+    await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
+    await page.goto('/projects');
+    await expect(page.getByRole('heading', { name: /projects/i, level: 1 })).toBeVisible({ timeout: 10_000 });
+
+    const originalSession = await readStoredSession(page);
+    expect(originalSession?.token).toBeTruthy();
+    expect(originalSession?.refreshToken).toBeTruthy();
+
+    await writeStoredSession(page, {
+      ...originalSession,
+      token: 'expired-access-token',
+      expiresAt: new Date(Date.now() - 60_000).toISOString(),
+    });
+
+    const refreshResponsePromise = page.waitForResponse((response) => {
+      return response.request().method() === 'POST' && response.url().includes('/api/auth/refresh');
+    });
+
+    await page.reload();
+
+    const refreshResponse = await refreshResponsePromise;
+    expect(refreshResponse.ok()).toBeTruthy();
+    await expect(page).toHaveURL(/\/projects$/, { timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /projects/i, level: 1 })).toBeVisible({ timeout: 10_000 });
+
+    const refreshedSession = await readStoredSession(page);
+    expect(refreshedSession?.token).toBeTruthy();
+    expect(refreshedSession?.token).not.toBe('expired-access-token');
+    expect(refreshedSession?.refreshToken).toBeTruthy();
+  });
+
+  // 6. Logout invalidates session ─────────────────────────────────────────────
 
   test('@release-gate — logout invalidates the session and redirects to login', async ({
     page,
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
-    // Open user menu and click sign-out
-    const userMenu = page.getByRole('button', {
-      name: /account|user menu|profile/i,
-    });
-    await expect(userMenu).toBeVisible({ timeout: 8_000 });
-    await userMenu.click();
+    expect(await readStoredSession(page)).not.toBeNull();
 
-    const signOutBtn = page.getByRole('menuitem', {
-      name: /sign out|log out/i,
-    });
-    await expect(signOutBtn).toBeVisible({ timeout: 5_000 });
-    await signOutBtn.click();
+    await logoutFromUserMenu(page);
 
-    // Should redirect to the login page
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10_000 });
-
-    // Trying to navigate to a protected route should redirect back to login
-    await page.goto('/app/workspaces');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 8_000 });
+    await expect(page.getByTestId('login-form')).toBeVisible({ timeout: 10_000 });
+    await expect(await readStoredSession(page)).toBeNull();
   });
 });

@@ -106,15 +106,15 @@ export function useProgressiveDisclosure({
       // Check if dismissed
       if (dismissedFeatures.has(featureId)) return false;
 
+      // Explicit user reveal should win over default experience gating.
+      if (visibleFeatures.has(featureId)) return true;
+
       // Check experience level requirement
       if (config.minExperienceLevel) {
         const requiredLevel = EXPERIENCE_ORDER[config.minExperienceLevel];
         const currentLevel = EXPERIENCE_ORDER[experienceLevel];
         if (currentLevel < requiredLevel) return false;
       }
-
-      // Check if explicitly shown
-      if (visibleFeatures.has(featureId)) return true;
 
       // Default to hidden for features with minExperienceLevel
       return !config.minExperienceLevel;

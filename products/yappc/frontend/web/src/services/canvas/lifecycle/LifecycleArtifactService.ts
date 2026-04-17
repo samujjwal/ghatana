@@ -161,6 +161,14 @@ export interface ILifecycleArtifactRepository {
   delete(id: string): Promise<boolean>;
 }
 
+function canUseStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+}
+
+function artifactStorageKey(projectId: string): string {
+  return `yappc.lifecycle.artifacts.${projectId}`;
+}
+
 // ============================================================================
 // In-Memory Repository
 // ============================================================================
@@ -233,6 +241,178 @@ export class InMemoryLifecycleArtifactRepository implements ILifecycleArtifactRe
 
   async delete(id: string): Promise<boolean> {
     return this.artifacts.delete(id);
+  }
+}
+
+/**
+ * Browser-backed repository that persists artifacts across reloads.
+ */
+export class LocalStorageLifecycleArtifactRepository
+  implements ILifecycleArtifactRepository
+{
+  private fallback = new InMemoryLifecycleArtifactRepository();
+
+  private readAll(): LifecycleArtifact[] {
+    if (!canUseStorage()) {
+      return [];
+    }
+
+    const artifacts: LifecycleArtifact[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (!key?.startsWith('yappc.lifecycle.artifacts.')) {
+        continue;
+      }
+
+      const raw = window.localStorage.getItem(key);
+      if (!raw) {
+        continue;
+      }
+
+      try {
+        const parsed = JSON.parse(raw) as LifecycleArtifact[];
+        artifacts.push(...parsed);
+      } catch {
+        continue;
+      }
+    }
+
+    return artifacts;
+  }
+
+  private readProject(projectId: string): LifecycleArtifact[] {
+    if (!canUseStorage()) {
+      return [];
+    }
+
+    const raw = window.localStorage.getItem(artifactStorageKey(projectId));
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      return JSON.parse(raw) as LifecycleArtifact[];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeProject(projectId: string, artifacts: LifecycleArtifact[]): void {
+    if (!canUseStorage()) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      artifactStorageKey(projectId),
+      JSON.stringify(artifacts)
+    );
+  }
+
+  async save(artifact: LifecycleArtifact): Promise<void> {
+    if (!canUseStorage()) {
+      return this.fallback.save(artifact);
+    }
+
+    const artifacts = this.readProject(artifact.projectId).filter(
+      (existing) => existing.id !== artifact.id
+    );
+    artifacts.push({ ...artifact });
+    this.writeProject(artifact.projectId, artifacts);
+  }
+
+  async findById(id: string): Promise<LifecycleArtifact | null> {
+    if (!canUseStorage()) {
+      return this.fallback.findById(id);
+    }
+
+    const artifact = this.readAll().find((candidate) => candidate.id === id);
+    return artifact ? { ...artifact } : null;
+  }
+
+  async findByProjectAndKind(
+    projectId: string,
+    kind: LifecycleArtifactKind
+  ): Promise<LifecycleArtifact[]> {
+    const artifacts = canUseStorage()
+      ? this.readProject(projectId)
+      : await this.fallback.findByProject(projectId);
+
+    return artifacts
+      .filter((artifact) => artifact.kind === kind)
+      .map((artifact) => ({ ...artifact }));
+  }
+
+  async findByProject(projectId: string): Promise<LifecycleArtifact[]> {
+    if (!canUseStorage()) {
+      return this.fallback.findByProject(projectId);
+    }
+
+    return this.readProject(projectId).map((artifact) => ({ ...artifact }));
+  }
+
+  async findByFilter(filter: ArtifactFilter): Promise<LifecycleArtifact[]> {
+    const artifacts = canUseStorage()
+      ? this.readAll()
+      : await this.fallback.findByFilter(filter);
+
+    return artifacts
+      .filter((artifact) => {
+        if (filter.projectId && artifact.projectId !== filter.projectId) {
+          return false;
+        }
+        if (filter.kinds && !filter.kinds.includes(artifact.kind)) {
+          return false;
+        }
+        if (filter.phases) {
+          const metadata = LIFECYCLE_ARTIFACT_CATALOG[artifact.kind];
+          if (!filter.phases.includes(metadata.phase)) {
+            return false;
+          }
+        }
+        if (filter.status && !filter.status.includes(artifact.status)) {
+          return false;
+        }
+        if (filter.search) {
+          const search = filter.search.toLowerCase();
+          if (!artifact.title.toLowerCase().includes(search)) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map((artifact) => ({ ...artifact }));
+  }
+
+  async update(artifact: LifecycleArtifact): Promise<void> {
+    if (!canUseStorage()) {
+      return this.fallback.update(artifact);
+    }
+
+    const artifacts = this.readProject(artifact.projectId);
+    const index = artifacts.findIndex((existing) => existing.id === artifact.id);
+    if (index === -1) {
+      throw new Error(`Artifact not found: ${artifact.id}`);
+    }
+
+    artifacts[index] = { ...artifact };
+    this.writeProject(artifact.projectId, artifacts);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    if (!canUseStorage()) {
+      return this.fallback.delete(id);
+    }
+
+    const artifact = await this.findById(id);
+    if (!artifact) {
+      return false;
+    }
+
+    const artifacts = this.readProject(artifact.projectId).filter(
+      (existing) => existing.id !== id
+    );
+    this.writeProject(artifact.projectId, artifacts);
+    return true;
   }
 }
 
@@ -698,7 +878,7 @@ import React from 'react';
 export function useLifecycleArtifacts(projectId: string) {
   const [service] = React.useState(
     () =>
-      new LifecycleArtifactService(new InMemoryLifecycleArtifactRepository())
+      new LifecycleArtifactService(new LocalStorageLifecycleArtifactRepository())
   );
   const [artifacts, setArtifacts] = React.useState<ArtifactSummary[]>([]);
   const [loading, setLoading] = React.useState(true);

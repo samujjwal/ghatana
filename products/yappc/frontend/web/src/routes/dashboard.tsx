@@ -10,15 +10,13 @@
  * @doc.pattern Route Module
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
-import { useQuery } from '@tanstack/react-query';
-import { parseJsonResponse } from '@/lib/http';
+import { ArrowRight, FolderOpen, Plus, ShieldAlert } from 'lucide-react';
 
 // Hooks
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
-import { useWorkflows } from '../hooks/useWorkflows';
 import { useLastOpenedProject } from '../hooks/useLastOpenedProject';
 import { useCurrentUser } from '../providers/AuthProvider';
 import { headerVisibleAtom } from '../state/atoms/layoutAtom';
@@ -26,12 +24,9 @@ import { headerVisibleAtom } from '../state/atoms/layoutAtom';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
 
 // Components
-import { WorkspaceSelectionDialog } from '../components/workspace/WorkspaceSelectionDialog';
-import { DashboardView } from '../components/dashboard/DashboardView';
 import { GuestLandingView } from '../components/dashboard/GuestLandingView';
 import { EmptyStateView } from '../components/dashboard/EmptyStateView';
 import { DashboardSkeleton } from '../components/dashboard/DashboardSkeleton';
-import type { PriorityTask } from '../components/dashboard/PriorityTasksList';
 
 /**
  * Home Dashboard Component
@@ -41,22 +36,20 @@ import type { PriorityTask } from '../components/dashboard/PriorityTasksList';
 export default function Component() {
     const navigate = useNavigate();
     const { ownedProjects, includedProjects, workspaces, isLoading: workspaceLoading } = useWorkspaceContext();
-    const { workflows, isLoading: workflowsLoading } = useWorkflows();
     const { getLastOpenedProject, setLastOpenedProject } = useLastOpenedProject();
     const setHeaderVisible = useSetAtom(headerVisibleAtom);
 
     const allProjects = [...ownedProjects, ...includedProjects];
-    const isLoading = workspaceLoading || workflowsLoading;
-
-    // Workspace selection dialog state
-    const [workspaceDialogOpen, setWorkspaceDialogOpen] = useState(false);
-    const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(null);
-    const [projectWorkspaces, setProjectWorkspaces] = useState<Array<{ id: string; name: string; description?: string; isOwner?: boolean }>>([]);
+    const isLoading = workspaceLoading;
 
     // Derive guest/empty states from real auth and workspace data
     const currentUser = useCurrentUser();
     const isGuest = !currentUser.isAuthenticated;
-    const isEmpty = !isLoading && !isGuest && allProjects.length === 0 && workflows.length === 0;
+    const isEmpty = !isLoading && !isGuest && allProjects.length === 0;
+    const recentProjects = useMemo(
+        () => [...allProjects].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)).slice(0, 3),
+        [allProjects]
+    );
 
     // Control header visibility based on auth state
     useEffect(() => {
@@ -64,62 +57,17 @@ export default function Component() {
         return () => setHeaderVisible(true);
     }, [isGuest, setHeaderVisible]);
 
-    // Fetch priority tasks from the API
-    const { data: priorityTasksData } = useQuery<PriorityTask[]>({
-        queryKey: ['priority-tasks'],
-        queryFn: async () => {
-            const res = await fetch('/api/tasks?priority=high&limit=5');
-            if (!res.ok) return [];
-            return parseJsonResponse<PriorityTask[]>(res, 'priority tasks');
-        },
-        enabled: !isGuest && !isLoading,
-        initialData: [],
-    });
-    const priorityTasks: PriorityTask[] = priorityTasksData ?? [];
-
-    // --- HANDLERS ---
-
-    const handleTaskClick = (task: PriorityTask) => {
-        // Implicitly switch persona logic will be handled by the route or context
-        navigate(`/p/${task.projectId}/canvas?taskId=${task.id}&persona=${task.persona.toLowerCase()}`);
-    };
-
     const handleProjectClick = (projectId: string) => {
-        const project = allProjects.find(p => p.id === projectId);
-        if (!project) return;
-
-        // Find all workspaces this project belongs to
-        const relatedWorkspaces = workspaces.filter(ws => {
-            return project.ownerWorkspaceId === ws.id;
-        });
-
-        if (relatedWorkspaces.length > 1) {
-            // Show workspace selection dialog
-            setSelectedProject({ id: projectId, name: project.name });
-            setProjectWorkspaces(relatedWorkspaces.map(ws => ({
-                id: ws.id,
-                name: ws.name,
-                description: ws.description,
-                isOwner: project.ownerWorkspaceId === ws.id,
-            })));
-            setWorkspaceDialogOpen(true);
-        } else {
-            // Direct navigation
-            const workspaceId = project.ownerWorkspaceId || workspaces[0]?.id;
-            if (workspaceId) {
-                setLastOpenedProject(workspaceId, projectId);
-            }
-            navigate(`/p/${projectId}/canvas`);
+        const project = allProjects.find((candidate) => candidate.id === projectId);
+        if (!project) {
+            return;
         }
-    };
 
-    const handleWorkspaceSelection = (workspaceId: string) => {
-        if (selectedProject) {
-            setLastOpenedProject(workspaceId, selectedProject.id);
-            navigate(`/p/${selectedProject.id}/canvas`);
-            setWorkspaceDialogOpen(false);
-            setSelectedProject(null);
+        const workspaceId = project.ownerWorkspaceId || workspaces[0]?.id;
+        if (workspaceId) {
+            setLastOpenedProject(workspaceId, projectId);
         }
+        navigate(`/p/${projectId}/canvas`);
     };
 
     const handleWorkspaceClick = (workspaceId: string) => {
@@ -145,18 +93,6 @@ export default function Component() {
         }
     };
 
-    const handleWorkflowClick = (workflowId: string) => {
-        navigate(`/workflows/${workflowId}`);
-    };
-
-    const handleSearchClick = () => {
-        window.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'k',
-            metaKey: true,
-            bubbles: true
-        }));
-    };
-
     // --- RENDER ---
 
     if (isLoading) {
@@ -174,7 +110,7 @@ export default function Component() {
     if (isEmpty) {
         return (
             <EmptyStateView
-                onCreateProject={() => navigate('/projects/new')}
+                onCreateProject={() => navigate('/projects')}
                 onSkip={() => navigate('/projects')}
             />
         );
@@ -182,37 +118,157 @@ export default function Component() {
 
     return (
         <div className="h-full overflow-auto bg-bg-default">
-            <DashboardView
-                priorityTasks={priorityTasks}
-                recentProjects={allProjects}
-                recentWorkflows={workflows}
-                workspaces={workspaces}
-                onTaskClick={handleTaskClick}
-                onViewAllTasks={() => { }} // NOTE: Navigate to tasks inbox
-                onSearchClick={handleSearchClick}
-                onProjectClick={handleProjectClick}
-                onCreateProject={() => navigate('/projects/new')}
-                onViewAllProjects={() => navigate('/projects')}
-                onWorkflowClick={handleWorkflowClick}
-                onCreateWorkflow={() => navigate('/workflows/new')}
-                onViewAllWorkflows={() => navigate('/workflows')}
-                onWorkspaceClick={handleWorkspaceClick}
-                onCreateWorkspace={() => navigate('/workspaces')}
-                onViewAllWorkspaces={() => navigate('/workspaces')}
-            />
+            <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+                <div className="flex flex-col gap-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary-600">
+                        Workspace Command Center
+                    </p>
+                    <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-semibold text-text-primary">Resume work without detours</h1>
+                            <p className="max-w-2xl text-sm text-text-secondary">
+                                The dashboard only exposes the next truthful actions: continue a project,
+                                create one, or review blockers in your current workspace.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/projects')}
+                            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Project
+                        </button>
+                    </div>
+                </div>
 
-            {/* Workspace Selection Dialog */}
-            <WorkspaceSelectionDialog
-                open={workspaceDialogOpen}
-                projectName={selectedProject?.name || ''}
-                workspaces={projectWorkspaces}
-                defaultWorkspaceId={projectWorkspaces.find(w => w.isOwner)?.id}
-                onSelect={handleWorkspaceSelection}
-                onCancel={() => {
-                    setWorkspaceDialogOpen(false);
-                    setSelectedProject(null);
-                }}
-            />
+                <div className="grid gap-4 md:grid-cols-3">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const [latestProject] = recentProjects;
+                            if (latestProject) {
+                                handleProjectClick(latestProject.id);
+                                return;
+                            }
+                            navigate('/projects');
+                        }}
+                        className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
+                    >
+                        <div className="mb-4 inline-flex rounded-full bg-primary-50 p-2 text-primary-600 dark:bg-primary-900/30 dark:text-primary-300">
+                            <FolderOpen className="h-5 w-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-text-primary">Resume Project</h2>
+                        <p className="mt-2 text-sm text-text-secondary">
+                            {recentProjects[0]
+                                ? `Continue ${recentProjects[0].name} in the canvas.`
+                                : 'Open your project workspace and continue where you left off.'}
+                        </p>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate('/projects')}
+                        className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
+                    >
+                        <div className="mb-4 inline-flex rounded-full bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            <Plus className="h-5 w-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-text-primary">Create Project</h2>
+                        <p className="mt-2 text-sm text-text-secondary">
+                            Start a new product in the active workspace with a persisted, API-backed create flow.
+                        </p>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate('/workspaces')}
+                        className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
+                    >
+                        <div className="mb-4 inline-flex rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
+                            <ShieldAlert className="h-5 w-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-text-primary">Review Blockers</h2>
+                        <p className="mt-2 text-sm text-text-secondary">
+                            Check workspace availability, loading failures, and unresolved setup issues before continuing.
+                        </p>
+                    </button>
+                </div>
+
+                <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-semibold text-text-primary">Recent Projects</h2>
+                            <p className="mt-1 text-sm text-text-secondary">
+                                Jump directly back into the latest project workspaces.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/projects')}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
+                        >
+                            View all projects
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <div className="mt-6 grid gap-3">
+                        {recentProjects.map((project) => (
+                            <button
+                                key={project.id}
+                                type="button"
+                                onClick={() => handleProjectClick(project.id)}
+                                className="flex items-center justify-between rounded-xl border border-divider px-4 py-3 text-left transition-colors hover:bg-bg-default"
+                            >
+                                <div>
+                                    <p className="font-medium text-text-primary">{project.name}</p>
+                                    <p className="text-sm text-text-secondary">
+                                        {project.description || 'No description yet'}
+                                    </p>
+                                </div>
+                                <span className="text-xs uppercase tracking-[0.14em] text-text-secondary">
+                                    {project.type}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-semibold text-text-primary">Workspaces</h2>
+                            <p className="mt-1 text-sm text-text-secondary">
+                                Switch context only when needed.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/workspaces')}
+                            className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
+                        >
+                            Manage workspaces
+                        </button>
+                    </div>
+
+                    <div className="mt-6 grid gap-3 md:grid-cols-2">
+                        {workspaces.map((workspace) => (
+                            <button
+                                key={workspace.id}
+                                type="button"
+                                onClick={() => handleWorkspaceClick(workspace.id)}
+                                className="rounded-xl border border-divider px-4 py-4 text-left transition-colors hover:bg-bg-default"
+                            >
+                                <p className="font-medium text-text-primary">{workspace.name}</p>
+                                <p className="mt-1 text-sm text-text-secondary">
+                                    {workspace.description || 'No description yet'}
+                                </p>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </section>
         </div>
     );
 }

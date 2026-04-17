@@ -17,12 +17,6 @@ type Pages = {
   "/login": {
     params: {};
   };
-  "/register": {
-    params: {};
-  };
-  "/forgot-password": {
-    params: {};
-  };
   "/onboarding": {
     params: {};
   };
@@ -83,11 +77,11 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/register" | "/forgot-password" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/_root.tsx": {
     id: "routes/_root";
-    page: "/" | "/login" | "/register" | "/forgot-password" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/dashboard.tsx": {
     id: "routes/dashboard";
@@ -96,14 +90,6 @@ type RouteFiles = {
   "routes/login.tsx": {
     id: "routes/login";
     page: "/login";
-  };
-  "routes/register.tsx": {
-    id: "routes/register";
-    page: "/register";
-  };
-  "routes/forgot-password.tsx": {
-    id: "routes/forgot-password";
-    page: "/forgot-password";
   };
   "routes/onboarding.tsx": {
     id: "routes/onboarding";
@@ -172,8 +158,6 @@ type RouteModules = {
   "routes/_root": typeof import("./src/routes/_root.tsx");
   "routes/dashboard": typeof import("./src/routes/dashboard.tsx");
   "routes/login": typeof import("./src/routes/login.tsx");
-  "routes/register": typeof import("./src/routes/register.tsx");
-  "routes/forgot-password": typeof import("./src/routes/forgot-password.tsx");
   "routes/onboarding": typeof import("./src/routes/onboarding.tsx");
   "routes/_shell": typeof import("./src/routes/_shell.tsx");
   "routes/app/workspaces": typeof import("./src/routes/app/workspaces.tsx");

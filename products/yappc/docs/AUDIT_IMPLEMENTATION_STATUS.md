@@ -42,7 +42,7 @@
 | 3 | MUI removal | ✅ Done | Zero MUI imports in web app |
 | 4 | Feature flag system (GrowthBook) | ✅ Done | `FeatureFlagProvider.tsx` + docs |
 | 5 | API client factory | ✅ Done | `api-client.ts` with auth headers |
-| 6 | Database migration runner (Flyway) | ✅ Done | Wired into `ApiApplication.main()` |
+| 6 | Database migration runner authority | ✅ Done | Active YAPPC API deployment docs now point to the Prisma migration workflow in `frontend/apps/api` |
 | 7 | Canvas component boundary | ✅ Done | `COMPONENT_BOUNDARY.md` |
 
 ---

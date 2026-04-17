@@ -67,7 +67,7 @@ test.describe('Golden Path - Project Management Flow', () => {
 
   test('Complete project lifecycle - Create to Deploy', async ({ page }) => {
     // 1. Navigate to projects directly instead of relying on nav button
-    await page.goto('/app/projects');
+    await page.goto('/projects');
     await expect(page.locator('h1, h2')).toContainText('Projects');
 
     // 2. Create new project
@@ -77,11 +77,10 @@ test.describe('Golden Path - Project Management Flow', () => {
       '[data-testid="project-description-input"]',
       TEST_PROJECT.description
     );
-    await page.selectOption('[data-testid="project-template-select"]', 'react');
     await projectPage.safeClick('[data-testid="create-project-submit"]');
 
-    // 3. Wait for navigation to overview page
-    await page.waitForURL(/\/app\/w\/.*\/p\/.*\/overview/, { timeout: 10000 });
+    // 3. Wait for navigation to the project canvas
+    await page.waitForURL(/\/p\/.*\/canvas/, { timeout: 10000 });
 
     // Wait for the overview page to load
     await page.waitForTimeout(2000);
@@ -108,11 +107,11 @@ test.describe('Golden Path - Project Management Flow', () => {
     // Wait a bit for the component to render and check what's on the page
     await page.waitForTimeout(1000);
 
-    // Check if the overview page loaded correctly
+    // Check if the canvas page loaded correctly
     const pageText = await page.textContent('body');
     console.log(
-      'Page contains project overview:',
-      pageText?.includes('overview') || pageText?.includes('Overview')
+      'Page contains canvas:',
+      pageText?.includes('canvas') || pageText?.includes('Canvas')
     );
     console.log(
       'Page contains project name:',
@@ -128,7 +127,7 @@ test.describe('Golden Path - Project Management Flow', () => {
       console.log(`  - ${testid}`);
     }
 
-    // Check for success indicators - either toast or successful page load
+    // Check for success indicators - either toast or successful route transition
     try {
       await expect(page.locator('[data-testid="success-toast"]')).toBeVisible({
         timeout: 5000,
@@ -205,43 +204,20 @@ test.describe('Golden Path - Project Management Flow', () => {
 
     await expect(page.locator('h1')).toContainText(TEST_PROJECT.name);
 
-    // 4. Navigate through project tabs
-    await projectPage.clickOverviewTab();
-    await expect(
-      page.locator('[data-testid="project-overview"]')
-    ).toBeVisible();
-
-    await projectPage.clickBuildsTab();
-    await expect(page.locator('[data-testid="builds-list"]')).toBeVisible();
+    // 4. Navigate through project tabs that exist in the active router
+    await page.goto(page.url().replace(/\/canvas$/, '/lifecycle'));
+    await expect(page.locator('[data-testid="lifecycle-insights-section"]')).toBeVisible();
 
     await projectPage.clickDeployTab();
     await expect(
       page.locator('[data-testid="deployment-environments"]')
     ).toBeVisible();
 
-    // 5. Trigger a build
-    // Ensure we're on the builds route before triggering a build; avoid extra tab clicks which sometimes race
-    if (!page.url().includes('/build')) {
-      // navigate directly to the build path for this project
-      const url = new URL(page.url());
-      const parts = url.pathname.split('/').filter(Boolean);
-      if (parts.length > 0) {
-        parts[parts.length - 1] = 'build';
-        const buildUrl = `${url.origin}/${parts.join('/')}`;
-        if (!page.isClosed())
-          await page.goto(buildUrl, { waitUntil: 'domcontentloaded' });
-      }
-    }
-    // Use POM trigger to ensure any overlays are handled
-    await projectPage.triggerBuild();
-    await expect(page.locator('[data-testid="build-progress"]')).toBeVisible();
-
-    // 6. Deploy to staging
+    // 5. Deploy to staging
     await projectPage.clickDeployTab();
-    // Use POM deploy helpers which use safeClick and overlay removal
     await projectPage.deployToStaging();
 
-    // 7. Monitor deployment
+    // 6. Monitor deployment
     await projectPage.clickMonitorTab();
     await expect(
       page.locator('[data-testid="metrics-dashboard"]')

@@ -27,13 +27,14 @@ function useOnboardingCheck() {
 export function Component() {
     const navigate = useNavigate();
     const isOnboardingComplete = useOnboardingCheck();
+    const redirectTarget = '/workspaces';
 
     // Redirect if already onboarded
     useEffect(() => {
         if (isOnboardingComplete) {
-            navigate('/app', { replace: true });
+            navigate(redirectTarget, { replace: true });
         }
-    }, [isOnboardingComplete, navigate]);
+    }, [isOnboardingComplete, navigate, redirectTarget]);
 
     // Don't render if already complete (prevents flash)
     if (isOnboardingComplete) {
@@ -43,9 +44,9 @@ export function Component() {
     return (
         <OnboardingFlow
             onComplete={() => {
-                // Will be called after workspace is created
+                navigate(redirectTarget, { replace: true });
             }}
-            redirectTo="/app"
+            redirectTo={redirectTarget}
         />
     );
 }

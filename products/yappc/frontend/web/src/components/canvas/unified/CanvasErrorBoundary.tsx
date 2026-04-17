@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CanvasErrorBoundary - Error boundary for canvas rendering
  * 

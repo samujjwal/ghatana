@@ -15,7 +15,6 @@ import { useNavigation, useLocation } from "react-router";
 
 import { RouteErrorBoundary } from "../components/route/ErrorBoundary";
 import { RouteProgressBar } from "../components/route/RouteProgressBar";
-import { ShortcutProvider } from "../contexts/ShortcutContext";
 import { PersonaProvider } from "../context/PersonaContext";
 import { HydrateFallback } from "../components/route/HydrateFallback";
 import { AppThemeProvider } from "../theme";
@@ -71,11 +70,9 @@ export function Layout({ children }: { children: ReactNode }) {
             <main id="main-content" role="main">
                 <AppThemeProvider>
                     <PersonaProvider>
-                        <ShortcutProvider>
-                            <Suspense fallback={<HydrateFallback />}>
-                                {children}
-                            </Suspense>
-                        </ShortcutProvider>
+                        <Suspense fallback={<HydrateFallback />}>
+                            {children}
+                        </Suspense>
                     </PersonaProvider>
                 </AppThemeProvider>
             </main>

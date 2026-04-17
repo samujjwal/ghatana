@@ -6,28 +6,15 @@
  */
 
 import { parseJsonResponse as sharedParseJsonResponse } from '@/lib/http';
+import type { components } from '@/clients/generated/openapi';
 import { logger } from '../../utils/Logger';
 
-type ApiRole = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
-
-type ApiAuthUser = {
-    id: string;
-    email: string;
-    name: string;
-    role: ApiRole;
-    avatar?: string;
-};
-
-type ApiAuthTokens = {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-};
-
-type ApiAuthResponse = {
-    user: ApiAuthUser;
-    tokens: ApiAuthTokens;
-};
+type ApiRole = components['schemas']['AuthRole'];
+type ApiAuthUser = components['schemas']['AuthUser'];
+type ApiAuthTokens = components['schemas']['RefreshTokenResponse'];
+type ApiAuthResponse = components['schemas']['LoginResponse'];
+type ApiLoginRequest = components['schemas']['LoginRequest'];
+type ApiRefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
 
 type ApiProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'username' | 'email' | 'avatar'>>;
 
@@ -167,8 +154,7 @@ export class AuthService {
                 body: JSON.stringify({
                     email: credentials.email,
                     password: credentials.password,
-                    rememberMe: credentials.rememberMe || false,
-                }),
+                } satisfies ApiLoginRequest),
             });
 
             if (!response.ok) {
@@ -235,40 +221,15 @@ export class AuthService {
                 return { success: false, error: 'All fields are required' };
             }
 
-            const name = `${userData.firstName} ${userData.lastName}`.trim() || userData.username;
-
-            // Call registration API
-            const response = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: userData.email,
-                    password: userData.password,
-                    name,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await readErrorResponse(response);
-
-                if (response.status === 409) {
-                    return { success: false, error: 'Username or email already exists' };
-                }
-
-                if (response.status === 422) {
-                    return { success: false, error: errorData.message || 'Invalid data provided' };
-                }
-
-                throw new Error(`Registration failed: ${response.statusText}`);
-            }
-
-            // Auto-login after successful registration
-            return this.login({
+            logger.warn('Registration route is disabled because no backend endpoint is available', 'auth', {
+                username: userData.username,
                 email: userData.email,
-                password: userData.password,
             });
+
+            return {
+                success: false,
+                error: 'Registration is not available in this deployment',
+            };
 
         } catch (error) {
             logger.error('Registration error', 'auth', {
@@ -294,18 +255,13 @@ export class AuthService {
 
             logger.info('Forgot-password request', 'auth', { email });
 
-            const response = await fetch('/api/auth/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+            logger.warn('Forgot-password route is disabled because no backend endpoint is available', 'auth', {
+                email,
             });
-
-            if (!response.ok) {
-                const err = await readErrorResponse(response);
-                return { success: false, error: err.message || 'Failed to send reset email' };
-            }
-
-            return { success: true };
+            return {
+                success: false,
+                error: 'Password reset is not available in this deployment',
+            };
         } catch (error) {
             logger.error('Forgot-password error', 'auth', {
                 error: error instanceof Error ? error.message : String(error),
@@ -404,7 +360,7 @@ export class AuthService {
                 },
                 body: JSON.stringify({
                     refreshToken: this.currentSession.refreshToken,
-                }),
+                } satisfies ApiRefreshTokenRequest),
             });
 
             if (!response.ok) {

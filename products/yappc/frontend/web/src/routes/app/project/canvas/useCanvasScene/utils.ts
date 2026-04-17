@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Local minimal types to avoid importing project type aliases from the monorepo.
  */

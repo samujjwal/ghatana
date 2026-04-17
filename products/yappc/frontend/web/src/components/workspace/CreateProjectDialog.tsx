@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Create Project Dialog
  * 
@@ -11,13 +10,14 @@
  * @doc.pattern Modal Component
  */
 import { useState, useEffect, useRef } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom } from 'jotai';
 
 import {
     workspaceAtom,
-    addOwnedProjectAtom,
     type ProjectWithOwnership
 } from '../../state/atoms/workspaceAtom';
+import { useCreateProject, useNameSuggestions } from '../../hooks/useWorkspaceData';
+import { useProgressiveDisclosure } from '../../hooks/useProgressiveDisclosure';
 
 interface CreateProjectDialogProps {
     isOpen: boolean;
@@ -26,6 +26,20 @@ interface CreateProjectDialogProps {
 }
 
 type ProjectType = 'UI' | 'BACKEND' | 'MOBILE' | 'DESKTOP' | 'FULL_STACK';
+
+interface AiProjectSuggestion {
+    name: string;
+    type: ProjectType;
+    rationale: string;
+    summary: string;
+    recommendations: string[];
+    relatedProjects: Array<{
+        id: string;
+        name: string;
+        type: string;
+        ownerWorkspaceName: string;
+    }>;
+}
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: string; description: string }[] = [
     { value: 'FULL_STACK', label: 'Full Stack', icon: 'FS', description: 'Complete web application' },
@@ -41,76 +55,93 @@ export function CreateProjectDialog({
     onCreated
 }: CreateProjectDialogProps) {
     const [state] = useAtom(workspaceAtom);
-    const addProject = useSetAtom(addOwnedProjectAtom);
+    const createProject = useCreateProject();
+    const { suggestProject, suggestProjectSetup } = useNameSuggestions();
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState<ProjectType>('FULL_STACK');
-    const [isCreating, setIsCreating] = useState(false);
-    const [aiSuggestion, setAiSuggestion] = useState<{ name: string; type: ProjectType } | null>(null);
+    const [aiSuggestion, setAiSuggestion] = useState<AiProjectSuggestion | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
+    const {
+        isFeatureVisible,
+        showFeature,
+        dismissFeature,
+    } = useProgressiveDisclosure({
+        experienceLevel: 'intermediate',
+        storageKey: 'create-project-dialog-disclosure',
+        features: [
+            {
+                featureId: 'advanced-ai-context',
+                minExperienceLevel: 'advanced',
+                showHint: true,
+            },
+        ],
+    });
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const isAdvancedAiContextVisible = isFeatureVisible('advanced-ai-context');
 
     // Focus input and generate suggestion on open
     useEffect(() => {
         if (isOpen) {
             setTimeout(() => inputRef.current?.focus(), 100);
-            generateAiSuggestion();
+            void generateAiSuggestion();
         } else {
             setName('');
             setDescription('');
             setType('FULL_STACK');
             setAiSuggestion(null);
+            setSubmitError(null);
+            dismissFeature('advanced-ai-context');
         }
-    }, [isOpen]);
+    }, [dismissFeature, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || name.trim()) {
+            return;
+        }
+
+        void generateAiSuggestion();
+    }, [isOpen, type]);
+
+    const normalizedName = name.trim().toLowerCase();
+    const duplicateProject = state.ownedProjects.find(
+        (project) => project.name.trim().toLowerCase() === normalizedName
+    );
 
     // AI-like suggestion based on existing projects
-    const generateAiSuggestion = () => {
-        const existingNames = state.ownedProjects.map(p => p.name.toLowerCase());
-        const workspaceName = state.currentWorkspace?.name || '';
-
-        // Smart naming based on workspace context
-        const prefixes = [
-            workspaceName.split(' ')[0],
-            'App',
-            'Service',
-            'Platform',
-            'Module',
-        ];
-
-        const suffixes = [
-            'v2',
-            'Core',
-            'Main',
-            'Pro',
-            '',
-        ];
-
-        // Find a unique name
-        for (const prefix of prefixes) {
-            for (const suffix of suffixes) {
-                const candidate = `${prefix} ${suffix}`.trim();
-                if (!existingNames.includes(candidate.toLowerCase()) && candidate.length > 2) {
-                    // Suggest type based on existing projects in workspace
-                    const typeCount = state.ownedProjects.reduce((acc, p) => {
-                        acc[p.type] = (acc[p.type] || 0) + 1;
-                        return acc;
-                    }, {} as Record<string, number>);
-
-                    // Suggest a type that's underrepresented
-                    let suggestedType: ProjectType = 'FULL_STACK';
-                    if (!typeCount['BACKEND']) suggestedType = 'BACKEND';
-                    else if (!typeCount['MOBILE']) suggestedType = 'MOBILE';
-                    else if (!typeCount['UI']) suggestedType = 'UI';
-
-                    setAiSuggestion({ name: candidate, type: suggestedType });
-                    return;
-                }
-            }
+    const generateAiSuggestion = async () => {
+        if (!state.currentWorkspace) {
+            return;
         }
 
-        // Fallback
-        setAiSuggestion({ name: `Project ${state.ownedProjects.length + 1}`, type: 'FULL_STACK' });
+        setIsSuggestionLoading(true);
+
+        try {
+            const existingNames = state.ownedProjects.map((project) => project.name.toLowerCase());
+            const setupSuggestion = await suggestProjectSetup(
+                state.currentWorkspace.id,
+                description.trim() || undefined,
+                type
+            );
+            const fallbackName = await suggestProject(state.currentWorkspace.id, type);
+            const suggestedName = existingNames.includes(setupSuggestion.suggestion.trim().toLowerCase())
+                ? fallbackName
+                : setupSuggestion.suggestion;
+
+            setAiSuggestion({
+                name: suggestedName,
+                type: setupSuggestion.inferredType as ProjectType,
+                rationale: setupSuggestion.rationale,
+                summary: setupSuggestion.summary,
+                recommendations: setupSuggestion.recommendations,
+                relatedProjects: setupSuggestion.relatedProjects,
+            });
+        } finally {
+            setIsSuggestionLoading(false);
+        }
     };
 
     const handleUseSuggestion = () => {
@@ -120,39 +151,30 @@ export function CreateProjectDialog({
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!name.trim() || !state.currentWorkspace) return;
 
-        setIsCreating(true);
+        setSubmitError(null);
 
         try {
-            // NOTE: Replace with actual API call
-            const newProject: ProjectWithOwnership = {
-                id: `prj_${Date.now()}`,
+            const newProject = await createProject.mutateAsync({
                 name: name.trim(),
                 description: description.trim() || undefined,
                 type,
-                status: 'DRAFT',
                 ownerWorkspaceId: state.currentWorkspace.id,
-                isDefault: false,
-                isOwned: true,
-                aiSummary: undefined,
-                aiNextActions: ['Set up project structure', 'Define initial requirements'],
-                aiHealthScore: undefined,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
+            });
 
-            addProject(newProject);
-            onCreated?.(newProject);
+            onCreated?.({ ...newProject, isOwned: true } as ProjectWithOwnership);
             onClose();
-        } catch (error) {
-            console.error('Failed to create project:', error);
-        } finally {
-            setIsCreating(false);
+        } catch (error: unknown) {
+            setSubmitError(
+                error instanceof Error ? error.message : 'Failed to create project'
+            );
         }
     };
+
+    const isCreating = createProject.isPending;
 
     if (!isOpen) return null;
 
@@ -199,18 +221,71 @@ export function CreateProjectDialog({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="px-6 py-4 space-y-5">
+                <form id="create-project-form" onSubmit={handleSubmit} className="px-6 py-4 space-y-5">
+                    {submitError && (
+                        <div
+                            role="alert"
+                            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                        >
+                            {submitError}
+                        </div>
+                    )}
+
                     {/* AI Suggestion Banner */}
                     {aiSuggestion && !name && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary-50 to-violet-50 dark:from-primary-900/20 dark:to-violet-900/20 rounded-lg">
                             <span className="text-xl">✨</span>
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-grey-800 dark:text-grey-200">
-                                    {aiSuggestion.name}
+                                    {isSuggestionLoading ? 'Finding a strong project name...' : aiSuggestion.name}
                                 </p>
                                 <p className="text-xs text-grey-500 dark:text-grey-400">
                                     Suggested as {PROJECT_TYPES.find(t => t.value === aiSuggestion.type)?.label}
                                 </p>
+                                <p className="mt-1 text-xs text-grey-600 dark:text-grey-300">
+                                    {aiSuggestion.summary}
+                                </p>
+                                {!isAdvancedAiContextVisible && (
+                                    <button
+                                        type="button"
+                                        onClick={() => showFeature('advanced-ai-context')}
+                                        className="mt-2 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
+                                        data-testid="show-advanced-ai-context"
+                                    >
+                                        Show AI context
+                                    </button>
+                                )}
+                                {isAdvancedAiContextVisible && (
+                                    <div className="mt-2" data-testid="advanced-ai-context-panel">
+                                        <p className="text-xs text-grey-500 dark:text-grey-400">
+                                            {aiSuggestion.rationale}
+                                        </p>
+                                        {aiSuggestion.recommendations.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {aiSuggestion.recommendations.map((recommendation) => (
+                                                    <span
+                                                        key={recommendation}
+                                                        className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] text-grey-600 shadow-sm dark:bg-grey-800/80 dark:text-grey-300"
+                                                    >
+                                                        {recommendation}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {aiSuggestion.relatedProjects.length > 0 && (
+                                            <div className="mt-3 rounded-md bg-white/70 px-3 py-2 text-xs text-grey-600 shadow-sm dark:bg-grey-900/40 dark:text-grey-300">
+                                                <p className="font-medium text-grey-700 dark:text-grey-200">Related projects in other workspaces</p>
+                                                <ul className="mt-1 space-y-1">
+                                                    {aiSuggestion.relatedProjects.map((project) => (
+                                                        <li key={project.id}>
+                                                            {project.name} in {project.ownerWorkspaceName} ({project.type})
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <button
                                 type="button"
@@ -252,6 +327,11 @@ export function CreateProjectDialog({
               "
                             required
                         />
+                        {duplicateProject && (
+                            <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
+                                A project named {duplicateProject.name} already exists in this workspace.
+                            </p>
+                        )}
                     </div>
 
                     {/* Project Type */}
@@ -303,6 +383,7 @@ export function CreateProjectDialog({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of this project..."
                             rows={2}
+                            data-testid="project-description-input"
                             className="
                 w-full px-4 py-2.5
                 bg-white dark:bg-grey-800
@@ -333,8 +414,8 @@ export function CreateProjectDialog({
                     </button>
                     <button
                         type="submit"
-                        onClick={handleSubmit}
-                        disabled={!name.trim() || isCreating}
+                        form="create-project-form"
+                        disabled={!name.trim() || isCreating || Boolean(duplicateProject)}
                         data-testid="create-project-submit"
                         className="
               px-4 py-2 text-sm font-medium

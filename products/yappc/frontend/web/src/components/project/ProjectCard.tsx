@@ -1,6 +1,4 @@
-// @ts-nocheck
-import { useNavigate } from 'react-router';
-import { Clock as AccessTime, ChevronRight, Folder } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Typography, Chip } from '@ghatana/design-system';
 
 interface Project {

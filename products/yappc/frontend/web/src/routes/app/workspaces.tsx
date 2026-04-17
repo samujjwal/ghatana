@@ -11,11 +11,16 @@
 
 import { useNavigate } from "react-router";
 import { Plus as Add, Settings, Users as Group, FolderOpen } from 'lucide-react';
-import { useWorkspaceContext } from "../../hooks/useWorkspaceData";
+import {
+    useCreateWorkspace,
+    useNameSuggestions,
+    useWorkspaceContext,
+} from "../../hooks/useWorkspaceData";
 import { useSetAtom } from "jotai";
 import { setWorkspaceBreadcrumbAtom } from "../../state/atoms/breadcrumbAtom";
 import { ApiUnavailableFallback } from "../../components/route/ApiUnavailableFallback";
-import { useCallback } from "react";
+import { CreateWorkspaceDialog } from "../../components/workspace/CreateWorkspaceDialog";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -31,21 +36,76 @@ function getErrorMessage(error: unknown): string {
  */
 export default function Component() {
     const navigate = useNavigate();
-    const { workspaces, isLoading, error } = useWorkspaceContext();
+    const { workspaces, isLoading, error, switchWorkspace } = useWorkspaceContext();
+    const createWorkspace = useCreateWorkspace();
+    const { suggestWorkspace } = useNameSuggestions();
     const setWorkspaceBreadcrumb = useSetAtom(setWorkspaceBreadcrumbAtom);
+    const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
+    const [isAutoCreatingStarter, setIsAutoCreatingStarter] = useState(false);
+    const hasAttemptedStarterCreation = useRef(false);
 
     const handleSelectWorkspace = useCallback((workspaceId: string) => {
+        switchWorkspace(workspaceId);
         setWorkspaceBreadcrumb({ id: workspaceId, name: workspaces.find(w => w.id === workspaceId)?.name || 'Workspace' });
         navigate(`/projects`);
-    }, [workspaces, setWorkspaceBreadcrumb, navigate]);
+    }, [navigate, setWorkspaceBreadcrumb, switchWorkspace, workspaces]);
 
     const handleCreateWorkspace = useCallback(() => {
-        navigate("/workspaces/new");
-    }, [navigate]);
+        setShowCreateWorkspace(true);
+    }, []);
+
+    const handleWorkspaceCreated = useCallback((workspace: { id: string; name: string }) => {
+        switchWorkspace(workspace.id);
+        setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
+        navigate('/projects');
+    }, [navigate, setWorkspaceBreadcrumb, switchWorkspace]);
 
     const handleRetry = useCallback(() => {
         window.location.reload();
     }, []);
+
+    useEffect(() => {
+        if (
+            hasAttemptedStarterCreation.current ||
+            isLoading ||
+            !!error ||
+            workspaces.length > 0 ||
+            createWorkspace.isPending
+        ) {
+            return;
+        }
+
+        hasAttemptedStarterCreation.current = true;
+        setIsAutoCreatingStarter(true);
+
+        const createStarterWorkspace = async (): Promise<void> => {
+            try {
+                const suggestedName = await suggestWorkspace();
+                const workspace = await createWorkspace.mutateAsync({
+                    name: suggestedName,
+                    createDefaultProject: true,
+                });
+                switchWorkspace(workspace.id);
+                setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
+                navigate('/projects');
+            } catch (starterCreationError) {
+                console.error('Failed to auto-create starter workspace:', starterCreationError);
+            } finally {
+                setIsAutoCreatingStarter(false);
+            }
+        };
+
+        void createStarterWorkspace();
+    }, [
+        createWorkspace,
+        error,
+        isLoading,
+        navigate,
+        setWorkspaceBreadcrumb,
+        suggestWorkspace,
+        switchWorkspace,
+        workspaces.length,
+    ]);
 
     if (isLoading) {
         return (
@@ -168,6 +228,14 @@ export default function Component() {
                             </div>
                         ))}
                     </div>
+                ) : isAutoCreatingStarter || createWorkspace.isPending ? (
+                    <div className="text-center py-12" data-testid="starter-workspace-creation">
+                        <div className="mb-4 flex justify-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+                        </div>
+                        <h2 className="text-xl font-semibold text-text-primary mb-2">Creating your starter workspace</h2>
+                        <p className="text-text-secondary">Preparing a default workspace and starter project for you.</p>
+                    </div>
                 ) : (
                     <div className="text-center py-12">
                         <div className="mb-4">
@@ -185,6 +253,12 @@ export default function Component() {
                     </div>
                 )}
             </div>
+
+            <CreateWorkspaceDialog
+                isOpen={showCreateWorkspace}
+                onClose={() => setShowCreateWorkspace(false)}
+                onCreated={handleWorkspaceCreated}
+            />
         </div>
     );
 }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * UnifiedToolbar - Tool Selection Toolbar
  */

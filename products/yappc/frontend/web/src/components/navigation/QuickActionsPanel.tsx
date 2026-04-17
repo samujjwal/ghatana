@@ -104,19 +104,10 @@ export function QuickActionsPanel({
             label: 'New Project',
             icon: <Folder className="w-4 h-4" />,
             onClick: () => {
-                onCreateProject ? onCreateProject() : navigate('/app');
+                onCreateProject ? onCreateProject() : navigate('/projects');
                 setIsOpen(false);
             },
             shortcut: '⌘N',
-        },
-        {
-            id: 'new-workflow',
-            label: 'New Workflow',
-            icon: <WorkOutline className="w-4 h-4" />,
-            onClick: () => {
-                onCreateWorkflow ? onCreateWorkflow() : navigate('/app/workflows');
-                setIsOpen(false);
-            },
         },
         {
             id: 'new-workspace',
@@ -126,13 +117,25 @@ export function QuickActionsPanel({
                 if (onCreateWorkspace) {
                     onCreateWorkspace();
                 } else {
-                    navigate('/app/workspaces');
+                    navigate('/workspaces');
                 }
                 setIsOpen(false);
             },
             divider: true,
         },
     ];
+
+    if (onCreateWorkflow) {
+        createActions.splice(1, 0, {
+            id: 'new-workflow',
+            label: 'New Workflow',
+            icon: <WorkOutline className="w-4 h-4" />,
+            onClick: () => {
+                onCreateWorkflow();
+                setIsOpen(false);
+            },
+        });
+    }
 
     // Project-specific actions (only show when in project context)
     const projectActions: QuickAction[] = projectId ? [
@@ -330,19 +333,10 @@ export function NewButton({
             label: 'Project',
             icon: <Folder className="w-4 h-4" />,
             onClick: () => {
-                onCreateProject ? onCreateProject() : navigate('/app');
+                onCreateProject ? onCreateProject() : navigate('/projects');
                 setIsOpen(false);
             },
             shortcut: '⌘N',
-        },
-        {
-            id: 'new-workflow',
-            label: 'Workflow',
-            icon: <WorkOutline className="w-4 h-4" />,
-            onClick: () => {
-                onCreateWorkflow ? onCreateWorkflow() : navigate('/app/workflows');
-                setIsOpen(false);
-            },
         },
         {
             id: 'new-workspace',
@@ -352,12 +346,24 @@ export function NewButton({
                 if (onCreateWorkspace) {
                     onCreateWorkspace();
                 } else {
-                    navigate('/app/workspaces');
+                    navigate('/workspaces');
                 }
                 setIsOpen(false);
             },
         },
     ];
+
+    if (onCreateWorkflow) {
+        createActions.splice(1, 0, {
+            id: 'new-workflow',
+            label: 'Workflow',
+            icon: <WorkOutline className="w-4 h-4" />,
+            onClick: () => {
+                onCreateWorkflow();
+                setIsOpen(false);
+            },
+        });
+    }
 
     return (
         <div className={`relative ${className}`}>

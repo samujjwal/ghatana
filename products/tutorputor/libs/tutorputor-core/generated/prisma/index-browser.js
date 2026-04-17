@@ -1962,6 +1962,43 @@ exports.Prisma.KernelPluginScalarFieldEnum = {
   kernelType: 'kernelType',
   capabilities: 'capabilities',
   dependencies: 'dependencies',
+  signature: 'signature',
+  publicKey: 'publicKey',
+  algorithm: 'algorithm',
+  signedAt: 'signedAt',
+  signerKeyId: 'signerKeyId',
+  codeHash: 'codeHash',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MarketplaceReviewScalarFieldEnum = {
+  id: 'id',
+  kernelId: 'kernelId',
+  submitterId: 'submitterId',
+  reviewerId: 'reviewerId',
+  status: 'status',
+  priority: 'priority',
+  submittedAt: 'submittedAt',
+  assignedAt: 'assignedAt',
+  completedAt: 'completedAt',
+  criteria: 'criteria',
+  comments: 'comments',
+  requestedChanges: 'requestedChanges'
+};
+
+exports.Prisma.StripeAccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  accountId: 'accountId',
+  status: 'status',
+  country: 'country',
+  email: 'email',
+  chargesEnabled: 'chargesEnabled',
+  payoutsEnabled: 'payoutsEnabled',
+  platformFeePercent: 'platformFeePercent',
+  onboardingCompletedAt: 'onboardingCompletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -2751,6 +2788,29 @@ exports.ReviewDecisionType = exports.$Enums.ReviewDecisionType = {
   ESCALATE: 'ESCALATE'
 };
 
+exports.ReviewStatus = exports.$Enums.ReviewStatus = {
+  PENDING: 'PENDING',
+  IN_REVIEW: 'IN_REVIEW',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  CHANGES_REQUESTED: 'CHANGES_REQUESTED'
+};
+
+exports.ReviewPriority = exports.$Enums.ReviewPriority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT'
+};
+
+exports.StripeAccountStatus = exports.$Enums.StripeAccountStatus = {
+  PENDING: 'PENDING',
+  ONBOARDING: 'ONBOARDING',
+  ENABLED: 'ENABLED',
+  RESTRICTED: 'RESTRICTED',
+  DISABLED: 'DISABLED'
+};
+
 exports.ContentAssetType = exports.$Enums.ContentAssetType = {
   EXPLAINER: 'EXPLAINER',
   MODULE: 'MODULE',
@@ -3033,6 +3093,8 @@ exports.Prisma.ModelName = {
   UserPoints: 'UserPoints',
   DeviceToken: 'DeviceToken',
   KernelPlugin: 'KernelPlugin',
+  MarketplaceReview: 'MarketplaceReview',
+  StripeAccount: 'StripeAccount',
   AutomationRule: 'AutomationRule',
   ContentAsset: 'ContentAsset',
   ContentAssetRevision: 'ContentAssetRevision',

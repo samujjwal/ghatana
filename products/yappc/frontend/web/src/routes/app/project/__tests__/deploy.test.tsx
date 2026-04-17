@@ -4,9 +4,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { LifecyclePhase } from '../../../../types/lifecycle';
 
-const { mockTransition, mockGetNextPhase } = vi.hoisted(() => ({
+const { mockTransition, mockGetNextPhase, mockCreateArtifact, mockUpdateArtifact } = vi.hoisted(() => ({
   mockTransition: vi.fn(),
   mockGetNextPhase: vi.fn(),
+  mockCreateArtifact: vi.fn(),
+  mockUpdateArtifact: vi.fn(),
 }));
 
 vi.mock('react-router', async (importOriginal) => {
@@ -35,8 +37,8 @@ vi.mock('../../../../components/deploy/DeployPanelHost', () => ({
 
 vi.mock('../../../../services/canvas/lifecycle', () => ({
   useLifecycleArtifacts: () => ({
-    createArtifact: vi.fn(),
-    updateArtifact: vi.fn(),
+    createArtifact: mockCreateArtifact,
+    updateArtifact: mockUpdateArtifact,
     artifacts: [],
   }),
   usePhaseGates: () => ({
@@ -57,6 +59,8 @@ describe('deploy route', () => {
   beforeEach(() => {
     mockTransition.mockReset();
     mockGetNextPhase.mockReset();
+    mockCreateArtifact.mockReset();
+    mockUpdateArtifact.mockReset();
   });
 
   afterEach(() => {
@@ -158,5 +162,37 @@ describe('deploy route', () => {
     expect((await screen.findByTestId('phase-preview-error')).textContent).toContain(
       'Build verification failed.'
     );
+  });
+
+  it('renders the operator control surface and creates an incident report', async () => {
+    mockGetNextPhase.mockResolvedValue({
+      projectId: 'project-1',
+      currentPhase: LifecyclePhase.GENERATE,
+      nextPhase: LifecyclePhase.RUN,
+      canAdvance: true,
+      readiness: 82,
+      blockers: [],
+      requiredArtifacts: ['Source Code'],
+      completedArtifacts: ['Source Code'],
+      estimatedReadyIn: 'Ready now',
+      estimatedReadyInHours: 0,
+      predictionConfidence: 0.88,
+      checkedAt: '2026-04-06T12:00:00.000Z',
+    });
+    mockCreateArtifact.mockResolvedValue(undefined);
+
+    render(<DeployRoute />);
+
+    expect(await screen.findByTestId('operator-controls-card')).toBeTruthy();
+    fireEvent.change(screen.getByTestId('operator-note-input'), {
+      target: { value: 'Watch error budget before promoting.' },
+    });
+    fireEvent.click(screen.getByTestId('operator-create-incident'));
+
+    await waitFor(() => {
+      expect(mockCreateArtifact).toHaveBeenCalledWith('incident_report', 'user-42');
+    });
+
+    expect(screen.getByTestId('operator-action-feedback').textContent).toContain('Incident report created');
   });
 });

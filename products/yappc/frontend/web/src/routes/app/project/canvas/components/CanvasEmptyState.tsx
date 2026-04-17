@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Empty canvas state display with call-to-action buttons

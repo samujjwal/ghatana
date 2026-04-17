@@ -7,6 +7,7 @@ import fastifyWebsocket from '@fastify/websocket';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { FastifyInstance } from 'fastify';
 
 // Import Observability
 import {
@@ -36,6 +37,7 @@ import {
   isDevAuthBypassEnabled,
 } from './middleware/dev-auth-config';
 import { authMiddleware } from './middleware/auth.middleware';
+import { auditMiddleware } from './middleware/audit.middleware';
 import { authRoutes } from './routes/auth';
 
 // Import WebSocket Service
@@ -47,12 +49,6 @@ startTracing();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = fastify({ logger: true });
-
-// Instrument Fastify with OpenTelemetry (manual instrumentation to avoid ESM/CommonJS issues)
-instrumentFastify(app);
-
-// Load Schema
 const projectRoot = process.cwd();
 
 const mainSchemaPathCandidates = [
@@ -94,90 +90,96 @@ const schema = createSchema({
   resolvers,
 });
 
-const yoga = createYoga({
-  schema,
-  logging: {
-    debug: (...args) => args.forEach((arg) => app.log.debug(arg)),
-    info: (...args) => args.forEach((arg) => app.log.info(arg)),
-    warn: (...args) => args.forEach((arg) => app.log.warn(arg)),
-    error: (...args) => args.forEach((arg) => app.log.error(arg)),
-  },
-  graphiql: true,
-});
-
-// @ts-ignore - CORS plugin type issue
-app.register(cors, {
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-});
-
-// Register WebSocket support
-await app.register(fastifyWebsocket);
-
-// Request tracking middleware
-app.addHook('onRequest', async (request, reply) => {
-  request.startTime = Date.now();
-});
-
-app.addHook('onResponse', async (request, reply) => {
-  const duration = (Date.now() - request.startTime!) / 1000;
-  const route = (request as unknown).routerPath || request.url;
-  const method = request.method;
-  const statusCode = reply.statusCode.toString();
-
-  httpRequestDuration.labels(method, route, statusCode).observe(duration);
-  httpRequestTotal.labels(method, route, statusCode).inc();
-});
-
-// Health check endpoint
-app.get('/health', async () => {
-  return {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-  };
-});
-
-// Prometheus metrics endpoint
-app.get('/metrics', async (request, reply) => {
-  reply.type(register.contentType);
-  return register.metrics();
-});
-
-// Initialize Real-Time Service
-const realTimeService = new RealTimeService();
-realTimeService.registerRoutes(app);
-
-// Register auth middleware before routes so protected endpoints enforce JWT.
-await authMiddleware(app);
-
-// Optional dev auth bypass. Must be explicitly enabled to avoid accidental open access.
-assertDevAuthBypassAllowed();
-if (isDevAuthBypassEnabled()) {
-  await devAuthBypass(app);
-  app.log.warn('Development auth bypass is enabled. Do not use in production.');
+export interface CreateAppOptions {
+  jwtSecret?: string;
 }
 
-// Register auth routes.
-app.register(authRoutes, { prefix: '/api' });
-app.register(authRoutes, { prefix: '/v1' });
+function registerApiPrefixes(
+  app: FastifyInstance,
+  route: Parameters<FastifyInstance['register']>[0]
+) {
+  app.register(route, { prefix: '/api' });
+  app.register(route, { prefix: '/v1' });
+  app.register(route, { prefix: '/api/v1' });
+}
 
-// Register REST API routes
-app.register(workspaceRoutes, { prefix: '/api' });
-app.register(projectRoutes, { prefix: '/api' });
-app.register(devsecopsRoutes, { prefix: '/api' });
-app.register(canvasRoutes, { prefix: '/api' });
-app.register(lifecycleRoutes, { prefix: '/api' });
-app.register(telemetryRoutes, { prefix: '/api' });
+export async function createApp(
+  options: CreateAppOptions = {}
+): Promise<FastifyInstance> {
+  if (options.jwtSecret) {
+    process.env.JWT_ACCESS_SECRET = options.jwtSecret;
+  }
 
-// Compatibility aliases (legacy docs): /v1/* maps to the same handlers as /api/*
-app.register(workspaceRoutes, { prefix: '/v1' });
-app.register(projectRoutes, { prefix: '/v1' });
-app.register(devsecopsRoutes, { prefix: '/v1' });
-app.register(canvasRoutes, { prefix: '/v1' });
-app.register(lifecycleRoutes, { prefix: '/v1' });
-app.register(telemetryRoutes, { prefix: '/v1' });
+  const app = fastify({ logger: true });
+
+  instrumentFastify(app);
+
+  const yoga = createYoga({
+    schema,
+    logging: {
+      debug: (...args) => args.forEach((arg) => app.log.debug(arg)),
+      info: (...args) => args.forEach((arg) => app.log.info(arg)),
+      warn: (...args) => args.forEach((arg) => app.log.warn(arg)),
+      error: (...args) => args.forEach((arg) => app.log.error(arg)),
+    },
+    graphiql: true,
+  });
+
+  // @ts-ignore - CORS plugin type issue
+  app.register(cors, {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
+  await app.register(fastifyWebsocket);
+
+  app.addHook('onRequest', async (request) => {
+    request.startTime = Date.now();
+  });
+
+  app.addHook('onResponse', async (request, reply) => {
+    const duration = (Date.now() - request.startTime!) / 1000;
+    const route = (request as unknown as { routerPath?: string }).routerPath || request.url;
+    const method = request.method;
+    const statusCode = reply.statusCode.toString();
+
+    httpRequestDuration.labels(method, route, statusCode).observe(duration);
+    httpRequestTotal.labels(method, route, statusCode).inc();
+  });
+
+  app.get('/health', async () => {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+    };
+  });
+
+  app.get('/metrics', async (_request, reply) => {
+    reply.type(register.contentType);
+    return register.metrics();
+  });
+
+  const realTimeService = new RealTimeService();
+  realTimeService.registerRoutes(app);
+
+  await authMiddleware(app);
+  await auditMiddleware(app);
+
+  assertDevAuthBypassAllowed();
+  if (isDevAuthBypassEnabled()) {
+    await devAuthBypass(app);
+    app.log.warn('Development auth bypass is enabled. Do not use in production.');
+  }
+
+  registerApiPrefixes(app, authRoutes);
+  registerApiPrefixes(app, workspaceRoutes);
+  registerApiPrefixes(app, projectRoutes);
+  registerApiPrefixes(app, devsecopsRoutes);
+  registerApiPrefixes(app, canvasRoutes);
+  registerApiPrefixes(app, lifecycleRoutes);
+  registerApiPrefixes(app, telemetryRoutes);
 
 async function readResponseText(response: Response): Promise<string> {
   try {
@@ -190,143 +192,184 @@ async function readResponseText(response: Response): Promise<string> {
 
 // Catch-all route for Java backend proxying
 // Handles /api/rail, /api/agents, and other Java backend routes
-app.all<{ Params: { '*': string } }>('/api/*', async (request, reply) => {
-  const javaBackendUrl =
-    process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
-  const targetUrl = new URL(javaBackendUrl + request.url);
+  app.all<{ Params: { '*': string } }>('/api/*', async (request, reply) => {
+    const javaBackendUrl =
+      process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
+    const targetUrl = new URL(javaBackendUrl + request.url);
 
-  try {
-    const response = await fetch(targetUrl.toString(), {
-      method: request.method as unknown,
-      headers: {
-        ...request.headers,
-        host: targetUrl.hostname,
-      },
-      body:
-        request.method !== 'GET' && request.method !== 'HEAD'
-          ? JSON.stringify((request as unknown).body ?? {})
-          : undefined,
-    } as unknown);
+    try {
+      const response = await fetch(targetUrl.toString(), {
+        method: request.method as unknown,
+        headers: {
+          ...request.headers,
+          host: targetUrl.hostname,
+        },
+        body:
+          request.method !== 'GET' && request.method !== 'HEAD'
+            ? JSON.stringify((request as unknown as { body?: unknown }).body ?? {})
+            : undefined,
+      } as unknown);
 
-    const contentType = response.headers.get('content-type');
-    const body = await readResponseText(response);
+      const contentType = response.headers.get('content-type');
+      const body = await readResponseText(response);
 
-    reply.code(response.status);
-    if (contentType) {
-      reply.header('content-type', contentType);
+      reply.code(response.status);
+      if (contentType) {
+        reply.header('content-type', contentType);
+      }
+      reply.send(body);
+    } catch (error) {
+      console.error('[Gateway] Proxy error:', error);
+      reply.status(503).send({
+        error: 'Service Unavailable',
+        message: 'Could not reach backend service',
+      });
     }
-    reply.send(body);
-  } catch (error) {
-    console.error('[Gateway] Proxy error:', error);
-    reply.status(503).send({
-      error: 'Service Unavailable',
-      message: 'Could not reach backend service',
-    });
-  }
-});
+  });
 
-// Compatibility proxy: /v1/* is forwarded to Java backend as /api/*
-app.all<{ Params: { '*': string } }>('/v1/*', async (request, reply) => {
-  const javaBackendUrl =
-    process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
-  const javaPath = request.url.replace(/^\/v1\//, '/api/');
-  const targetUrl = new URL(javaBackendUrl + javaPath);
+  app.all<{ Params: { '*': string } }>('/v1/*', async (request, reply) => {
+    const javaBackendUrl =
+      process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
+    const javaPath = request.url.replace(/^\/v1\//, '/api/');
+    const targetUrl = new URL(javaBackendUrl + javaPath);
 
-  try {
-    const response = await fetch(targetUrl.toString(), {
-      method: request.method as unknown,
-      headers: {
-        ...request.headers,
-        host: targetUrl.hostname,
-      },
-      body:
-        request.method !== 'GET' && request.method !== 'HEAD'
-          ? JSON.stringify((request as unknown).body ?? {})
-          : undefined,
-    } as unknown);
+    try {
+      const response = await fetch(targetUrl.toString(), {
+        method: request.method as unknown,
+        headers: {
+          ...request.headers,
+          host: targetUrl.hostname,
+        },
+        body:
+          request.method !== 'GET' && request.method !== 'HEAD'
+            ? JSON.stringify((request as unknown as { body?: unknown }).body ?? {})
+            : undefined,
+      } as unknown);
 
-    const contentType = response.headers.get('content-type');
-    const body = await readResponseText(response);
+      const contentType = response.headers.get('content-type');
+      const body = await readResponseText(response);
 
-    reply.code(response.status);
-    if (contentType) {
-      reply.header('content-type', contentType);
+      reply.code(response.status);
+      if (contentType) {
+        reply.header('content-type', contentType);
+      }
+      reply.send(body);
+    } catch (error) {
+      console.error('[Gateway] Proxy error:', error);
+      reply.status(503).send({
+        error: 'Service Unavailable',
+        message: 'Could not reach backend service',
+      });
     }
-    reply.send(body);
-  } catch (error) {
-    console.error('[Gateway] Proxy error:', error);
-    reply.status(503).send({
-      error: 'Service Unavailable',
-      message: 'Could not reach backend service',
-    });
-  }
-});
+  });
+
+  app.all<{ Params: { '*': string } }>('/api/v1/*', async (request, reply) => {
+    const javaBackendUrl =
+      process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
+    const javaPath = request.url.replace(/^\/api\/v1\//, '/api/');
+    const targetUrl = new URL(javaBackendUrl + javaPath);
+
+    try {
+      const response = await fetch(targetUrl.toString(), {
+        method: request.method as unknown,
+        headers: {
+          ...request.headers,
+          host: targetUrl.hostname,
+        },
+        body:
+          request.method !== 'GET' && request.method !== 'HEAD'
+            ? JSON.stringify((request as unknown as { body?: unknown }).body ?? {})
+            : undefined,
+      } as unknown);
+
+      const contentType = response.headers.get('content-type');
+      const body = await readResponseText(response);
+
+      reply.code(response.status);
+      if (contentType) {
+        reply.header('content-type', contentType);
+      }
+      reply.send(body);
+    } catch (error) {
+      console.error('[Gateway] Proxy error:', error);
+      reply.status(503).send({
+        error: 'Service Unavailable',
+        message: 'Could not reach backend service',
+      });
+    }
+  });
 
 // Bind GraphQL Yoga to Fastify (pass auth context from Fastify to GraphQL resolvers)
-app.all('/graphql', async (req, reply) => {
-  // Build server context from authenticated Fastify request
-  const serverContext = {
-    userId: req.user?.userId,
-    email: req.user?.email,
-    role: req.user?.role,
-  };
+  app.all('/graphql', async (req, reply) => {
+    const serverContext = {
+      userId: req.user?.userId,
+      email: req.user?.email,
+      role: req.user?.role,
+    };
 
   // Third arg to yoga.fetch is the serverContext — merged into resolver context
-  const response = await yoga.fetch(
-    req.url,
-    {
-      method: req.method,
-      headers: req.headers as HeadersInit,
-      body:
-        req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH'
-          ? JSON.stringify(req.body)
-          : undefined,
-    },
-    serverContext
-  );
+    const response = await yoga.fetch(
+      req.url,
+      {
+        method: req.method,
+        headers: req.headers as HeadersInit,
+        body:
+          req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH'
+            ? JSON.stringify(req.body)
+            : undefined,
+      },
+      serverContext
+    );
 
-  try {
-    response.headers.forEach((value, key) => {
-      reply.header(key, value);
-    });
+    try {
+      response.headers.forEach((value, key) => {
+        reply.header(key, value);
+      });
 
-    reply.status(response.status);
-    reply.send(await readResponseText(response));
-  } catch (error) {
-    req.log.error(error, 'Failed to proxy GraphQL response body');
-    reply.status(502).send({
-      error: 'Bad Gateway',
-      message: 'Could not read GraphQL upstream response',
-    });
-  }
-});
+      reply.status(response.status);
+      reply.send(await readResponseText(response));
+    } catch (error) {
+      req.log.error(error, 'Failed to proxy GraphQL response body');
+      reply.status(502).send({
+        error: 'Bad Gateway',
+        message: 'Could not read GraphQL upstream response',
+      });
+    }
+  });
+
+  app.addHook('onClose', async () => {
+    realTimeService.shutdown();
+  });
+
+  return app;
+}
 
 const PORT = parseInt(process.env.PORT || '7002', 10);
 
-app.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
-  if (err) {
-    app.log.error(err);
-    process.exit(1);
-  }
-  app.log.info(`API Server listening at ${address}`);
-  app.log.info(`GraphQL endpoint: ${address}/graphql`);
-  app.log.info(
-    `WebSocket endpoint: ws://${address.replace('http://', '')}/canvas/:projectId`
-  );
-  app.log.info(
-    `WebSocket (compat) endpoint: ws://${address.replace('http://', '')}/ws/canvas/:projectId`
-  );
-});
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  const app = await createApp();
+  app.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
+    if (err) {
+      app.log.error(err);
+      process.exit(1);
+    }
+    app.log.info(`API Server listening at ${address}`);
+    app.log.info(`GraphQL endpoint: ${address}/graphql`);
+    app.log.info(
+      `WebSocket endpoint: ws://${address.replace('http://', '')}/canvas/:projectId`
+    );
+    app.log.info(
+      `WebSocket (compat) endpoint: ws://${address.replace('http://', '')}/ws/canvas/:projectId`
+    );
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  app.log.info('SIGTERM received, shutting down gracefully');
-  realTimeService.shutdown();
   await shutdownTracing();
-  app.close(() => {
-    app.log.info('Server closed');
-    process.exit(0);
-  });
+  process.exit(0);
 });
 
 // Type extensions for request tracking

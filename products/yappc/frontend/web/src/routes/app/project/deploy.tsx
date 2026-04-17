@@ -80,6 +80,8 @@ export default function Component() {
     const [phasePreviewError, setPhasePreviewError] = useState<string | null>(null);
     const [isPhasePreviewLoading, setIsPhasePreviewLoading] = useState<boolean>(false);
     const [isAdvancing, setIsAdvancing] = useState<boolean>(false);
+    const [operatorNote, setOperatorNote] = useState<string>('');
+    const [operatorFeedback, setOperatorFeedback] = useState<string | null>(null);
 
     const phasePredictionSummary = phasePreview?.estimatedReadyIn
         ? phasePreview.estimatedReadyIn === 'Ready now'
@@ -229,6 +231,18 @@ export default function Component() {
         }, userId);
     }, [updateArtifact]);
 
+    const handleCreateIncidentFromOperatorSurface = useCallback(async () => {
+        await handleCreateIncident();
+        setOperatorFeedback('Incident report created for the current deployment posture.');
+    }, [handleCreateIncident]);
+
+    const handleOperatorAdvance = useCallback(async () => {
+        await handleAdvancePhase(operatorNote.trim() || undefined);
+        if (phasePreview?.canAdvance) {
+            setOperatorFeedback('Operator advance request submitted to the lifecycle gate.');
+        }
+    }, [handleAdvancePhase, operatorNote, phasePreview?.canAdvance]);
+
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
@@ -286,6 +300,73 @@ export default function Component() {
                     )}
                 </div>
             )}
+
+            <section
+                className="border-b border-divider bg-bg-paper px-6 py-4"
+                data-testid="operator-controls-card"
+            >
+                <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
+                    <div>
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-600">Operator control surface</h2>
+                        <p className="mt-2 text-base font-semibold text-text-primary">Release posture for live promotion decisions</p>
+                        <p className="mt-1 text-sm text-text-secondary">
+                            Strategy {deploymentPlan.strategy}, risk score {deploymentPlan.riskScore}, readiness {deploymentPlan.readiness}%.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">
+                            <span>Approval {deploymentPlan.requiresApproval ? 'required' : 'not required'}</span>
+                            <span>Target replicas {capacityRecommendation.targetReplicas}</span>
+                            <span>Projected cost ${capacityRecommendation.projectedMonthlyCost}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium uppercase tracking-[0.14em] text-text-secondary" htmlFor="operator-note">
+                            Operator note
+                        </label>
+                        <textarea
+                            id="operator-note"
+                            data-testid="operator-note-input"
+                            rows={3}
+                            value={operatorNote}
+                            onChange={(event) => setOperatorNote(event.target.value)}
+                            className="mt-2 w-full rounded-lg border border-divider bg-bg-default px-3 py-2 text-sm text-text-primary"
+                            placeholder="Capture rollout context, approval notes, or incident clues."
+                        />
+                        <div className="mt-3 flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                data-testid="operator-create-incident"
+                                onClick={() => {
+                                    void handleCreateIncidentFromOperatorSurface();
+                                }}
+                                className="rounded-lg border border-divider px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-grey-100 dark:hover:bg-grey-800"
+                            >
+                                Create incident report
+                            </button>
+                            <button
+                                type="button"
+                                data-testid="operator-advance-with-note"
+                                disabled={
+                                    isAdvancing ||
+                                    isPhasePreviewLoading ||
+                                    !phasePreview?.canAdvance ||
+                                    !phasePreview?.nextPhase
+                                }
+                                onClick={() => {
+                                    void handleOperatorAdvance();
+                                }}
+                                className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Advance with operator note
+                            </button>
+                        </div>
+                        {operatorFeedback && (
+                            <p className="mt-3 text-xs text-text-secondary" data-testid="operator-action-feedback">
+                                {operatorFeedback}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </section>
 
             {/* DeployPanelHost - URL-driven segment navigation */}
             <div className="flex-1 overflow-hidden">

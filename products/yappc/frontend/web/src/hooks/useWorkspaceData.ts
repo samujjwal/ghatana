@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys, projectQueryKeys } from '../lib/query-keys';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import type { components } from '../clients/generated/openapi';
 import {
   currentWorkspaceIdAtom,
   workspaceAtom,
@@ -26,6 +27,18 @@ import {
   type ProjectWithOwnership,
 } from '@/state/atoms/workspaceAtom';
 
+type WorkspaceListResponse = components['schemas']['WorkspaceListResponse'];
+type WorkspaceDetailResponse = components['schemas']['WorkspaceDetailResponse'];
+type ProjectsResponse = components['schemas']['ProjectsResponse'];
+type WorkspaceResponse = components['schemas']['WorkspaceResponse'];
+type ProjectResponse = components['schemas']['ProjectResponse'];
+type NameSuggestionResponse = components['schemas']['NameSuggestionResponse'];
+type GeneratedProjectSetupSuggestion = components['schemas']['ProjectSetupSuggestion'];
+type GeneratedProjectType = components['schemas']['ProjectType'];
+type CreateWorkspaceRequest = components['schemas']['CreateWorkspaceRequest'];
+
+export type ProjectSetupSuggestion = GeneratedProjectSetupSuggestion;
+
 // ============================================================================
 // API Functions
 // ============================================================================
@@ -35,6 +48,10 @@ import {
 const API_BASE = import.meta.env.DEV
   ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api`
   : '/api';
+
+const DEMO_FIXTURES_ENABLED =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ENABLE_DEMO_WORKSPACE_FIXTURES === 'true';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -81,38 +98,34 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
 
     // Accept either the raw array or the wrapped form { workspaces: [...] }
     if (Array.isArray(data)) return data as Workspace[];
-    if (isRecord(data) && Array.isArray(data.workspaces))
-      return data.workspaces as Workspace[];
+    if (isRecord(data) && Array.isArray(data.workspaces)) {
+      const response = data as WorkspaceListResponse;
+      return response.workspaces as Workspace[];
+    }
 
     throw new Error('Unexpected response shape for workspaces');
   } catch (error) {
-    // Fallback to mock data when backend is not available
-    console.warn(
-      'Backend API not available, using fallback workspace data:',
-      error
-    );
-    return [
-      {
-        id: 'demo-workspace-1',
-        name: 'Demo Workspace',
-        description: 'A sample workspace for demonstrating the IDE',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiSummary: 'Demo workspace for testing IDE features',
-        aiTags: ['demo', 'testing', 'ide'],
-      },
-      {
-        id: 'demo-workspace-2',
-        name: 'Development Workspace',
-        description: 'Workspace for active development projects',
-        isDefault: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiSummary: 'Active development workspace',
-        aiTags: ['development', 'active', 'coding'],
-      },
-    ];
+    if (DEMO_FIXTURES_ENABLED) {
+      console.warn(
+        'Backend API not available, using demo workspace fixtures:',
+        error
+      );
+      return [
+        {
+          id: 'demo-workspace-1',
+          name: 'Demo Workspace',
+          description: 'A sample workspace for demonstrating the IDE',
+          ownerId: 'demo-owner',
+          isDefault: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          aiSummary: 'Demo workspace for testing IDE features',
+          aiTags: ['demo', 'testing', 'ide'],
+        },
+      ];
+    }
+
+    throw error;
   }
 }
 
@@ -128,7 +141,8 @@ async function fetchWorkspace(
 
     // Accept either raw workspace or wrapped form { workspace: {...} }
     if (isRecord(data) && isRecord(data.workspace)) {
-      return data.workspace as unknown as Workspace & {
+      const response = data as WorkspaceDetailResponse;
+      return response.workspace as unknown as Workspace & {
         ownedProjects: Project[];
         includedProjects: Project[];
       };
@@ -145,47 +159,27 @@ async function fetchWorkspace(
       throw error;
     }
 
-    // Fallback to mock data when backend is not available
-    console.warn(
-      'Backend API not available, using fallback workspace detail data:',
-      error
-    );
-    return {
-      id: workspaceId,
-      name:
-        workspaceId === 'demo-workspace-1'
-          ? 'Demo Workspace'
-          : 'Development Workspace',
-      description:
-        workspaceId === 'demo-workspace-1'
-          ? 'A sample workspace for demonstrating the IDE'
-          : 'Workspace for active development projects',
-      isDefault: workspaceId === 'demo-workspace-1',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      aiSummary:
-        workspaceId === 'demo-workspace-1'
-          ? 'Demo workspace for testing IDE features'
-          : 'Active development workspace',
-      aiTags:
-        workspaceId === 'demo-workspace-1'
-          ? ['demo', 'testing', 'ide']
-          : ['development', 'active', 'coding'],
-      ownedProjects: [
-        {
-          id: 'demo-project-1',
-          name: 'Demo Project',
-          description: 'A sample project for demonstration',
-          type: 'webapp',
-          workspaceId: workspaceId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          aiNextActions: ['Add more components', 'Implement authentication'],
-          aiHealthScore: 85,
-        },
-      ],
-      includedProjects: [],
-    };
+    if (DEMO_FIXTURES_ENABLED) {
+      console.warn(
+        'Backend API not available, using demo workspace detail fixture:',
+        error
+      );
+      return {
+        id: workspaceId,
+        name: 'Demo Workspace',
+        description: 'A sample workspace for demonstrating the IDE',
+        ownerId: 'demo-owner',
+        isDefault: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        aiSummary: 'Demo workspace for testing IDE features',
+        aiTags: ['demo', 'testing', 'ide'],
+        ownedProjects: [],
+        includedProjects: [],
+      };
+    }
+
+    throw error;
   }
 }
 
@@ -194,63 +188,30 @@ async function fetchProjects(
 ): Promise<{ owned: Project[]; included: Project[] }> {
   try {
     const res = await fetch(`${API_BASE}/projects?workspaceId=${workspaceId}`);
-    return (await parseJsonResponse(res)) as {
-      owned: Project[];
-      included: Project[];
+    const payload = (await parseJsonResponse(res)) as ProjectsResponse;
+    return {
+      owned: payload.owned as Project[],
+      included: payload.included as Project[],
     };
   } catch (error) {
-    // Fallback to mock data when backend is not available
-    console.warn(
-      'Backend API not available, using fallback projects data:',
-      error
-    );
-    return {
-      owned: [
-        {
-          id: 'demo-project-1',
-          name: 'Demo Project',
-          description: 'A sample project for demonstration',
-          type: 'webapp',
-          workspaceId: workspaceId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          aiNextActions: ['Add more components', 'Implement authentication'],
-          aiHealthScore: 85,
-        },
-        {
-          id: 'demo-project-2',
-          name: 'UI Components',
-          description: 'Reusable UI component library',
-          type: 'library',
-          workspaceId: workspaceId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          aiNextActions: ['Add theme support', 'Improve documentation'],
-          aiHealthScore: 92,
-        },
-      ],
-      included: [
-        {
-          id: 'demo-project-3',
-          name: 'Shared Utils',
-          description: 'Common utility functions',
-          type: 'library',
-          workspaceId: 'other-workspace',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          aiNextActions: ['Add tests', 'Optimize performance'],
-          aiHealthScore: 78,
-        },
-      ],
-    };
+    if (DEMO_FIXTURES_ENABLED) {
+      console.warn(
+        'Backend API not available, using empty demo project fixtures:',
+        error
+      );
+      return {
+        owned: [],
+        included: [],
+      };
+    }
+
+    throw error;
   }
 }
 
-async function createWorkspaceApi(data: {
-  name: string;
-  description?: string;
-  createDefaultProject?: boolean;
-}): Promise<Workspace> {
+async function createWorkspaceApi(
+  data: CreateWorkspaceRequest
+): Promise<Workspace> {
   const res = await fetch(`${API_BASE}/workspaces`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -258,15 +219,17 @@ async function createWorkspaceApi(data: {
   });
 
   const payload = await parseJsonResponse(res);
-  if (isRecord(payload) && isRecord(payload.workspace))
-    return payload.workspace as unknown as Workspace;
+  if (isRecord(payload) && isRecord(payload.workspace)) {
+    const response = payload as WorkspaceResponse;
+    return response.workspace as Workspace;
+  }
   return payload as Workspace;
 }
 
 async function createProjectApi(data: {
   name: string;
   description?: string;
-  type: string;
+  type: GeneratedProjectType;
   ownerWorkspaceId: string;
 }): Promise<Project> {
   const res = await fetch(`${API_BASE}/projects`, {
@@ -281,8 +244,10 @@ async function createProjectApi(data: {
   });
 
   const payload = await parseJsonResponse(res);
-  if (isRecord(payload) && isRecord(payload.project))
-    return payload.project as unknown as Project;
+  if (isRecord(payload) && isRecord(payload.project)) {
+    const response = payload as ProjectResponse;
+    return response.project as Project;
+  }
   return payload as Project;
 }
 
@@ -301,24 +266,55 @@ async function includeProjectApi(data: {
 async function suggestWorkspaceName(): Promise<string> {
   const res = await fetch(`${API_BASE}/workspaces/suggest-name`);
   const data = await parseJsonResponse(res);
-  if (isRecord(data) && typeof data.suggestion === 'string')
-    return data.suggestion;
+  if (isRecord(data) && typeof data.suggestion === 'string') {
+    const response = data as NameSuggestionResponse;
+    return response.suggestion;
+  }
   if (isRecord(data) && typeof data.name === 'string') return data.name;
   throw new Error('Unexpected response shape for workspace name suggestion');
 }
 
 async function suggestProjectName(
   workspaceId: string,
-  projectType?: string
+  projectType?: GeneratedProjectType
 ): Promise<string> {
   const params = new URLSearchParams({ workspaceId });
   if (projectType) params.append('type', projectType);
   const res = await fetch(`${API_BASE}/projects/suggest-name?${params}`);
   const data = await parseJsonResponse(res);
-  if (isRecord(data) && typeof data.suggestion === 'string')
-    return data.suggestion;
+  if (isRecord(data) && typeof data.suggestion === 'string') {
+    const response = data as NameSuggestionResponse;
+    return response.suggestion;
+  }
   if (isRecord(data) && typeof data.name === 'string') return data.name;
   throw new Error('Unexpected response shape for project name suggestion');
+}
+
+async function suggestProjectSetup(data: {
+  workspaceId: string;
+  description?: string;
+  preferredType?: GeneratedProjectType;
+}): Promise<ProjectSetupSuggestion> {
+  const res = await fetch(`${API_BASE}/projects/setup-suggestion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  const payload = await parseJsonResponse(res);
+  if (
+    isRecord(payload) &&
+    typeof payload.suggestion === 'string' &&
+    typeof payload.inferredType === 'string' &&
+    typeof payload.rationale === 'string' &&
+    typeof payload.summary === 'string' &&
+    Array.isArray(payload.recommendations) &&
+    Array.isArray(payload.relatedProjects)
+  ) {
+    return payload as ProjectSetupSuggestion;
+  }
+
+  throw new Error('Unexpected response shape for project setup suggestion');
 }
 
 async function refreshWorkspaceAI(
@@ -393,46 +389,15 @@ async function fetchAvailableForInclusion(
       return data.projects as Project[];
     throw new Error('Unexpected response shape for available projects');
   } catch (error) {
-    // Fallback to mock data when backend is not available
-    console.warn(
-      'Backend API not available, using fallback available projects data:',
-      error
-    );
-    return [
-      {
-        id: 'available-project-1',
-        name: 'Analytics Engine',
-        description: 'Real-time analytics and reporting system',
-        type: 'microservice',
-        workspaceId: 'shared-workspace',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiNextActions: ['Add dashboards', 'Improve performance'],
-        aiHealthScore: 88,
-      },
-      {
-        id: 'available-project-2',
-        name: 'Design System',
-        description: 'Component library and design tokens',
-        type: 'library',
-        workspaceId: 'shared-workspace',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiNextActions: ['Add more components', 'Create documentation'],
-        aiHealthScore: 95,
-      },
-      {
-        id: 'available-project-3',
-        name: 'Mobile App',
-        description: 'Cross-platform mobile application',
-        type: 'mobile',
-        workspaceId: 'shared-workspace',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        aiNextActions: ['Add offline support', 'Improve UI'],
-        aiHealthScore: 72,
-      },
-    ];
+    if (DEMO_FIXTURES_ENABLED) {
+      console.warn(
+        'Backend API not available, using empty inclusion fixtures:',
+        error
+      );
+      return [];
+    }
+
+    throw error;
   }
 }
 
@@ -651,7 +616,7 @@ export function useCreateProject() {
         queryClient.setQueryData(projectKeys.list(context.tempProject.workspaceId), context.previousProjects);
       }
     },
-    onSettled: (_, variables) => {
+    onSettled: (_, __, variables) => {
       // Refetch to ensure server state
       queryClient.invalidateQueries({
         queryKey: projectKeys.list(variables.ownerWorkspaceId),
@@ -756,7 +721,28 @@ export function useNameSuggestions() {
     []
   );
 
-  return { suggestWorkspace, suggestProject };
+  const suggestProjectSetupWithFallback = useCallback(
+    async (workspaceId: string, description?: string, preferredType?: string) => {
+      try {
+        return await suggestProjectSetup({ workspaceId, description, preferredType });
+      } catch {
+        return {
+          suggestion: await suggestProject(workspaceId, preferredType),
+          inferredType: (preferredType ?? 'FULL_STACK') as Project['type'],
+          rationale:
+            'The server-side setup suggestion is unavailable, so the dialog is using the currently selected project type.',
+          summary: 'Fallback suggestion generated from the current workspace context.',
+          recommendations: [
+            'Add a richer project description to improve the initial setup suggestion.',
+          ],
+          relatedProjects: [],
+        } satisfies ProjectSetupSuggestion;
+      }
+    },
+    [suggestProject]
+  );
+
+  return { suggestWorkspace, suggestProject, suggestProjectSetup: suggestProjectSetupWithFallback };
 }
 
 /**

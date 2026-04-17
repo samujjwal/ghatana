@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Manages template loading, saving, and gallery state

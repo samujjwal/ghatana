@@ -5,6 +5,17 @@ import path from 'path';
 import { describe, it, expect } from 'vitest';
 
 describe('routes configuration (smoke)', () => {
+  it('uses the truthful workspace and project route taxonomy', () => {
+    const routesPath = path.resolve(__dirname, '..', 'routes.ts');
+    const content = readFileSync(routesPath, 'utf8');
+
+    expect(content.includes("route('workspaces', 'routes/app/workspaces.tsx')")).toBe(true);
+    expect(content.includes("route('projects', 'routes/app/projects.tsx')")).toBe(true);
+    expect(content.includes("route('p/:projectId', 'routes/app/project/_shell.tsx'")).toBe(true);
+    expect(content.includes("route('register', 'routes/register.tsx')")).toBe(false);
+    expect(content.includes("route('forgot-password', 'routes/forgot-password.tsx')")).toBe(false);
+  });
+
   it('routes file exists or docs include routes marker', () => {
     const routesPath = path.resolve(__dirname, '..', 'routes.ts');
     const docPath = path.resolve(
@@ -30,7 +41,7 @@ describe('routes configuration (smoke)', () => {
       const content = readFileSync(docPath, 'utf8');
       expect(
         content.includes('createBrowserRouter') ||
-          content.includes('/app/w/:workspaceId/p/:projectId')
+          content.includes('/p/:projectId')
       ).toBe(true);
     }
   });

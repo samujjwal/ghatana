@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CanvasScene - Legacy compatibility shim
  * @deprecated Use CanvasRoute. The 1252-line legacy component (canvasAtom,

@@ -50,7 +50,7 @@ import {
   type NodeChange,
   type NodeTypes,
 } from '@xyflow/react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
 import {
   Download as FileDownload,
@@ -88,7 +88,9 @@ import { type CanvasMode as NavCanvasMode } from '../../../components/navigation
 import { useKeyboardShortcuts } from '../../../components/keyboard/KeyboardShortcutsManager';
 import { useStudioMode } from '../../../components/studio/StudioLayout';
 import { useAIStatusBar } from '../../../components/ai/AIStatusBar';
+import { useAuth } from '../../../hooks/useAuth';
 import { useCanvasMode } from '../../../hooks/useCanvasMode';
+import { useCollaboration } from '../../../hooks/useCollaboration';
 import { useUnifiedCanvas } from '../../../hooks/useUnifiedCanvas';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { parseJsonResponse } from '@/lib/http';
@@ -96,6 +98,7 @@ import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/Alignm
 import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
 import type { CanvasMode } from '../../../types/canvasMode';
 import { LifecyclePhase as RailLifecyclePhase } from '../../../types/lifecycle';
+import { currentUserAtom } from '../../../stores/user.store';
 import {
   CanvasNodeContextMenu,
   CanvasOutlinePanel,
@@ -120,6 +123,61 @@ interface CanvasProjectData {
 
 type KeyboardShortcutCanvas = Parameters<typeof useCanvasKeyboardShortcuts>[0]['canvas'];
 type KeyboardShortcutNode = Parameters<typeof useCanvasKeyboardShortcuts>[0]['copiedNodes'][number];
+
+function CanvasCollaborationBanner({ projectId }: { projectId: string }) {
+  const currentUser = useAtomValue(currentUserAtom);
+  const { getToken } = useAuth();
+  const collaboration = useCollaboration({
+    projectId,
+    getToken,
+    currentUser: currentUser
+      ? {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          color: '#4ECDC4',
+        }
+      : null,
+    enabled: Boolean(projectId && currentUser),
+  });
+
+  if (!currentUser) {
+    return null;
+  }
+
+  const collaborators = Array.from(collaboration.presence.values()).slice(0, 3);
+  const onlineCount = 1 + collaboration.presence.size;
+
+  return (
+    <div
+      className="absolute right-4 top-4 z-20 rounded-xl border border-divider bg-bg-paper/95 px-4 py-3 shadow-lg backdrop-blur"
+      data-testid="canvas-collaboration-banner"
+    >
+      <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+        <span
+          className={`h-2.5 w-2.5 rounded-full ${collaboration.isConnected ? 'bg-green-500' : 'bg-amber-500'}`}
+          data-testid="canvas-collaboration-status-dot"
+        />
+        <span>{collaboration.isConnected ? 'Live collaboration connected' : 'Collaboration standby'}</span>
+      </div>
+      <p className="mt-1 text-xs text-text-secondary" data-testid="canvas-collaboration-summary">
+        {onlineCount} collaborator{onlineCount === 1 ? '' : 's'} visible for this canvas.
+      </p>
+      {collaborators.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {collaborators.map((presence) => (
+            <span
+              key={presence.user.id}
+              className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-200"
+            >
+              {presence.user.name}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function UnifiedCanvasInner() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -789,6 +847,8 @@ function UnifiedCanvasInner() {
               currentPhase={currentPhase}
               zoom={canvas.viewport.zoom}
             />
+
+            {projectId && <CanvasCollaborationBanner projectId={projectId} />}
           </Box>
 
           {/* Node Context Menu */}

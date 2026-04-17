@@ -160,6 +160,7 @@ export default function ProjectsRoute() {
                     </div>
                     <button
                         onClick={() => setShowCreateDialog(true)}
+                        data-testid="create-project-button"
                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
                     >
                         <Add className="w-5 h-5" />
@@ -246,13 +247,13 @@ export default function ProjectsRoute() {
                     <ProjectGrid
                         projects={filteredProjects}
                         getHealthColor={getHealthColor}
-                        onSelect={(id) => navigate(`/app/p/${id}`)}
+                        onSelect={(id) => navigate(`/p/${id}/canvas`)}
                     />
                 ) : (
                     <ProjectList
                         projects={filteredProjects}
                         getHealthColor={getHealthColor}
-                        onSelect={(id) => navigate(`/app/p/${id}`)}
+                        onSelect={(id) => navigate(`/p/${id}/canvas`)}
                     />
                 )}
             </main>
@@ -263,7 +264,7 @@ export default function ProjectsRoute() {
                 onClose={() => setShowCreateDialog(false)}
                 onCreated={(project) => {
                     setShowCreateDialog(false);
-                    navigate(`/app/p/${project.id}`);
+                    navigate(`/p/${project.id}/canvas`);
                 }}
             />
         </div>

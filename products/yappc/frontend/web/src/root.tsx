@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   Links,
   Meta,
@@ -11,7 +10,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GraphQLProvider } from '@yappc/api';
 import { WebSocketProvider } from './contexts/WebSocketContext';
-import { ToastProvider } from '@yappc/ui/components/components/Toast';
+import { ToastProvider } from './components/common';
 import { AuthProvider } from './providers/AuthProvider';
 import { FeatureFlagProvider } from './providers/FeatureFlagProvider';
 import { AppThemeProvider } from './theme';

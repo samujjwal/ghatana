@@ -122,6 +122,14 @@ export interface IProjectPhaseRepository {
   ): Promise<void>;
 }
 
+function canUseStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+}
+
+function phaseStateStorageKey(projectId: string): string {
+  return `yappc.lifecycle.phase-state.${projectId}`;
+}
+
 // ============================================================================
 // In-Memory Repository
 // ============================================================================
@@ -154,6 +162,63 @@ export class InMemoryProjectPhaseRepository implements IProjectPhaseRepository {
     state.phaseHistory.push(record);
     state.lastUpdated = new Date().toISOString();
     this.states.set(projectId, state);
+  }
+}
+
+/**
+ * Browser-backed repository that persists project phase state across reloads.
+ */
+export class LocalStorageProjectPhaseRepository
+  implements IProjectPhaseRepository
+{
+  private fallback = new InMemoryProjectPhaseRepository();
+
+  async getState(projectId: string): Promise<ProjectPhaseState | null> {
+    if (!canUseStorage()) {
+      return this.fallback.getState(projectId);
+    }
+
+    const raw = window.localStorage.getItem(phaseStateStorageKey(projectId));
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as ProjectPhaseState;
+    } catch {
+      return null;
+    }
+  }
+
+  async saveState(state: ProjectPhaseState): Promise<void> {
+    if (!canUseStorage()) {
+      return this.fallback.saveState(state);
+    }
+
+    window.localStorage.setItem(
+      phaseStateStorageKey(state.projectId),
+      JSON.stringify(state)
+    );
+  }
+
+  async updatePhase(
+    projectId: string,
+    phase: LifecyclePhase,
+    record: PhaseTransitionRecord
+  ): Promise<void> {
+    const state = await this.getState(projectId);
+    if (!state) {
+      throw new Error(`Project state not found: ${projectId}`);
+    }
+
+    const nextState: ProjectPhaseState = {
+      ...state,
+      currentPhase: phase,
+      phaseHistory: [...state.phaseHistory, record],
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await this.saveState(nextState);
   }
 }
 
@@ -521,7 +586,7 @@ import React from 'react';
  */
 export function usePhaseGates(projectId: string) {
   const [service] = React.useState(
-    () => new PhaseGateService(new InMemoryProjectPhaseRepository())
+    () => new PhaseGateService(new LocalStorageProjectPhaseRepository())
   );
   const [currentPhase, setCurrentPhase] = React.useState<LifecyclePhase>(
     LifecyclePhase.INTENT

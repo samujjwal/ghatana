@@ -1,8 +1,11 @@
 /**
- * Tests for YAPPC auth routes: Register and ForgotPassword.
+ * Tests for dormant YAPPC auth screens: Register and ForgotPassword.
+ *
+ * These routes are no longer mounted in the active router, but the components
+ * still exist and should fail truthfully against the current deployment.
  *
  * @doc.type test
- * @doc.purpose RTL tests for register and forgot-password routes
+ * @doc.purpose RTL tests for register and forgot-password fallback screens
  * @doc.layer frontend
  */
 
@@ -54,7 +57,10 @@ function renderInRouter(ui: React.ReactElement) {
 
 describe('RegisterPage', () => {
   beforeEach(() => {
-    vi.mocked(authService.register).mockResolvedValue({ success: true, token: 'tok123' });
+    vi.mocked(authService.register).mockResolvedValue({
+      success: false,
+      error: 'Registration is not available in this deployment',
+    });
     mockNavigate.mockClear();
   });
 
@@ -141,7 +147,7 @@ describe('RegisterPage', () => {
     });
   });
 
-  it('navigates to workspaces on successful registration', async () => {
+  it('surfaces the deployment availability error instead of navigating', async () => {
     renderInRouter(<RegisterComponent />);
 
     fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Jane' } });
@@ -152,8 +158,10 @@ describe('RegisterPage', () => {
 
     fireEvent.submit(screen.getByRole('button', { name: /create account/i }));
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/workspaces');
+      expect(screen.getByTestId('register-error')).toBeDefined();
+      expect(screen.getByText('Registration is not available in this deployment')).toBeDefined();
     });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('shows server error when registration fails', async () => {
@@ -199,7 +207,10 @@ describe('RegisterPage', () => {
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
-    vi.mocked(authService.forgotPassword).mockResolvedValue({ success: true });
+    vi.mocked(authService.forgotPassword).mockResolvedValue({
+      success: false,
+      error: 'Password reset is not available in this deployment',
+    });
     mockNavigate.mockClear();
   });
 
@@ -245,13 +256,13 @@ describe('ForgotPasswordPage', () => {
     });
   });
 
-  it('shows success state after request', async () => {
+  it('surfaces the deployment availability error instead of a success state', async () => {
     renderInRouter(<ForgotPasswordComponent />);
     fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'user@example.com' } });
     fireEvent.submit(screen.getByRole('button', { name: /send reset link/i }));
     await waitFor(() => {
-      expect(screen.getByTestId('forgot-password-success')).toBeDefined();
-      expect(screen.getByText(/check your inbox/i)).toBeDefined();
+      expect(screen.getByTestId('forgot-password-error')).toBeDefined();
+      expect(screen.getByText('Password reset is not available in this deployment')).toBeDefined();
     });
   });
 

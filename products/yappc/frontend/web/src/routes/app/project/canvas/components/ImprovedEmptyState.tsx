@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Box, Typography, Button, Stack, Card } from '@ghatana/design-system';
 import { Sparkles as AutoAwesome, GitBranch as AccountTree, LayoutGrid as ViewModule } from 'lucide-react';
 

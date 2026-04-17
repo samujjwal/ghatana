@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useCanvasPersistence - Canvas State Persistence Hook
  * 
@@ -35,8 +34,7 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
     const {
         projectId,
         autoSaveInterval = 30000, // 30 seconds
-        debounceDelay = 2000, // 2 seconds
-        enableConflictResolution = true
+        debounceDelay = 2000 // 2 seconds
     } = options;
 
     const canvas = useAtomValue(canvasAtom);
@@ -45,8 +43,8 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
 
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const autoSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const lastSavedStateRef = useRef<string | null>(null);
 
     /**
@@ -197,7 +195,7 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
     useEffect(() => {
         autoSaveIntervalRef.current = setInterval(() => {
             if (hasUnsavedChanges()) {
-                saveToBackend();
+                void saveToBackend();
             }
         }, autoSaveInterval);
 
@@ -225,7 +223,7 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
                 event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
 
                 // Attempt synchronous save (browser may block this)
-                saveToBackend();
+                void saveToBackend();
             }
         };
 

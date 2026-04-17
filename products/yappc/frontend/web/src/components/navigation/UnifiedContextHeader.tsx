@@ -196,7 +196,7 @@ export function UnifiedContextHeader({
       <div className="flex items-center gap-4 flex-1 overflow-hidden">
         {/* Logo */}
         <Link
-          to="/app"
+          to="/projects"
           className="flex items-center gap-2 flex-shrink-0 group no-underline"
           aria-label="YAPPC Home"
         >

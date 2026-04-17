@@ -1,4 +1,4 @@
-Perform a **strict, evidence-based full audit** of the repository, tests, product docs, configs, architecture, and overall product direction.
+Perform a **strict, evidence-based full audit** of the product yappc, tests, product docs, configs, architecture, and overall product direction.
 
 This is **not a re-audit**. Do not optimize for validating previous findings.  
 Optimize for discovering the truth of the current system from first principles.

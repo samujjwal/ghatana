@@ -41,6 +41,11 @@ describe('mapAuthSessionToUser — role mapping', () => {
       expect(mapAuthSessionToUser({ id: 'u1', role, tenantId: 't1' }).role).toBe(role);
     }
   });
+
+  it('falls back to the generated roles array when role is absent', () => {
+    const result = mapAuthSessionToUser({ id: 'u1', roles: ['VIEWER'], tenantId: 'acme' });
+    expect(result.role).toBe('VIEWER');
+  });
 });
 
 describe('mapAuthSessionToUser — tenantId mapping', () => {
@@ -77,6 +82,11 @@ describe('mapAuthSessionToUser — name and workspaceIds', () => {
   it('falls back to id when no name parts are present', () => {
     const result = mapAuthSessionToUser({ id: 'user-42' });
     expect(result.name).toBe('user-42');
+  });
+
+  it('falls back to the generated name field when first and last name are absent', () => {
+    const result = mapAuthSessionToUser({ id: 'u1', name: 'Platform Operator' });
+    expect(result.name).toBe('Platform Operator');
   });
 
   it('propagates workspaceIds from API response', () => {

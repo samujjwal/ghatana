@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useUnifiedCanvas - Main Canvas Hook
  *

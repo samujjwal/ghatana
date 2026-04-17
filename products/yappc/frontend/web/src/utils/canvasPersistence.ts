@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas State Persistence Utilities
  * 
@@ -12,6 +11,13 @@
  */
 
 import { CanvasMode, AbstractionLevel } from '../types/canvas';
+import {
+    CanvasPersistenceService,
+    type CanvasSnapshot,
+} from '../services/persistence';
+
+const COMPAT_STATE_PROJECT_ID = 'yappc-canvas-state';
+const COMPAT_STATE_METADATA_KEY = 'compatPersistedState';
 
 interface CanvasStateData {
     mode: CanvasMode;
@@ -26,11 +32,63 @@ interface CanvasPersistenceOptions {
     enableCompression?: boolean;
 }
 
+interface CanvasStateCompatEnvelope<T> {
+    [COMPAT_STATE_METADATA_KEY]?: T;
+}
+
 const DEFAULT_OPTIONS: Required<CanvasPersistenceOptions> = {
     storageKey: 'yappc-canvas-state',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     enableCompression: false,
 };
+
+function getCompatibilityCanvasId(
+    mode: CanvasMode,
+    level: AbstractionLevel,
+    options: CanvasPersistenceOptions
+): string {
+    const opts = { ...DEFAULT_OPTIONS, ...options };
+    return `${opts.storageKey}:${mode}:${level}`;
+}
+
+function toCompatibleCanvasState<T>(
+    mode: CanvasMode,
+    level: AbstractionLevel,
+    data: T
+) {
+    return {
+        elements: [],
+        connections: [],
+        metadata: {
+            mode,
+            level,
+            [COMPAT_STATE_METADATA_KEY]: data,
+        } satisfies CanvasStateCompatEnvelope<T> & {
+            mode: CanvasMode;
+            level: AbstractionLevel;
+        },
+    };
+}
+
+function fromSnapshotData<T>(snapshot?: CanvasSnapshot): T | null {
+    const metadata = snapshot?.data?.metadata as
+        | (CanvasStateCompatEnvelope<T> & Record<string, unknown>)
+        | undefined;
+
+    if (!metadata || !(COMPAT_STATE_METADATA_KEY in metadata)) {
+        return null;
+    }
+
+    return metadata[COMPAT_STATE_METADATA_KEY] ?? null;
+}
+
+function isExpired(
+    snapshot: CanvasSnapshot,
+    maxAge: number
+): boolean {
+    const timestamp = Date.parse(snapshot.timestamp);
+    return Number.isFinite(timestamp) && Date.now() - timestamp > maxAge;
+}
 
 /**
  * Save canvas state to localStorage
@@ -42,17 +100,12 @@ export function saveCanvasState(
     options: CanvasPersistenceOptions = {}
 ): boolean {
     try {
-        const opts = { ...DEFAULT_OPTIONS, ...options };
-        const stateKey = `${opts.storageKey}-${mode}-${level}`;
-
-        const state: CanvasStateData = {
-            mode,
-            level,
-            timestamp: Date.now(),
-            data,
-        };
-
-        localStorage.setItem(stateKey, JSON.stringify(state));
+        const canvasId = getCompatibilityCanvasId(mode, level, options);
+        void CanvasPersistenceService.saveCanvas(
+            COMPAT_STATE_PROJECT_ID,
+            canvasId,
+            toCompatibleCanvasState(mode, level, data)
+        );
         return true;
     } catch (error) {
         console.error('Failed to save canvas state:', error);
@@ -70,22 +123,25 @@ export function loadCanvasState(
 ): unknown | null {
     try {
         const opts = { ...DEFAULT_OPTIONS, ...options };
-        const stateKey = `${opts.storageKey}-${mode}-${level}`;
+        const canvasId = getCompatibilityCanvasId(mode, level, options);
+        const key = `yappc-canvas:${COMPAT_STATE_PROJECT_ID}:${canvasId}`;
+        const stored = localStorage.getItem(key);
 
-        const stored = localStorage.getItem(stateKey);
         if (!stored) {
             return null;
         }
 
-        const state: CanvasStateData = JSON.parse(stored);
+        const snapshot = JSON.parse(stored) as CanvasSnapshot;
 
-        // Check if state is expired
-        if (Date.now() - state.timestamp > opts.maxAge) {
-            localStorage.removeItem(stateKey);
+        if (isExpired(snapshot, opts.maxAge)) {
+            void CanvasPersistenceService.deleteCanvas(
+                COMPAT_STATE_PROJECT_ID,
+                canvasId
+            );
             return null;
         }
 
-        return state.data;
+        return fromSnapshotData(snapshot);
     } catch (error) {
         console.error('Failed to load canvas state:', error);
         return null;
@@ -101,9 +157,11 @@ export function clearCanvasState(
     options: CanvasPersistenceOptions = {}
 ): boolean {
     try {
-        const opts = { ...DEFAULT_OPTIONS, ...options };
-        const stateKey = `${opts.storageKey}-${mode}-${level}`;
-        localStorage.removeItem(stateKey);
+        const canvasId = getCompatibilityCanvasId(mode, level, options);
+        void CanvasPersistenceService.deleteCanvas(
+            COMPAT_STATE_PROJECT_ID,
+            canvasId
+        );
         return true;
     } catch (error) {
         console.error('Failed to clear canvas state:', error);
@@ -120,9 +178,10 @@ export function clearAllCanvasStates(
     try {
         const opts = { ...DEFAULT_OPTIONS, ...options };
         const keys = Object.keys(localStorage);
+        const prefix = `yappc-canvas:${COMPAT_STATE_PROJECT_ID}:${opts.storageKey}:`;
 
         keys.forEach(key => {
-            if (key.startsWith(opts.storageKey)) {
+            if (key.startsWith(prefix)) {
                 localStorage.removeItem(key);
             }
         });
@@ -142,16 +201,26 @@ export function getAllCanvasStates(
 ): Map<string, CanvasStateData> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
     const states = new Map<string, CanvasStateData>();
+    const prefix = `yappc-canvas:${COMPAT_STATE_PROJECT_ID}:${opts.storageKey}:`;
 
     try {
         const keys = Object.keys(localStorage);
 
         keys.forEach(key => {
-            if (key.startsWith(opts.storageKey)) {
+            if (key.startsWith(prefix)) {
                 const stored = localStorage.getItem(key);
                 if (stored) {
-                    const state: CanvasStateData = JSON.parse(stored);
-                    states.set(key, state);
+                    const snapshot = JSON.parse(stored) as CanvasSnapshot;
+                    const data = fromSnapshotData(snapshot);
+                    if (data !== null) {
+                        const [, , , mode, level] = key.split(':');
+                        states.set(key, {
+                            mode: (mode ?? 'freeform') as CanvasMode,
+                            level: (level ?? 'high') as AbstractionLevel,
+                            timestamp: Date.parse(snapshot.timestamp),
+                            data,
+                        });
+                    }
                 }
             }
         });

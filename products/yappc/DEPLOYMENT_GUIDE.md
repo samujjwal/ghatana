@@ -84,8 +84,9 @@ vim .env.production
 # Create production database
 createdb yappc_production
 
-# Run migrations
-./gradlew flywayMigrate -Denv=production
+# Run authoritative schema migrations for the active API surface
+cd frontend/apps/api
+pnpm run db:migrate
 
 # Verify schema
 psql yappc_production -c "\dt"
@@ -378,8 +379,10 @@ kubectl rollout status deployment/yappc-backend -n yappc-production
 ### Database Rollback
 
 ```bash
-# Rollback migrations
-./gradlew flywayUndo -Denv=production
+# Reset and re-apply the authoritative Prisma migration set for the active API surface
+cd frontend/apps/api
+pnpm run db:reset
+pnpm run db:migrate
 
 # Restore from backup
 pg_restore -d yappc_production backup.dump

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { server } from '@yappc/testing/node';
+import { server } from './web/src/test-utils/msw-handlers';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 // Establish API mocking before all tests

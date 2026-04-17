@@ -25,6 +25,10 @@ servers:
 tags:
   - name: auth
     description: Authentication and token management
+  - name: workspaces
+    description: Workspace CRUD and AI suggestion endpoints used by the active web client
+  - name: projects
+    description: Project CRUD, inclusion, and AI suggestion endpoints used by the active web client
   - name: lifecycle
     description: Project lifecycle phase management
   - name: intent
@@ -124,14 +128,46 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      summary: Exchange a refresh token for a new access token pair
+      operationId: refreshAuthToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/auth/logout:
     post:
       tags: [auth]
       summary: Invalidate the current session
       operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
       responses:
-        "204":
+        "200":
           description: Session invalidated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
 
   /api/auth/validate:
     get:
@@ -179,6 +215,353 @@ paths:
                 name: YAPPC Lifecycle API
                 version: "2.0.0"
                 status: operational
+
+  # ── Workspaces ─────────────────────────────────────────────────────────────
+
+  /api/workspaces:
+    get:
+      tags: [workspaces]
+      summary: List workspaces for the authenticated user
+      operationId: listWorkspaces
+      responses:
+        "200":
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          description: Database service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [workspaces]
+      summary: Create a workspace and optional starter project
+      operationId: createWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkspaceRequest"
+      responses:
+        "201":
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/workspaces/{workspaceId}:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [workspaces]
+      summary: Get a workspace with owned and included projects
+      operationId: getWorkspace
+      responses:
+        "200":
+          description: Workspace detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceDetailResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          description: Database service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [workspaces]
+      summary: Update workspace metadata
+      operationId: updateWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkspaceRequest"
+      responses:
+        "200":
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [workspaces]
+      summary: Delete a workspace
+      operationId: deleteWorkspace
+      responses:
+        "204":
+          description: Workspace deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/workspaces/suggest-name:
+    get:
+      tags: [workspaces]
+      summary: Suggest a workspace name
+      operationId: suggestWorkspaceName
+      responses:
+        "200":
+          description: Suggested workspace name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameSuggestionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Projects ───────────────────────────────────────────────────────────────
+
+  /api/projects:
+    get:
+      tags: [projects]
+      summary: List owned and included projects for a workspace
+      operationId: listProjects
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workspace project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      tags: [projects]
+      summary: Create a project owned by a workspace
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [projects]
+      summary: Get a single project with ownership context
+      operationId: getProject
+      parameters:
+        - name: workspaceId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [projects]
+      summary: Update a project owned by the current workspace
+      operationId: updateProject
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectRequest"
+      responses:
+        "200":
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectResponse"
+        "403":
+          description: Current workspace does not own the project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [projects]
+      summary: Delete a project owned by the current workspace
+      operationId: deleteProject
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Project deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Current workspace does not own the project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/include:
+    post:
+      tags: [projects]
+      summary: Include a read-only project in another workspace
+      operationId: includeProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncludeProjectRequest"
+      responses:
+        "201":
+          description: Project inclusion created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncludedProjectResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [projects]
+      summary: Remove a project inclusion from a workspace
+      operationId: removeIncludedProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncludeProjectRequest"
+      responses:
+        "204":
+          description: Inclusion removed
+
+  /api/projects/available-for-inclusion:
+    get:
+      tags: [projects]
+      summary: List projects that can be included in a workspace
+      operationId: listAvailableProjectsForInclusion
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Available projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailableProjectsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/projects/suggest-name:
+    get:
+      tags: [projects]
+      summary: Suggest a project name for a workspace
+      operationId: suggestProjectName
+      parameters:
+        - name: workspaceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProjectType"
+      responses:
+        "200":
+          description: Suggested project name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameSuggestionResponse"
+
+  /api/projects/setup-suggestion:
+    post:
+      tags: [projects]
+      summary: Suggest initial project setup from description and workspace context
+      operationId: suggestProjectSetup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectSetupSuggestionRequest"
+      responses:
+        "200":
+          description: Project setup suggestion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectSetupSuggestion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -682,7 +1065,342 @@ components:
 
   schemas:
 
+    # ── Workspace and project schemas ────────────────────────────────────────
+
+    ProjectType:
+      type: string
+      enum: [UI, BACKEND, MOBILE, DESKTOP, FULL_STACK]
+
+    ProjectStatus:
+      type: string
+      enum: [DRAFT, ACTIVE, COMPLETED, ARCHIVED]
+
+    ProjectLifecyclePhase:
+      type: string
+      description: Legacy project lifecycle phase used by the active web workspace/project surface.
+
+    Workspace:
+      type: object
+      required: [id, name, ownerId, isDefault, aiTags, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: string
+        isDefault:
+          type: boolean
+        projectCount:
+          type: integer
+        memberCount:
+          type: integer
+        aiSummary:
+          type: string
+        aiTags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      required:
+        [id, name, type, status, ownerWorkspaceId, isDefault, aiNextActions, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProjectType"
+        status:
+          $ref: "#/components/schemas/ProjectStatus"
+        lifecyclePhase:
+          $ref: "#/components/schemas/ProjectLifecyclePhase"
+        ownerWorkspaceId:
+          type: string
+        isDefault:
+          type: boolean
+        aiSummary:
+          type: string
+        aiNextActions:
+          type: array
+          items:
+            type: string
+        aiHealthScore:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProjectWithOwnership:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          required: [isOwned]
+          properties:
+            isOwned:
+              type: boolean
+            addedAt:
+              type: string
+              format: date-time
+
+    WorkspaceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Workspace"
+        - type: object
+          properties:
+            ownedProjects:
+              type: array
+              items:
+                $ref: "#/components/schemas/Project"
+            includedProjects:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProjectWithOwnership"
+
+    RelatedProjectRecommendation:
+      type: object
+      required: [id, name, type, ownerWorkspaceId, ownerWorkspaceName]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProjectType"
+        ownerWorkspaceId:
+          type: string
+        ownerWorkspaceName:
+          type: string
+
+    AvailableInclusionProject:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          properties:
+            ownerWorkspaceName:
+              type: string
+            aiCompatibilityScore:
+              type: integer
+
+    CreateWorkspaceRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        createDefaultProject:
+          type: boolean
+
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    WorkspaceResponse:
+      type: object
+      required: [workspace]
+      properties:
+        workspace:
+          $ref: "#/components/schemas/Workspace"
+
+    WorkspaceDetailResponse:
+      type: object
+      required: [workspace]
+      properties:
+        workspace:
+          $ref: "#/components/schemas/WorkspaceDetail"
+
+    WorkspaceListResponse:
+      type: object
+      required: [workspaces]
+      properties:
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/Workspace"
+
+    CreateProjectRequest:
+      type: object
+      required: [name, type, workspaceId]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProjectType"
+        workspaceId:
+          type: string
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProjectType"
+        status:
+          $ref: "#/components/schemas/ProjectStatus"
+        lifecyclePhase:
+          type: string
+          enum: [INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, IMPROVE]
+
+    IncludeProjectRequest:
+      type: object
+      required: [workspaceId, projectId]
+      properties:
+        workspaceId:
+          type: string
+        projectId:
+          type: string
+
+    ProjectResponse:
+      type: object
+      required: [project]
+      properties:
+        project:
+          $ref: "#/components/schemas/ProjectWithOwnership"
+
+    ProjectsResponse:
+      type: object
+      required: [owned, included]
+      properties:
+        owned:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectWithOwnership"
+        included:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectWithOwnership"
+
+    IncludedProjectResponse:
+      type: object
+      required: [project]
+      properties:
+        project:
+          $ref: "#/components/schemas/ProjectWithOwnership"
+
+    AvailableProjectsResponse:
+      type: object
+      required: [projects]
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailableInclusionProject"
+
+    NameSuggestionResponse:
+      type: object
+      required: [suggestion]
+      properties:
+        suggestion:
+          type: string
+
+    ProjectSetupSuggestionRequest:
+      type: object
+      required: [workspaceId]
+      properties:
+        workspaceId:
+          type: string
+        description:
+          type: string
+        preferredType:
+          $ref: "#/components/schemas/ProjectType"
+
+    ProjectSetupSuggestion:
+      type: object
+      required:
+        [suggestion, inferredType, rationale, summary, recommendations, relatedProjects]
+      properties:
+        suggestion:
+          type: string
+        inferredType:
+          $ref: "#/components/schemas/ProjectType"
+        rationale:
+          type: string
+        summary:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        relatedProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatedProjectRecommendation"
+
     # ── Auth schemas ──────────────────────────────────────────────────────────
+
+    AuthRole:
+      type: string
+      enum: [VIEWER, EDITOR, ADMIN, OWNER]
+
+    AuthUser:
+      type: object
+      required: [id, email, name, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: "#/components/schemas/AuthRole"
+        avatar:
+          type: string
+        avatarUrl:
+          type: string
+        tenantId:
+          type: string
+        workspaceIds:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    AuthTokenPair:
+      type: object
+      required: [accessToken, refreshToken, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token TTL in seconds
 
     LoginRequest:
       type: object
@@ -697,16 +1415,28 @@ components:
 
     LoginResponse:
       type: object
+      required: [user, tokens]
       properties:
-        token:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+        tokens:
+          $ref: "#/components/schemas/AuthTokenPair"
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
           type: string
-          description: JWT access token
-        expiresIn:
-          type: integer
-          description: Token TTL in seconds
-        tenantId:
-          type: string
-        userId:
+
+    RefreshTokenResponse:
+      allOf:
+        - $ref: "#/components/schemas/AuthTokenPair"
+
+    LogoutResponse:
+      type: object
+      properties:
+        message:
           type: string
 
     TokenValidationResult:
@@ -729,9 +1459,24 @@ components:
           type: string
         email:
           type: string
+          format: email
         name:
           type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: "#/components/schemas/AuthRole"
         tenantId:
+          type: string
+        workspaceIds:
+          type: array
+          items:
+            type: string
+        avatar:
+          type: string
+        avatarUrl:
           type: string
         roles:
           type: array

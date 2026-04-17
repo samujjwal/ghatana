@@ -28,7 +28,7 @@ jobs:
       matrix:
         product:
           - name: yappc-frontend
-            path: products/yappc/frontend/apps/web
+            path: products/yappc/frontend/web
             url: http://localhost:5173
             budgets:
               performance: 90
@@ -143,12 +143,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build YAPPC Frontend
+      - name: Build YAPPC Frontend Workspace Libraries
         working-directory: products/yappc/frontend
-        run: pnpm build:web
+        run: pnpm -r --filter "./libs/*" build
+
+      - name: Build YAPPC Frontend
+        working-directory: products/yappc/frontend/web
+        run: pnpm build
 
       - name: Analyze bundle size
-        working-directory: products/yappc/frontend/apps/web
+        working-directory: products/yappc/frontend/web
         run: |
           echo "=== Bundle Size Analysis ==="
           du -sh dist/
@@ -166,7 +170,7 @@ jobs:
           echo "✅ Bundle size within budget: $(du -sh dist/ | cut -f1)"
 
       - name: Check for large chunks
-        working-directory: products/yappc/frontend/apps/web
+        working-directory: products/yappc/frontend/web
         run: |
           echo "=== Large Chunk Detection ==="
           LARGE_CHUNKS=$(find dist/assets -name "*.js" -size +500k)

@@ -9,10 +9,15 @@
  * @doc.layer product
  * @doc.pattern Modal Component
  */
-import { useState, useEffect, useRef } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 
-import { workspaceAtom, addWorkspaceAtom, type Workspace } from '../../state/atoms/workspaceAtom';
+import {
+    currentWorkspaceIdAtom,
+    workspaceAtom,
+    type Workspace,
+} from '../../state/atoms/workspaceAtom';
+import { useCreateWorkspace, useNameSuggestions } from '../../hooks/useWorkspaceData';
 
 interface CreateWorkspaceDialogProps {
     isOpen: boolean;
@@ -25,79 +30,78 @@ export function CreateWorkspaceDialog({
     onClose,
     onCreated
 }: CreateWorkspaceDialogProps) {
-    const [state] = useAtom(workspaceAtom);
-    const addWorkspace = useSetAtom(addWorkspaceAtom);
+    const state = useAtomValue(workspaceAtom);
+    const setCurrentWorkspaceId = useSetAtom(currentWorkspaceIdAtom);
+    const createWorkspace = useCreateWorkspace();
+    const { suggestWorkspace } = useNameSuggestions();
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [createDefaultProject, setCreateDefaultProject] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const formId = 'create-workspace-form';
+
+    const generateAiSuggestion = useCallback(async (): Promise<void> => {
+        try {
+            const suggestion = await suggestWorkspace();
+            setAiSuggestion(suggestion);
+        } catch (error) {
+            console.warn('Failed to generate workspace suggestion:', error);
+            setAiSuggestion(null);
+        }
+    }, [suggestWorkspace]);
 
     // Focus input on open
     useEffect(() => {
         if (isOpen) {
+            setSubmitError(null);
             setTimeout(() => inputRef.current?.focus(), 100);
-            generateAiSuggestion();
+            void generateAiSuggestion();
         } else {
             setName('');
             setDescription('');
+            setCreateDefaultProject(true);
             setAiSuggestion(null);
+            setSubmitError(null);
         }
-    }, [isOpen]);
+    }, [generateAiSuggestion, isOpen]);
 
-    // Generate AI suggestion based on existing workspaces
-    const generateAiSuggestion = () => {
-        const existingNames = state.availableWorkspaces.map(w => w.name.toLowerCase());
-
-        // Simple AI-like suggestion logic
-        const suggestions = [
-            'Product Development',
-            'Client Projects',
-            'Personal',
-            'Experiments',
-            'Team Alpha',
-            'Platform Core',
-            'Mobile Apps',
-            'Backend Services',
-        ];
-
-        const available = suggestions.filter(
-            s => !existingNames.includes(s.toLowerCase())
-        );
-
-        if (available.length > 0) {
-            setAiSuggestion(available[0]);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!name.trim()) return;
+
+        const trimmedName = name.trim();
+        if (!trimmedName) return;
+
+        setSubmitError(null);
+
+        const existingNames = new Set(
+            state.availableWorkspaces.map((workspace) => workspace.name.trim().toLowerCase())
+        );
+        if (existingNames.has(trimmedName.toLowerCase())) {
+            setSubmitError(`A workspace named "${trimmedName}" already exists.`);
+            return;
+        }
 
         setIsCreating(true);
 
         try {
-            // NOTE: Replace with actual API call
-            const newWorkspace: Workspace = {
-                id: `ws_${Date.now()}`,
-                name: name.trim(),
+            const newWorkspace: Workspace = await createWorkspace.mutateAsync({
+                name: trimmedName,
                 description: description.trim() || undefined,
-                ownerId: 'current-user-id', // NOTE: Get from auth context
-                isDefault: false,
-                aiSummary: undefined,
-                aiTags: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            };
+                createDefaultProject,
+            });
 
-            addWorkspace(newWorkspace);
+            setCurrentWorkspaceId(newWorkspace.id);
             onCreated?.(newWorkspace);
             onClose();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Failed to create workspace:', error);
+            const message = error instanceof Error ? error.message : 'Failed to create workspace.';
+            setSubmitError(message);
         } finally {
             setIsCreating(false);
         }
@@ -149,7 +153,7 @@ export function CreateWorkspaceDialog({
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+                <form id={formId} onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
                     {/* AI Suggestion Banner */}
                     {aiSuggestion && !name && (
                         <div className="flex items-center gap-3 px-4 py-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
@@ -246,6 +250,15 @@ export function CreateWorkspaceDialog({
                             Create a default project in this workspace
                         </label>
                     </div>
+
+                    {submitError && (
+                        <p
+                            className="text-sm text-red-600 dark:text-red-400"
+                            data-testid="create-workspace-error"
+                        >
+                            {submitError}
+                        </p>
+                    )}
                 </form>
 
                 {/* Footer */}
@@ -264,7 +277,7 @@ export function CreateWorkspaceDialog({
                     </button>
                     <button
                         type="submit"
-                        onClick={handleSubmit}
+                        form={formId}
                         disabled={!name.trim() || isCreating}
                         data-testid="create-workspace-submit"
                         className="

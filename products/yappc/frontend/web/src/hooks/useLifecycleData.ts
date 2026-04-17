@@ -11,7 +11,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { lifecycleAPI, Artifact, Evidence, Task, GateStatus, AIRecommendation, AuditEvent } from '@/services/lifecycle/api';
+import { lifecycleAPI, Artifact, Evidence, Task, GateStatus, AIRecommendation, AuditEvent, ReadinessAnomalyAlert } from '@/services/lifecycle/api';
 import { FOWStage, ArtifactType } from '@/types/fow-stages';
 import { LifecyclePhase } from '@/types/lifecycle';
 
@@ -31,6 +31,7 @@ export const lifecycleKeys = {
     nextTask: (projectId: string, phase: LifecyclePhase, persona?: string) => [...lifecycleKeys.all, 'next-task', projectId, phase, persona] as const,
     aiRecommendations: (projectId: string, phase: LifecyclePhase, fowStage: FOWStage) => [...lifecycleKeys.all, 'ai-recommendations', projectId, phase, fowStage] as const,
     aiInsights: (projectId: string) => [...lifecycleKeys.all, 'ai-insights', projectId] as const,
+    readinessAnomalies: (projectId: string) => [...lifecycleKeys.all, 'readiness-anomalies', projectId] as const,
     audit: (projectId: string) => [...lifecycleKeys.all, 'audit', projectId] as const,
     derivedPersona: (projectId: string, phase: LifecyclePhase, fowStage: FOWStage) => [...lifecycleKeys.all, 'persona', projectId, phase, fowStage] as const,
 };
@@ -335,6 +336,16 @@ export function useAIInsights(projectId: string, options?: UseQueryOptions<Evide
         queryFn: () => lifecycleAPI.ai.getInsights(projectId),
         enabled: !!projectId,
         staleTime: 300000, // 5 minutes
+        ...options,
+    });
+}
+
+export function useReadinessAnomalies(projectId: string, options?: UseQueryOptions<ReadinessAnomalyAlert[], Error>) {
+    return useQuery({
+        queryKey: lifecycleKeys.readinessAnomalies(projectId),
+        queryFn: () => lifecycleAPI.devSecOps.getAnomalyAlerts(),
+        enabled: !!projectId,
+        staleTime: 60000,
         ...options,
     });
 }

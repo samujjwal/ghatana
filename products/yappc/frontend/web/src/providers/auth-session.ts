@@ -1,22 +1,55 @@
 import type { User } from '@/types/dashboard';
+import type { components } from '@/clients/generated/openapi';
 import { parseJsonResponse } from '@/lib/http';
 
 export const AUTH_ME_ENDPOINT = '/api/auth/me';
+export const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh';
+
+type RefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
+type RefreshTokenResponse = components['schemas']['RefreshTokenResponse'];
 
 export type StoredSession = {
   token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
 };
 
-export type AuthSessionUser = {
-  id: string;
+type GeneratedAuthSessionUser = components['schemas']['UserInfo'];
+
+export type AuthSessionUser = GeneratedAuthSessionUser & {
   firstName?: string;
   lastName?: string;
   email?: string;
+  name?: string;
   avatarUrl?: string;
-  role?: 'ADMIN' | 'USER' | 'VIEWER';
   tenantId?: string;
   workspaceIds?: string[];
 };
+
+function mapGeneratedRole(role: AuthSessionUser['role'] | string | undefined): User['role'] {
+  if (role === 'ADMIN' || role === 'VIEWER') {
+    return role;
+  }
+
+  if (role === 'OWNER') {
+    return 'ADMIN';
+  }
+
+  if (role === 'EDITOR') {
+    return 'USER';
+  }
+
+  return 'USER';
+}
+
+function getPrimaryRole(user: AuthSessionUser): User['role'] {
+  if (typeof user.role === 'string') {
+    return mapGeneratedRole(user.role);
+  }
+
+  const firstRole = Array.isArray(user.roles) ? user.roles[0] : undefined;
+  return typeof firstRole === 'string' ? mapGeneratedRole(firstRole) : 'USER';
+}
 
 function parseStoredSession(raw: string): StoredSession {
   const payload = JSON.parse(raw) as unknown;
@@ -27,14 +60,46 @@ function parseStoredSession(raw: string): StoredSession {
   return payload as StoredSession;
 }
 
+function readStoredSession(): StoredSession | null {
+  try {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const raw = localStorage.getItem('auth-session');
+    if (!raw) {
+      return null;
+    }
+
+    return parseStoredSession(raw);
+  } catch {
+    return null;
+  }
+}
+
+function persistStoredSession(session: StoredSession): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  localStorage.setItem('auth-session', JSON.stringify(session));
+}
+
+function clearStoredSession(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  localStorage.removeItem('auth-session');
+}
+
 const VALID_ROLES = new Set<User['role']>(['ADMIN', 'USER', 'VIEWER']);
 
 export function mapAuthSessionToUser(user: AuthSessionUser): User {
   const first = user.firstName?.trim() ?? '';
   const last = user.lastName?.trim() ?? '';
-  const name = `${first} ${last}`.trim() || user.id;
-  const role: User['role'] =
-    user.role && VALID_ROLES.has(user.role) ? user.role : 'USER';
+  const name = `${first} ${last}`.trim() || user.name?.trim() || user.id;
+  const role = getPrimaryRole(user);
 
   return {
     id: user.id,
@@ -50,20 +115,45 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
 }
 
 export function getStoredAccessToken(): string | null {
+  const session = readStoredSession();
+  return typeof session?.token === 'string' && session.token.length > 0
+    ? session.token
+    : null;
+}
+
+async function refreshStoredSession(
+  session: StoredSession,
+  fetchImpl: typeof fetch
+): Promise<StoredSession | null> {
+  if (!session.refreshToken) {
+    return null;
+  }
+
   try {
-    if (typeof localStorage === 'undefined') {
-      return null;
-    }
+    const response = await fetchImpl(AUTH_REFRESH_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: session.refreshToken } satisfies RefreshTokenRequest),
+    });
 
-    const raw = localStorage.getItem('auth-session');
-    if (!raw) {
-      return null;
-    }
+    if (!response.ok) {
 
-    const parsed = parseStoredSession(raw);
-    return typeof parsed.token === 'string' && parsed.token.length > 0
-      ? parsed.token
-      : null;
+    const refreshed = await parseJsonResponse<RefreshTokenResponse>(
+      response,
+      'refresh auth session'
+    );
+    const nextSession: StoredSession = {
+      ...session,
+      token: refreshed.accessToken,
+      refreshToken: refreshed.refreshToken,
+      expiresAt: new Date(Date.now() + refreshed.expiresIn * 1000).toISOString(),
+    };
+
+    persistStoredSession(nextSession);
+    return nextSession;
   } catch {
     return null;
   }
@@ -72,8 +162,8 @@ export function getStoredAccessToken(): string | null {
 export async function fetchAuthSession(
   fetchImpl?: typeof fetch
 ): Promise<AuthSessionUser | null> {
-  const token = getStoredAccessToken();
-  if (!token) {
+  const storedSession = readStoredSession();
+  if (!storedSession?.token) {
     return null;
   }
 
@@ -83,14 +173,30 @@ export async function fetchAuthSession(
   }
 
   try {
-    const response = await effectiveFetch(AUTH_ME_ENDPOINT, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const fetchCurrentUser = async (accessToken: string): Promise<Response> =>
+      effectiveFetch(AUTH_ME_ENDPOINT, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+    let response = await fetchCurrentUser(storedSession.token);
+
+    if (response.status === 401) {
+      const refreshedSession = await refreshStoredSession(storedSession, effectiveFetch);
+      if (!refreshedSession?.token) {
+        clearStoredSession();
+        return null;
+      }
+
+      response = await fetchCurrentUser(refreshedSession.token);
+    }
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearStoredSession();
+      }
       return null;
     }
 
@@ -98,7 +204,7 @@ export async function fetchAuthSession(
       response,
       'fetch auth session'
     );
-    return user?.id ? user : null;
+    return typeof user?.id === 'string' && user.id.length > 0 ? user : null;
   } catch {
     return null;
   }

@@ -14,9 +14,80 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrowserRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import UnifiedCanvasComplete from '../canvas';
 import * as StudioLayoutModule from '../../../../components/studio/StudioLayout';
 import * as KeyboardShortcutsModule from '../../../../components/keyboard/KeyboardShortcutsManager';
+
+vi.mock('react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router')>();
+  return {
+    ...actual,
+    useParams: () => ({ projectId: 'project-1' }),
+    useNavigate: () => vi.fn(),
+  };
+});
+
+vi.mock('@ghatana/design-system', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ghatana/design-system')>();
+  return {
+    ...actual,
+    Alert: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Box: ({ children, ...props }: { children: React.ReactNode }) => <div {...props}>{children}</div>,
+    Snackbar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  };
+});
+
+vi.mock('../../../../hooks/useAuth', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    currentUser: { id: 'user-1', email: 'dev@yappc.dev', name: 'Dev User' },
+    currentSession: null,
+    getToken: () => 'token-123',
+    getAuthHeader: () => 'Bearer token-123',
+    hasPermission: () => true,
+    hasRole: () => true,
+    logout: vi.fn(),
+  }),
+}));
+
+vi.mock('../../../../hooks/useCollaboration', () => ({
+  useCollaboration: () => ({
+    connectionState: { status: 'connected' },
+    status: 'connected',
+    isConnected: true,
+    presence: new Map([
+      ['user-2', { user: { id: 'user-2', name: 'Alex', email: 'alex@yappc.dev', color: '#FF6B6B' }, status: 'active', lastSeen: '2026-04-17T12:00:00.000Z' }],
+      ['user-3', { user: { id: 'user-3', name: 'Sam', email: 'sam@yappc.dev', color: '#4ECDC4' }, status: 'active', lastSeen: '2026-04-17T12:00:00.000Z' }],
+    ]),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+  }),
+}));
+
+vi.mock('../../../../hooks/useWorkspaceData', () => ({
+  useWorkspaceContext: () => ({
+    workspace: { id: 'workspace-1', name: 'YAPPC Workspace' },
+    workspaceId: 'workspace-1',
+    ownedProjects: [
+      {
+        id: 'project-1',
+        name: 'Project One',
+        lifecyclePhase: 'INTENT',
+      },
+    ],
+    includedProjects: [],
+    isLoading: false,
+  }),
+}));
+
+vi.mock('jotai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('jotai')>();
+  return {
+    ...actual,
+    useAtomValue: () => ({ id: 'user-1', email: 'dev@yappc.dev', name: 'Dev User' }),
+  };
+});
 
 // Mock all the new components
 vi.mock('../../../../components/ai/AIStatusBar', () => ({
@@ -157,18 +228,22 @@ vi.mock('../../../../components/canvas/unified/CanvasErrorBoundary', () => ({
   CanvasErrorBoundary: ({ children }: unknown) => <div>{children}</div>,
 }));
 
-vi.mock('@ghatana/canvas', () => ({
-  CanvasCommandProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  CanvasChromeLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="canvas-chrome-layout">{children}</div>,
-  useCanvasTelemetry: () => ({ trackEvent: vi.fn(), trackError: vi.fn() }),
-  useCanvasCommands: () => ({ executeCommand: vi.fn(), canUndo: false, canRedo: false, undo: vi.fn(), redo: vi.fn() }),
-  OnboardingTour: ({ active }: { active: boolean }) => (
-    <div data-testid="onboarding-tour" data-active={active}>
-      Tour
-    </div>
-  ),
-  FeatureHintsManager: () => <div data-testid="feature-hints">Hints</div>,
-}));
+vi.mock('@ghatana/canvas', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ghatana/canvas')>();
+  return {
+    ...actual,
+    CanvasCommandProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    CanvasChromeLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="canvas-chrome-layout">{children}</div>,
+    useCanvasTelemetry: () => ({ trackEvent: vi.fn(), trackError: vi.fn() }),
+    useCanvasCommands: () => ({ executeCommand: vi.fn(), canUndo: false, canRedo: false, undo: vi.fn(), redo: vi.fn() }),
+    OnboardingTour: ({ active }: { active: boolean }) => (
+      <div data-testid="onboarding-tour" data-active={active}>
+        Tour
+      </div>
+    ),
+    FeatureHintsManager: () => <div data-testid="feature-hints">Hints</div>,
+  };
+});
 
 vi.mock('../../../../hooks/useUnifiedCanvas', () => ({
   useUnifiedCanvas: () => ({
@@ -204,11 +279,21 @@ vi.mock('../../../../hooks/useUnifiedCanvas', () => ({
 }));
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const testTheme = {
+  colors: {
+    primary: '#0070f3',
+    secondary: '#1e88e5',
+    background: '#ffffff',
+    text: '#000000',
+  },
+};
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{component}</BrowserRouter>
+      <ThemeProvider theme={testTheme}>
+        <BrowserRouter>{component}</BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
@@ -236,6 +321,15 @@ describe('Canvas Integration Tests', () => {
       // Canvas chrome layout should be present (not studio-specific UI)
       expect(screen.getByTestId('canvas-chrome-layout')).toBeInTheDocument();
       expect(screen.queryByTestId('studio-layout')).not.toBeInTheDocument();
+    });
+
+    it('renders collaboration presence for the active canvas', () => {
+      renderWithProviders(<UnifiedCanvasComplete />);
+
+      expect(screen.getByTestId('canvas-collaboration-banner')).toBeInTheDocument();
+      expect(screen.getByTestId('canvas-collaboration-summary').textContent).toContain('3 collaborators');
+      expect(screen.getByText('Alex')).toBeInTheDocument();
+      expect(screen.getByText('Sam')).toBeInTheDocument();
     });
   });
 

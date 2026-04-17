@@ -14,6 +14,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { markDeprecated } from '../middleware/deprecation';
 import { requirePermission } from '../middleware/rbac.middleware';
+import { getAuditService } from '../services/audit/audit.service';
 
 // ============================================================================
 // Types
@@ -48,6 +49,41 @@ interface ProjectParams {
 interface IncludeProjectBody {
   workspaceId: string;
   projectId: string;
+}
+
+interface ProjectSetupSuggestionBody {
+  workspaceId: string;
+  description?: string;
+  preferredType?: CreateProjectBody['type'];
+}
+
+interface AuditProjectSummary {
+  id: string;
+  name: string;
+  type: CreateProjectBody['type'];
+  ownerWorkspaceId: string;
+}
+
+interface AuditWorkspaceSummary {
+  id: string;
+  name: string;
+}
+
+interface RelatedProjectRecommendation {
+  id: string;
+  name: string;
+  type: CreateProjectBody['type'];
+  ownerWorkspaceId: string;
+  ownerWorkspaceName: string;
+}
+
+interface ProjectSetupSuggestion {
+  suggestion: string;
+  inferredType: CreateProjectBody['type'];
+  rationale: string;
+  summary: string;
+  recommendations: string[];
+  relatedProjects: RelatedProjectRecommendation[];
 }
 
 // ============================================================================
@@ -134,7 +170,10 @@ async function calculateHealthScore(projectId: string): Promise<number> {
 /**
  * Suggest project name based on workspace context
  */
-async function suggestProjectName(workspaceId: string): Promise<string> {
+async function suggestProjectName(
+  workspaceId: string,
+  preferredType?: CreateProjectBody['type']
+): Promise<string> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
     include: {
@@ -149,7 +188,16 @@ async function suggestProjectName(workspaceId: string): Promise<string> {
   );
   const workspacePrefix = workspace.name.split(' ')[0];
 
+  const typeSuggestions: Record<CreateProjectBody['type'], string[]> = {
+    FULL_STACK: [`${workspacePrefix} Platform`, `${workspacePrefix} App`],
+    UI: [`${workspacePrefix} UI`, `${workspacePrefix} Design System`],
+    BACKEND: [`${workspacePrefix} API`, `${workspacePrefix} Service`],
+    MOBILE: [`${workspacePrefix} Mobile`, `${workspacePrefix} Companion App`],
+    DESKTOP: [`${workspacePrefix} Desktop`, `${workspacePrefix} Studio`],
+  };
+
   const suggestions = [
+    ...(preferredType ? typeSuggestions[preferredType] : []),
     `${workspacePrefix} App`,
     `${workspacePrefix} Service`,
     `${workspacePrefix} Platform`,
@@ -164,6 +212,196 @@ async function suggestProjectName(workspaceId: string): Promise<string> {
   );
 
   return available || `Project ${workspace.ownedProjects.length + 1}`;
+}
+
+function inferProjectTypeFromDescription(params: {
+  description?: string;
+  preferredType?: CreateProjectBody['type'];
+}): {
+  inferredType: CreateProjectBody['type'];
+  rationale: string;
+  summary: string;
+  recommendations: string[];
+} {
+  const { description, preferredType } = params;
+  const normalizedDescription = description?.toLowerCase().trim() ?? '';
+
+  if (!normalizedDescription) {
+    const inferredType = preferredType ?? 'FULL_STACK';
+    return {
+      inferredType,
+      rationale:
+        'No description was provided, so the suggestion falls back to the selected project type.',
+      summary: `Suggested as a ${inferredType.replace('_', ' ').toLowerCase()} project based on your current selection.`,
+      recommendations: [
+        'Add a short problem statement to improve the AI setup suggestion.',
+        'Capture the primary users or interfaces before creating the project.',
+      ],
+    };
+  }
+
+  const keywordMap: Record<CreateProjectBody['type'], string[]> = {
+    FULL_STACK: ['full stack', 'web app', 'platform', 'portal', 'dashboard', 'end-to-end'],
+    UI: ['ui', 'design system', 'frontend', 'component', 'landing page', 'experience'],
+    BACKEND: ['api', 'backend', 'service', 'auth', 'worker', 'queue', 'database', 'integration'],
+    MOBILE: ['mobile', 'ios', 'android', 'react native', 'tablet', 'phone'],
+    DESKTOP: ['desktop', 'electron', 'native app', 'workstation', 'local app'],
+  };
+
+  const scoredTypes = Object.entries(keywordMap).map(([type, keywords]) => {
+    const score = keywords.reduce((total, keyword) => {
+      return total + (normalizedDescription.includes(keyword) ? 1 : 0);
+    }, 0);
+    return { type: type as CreateProjectBody['type'], score };
+  });
+
+  const rankedTypes = scoredTypes.sort((left, right) => right.score - left.score);
+  const topMatch = rankedTypes[0];
+  const inferredType = topMatch.score > 0 ? topMatch.type : preferredType ?? 'FULL_STACK';
+
+  const rationaleByType: Record<CreateProjectBody['type'], string> = {
+    FULL_STACK:
+      'The description points to a product flow that spans both user-facing experience and backend services.',
+    UI: 'The description emphasizes interface design, components, or browser experience work.',
+    BACKEND:
+      'The description emphasizes APIs, services, authentication, data, or system integration work.',
+    MOBILE:
+      'The description references mobile platforms, handheld use cases, or native device workflows.',
+    DESKTOP:
+      'The description points to a workstation or locally installed desktop application.',
+  };
+
+  const recommendationsByType: Record<CreateProjectBody['type'], string[]> = {
+    FULL_STACK: [
+      'Define the primary frontend journeys and backend integration boundary.',
+      'Start with one end-to-end workflow that proves the product spine.',
+    ],
+    UI: [
+      'Capture the main screen hierarchy and component ownership before implementation.',
+      'Reuse the existing design system first and only extend it where the product needs it.',
+    ],
+    BACKEND: [
+      'Define the core API contract and integration boundaries before scaffolding.',
+      'Identify persistence, auth, and observability requirements early.',
+    ],
+    MOBILE: [
+      'Clarify the first-run mobile flow and offline expectations.',
+      'Define the minimum supported platforms and device capabilities.',
+    ],
+    DESKTOP: [
+      'Define the local workflow, packaging target, and runtime permissions.',
+      'Map native integrations before choosing the shell architecture.',
+    ],
+  };
+
+  return {
+    inferredType,
+    rationale: rationaleByType[inferredType],
+    summary: `AI suggests a ${inferredType.replace('_', ' ').toLowerCase()} project for this description.`,
+    recommendations: recommendationsByType[inferredType],
+  };
+}
+
+async function getCrossWorkspaceRecommendations(params: {
+  workspaceId: string;
+  inferredType: CreateProjectBody['type'];
+}): Promise<RelatedProjectRecommendation[]> {
+  const relatedProjects = await prisma.project.findMany({
+    where: {
+      ownerWorkspaceId: { not: params.workspaceId },
+      type: params.inferredType,
+    },
+    include: {
+      ownerWorkspace: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+    take: 3,
+  });
+
+  return relatedProjects.map((project) => ({
+    id: project.id,
+    name: project.name,
+    type: project.type,
+    ownerWorkspaceId: project.ownerWorkspaceId,
+    ownerWorkspaceName: project.ownerWorkspace.name,
+  }));
+}
+
+async function buildProjectSetupSuggestion(
+  body: ProjectSetupSuggestionBody
+): Promise<ProjectSetupSuggestion> {
+  const inferred = inferProjectTypeFromDescription({
+    description: body.description,
+    preferredType: body.preferredType,
+  });
+  const [suggestion, relatedProjects] = await Promise.all([
+    suggestProjectName(body.workspaceId, inferred.inferredType),
+    getCrossWorkspaceRecommendations({
+      workspaceId: body.workspaceId,
+      inferredType: inferred.inferredType,
+    }),
+  ]);
+
+  return {
+    suggestion,
+    inferredType: inferred.inferredType,
+    rationale: inferred.rationale,
+    summary: inferred.summary,
+    recommendations: inferred.recommendations,
+    relatedProjects,
+  };
+}
+
+async function logProjectCreatedAuditEvent(params: {
+  request: FastifyRequest;
+  project: AuditProjectSummary;
+  workspace: AuditWorkspaceSummary;
+}): Promise<void> {
+  const { request, project, workspace } = params;
+
+  if (!request.user?.userId) {
+    return;
+  }
+
+  try {
+    await getAuditService().log({
+      action: 'PROJECT_CREATED',
+      actor: request.user.userId,
+      actorRole: request.user.role,
+      resource: `/projects/${project.id}`,
+      severity: 'info',
+      details: `Project ${project.name} created in workspace ${workspace.name}`,
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'],
+      method: request.method,
+      status: 201,
+      tenantId: request.user.tenantId,
+      success: true,
+      metadata: {
+        workspaceId: workspace.id,
+        workspaceName: workspace.name,
+        projectId: project.id,
+        projectName: project.name,
+        projectType: project.type,
+      },
+    });
+  } catch (error) {
+    request.log.warn(
+      {
+        error,
+        projectId: project.id,
+        workspaceId: workspace.id,
+      },
+      'Failed to write project creation audit event'
+    );
+  }
 }
 
 // ============================================================================
@@ -303,6 +541,20 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       await prisma.project.update({
         where: { id: project.id },
         data: { aiHealthScore },
+      });
+
+      await logProjectCreatedAuditEvent({
+        request,
+        project: {
+          id: project.id,
+          name: project.name,
+          type: project.type,
+          ownerWorkspaceId: project.ownerWorkspaceId,
+        },
+        workspace: {
+          id: workspace.id,
+          name: workspace.name,
+        },
       });
 
       return reply.status(201).send({
@@ -569,14 +821,47 @@ export default async function projectRoutes(fastify: FastifyInstance) {
    * GET /api/projects/suggest-name
    * AI suggests project name for workspace
    */
-  fastify.get<{ Querystring: { workspaceId: string } }>(
+  fastify.get<{
+    Querystring: {
+      workspaceId: string;
+      type?: CreateProjectBody['type'];
+    };
+  }>(
     '/projects/suggest-name',
     async (request, reply) => {
-      const { workspaceId } = request.query;
+      const { workspaceId, type } = request.query;
 
-      const suggestion = await suggestProjectName(workspaceId);
+      const suggestion = await suggestProjectName(workspaceId, type);
 
       return reply.send({ suggestion });
+    }
+  );
+
+  /**
+   * POST /api/projects/setup-suggestion
+   * Suggest the initial project setup from the description and workspace context.
+   */
+  fastify.post<{ Body: ProjectSetupSuggestionBody }>(
+    '/projects/setup-suggestion',
+    { preHandler: requirePermission('project', 'create') },
+    async (request, reply) => {
+      const { workspaceId } = request.body;
+
+      if (!workspaceId) {
+        return reply.status(400).send({ error: 'workspaceId is required' });
+      }
+
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { id: true },
+      });
+
+      if (!workspace) {
+        return reply.status(404).send({ error: 'Workspace not found' });
+      }
+
+      const suggestion = await buildProjectSetupSuggestion(request.body);
+      return reply.send(suggestion);
     }
   );
 

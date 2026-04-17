@@ -113,6 +113,19 @@ export interface DevSecOpsItem {
   risk?: number;
 }
 
+export interface ReadinessAnomalyAlert {
+  id: string;
+  metric: string;
+  severity: string;
+  status: string;
+  expectedValue: number;
+  actualValue: number;
+  deviation: number;
+  message: string;
+  detectedAt: string;
+  resolvedAt?: string;
+}
+
 // ============================================================================
 // API Configuration
 // ============================================================================
@@ -173,6 +186,10 @@ async function fetchAPI<T>(
   }
 
   return parseJsonResponse<T>(response, endpoint);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 // ============================================================================
@@ -371,6 +388,23 @@ export const devSecOpsAPI = {
   getItems: async (projectId: string): Promise<DevSecOpsItem[]> => {
     return fetchAPI<DevSecOpsItem[]>(`/projects/${projectId}/devsecops`);
   },
+
+  /**
+   * Get active anomaly alerts that can block release readiness.
+   */
+  getAnomalyAlerts: async (): Promise<ReadinessAnomalyAlert[]> => {
+    const payload = await fetchAPI<unknown>('/devsecops/anomaly-alerts');
+
+    if (Array.isArray(payload)) {
+      return payload as ReadinessAnomalyAlert[];
+    }
+
+    if (isRecord(payload) && Array.isArray(payload.data)) {
+      return payload.data as ReadinessAnomalyAlert[];
+    }
+
+    return [];
+  },
 };
 
 // ============================================================================
@@ -503,6 +537,7 @@ export const lifecycleAPI = {
   gates: gateAPI,
   tasks: taskAPI,
   ai: aiAPI,
+  devSecOps: devSecOpsAPI,
   audit: auditAPI,
   personas: personaAPI,
 };

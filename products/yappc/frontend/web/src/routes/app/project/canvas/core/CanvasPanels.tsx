@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { Alert, Box, Drawer, Snackbar, useMediaQuery, useTheme } from '@ghatana/design-system';
 
