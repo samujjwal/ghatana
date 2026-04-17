@@ -13,6 +13,7 @@
 
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { LifecyclePhase } from '@/types/lifecycle';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 export interface ArtifactSuggestion {
     id: string;
@@ -49,10 +50,13 @@ export async function generateArtifactSuggestions(
     });
 
     if (!response.ok) {
-        throw new Error('Failed to generate suggestions');
+        throw new Error(await readErrorResponse(response, 'Failed to generate suggestions'));
     }
 
-    const data = await response.json();
+    const data = await parseJsonResponse<{ suggestions: ArtifactSuggestion[] }>(
+        response,
+        'generate artifact suggestions'
+    );
     return data.suggestions;
 }
 

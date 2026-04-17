@@ -47,9 +47,6 @@ const SENSITIVE_FIELDS = new Set([
 // ============================================================================
 
 function redact(obj: unknown): unknown {
-  if (typeof obj !== 'object' || obj === null) return obj;
-  if (Array.isArray(obj)) return obj.map(redact);
-
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     result[key] = SENSITIVE_FIELDS.has(key) ? '[REDACTED]' : redact(value);
@@ -103,33 +100,35 @@ export async function auditMiddleware(fastify: FastifyInstance): Promise<void> {
         ? JSON.stringify(redact(request.body))
         : undefined;
 
-      getAuditService()
-        .log({
-          action: inferAction(request.method, path),
-          actor,
-          actorRole,
-          resource: path,
-          severity:
-            reply.statusCode >= 500
-              ? 'error'
-              : reply.statusCode >= 400
-                ? 'warn'
-                : 'info',
-          method: request.method,
-          status: reply.statusCode,
-          ipAddress: request.ip,
-          userAgent: request.headers['user-agent'],
-          details,
-          success: reply.statusCode < 400,
-        })
-        .catch((err) => {
+      void (async () => {
+        try {
+          await getAuditService().log({
+            action: inferAction(request.method, path),
+            actor,
+            actorRole,
+            resource: path,
+            severity:
+              reply.statusCode >= 500
+                ? 'error'
+                : reply.statusCode >= 400
+                  ? 'warn'
+                  : 'info',
+            method: request.method,
+            status: reply.statusCode,
+            ipAddress: request.ip,
+            userAgent: request.headers['user-agent'],
+            details,
+            success: reply.statusCode < 400,
+          });
+        } catch (err) {
           if (fastify.log?.warn) {
             fastify.log.warn(
               '[AuditMiddleware] Failed to write audit entry:',
               err
             );
           }
-        });
+        }
+      })();
     }
   );
 }

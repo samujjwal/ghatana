@@ -25,7 +25,7 @@
 
 import { useMemo } from "react";
 import { getYappcCanvasAIAdapter, YappcCanvasAIAdapter } from "./yappc-ai-adapter.js";
-import type { CanvasAIAdapter } from "@ghatana/canvas";
+import type { CanvasAIAdapter } from "@ghatana/canvas/ai";
 
 /**
  * Returns a stable singleton YappcCanvasAIAdapter instance.

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface ArticleAuthor {
   id: string;
@@ -58,8 +59,10 @@ const ArticlePage: React.FC = () => {
     queryKey: ['article', articleId],
     queryFn: async () => {
       const res = await fetch(`/api/articles/${articleId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load article');
-      return res.json() as Promise<ArticleData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load article'));
+      }
+      return parseJsonResponse<ArticleData>(res, 'article detail');
     },
     enabled: !!articleId,
   });

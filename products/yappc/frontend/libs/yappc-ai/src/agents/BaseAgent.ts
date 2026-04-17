@@ -217,28 +217,29 @@ export abstract class BaseAgent<TInput, TOutput> implements IAIAgent<
     promise: Promise<T>,
     timeoutMs: number
   ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(
-          new AgentError(
-            `Agent ${this.name} timed out after ${timeoutMs}ms`,
-            'TIMEOUT',
-            this.name,
-            true
-          )
-        );
-      }, timeoutMs);
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-      promise
-        .then((result) => {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch((error) => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => {
+            reject(
+              new AgentError(
+                `Agent ${this.name} timed out after ${timeoutMs}ms`,
+                'TIMEOUT',
+                this.name,
+                true
+              )
+            );
+          }, timeoutMs);
+        }),
+      ]);
+    } finally {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    }
   }
 
   /**

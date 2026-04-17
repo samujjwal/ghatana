@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Bell, X, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
 
@@ -295,8 +296,12 @@ function formatTime(timestamp: string): string {
 
 async function fetchNotifications(tenantId: string): Promise<Notification[]> {
   const res = await fetch(`/api/notifications?tenantId=${encodeURIComponent(tenantId)}`);
-  if (!res.ok) throw new Error(`Failed to fetch notifications: ${res.status}`);
-  return res.json() as Promise<Notification[]>;
+  if (!res.ok) {
+    throw new Error(
+      await readErrorResponse(res, `Failed to fetch notifications: ${res.status}`)
+    );
+  }
+  return parseJsonResponse<Notification[]>(res, 'fetch notifications');
 }
 
 async function markNotificationAsRead(notificationId: string): Promise<void> {

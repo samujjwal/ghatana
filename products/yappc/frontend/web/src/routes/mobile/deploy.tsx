@@ -15,6 +15,7 @@ import { useParams } from 'react-router';
 import { useIsDarkMode } from '@ghatana/theme';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { logger } from '../../utils/Logger';
 import {
   Box,
@@ -66,8 +67,12 @@ export default function MobileDeployRoute() {
         setLoading(true);
         try {
             const res = await fetch(`/api/projects/${projectId}/deployments`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json() as Deployment[];
+            if (!res.ok) {
+                throw new Error(
+                    await readErrorResponse(res, `Failed to load deployments: ${res.status}`)
+                );
+            }
+            const data = await parseJsonResponse<Deployment[]>(res, 'mobile deployments load');
             setDeployments(data.map(d => ({ ...d, timestamp: new Date(d.timestamp) })));
         } catch (error) {
             logger.error('Failed to load deployments', 'mobile-deploy', {

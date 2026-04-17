@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type ReviewDecision = 'approved' | 'changes-requested' | 'pending' | 'commented';
 
@@ -82,8 +83,10 @@ const CodeReviewPage: React.FC = () => {
       const res = await fetch(`/api/code-reviews/${reviewId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load code review');
-      return res.json() as Promise<CodeReviewData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load code review'));
+      }
+      return parseJsonResponse<CodeReviewData>(res, 'code review page');
     },
     enabled: !!reviewId,
   });

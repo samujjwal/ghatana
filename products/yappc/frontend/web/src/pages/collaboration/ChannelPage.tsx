@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface ChannelMember {
   id: string;
@@ -49,8 +50,10 @@ const ChannelPage: React.FC = () => {
     queryKey: ['channel', channelId],
     queryFn: async () => {
       const res = await fetch(`/api/messages/channels/${channelId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load channel');
-      return res.json() as Promise<ChannelData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load channel'));
+      }
+      return parseJsonResponse<ChannelData>(res, 'channel detail');
     },
     enabled: !!channelId,
     refetchInterval: 10_000,
@@ -63,8 +66,10 @@ const ChannelPage: React.FC = () => {
         headers: authHeaders(),
         body: JSON.stringify({ content }),
       });
-      if (!res.ok) throw new Error('Failed to send message');
-      return res.json() as Promise<ChannelMessage>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to send message'));
+      }
+      return parseJsonResponse<ChannelMessage>(res, 'channel message send');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel', channelId] });

@@ -64,6 +64,50 @@ interface GraphQLClientHandle {
   stop: () => void;
 }
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string,
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const raw = await response.text();
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -181,10 +225,12 @@ async function refreshAccessToken(): Promise<string | null> {
     });
 
     if (!response.ok) {
-      throw new Error('Token refresh failed');
+      throw new Error(
+        await readErrorResponse(response, 'Token refresh failed')
+      );
     }
 
-    const data: unknown = await response.json();
+    const data = await parseJsonResponse<unknown>(response, 'token refresh');
     if (!isTokenRefreshResponse(data)) {
       throw new Error('Token refresh returned an invalid payload');
     }
@@ -300,40 +346,43 @@ const errorLink = onError(
           }
 
           return new Observable((observer) => {
-            void tokenRefreshPromise
-              ?.then((newToken) => {
-                if (newToken) {
-                  if (!forward) {
-                    observer.error(
-                      new Error('Unable to retry GraphQL operation')
-                    );
-                    return;
-                  }
+            void (async () => {
+              try {
+                const newToken = await tokenRefreshPromise;
 
-                  // Retry the request with new token
-                  operation.setContext(
-                    ({
-                      headers = {},
-                    }: {
-                      headers?: Record<string, string>;
-                    }) => ({
-                      headers: {
-                        ...headers,
-                        Authorization: `Bearer ${newToken}`,
-                      },
-                    })
-                  );
-                  const retried = forward(operation) as Observable<
-                    FetchResult<Record<string, unknown>>
-                  >;
-                  retried.subscribe(observer);
-                } else {
+                if (!newToken) {
                   observer.error(new Error(message));
+                  return;
                 }
-              })
-              .catch((refreshError: unknown) => {
+
+                if (!forward) {
+                  observer.error(
+                    new Error('Unable to retry GraphQL operation')
+                  );
+                  return;
+                }
+
+                // Retry the request with new token
+                operation.setContext(
+                  ({
+                    headers = {},
+                  }: {
+                    headers?: Record<string, string>;
+                  }) => ({
+                    headers: {
+                      ...headers,
+                      Authorization: `Bearer ${newToken}`,
+                    },
+                  })
+                );
+                const retried = forward(operation) as Observable<
+                  FetchResult<Record<string, unknown>>
+                >;
+                retried.subscribe(observer);
+              } catch (refreshError: unknown) {
                 observer.error(refreshError);
-              });
+              }
+            })();
           });
         }
 

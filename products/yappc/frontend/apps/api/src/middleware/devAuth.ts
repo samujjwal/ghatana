@@ -7,6 +7,8 @@
  */
 import { FastifyInstance } from 'fastify';
 import prisma from '../db';
+import type { JWTUserPayload } from './auth.middleware';
+import { getErrorMessage } from '../utils/type-guards';
 import {
   assertDevAuthBypassAllowed,
   isDevAuthBypassEnabled,
@@ -50,7 +52,7 @@ async function getDevUser() {
         devUserId = envId;
         console.warn(
           '[DevAuth] Prisma error; using DEV_USER_ID from env as fallback. Error:',
-          err?.message || err
+          getErrorMessage(err)
         );
       } else {
         // Use a deterministic synthetic id so downstream code can run during dev
@@ -87,7 +89,7 @@ export async function devAuthBypass(fastify: FastifyInstance): Promise<void> {
         userId: userId!,
         email: 'admin@yappc.com',
         role: 'ADMIN',
-      };
+      } satisfies JWTUserPayload;
       // Log first few chars of URL to avoid spam
       const shortUrl = request.url.substring(0, 30);
       console.log(
@@ -99,13 +101,3 @@ export async function devAuthBypass(fastify: FastifyInstance): Promise<void> {
   }
 }
 
-// Extend Fastify Request type
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: {
-      userId: string;
-      email: string;
-      role: string;
-    };
-  }
-}

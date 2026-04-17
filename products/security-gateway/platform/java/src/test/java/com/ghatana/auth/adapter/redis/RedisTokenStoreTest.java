@@ -335,6 +335,28 @@ class RedisTokenStoreTest extends EventloopTestBase {
             .isEmpty();
     }
 
+    @Test
+    @DisplayName("Should scope user token revocation to the target tenant in Redis")
+    void shouldScopeUserTokenRevocationToTargetTenantInRedis() {
+        TenantId otherTenant = TenantId.of("tenant-redis-other");
+        Token tenantToken = createToken(tenantId, "redis-tenant-primary");
+        Token otherTenantToken = createToken(otherTenant, "redis-tenant-secondary");
+
+        runPromise(() -> tokenStore.store(tenantToken));
+        runPromise(() -> tokenStore.store(otherTenantToken));
+
+        runPromise(() -> tokenStore.revokeAllForUser(tenantId, userId));
+
+        List<Token> targetTenantTokens = runPromise(() -> tokenStore.findByUserId(tenantId, userId));
+        List<Token> survivingOtherTenantTokens = runPromise(() -> tokenStore.findByUserId(otherTenant, userId));
+
+        assertThat(targetTenantTokens).isEmpty();
+        assertThat(survivingOtherTenantTokens)
+            .hasSize(1)
+            .extracting(Token::getTokenId)
+            .containsExactly(otherTenantToken.getTokenId());
+    }
+
     /**
      * Verifies revoking all tokens for a client in Redis.
      *
@@ -414,6 +436,14 @@ class RedisTokenStoreTest extends EventloopTestBase {
             .isPresent();
         assertThat(retrieved.get().getTokenValue())
             .isEqualTo(token.getTokenValue());
+    }
+
+    @Test
+    @DisplayName("Should report zero deleted tokens because Redis TTL handles expiration")
+    void shouldReturnZeroForDeleteExpired() {
+        Integer deleted = runPromise(() -> tokenStore.deleteExpired(tenantId));
+
+        assertThat(deleted).isZero();
     }
 
     // ===== Helper methods =====

@@ -84,11 +84,13 @@ await fastify.register(fastifySocketIO, {
 });
 
 // Setup WebSocket handlers (after server is ready)
-fastify.ready().then(async () => {
+async function initializeSocketRuntime(): Promise<void> {
+    await fastify.ready();
+
     // Add global authentication middleware - allows all connections in dev
     // In production, implement proper JWT validation here
     fastify.io.use((socket, next) => {
-        const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+        const isDev = appConfig.isDevelopment;
 
         if (isDev) {
             // Development: allow all connections
@@ -119,6 +121,10 @@ fastify.ready().then(async () => {
         fastify.log.error({ err: error }, '❌ Failed to sync configuration on boot');
         // Don't crash the server if config sync fails, just log it
     }
+}
+
+void initializeSocketRuntime().catch((error: unknown) => {
+    fastify.log.error({ err: error }, 'Failed to initialize socket runtime');
 });
 
 // Health check endpoint

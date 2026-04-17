@@ -14,6 +14,55 @@ import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '../../hooks/auth';
 
+type AuthSessionPayload = {
+  user: Parameters<ReturnType<typeof useAuth>['login']>[0]['user'];
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+};
+
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -190,11 +239,13 @@ export function RegisterForm({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(await readErrorMessage(response, 'Registration failed'));
       }
 
-      const data = await response.json();
+      const data = await parseJsonResponse<AuthSessionPayload>(
+        response,
+        'register response'
+      );
 
       // Auto-login after registration
       login({

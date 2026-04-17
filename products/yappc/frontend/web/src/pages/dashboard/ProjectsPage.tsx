@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface ProjectSummary {
   id: string;
@@ -32,8 +33,10 @@ const ProjectsPage: React.FC = () => {
       const res = await fetch('/api/projects', {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load projects');
-      return res.json();
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load projects'));
+      }
+      return parseJsonResponse<ProjectSummary[]>(res, 'dashboard projects');
     },
   });
 

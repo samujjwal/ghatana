@@ -1,6 +1,10 @@
 // @ts-nocheck
 import type { Agent } from '../types/agent';
 import {
+  parseJsonResponse as sharedParseJsonResponse,
+  readErrorResponse as sharedReadErrorResponse,
+} from '@/lib/http';
+import {
   BaseAgent,
   AgentOrchestrator,
   DesignAgent,
@@ -102,9 +106,9 @@ class AgentService {
   async getAgents(): Promise<Agent[]> {
     const response = await fetch(this.baseUrl);
     if (!response.ok) {
-      throw new Error('Failed to fetch agents');
+      throw new Error(await this.readErrorResponse(response, 'Failed to fetch agents'));
     }
-    return response.json();
+    return this.parseJsonResponse<Agent[]>(response, 'get agents');
   }
 
   /**
@@ -113,9 +117,9 @@ class AgentService {
   async getAgent(id: string): Promise<Agent> {
     const response = await fetch(`${this.baseUrl}/${id}`);
     if (!response.ok) {
-      throw new Error('Failed to fetch agent');
+      throw new Error(await this.readErrorResponse(response, 'Failed to fetch agent'));
     }
-    return response.json();
+    return this.parseJsonResponse<Agent>(response, 'get agent');
   }
 
   /**
@@ -131,10 +135,10 @@ class AgentService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create agent');
+      throw new Error(await this.readErrorResponse(response, 'Failed to create agent'));
     }
 
-    return response.json();
+    return this.parseJsonResponse<Agent>(response, 'create agent');
   }
 
   /**
@@ -150,10 +154,10 @@ class AgentService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update agent');
+      throw new Error(await this.readErrorResponse(response, 'Failed to update agent'));
     }
 
-    return response.json();
+    return this.parseJsonResponse<Agent>(response, 'update agent');
   }
 
   /**
@@ -165,7 +169,7 @@ class AgentService {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to delete agent');
+      throw new Error(await this.readErrorResponse(response, 'Failed to delete agent'));
     }
   }
 
@@ -175,9 +179,34 @@ class AgentService {
   async searchAgents(query: string): Promise<Agent[]> {
     const response = await fetch(`${this.baseUrl}/search?q=${encodeURIComponent(query)}`);
     if (!response.ok) {
-      throw new Error('Search failed');
+      throw new Error(await this.readErrorResponse(response, 'Search failed'));
     }
-    return response.json();
+    return this.parseJsonResponse<Agent[]>(response, 'search agents');
+  }
+
+  private async readErrorResponse(
+    response: Response,
+    fallback: string
+  ): Promise<string> {
+    return sharedReadErrorResponse(response, fallback);
+  }
+
+  private async parseJsonResponse<T>(
+    response: Response,
+    context: string
+  ): Promise<T> {
+    try {
+      return await sharedParseJsonResponse<T>(response, `AgentService ${context}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        const message = error.message.replace(
+          /^AgentService /,
+          'AgentService '
+        );
+        throw new Error(message);
+      }
+      throw error;
+    }
   }
 
   /**

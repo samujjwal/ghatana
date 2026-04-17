@@ -70,15 +70,21 @@ export const CanvasCollaborationProvider: React.FC<
     })
   );
 
-  useEffect(() => {
-    wsClient.connect().catch((error: unknown) => {
+  const connectWebSocketClient = useCallback(async (): Promise<void> => {
+    try {
+      await wsClient.connect();
+    } catch (error: unknown) {
       console.error('Failed to connect WebSocket:', error);
-    });
+    }
+  }, [wsClient]);
+
+  useEffect(() => {
+    void connectWebSocketClient();
 
     return () => {
       wsClient.disconnect();
     };
-  }, [wsClient]);
+  }, [connectWebSocketClient, wsClient]);
 
   const backend = useCanvasCollaborationBackend({
     wsClient,

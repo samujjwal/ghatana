@@ -20,6 +20,7 @@ import { useEffect } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
 import { nodesAtom, codeAssociationsAtom, type CodeLink } from '../workspace';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ---------------------------------------------------------------------------
 // API shape  (adapt to your actual API client)
@@ -46,10 +47,18 @@ async function fetchCodeAssociationsBatch(
     );
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch code associations: ${response.status}`);
+        throw new Error(
+            await readErrorResponse(
+                response,
+                `Failed to fetch code associations: ${response.status}`
+            )
+        );
     }
 
-    return response.json() as Promise<BatchAssociationResponse[]>;
+    return parseJsonResponse<BatchAssociationResponse[]>(
+        response,
+        'fetch code associations batch'
+    );
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface UserProfile {
   id: string;
@@ -28,8 +29,10 @@ const ProfilePage: React.FC = () => {
       const res = await fetch('/api/user/profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load profile');
-      return res.json();
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load profile'));
+      }
+      return parseJsonResponse<UserProfile>(res, 'auth profile page');
     },
   });
 
@@ -43,8 +46,10 @@ const ProfilePage: React.FC = () => {
         },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error('Failed to update profile');
-      return res.json();
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to update profile'));
+      }
+      return parseJsonResponse<UserProfile>(res, 'auth profile update');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });

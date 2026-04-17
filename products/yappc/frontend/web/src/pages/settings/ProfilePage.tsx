@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -35,8 +36,10 @@ async function fetchProfile(): Promise<UserProfile> {
   const res = await fetch('/api/user/profile', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load profile');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load profile'));
+  }
+  return parseJsonResponse<UserProfile>(res, 'settings profile');
 }
 
 async function updateProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
@@ -48,8 +51,10 @@ async function updateProfile(profile: Partial<UserProfile>): Promise<UserProfile
     },
     body: JSON.stringify(profile),
   });
-  if (!res.ok) throw new Error('Failed to update profile');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to update profile'));
+  }
+  return parseJsonResponse<UserProfile>(res, 'settings profile update');
 }
 
 // ============================================================================

@@ -1,5 +1,50 @@
 import type { DataSourceConfig } from './types';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  context: string
+): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return `HTTP ${response.status} while ${context}`;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return `HTTP ${response.status} while ${context}`;
+}
+
 /**
  * Simple in-memory cache with TTL (Time-To-Live) support.
  *
@@ -98,10 +143,10 @@ export class DataSourceUtils {
     } as RequestInit);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(await readErrorResponse(response, `fetching ${url}`));
     }
 
-    const json: unknown = await response.json();
+    const json = await parseJsonResponse<unknown>(response, `fetching ${url}`);
     return (
       config.transformResponse ? config.transformResponse(json) : json
     ) as TData;
@@ -147,14 +192,13 @@ export class DataSourceUtils {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(await readErrorResponse(response, `querying ${url}`));
     }
 
-    const result: unknown = await response.json();
-    const parsed = result as {
+    const parsed = await parseJsonResponse<{
       errors?: Array<{ message: string }>;
       data?: unknown;
-    };
+    }>(response, `querying ${url}`);
 
     if (parsed.errors && parsed.errors.length > 0) {
       throw new Error(parsed.errors[0].message);

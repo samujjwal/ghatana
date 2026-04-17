@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -45,8 +46,10 @@ async function fetchTopology(): Promise<TopologyData> {
   const res = await fetch('/api/services/topology', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load service topology');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load service topology'));
+  }
+  return parseJsonResponse<TopologyData>(res, 'service topology');
 }
 
 // ============================================================================

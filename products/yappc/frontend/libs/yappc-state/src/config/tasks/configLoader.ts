@@ -23,6 +23,20 @@ import type {
   AuditArtifactType,
   TaskUIConfig,
 } from '../../../types/src/tasks/index.ts';
+import { parse } from 'yaml';
+
+async function readTextResponse(response: Response, path: string): Promise<string> {
+  if (!response.ok) {
+    const detail = (await response.text()).trim();
+    throw new Error(
+      detail.length > 0
+        ? `Failed to load config ${path}: ${detail}`
+        : `Failed to load config ${path}: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.text();
+}
 
 // ============================================================================
 // YAML Type Definitions (Raw)
@@ -496,16 +510,11 @@ export function createBrowserConfigLoader(basePath: string): TaskConfigLoader {
   return new TaskConfigLoader({
     basePath,
     yamlParser: (content: string) => {
-      // In browser, use a YAML parsing library
-      // This is a placeholder - actual implementation would use js-yaml
-      throw new Error('YAML parser not implemented for browser');
+      return parse(content);
     },
     fileReader: async (path: string) => {
       const response = await fetch(path);
-      if (!response.ok) {
-        throw new Error(`Failed to load config: ${path}`);
-      }
-      return response.text();
+      return readTextResponse(response, path);
     },
   });
 }
@@ -517,13 +526,11 @@ export function createNodeConfigLoader(basePath: string): TaskConfigLoader {
   return new TaskConfigLoader({
     basePath,
     yamlParser: (content: string) => {
-      // In Node.js, use js-yaml or yaml library
-      // This is a placeholder - actual implementation would import yaml
-      throw new Error('YAML parser not implemented for Node.js');
+      return parse(content);
     },
     fileReader: async (path: string) => {
-      // In Node.js, use fs.readFile
-      throw new Error('File reader not implemented for Node.js');
+      const { readFile } = await import('fs/promises');
+      return readFile(path, 'utf-8');
     },
   });
 }

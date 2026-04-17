@@ -12,6 +12,7 @@
  */
 
 import type { CanvasSnapshot } from '../CanvasPersistence';
+import { parseJsonResponse } from '@/lib/http';
 
 export interface APIConfig {
     baseUrl: string;
@@ -24,6 +25,22 @@ export interface APIError {
     status: number;
     message: string;
     code?: string;
+}
+
+async function readApiErrorResponse(
+    response: Response,
+): Promise<{ message?: string; code?: string }> {
+    const raw = await response.text();
+
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw) as { message?: string; code?: string };
+    } catch {
+        return { message: raw.trim() || undefined };
+    }
 }
 
 export class CanvasAPIClient {
@@ -61,7 +78,7 @@ export class CanvasAPIClient {
             }
 
             try {
-                return await response.json();
+                return await parseJsonResponse<unknown>(response, 'save snapshot');
             } catch {
                 return undefined;
             }
@@ -83,7 +100,7 @@ export class CanvasAPIClient {
                 throw await this.createError(response);
             }
 
-            return response.json();
+            return parseJsonResponse<CanvasSnapshot>(response, 'load snapshot');
         });
     }
 
@@ -102,7 +119,7 @@ export class CanvasAPIClient {
                 throw await this.createError(response);
             }
 
-            return response.json();
+            return parseJsonResponse<CanvasSnapshot[]>(response, 'list snapshots');
         });
     }
 
@@ -146,7 +163,10 @@ export class CanvasAPIClient {
 
             if (!response.ok) return null;
 
-            const data = await response.json();
+            const data = await parseJsonResponse<{ lastSync?: number }>(
+                response,
+                'get last sync'
+            );
             return data.lastSync || null;
         } catch (error) {
             return null;
@@ -168,7 +188,7 @@ export class CanvasAPIClient {
             }
 
             try {
-                return await response.json();
+                return await parseJsonResponse<unknown>(response, 'batch save snapshots');
             } catch {
                 return undefined;
             }
@@ -306,13 +326,9 @@ export class CanvasAPIClient {
         let message = response.statusText;
         let code: string | undefined;
 
-        try {
-            const data = await response.json();
-            message = data.message || message;
-            code = data.code;
-        } catch {
-            // Ignore JSON parse errors
-        }
+        const data = await readApiErrorResponse(response);
+        message = data.message || message;
+        code = data.code;
 
         return {
             status: response.status,

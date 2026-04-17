@@ -147,6 +147,13 @@ class CrossServiceTokenValidationTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("Blank token string is rejected")
+        void blankTokenIsRejected() {
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, "   ")))
+                .isInstanceOf(JwtValidationException.class);
+        }
+
+        @Test
         @DisplayName("Token issued for one tenant is rejected when validated against a different tenant")
         void crossTenantTokenIsRejected() {
             // GIVEN — token for contoso
@@ -160,6 +167,18 @@ class CrossServiceTokenValidationTest extends EventloopTestBase {
                     .isInstanceOf(JwtValidationException.class);
         }
 
+            @Test
+            @DisplayName("Refresh token issued for one tenant is rejected for a different tenant")
+            void crossTenantRefreshTokenIsRejected() {
+                String refreshToken = runPromise(() ->
+                    provider.generateRefreshToken(tenantId, principal, Duration.ofDays(30))
+                );
+                TenantId otherTenant = TenantId.of("fabrikam");
+
+                assertThatThrownBy(() -> runPromise(() -> provider.validateToken(otherTenant, refreshToken)))
+                    .isInstanceOf(JwtValidationException.class);
+            }
+
         @Test
         @DisplayName("Revoked token is rejected by the validator")
         void revokedTokenIsRejected() {
@@ -172,6 +191,66 @@ class CrossServiceTokenValidationTest extends EventloopTestBase {
             assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, token)))
                     .isInstanceOf(JwtValidationException.class)
                     .hasMessageContaining("revoked");
+        }
+
+        @Test
+        @DisplayName("Bulk user revocation invalidates all active tokens")
+        void bulkUserRevocationInvalidatesAllActiveTokens() {
+            String tokenOne = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+            String tokenTwo = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+
+            Integer revokedCount = runPromise(() ->
+                provider.revokeAllTokensForUser(tenantId, principal.getUserId())
+            );
+
+            assertThat(revokedCount).isEqualTo(2);
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, tokenOne)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, tokenTwo)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+        }
+
+        @Test
+        @DisplayName("Bulk user revocation also invalidates refresh tokens")
+        void bulkUserRevocationInvalidatesRefreshTokens() {
+            String accessToken = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+            String refreshToken = runPromise(() ->
+                provider.generateRefreshToken(tenantId, principal, Duration.ofDays(30))
+            );
+
+            Integer revokedCount = runPromise(() ->
+                provider.revokeAllTokensForUser(tenantId, principal.getUserId())
+            );
+
+            assertThat(revokedCount).isEqualTo(2);
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, accessToken)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, refreshToken)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+        }
+
+        @Test
+        @DisplayName("Bulk user revocation does not cross tenant boundaries")
+        void bulkUserRevocationDoesNotCrossTenantBoundaries() {
+            TenantId otherTenant = TenantId.of("fabrikam");
+            String primaryTenantToken = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+            String otherTenantToken = runPromise(() -> provider.generateToken(otherTenant, principal, Duration.ofHours(1)));
+
+            Integer revokedCount = runPromise(() ->
+                provider.revokeAllTokensForUser(tenantId, principal.getUserId())
+            );
+
+            assertThat(revokedCount).isEqualTo(1);
+            assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, primaryTenantToken)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+
+            JwtClaims survivingClaims = runPromise(() -> provider.validateToken(otherTenant, otherTenantToken));
+            assertThat(survivingClaims.getTenantId()).isEqualTo(otherTenant);
         }
     }
 }

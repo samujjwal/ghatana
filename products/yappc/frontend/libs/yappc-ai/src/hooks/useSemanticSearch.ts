@@ -15,6 +15,50 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { AIAgentClientFactory } from '../agents';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  const raw = await response.text();
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Search modes
  */
@@ -56,6 +100,16 @@ export interface SearchResponse {
   queryTime: number;
   correctedQuery?: string;
   suggestions?: string[];
+}
+
+interface SearchResponseEnvelope {
+  data?: {
+    results?: Array<Record<string, unknown>>;
+    facets?: Array<Record<string, unknown>>;
+    total?: number;
+    correctedQuery?: string;
+    suggestions?: string[];
+  };
 }
 
 /**
@@ -311,10 +365,14 @@ export function useSemanticSearch(
           throw new Error(`Search failed: ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const data = await parseJsonResponse<SearchResponseEnvelope>(
+          response,
+          'semantic search'
+        );
         const queryTime = performance.now() - startTime;
+        const payload = data.data ?? {};
 
-        const searchResults: SearchResult[] = (data.data?.results || []).map(
+        const searchResults: SearchResult[] = (payload.results ?? []).map(
           (r: Record<string, unknown>) => ({
             id: r.id as string,
             type: (r.type as string) || 'item',
@@ -327,7 +385,7 @@ export function useSemanticSearch(
           })
         );
 
-        const searchFacets: SearchFacet[] = (data.data?.facets || []).map(
+        const searchFacets: SearchFacet[] = (payload.facets ?? []).map(
           (f: Record<string, unknown>) => ({
             field: f.field as string,
             values: ((f.values as Record<string, unknown>[]) || []).map(
@@ -344,11 +402,11 @@ export function useSemanticSearch(
 
         const searchResponse: SearchResponse = {
           results: searchResults,
-          total: data.data?.total || searchResults.length,
+          total: payload.total ?? searchResults.length,
           facets: searchFacets,
           queryTime,
-          correctedQuery: data.data?.correctedQuery,
-          suggestions: data.data?.suggestions || [],
+          correctedQuery: payload.correctedQuery,
+          suggestions: payload.suggestions ?? [],
         };
 
         if (searchOffset === 0) {

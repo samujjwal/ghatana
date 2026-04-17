@@ -23,6 +23,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Alert severity level
@@ -58,8 +59,15 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
     queryKey: ['rateLimitStatus'],
     queryFn: async () => {
       const response = await fetch('/api/rate-limit/status/me');
-      if (!response.ok) throw new Error('Failed to fetch rate limit status');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch rate limit status'));
+      return parseJsonResponse<{
+        tier: string;
+        used: number;
+        limit: number;
+        remaining: number;
+        percentage: number;
+        isLimited: boolean;
+      }>(response, 'fetch throttle alert rate limit status');
     },
     refetchInterval: 5000, // Check every 5 seconds
   });

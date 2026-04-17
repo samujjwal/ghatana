@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { logger } from '../../utils/Logger';
 
 export interface BacklogItem {
@@ -75,8 +76,12 @@ export default function Component() {
       params.set('sort', sortBy);
       params.set('order', sortOrder);
       const res = await fetch(`/api/projects/${projectId}/backlog?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as BacklogItem[];
+      if (!res.ok) {
+        throw new Error(
+          await readErrorResponse(res, `Failed to load backlog: ${res.status}`)
+        );
+      }
+      const data = await parseJsonResponse<BacklogItem[]>(res, 'mobile backlog load');
       logger.info('Backlog items loaded', 'mobile-backlog', { count: data.length });
       return data;
     },
@@ -91,8 +96,12 @@ export default function Component() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json() as Promise<BacklogItem>;
+      if (!res.ok) {
+        throw new Error(
+          await readErrorResponse(res, `Failed to update backlog item: ${res.status}`)
+        );
+      }
+      return parseJsonResponse<BacklogItem>(res, 'mobile backlog status update');
     },
     onSuccess: (_data, { itemId, newStatus }) => {
       logger.info('Item status updated', 'mobile-backlog', { itemId, newStatus });
@@ -117,8 +126,12 @@ export default function Component() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priority: newPriority }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json() as Promise<BacklogItem>;
+      if (!res.ok) {
+        throw new Error(
+          await readErrorResponse(res, `Failed to reprioritize backlog item: ${res.status}`)
+        );
+      }
+      return parseJsonResponse<BacklogItem>(res, 'mobile backlog priority update');
     },
     onSuccess: (_data, { itemId, newPriority }) => {
       logger.info('Item priority updated', 'mobile-backlog', { itemId, newPriority });

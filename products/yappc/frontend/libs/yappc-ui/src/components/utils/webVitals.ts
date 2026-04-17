@@ -39,18 +39,20 @@ type ReportHandler = (metric: WebVitalsMetric) => void;
 export function reportWebVitals(onReport: ReportHandler): void {
   if (typeof window === 'undefined') return;
 
-  // Dynamically import web-vitals to avoid bundling it
-  import('web-vitals')
-    .then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
+  void (async () => {
+    try {
+      // Dynamically import web-vitals to avoid bundling it
+      const { onCLS, onFID, onFCP, onLCP, onTTFB } = await import('web-vitals');
+
       onCLS(onReport);
       onFID(onReport);
       onFCP(onReport);
       onLCP(onReport);
       onTTFB(onReport);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Failed to load web-vitals:', error);
-    });
+    }
+  })();
 }
 
 /**

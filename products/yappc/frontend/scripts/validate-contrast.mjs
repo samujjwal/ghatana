@@ -20,21 +20,25 @@ import { dirname, resolve } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Import contrast checker (would need to be compiled first)
+async function loadContrastChecker() {
+  try {
+    return await import(
+      resolve(__dirname, '../libs/canvas/src/utils/contrast-checker.ts')
+    );
+  } catch {
+    return import(
+      resolve(__dirname, '../dist/libs/canvas/src/utils/contrast-checker.js')
+    );
+  }
+}
+
 const {
   checkAllTokenPairs,
   getFailingChecks,
   generateContrastReport,
   formatRatio,
   getLevelEmoji,
-} = await import(
-  resolve(__dirname, '../libs/canvas/src/utils/contrast-checker.ts')
-).catch(async () => {
-  // Fallback: try compiled JS
-  return await import(
-    resolve(__dirname, '../dist/libs/canvas/src/utils/contrast-checker.js')
-  );
-});
+} = await loadContrastChecker();
 
 /**
  * Color codes for terminal output
@@ -117,4 +121,8 @@ async function main() {
 }
 
 // Run
-main();
+void main().catch(error => {
+  log('\n💥 Unhandled contrast validation failure:', colors.red + colors.bold);
+  console.error(error);
+  process.exit(2);
+});

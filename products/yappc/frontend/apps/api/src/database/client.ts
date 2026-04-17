@@ -18,11 +18,12 @@
  * @doc.layer product
  * @doc.pattern Singleton
  */
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-export const Prisma = require('@prisma/client').Prisma;
+export { Prisma, PrismaClient };
+export type { PrismaClient as DatabasePrismaClient };
 
 let prismaClient: PrismaClient | null = null;
 let pool: Pool | null = null;

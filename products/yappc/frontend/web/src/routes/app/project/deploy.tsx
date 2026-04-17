@@ -105,16 +105,16 @@ export default function Component() {
         setIsPhasePreviewLoading(true);
         setPhasePreviewError(null);
 
-        void phaseTransitionAPI
-            .getNextPhase(currentPhase, projectId)
-            .then((preview) => {
+        void (async () => {
+            try {
+                const preview = await phaseTransitionAPI.getNextPhase(currentPhase, projectId);
+
                 if (!isMounted) {
                     return;
                 }
 
                 setPhasePreview(preview);
-            })
-            .catch((error: unknown) => {
+            } catch (error: unknown) {
                 if (!isMounted) {
                     return;
                 }
@@ -125,12 +125,12 @@ export default function Component() {
                         ? error.message
                         : 'Unable to load lifecycle readiness.'
                 );
-            })
-            .finally(() => {
+            } finally {
                 if (isMounted) {
                     setIsPhasePreviewLoading(false);
                 }
-            });
+            }
+        })();
 
         return () => {
             isMounted = false;

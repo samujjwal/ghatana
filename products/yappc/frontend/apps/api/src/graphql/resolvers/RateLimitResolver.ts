@@ -17,11 +17,38 @@
  * @doc.pattern Resolver
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../database/client';
 import {
   RateLimitingService,
   RATE_LIMIT_TIERS,
 } from '../../services/ratelimit/RateLimitingService';
+import { getNumber, getString, isRecord } from '../../utils/type-guards';
+
+interface RateLimitResolverContext {
+  userId?: string;
+  user?: { id?: string };
+}
+
+interface RateLimitTierConfig {
+  name: string;
+  requestsPerHour: number;
+  requestsPerDay: number;
+  burstSize: number;
+}
+
+function getTierConfig(tier: string): RateLimitTierConfig {
+  const tierValue = RATE_LIMIT_TIERS[tier] ?? RATE_LIMIT_TIERS.free;
+  if (!isRecord(tierValue)) {
+    return { name: 'Free', requestsPerHour: 100, requestsPerDay: 1000, burstSize: 10 };
+  }
+
+  return {
+    name: getString(tierValue.name) ?? 'Free',
+    requestsPerHour: getNumber(tierValue.requestsPerHour) ?? 100,
+    requestsPerDay: getNumber(tierValue.requestsPerDay) ?? 1000,
+    burstSize: getNumber(tierValue.burstSize) ?? 10,
+  };
+}
 
 /**
  * RateLimitResolver handles rate limit GraphQL operations
@@ -45,9 +72,9 @@ export class RateLimitResolver {
     /**
      * Get current user's rate limit status
      */
-    myRateLimitStatus: async (_: unknown, __: unknown, context: unknown) => {
+    myRateLimitStatus: async (_: unknown, __: unknown, context: RateLimitResolverContext) => {
       try {
-        const userId = context.userId || context.user?.id;
+        const userId = context.userId ?? context.user?.id;
         if (!userId) {
           throw new Error('User not authenticated');
         }
@@ -99,8 +126,7 @@ export class RateLimitResolver {
           return null;
         }
 
-        const tierConfig =
-          RATE_LIMIT_TIERS[config.tier] || RATE_LIMIT_TIERS['free'];
+        const tierConfig = getTierConfig(config.tier);
 
         return {
           userId: config.userId,
@@ -166,15 +192,18 @@ export class RateLimitResolver {
      * List available rate limit tiers
      */
     rateLimitTiers: async () => {
-      return Object.entries(RATE_LIMIT_TIERS).map(([name, tier]) => ({
+      return Object.entries(RATE_LIMIT_TIERS).map(([name, tier]) => {
+        const tierConfig = getTierConfig(name);
+        return ({
         name: name.charAt(0).toUpperCase() + name.slice(1),
-        description: tier.name,
-        requestsPerHour: tier.requestsPerHour,
-        requestsPerDay: tier.requestsPerDay,
-        burstSize: tier.burstSize,
+        description: tierConfig.name,
+        requestsPerHour: tierConfig.requestsPerHour,
+        requestsPerDay: tierConfig.requestsPerDay,
+        burstSize: tierConfig.burstSize,
         monthlyCost: this.getTierCost(name),
         features: this.getTierFeatures(name),
-      }));
+      });
+      });
     },
 
     /**
@@ -182,11 +211,7 @@ export class RateLimitResolver {
      */
     rateLimitTier: async (_: unknown, { name }: { name: string }) => {
       const tierKey = name.toLowerCase();
-      const tier = RATE_LIMIT_TIERS[tierKey];
-
-      if (!tier) {
-        throw new Error(`Unknown tier: ${name}`);
-      }
+      const tier = getTierConfig(tierKey);
 
       return {
         name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -205,13 +230,14 @@ export class RateLimitResolver {
     rateLimitMetrics: async () => {
       try {
         const metrics = await this.rateLimitService.getMetrics();
+        const metricRecord: Record<string, unknown> = isRecord(metrics)
+          ? metrics
+          : {};
         return {
-          totalActiveUsers: (metrics as unknown).totalUsers || 0,
-          totalRequests: (metrics as unknown).totalRequests || 0,
-          limitedUsers: (metrics as unknown).limitedUsers || 0,
-          limitPercentage: parseFloat(
-            (metrics as unknown).limitPercentage || '0'
-          ),
+          totalActiveUsers: getNumber(metricRecord.totalUsers) ?? 0,
+          totalRequests: getNumber(metricRecord.totalRequests) ?? 0,
+          limitedUsers: getNumber(metricRecord.limitedUsers) ?? 0,
+          limitPercentage: parseFloat(getString(metricRecord.limitPercentage) ?? '0'),
           averageRequestsPerUser: 0,
           peakRequestsPerSecond: 0,
         };
@@ -270,10 +296,10 @@ export class RateLimitResolver {
     requestUpgrade: async (
       _: unknown,
       { requestedTier }: { requestedTier: string },
-      context: unknown
+      context: RateLimitResolverContext
     ) => {
       try {
-        const userId = context.userId || context.user?.id;
+        const userId = context.userId ?? context.user?.id;
         if (!userId) {
           throw new Error('User not authenticated');
         }
@@ -339,8 +365,7 @@ export class RateLimitResolver {
           where: { userId: request.userId },
         });
 
-        const tierConfig =
-          RATE_LIMIT_TIERS[config?.tier || 'free'] || RATE_LIMIT_TIERS['free'];
+        const tierConfig = getTierConfig(config?.tier || 'free');
 
         return {
           userId: config?.userId,
@@ -401,8 +426,7 @@ export class RateLimitResolver {
           where: { userId },
         });
 
-        const tierConfig =
-          RATE_LIMIT_TIERS[config?.tier || tier] || RATE_LIMIT_TIERS['free'];
+        const tierConfig = getTierConfig(config?.tier || tier);
 
         return {
           userId: config?.userId,
@@ -458,9 +482,9 @@ export class RateLimitResolver {
     /**
      * Downgrade to free tier
      */
-    downgradeToFree: async (_: unknown, __: unknown, context: unknown) => {
+    downgradeToFree: async (_: unknown, __: unknown, context: RateLimitResolverContext) => {
       try {
-        const userId = context.userId || context.user?.id;
+        const userId = context.userId ?? context.user?.id;
         if (!userId) {
           throw new Error('User not authenticated');
         }
@@ -471,7 +495,7 @@ export class RateLimitResolver {
           where: { userId },
         });
 
-        const tierConfig = RATE_LIMIT_TIERS['free'];
+        const tierConfig = getTierConfig('free');
 
         return {
           userId: config?.userId,

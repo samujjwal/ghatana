@@ -18,7 +18,88 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../database/client';
+import { getArray, getNumber, getString, isRecord } from '../../utils/type-guards';
+
+interface AssessmentGapRecord {
+  controlId?: string;
+  description?: string;
+  frameworkId?: string;
+  dependencies?: string[];
+  severity?: number;
+  framework?: string;
+}
+
+interface AssessmentFindingRecord {
+  controlId?: string;
+  severity?: string;
+}
+
+interface AssessmentControlRecord {
+  id?: string;
+  name?: string;
+  owner?: string;
+  dependencies?: string[];
+}
+
+interface RemediationStepRecord {
+  id: string;
+  status?: string;
+  estimatedEffort?: number | null;
+}
+
+interface RemediationPlanRecord {
+  id: string;
+  completionTarget?: Date | null;
+  steps: RemediationStepRecord[];
+}
+
+interface ComplianceAssessmentWithPlans {
+  framework: string;
+  riskScore: number | null;
+  findings: unknown;
+  controls: unknown;
+  gaps: unknown;
+  auditTrail: unknown;
+  remediationPlans?: RemediationPlanRecord[];
+}
+
+function asFindingRecords(value: unknown): AssessmentFindingRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({
+      controlId: getString(record.controlId),
+      severity: getString(record.severity),
+    }));
+}
+
+function asControlRecords(value: unknown): AssessmentControlRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({
+      id: getString(record.id),
+      name: getString(record.name),
+      owner: getString(record.owner),
+      dependencies: getArray<string>(record.dependencies).filter(
+        (dependency): dependency is string => typeof dependency === 'string'
+      ),
+    }));
+}
+
+function asGapRecords(value: unknown): AssessmentGapRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({
+      controlId: getString(record.controlId),
+      description: getString(record.description),
+      frameworkId: getString(record.frameworkId),
+      dependencies: getArray<string>(record.dependencies).filter(
+        (dependency): dependency is string => typeof dependency === 'string'
+      ),
+      severity: getNumber(record.severity),
+      framework: getString(record.framework),
+    }));
+}
 
 /**
  * Interface for remediation step recommendations
@@ -103,14 +184,15 @@ export class ComplianceAutomationService {
       }
 
       // Group findings by control and calculate priorities
-      const controlFindings = this.groupFindingsByControl(
-        assessment.findings as unknown[]
-      );
+      const findingRecords = asFindingRecords(assessment.findings);
+      const controlRecords = asControlRecords(assessment.controls);
+
+      const controlFindings = this.groupFindingsByControl(findingRecords);
 
       // Generate remediation steps with dependencies
       const steps = this.generateRemediationSteps(
         controlFindings,
-        assessment.controls as unknown[],
+        controlRecords,
         frameworkId
       );
 
@@ -143,10 +225,24 @@ export class ComplianceAutomationService {
         data: {
           id: planId,
           assessmentId,
-          steps: sortedSteps as unknown,
+          steps: {
+            create: sortedSteps.map((step) => ({
+              id: step.id,
+              controlId: step.controlId,
+              title: step.title,
+              description: step.description,
+              priority: step.priority,
+              estimatedEffort: step.estimatedEffort,
+              owner: step.owner,
+              deadline: step.deadline,
+              status: step.status,
+              evidence: step.evidence,
+            })),
+          },
           status: 'draft',
           totalEffort,
           completionTarget,
+          riskScore: assessment.riskScore || 0,
         },
       });
 
@@ -183,17 +279,17 @@ export class ComplianceAutomationService {
 
     const recommendations: ComplianceRecommendation[] = [];
 
-    for (const gap of (assessment.gaps as unknown[]) || []) {
+    for (const gap of asGapRecords(assessment.gaps)) {
       const recommendation: ComplianceRecommendation = {
         id: `rec-${Date.now()}-${Math.random()}`,
         type: this.inferRecommendationType(gap),
-        title: `Implement ${gap.controlId} control`,
-        description: gap.description || '',
-        framework: gap.frameworkId || 'unknown',
+        title: `Implement ${gap.controlId ?? 'unknown'} control`,
+        description: gap.description ?? '',
+        framework: gap.frameworkId ?? 'unknown',
         impactScore: this.calculateImpactScore(gap),
         implementationCost: this.estimateImplementationCost(gap),
         expectedBenefit: this.generateBenefitStatement(gap),
-        precedingControls: gap.dependencies || [],
+        precedingControls: gap.dependencies ?? [],
       };
 
       recommendations.push(recommendation);
@@ -286,9 +382,10 @@ export class ComplianceAutomationService {
       throw new Error(`Assessment not found: ${assessmentId}`);
     }
 
-    const plan = assessment.remediationPlans?.[0];
+    const typedAssessment = assessment as ComplianceAssessmentWithPlans;
+    const plan = typedAssessment.remediationPlans?.[0];
     const completedSteps =
-      plan?.steps.filter((s: unknown) => s.status === 'completed').length || 0;
+      plan?.steps.filter((step) => step.status === 'completed').length || 0;
     const totalSteps = plan?.steps.length || 0;
     const completionPercentage =
       totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
@@ -299,13 +396,13 @@ export class ComplianceAutomationService {
       generatedAt: new Date(),
       framework: assessment.framework,
       overallScore: assessment.riskScore,
-      findingsCount: (assessment.findings as unknown[])?.length || 0,
-      gapsCount: (assessment.gaps as unknown[])?.length || 0,
+      findingsCount: getArray<unknown>(assessment.findings).length,
+      gapsCount: getArray<unknown>(assessment.gaps).length,
       remediationProgress: completionPercentage,
       completedSteps,
       totalSteps,
-      controls: assessment.controls,
-      auditTrail: assessment.auditTrail,
+      controls: typedAssessment.controls,
+      auditTrail: typedAssessment.auditTrail,
     };
   }
 
@@ -314,10 +411,15 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private groupFindingsByControl(findings: unknown[]): Map<string, unknown[]> {
-    const grouped = new Map<string, unknown[]>();
+  private groupFindingsByControl(
+    findings: AssessmentFindingRecord[]
+  ): Map<string, AssessmentFindingRecord[]> {
+    const grouped = new Map<string, AssessmentFindingRecord[]>();
     for (const finding of findings) {
       const controlId = finding.controlId;
+      if (!controlId) {
+        continue;
+      }
       if (!grouped.has(controlId)) {
         grouped.set(controlId, []);
       }
@@ -332,21 +434,21 @@ export class ComplianceAutomationService {
    * @private
    */
   private generateRemediationSteps(
-    controlFindings: Map<string, unknown[]>,
-    controls: unknown[],
+    controlFindings: Map<string, AssessmentFindingRecord[]>,
+    controls: AssessmentControlRecord[],
     frameworkId?: string
   ): RemediationStep[] {
     const steps: RemediationStep[] = [];
 
     for (const [controlId, findings] of controlFindings.entries()) {
-      const control = controls.find((c) => c.id === controlId);
+      const control = controls.find((controlRecord) => controlRecord.id === controlId);
       if (!control) continue;
 
       const priority = this.calculatePriority(findings);
       const step: RemediationStep = {
         id: `step-${Date.now()}-${Math.random()}`,
         controlId,
-        title: `Remediate ${control.name} control`,
+        title: `Remediate ${control.name ?? controlId} control`,
         description: `Address ${findings.length} findings for control ${controlId}`,
         priority,
         estimatedEffort: this.estimateEffort(findings),
@@ -411,8 +513,10 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private calculatePriority(findings: unknown[]): RemediationStep['priority'] {
-    const riskLevels = findings.map((f) => f.severity || 'medium');
+  private calculatePriority(
+    findings: AssessmentFindingRecord[]
+  ): RemediationStep['priority'] {
+    const riskLevels = findings.map((finding) => finding.severity || 'medium');
     if (riskLevels.includes('critical')) return 'critical';
     if (riskLevels.includes('high')) return 'high';
     if (riskLevels.includes('medium')) return 'medium';
@@ -424,7 +528,7 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private estimateEffort(findings: unknown[]): number {
+  private estimateEffort(findings: AssessmentFindingRecord[]): number {
     const baseEffort = 4;
     return baseEffort + findings.length * 2;
   }
@@ -453,7 +557,7 @@ export class ComplianceAutomationService {
    * @private
    */
   private inferRecommendationType(
-    gap: unknown
+    gap: AssessmentGapRecord
   ): ComplianceRecommendation['type'] {
     const description = gap.description || '';
     if (description.includes('process')) return 'process';
@@ -467,7 +571,7 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private calculateImpactScore(gap: unknown): number {
+  private calculateImpactScore(gap: AssessmentGapRecord): number {
     return Math.min(100, 40 + (gap.severity || 5) * 12);
   }
 
@@ -476,7 +580,7 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private estimateImplementationCost(gap: unknown): number {
+  private estimateImplementationCost(_gap: AssessmentGapRecord): number {
     return 5000 + Math.random() * 15000;
   }
 
@@ -485,7 +589,7 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private generateBenefitStatement(gap: unknown): string {
+  private generateBenefitStatement(gap: AssessmentGapRecord): string {
     return `Improve ${gap.framework || 'compliance'} posture and reduce risk exposure`;
   }
 

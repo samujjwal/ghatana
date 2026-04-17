@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse } from '@/lib/http';
 
 // Hooks
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
@@ -69,7 +70,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch('/api/tasks?priority=high&limit=5');
             if (!res.ok) return [];
-            return res.json() as Promise<PriorityTask[]>;
+            return parseJsonResponse<PriorityTask[]>(res, 'priority tasks');
         },
         enabled: !isGuest && !isLoading,
         initialData: [],

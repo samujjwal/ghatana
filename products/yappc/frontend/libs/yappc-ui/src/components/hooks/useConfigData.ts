@@ -22,6 +22,50 @@ const API_BASE_URL = import.meta.env.DEV
     : 'http://localhost:7002'
   : '';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  endpoint: string
+): Promise<string> {
+  const raw = await response.text();
+  if (!raw) {
+    return `API request failed for ${endpoint}: ${response.status} ${response.statusText}`;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return `API request failed for ${endpoint}: ${response.status} ${response.statusText}`;
+}
+
 function getResponseData<T>(payload: unknown): T {
   if (typeof payload === 'object' && payload !== null && 'data' in payload) {
     return (payload as { data: T }).data;
@@ -42,10 +86,10 @@ async function fetchConfig<T = unknown>(endpoint: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+    throw new Error(await readErrorResponse(response, endpoint));
   }
 
-  const json: unknown = await response.json();
+  const json = await parseJsonResponse<unknown>(response, endpoint);
   return getResponseData<T>(json);
 }
 

@@ -22,8 +22,14 @@
  * @doc.pattern Repository
  */
 
-import { PrismaClient, AuditLogEntry } from '@prisma/client';
+import type { AuditLogEntry } from '@prisma/client';
+import type { PrismaClient } from '../client';
 import { BaseRepository } from '../repository.base';
+
+interface TimestampRange {
+  gte?: Date;
+  lte?: Date;
+}
 
 /**
  * Interface for audit log query filters
@@ -85,7 +91,9 @@ export class AuditLogRepository extends BaseRepository<
     tenantId: string,
     filter?: AuditLogFilter
   ): Promise<AuditLogEntry[]> {
-    const where: Record<string, unknown> = { tenantId };
+    const where: Record<string, unknown> & { timestamp?: TimestampRange } = {
+      tenantId,
+    };
 
     if (filter?.action) where.action = filter.action;
     if (filter?.actor) where.actor = filter.actor;
@@ -130,7 +138,9 @@ export class AuditLogRepository extends BaseRepository<
     tenantId?: string,
     timeRange?: { startDate: Date; endDate: Date }
   ): Promise<AuditLogEntry[]> {
-    const where: Record<string, unknown> = { action };
+    const where: Record<string, unknown> & { timestamp?: TimestampRange } = {
+      action,
+    };
 
     if (tenantId) where.tenantId = tenantId;
 

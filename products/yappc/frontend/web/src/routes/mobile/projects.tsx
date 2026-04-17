@@ -36,6 +36,7 @@ import { CardContent as CardActionArea } from '@ghatana/design-system';
 // MUI hooks and utilities
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // Mobile-specific components
 import MobileCard from '../../components/mobile/MobileCard';
@@ -118,13 +119,14 @@ export default function Component() {
 
       // Check initial network status if available
       if (Network && typeof Network.getStatus === 'function') {
-        void Network.getStatus()
-          .then((status: unknown) => {
+        void (async () => {
+          try {
+            const status: unknown = await Network.getStatus();
             setIsOffline(!status.connected);
-          })
-          .catch((error: unknown) => {
+          } catch (error: unknown) {
             console.warn('Failed to resolve initial mobile network status', error);
-          });
+          }
+        })();
       }
     } catch (e) {
       // In web/test environments Capacitor may be stubbed or unavailable - ignore
@@ -153,10 +155,13 @@ export default function Component() {
       // Fetch projects from API
       const response = await fetch(`/api/projects?workspaceId=${currentWorkspaceId}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch projects');
+        throw new Error(await readErrorResponse(response, 'Failed to fetch projects'));
       }
 
-      const data = await response.json();
+      const data = await parseJsonResponse<Record<string, unknown>>(
+        response,
+        'mobile projects query'
+      );
       const apiProjects = [...(data.owned || []), ...(data.included || [])];
 
       // Transform API data to mobile format

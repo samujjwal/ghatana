@@ -63,8 +63,35 @@ function readWorkspaces(user: AuthUserProfile | null): string[] {
   return Array.isArray(user?.workspaces) ? user.workspaces : [];
 }
 
+async function parseJsonPayload<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+function parseStoredAuthUser(userData: string): AuthUserProfile {
+  const payload = JSON.parse(userData) as unknown;
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('Stored auth user was invalid');
+  }
+
+  return payload as AuthUserProfile;
+}
+
 async function parseAuthResponse(response: Response): Promise<AuthResponse> {
-  const payload: unknown = await response.json();
+  const payload = await parseJsonPayload<unknown>(response, 'authentication');
 
   if (typeof payload !== 'object' || payload === null) {
     throw new Error('Authentication response was invalid');
@@ -89,7 +116,7 @@ async function readErrorResponse(
   fallback: string
 ): Promise<Error> {
   try {
-    const payload: unknown = await response.json();
+    const payload = await parseJsonPayload<unknown>(response, 'authentication error');
     if (typeof payload === 'object' && payload !== null && 'message' in payload) {
       const message = (payload as { message?: unknown }).message;
       if (typeof message === 'string' && message.length > 0) {
@@ -97,7 +124,14 @@ async function readErrorResponse(
       }
     }
   } catch {
-    // Keep fallback below.
+    try {
+      const message = await response.text();
+      if (message.trim().length > 0) {
+        return new Error(message.trim());
+      }
+    } catch {
+      // Keep fallback below.
+    }
   }
 
   return new Error(fallback);
@@ -236,7 +270,7 @@ export function useAuth() {
         return;
       }
 
-      const parsedUser = JSON.parse(userData) as AuthUserProfile;
+      const parsedUser = parseStoredAuthUser(userData);
       const isValid = await validateTokenWithServer(token);
 
       if (!isValid) {
@@ -397,7 +431,10 @@ export function useAuth() {
           throw await readErrorResponse(response, 'Profile update failed');
         }
 
-        const updatedUser = (await response.json()) as AuthUserProfile;
+        const updatedUser = await parseJsonPayload<AuthUserProfile>(
+          response,
+          'profile update'
+        );
         localStorage.setItem('auth_user', JSON.stringify(updatedUser));
 
         updateAuthState((currentState) => ({

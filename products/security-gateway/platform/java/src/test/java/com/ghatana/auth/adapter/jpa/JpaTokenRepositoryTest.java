@@ -243,6 +243,18 @@ class JpaTokenRepositoryTest extends EventloopTestBase {
                 .isEmpty();
     }
 
+    @Test
+    @DisplayName("Should not retrieve tokens across tenant boundaries")
+    void shouldNotRetrieveTokensAcrossTenantBoundaries() {
+        Token token = createToken(tenantId, "tenant-boundary-token");
+
+        runPromise(() -> tokenStore.store(token));
+
+        Optional<Token> retrieved = runPromise(() -> tokenStore.findById(TenantId.of("tenant-other"), token.getTokenId()));
+
+        assertThat(retrieved).isEmpty();
+    }
+
     /**
      * Verifies introspection queries work correctly.
      *
@@ -389,6 +401,30 @@ class JpaTokenRepositoryTest extends EventloopTestBase {
         assertThat(remaining)
                 .as("No tokens should remain for user")
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should revoke all client tokens in database")
+    void shouldRevokeAllClientTokensInDatabase() {
+        ClientId client = ClientId.of("postgres-client-revoke");
+        ClientId otherClient = ClientId.of("postgres-client-other");
+        Token token1 = createToken(tenantId, userId, client, "client-revoke-1");
+        Token token2 = createToken(tenantId, userId, client, "client-revoke-2");
+        Token otherToken = createToken(tenantId, userId, otherClient, "client-other-1");
+        runPromise(() -> tokenStore.store(token1));
+        runPromise(() -> tokenStore.store(token2));
+        runPromise(() -> tokenStore.store(otherToken));
+
+        runPromise(() -> tokenStore.revokeAllForClient(tenantId, client));
+
+        List<Token> clientTokens = runPromise(() -> tokenStore.findByClientId(tenantId, client));
+        List<Token> remainingOtherClientTokens = runPromise(() -> tokenStore.findByClientId(tenantId, otherClient));
+
+        assertThat(clientTokens).isEmpty();
+        assertThat(remainingOtherClientTokens)
+                .hasSize(1)
+                .extracting(Token::getTokenId)
+                .containsExactly(otherToken.getTokenId());
     }
 
     /**

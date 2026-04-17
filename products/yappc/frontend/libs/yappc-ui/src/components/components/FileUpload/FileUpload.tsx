@@ -278,8 +278,9 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
         });
         setFiles((prev) => [...prev]);
 
-        onUpload(validUploadedFiles)
-          .then(() => {
+        void (async () => {
+          try {
+            await onUpload(validUploadedFiles);
             setFiles((prev) =>
               prev.map((f) =>
                 validUploadedFiles.find((vf) => vf.id === f.id)
@@ -287,16 +288,17 @@ export const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
                   : f
               )
             );
-          })
-          .catch((error) => {
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Upload failed';
             setFiles((prev) =>
               prev.map((f) =>
                 validUploadedFiles.find((vf) => vf.id === f.id)
-                  ? { ...f, status: 'error', error: error.message }
+                  ? { ...f, status: 'error', error: message }
                   : f
               )
             );
-          });
+          }
+        })();
       }
     };
 

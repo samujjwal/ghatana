@@ -312,7 +312,7 @@ public class SecurityInterceptor {
      */
     private boolean isPublicEndpoint(String path, String method) {
         // Add public endpoints that don't require authentication
-        return (path.equals("/api/auth/login") && method.equals("post")) ||
+        return (path.equals("/api/auth/login") && method.equalsIgnoreCase("post")) ||
                path.equals("/api/health") ||
                path.startsWith("/public/");
     }

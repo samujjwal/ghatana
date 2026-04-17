@@ -1,5 +1,6 @@
 package com.ghatana.security.grpc;
 
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.security.audit.AuditEmitter;
 import com.ghatana.security.govern.IamPolicyEnforcer;
@@ -107,7 +108,50 @@ class PolicyEnforcementInterceptorTest {
         assertThat(statusCaptor.getValue().getCode()).isEqualTo(Status.Code.UNAUTHENTICATED);
         assertThat(trailerCaptor.getValue().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER)))
                 .isNotBlank();
+        verify(auditEmitter, never()).emitAuditEvent(any());
     }
+
+        @Test
+        @DisplayName("denied policy closes call with correlation-aware trailers")
+        void deniedPolicyClosesCallWithCorrelationAwareTrailers() throws Exception {
+        IamPolicyEnforcer policyEnforcer = mock(IamPolicyEnforcer.class);
+        AuditEmitter auditEmitter = mock(AuditEmitter.class);
+        UserAuthenticationService authService = mock(UserAuthenticationService.class);
+
+        User user = new User("user-1", "alice", Set.of("pattern-viewer"));
+        when(authService.authenticate("jwt-token")).thenReturn(user);
+        when(policyEnforcer.enforcePatternRecommendPolicy(eq(user), eq("tenant-42"), eq("patterns/recommend")))
+            .thenReturn(PolicyEnforcementResult.denied(
+                "missing permission",
+                AuditEvent.builder()
+                    .tenantId("tenant-42")
+                    .eventType("grpc.deny")
+                    .resourceType("pattern")
+                    .resourceId("patterns/recommend")
+                    .success(false)
+                    .build()
+            ));
+
+        PolicyEnforcementInterceptor interceptor = new PolicyEnforcementInterceptor(policyEnforcer, auditEmitter, authService);
+        ServerCall<Object, Object> call = mockCall(METHOD_NAME);
+        Metadata headers = new Metadata();
+        headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER), "Bearer jwt-token");
+        headers.put(Metadata.Key.of("x-tenant-id", Metadata.ASCII_STRING_MARSHALLER), "tenant-42");
+        headers.put(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER), "corr-grpc-1");
+        @SuppressWarnings("unchecked")
+        ServerCallHandler<Object, Object> handler = mock(ServerCallHandler.class);
+
+        interceptor.interceptCall(call, headers, handler);
+
+        ArgumentCaptor<Status> statusCaptor = ArgumentCaptor.forClass(Status.class);
+        ArgumentCaptor<Metadata> trailerCaptor = ArgumentCaptor.forClass(Metadata.class);
+        verify(call).close(statusCaptor.capture(), trailerCaptor.capture());
+        assertThat(statusCaptor.getValue().getCode()).isEqualTo(Status.Code.PERMISSION_DENIED);
+        assertThat(statusCaptor.getValue().getDescription()).isEqualTo("missing permission");
+        assertThat(trailerCaptor.getValue().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER)))
+            .isEqualTo("corr-grpc-1");
+        verify(auditEmitter).emitAuditEvent(any());
+        }
 
     @SuppressWarnings("unchecked")
     private static <ReqT, RespT> ServerCall<ReqT, RespT> mockCall(String fullMethod) {

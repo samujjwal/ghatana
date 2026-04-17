@@ -12,6 +12,54 @@ import type {
   OAuthUser,
 } from './types';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { error_description?: unknown; error?: unknown; message?: unknown };
+    if (typeof payload.error_description === 'string' && payload.error_description.length > 0) {
+      return payload.error_description;
+    }
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * OAuth utilities class
  * Static methods for OAuth 2.0 operations
@@ -91,10 +139,17 @@ export class OAuthUtils {
     });
 
     if (!response.ok) {
-      throw new Error(`Token exchange failed: ${response.statusText}`);
+      const message = await readErrorMessage(
+        response,
+        `Token exchange failed: ${response.statusText}`
+      );
+      throw new Error(message);
     }
 
-    const data: TokenResponse = await response.json();
+    const data = await parseJsonResponse<TokenResponse>(
+      response,
+      'OAuth token exchange'
+    );
 
     return {
       accessToken: data.access_token,
@@ -130,10 +185,17 @@ export class OAuthUtils {
     });
 
     if (!response.ok) {
-      throw new Error(`Token refresh failed: ${response.statusText}`);
+      const message = await readErrorMessage(
+        response,
+        `Token refresh failed: ${response.statusText}`
+      );
+      throw new Error(message);
     }
 
-    const data: TokenResponse = await response.json();
+    const data = await parseJsonResponse<TokenResponse>(
+      response,
+      'OAuth token refresh'
+    );
 
     return {
       accessToken: data.access_token,
@@ -162,10 +224,17 @@ export class OAuthUtils {
     });
 
     if (!response.ok) {
-      throw new Error(`User info fetch failed: ${response.statusText}`);
+      const message = await readErrorMessage(
+        response,
+        `User info fetch failed: ${response.statusText}`
+      );
+      throw new Error(message);
     }
 
-    const data: UserInfoResponse = await response.json();
+    const data = await parseJsonResponse<UserInfoResponse>(
+      response,
+      'OAuth user info'
+    );
 
     return {
       id: data.id,

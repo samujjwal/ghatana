@@ -56,13 +56,13 @@ async function runTestSuite(suite) {
   }
 }
 
-async function runAllTests() {
+async function runAllTests(suites) {
   const results = [];
   let totalDuration = 0;
 
   console.log('\n🚀 Starting comprehensive canvas test execution...\n');
 
-  for (const suite of testSuites) {
+  for (const suite of suites) {
     const result = await runTestSuite(suite);
     results.push({ ...suite, ...result });
     totalDuration += result.duration;
@@ -146,8 +146,13 @@ if (args.includes('--watch')) {
   }));
 }
 
-// Run the tests
-runAllTests().catch((error) => {
-  console.error('❌ Test runner encountered an error:', error);
-  process.exit(1);
-});
+async function run() {
+  try {
+    await runAllTests(suitesToRun);
+  } catch (error) {
+    console.error('❌ Test runner encountered an error:', error);
+    process.exit(1);
+  }
+}
+
+void run();

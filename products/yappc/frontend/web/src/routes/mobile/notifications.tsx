@@ -8,6 +8,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { logger } from '../../utils/Logger';
 
 export interface Notification {
@@ -53,8 +54,12 @@ export default function Component() {
       if (filter.type !== 'all') params.set('type', filter.type);
       if (filter.readStatus !== 'all') params.set('read', filter.readStatus === 'read' ? 'true' : 'false');
       const res = await fetch(`/api/notifications?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as Notification[];
+      if (!res.ok) {
+        throw new Error(
+          await readErrorResponse(res, `Failed to load notifications: ${res.status}`)
+        );
+      }
+      const data = await parseJsonResponse<Notification[]>(res, 'mobile notifications load');
       logger.info('Notifications loaded', 'mobile-notifications', { count: data.length });
       return data;
     },

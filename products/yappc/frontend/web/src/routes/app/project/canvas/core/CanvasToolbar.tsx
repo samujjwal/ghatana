@@ -103,24 +103,25 @@ export function CanvasToolbar({
   onSketchToolChange,
 }: CanvasToolbarProps) {
 
-  const handleRetrySave = useCallback(() => {
+  const handleRetrySave = useCallback(async () => {
     const { projectId, canvasId } = params;
     if (projectId && canvasId) {
       setAutoSaveStatus('saving');
-      performanceMonitor.measureAsync('manual-save', async () => {
-        await persistenceRef.current?.save(
-          projectId,
-          canvasId,
-          { elements: nodes as unknown as CanvasElement[], connections: edges as unknown as unknown[] },
-          { label: 'Retry save' }
-        );
-      }).then(() => {
+      try {
+        await performanceMonitor.measureAsync('manual-save', async () => {
+          await persistenceRef.current?.save(
+            projectId,
+            canvasId,
+            { elements: nodes as unknown as CanvasElement[], connections: edges as unknown as unknown[] },
+            { label: 'Retry save' }
+          );
+        });
         setAutoSaveStatus('saved');
         setLastSaveTime(Date.now());
-      }).catch((error) => {
+      } catch (error) {
         console.error('Retry save failed:', error);
         setAutoSaveStatus('error');
-      });
+      }
     }
   }, [params, nodes, edges, persistenceRef, setAutoSaveStatus, setLastSaveTime]);
 

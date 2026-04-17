@@ -158,6 +158,48 @@ class WebhookSignatureValidatorTest {
                     .isFalse();
         }
 
+            /**
+             * Verifies that a signature with an empty value is rejected.
+             *
+             * GIVEN: A signature that only contains the sha256= prefix WHEN:
+             * validate() is called THEN: Returns false
+             */
+            @Test
+            @DisplayName("Should reject signature with empty hex value")
+            void shouldRejectSignatureWithEmptyHexValue() {
+                // GIVEN: A signature with no hexadecimal content
+                String emptySignatureValue = "sha256=";
+
+                // WHEN: We try to validate with this signature
+                boolean isValid = validator.validate(TEST_PAYLOAD, emptySignatureValue);
+
+                // THEN: The signature should be invalid
+                assertThat(isValid)
+                    .as("Signature with empty hex value should be rejected")
+                    .isFalse();
+            }
+
+            /**
+             * Verifies that a signature with the wrong length is rejected.
+             *
+             * GIVEN: A signature shorter than an HMAC-SHA256 digest WHEN:
+             * validate() is called THEN: Returns false
+             */
+            @Test
+            @DisplayName("Should reject signature with wrong digest length")
+            void shouldRejectSignatureWithWrongDigestLength() {
+                // GIVEN: A signature shorter than the expected SHA-256 hex digest
+                String shortSignature = "sha256=deadbeef";
+
+                // WHEN: We try to validate with this signature
+                boolean isValid = validator.validate(TEST_PAYLOAD, shortSignature);
+
+                // THEN: The signature should be invalid
+                assertThat(isValid)
+                    .as("Signature with wrong digest length should be rejected")
+                    .isFalse();
+            }
+
         /**
          * Verifies that a signature with wrong prefix is rejected.
          *
@@ -176,6 +218,30 @@ class WebhookSignatureValidatorTest {
             // THEN: The signature should be invalid
             assertThat(isValid)
                     .as("Signature with wrong prefix should be rejected")
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject signature with uppercase digest")
+        void shouldRejectSignatureWithUppercaseDigest() {
+            String uppercaseSignature = computeSignature(TEST_PAYLOAD).toUpperCase();
+
+            boolean isValid = validator.validate(TEST_PAYLOAD, uppercaseSignature);
+
+            assertThat(isValid)
+                    .as("Uppercase digest should not match the canonical lowercase signature")
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject signature containing non-hex characters")
+        void shouldRejectSignatureWithNonHexCharacters() {
+            String invalidHexSignature = "sha256=zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+
+            boolean isValid = validator.validate(TEST_PAYLOAD, invalidHexSignature);
+
+            assertThat(isValid)
+                    .as("Signature with non-hex characters should be rejected")
                     .isFalse();
         }
     }
@@ -313,7 +379,6 @@ class WebhookSignatureValidatorTest {
             // GIVEN: Two validators with different secret keys
             String secretKey1 = "secret-key-1";
             String secretKey2 = "secret-key-2";
-            WebhookSignatureValidator validator1 = new WebhookSignatureValidator(secretKey1);
             WebhookSignatureValidator validator2 = new WebhookSignatureValidator(secretKey2);
 
             // AND: A signature created with key1

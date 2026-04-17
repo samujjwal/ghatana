@@ -16,10 +16,13 @@ import React, { Suspense } from 'react';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
+async function loadCanvasComponent() {
+  const module = await import('@ghatana/canvas');
+  return { default: module.Canvas };
+}
+
 // Lazy-load the heavy canvas to avoid blocking the initial bundle
-const CanvasLazy = React.lazy(() =>
-  import('@ghatana/canvas').then((m) => ({ default: m.Canvas }))
-);
+const CanvasLazy = React.lazy(loadCanvasComponent);
 
 export interface CanvasEditorProps {
   /** The CanvasDocument to render. Pass `null` to show an empty state. */

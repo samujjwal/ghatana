@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type PRState = 'open' | 'closed' | 'merged' | 'draft';
 type CheckStatus = 'success' | 'failure' | 'pending' | 'skipped';
@@ -94,8 +95,10 @@ const PullRequestDetailPage: React.FC = () => {
       const res = await fetch(`/api/pull-requests/${prId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load pull request');
-      return res.json() as Promise<PullRequestData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load pull request'));
+      }
+      return parseJsonResponse<PullRequestData>(res, 'pull request detail');
     },
     enabled: !!prId,
   });

@@ -21,7 +21,70 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../database/client';
+import { getArray, getNumber, getString, isRecord } from '../../utils/type-guards';
+
+interface ComplianceFindingRecord {
+  severity?: string;
+}
+
+interface ComplianceControlRecord {
+  assessed?: boolean;
+  status?: string;
+}
+
+interface RemediationStepRecord {
+  status?: string;
+  estimatedEffort?: number | null;
+}
+
+interface RemediationPlanRecord {
+  completionTarget?: Date | null;
+  steps: RemediationStepRecord[];
+}
+
+interface AuditTrailRecord {
+  action?: string;
+  timestamp?: string | Date;
+  actor?: string;
+}
+
+interface AssessmentReportView {
+  framework?: string | null;
+  riskScore?: number | null;
+  assessmentDate?: string | Date | null;
+  findings?: unknown;
+  controls?: unknown;
+  auditTrail?: unknown;
+  remediationPlans?: RemediationPlanRecord[];
+}
+
+function asFindingRecords(value: unknown): ComplianceFindingRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({ severity: getString(record.severity) }));
+}
+
+function asControlRecords(value: unknown): ComplianceControlRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({
+      assessed: typeof record.assessed === 'boolean' ? record.assessed : undefined,
+      status: getString(record.status),
+    }));
+}
+
+function asAuditTrailRecords(value: unknown): AuditTrailRecord[] {
+  return getArray<unknown>(value)
+    .filter(isRecord)
+    .map((record) => ({
+      action: getString(record.action),
+      timestamp:
+        getString(record.timestamp) ??
+        (record.timestamp instanceof Date ? record.timestamp : undefined),
+      actor: getString(record.actor),
+    }));
+}
 
 /**
  * Interface for report configuration
@@ -329,30 +392,30 @@ export class ComplianceReportService {
    *
    * @private
    */
-  private calculateMetrics(assessment: unknown): ReportMetrics {
-    const controls = assessment.controls || [];
-    const findings = assessment.findings || [];
+  private calculateMetrics(assessment: AssessmentReportView): ReportMetrics {
+    const controls = asControlRecords(assessment.controls);
+    const findings = asFindingRecords(assessment.findings);
     const criticalFindings = findings.filter(
-      (f: unknown) => f.severity === 'critical'
+      (finding) => finding.severity === 'critical'
     );
 
-    const remediationPlan = assessment.remediationPlan;
+    const remediationPlan = assessment.remediationPlans?.[0];
     const totalSteps = remediationPlan?.steps?.length || 0;
     const completedSteps =
-      remediationPlan?.steps?.filter((s: unknown) => s.status === 'completed')
+      remediationPlan?.steps?.filter((step) => step.status === 'completed')
         .length || 0;
 
     return {
       totalControls: controls.length,
-      controlsAssessed: controls.filter((c: unknown) => c.assessed).length,
+      controlsAssessed: controls.filter((control) => control.assessed).length,
       controlsImplemented: controls.filter(
-        (c: unknown) => c.status === 'implemented'
+        (control) => control.status === 'implemented'
       ).length,
       controlsPartiallyImplemented: controls.filter(
-        (c: unknown) => c.status === 'partial'
+        (control) => control.status === 'partial'
       ).length,
       controlsNotImplemented: controls.filter(
-        (c: unknown) => c.status === 'not_implemented'
+        (control) => control.status === 'not_implemented'
       ).length,
       overallComplianceScore: assessment.riskScore || 0,
       findingsCount: findings.length,
@@ -369,7 +432,7 @@ export class ComplianceReportService {
    * @private
    */
   private generateExecutiveSummary(
-    assessment: unknown,
+    assessment: AssessmentReportView,
     metrics: ReportMetrics
   ): ReportSection {
     const complianceRate = metrics.overallComplianceScore;
@@ -382,7 +445,7 @@ export class ComplianceReportService {
 
     return {
       title: 'Executive Summary',
-      content: `This compliance assessment was conducted on ${assessment.assessmentDate}. The organization is currently ${status} with an overall compliance score of ${complianceRate}%. Key findings include ${metrics.findingsCount} total findings, of which ${metrics.criticalFindingsCount} are critical. There are ${metrics.openRemediationItems} open remediation items with a completion rate of ${metrics.remediationCompletionRate.toFixed(1)}%.`,
+      content: `This compliance assessment was conducted on ${assessment.assessmentDate ?? 'an unspecified date'}. The organization is currently ${status} with an overall compliance score of ${complianceRate}%. Key findings include ${metrics.findingsCount} total findings, of which ${metrics.criticalFindingsCount} are critical. There are ${metrics.openRemediationItems} open remediation items with a completion rate of ${metrics.remediationCompletionRate.toFixed(1)}%.`,
       subsections: [
         {
           title: 'Compliance Score',
@@ -405,8 +468,8 @@ export class ComplianceReportService {
    *
    * @private
    */
-  private generateFindingsSection(assessment: unknown): ReportSection {
-    const findings = assessment.findings || [];
+  private generateFindingsSection(assessment: AssessmentReportView): ReportSection {
+    const findings = asFindingRecords(assessment.findings);
     const bySeverity = new Map<string, number>();
 
     for (const finding of findings) {
@@ -431,13 +494,13 @@ export class ComplianceReportService {
    *
    * @private
    */
-  private generateRemediationSection(assessment: unknown): ReportSection {
-    const plan = assessment.remediationPlan;
+  private generateRemediationSection(assessment: AssessmentReportView): ReportSection {
+    const plan = assessment.remediationPlans?.[0];
     const steps = plan?.steps || [];
 
     return {
       title: 'Remediation Plan',
-      content: `The remediation plan includes ${steps.length} action items with a total estimated effort of ${steps.reduce((sum: number, s: unknown) => sum + (s.estimatedEffort || 0), 0)} hours.`,
+      content: `The remediation plan includes ${steps.length} action items with a total estimated effort of ${steps.reduce((sum, step) => sum + (step.estimatedEffort || 0), 0)} hours.`,
       subsections: [
         {
           title: 'Completion Target',
@@ -447,7 +510,7 @@ export class ComplianceReportService {
         },
         {
           title: 'Current Progress',
-          content: `${steps.filter((s: unknown) => s.status === 'completed').length}/${steps.length} steps completed`,
+          content: `${steps.filter((step) => step.status === 'completed').length}/${steps.length} steps completed`,
         },
       ],
     };
@@ -458,15 +521,15 @@ export class ComplianceReportService {
    *
    * @private
    */
-  private generateAuditTrailSection(assessment: unknown): ReportSection {
-    const auditEvents = assessment.auditTrail || [];
+  private generateAuditTrailSection(assessment: AssessmentReportView): ReportSection {
+    const auditEvents = asAuditTrailRecords(assessment.auditTrail);
 
     return {
       title: 'Audit Trail',
       content: `${auditEvents.length} audit events recorded during this assessment period.`,
-      subsections: auditEvents.slice(0, 5).map((event: unknown) => ({
-        title: event.action,
-        content: `${new Date(event.timestamp).toLocaleDateString()} - ${event.actor}`,
+      subsections: auditEvents.slice(0, 5).map((event) => ({
+        title: event.action ?? 'Unknown action',
+        content: `${new Date(event.timestamp ?? Date.now()).toLocaleDateString()} - ${event.actor ?? 'unknown actor'}`,
       })),
     };
   }
@@ -476,7 +539,7 @@ export class ComplianceReportService {
    *
    * @private
    */
-  private generateRecommendationsSection(assessment: unknown): ReportSection {
+  private generateRecommendationsSection(_assessment: AssessmentReportView): ReportSection {
     return {
       title: 'Recommendations',
       content:

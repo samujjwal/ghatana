@@ -337,4 +337,5 @@ include(":shared-services:incident-service")  // Migrated from platform:java:inc
 // =============================================================================
 // Integration Tests
 // =============================================================================
+include(":integration-tests:cross-service-workflow")
 include(":integration-tests:phr-finance-integration")

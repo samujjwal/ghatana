@@ -10,19 +10,53 @@
  * @doc.pattern Container Component
  */
 
-import React, { useCallback, useMemo, Suspense, lazy } from 'react';
+import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { X as Close, ChevronLeft, ChevronRight } from 'lucide-react';
-import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+
+async function loadArtifactsPanel() {
+    const module = await import('./ArtifactsPanel');
+    return { default: module.ArtifactsPanel };
+}
+
+async function loadRequirementsPanel() {
+    const module = await import('./RequirementsPanel');
+    return { default: module.RequirementsPanel };
+}
+
+async function loadAdrPanel() {
+    const module = await import('./AdrPanel');
+    return { default: module.AdrPanel };
+}
+
+async function loadUxSpecPanel() {
+    const module = await import('./UxSpecPanel');
+    return { default: module.UxSpecPanel };
+}
+
+async function loadThreatModelPanel() {
+    const module = await import('./ThreatModelPanel');
+    return { default: module.ThreatModelPanel };
+}
+
+async function loadImprovePanel() {
+    const module = await import('./ImprovePanel');
+    return { default: module.ImprovePanel };
+}
+
+async function loadTraceabilityPanel() {
+    const module = await import('./TraceabilityPanel');
+    return { default: module.TraceabilityPanel };
+}
 
 // Lazy load panels for code splitting
-const ArtifactsPanel = lazy(() => import('./ArtifactsPanel').then((m) => ({ default: m.ArtifactsPanel })));
-const RequirementsPanel = lazy(() => import('./RequirementsPanel').then((m) => ({ default: m.RequirementsPanel })));
-const AdrPanel = lazy(() => import('./AdrPanel').then((m) => ({ default: m.AdrPanel })));
-const UxSpecPanel = lazy(() => import('./UxSpecPanel').then((m) => ({ default: m.UxSpecPanel })));
-const ThreatModelPanel = lazy(() => import('./ThreatModelPanel').then((m) => ({ default: m.ThreatModelPanel })));
-const ImprovePanel = lazy(() => import('./ImprovePanel').then((m) => ({ default: m.ImprovePanel })));
-const TraceabilityPanel = lazy(() => import('./TraceabilityPanel').then((m) => ({ default: m.TraceabilityPanel })));
+const ArtifactsPanel = lazy(loadArtifactsPanel);
+const RequirementsPanel = lazy(loadRequirementsPanel);
+const AdrPanel = lazy(loadAdrPanel);
+const UxSpecPanel = lazy(loadUxSpecPanel);
+const ThreatModelPanel = lazy(loadThreatModelPanel);
+const ImprovePanel = lazy(loadImprovePanel);
+const TraceabilityPanel = lazy(loadTraceabilityPanel);
 
 export type PanelType =
     | 'artifacts'

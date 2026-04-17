@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -76,8 +77,10 @@ const ScanResultsPage: React.FC = () => {
       const res = await fetch(`/api/security-scans/${scanId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load scan results');
-      return res.json() as Promise<ScanResult>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load scan results'));
+      }
+      return parseJsonResponse<ScanResult>(res, 'scan results');
     },
     enabled: !!scanId,
   });

@@ -258,7 +258,13 @@ async function removeNeedsDodLabelIfExists(githubToken, repo, prNumber) {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(2);
-});
+async function run() {
+  try {
+    await main();
+  } catch (err) {
+    console.error(err);
+    process.exit(2);
+  }
+}
+
+void run();

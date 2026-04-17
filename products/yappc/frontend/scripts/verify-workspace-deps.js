@@ -511,4 +511,7 @@ async function main() {
   }
 }
 
-main();
+void main().catch(error => {
+  console.error(chalk.red('\n❌ Unhandled workspace verification failure:'), error);
+  process.exit(1);
+});

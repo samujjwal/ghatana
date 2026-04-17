@@ -163,36 +163,39 @@ export function useDialog() {
       } = options;
 
       return new Promise<ConfirmResult>((resolve) => {
-        void show({
-          ...dialogOptions,
-          actions: [
-            {
-              label: cancelLabel,
-              onClick: () => {},
-              variant: 'text',
-            },
-            {
-              label: confirmLabel,
-              onClick: () => {},
-              variant: 'contained',
-              color: confirmColor,
-              autoFocus: true,
-            },
-          ],
-          closeOnAction: true,
-          closeOnBackdrop: false,
-        }).then((actionIndex) => {
-          resolve({
-            confirmed: actionIndex === 1,
-            actionIndex: actionIndex ?? undefined,
-          });
-        }).catch((error: unknown) => {
-          console.warn('Dialog confirmation flow failed', error);
-          resolve({
-            confirmed: false,
-            actionIndex: undefined,
-          });
-        });
+        void (async () => {
+          try {
+            const actionIndex = await show({
+              ...dialogOptions,
+              actions: [
+                {
+                  label: cancelLabel,
+                  onClick: () => {},
+                  variant: 'text',
+                },
+                {
+                  label: confirmLabel,
+                  onClick: () => {},
+                  variant: 'contained',
+                  color: confirmColor,
+                  autoFocus: true,
+                },
+              ],
+              closeOnAction: true,
+              closeOnBackdrop: false,
+            });
+            resolve({
+              confirmed: actionIndex === 1,
+              actionIndex: actionIndex ?? undefined,
+            });
+          } catch (error: unknown) {
+            console.warn('Dialog confirmation flow failed', error);
+            resolve({
+              confirmed: false,
+              actionIndex: undefined,
+            });
+          }
+        })();
       });
     },
     [show]
@@ -249,29 +252,32 @@ export function useDialog() {
       const inputValue = defaultValue;
 
       return new Promise<string | null>((resolve) => {
-        void show({
-          ...dialogOptions,
-          content: null, // Would be TextField component
-          actions: [
-            {
-              label: cancelLabel,
-              onClick: () => {},
-              variant: 'text',
-            },
-            {
-              label: confirmLabel,
-              onClick: () => {},
-              variant: 'contained',
-              color: 'primary',
-              autoFocus: true,
-            },
-          ],
-        }).then((actionIndex) => {
-          resolve(actionIndex === 1 ? inputValue : null);
-        }).catch((error: unknown) => {
-          console.warn('Dialog prompt flow failed', error);
-          resolve(null);
-        });
+        void (async () => {
+          try {
+            const actionIndex = await show({
+              ...dialogOptions,
+              content: null, // Would be TextField component
+              actions: [
+                {
+                  label: cancelLabel,
+                  onClick: () => {},
+                  variant: 'text',
+                },
+                {
+                  label: confirmLabel,
+                  onClick: () => {},
+                  variant: 'contained',
+                  color: 'primary',
+                  autoFocus: true,
+                },
+              ],
+            });
+            resolve(actionIndex === 1 ? inputValue : null);
+          } catch (error: unknown) {
+            console.warn('Dialog prompt flow failed', error);
+            resolve(null);
+          }
+        })();
       });
     },
     [show]

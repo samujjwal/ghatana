@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -82,8 +83,10 @@ async function fetchSettings(): Promise<WorkspaceSettings> {
   const res = await fetch('/api/settings', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load settings');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load settings'));
+  }
+  return parseJsonResponse<WorkspaceSettings>(res, 'settings page');
 }
 
 // ============================================================================

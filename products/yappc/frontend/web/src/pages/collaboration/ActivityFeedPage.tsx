@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -82,8 +83,10 @@ async function fetchActivities(): Promise<ActivityFeedResponse> {
   const res = await fetch('/api/activity', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load activities');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load activities'));
+  }
+  return parseJsonResponse<ActivityFeedResponse>(res, 'activity feed');
 }
 
 // ============================================================================

@@ -127,6 +127,15 @@ class SecurityContextTest extends EventloopTestBase {
                 .isEmpty();
     }
 
+        @Test
+        @DisplayName("Should deny all roles and permissions for empty context")
+        void shouldDenyRolesAndPermissionsForEmptyContext() {
+                SecurityContext context = SecurityContext.empty();
+
+                assertThat(context.hasRole("ADMIN")).isFalse();
+                assertThat(context.hasPermission("document.read")).isFalse();
+        }
+
     /**
      * Verifies SecurityContext delegates role checks to UserPrincipal.
      *
@@ -317,6 +326,91 @@ class SecurityContextTest extends EventloopTestBase {
         assertThat(result.getPath())
                 .as("Returned request should have correct path")
                 .isEqualTo("/api/resource");
+
+        verify(jwtTokenProvider).validateToken(eq(TenantId.of("default-tenant")), eq(token));
+    }
+
+        @Test
+        @DisplayName("Should reject authorization headers without bearer prefix")
+        void shouldRejectAuthorizationHeadersWithoutBearerPrefix() {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/resource")
+                                .withHeader(HttpHeaders.AUTHORIZATION, "Token invalid-format")
+                                .build();
+
+                assertThatThrownBy(() -> runPromise(() -> authenticationFilter.authenticate(request)))
+                                .isInstanceOf(JwtAuthenticationFilter.AuthenticationException.class)
+                                .hasMessageContaining("Missing or invalid Authorization header");
+
+                verifyNoInteractions(jwtTokenProvider);
+                assertThat(SecurityContextHolder.getCurrentContext().isAuthenticated()).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should reject blank bearer tokens")
+        void shouldRejectBlankBearerTokens() {
+                HttpRequest request = createRequest("Bearer ");
+
+                assertThatThrownBy(() -> runPromise(() -> authenticationFilter.authenticate(request)))
+                                .isInstanceOf(JwtAuthenticationFilter.AuthenticationException.class)
+                                .hasMessageContaining("Missing or invalid Authorization header");
+
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+    /**
+     * Verifies filter stores authenticated context from validated claims.
+     *
+     * GIVEN: Valid JWT token and validated claims
+     * WHEN: authenticate() is called
+     * THEN: SecurityContextHolder contains authenticated user and tenant context
+     */
+    @Test
+    @DisplayName("Should populate SecurityContext from validated JWT claims")
+    void shouldPopulateSecurityContextFromValidatedClaims() {
+        // GIVEN
+        String token = "valid-jwt-token-123";
+        JwtClaims claims = createJwtClaims();
+
+        when(jwtTokenProvider.validateToken(any(), eq(token)))
+                .thenReturn(Promise.of(claims));
+
+        HttpRequest request = createRequest("Bearer " + token);
+
+        // WHEN
+        SecurityContext context = runPromise(() -> authenticationFilter.authenticate(request)
+                .map(ignored -> SecurityContextHolder.getCurrentContext()));
+
+        // THEN
+        assertThat(context.isAuthenticated()).isTrue();
+        assertThat(context.getTenantId()).contains(TenantId.of("test-tenant"));
+        assertThat(context.getUserPrincipal())
+                .hasValueSatisfying(user -> {
+                    assertThat(user.getUserId()).isEqualTo("user-123");
+                    assertThat(user.getEmail()).isEqualTo("alice@example.com");
+                    assertThat(user.getRoles()).contains("ADMIN");
+                    assertThat(user.getPermissions()).contains("document.read", "document.write");
+                });
+    }
+
+    @Test
+    @DisplayName("Should overwrite previous SecurityContext after successful authentication")
+    void shouldOverwritePreviousSecurityContextAfterSuccessfulAuthentication() {
+        SecurityContextHolder.setCurrentContext(SecurityContext.of(testUser, testTenantId));
+        String token = "replacement-jwt-token-456";
+        JwtClaims claims = createJwtClaims();
+
+        when(jwtTokenProvider.validateToken(any(), eq(token)))
+                .thenReturn(Promise.of(claims));
+
+        HttpRequest request = createRequest("Bearer " + token);
+
+        SecurityContext context = runPromise(() -> authenticationFilter.authenticate(request)
+                .map(ignored -> SecurityContextHolder.getCurrentContext()));
+
+        assertThat(context.isAuthenticated()).isTrue();
+        assertThat(context.getTenantId()).contains(TenantId.of("test-tenant"));
+        assertThat(context.getUserPrincipal())
+                .hasValueSatisfying(user -> assertThat(user.getUserId()).isEqualTo("user-123"));
     }
 
     /**
@@ -363,6 +457,35 @@ class SecurityContextTest extends EventloopTestBase {
                 .as("Should throw AuthenticationException")
                 .isInstanceOf(JwtAuthenticationFilter.AuthenticationException.class);
     }
+
+        @Test
+        @DisplayName("Should reject null requests before authentication starts")
+        void shouldRejectNullRequest() {
+                assertThatThrownBy(() -> authenticationFilter.authenticate(null))
+                                .isInstanceOf(NullPointerException.class)
+                                .hasMessageContaining("request cannot be null");
+        }
+
+        /**
+         * Verifies filter rejects request with an empty bearer token.
+         *
+         * GIVEN: Authorization header with Bearer prefix but no token value
+         * WHEN: authenticate() is called
+         * THEN: Throws AuthenticationException
+         */
+        @Test
+        @DisplayName("Should reject request with empty bearer token")
+        void shouldRejectEmptyBearerToken() {
+                // GIVEN
+                HttpRequest request = createRequest("Bearer ");
+
+                // WHEN & THEN
+                assertThatThrownBy(() -> runPromise(() -> authenticationFilter.authenticate(request)))
+                                .as("Should reject empty bearer tokens")
+                                .isInstanceOf(JwtAuthenticationFilter.AuthenticationException.class);
+
+                verifyNoInteractions(jwtTokenProvider);
+        }
 
     /**
      * Verifies filter rejects request when token validation fails.

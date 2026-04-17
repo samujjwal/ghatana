@@ -517,11 +517,15 @@ async function main() {
     console.log('🎉 Workflow seed completed successfully!');
 }
 
-main()
-    .catch((e) => {
-        console.error('❌ Seed failed:', e);
-        process.exit(1);
-    })
-    .finally(async () => {
+async function runSeed(): Promise<void> {
+    try {
+        await main();
+    } catch (error) {
+        console.error('❌ Seed failed:', error);
+        process.exitCode = 1;
+    } finally {
         await prisma.$disconnect();
-    });
+    }
+}
+
+void runSeed();

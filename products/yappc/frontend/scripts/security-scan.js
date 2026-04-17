@@ -398,4 +398,7 @@ async function main() {
   }
 }
 
-main();
+void main().catch(error => {
+  console.error(chalk.red('Unhandled security scan failure:'), error);
+  process.exit(1);
+});

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -68,8 +69,10 @@ async function fetchCalendarEvents(): Promise<CalendarResponse> {
   const res = await fetch('/api/calendar/events', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load calendar events');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load calendar events'));
+  }
+  return parseJsonResponse<CalendarResponse>(res, 'calendar events');
 }
 
 // ============================================================================

@@ -85,6 +85,24 @@ export interface AIStreamChunk {
   timestamp: number;
 }
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
 export interface ResilienceMetrics {
   totalRequests: number;
   successfulRequests: number;
@@ -245,7 +263,9 @@ export class AICache {
     // Remove oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (typeof firstKey === 'string') {
+        this.cache.delete(firstKey);
+      }
     }
 
     this.cache.set(key, {
@@ -507,13 +527,16 @@ export class FallbackProvider {
       });
 
       if (!response.ok) {
-        const errorBody = await response.text().catch(() => '');
+        const errorBody = (await response.text()).trim();
         throw new Error(
           `Provider ${provider.name} returned HTTP ${response.status}: ${errorBody}`
         );
       }
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = await parseJsonResponse<Record<string, unknown>>(
+        response,
+        `provider ${provider.name}`
+      );
       const latency = Date.now() - startTime;
 
       // Normalise OpenAI and Anthropic response shapes

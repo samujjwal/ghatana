@@ -17,6 +17,51 @@ import {
   isServiceMode,
 } from './data-cloud-mode';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Feature definition
  */
@@ -315,10 +360,12 @@ class DataCloudServiceClient implements DataCloudClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to compute feature: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Failed to compute feature: ${response.statusText}`)
+      );
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'Data Cloud computeFeature');
   }
 
   async getFeature(featureName: string): Promise<Feature | null> {
@@ -335,10 +382,12 @@ class DataCloudServiceClient implements DataCloudClient {
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to get feature: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Failed to get feature: ${response.statusText}`)
+      );
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'Data Cloud getFeature');
   }
 
   async storeFeature(feature: Feature): Promise<void> {
@@ -352,7 +401,9 @@ class DataCloudServiceClient implements DataCloudClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to store feature: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Failed to store feature: ${response.statusText}`)
+      );
     }
   }
 
@@ -367,10 +418,12 @@ class DataCloudServiceClient implements DataCloudClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to query features: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Failed to query features: ${response.statusText}`)
+      );
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'Data Cloud queryFeatures');
   }
 
   async getFeatureStats(): Promise<Record<string, unknown>> {
@@ -383,10 +436,12 @@ class DataCloudServiceClient implements DataCloudClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get feature stats: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Failed to get feature stats: ${response.statusText}`)
+      );
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'Data Cloud getFeatureStats');
   }
 
   async shutdown(): Promise<void> {
@@ -412,7 +467,7 @@ class DataCloudServiceClient implements DataCloudClient {
 
     try {
       const response = await this.fetch('/health', { method: 'GET' });
-      return response.json();
+      return parseJsonResponse(response, 'Data Cloud health');
     } catch (error) {
       return { status: 'unhealthy' };
     }
@@ -507,7 +562,9 @@ export async function getGlobalDataCloudClient(): Promise<DataCloudClient> {
  */
 export function resetGlobalDataCloudClient(): void {
   if (globalClient) {
-    globalClient.shutdown().catch(console.error);
+    void globalClient.shutdown().catch((error: unknown) => {
+      console.error('Failed to shutdown global Data Cloud client:', error);
+    });
     globalClient = null;
   }
 }

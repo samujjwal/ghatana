@@ -1,4 +1,5 @@
 import { LifecyclePhase } from '../../types/lifecycle';
+import { parseJsonResponse } from '@/lib/http';
 
 const importMetaEnv = import.meta as ImportMeta & {
   env?: {
@@ -36,6 +37,21 @@ class PhaseTransitionApiError extends Error {
   }
 }
 
+async function readPhaseTransitionError(
+  response: Response
+): Promise<{ error?: string; message?: string }> {
+  const raw = await response.text();
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw) as { error?: string; message?: string };
+  } catch {
+    return { message: raw.trim() || undefined };
+  }
+}
+
 async function fetchPhaseTransitionPreview(
   currentPhase: LifecyclePhase,
   projectId: string
@@ -51,10 +67,7 @@ async function fetchPhaseTransitionPreview(
   );
 
   if (!response.ok) {
-    const error = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      message?: string;
-    };
+    const error = await readPhaseTransitionError(response);
 
     throw new PhaseTransitionApiError(
       error.message ?? error.error ?? 'Failed to load phase transition preview',
@@ -62,7 +75,10 @@ async function fetchPhaseTransitionPreview(
     );
   }
 
-  return (await response.json()) as PhaseTransitionPreview;
+  return parseJsonResponse<PhaseTransitionPreview>(
+    response,
+    'fetch phase transition preview'
+  );
 }
 
 export const phaseTransitionAPI = {

@@ -7,6 +7,7 @@ import { useParams } from 'react-router';
 import { useNavigate } from 'react-router-dom';
 import { getRouteForPhase } from '@/types/lifecycle';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Hook for managing lifecycle phase transitions
@@ -29,10 +30,18 @@ export function useLifecyclePhaseTransition() {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to update project lifecycle: ${response.status}`);
+                throw new Error(
+                    await readErrorResponse(
+                        response,
+                        `Failed to update project lifecycle: ${response.status}`
+                    )
+                );
             }
 
-            return response.json();
+            return parseJsonResponse<Record<string, unknown>>(
+                response,
+                'update project lifecycle'
+            );
         },
         onMutate: async (newPhase) => {
             if (!projectId) return;

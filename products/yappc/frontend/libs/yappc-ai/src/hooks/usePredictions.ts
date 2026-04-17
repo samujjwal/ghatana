@@ -16,7 +16,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   AIAgentClientFactory,
   type PredictionInput,
-  type PredictionOutput,
 } from '../agents';
 
 /**

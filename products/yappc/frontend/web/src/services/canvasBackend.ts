@@ -13,6 +13,7 @@
 import type { HierarchicalNode } from '../lib/canvas/HierarchyManager';
 import type { Connection } from '../lib/canvas/NodeManipulation';
 import type { DrawingStroke } from '../lib/canvas/DrawingManager';
+import { parseJsonResponse, readErrorResponse } from '../lib/http';
 import { logger } from '../utils/Logger';
 
 export interface CanvasData {
@@ -34,6 +35,10 @@ export interface SaveCanvasRequest {
 export interface LoadCanvasResponse {
     data: CanvasData | null;
     error?: string;
+}
+
+function parseStoredCanvasData(raw: string): CanvasData {
+    return JSON.parse(raw) as CanvasData;
 }
 
 export class CanvasBackendService {
@@ -63,10 +68,12 @@ export class CanvasBackendService {
             }
 
             if (!response.ok) {
-                throw new Error(`Failed to load canvas: ${response.statusText}`);
+                throw new Error(
+                    await readErrorResponse(response, `Failed to load canvas: ${response.statusText}`)
+                );
             }
 
-            const data = await response.json() as CanvasData;
+            const data = await parseJsonResponse<CanvasData>(response, 'load canvas');
             logger.info('Loaded from backend', 'canvas-backend', { projectId });
 
             // Write-through cache so offline fallback is fresh
@@ -132,7 +139,9 @@ export class CanvasBackendService {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to save canvas: ${response.statusText}`);
+                throw new Error(
+                    await readErrorResponse(response, `Failed to save canvas: ${response.statusText}`)
+                );
             }
 
             logger.info('Saved to backend successfully', 'canvas-backend');
@@ -216,7 +225,7 @@ export class CanvasBackendService {
         try {
             const key = `canvas_${projectId}`;
             const json = localStorage.getItem(key);
-            return json ? JSON.parse(json) : null;
+            return json ? parseStoredCanvasData(json) : null;
         } catch (error) {
             logger.warn('localStorage load failed', 'canvas-backend', { error: error instanceof Error ? error.message : String(error) });
             return null;

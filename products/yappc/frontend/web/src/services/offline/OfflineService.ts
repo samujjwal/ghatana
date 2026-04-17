@@ -10,6 +10,11 @@
  * @doc.pattern Service Layer
  */
 
+import {
+  parseJsonResponse as sharedParseJsonResponse,
+  readErrorResponse as sharedReadErrorResponse,
+} from '@/lib/http';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -37,6 +42,19 @@ export interface OfflineServiceOptions {
   syncOnOnline?: boolean;
 }
 
+function createQueuedOperationId(): string {
+  return `op-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function parseStoredJson<T>(raw: string, context: string): T {
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} was invalid: ${detail}`);
+  }
+}
+
 // ============================================================================
 // Storage Helpers
 // ============================================================================
@@ -55,7 +73,7 @@ class StorageManager {
   load<T>(): T | null {
     try {
       const data = localStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : null;
+      return data ? parseStoredJson<T>(data, this.storageKey) : null;
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
       return null;
@@ -119,6 +137,26 @@ export class OfflineService {
     this.listeners.forEach(listener => listener(this.state));
   }
 
+  private triggerSyncAfterReconnect(): void {
+    void this.sync().catch((error: unknown) => {
+      console.error('Offline sync failed after reconnect:', error);
+    });
+  }
+
+  private async parseJsonResponse<T>(
+    response: Response,
+    context: string,
+  ): Promise<T> {
+    return sharedParseJsonResponse<T>(response, context);
+  }
+
+  private async readErrorResponse(
+    response: Response,
+    fallback: string,
+  ): Promise<string> {
+    return sharedReadErrorResponse(response, fallback);
+  }
+
   // ========================================================================
   // Event Listeners
   // ========================================================================
@@ -129,7 +167,7 @@ export class OfflineService {
       this.saveState();
 
       if (this.options.syncOnOnline) {
-        this.sync().catch(console.error);
+        this.triggerSyncAfterReconnect();
       }
     };
 
@@ -175,7 +213,7 @@ export class OfflineService {
     if (!this.state.isOnline) {
       const queued: QueuedOperation = {
         ...operation,
-        id: `op-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: createQueuedOperationId(),
         timestamp: Date.now(),
         retries: 0,
       };
@@ -274,10 +312,15 @@ export class OfflineService {
     const response = await fetch(url, options);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        await this.readErrorResponse(
+          response,
+          `HTTP ${response.status}: ${response.statusText}`
+        )
+      );
     }
 
-    return response.json();
+    return this.parseJsonResponse<unknown>(response, 'offline queued operation');
   }
 
   /**

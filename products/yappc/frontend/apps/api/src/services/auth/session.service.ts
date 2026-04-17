@@ -14,7 +14,7 @@
  */
 
 import crypto from 'crypto';
-import { PrismaClient } from '../../generated/prisma';
+import type { PrismaClient } from '../../database/client';
 
 // ============================================================================
 // Types

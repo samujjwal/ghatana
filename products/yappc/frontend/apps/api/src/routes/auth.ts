@@ -10,8 +10,11 @@
  * @doc.pattern REST API / Proxy
  */
 
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { proxyAuthService } from '../services/auth/proxy-auth.service';
+import type { AuthUser } from '../services/auth/auth.service';
+import type { JWTUserPayload } from '../middleware/auth.middleware';
+import { getErrorMessage, isRecord } from '../utils/type-guards';
 
 // Use proxy auth service that delegates to Java lifecycle service
 const authService = proxyAuthService;
@@ -25,11 +28,23 @@ type RefreshRequestBody = {
   refreshToken: string;
 };
 
+type AuthenticatedRequest = FastifyRequest & {
+  user?: JWTUserPayload | AuthUser;
+};
+
+function toAuthenticatedUser(user: AuthUser): JWTUserPayload {
+  return {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  };
+}
+
 // ============================================================================
 // Authentication Routes
 // ============================================================================
 
-export async function authRoutes(fastify: unknown) {
+export async function authRoutes(fastify: FastifyInstance) {
   // Login endpoint
   fastify.post(
     '/auth/login',
@@ -136,15 +151,15 @@ export async function authRoutes(fastify: unknown) {
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { refreshToken } = request.body as unknown;
+        const { refreshToken } = request.body as RefreshRequestBody;
 
         await authService.logout(refreshToken);
 
         reply.send({ message: 'Logged out successfully' });
-      } catch (error) {
+      } catch (error: unknown) {
         reply.code(400).send({
           error: 'Logout failed',
-          message: error.message,
+          message: getErrorMessage(error),
         });
       }
     }
@@ -159,14 +174,14 @@ export async function authRoutes(fastify: unknown) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const user = await authService.getCurrentUser(
-          (request as unknown).user.userId
+          (request as AuthenticatedRequest).user?.userId ?? ''
         );
 
         reply.send(user);
-      } catch (error) {
+      } catch (error: unknown) {
         reply.code(404).send({
           error: 'User not found',
-          message: error.message,
+          message: getErrorMessage(error),
         });
       }
     }
@@ -195,7 +210,7 @@ export async function authenticateToken(
     const token = authHeader.substring(7);
     const user = await authService.validateAccessToken(token);
 
-    (request as unknown).user = user;
+    (request as AuthenticatedRequest).user = toAuthenticatedUser(user);
   } catch (error: unknown) {
     return reply.code(401).send({
       error: 'Invalid token',
@@ -207,7 +222,7 @@ export async function authenticateToken(
 export async function requireRole(role: string) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const user = (request as unknown).user;
+      const user = (request as AuthenticatedRequest).user;
 
       if (!user || !hasRole(user.role, role)) {
         return reply.code(403).send({
@@ -215,10 +230,10 @@ export async function requireRole(role: string) {
           message: `Role ${role} required`,
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return reply.code(403).send({
         error: 'Authorization failed',
-        message: error.message,
+        message: getErrorMessage(error),
       });
     }
   };

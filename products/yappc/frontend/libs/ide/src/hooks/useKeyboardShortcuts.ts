@@ -375,14 +375,16 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     action: () => {
       // Prefer the async Clipboard API; fall back to execCommand for older envs
       if (navigator.clipboard?.readText) {
-        navigator.clipboard
-          .readText()
-          .then((text) => {
+        void (async () => {
+          try {
+            const text = await navigator.clipboard.readText();
             document.dispatchEvent(
               new CustomEvent('ide:paste', { detail: { text } })
             );
-          })
-          .catch(() => document.execCommand('paste'));
+          } catch {
+            document.execCommand('paste');
+          }
+        })();
       } else {
         document.execCommand('paste');
       }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Sync Strategy
  * 
@@ -66,15 +65,15 @@ export class SyncStrategy {
     public startAutoSync(intervalMs: number = 60000): void {
         this.stopAutoSync();
 
-        this.syncInterval = setInterval(async () => {
+        this.syncInterval = setInterval(() => {
             if (this.isOnline()) {
-                await this.sync();
+                void this.triggerBackgroundSync();
             }
         }, intervalMs);
 
         // Sync immediately
         if (this.isOnline()) {
-            this.sync().catch(console.error);
+            void this.triggerBackgroundSync();
         }
     }
 
@@ -92,8 +91,8 @@ export class SyncStrategy {
      * Perform full sync
      */
     public async sync(
-        projectId: string,
-        canvasId: string,
+        projectId: string = '',
+        canvasId: string = '',
         options: SyncOptions = {}
     ): Promise<SyncResult> {
         const {
@@ -142,6 +141,12 @@ export class SyncStrategy {
                 this.syncStatus = 'idle';
             }
         }
+    }
+
+    private async triggerBackgroundSync(projectId: string = '', canvasId: string = ''): Promise<void> {
+        await this.sync(projectId, canvasId).catch((error: unknown) => {
+            console.error('Canvas auto-sync failed:', error);
+        });
     }
 
     /**
@@ -376,7 +381,7 @@ export class SyncStrategy {
         window.addEventListener('online', () => {
             console.log('Back online - syncing...');
             this.syncStatus = 'online';
-            this.sync('', '').catch(console.error); // Will use last project/canvas
+            this.triggerBackgroundSync();
         });
 
         window.addEventListener('offline', () => {

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * SSOCallbackPage — SSO/OAuth callback handler.
@@ -23,20 +24,25 @@ const SSOCallbackPage: React.FC = () => {
     }
 
     if (code) {
-      fetch('/api/auth/sso/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, state }),
-      })
-        .then(async (res) => {
-          if (!res.ok) throw new Error('SSO authentication failed');
-          const { token } = await res.json();
+      void (async () => {
+        try {
+          const res = await fetch('/api/auth/sso/callback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, state }),
+          });
+
+          if (!res.ok) {
+            throw new Error(await readErrorResponse(res, 'SSO authentication failed'));
+          }
+
+          const { token } = await parseJsonResponse<{ token: string }>(res, 'sso callback');
           localStorage.setItem('auth_token', token);
           navigate(state ?? '/', { replace: true });
-        })
-        .catch(() => {
+        } catch {
           navigate('/login?error=sso_failed', { replace: true });
-        });
+        }
+      })();
     }
   }, [searchParams, navigate]);
 

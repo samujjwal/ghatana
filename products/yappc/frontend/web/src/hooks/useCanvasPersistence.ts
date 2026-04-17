@@ -14,6 +14,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { canvasAtom } from '../state/atoms/unifiedCanvasAtom';
 import { apiUrl } from '../config/api';
+import { parseJsonResponse, readErrorResponse } from '../lib/http';
 
 export interface PersistenceOptions {
     projectId: string;
@@ -78,10 +79,15 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to save canvas: ${response.statusText}`);
+                throw new Error(
+                    await readErrorResponse(response, `Failed to save canvas: ${response.statusText}`)
+                );
             }
 
-            const result = await response.json();
+            const result = await parseJsonResponse<{ version?: string | number }>(
+                response,
+                'save canvas'
+            );
             console.log('[Persistence] Saved successfully, version:', result.version);
 
             lastSavedStateRef.current = JSON.stringify(canvasData);
@@ -111,10 +117,15 @@ export function useCanvasPersistence(options: PersistenceOptions): UseCanvasPers
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to load canvas: ${response.statusText}`);
+                throw new Error(
+                    await readErrorResponse(response, `Failed to load canvas: ${response.statusText}`)
+                );
             }
 
-            const data = await response.json();
+            const data = await parseJsonResponse<{ lastSaved?: string } & Record<string, unknown>>(
+                response,
+                'load canvas'
+            );
             console.log('[Persistence] Canvas loaded successfully');
 
             // Update save state

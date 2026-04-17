@@ -113,6 +113,15 @@ function createGrowthBookInstance(): GrowthBook {
   return gb;
 }
 
+async function loadGrowthBookFeatures(growthbook: GrowthBook): Promise<void> {
+  try {
+    await growthbook.loadFeatures();
+  } catch (error: unknown) {
+    console.warn('[FeatureFlags] Failed to load features from GrowthBook:', error);
+    console.info('[FeatureFlags] Using default feature values');
+  }
+}
+
 /**
  * Feature Flag Provider component.
  * Wraps the app with GrowthBook context and manages feature flag state.
@@ -137,10 +146,7 @@ export function FeatureFlagProvider({ children }: { children: React.ReactNode })
 
     // Load features from GrowthBook API
     if (GROWTHBOOK_CLIENT_KEY) {
-      growthbook.loadFeatures().catch((error: unknown) => {
-        console.warn('[FeatureFlags] Failed to load features from GrowthBook:', error);
-        console.info('[FeatureFlags] Using default feature values');
-      });
+      void loadGrowthBookFeatures(growthbook);
     } else {
       console.info('[FeatureFlags] GrowthBook not configured, using default features');
     }

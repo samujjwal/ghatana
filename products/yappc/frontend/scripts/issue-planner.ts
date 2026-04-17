@@ -702,7 +702,14 @@ async function main() {
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(console.error);
+  void (async () => {
+    try {
+      await main();
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
+    }
+  })();
 }
 
 export { EpicParser, TaskGenerator, DependencyTracker, RoadmapSync };

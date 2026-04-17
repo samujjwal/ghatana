@@ -14,7 +14,8 @@
  */
 import { FastifyInstance, FastifyRequest } from 'fastify';
 import { WebSocket } from 'ws';
-import { redisCanvasRoomStore, type CollaboratorInfo as RedisCollaboratorInfo } from './RedisCanvasRoomStore';
+import { redisCanvasRoomStore } from './RedisCanvasRoomStore';
+import type { CollaboratorInfo as RedisCollaboratorInfo } from './RedisCanvasRoomStore';
 
 // =============================================================================
 // Canvas Types (Legacy + Enhanced)
@@ -88,11 +89,36 @@ export class RealTimeService {
     '#52B788',
   ];
 
+  private connectRedisCanvasRoomStore(): void {
+    void (async () => {
+      try {
+        await redisCanvasRoomStore.connect();
+      } catch (err) {
+        console.error('[RealTimeService] Failed to connect to Redis:', err);
+      }
+    })();
+  }
+
+  private persistNodeUpdateInBackground(
+    projectId: string,
+    nodeId: string,
+    updates: Record<string, unknown>
+  ): void {
+    void (async () => {
+      try {
+        await this.persistNodeUpdate(projectId, nodeId, updates);
+      } catch (err) {
+        console.error(
+          '[RealTimeService] Failed to persist node update:',
+          err
+        );
+      }
+    })();
+  }
+
   constructor() {
     // Initialize Redis connection
-    redisCanvasRoomStore.connect().catch((err) => {
-      console.error('[RealTimeService] Failed to connect to Redis:', err);
-    });
+    this.connectRedisCanvasRoomStore();
 
     // Start heartbeat monitoring (every 30s)
     this.heartbeatInterval = setInterval(() => this.checkHeartbeats(), 30000);
@@ -270,15 +296,10 @@ export class RealTimeService {
           case 'node-update':
             if (userId && room) {
               // Persist node update to canvas document asynchronously
-              this.persistNodeUpdate(
+              this.persistNodeUpdateInBackground(
                 room.projectId,
                 message.nodeId,
                 message.updates
-              ).catch((err) =>
-                console.error(
-                  '[RealTimeService] Failed to persist node update:',
-                  err
-                )
               );
               this.broadcastToRoom(
                 room,

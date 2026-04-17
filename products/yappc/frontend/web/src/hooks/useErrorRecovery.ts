@@ -286,6 +286,14 @@ const defaultRetryConfig: Required<RetryConfig> = {
 
 const offlineQueue = new OfflineQueue();
 
+async function processOfflineQueueAfterReconnect(): Promise<void> {
+  try {
+    await offlineQueue.process();
+  } catch (error: unknown) {
+    console.error('Failed to process offline queue after reconnect:', error);
+  }
+}
+
 export function useErrorRecovery({
   enableAutoRetry = true,
   retryConfig = {},
@@ -306,7 +314,7 @@ export function useErrorRecovery({
       setIsOnline(true);
       // Process offline queue when back online
       if (enableOfflineQueue) {
-        offlineQueue.process().catch(console.error);
+        void processOfflineQueueAfterReconnect();
       }
     };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -44,8 +45,10 @@ async function fetchTeamHub(): Promise<TeamHubData> {
   const res = await fetch('/api/teams/hub', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load team hub');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load team hub'));
+  }
+  return parseJsonResponse<TeamHubData>(res, 'team hub');
 }
 
 // ============================================================================

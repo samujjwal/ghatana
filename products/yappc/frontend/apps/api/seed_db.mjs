@@ -35,9 +35,15 @@ async function main() {
   console.log('Workspace created:', workspace);
 }
 
-main()
-  .catch(e => {
-    console.error('Error:', e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+async function run() {
+  try {
+    await main();
+  } catch (error) {
+    console.error('Error:', error);
+    process.exitCode = 1;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+void run();

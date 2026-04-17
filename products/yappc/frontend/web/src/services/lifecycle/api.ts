@@ -133,6 +133,24 @@ class APIError extends Error {
   }
 }
 
+import { parseJsonResponse } from '@/lib/http';
+
+async function readApiError(
+  response: Response
+): Promise<{ message?: string; code?: string }> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw) as { message?: string; code?: string };
+  } catch {
+    return { message: raw.trim() || undefined };
+  }
+}
+
 async function fetchAPI<T>(
   endpoint: string,
   options?: RequestInit
@@ -146,7 +164,7 @@ async function fetchAPI<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const error = await readApiError(response);
     throw new APIError(
       error.message || 'API request failed',
       response.status,
@@ -154,7 +172,7 @@ async function fetchAPI<T>(
     );
   }
 
-  return response.json();
+  return parseJsonResponse<T>(response, endpoint);
 }
 
 // ============================================================================

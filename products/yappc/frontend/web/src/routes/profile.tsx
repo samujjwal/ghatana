@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Mail, Save, Camera } from 'lucide-react';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { useCurrentUser } from '../providers/AuthProvider';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
 
@@ -50,7 +51,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch('/api/users/me');
             if (!res.ok) throw new Error('Failed to load profile');
-            return res.json() as Promise<UserProfile>;
+            return parseJsonResponse<UserProfile>(res, 'profile load');
         },
         enabled: currentUser.isAuthenticated,
     });
@@ -82,8 +83,10 @@ export default function Component() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates),
             });
-            if (!res.ok) throw new Error('Failed to update profile');
-            return res.json() as Promise<UserProfile>;
+            if (!res.ok) {
+                throw new Error(await readErrorResponse(res, 'Failed to update profile'));
+            }
+            return parseJsonResponse<UserProfile>(res, 'profile update');
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['user-profile'] });

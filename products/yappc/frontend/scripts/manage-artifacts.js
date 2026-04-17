@@ -426,4 +426,7 @@ async function main() {
   }
 }
 
-main();
+void main().catch(error => {
+  console.error(chalk.red('Unhandled artifact management failure:'), error);
+  process.exit(1);
+});

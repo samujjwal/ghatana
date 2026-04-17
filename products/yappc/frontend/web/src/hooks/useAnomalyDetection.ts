@@ -11,6 +11,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Anomaly data model
@@ -119,10 +120,15 @@ export function useAnomalyDetection(tenantId: string) {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch anomalies: ${response.statusText}`);
+        throw new Error(
+          await readErrorResponse(response, `Failed to fetch anomalies: ${response.statusText}`)
+        );
       }
 
-      const data = await response.json();
+      const data = await parseJsonResponse<{ anomalies?: Anomaly[] }>(
+        response,
+        'fetch anomalies'
+      );
       const anomalies = data.anomalies || [];
       const criticalCount = anomalies.filter(
         (a: Anomaly) => a.severity === 'CRITICAL',
@@ -178,10 +184,15 @@ export function useAnomalyDetection(tenantId: string) {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch user anomalies: ${response.statusText}`);
+        throw new Error(
+          await readErrorResponse(response, `Failed to fetch user anomalies: ${response.statusText}`)
+        );
       }
 
-      const data = await response.json();
+      const data = await parseJsonResponse<{ anomalies?: Anomaly[] }>(
+        response,
+        'fetch user anomalies'
+      );
       setState({
         anomalies: data.anomalies || [],
         loading: false,
@@ -226,7 +237,7 @@ export function useAnomalyDetection(tenantId: string) {
           ),
         }));
 
-        return await response.json();
+        return await parseJsonResponse<unknown>(response, 'update anomaly status');
       } catch (err) {
         setState((prev) => ({
           ...prev,
@@ -257,7 +268,7 @@ export function useAnomalyDetection(tenantId: string) {
           throw new Error(`Failed to create investigation: ${response.statusText}`);
         }
 
-        return await response.json();
+        return await parseJsonResponse<unknown>(response, 'create investigation');
       } catch (err) {
         setState((prev) => ({
           ...prev,
@@ -286,7 +297,7 @@ export function useAnomalyDetection(tenantId: string) {
         throw new Error(`Failed to fetch baselines: ${response.statusText}`);
       }
 
-      return await response.json();
+      return await parseJsonResponse<unknown>(response, 'get baselines');
     } catch (err) {
       setState((prev) => ({
         ...prev,
@@ -313,7 +324,7 @@ export function useAnomalyDetection(tenantId: string) {
         throw new Error(`Failed to fetch threat intel: ${response.statusText}`);
       }
 
-      return await response.json();
+      return await parseJsonResponse<unknown>(response, 'get threat intelligence');
     } catch (err) {
       setState((prev) => ({
         ...prev,
@@ -372,7 +383,7 @@ export function useRiskScores(tenantId: string) {
         headers: { 'X-Tenant-Id': tenantId },
       });
       if (!response.ok) throw new Error('Failed to fetch risk scores');
-      const data = await response.json();
+      const data = await parseJsonResponse<unknown[]>(response, 'fetch risk scores');
       setRiskScores(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -403,7 +414,7 @@ export function useAnomalyDetail(anomalyId: string, tenantId: string) {
         headers: { 'X-Tenant-Id': tenantId },
       });
       if (!response.ok) throw new Error('Failed to fetch anomaly detail');
-      const data = await response.json();
+      const data = await parseJsonResponse<Anomaly>(response, 'fetch anomaly detail');
       setAnomaly(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));

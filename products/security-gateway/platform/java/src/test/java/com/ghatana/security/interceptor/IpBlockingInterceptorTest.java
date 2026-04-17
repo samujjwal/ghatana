@@ -116,6 +116,72 @@ class IpBlockingInterceptorTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(200);
     }
 
+    @Test
+    @DisplayName("should block requests without forwarded IP when unknown is blocklisted")
+    void shouldBlockUnknownClientIpWhenNoHeaderProvided() {
+        IpBlockingInterceptor blocker = new IpBlockingInterceptor(
+                auditLogger, Set.of("unknown"), 5, Duration.ofMinutes(1), Duration.ofHours(1), true
+        );
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/resource")
+                .build();
+
+        HttpResponse response = runPromise(() -> blocker.intercept(request, passThrough));
+
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+        @Test
+        @DisplayName("should use the first forwarded IP when multiple proxies are present")
+        void shouldUseFirstForwardedIpWhenMultipleProxiesPresent() {
+                IpBlockingInterceptor blocker = new IpBlockingInterceptor(
+                                auditLogger, Set.of("10.0.0.99"), 5, Duration.ofMinutes(1), Duration.ofHours(1), true
+                );
+
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/resource")
+                                .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.99, 10.0.0.12")
+                                .build();
+
+                HttpResponse response = runPromise(() -> blocker.intercept(request, passThrough));
+
+                assertThat(response.getCode()).isEqualTo(403);
+        }
+
+        @Test
+        @DisplayName("should keep non-violating IPs unblocked after another IP is auto-banned")
+        void shouldKeepOtherIpsUnblockedAfterAutoBan() {
+                IpBlockingInterceptor blocker = new IpBlockingInterceptor(
+                                auditLogger, Set.of(), 2, Duration.ofMinutes(5), Duration.ofHours(1), true
+                );
+
+                blocker.recordViolation("10.0.0.50");
+                blocker.recordViolation("10.0.0.50");
+
+                HttpResponse blockedResponse = runPromise(() -> blocker.intercept(requestFromIp("10.0.0.50"), passThrough));
+                HttpResponse otherIpResponse = runPromise(() -> blocker.intercept(requestFromIp("10.0.0.51"), passThrough));
+
+                assertThat(blockedResponse.getCode()).isEqualTo(403);
+                assertThat(otherIpResponse.getCode()).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("should expire auto-ban after configured duration")
+        void shouldExpireAutoBanAfterConfiguredDuration() throws InterruptedException {
+                IpBlockingInterceptor blocker = new IpBlockingInterceptor(
+                                auditLogger, Set.of(), 1, Duration.ofMillis(10), Duration.ofMillis(50), true
+                );
+
+                blocker.recordViolation("10.0.0.77");
+                HttpResponse blockedResponse = runPromise(() -> blocker.intercept(requestFromIp("10.0.0.77"), passThrough));
+
+                Thread.sleep(80);
+
+                HttpResponse allowedResponse = runPromise(() -> blocker.intercept(requestFromIp("10.0.0.77"), passThrough));
+
+                assertThat(blockedResponse.getCode()).isEqualTo(403);
+                assertThat(allowedResponse.getCode()).isEqualTo(200);
+        }
+
     private static HttpRequest requestFromIp(String ip) {
         return HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/resource")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), ip)

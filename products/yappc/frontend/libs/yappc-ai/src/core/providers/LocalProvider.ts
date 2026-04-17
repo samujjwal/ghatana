@@ -75,7 +75,10 @@ export class LocalProvider extends AIService {
           );
         }
 
-        const data = await response.json();
+        const data = await this.parseJsonResponse<Record<string, unknown>>(
+          response,
+          'local completion'
+        );
 
         // Handle Ollama response format
         const content = data.message?.content || data.response || '';
@@ -227,7 +230,10 @@ export class LocalProvider extends AIService {
           );
         }
 
-        const data = await response.json();
+        const data = await this.parseJsonResponse<{ embedding: number[] }>(
+          response,
+          'local embedding'
+        );
 
         const result: EmbeddingResponse = {
           embedding: data.embedding,
@@ -295,6 +301,34 @@ export class LocalProvider extends AIService {
       completionTokens: data.eval_count || 0,
       totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
     };
+  }
+
+  private async parseJsonResponse<T>(
+    response: Response,
+    context: string
+  ): Promise<T> {
+    const raw = await response.text();
+
+    if (!raw) {
+      throw new AIServiceError(
+        `${context} returned an empty response`,
+        'PARSE_ERROR',
+        response.status,
+        this.provider
+      );
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new AIServiceError(
+        `${context} returned invalid JSON: ${detail}`,
+        'PARSE_ERROR',
+        response.status,
+        this.provider
+      );
+    }
   }
 
   /**

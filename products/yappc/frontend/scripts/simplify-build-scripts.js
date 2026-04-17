@@ -156,4 +156,14 @@ class ScriptSimplifier {
 // Run the simplifier
 const dryRun = process.argv.includes('--dry-run');
 const simplifier = new ScriptSimplifier(dryRun);
-simplifier.run().catch(console.error);
+
+async function run() {
+  try {
+    await simplifier.run();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+void run();

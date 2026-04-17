@@ -12,9 +12,12 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import type { PrismaClient } from '@prisma/client';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { PrismaClient } from '../../database/client';
 import type { Role } from '../../generated/prisma';
 import { getPrismaClient } from '../../database/client';
+import type { JWTUserPayload } from '../../middleware/auth.middleware';
+import { getErrorMessage } from '../../utils/type-guards';
 import { getJwtRuntimeConfig } from './jwt-config';
 import { SessionService } from './session.service';
 
@@ -65,6 +68,26 @@ export interface RegisterData {
   workspaceName?: string;
 }
 
+type UserWithWorkspaceMemberships = {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  avatar?: string | null;
+  workspaces?: Array<{
+    workspaceId: string;
+    role: Role;
+    workspace: { id: string; name: string };
+  }>;
+};
+
+type TokenUser = Pick<UserWithWorkspaceMemberships, 'id' | 'email' | 'role'>;
+
+type AuthenticatedFastifyRequest = FastifyRequest & {
+  user?: JWTUserPayload;
+  workspaceId?: string;
+};
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -99,7 +122,7 @@ export class AuthService {
   constructor(prisma?: PrismaClient) {
     const resolvedPrisma = prisma ?? getPrismaClient();
     this.prisma = resolvedPrisma;
-    this.sessionService = new SessionService(resolvedPrisma as never);
+    this.sessionService = new SessionService(resolvedPrisma);
   }
 
   // -------------------------------------------------------------------------
@@ -124,21 +147,34 @@ export class AuthService {
       JWT_CONFIG.bcryptRounds
     );
 
-    // Create user
     const user = await this.prisma.user.create({
       data: {
         email: data.email,
         name: data.name,
         passwordHash,
         role: 'EDITOR',
-        workspaces: {
-          create: {
-            name: data.workspaceName || `${data.name}'s Workspace`,
-            description: 'Default workspace',
-            isDefault: true,
-          },
-        },
       },
+    });
+
+    const workspace = await this.prisma.workspace.create({
+      data: {
+        name: data.workspaceName || `${data.name}'s Workspace`,
+        description: 'Default workspace',
+        isDefault: true,
+        ownerId: user.id,
+      },
+    });
+
+    await this.prisma.workspaceMember.create({
+      data: {
+        userId: user.id,
+        workspaceId: workspace.id,
+        role: 'OWNER',
+      },
+    });
+
+    const hydratedUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         workspaces: {
           include: {
@@ -148,12 +184,16 @@ export class AuthService {
       },
     });
 
+    if (!hydratedUser) {
+      throw new Error('Created user could not be reloaded');
+    }
+
     // Generate tokens
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.generateTokens(hydratedUser);
 
     // Return user data
     return {
-      user: this.formatAuthUser(user),
+      user: this.formatAuthUser(hydratedUser),
       tokens,
     };
   }
@@ -341,7 +381,7 @@ export class AuthService {
       const decoded = jwt.verify(
         token,
         JWT_CONFIG.accessTokenSecret
-      ) as unknown;
+      ) as { type?: string; userId?: string };
 
       if (decoded.type !== 'password-reset') {
         throw new Error('Invalid reset token');
@@ -406,14 +446,14 @@ export class AuthService {
     // the revocation intent is not silently lost.  We bump `updatedAt` which
     // callers can compare against token `iat` if they persist the registry to
     // Redis on startup.
-    await this.prisma.user
-      .update({
+    try {
+      await this.prisma.user.update({
         where: { id: userId },
         data: { updatedAt: new Date(revocationTimestamp * 1000) },
-      })
-      .catch(() => {
-        // Non-fatal: the in-process registry already handles this request
       });
+    } catch {
+      // Non-fatal: the in-process registry already handles this request
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -421,25 +461,29 @@ export class AuthService {
   // -------------------------------------------------------------------------
 
   private async generateTokens(
-    user: unknown,
+    user: TokenUser,
     workspaceId?: string
   ): Promise<AuthTokens> {
     const payload: JWTPayload = {
-      userId: (user as { id: string }).id,
-      email: (user as { email: string }).email,
-      role: (user as { role: Role }).role,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
       workspaceId,
     };
 
-    const accessToken = jwt.sign(payload, JWT_CONFIG.accessTokenSecret, {
-      expiresIn: JWT_CONFIG.accessTokenExpiry,
-    });
+    const accessToken = jwt.sign(
+      payload,
+      JWT_CONFIG.accessTokenSecret as jwt.Secret,
+      {
+        expiresIn: JWT_CONFIG.accessTokenExpiry,
+      } as jwt.SignOptions
+    );
 
     // Refresh token TTL → 7 days; create a durable DB session for rotation
     const refreshTtlMs = 7 * 24 * 60 * 60 * 1000;
     const expiresAt = new Date(Date.now() + refreshTtlMs);
     const sessionToken = await this.sessionService.create({
-      userId: (user as { id: string }).id,
+      userId: user.id,
       workspaceId,
       expiresAt,
     });
@@ -447,10 +491,10 @@ export class AuthService {
     const refreshPayload: JWTPayload = { ...payload, sessionToken };
     const refreshToken = jwt.sign(
       refreshPayload,
-      JWT_CONFIG.refreshTokenSecret,
+      JWT_CONFIG.refreshTokenSecret as jwt.Secret,
       {
         expiresIn: JWT_CONFIG.refreshTokenExpiry,
-      }
+      } as jwt.SignOptions
     );
 
     const expiresIn = 15 * 60; // 15 minutes
@@ -462,14 +506,14 @@ export class AuthService {
     };
   }
 
-  private formatAuthUser(user: unknown): AuthUser {
+  private formatAuthUser(user: UserWithWorkspaceMemberships): AuthUser {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-      avatar: user.avatar,
-      workspaces: user.workspaces.map((wm: unknown) => ({
+      avatar: user.avatar ?? undefined,
+      workspaces: (user.workspaces ?? []).map((wm) => ({
         id: wm.workspace.id,
         name: wm.workspace.name,
         role: wm.role,
@@ -483,7 +527,7 @@ export class AuthService {
 // ============================================================================
 
 export function createAuthMiddleware(authService: AuthService) {
-  return async (request: unknown, reply: unknown) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authHeader = request.headers.authorization;
 
@@ -495,14 +539,14 @@ export function createAuthMiddleware(authService: AuthService) {
       const payload = await authService.validateAccessToken(token);
 
       // Add user info to request
-      request.user = payload;
+      (request as AuthenticatedFastifyRequest).user = payload;
 
       // Add workspace context if available
       if (payload.workspaceId) {
-        request.workspaceId = payload.workspaceId;
+        (request as AuthenticatedFastifyRequest).workspaceId = payload.workspaceId;
       }
-    } catch (error) {
-      reply.code(401).send({ error: 'Unauthorized', message: error.message });
+    } catch (error: unknown) {
+      reply.code(401).send({ error: 'Unauthorized', message: getErrorMessage(error) });
     }
   };
 }
@@ -512,13 +556,15 @@ export function createAuthMiddleware(authService: AuthService) {
 // ============================================================================
 
 export function requireRole(requiredRole: Role) {
-  return async (request: unknown, reply: unknown) => {
-    if (!request.user) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const authenticatedRequest = request as AuthenticatedFastifyRequest;
+
+    if (!authenticatedRequest.user) {
       reply.code(401).send({ error: 'Unauthorized' });
       return;
     }
 
-    const userRole = request.user.role as Role;
+    const userRole = authenticatedRequest.user.role as Role;
     const roleHierarchy: Record<Role, number> = {
       VIEWER: 1,
       EDITOR: 2,
@@ -536,15 +582,17 @@ export function requireRole(requiredRole: Role) {
 }
 
 export function requireWorkspaceRole(requiredRole: Role) {
-  return async (request: unknown, reply: unknown) => {
-    if (!request.user || !request.workspaceId) {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const authenticatedRequest = request as AuthenticatedFastifyRequest;
+
+    if (!authenticatedRequest.user || !authenticatedRequest.workspaceId) {
       reply.code(401).send({ error: 'Unauthorized' });
       return;
     }
 
     // In a real implementation, you'd check the user's role in the specific workspace
     // For now, we'll use the user's global role
-    const userRole = request.user.role as Role;
+    const userRole = authenticatedRequest.user.role as Role;
     const roleHierarchy: Record<Role, number> = {
       VIEWER: 1,
       EDITOR: 2,

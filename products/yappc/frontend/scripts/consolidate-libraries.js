@@ -373,4 +373,14 @@ class LibraryConsolidator {
 // Run the consolidator
 const dryRun = process.argv.includes('--dry-run');
 const consolidator = new LibraryConsolidator(dryRun);
-consolidator.run().catch(console.error);
+
+async function run() {
+  try {
+    await consolidator.run();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+void run();

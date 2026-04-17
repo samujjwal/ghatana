@@ -24,7 +24,24 @@
  * @doc.pattern Repository
  */
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from './client';
+
+interface RepositoryDelegate<T> {
+  findUnique(args: { where: Record<string, unknown> }): Promise<T | null>;
+  findMany(args?: Record<string, unknown>): Promise<T[]>;
+  count(args?: { where?: Record<string, unknown> }): Promise<number>;
+  create(args: { data: Record<string, unknown> }): Promise<T>;
+  update(args: {
+    where: Record<string, unknown>;
+    data: Record<string, unknown>;
+  }): Promise<T>;
+  delete(args: { where: Record<string, unknown> }): Promise<T>;
+  upsert(args: {
+    where: Record<string, unknown>;
+    create: Record<string, unknown>;
+    update: Record<string, unknown>;
+  }): Promise<T>;
+}
 
 /**
  * Generic repository base class for database operations.
@@ -58,8 +75,8 @@ export abstract class BaseRepository<T, M extends keyof PrismaClient> {
    *
    * @returns The Prisma model delegate
    */
-  protected getModel() {
-    return this.prisma[this.modelName] as unknown;
+  protected getModel(): RepositoryDelegate<T> {
+    return this.prisma[this.modelName] as unknown as RepositoryDelegate<T>;
   }
 
   /**

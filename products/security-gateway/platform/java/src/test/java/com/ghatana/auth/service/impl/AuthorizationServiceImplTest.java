@@ -113,6 +113,22 @@ class AuthorizationServiceImplTest extends EventloopTestBase {
                 .isFalse();
     }
 
+    @Test
+    @DisplayName("Should grant document.write permission to editor user")
+    void shouldGrantDocumentWritePermissionToEditor() {
+        Boolean hasPermission = runPromise(() ->
+                authzService.checkPermission(
+                        tenantId,
+                        userWithEditorRole,
+                        "document.write"
+                )
+        );
+
+        assertThat(hasPermission)
+                .as("Editor should retain document.write permission")
+                .isTrue();
+    }
+
     /**
      * Verifies that viewer user only has read permissions.
      *
@@ -149,6 +165,23 @@ class AuthorizationServiceImplTest extends EventloopTestBase {
 
         assertThat(canWrite)
                 .as("Viewer should not have write permission")
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("Should deny permission checks for users without roles")
+    void shouldDenyPermissionChecksForUsersWithoutRoles() {
+        UserPrincipal rolelessUser = UserPrincipal.builder()
+                .userId("no-role-user")
+                .email("norole@example.com")
+                .build();
+
+        Boolean hasPermission = runPromise(() ->
+                authzService.checkPermission(tenantId, rolelessUser, "document.read")
+        );
+
+        assertThat(hasPermission)
+                .as("Users without roles should not inherit permissions")
                 .isFalse();
     }
 
@@ -228,6 +261,27 @@ class AuthorizationServiceImplTest extends EventloopTestBase {
                 .contains("document.read", "document.write", "document.delete",
                         "user.read", "user.create", "user.update", "user.delete",
                         "role.manage", "settings.admin");
+    }
+
+    /**
+     * Verifies that unknown roles resolve to an empty permission set.
+     *
+     * GIVEN: Role not present in the built-in RBAC map
+     * WHEN: getPermissionsForRole("UNKNOWN") is called
+     * THEN: Returns an empty set
+     */
+    @Test
+    @DisplayName("Should return empty permissions for unknown role")
+    void shouldReturnEmptyPermissionsForUnknownRole() {
+        // GIVEN & WHEN
+        Set<String> permissions = runPromise(() ->
+                authzService.getPermissionsForRole(tenantId, "UNKNOWN")
+        );
+
+        // THEN
+        assertThat(permissions)
+                .as("Unknown roles should not receive default permissions")
+                .isEmpty();
     }
 
     /**
@@ -440,6 +494,42 @@ class AuthorizationServiceImplTest extends EventloopTestBase {
         )
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("permission cannot be null");
+    }
+
+    /**
+     * Verifies null parameter handling for role checks.
+     *
+     * GIVEN: Null role
+     * WHEN: checkRole is called
+     * THEN: Throws NullPointerException
+     */
+    @Test
+    @DisplayName("Should reject null role in checkRole")
+    void shouldRejectNullRoleInCheckRole() {
+        // WHEN & THEN
+        assertThatThrownBy(() ->
+                authzService.checkRole(tenantId, userWithAdminRole, null)
+        )
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("role cannot be null");
+    }
+
+    /**
+     * Verifies null parameter handling for role permission lookup.
+     *
+     * GIVEN: Null role
+     * WHEN: getPermissionsForRole is called
+     * THEN: Throws NullPointerException
+     */
+    @Test
+    @DisplayName("Should reject null role in getPermissionsForRole")
+    void shouldRejectNullRoleInGetPermissionsForRole() {
+        // WHEN & THEN
+        assertThatThrownBy(() ->
+                authzService.getPermissionsForRole(tenantId, null)
+        )
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("role cannot be null");
     }
 
     @AfterEach

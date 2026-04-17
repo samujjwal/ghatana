@@ -21,6 +21,48 @@ const API_BASE_URL = import.meta.env.DEV
 
 const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL ?? '/graphql';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(response: Response, fallback: string): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Generic REST API fetch helper
  */
@@ -33,11 +75,21 @@ async function fetchConfig<T = unknown>(endpoint: string): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+    throw new Error(
+      await readErrorResponse(response, `API request failed: ${response.statusText}`)
+    );
   }
 
-  const json = await response.json();
-  return json.data || json;
+  const json = await parseJsonResponse<T | { data?: T }>(
+    response,
+    `config endpoint ${endpoint}`
+  );
+
+  if (typeof json === 'object' && json !== null && 'data' in json && json.data !== undefined) {
+    return json.data;
+  }
+
+  return json as T;
 }
 
 async function graphql<T = unknown>(
@@ -53,13 +105,22 @@ async function graphql<T = unknown>(
   });
 
   if (!response.ok) {
-    throw new Error(`GraphQL request failed: ${response.statusText}`);
+    throw new Error(
+      await readErrorResponse(response, `GraphQL request failed: ${response.statusText}`)
+    );
   }
 
-  const json = await response.json();
+  const json = await parseJsonResponse<{
+    data?: T;
+    errors?: Array<{ message?: string }>;
+  }>(response, 'config GraphQL request');
 
-  if (json.errors) {
+  if (json.errors?.length) {
     throw new Error(json.errors[0]?.message ?? 'GraphQL request failed');
+  }
+
+  if (json.data === undefined) {
+    throw new Error('GraphQL request returned no data');
   }
 
   return json.data;

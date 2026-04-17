@@ -180,13 +180,14 @@ export class AccessibilityAuditor {
 
     // Monitor DOM changes
     const observer = new MutationObserver(() => {
-      void this.auditPage()
-        .then((report) => {
+      void (async () => {
+        try {
+          const report = await this.auditPage();
           this.listeners.forEach((listener) => listener(report));
-        })
-        .catch((error: unknown) => {
+        } catch (error: unknown) {
           console.warn('Accessibility monitoring audit failed', error);
-        });
+        }
+      })();
     });
 
     observer.observe(document.body, {

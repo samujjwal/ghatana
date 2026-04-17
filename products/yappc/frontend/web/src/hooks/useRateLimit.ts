@@ -24,6 +24,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useEffect } from 'react';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Rate limit status interface
@@ -109,8 +110,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
         ? `/api/rate-limit/status/${userId}`
         : '/api/rate-limit/status/me';
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch rate limit status');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch rate limit status'));
+      return parseJsonResponse<RateLimitStatus>(response, 'fetch rate limit status');
     },
     refetchInterval: autoRefresh ? refreshInterval : false,
   });
@@ -122,8 +123,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
     queryKey: ['rateLimitTiers'],
     queryFn: async () => {
       const response = await fetch('/api/rate-limit/tiers');
-      if (!response.ok) throw new Error('Failed to fetch tiers');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch tiers'));
+      return parseJsonResponse<RateLimitTier[]>(response, 'fetch rate limit tiers');
     },
   });
 
@@ -136,8 +137,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
     queryKey: ['upgradeRequests', userId],
     queryFn: async () => {
       const response = await fetch('/api/rate-limit/upgrade-requests');
-      if (!response.ok) throw new Error('Failed to fetch upgrade requests');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch upgrade requests'));
+      return parseJsonResponse<UpgradeRequest[]>(response, 'fetch upgrade requests');
     },
     enabled: !!userId,
   });
@@ -152,8 +153,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestedTier }),
       });
-      if (!response.ok) throw new Error('Failed to request upgrade');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to request upgrade'));
+      return parseJsonResponse<unknown>(response, 'request rate limit upgrade');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upgradeRequests'] });
@@ -171,8 +172,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: targetUserId }),
       });
-      if (!response.ok) throw new Error('Failed to reset limit');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to reset limit'));
+      return parseJsonResponse<unknown>(response, 'reset rate limit');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rateLimitStatus'] });
@@ -187,8 +188,8 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
       const response = await fetch('/api/rate-limit/downgrade', {
         method: 'POST',
       });
-      if (!response.ok) throw new Error('Failed to downgrade');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to downgrade'));
+      return parseJsonResponse<unknown>(response, 'downgrade rate limit tier');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rateLimitStatus'] });

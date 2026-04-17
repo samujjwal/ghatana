@@ -279,11 +279,15 @@ async function main() {
   console.log('✅ Database seeding completed successfully!');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
+async function runSeed(): Promise<void> {
+  try {
+    await main();
+  } catch (error) {
+    console.error('❌ Seeding failed:', error);
+    process.exitCode = 1;
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+}
+
+void runSeed();

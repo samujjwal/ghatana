@@ -92,6 +92,19 @@ class WafInterceptorTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("should not emit audit events when disabled interceptor sees blocked content")
+    void shouldNotAuditBlockedPatternWhenDisabled() {
+        WafInterceptor disabled = new WafInterceptor(auditLogger, false);
+        HttpRequest traversal = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/v1/files/../../etc/passwd").build();
+
+        HttpResponse response = runPromise(() -> disabled.intercept(traversal, passThrough));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(auditLogger, never()).logSecurityEvent(any(), any(), any());
+    }
+
+    @Test
     @DisplayName("should block OS command injection with semicolon pipe")
     void shouldBlockCommandInjection() {
         HttpRequest cmd = HttpRequest.builder(HttpMethod.GET,
@@ -139,5 +152,25 @@ class WafInterceptorTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> waf.intercept(clean, passThrough));
         assertThat(response.getCode()).isEqualTo(200);
         verify(auditLogger, never()).logSecurityEvent(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("should block path traversal using backslashes")
+    void shouldBlockWindowsStylePathTraversal() {
+        HttpRequest traversal = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/v1/files/..\\..\\windows\\system32").build();
+        HttpResponse response = runPromise(() -> waf.intercept(traversal, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("PATH_TRAVERSAL"));
+    }
+
+    @Test
+    @DisplayName("should block command substitution injection")
+    void shouldBlockCommandSubstitutionInjection() {
+        HttpRequest cmd = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/v1/exec?cmd=$(cat /etc/passwd)").build();
+        HttpResponse response = runPromise(() -> waf.intercept(cmd, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("COMMAND_INJECTION"));
     }
 }

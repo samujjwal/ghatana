@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -40,16 +41,20 @@ async function fetchChannels(): Promise<Channel[]> {
   const res = await fetch('/api/messages/channels', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load channels');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load channels'));
+  }
+  return parseJsonResponse<Channel[]>(res, 'message channels');
 }
 
 async function fetchChannelMessages(channelId: string): Promise<ChannelMessages> {
   const res = await fetch(`/api/messages/channels/${channelId}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load messages');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load messages'));
+  }
+  return parseJsonResponse<ChannelMessages>(res, 'channel messages');
 }
 
 // ============================================================================

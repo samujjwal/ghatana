@@ -12,6 +12,10 @@
  */
 
 import React from 'react';
+import {
+    parseJsonResponse as sharedParseJsonResponse,
+    readErrorResponse as sharedReadErrorResponse,
+} from '@/lib/http';
 import { logger } from '../../utils/Logger';
 import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
 
@@ -713,7 +717,9 @@ export class CanvasPersistence {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to save to API: ${response.statusText}`);
+            throw new Error(
+                await this.readErrorResponse(response, `Failed to save to API: ${response.statusText}`)
+            );
         }
     }
 
@@ -731,7 +737,15 @@ export class CanvasPersistence {
             return null;
         }
 
-        const data = await response.json();
+        const data = await this.parseJsonResponse<{
+            canvas?: {
+                id: string;
+                projectId: string;
+                canvasId: string;
+                updatedAt: string;
+                data: CanvasSnapshot['data'];
+            };
+        }>(response, 'load canvas snapshot from API');
         return data.canvas ? {
             id: data.canvas.id,
             projectId: data.canvas.projectId,
@@ -741,6 +755,20 @@ export class CanvasPersistence {
             data: data.canvas.data,
             checksum: '',
         } : null;
+    }
+
+    private async parseJsonResponse<T>(
+        response: Response,
+        context: string,
+    ): Promise<T> {
+        return sharedParseJsonResponse<T>(response, context);
+    }
+
+    private async readErrorResponse(
+        response: Response,
+        fallback: string,
+    ): Promise<string> {
+        return sharedReadErrorResponse(response, fallback);
     }
 
     private async pruneSnapshots(projectId: string, canvasId: string): Promise<void> {

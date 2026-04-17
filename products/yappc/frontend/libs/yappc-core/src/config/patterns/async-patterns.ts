@@ -76,9 +76,10 @@ export async function parallelLimited<T>(
   const executing: Promise<void>[] = [];
 
   for (const op of operations) {
-    const promise = op().then((result) => {
+    const promise = (async () => {
+      const result = await op();
       results.push(result);
-    });
+    })();
     executing.push(promise);
 
     if (executing.length >= maxConcurrency) {
@@ -313,16 +314,18 @@ export async function apiCall<T>(
   endpoint: string,
   timeoutMs = 30000
 ): Promise<T> {
-  return withTimeoutAndRetry(operation, timeoutMs, {
-    maxRetries: 3,
-    initialDelayMs: 1000,
-  }).catch((error) => {
+  try {
+    return await withTimeoutAndRetry(operation, timeoutMs, {
+      maxRetries: 3,
+      initialDelayMs: 1000,
+    });
+  } catch (error) {
     throw new ApiError(
       `API call to ${endpoint} failed: ${error instanceof Error ? error.message : String(error)}`,
       endpoint,
       error
     );
-  });
+  }
 }
 
 /**
@@ -363,17 +366,18 @@ export function makeCancellable<T>(promise: Promise<T>): {
   let isCancelled = false;
 
   const wrappedPromise = new Promise<T>((resolve, reject) => {
-    promise
-      .then((value) => {
+    void (async () => {
+      try {
+        const value = await promise;
         if (!isCancelled) {
           resolve(value);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!isCancelled) {
           reject(error);
         }
-      });
+      }
+    })();
   });
 
   return {

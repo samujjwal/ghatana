@@ -33,6 +33,7 @@ import { useQuery } from '@tanstack/react-query';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import { parseJsonResponse } from '@/lib/http';
 import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
@@ -78,6 +79,14 @@ const projectTabs = [
   },
 ];
 
+interface ProjectShellData {
+  name: string;
+  type?: string;
+  workspaceId?: string;
+  currentPhase: string;
+  phaseProgress?: number;
+}
+
 /**
  * Project shell layout with minimal navigation
  */
@@ -98,7 +107,10 @@ export function Layout() {
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) return null;
-      return response.json();
+      return parseJsonResponse<ProjectShellData>(
+        response,
+        'project shell project query'
+      );
     },
     enabled: !!projectId,
   });
@@ -260,7 +272,10 @@ export function Layout() {
       body: JSON.stringify({ kind, projectId }),
     });
     if (!response.ok) return null;
-    return response.json();
+    return parseJsonResponse<Record<string, unknown>>(
+      response,
+      'project shell AI assist'
+    );
   }, [projectId]);
 
   // Load existing intent data from artifacts

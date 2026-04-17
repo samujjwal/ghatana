@@ -74,6 +74,18 @@ interface JavaAgentResponse<T> {
   }>;
 }
 
+async function readResponseText(
+  response: Response,
+  context: string
+): Promise<string> {
+  try {
+    return await response.text();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} failed to read response body: ${detail}`);
+  }
+}
+
 /**
  * Base API client for AI agents
  * Wraps HTTP calls to the Java backend
@@ -277,11 +289,14 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorBody = await response.text();
+        const errorBody = await readResponseText(response, `${method} ${path}`);
         throw new Error(`HTTP ${response.status}: ${errorBody}`);
       }
 
-      const data = (await response.json()) as JavaAgentResponse<T>;
+      const data = await this.parseJsonResponse<JavaAgentResponse<T>>(
+        response,
+        `${method} ${path}`
+      );
 
       if (this.config.debug) {
         console.debug('[AIAgentAPIClient] Response:', {
@@ -299,6 +314,24 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<
       }
 
       throw error;
+    }
+  }
+
+  private async parseJsonResponse<T>(
+    response: Response,
+    context: string
+  ): Promise<T> {
+    const raw = await readResponseText(response, context);
+
+    if (!raw) {
+      throw new Error(`${context} returned an empty response`);
+    }
+
+    try {
+      return JSON.parse(raw) as T;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${context} returned invalid JSON: ${detail}`);
     }
   }
 }

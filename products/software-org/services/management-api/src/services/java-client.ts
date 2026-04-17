@@ -79,6 +79,33 @@ function isApprovalStatus(payload: unknown): payload is ApprovalStatus {
     );
 }
 
+async function parseJsonResponse<T>(response: Response, context: string): Promise<T> {
+    const raw = await response.text();
+    if (!raw) {
+        throw new Error(`${context} returned an empty response`);
+    }
+
+    try {
+        return JSON.parse(raw) as T;
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        throw new Error(`${context} returned invalid JSON: ${detail}`);
+    }
+}
+
+async function readErrorResponse(response: Response): Promise<unknown> {
+    const raw = await response.text();
+    if (!raw) {
+        return { error: 'Unknown error' };
+    }
+
+    try {
+        return JSON.parse(raw) as unknown;
+    } catch {
+        return { error: raw.trim() || 'Unknown error' };
+    }
+}
+
 /**
  * Client for interacting with Java approval service.
  */
@@ -102,11 +129,11 @@ export class JavaServiceClient {
         });
 
         if (!response.ok) {
-            const errorPayload: unknown = await response.json().catch(() => ({ error: 'Unknown error' }) as unknown);
+            const errorPayload = await readErrorResponse(response);
             throw new Error(`Failed to submit approval: ${getErrorField(errorPayload) || response.statusText}`);
         }
 
-        const payload: unknown = await response.json();
+        const payload = await parseJsonResponse<unknown>(response, 'submit approval');
         if (!isRecord(payload) || typeof payload.requestId !== 'string' || typeof payload.status !== 'string') {
             throw new Error('Invalid response from Java approval service (submitApproval)');
         }
@@ -124,11 +151,11 @@ export class JavaServiceClient {
         }
 
         if (!response.ok) {
-            const errorPayload: unknown = await response.json().catch(() => ({ error: 'Unknown error' }) as unknown);
+            const errorPayload = await readErrorResponse(response);
             throw new Error(`Failed to get approval: ${getErrorField(errorPayload) || response.statusText}`);
         }
 
-        const payload: unknown = await response.json();
+        const payload = await parseJsonResponse<unknown>(response, 'get approval');
         if (!isApprovalRequest(payload)) {
             throw new Error('Invalid response from Java approval service (getApproval)');
         }
@@ -148,11 +175,11 @@ export class JavaServiceClient {
         });
 
         if (!response.ok) {
-            const errorPayload: unknown = await response.json().catch(() => ({ error: 'Unknown error' }) as unknown);
+            const errorPayload = await readErrorResponse(response);
             throw new Error(`Failed to record decision: ${getErrorField(errorPayload) || response.statusText}`);
         }
 
-        const payload: unknown = await response.json();
+        const payload = await parseJsonResponse<unknown>(response, 'record decision');
         if (!isApprovalRequest(payload)) {
             throw new Error('Invalid response from Java approval service (recordDecision)');
         }
@@ -166,11 +193,11 @@ export class JavaServiceClient {
         const response = await fetch(`${this.baseUrl}/api/v1/approvals/pending/${approverId}`);
 
         if (!response.ok) {
-            const errorPayload: unknown = await response.json().catch(() => ({ error: 'Unknown error' }) as unknown);
+            const errorPayload = await readErrorResponse(response);
             throw new Error(`Failed to get pending approvals: ${getErrorField(errorPayload) || response.statusText}`);
         }
 
-        const payload: unknown = await response.json();
+        const payload = await parseJsonResponse<unknown>(response, 'get pending approvals');
         if (!isPendingApprovals(payload)) {
             throw new Error('Invalid response from Java approval service (getPendingApprovals)');
         }
@@ -188,11 +215,11 @@ export class JavaServiceClient {
         }
 
         if (!response.ok) {
-            const errorPayload: unknown = await response.json().catch(() => ({ error: 'Unknown error' }) as unknown);
+            const errorPayload = await readErrorResponse(response);
             throw new Error(`Failed to get approval status: ${getErrorField(errorPayload) || response.statusText}`);
         }
 
-        const payload: unknown = await response.json();
+        const payload = await parseJsonResponse<unknown>(response, 'get approval status');
         if (!isApprovalStatus(payload)) {
             throw new Error('Invalid response from Java approval service (getApprovalStatus)');
         }

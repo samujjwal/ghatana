@@ -85,4 +85,56 @@ class EncryptedStorageServiceTest extends EventloopTestBase {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Failed to store data securely");
     }
+
+    @Test
+    @DisplayName("remove should clear stored data and update contains")
+    void removeShouldClearStoredData() {
+        runPromise(() -> storageService.storeSecurely("audit", "payload".getBytes(StandardCharsets.UTF_8)));
+
+        Boolean containsBefore = runPromise(() -> storageService.contains("audit"));
+        runPromise(() -> storageService.remove("audit"));
+        Boolean containsAfter = runPromise(() -> storageService.contains("audit"));
+        byte[] retrieved = runPromise(() -> storageService.retrieve("audit"));
+
+        assertThat(containsBefore).isTrue();
+        assertThat(containsAfter).isFalse();
+        assertThat(retrieved).isNull();
+    }
+
+    @Test
+    @DisplayName("contains should return false for unknown keys")
+    void containsShouldReturnFalseForUnknownKeys() {
+        Boolean contains = runPromise(() -> storageService.contains("missing"));
+
+        assertThat(contains).isFalse();
+    }
+
+    @Test
+    @DisplayName("storeSecurely should replace existing values for the same key")
+    void storeSecurelyShouldReplaceExistingValues() {
+        runPromise(() -> storageService.storeSecurely("audit", "first".getBytes(StandardCharsets.UTF_8)));
+        runPromise(() -> storageService.storeSecurely("audit", "second".getBytes(StandardCharsets.UTF_8)));
+
+        byte[] decrypted = runPromise(() -> storageService.retrieve("audit"));
+
+        assertThat(new String(decrypted, StandardCharsets.UTF_8)).isEqualTo("second");
+    }
+
+    @Test
+    @DisplayName("clear should remove all stored values and reset size")
+    void clearShouldRemoveAllStoredValuesAndResetSize() {
+        runPromise(() -> storageService.storeSecurely("audit-1", "first".getBytes(StandardCharsets.UTF_8)));
+        runPromise(() -> storageService.storeSecurely("audit-2", "second".getBytes(StandardCharsets.UTF_8)));
+
+        Integer sizeBefore = runPromise(() -> storageService.size());
+        runPromise(() -> storageService.clear());
+        Integer sizeAfter = runPromise(() -> storageService.size());
+        Boolean containsFirst = runPromise(() -> storageService.contains("audit-1"));
+        Boolean containsSecond = runPromise(() -> storageService.contains("audit-2"));
+
+        assertThat(sizeBefore).isEqualTo(2);
+        assertThat(sizeAfter).isZero();
+        assertThat(containsFirst).isFalse();
+        assertThat(containsSecond).isFalse();
+    }
 }

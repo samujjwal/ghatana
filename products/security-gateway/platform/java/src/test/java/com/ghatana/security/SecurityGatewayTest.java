@@ -21,6 +21,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -316,6 +317,57 @@ class SecurityGatewayTest extends EventloopTestBase {
             assertThat(allowed).isTrue();
         }
 
+    @Test
+    @DisplayName("should validate tokens even when audit logging is not configured")
+    void shouldValidateTokenWithoutAuditLogger() {
+        SecurityGateway built = SecurityGateway.builder()
+            .tokenIntrospector(tokenIntrospector)
+            .policyService(policyService)
+            .build();
+
+        User user = User.builder()
+            .userId("user-no-audit")
+            .username("noaudit")
+            .build();
+        when(tokenIntrospector.introspect("valid-token-no-audit"))
+            .thenReturn(Promise.of(user));
+
+        User result = runPromise(() -> built.validateToken("valid-token-no-audit"));
+
+        assertThat(result.getUserId()).isEqualTo("user-no-audit");
+    }
+
+    @Test
+    @DisplayName("should evaluate policies without audit logger configured")
+    void shouldEvaluatePoliciesWithoutAuditLogger() {
+        SecurityGateway built = SecurityGateway.builder()
+            .tokenIntrospector(tokenIntrospector)
+            .policyService(policyService)
+            .build();
+
+        policyService.createPolicy(
+                "viewer-read",
+                "Viewers can read reports",
+                "viewer",
+                "reports/*",
+                Set.of("read")
+        );
+
+        Boolean allowed = runPromise(() -> built.evaluatePolicy("viewer-1", Set.of("viewer"), "reports/weekly", "read"));
+
+        assertThat(allowed).isTrue();
+    }
+
+        @Test
+        @DisplayName("should reject blank tokens before introspection")
+        void shouldRejectBlankTokensBeforeIntrospection() {
+            assertThatThrownBy(() -> runPromise(() -> gateway.validateToken("   ")))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("blank");
+
+            verify(tokenIntrospector, never()).introspect(any());
+        }
+
         @Test
         @DisplayName("should deny if token valid but no permission")
         void shouldDenyIfTokenValidButNoPermission() {
@@ -334,7 +386,42 @@ class SecurityGatewayTest extends EventloopTestBase {
 
             // THEN
             assertThat(allowed).isFalse();
+            verify(auditLogger, atLeastOnce()).log(any(AuditEvent.class));
         }
+
+    @Test
+    @DisplayName("should treat validated users with null roles as unauthorized")
+    void shouldTreatValidatedUsersWithNullRolesAsUnauthorized() {
+        User user = User.builder()
+            .userId("user-2")
+            .username("noroles")
+            .roles(null)
+            .build();
+        when(tokenIntrospector.introspect("token-without-roles"))
+            .thenReturn(Promise.of(user));
+
+        Boolean allowed = runPromise(() -> gateway.validateTokenAndPermission(
+            "token-without-roles", "orders/321", "read"));
+
+        assertThat(allowed).isFalse();
+    }
+
+    @Test
+    @DisplayName("should treat validated users with empty roles as unauthorized")
+    void shouldTreatValidatedUsersWithEmptyRolesAsUnauthorized() {
+        User user = User.builder()
+            .userId("user-3")
+            .username("emptyroles")
+            .roles(Set.of())
+            .build();
+        when(tokenIntrospector.introspect("token-with-empty-roles"))
+            .thenReturn(Promise.of(user));
+
+        Boolean allowed = runPromise(() -> gateway.validateTokenAndPermission(
+            "token-with-empty-roles", "orders/999", "read"));
+
+        assertThat(allowed).isFalse();
+    }
     }
 
     @Nested

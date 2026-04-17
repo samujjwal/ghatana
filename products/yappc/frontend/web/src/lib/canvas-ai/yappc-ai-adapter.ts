@@ -30,7 +30,8 @@ import type {
   AIResult,
   AILayoutResult,
   AIGenerateElementResult,
-} from "@ghatana/canvas";
+} from "@ghatana/canvas/ai";
+import { parseJsonResponse, readErrorResponse } from "@/lib/http";
 
 // ---------------------------------------------------------------------------
 // API base — resolves to the BFF proxy which forwards to the Java service
@@ -53,11 +54,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
+    const text = await readErrorResponse(res, res.statusText);
     throw new Error(`Canvas AI API error [${res.status}]: ${text}`);
   }
 
-  return res.json() as Promise<T>;
+  return parseJsonResponse<T>(res, `canvas ai request ${path}`);
 }
 
 /** Maps raw service suggestion to the platform AISuggestion shape */

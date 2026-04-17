@@ -94,14 +94,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
 
     // Send to error reporting service (Sentry, LogRocket, etc.)
-    fetch('/api/errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(errorData),
-    }).catch(() => {
-      // Fallback to console if service fails
-      console.error('Failed to log error to service:', errorData);
-    });
+    void (async () => {
+      try {
+        await fetch('/api/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(errorData),
+        });
+      } catch {
+        // Fallback to console if service fails
+        console.error('Failed to log error to service:', errorData);
+      }
+    })();
   };
 
   private handleReset = () => {
@@ -442,18 +446,22 @@ export const useErrorBoundary = () => {
     
     // Send to error reporting service
     if (process.env.NODE_ENV === 'production') {
-      fetch('/api/errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: error.message,
-          stack: error.stack,
-          context,
-          timestamp: new Date().toISOString(),
-        }),
-      }).catch(() => {
-        // Fallback to console
-      });
+      void (async () => {
+        try {
+          await fetch('/api/errors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: error.message,
+              stack: error.stack,
+              context,
+              timestamp: new Date().toISOString(),
+            }),
+          });
+        } catch {
+          // Fallback to console
+        }
+      })();
     }
   };
 

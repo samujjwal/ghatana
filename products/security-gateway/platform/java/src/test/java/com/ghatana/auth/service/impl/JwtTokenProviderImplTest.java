@@ -366,6 +366,71 @@ class JwtTokenProviderImplTest extends EventloopTestBase {
                 .isTrue();
     }
 
+    @Test
+    @DisplayName("Should return true when revoking a previously unseen token id")
+    void shouldReturnTrueWhenRevokingPreviouslyUnseenTokenId() {
+        Boolean revoked = runPromise(() ->
+                provider.revokeToken(tenantId, "unknown-token-id")
+        );
+
+        assertThat(revoked).isTrue();
+    }
+
+        /**
+         * GIVEN: Multiple active tokens for the same user
+         * WHEN: revokeAllTokensForUser() is called
+         * THEN: All tracked tokens are revoked and fail validation
+         */
+        @Test
+        @DisplayName("Should revoke all active tokens for a user")
+        void shouldRevokeAllActiveTokensForUser() {
+        // GIVEN: Multiple active tokens for the same user
+        String tokenOne = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+        String tokenTwo = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+
+        JwtClaims claimsOne = runPromise(() -> provider.validateToken(tenantId, tokenOne));
+        JwtClaims claimsTwo = runPromise(() -> provider.validateToken(tenantId, tokenTwo));
+
+        assertThat(claimsOne.getTokenId()).isNotEqualTo(claimsTwo.getTokenId());
+
+        // WHEN: Revoke all tokens for the user
+        Integer revokedCount = runPromise(() ->
+            provider.revokeAllTokensForUser(tenantId, principal.getUserId())
+        );
+
+        // THEN: Both tracked tokens are revoked
+        assertThat(revokedCount)
+            .as("Both active user tokens should be revoked")
+            .isEqualTo(2);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, tokenOne)))
+            .as("First token should be rejected after bulk revocation")
+            .isInstanceOf(JwtValidationException.class);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, tokenTwo)))
+            .as("Second token should be rejected after bulk revocation")
+            .isInstanceOf(JwtValidationException.class);
+        }
+
+        /**
+         * GIVEN: No active tokens for the user
+         * WHEN: revokeAllTokensForUser() is called
+         * THEN: Returns zero without error
+         */
+        @Test
+        @DisplayName("Should return zero when revoking all tokens for user with no active tokens")
+        void shouldReturnZeroWhenUserHasNoActiveTokens() {
+        // WHEN: Revoke tokens for a user with no tracked active tokens
+        Integer revokedCount = runPromise(() ->
+            provider.revokeAllTokensForUser(tenantId, "user-without-active-tokens")
+        );
+
+        // THEN: No tokens are revoked
+        assertThat(revokedCount)
+            .as("Users without active tokens should produce zero revocations")
+            .isZero();
+        }
+
     // ==================== ERROR HANDLING TESTS ====================
 
     /**
@@ -388,6 +453,13 @@ class JwtTokenProviderImplTest extends EventloopTestBase {
             assertThat(e).isInstanceOf(JwtValidationException.class);
         }
         assertThat(exceptionThrown).as("Should throw exception for malformed token").isTrue();
+    }
+
+    @Test
+    @DisplayName("Should reject blank token input")
+    void shouldRejectBlankTokenInput() {
+        assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, "   ")))
+                .isInstanceOf(JwtValidationException.class);
     }
 
     /**
@@ -469,6 +541,27 @@ class JwtTokenProviderImplTest extends EventloopTestBase {
         assertThat(exceptionThrown).as("Should throw exception for null tenant").isTrue();
     }
 
+    @Test
+    @DisplayName("Should scope bulk user revocation to the target tenant")
+    void shouldScopeBulkUserRevocationToTargetTenant() {
+        TenantId otherTenant = TenantId.of("other-tenant-789");
+
+        String tenantToken = runPromise(() -> provider.generateToken(tenantId, principal, Duration.ofHours(1)));
+        String otherTenantToken = runPromise(() -> provider.generateToken(otherTenant, principal, Duration.ofHours(1)));
+
+        Integer revokedCount = runPromise(() ->
+                provider.revokeAllTokensForUser(tenantId, principal.getUserId())
+        );
+
+        assertThat(revokedCount).isEqualTo(1);
+        assertThatThrownBy(() -> runPromise(() -> provider.validateToken(tenantId, tenantToken)))
+                .isInstanceOf(JwtValidationException.class)
+                .hasMessageContaining("revoked");
+
+        JwtClaims survivingClaims = runPromise(() -> provider.validateToken(otherTenant, otherTenantToken));
+        assertThat(survivingClaims.getTenantId()).isEqualTo(otherTenant);
+    }
+
     /**
      * GIVEN: Principal with empty roles/permissions
      * WHEN: generateToken() is called
@@ -499,5 +592,18 @@ class JwtTokenProviderImplTest extends EventloopTestBase {
         assertThat(claims.getRoles())
                 .as("Claims should have empty roles")
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should omit roles and permissions from refresh token claims")
+    void shouldOmitRolesAndPermissionsFromRefreshTokenClaims() {
+        String refreshToken = runPromise(() ->
+                provider.generateRefreshToken(tenantId, principal, Duration.ofDays(30))
+        );
+
+        JwtClaims claims = runPromise(() -> provider.validateToken(tenantId, refreshToken));
+
+        assertThat(claims.getRoles()).isEmpty();
+        assertThat(claims.getPermissions()).isEmpty();
     }
 }

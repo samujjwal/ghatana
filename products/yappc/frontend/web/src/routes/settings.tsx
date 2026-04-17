@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { Settings, Bell, CreditCard, AlertTriangle, Save } from 'lucide-react';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { currentWorkspaceIdAtom } from '../state/atoms/workspaceAtom';
 import { useCurrentUser } from '../providers/AuthProvider';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
@@ -80,7 +81,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch(`/api/workspaces/${workspaceId}`);
             if (!res.ok) throw new Error('Failed to load workspace settings');
-            return res.json() as Promise<WorkspaceSettings>;
+            return parseJsonResponse<WorkspaceSettings>(res, 'workspace settings load');
         },
         enabled: !!workspaceId && currentUser.isAuthenticated,
     });
@@ -116,8 +117,10 @@ export default function Component() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            if (!res.ok) throw new Error('Failed to save settings');
-            return res.json();
+            if (!res.ok) {
+                throw new Error(await readErrorResponse(res, 'Failed to save settings'));
+            }
+            return parseJsonResponse<WorkspaceSettings>(res, 'workspace settings save');
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['workspace-settings', workspaceId] });

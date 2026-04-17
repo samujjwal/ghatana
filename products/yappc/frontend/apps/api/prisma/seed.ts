@@ -1893,11 +1893,15 @@ async function main() {
   console.log('🎉 Database is ready for comprehensive testing!');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Error during seeding:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
+async function runSeed(): Promise<void> {
+  try {
+    await main();
+  } catch (error) {
+    console.error('❌ Error during seeding:', error);
+    process.exitCode = 1;
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+}
+
+void runSeed();

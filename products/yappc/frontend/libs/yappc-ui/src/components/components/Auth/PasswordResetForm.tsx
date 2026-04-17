@@ -11,6 +11,30 @@
 
 import { useState, type FormEvent } from 'react';
 
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -107,8 +131,9 @@ export function PasswordResetRequest({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to send reset email');
+        throw new Error(
+          await readErrorMessage(response, 'Failed to send reset email')
+        );
       }
 
       setSuccess(true);
@@ -291,8 +316,9 @@ export function PasswordResetConfirm({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to reset password');
+        throw new Error(
+          await readErrorMessage(response, 'Failed to reset password')
+        );
       }
 
       if (onSuccess) {

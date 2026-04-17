@@ -14,6 +14,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { StoryCard } from '@yappc/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -85,8 +86,8 @@ const fetchPlanningSession = async (
   const response = await fetch(
     `/api/projects/${projectId}/sprints/${sprintId}/planning`
   );
-  if (!response.ok) throw new Error('Failed to fetch planning session');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch planning session'));
+  return parseJsonResponse<PlanningSession>(response, 'fetch planning session');
 };
 
 const addStoryToSprint = async (
@@ -98,7 +99,7 @@ const addStoryToSprint = async (
     `/api/projects/${projectId}/sprints/${sprintId}/stories/${storyId}`,
     { method: 'POST' }
   );
-  if (!response.ok) throw new Error('Failed to add story to sprint');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to add story to sprint'));
 };
 
 const removeStoryFromSprint = async (
@@ -110,7 +111,7 @@ const removeStoryFromSprint = async (
     `/api/projects/${projectId}/sprints/${sprintId}/stories/${storyId}`,
     { method: 'DELETE' }
   );
-  if (!response.ok) throw new Error('Failed to remove story from sprint');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to remove story from sprint'));
 };
 
 const updateStoryPoints = async (
@@ -123,7 +124,7 @@ const updateStoryPoints = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ points }),
   });
-  if (!response.ok) throw new Error('Failed to update story points');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to update story points'));
 };
 
 const startSprintPlanning = async (
@@ -134,7 +135,7 @@ const startSprintPlanning = async (
     `/api/projects/${projectId}/sprints/${sprintId}/start-planning`,
     { method: 'POST' }
   );
-  if (!response.ok) throw new Error('Failed to start sprint');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to start sprint'));
 };
 
 const submitVote = async (
@@ -150,7 +151,7 @@ const submitVote = async (
       body: JSON.stringify({ vote }),
     }
   );
-  if (!response.ok) throw new Error('Failed to submit vote');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to submit vote'));
 };
 
 // ============================================================================

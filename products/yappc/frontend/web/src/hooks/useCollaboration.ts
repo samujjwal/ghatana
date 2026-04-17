@@ -139,9 +139,13 @@ export function useCollaboration({
     if (!enabled || !currentUser) return;
     const token = getToken();
     if (!token) return;
-    connect().catch((err: unknown) =>
-      console.error('[useCollaboration] auto-connect failed:', err)
-    );
+    void (async () => {
+      try {
+        await connect();
+      } catch (err: unknown) {
+        console.error('[useCollaboration] auto-connect failed:', err);
+      }
+    })();
   }, [enabled, currentUser, connect, getToken]);
 
   const status = connectionState.status;

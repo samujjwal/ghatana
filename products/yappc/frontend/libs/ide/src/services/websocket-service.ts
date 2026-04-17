@@ -393,11 +393,16 @@ export class WebSocketService {
     this.setStatus('reconnecting');
 
     this.reconnectTimer = setTimeout(() => {
-      this.connect().catch(() => {
-        // Reconnection failed, try again
-        this.attemptReconnection();
-      });
+      void this.retryConnection();
     }, this.config.reconnectDelay * this.reconnectAttempts);
+  }
+
+  private async retryConnection(): Promise<void> {
+    try {
+      await this.connect();
+    } catch {
+      this.attemptReconnection();
+    }
   }
 
   /**

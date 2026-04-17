@@ -25,6 +25,19 @@ import type {
 } from '../../../types/src/tasks/index.ts';
 import { parse, stringify } from 'yaml';
 
+async function readTextResponse(response: Response, path: string): Promise<string> {
+  if (!response.ok) {
+    const detail = (await response.text()).trim();
+    throw new Error(
+      detail.length > 0
+        ? `Failed to load config ${path}: ${detail}`
+        : `Failed to load config ${path}: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.text();
+}
+
 // ============================================================================
 // YAML Type Definitions (Raw)
 // ============================================================================
@@ -502,10 +515,7 @@ export function createBrowserConfigLoader(basePath: string): TaskConfigLoader {
     },
     fileReader: async (path: string) => {
       const response = await fetch(path);
-      if (!response.ok) {
-        throw new Error(`Failed to load config: ${path}`);
-      }
-      return response.text();
+      return readTextResponse(response, path);
     },
   });
 }

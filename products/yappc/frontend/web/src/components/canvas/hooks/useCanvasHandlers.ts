@@ -67,6 +67,17 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
     const { mutateAsync: updateArtifact } = useUpdateArtifact();
     const { mutateAsync: transitionStage } = useTransitionStage();
 
+    const runMutationWithAnnouncement = useCallback(
+        async (operation: Promise<unknown>, failureMessage: string): Promise<void> => {
+            try {
+                await operation;
+            } catch {
+                announce(failureMessage);
+            }
+        },
+        [announce]
+    );
+
     // --- Create Artifact ---
     const handleCreateArtifact = useCallback(
         async (template: ArtifactTemplate, position: { x: number; y: number }) => {
@@ -168,35 +179,42 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 updates as Record<string, unknown>,
                 `Update ${updates.title ?? id}`,
             ));
-            updateArtifact({ artifactId: id, data: updates as Record<string, unknown> }).catch(
-                () => announce('Failed to update artifact')
+            void runMutationWithAnnouncement(
+                updateArtifact({ artifactId: id, data: updates as Record<string, unknown> }),
+                'Failed to update artifact'
             );
         },
-        [nodes, executeCommand, updateArtifact, announce]
+        [nodes, executeCommand, updateArtifact, runMutationWithAnnouncement]
     );
 
     // --- Add Blocker ---
     const handleAddBlocker = useCallback(
         (artifactId: string, blocker: Record<string, unknown>) => {
-            updateArtifact({
-                artifactId,
-                data: { blockers: [blocker], status: 'blocked' } as Record<string, unknown>,
-            }).catch(() => announce('Failed to add blocker'));
+            void runMutationWithAnnouncement(
+                updateArtifact({
+                    artifactId,
+                    data: { blockers: [blocker], status: 'blocked' } as Record<string, unknown>,
+                }),
+                'Failed to add blocker'
+            );
         },
-        [updateArtifact, announce]
+        [updateArtifact, runMutationWithAnnouncement]
     );
 
     // --- Add Comment ---
     const handleAddComment = useCallback(
         (artifactId: string, content: string) => {
-            updateArtifact({
-                artifactId,
-                data: {
-                    comments: [{ content, createdBy: userId || 'current-user', createdAt: new Date().toISOString() }],
-                } as Record<string, unknown>,
-            }).catch(() => announce('Failed to add comment'));
+            void runMutationWithAnnouncement(
+                updateArtifact({
+                    artifactId,
+                    data: {
+                        comments: [{ content, createdBy: userId || 'current-user', createdAt: new Date().toISOString() }],
+                    } as Record<string, unknown>,
+                }),
+                'Failed to add comment'
+            );
         },
-        [updateArtifact, userId, announce]
+        [updateArtifact, userId, runMutationWithAnnouncement]
     );
 
     // --- Link Artifacts ---
@@ -206,10 +224,13 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             const existingLinks = artifact?.linkedArtifacts || [];
             if (existingLinks.includes(targetId)) return;
 
-            updateArtifact({
-                artifactId,
-                data: { linkedArtifacts: [...existingLinks, targetId] } as Record<string, unknown>,
-            }).catch(() => announce('Failed to link artifact'));
+            void runMutationWithAnnouncement(
+                updateArtifact({
+                    artifactId,
+                    data: { linkedArtifacts: [...existingLinks, targetId] } as Record<string, unknown>,
+                }),
+                'Failed to link artifact'
+            );
 
             const newEdge: Edge<DependencyEdgeData> = {
                 id: `${artifactId}->${targetId}`,
@@ -220,26 +241,39 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             };
             executeCommand(new AddEdgeCommand(newEdge));
         },
-        [artifacts, updateArtifact, executeCommand, announce]
+        [artifacts, updateArtifact, executeCommand, runMutationWithAnnouncement]
     );
 
     // --- Ghost Node Handlers ---
     const handleAcceptGhost = useCallback(async (ghostId: string) => {
+        let acceptedGhost: Node<ArtifactNodeData> | undefined;
+
         setGhostNodes((prev) => {
-            const ghost = prev.find((g) => g.id === ghostId);
-            if (!ghost) return prev;
+            acceptedGhost = prev.find((g) => g.id === ghostId);
+            if (!acceptedGhost) {
+                return prev;
+            }
+
+            return prev.filter((g) => g.id !== ghostId);
+        });
+
+        if (!acceptedGhost) {
+            return;
+        }
+
+        await runMutationWithAnnouncement(
             createArtifact({
-                type: ghost.data.type,
-                title: ghost.data.title,
-                description: ghost.data.description || '',
+                type: acceptedGhost.data.type,
+                title: acceptedGhost.data.title,
+                description: acceptedGhost.data.description || '',
                 phase: currentPhase,
                 status: 'pending',
                 createdBy: personaName || 'AI Assistant',
                 linkedArtifacts: [],
-            }).catch(() => announce('Failed to create artifact from suggestion'));
-            return prev.filter((g) => g.id !== ghostId);
-        });
-    }, [createArtifact, currentPhase, personaName, setGhostNodes, announce]);
+            }),
+            'Failed to create artifact from suggestion'
+        );
+    }, [createArtifact, currentPhase, personaName, setGhostNodes, runMutationWithAnnouncement]);
 
     const handleRejectGhost = useCallback((ghostId: string) => {
         setGhostNodes((prev) => prev.filter((g) => g.id !== ghostId));
@@ -264,10 +298,13 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         const artifact = artifacts?.find((a) => a.id === artifactId);
         if (!artifact) return;
         const migratedData = migrateData(artifact.data || {}, artifact.type, newType);
-        updateArtifact({
-            artifactId,
-            data: { type: newType, data: migratedData } as Record<string, unknown>,
-        }).catch(() => announce('Failed to change artifact type'));
+        void runMutationWithAnnouncement(
+            updateArtifact({
+                artifactId,
+                data: { type: newType, data: migratedData } as Record<string, unknown>,
+            }),
+            'Failed to change artifact type'
+        );
 
         setNodesAtom((prev) => prev.map((node) => {
             if (node.id === artifactId) {
@@ -275,7 +312,7 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
             }
             return node;
         }));
-    }, [artifacts, setNodesAtom, updateArtifact, announce]);
+    }, [artifacts, setNodesAtom, updateArtifact, runMutationWithAnnouncement]);
 
     // --- Phase Transition ---
     const handleProceedToNext = useCallback(() => {
@@ -283,12 +320,15 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
         const index = phases.indexOf(currentPhase);
         const nextPhase = index >= 0 && index < phases.length - 1 ? phases[index + 1] : undefined;
         if (nextPhase) {
-            transitionStage({
-                projectId,
-                targetStage: nextPhase as unknown as FOWStage,
-            }).catch(() => announce('Phase transition failed'));
+            void runMutationWithAnnouncement(
+                transitionStage({
+                    projectId,
+                    targetStage: nextPhase as unknown as FOWStage,
+                }),
+                'Phase transition failed'
+            );
         }
-    }, [currentPhase, projectId, transitionStage, announce]);
+    }, [currentPhase, projectId, transitionStage, runMutationWithAnnouncement]);
 
     // --- Move Nodes (keyboard accessibility) ---
     const handleMoveSelectedNodes = useCallback((dx: number, dy: number) => {

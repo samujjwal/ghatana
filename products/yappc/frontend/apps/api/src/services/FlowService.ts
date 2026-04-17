@@ -1,11 +1,8 @@
-import { getPrismaClient, type PrismaClient } from '../database/client';
+import { getPrismaClient, Prisma, type PrismaClient } from '../database/client';
 import { GoldenFlows } from '../config/flows';
+import { getArray, isRecord } from '../utils/type-guards';
 
-const prisma: PrismaClient = new Proxy({} as PrismaClient, {
-  get(_target, property) {
-    return (getPrismaClient() as unknown)[property];
-  },
-});
+const prisma: PrismaClient = getPrismaClient();
 
 // State hooks that trigger AI processing
 type StateHook = (
@@ -15,6 +12,51 @@ type StateHook = (
 ) => Promise<void>;
 const stateHooks: Map<string, StateHook[]> = new Map();
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  context: string
+): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return `${context} failed with HTTP ${response.status}`;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return `${context} failed with HTTP ${response.status}`;
+}
+
 export interface FlowInstance {
   instanceId: string;
   flowId: string;
@@ -22,6 +64,19 @@ export interface FlowInstance {
   context: unknown;
   history: FlowHistoryItem[];
   artifacts: unknown[];
+}
+
+type FlowStateRecord = {
+  id: string;
+  flowId: string;
+  currentState: string;
+  context: unknown;
+  history: unknown;
+  artifacts: unknown;
+};
+
+function toJsonValue(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
 }
 
 export interface FlowHistoryItem {
@@ -76,7 +131,10 @@ async function triggerAISuggestion(
     );
 
     if (response.ok) {
-      const result = await response.json();
+      const result = await parseJsonResponse<Record<string, unknown>>(
+        response,
+        'AI suggestion endpoint'
+      );
       console.log(
         `[FlowService] AI suggestion generated: ${result.suggestionId || 'pending'}`
       );
@@ -85,16 +143,16 @@ async function triggerAISuggestion(
       await prisma.flowState.update({
         where: { id: instanceId },
         data: {
-          context: {
-            ...context,
+          context: toJsonValue({
+            ...(isRecord(context) ? context : {}),
             aiSuggestionId: result.suggestionId,
             aiStatus: 'pending',
-          },
+          }),
         },
       });
     } else {
       console.warn(
-        `[FlowService] AI suggestion request failed: ${response.status}`
+        `[FlowService] AI suggestion request failed: ${await readErrorResponse(response, 'AI suggestion endpoint')}`
       );
     }
   } catch (error) {
@@ -139,9 +197,9 @@ export class FlowService {
       data: {
         flowId,
         currentState: definition.initialState,
-        context: input || {},
-        history: [historyItem] as unknown,
-        artifacts: [],
+        context: toJsonValue(isRecord(input) ? input : {}),
+        history: toJsonValue([historyItem]),
+        artifacts: toJsonValue([]),
         activeTasks:
           definition.states[definition.initialState]?.associatedTasks || [],
       },
@@ -186,15 +244,18 @@ export class FlowService {
       actorId,
     };
 
-    const history = (flowState.history as unknown as FlowHistoryItem[]) || [];
+    const history = getArray<FlowHistoryItem>(flowState.history);
     history.push(historyItem);
+
+    const currentContext = isRecord(flowState.context) ? flowState.context : {};
+    const payloadRecord = isRecord(payload) ? payload : {};
 
     const updatedFlowState = await prisma.flowState.update({
       where: { id: instanceId },
       data: {
         currentState: nextState,
-        context: { ...(flowState.context as unknown), ...payload },
-        history: history as unknown,
+        context: toJsonValue({ ...currentContext, ...payloadRecord }),
+        history: toJsonValue(history),
         activeTasks: nextStateDef?.associatedTasks || [],
       },
     });
@@ -203,14 +264,16 @@ export class FlowService {
     const hooks = stateHooks.get(nextState) || [];
     for (const hook of hooks) {
       // Run hooks asynchronously - don't block the transition
-      hook(flowState.flowId, instanceId, updatedFlowState.context).catch(
-        (err) => {
+      void (async () => {
+        try {
+          await hook(flowState.flowId, instanceId, updatedFlowState.context);
+        } catch (err) {
           console.error(
             `[FlowService] Hook failed for state ${nextState}:`,
             err
           );
         }
-      );
+      })();
     }
 
     return this.mapToInstance(updatedFlowState);
@@ -262,15 +325,17 @@ export class FlowService {
       actorId,
     };
 
-    const history = (flowState.history as unknown as FlowHistoryItem[]) || [];
+    const history = getArray<FlowHistoryItem>(flowState.history);
     history.push(historyItem);
+
+    const currentContext = isRecord(flowState.context) ? flowState.context : {};
 
     const updatedFlowState = await prisma.flowState.update({
       where: { id: instanceId },
       data: {
         currentState: 'Cancelled',
-        context: { ...(flowState.context as unknown), cancelReason: reason },
-        history: history as unknown,
+        context: toJsonValue({ ...currentContext, cancelReason: reason }),
+        history: toJsonValue(history),
         activeTasks: [],
       },
     });
@@ -278,14 +343,14 @@ export class FlowService {
     return this.mapToInstance(updatedFlowState);
   }
 
-  private mapToInstance(flowState: unknown): FlowInstance {
+  private mapToInstance(flowState: FlowStateRecord): FlowInstance {
     return {
       instanceId: flowState.id,
       flowId: flowState.flowId,
       currentState: flowState.currentState,
       context: flowState.context,
-      history: flowState.history,
-      artifacts: flowState.artifacts,
+      history: getArray<FlowHistoryItem>(flowState.history),
+      artifacts: getArray<unknown>(flowState.artifacts),
     };
   }
 }

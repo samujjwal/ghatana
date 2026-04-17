@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 
@@ -248,6 +249,6 @@ async function performSearch(
     limit: '10',
   });
   const res = await fetch(`/api/search?${params.toString()}`);
-  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-  return res.json() as Promise<SearchResult[]>;
+  if (!res.ok) throw new Error(await readErrorResponse(res, `Search failed: ${res.status}`));
+  return parseJsonResponse<SearchResult[]>(res, 'global search');
 }

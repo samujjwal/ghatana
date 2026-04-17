@@ -8,6 +8,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Code relationship types
@@ -59,8 +60,8 @@ export function useCodeAssociations(artifactId: string) {
         queryKey: ['codeAssociations', artifactId],
         queryFn: async () => {
             const response = await fetch(`/api/artifacts/${artifactId}/code-associations`);
-            if (!response.ok) throw new Error('Failed to fetch code associations');
-            return response.json() as Promise<CodeAssociation[]>;
+            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch code associations'));
+            return parseJsonResponse<CodeAssociation[]>(response, 'fetch code associations');
         },
         enabled: !!artifactId,
         staleTime: 30 * 1000, // 30 seconds
@@ -80,8 +81,8 @@ export function useCreateCodeAssociation() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(input),
             });
-            if (!response.ok) throw new Error('Failed to create code association');
-            return response.json() as Promise<CodeAssociation>;
+            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to create code association'));
+            return parseJsonResponse<CodeAssociation>(response, 'create code association');
         },
         onSuccess: (data) => {
             // Invalidate queries for both artifacts
@@ -103,8 +104,8 @@ export function useDeleteCodeAssociation() {
             const response = await fetch(`/api/code-associations/${associationId}`, {
                 method: 'DELETE',
             });
-            if (!response.ok) throw new Error('Failed to delete code association');
-            return response.json();
+            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to delete code association'));
+            return parseJsonResponse<unknown>(response, 'delete code association');
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['codeAssociations'] });

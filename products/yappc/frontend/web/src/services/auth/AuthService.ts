@@ -5,6 +5,7 @@
  * Replaces placeholder authentication logic with proper security
  */
 
+import { parseJsonResponse as sharedParseJsonResponse } from '@/lib/http';
 import { logger } from '../../utils/Logger';
 
 type ApiRole = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
@@ -27,6 +28,29 @@ type ApiAuthResponse = {
     user: ApiAuthUser;
     tokens: ApiAuthTokens;
 };
+
+type ApiProfileUpdate = Partial<Pick<User, 'firstName' | 'lastName' | 'username' | 'email' | 'avatar'>>;
+
+async function parseJsonResponse<T>(response: Response, context: string): Promise<T> {
+    return sharedParseJsonResponse<T>(response, context);
+}
+
+async function readErrorResponse(response: Response): Promise<{ message?: string }> {
+    const raw = await response.text();
+    if (!raw) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(raw) as { message?: string };
+    } catch {
+        return { message: raw.trim() || undefined };
+    }
+}
+
+function parseStoredSession(storedSession: string): AuthSession {
+    return JSON.parse(storedSession) as AuthSession;
+}
 
 export function isDemoLoginEnabled(): boolean {
     return import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_LOGIN === 'true';
@@ -104,7 +128,7 @@ export class AuthService {
         try {
             const storedSession = localStorage.getItem('auth-session');
             if (storedSession) {
-                const session: AuthSession = JSON.parse(storedSession);
+                const session = parseStoredSession(storedSession);
                 if (this.isSessionValid(session)) {
                     this.currentSession = session;
                     this.setupSessionRefresh();
@@ -161,7 +185,10 @@ export class AuthService {
                 throw new Error(`Authentication failed: ${response.statusText}`);
             }
 
-            const authData = await response.json();
+            const authData = await parseJsonResponse<ApiAuthResponse>(
+                response,
+                'auth login'
+            );
             const session = this.createSessionFromApiResponse(authData);
 
             this.currentSession = session;
@@ -224,7 +251,7 @@ export class AuthService {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
+                const errorData = await readErrorResponse(response);
 
                 if (response.status === 409) {
                     return { success: false, error: 'Username or email already exists' };
@@ -274,7 +301,7 @@ export class AuthService {
             });
 
             if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
+                const err = await readErrorResponse(response);
                 return { success: false, error: err.message || 'Failed to send reset email' };
             }
 
@@ -384,7 +411,10 @@ export class AuthService {
                 throw new Error('Token refresh failed');
             }
 
-            const authData = await response.json() as ApiAuthTokens;
+            const authData = await parseJsonResponse<ApiAuthTokens>(
+                response,
+                'auth token refresh'
+            );
 
             // Update session with new token pair
             this.currentSession.token = authData.accessToken;
@@ -604,7 +634,10 @@ export class AuthService {
                 throw new Error(`Profile update failed: ${response.statusText}`);
             }
 
-            const updatedUser = await response.json();
+            const updatedUser = await parseJsonResponse<ApiProfileUpdate>(
+                response,
+                'auth profile update'
+            );
 
             // Update session with new user data
             this.currentSession.user = { ...this.currentSession.user, ...updatedUser };

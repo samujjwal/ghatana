@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type WidgetType = 'chart' | 'metric' | 'table' | 'log' | 'status';
 
@@ -53,8 +54,10 @@ const DashboardEditorPage: React.FC = () => {
     queryKey: ['dashboard-editor', dashboardId],
     queryFn: async () => {
       const res = await fetch(`/api/dashboards/${dashboardId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load dashboard');
-      return res.json() as Promise<DashboardData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load dashboard'));
+      }
+      return parseJsonResponse<DashboardData>(res, 'dashboard editor');
     },
     enabled: !!dashboardId,
   });

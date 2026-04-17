@@ -91,6 +91,7 @@ import { useAIStatusBar } from '../../../components/ai/AIStatusBar';
 import { useCanvasMode } from '../../../hooks/useCanvasMode';
 import { useUnifiedCanvas } from '../../../hooks/useUnifiedCanvas';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
+import { parseJsonResponse } from '@/lib/http';
 import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/AlignmentEngine';
 import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
 import type { CanvasMode } from '../../../types/canvasMode';
@@ -111,6 +112,11 @@ const edgeTypes = {
   dependency: DependencyEdge,
   flow: DependencyEdge,
 } as unknown as EdgeTypes;
+
+interface CanvasProjectData {
+  currentPhase: string;
+  phaseProgress?: number;
+}
 
 type KeyboardShortcutCanvas = Parameters<typeof useCanvasKeyboardShortcuts>[0]['canvas'];
 type KeyboardShortcutNode = Parameters<typeof useCanvasKeyboardShortcuts>[0]['copiedNodes'][number];
@@ -139,7 +145,10 @@ function UnifiedCanvasInner() {
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) return null;
-      return response.json();
+      return parseJsonResponse<CanvasProjectData>(
+        response,
+        'project canvas query'
+      );
     },
     enabled: !!projectId,
   });

@@ -2,6 +2,7 @@ import { Save, Plus as Add, Pencil as Edit, Trash2 as Delete, AlertTriangle as W
 import React, { useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 
@@ -587,7 +588,10 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch(`/api/projects/${projectId}`);
             if (!res.ok) throw new Error('Failed to load project');
-            return res.json() as Promise<{ id: string; name: string; description: string; language?: string; serviceKind?: string; target?: string; autoBackup?: boolean; enableNotifications?: boolean; publicAccess?: boolean }>;
+            return parseJsonResponse<{ id: string; name: string; description: string; language?: string; serviceKind?: string; target?: string; autoBackup?: boolean; enableNotifications?: boolean; publicAccess?: boolean }>(
+                res,
+                'project settings load'
+            );
         },
         enabled: !!projectId,
     });
@@ -598,7 +602,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch(`/api/projects/${projectId}/members`);
             if (!res.ok) return [];
-            return res.json() as Promise<User[]>;
+            return parseJsonResponse<User[]>(res, 'project members load');
         },
         enabled: !!projectId,
     });
@@ -609,7 +613,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch(`/api/projects/${projectId}/tokens`);
             if (!res.ok) return [];
-            return res.json() as Promise<ApiToken[]>;
+            return parseJsonResponse<ApiToken[]>(res, 'project tokens load');
         },
         enabled: !!projectId,
     });
@@ -620,7 +624,7 @@ export default function Component() {
         queryFn: async () => {
             const res = await fetch(`/api/projects/${projectId}/audit?limit=50`);
             if (!res.ok) return [];
-            return res.json() as Promise<AuditLog[]>;
+            return parseJsonResponse<AuditLog[]>(res, 'project audit load');
         },
         enabled: !!projectId,
     });
@@ -633,8 +637,10 @@ export default function Component() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
             });
-            if (!res.ok) throw new Error('Failed to save settings');
-            return res.json();
+            if (!res.ok) {
+                throw new Error(await readErrorResponse(res, 'Failed to save settings'));
+            }
+            return parseJsonResponse<Record<string, unknown>>(res, 'project settings save');
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['project', projectId] });
@@ -660,8 +666,10 @@ export default function Component() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(token),
             });
-            if (!res.ok) throw new Error('Failed to create token');
-            return res.json();
+            if (!res.ok) {
+                throw new Error(await readErrorResponse(res, 'Failed to create token'));
+            }
+            return parseJsonResponse<Record<string, unknown>>(res, 'project token create');
         },
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['project-tokens', projectId] });

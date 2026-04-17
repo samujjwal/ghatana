@@ -79,5 +79,13 @@ async function updateDependencies() {
   console.log('Dependency update complete!');
 }
 
-// Run the update
-updateDependencies().catch(console.error);
+async function run() {
+  try {
+    await updateDependencies();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+void run();

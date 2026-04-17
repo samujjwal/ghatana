@@ -282,25 +282,29 @@ export function useAIAssistant(
 
     setIsAnalyzing(true);
 
-    getCanvasAIService()
-      .then(async (service) => {
+    void (async () => {
+      let newSuggestions;
+
+      try {
+        const service = await getCanvasAIService();
         if (!service.isAvailable()) {
           throw new Error('CanvasAIService unavailable');
         }
+
         const report = await service.validateCanvas(buildServicePayload());
         if (controller.signal.aborted) return;
-        return mapReportToSuggestions(report);
-      })
-      .catch(() => {
+        newSuggestions = mapReportToSuggestions(report);
+      } catch {
         // Service unavailable or error — use local heuristics
-        if (controller.signal.aborted) return undefined;
-        return buildLocalSuggestions();
-      })
-      .then((newSuggestions) => {
+        if (controller.signal.aborted) return;
+        newSuggestions = buildLocalSuggestions();
+      }
+
+      if (controller.signal.aborted || !newSuggestions) return;
         if (controller.signal.aborted || !newSuggestions) return;
         const filtered = newSuggestions.filter((s) => !dismissedIds.has(s.id));
         setSuggestions(filtered);
-      })
+    })()
       .finally(() => {
         if (!controller.signal.aborted) setIsAnalyzing(false);
       });

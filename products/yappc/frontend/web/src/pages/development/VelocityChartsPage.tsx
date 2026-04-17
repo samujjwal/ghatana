@@ -14,6 +14,7 @@ import { useParams } from 'react-router-dom';
 import { VelocityChart, BurndownChart } from '@yappc/development-ui';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -67,8 +68,8 @@ interface DistributionData {
 
 const fetchVelocityData = async (projectId: string): Promise<VelocityData> => {
   const response = await fetch(`/api/projects/${projectId}/velocity`);
-  if (!response.ok) throw new Error('Failed to fetch velocity data');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch velocity data'));
+  return parseJsonResponse<VelocityData>(response, 'fetch velocity data');
 };
 
 const fetchBurndownData = async (
@@ -78,20 +79,20 @@ const fetchBurndownData = async (
   const response = await fetch(
     `/api/projects/${projectId}/sprints/${sprintId}/burndown`
   );
-  if (!response.ok) throw new Error('Failed to fetch burndown data');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch burndown data'));
+  return parseJsonResponse<BurndownDataPoint[]>(response, 'fetch burndown data');
 };
 
 const fetchTeamMetrics = async (projectId: string): Promise<TeamMetrics> => {
   const response = await fetch(`/api/projects/${projectId}/team-metrics`);
-  if (!response.ok) throw new Error('Failed to fetch team metrics');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch team metrics'));
+  return parseJsonResponse<TeamMetrics>(response, 'fetch team metrics');
 };
 
 const fetchStoryDistribution = async (projectId: string): Promise<DistributionData[]> => {
   const response = await fetch(`/api/projects/${projectId}/story-distribution`);
-  if (!response.ok) throw new Error('Failed to fetch distribution');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch distribution'));
+  return parseJsonResponse<DistributionData[]>(response, 'fetch story distribution');
 };
 
 // ============================================================================

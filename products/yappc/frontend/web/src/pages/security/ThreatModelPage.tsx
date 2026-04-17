@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type RiskLevel = 'critical' | 'high' | 'medium' | 'low';
 type MitigationStatus = 'implemented' | 'in-progress' | 'planned' | 'not-started';
@@ -71,8 +72,10 @@ const ThreatModelPage: React.FC = () => {
       const res = await fetch(`/api/threat-models/${projectId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load threat model');
-      return res.json() as Promise<ThreatModel>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load threat model'));
+      }
+      return parseJsonResponse<ThreatModel>(res, 'threat model');
     },
     enabled: !!projectId,
   });

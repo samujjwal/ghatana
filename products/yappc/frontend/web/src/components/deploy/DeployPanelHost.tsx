@@ -15,31 +15,55 @@ import React, { useCallback, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router';
 import { Settings, Rocket as RocketLaunch, Heart as Favorite } from 'lucide-react';
 
+async function loadDeliveryPlanEditor() {
+    const module = await import('./DeliveryPlanEditor');
+    return { default: module.DeliveryPlanEditor };
+}
+
+async function loadReleaseStrategyConfigurator() {
+    const module = await import('./ReleaseStrategyConfigurator');
+    return { default: module.ReleaseStrategyConfigurator };
+}
+
+async function loadBuildProgressTracker() {
+    const module = await import('./BuildProgressTracker');
+    return { default: module.BuildProgressTracker };
+}
+
+async function loadReleasePacketPanel() {
+    const module = await import('./ReleasePacketPanel');
+    return { default: module.ReleasePacketPanel };
+}
+
+async function loadDeploymentPanel() {
+    const module = await import('./DeploymentPanel');
+    return { default: module.DeploymentPanel };
+}
+
+async function loadHealthPanel() {
+    const module = await import('../observe/HealthPanel');
+    return { default: module.HealthPanel };
+}
+
+async function loadIncidentsPanel() {
+    const module = await import('../observe/IncidentsPanel');
+    return { default: module.IncidentsPanel };
+}
+
+async function loadCapacityDashboard() {
+    const module = await import('./CapacityDashboard');
+    return { default: module.CapacityDashboard };
+}
+
 // Lazy load panels for code splitting
-const DeliveryPlanEditor = lazy(() =>
-    import('./DeliveryPlanEditor').then((m) => ({ default: m.DeliveryPlanEditor })),
-);
-const ReleaseStrategyConfigurator = lazy(() =>
-    import('./ReleaseStrategyConfigurator').then((m) => ({ default: m.ReleaseStrategyConfigurator })),
-);
-const BuildProgressTracker = lazy(() =>
-    import('./BuildProgressTracker').then((m) => ({ default: m.BuildProgressTracker })),
-);
-const ReleasePacketPanel = lazy(() =>
-    import('./ReleasePacketPanel').then((m) => ({ default: m.ReleasePacketPanel })),
-);
-const DeploymentPanel = lazy(() =>
-    import('./DeploymentPanel').then((m) => ({ default: m.DeploymentPanel })),
-);
-const HealthPanel = lazy(() =>
-    import('../observe/HealthPanel').then((m) => ({ default: m.HealthPanel })),
-);
-const IncidentsPanel = lazy(() =>
-    import('../observe/IncidentsPanel').then((m) => ({ default: m.IncidentsPanel })),
-);
-const CapacityDashboard = lazy(() =>
-    import('./CapacityDashboard').then((m) => ({ default: m.CapacityDashboard })),
-);
+const DeliveryPlanEditor = lazy(loadDeliveryPlanEditor);
+const ReleaseStrategyConfigurator = lazy(loadReleaseStrategyConfigurator);
+const BuildProgressTracker = lazy(loadBuildProgressTracker);
+const ReleasePacketPanel = lazy(loadReleasePacketPanel);
+const DeploymentPanel = lazy(loadDeploymentPanel);
+const HealthPanel = lazy(loadHealthPanel);
+const IncidentsPanel = lazy(loadIncidentsPanel);
+const CapacityDashboard = lazy(loadCapacityDashboard);
 
 export type DeploySegment = 'configure' | 'deployments' | 'health';
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface DMUser {
   id: string;
@@ -47,8 +48,10 @@ const DirectMessagePage: React.FC = () => {
     queryKey: ['dm', userId],
     queryFn: async () => {
       const res = await fetch(`/api/messages/dm/${userId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load conversation');
-      return res.json() as Promise<DMConversation>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load conversation'));
+      }
+      return parseJsonResponse<DMConversation>(res, 'direct message conversation');
     },
     enabled: !!userId,
     refetchInterval: 5_000,
@@ -61,8 +64,8 @@ const DirectMessagePage: React.FC = () => {
         headers: authHeaders(),
         body: JSON.stringify({ content }),
       });
-      if (!res.ok) throw new Error('Failed to send');
-      return res.json() as Promise<DMMessage>;
+      if (!res.ok) throw new Error(await readErrorResponse(res, 'Failed to send'));
+      return parseJsonResponse<DMMessage>(res, 'direct message send');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dm', userId] });

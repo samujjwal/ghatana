@@ -15,9 +15,11 @@ export {
   initializeDatabase,
   disconnectDatabase,
   withTransaction,
+  Prisma,
+  PrismaClient,
 } from './client';
 
-export type { PrismaClient } from './client';
+export type { DatabasePrismaClient } from './client';
 
 export {
   BaseRepository,

@@ -1,4 +1,5 @@
 import type { User } from '@/types/dashboard';
+import { parseJsonResponse } from '@/lib/http';
 
 export const AUTH_ME_ENDPOINT = '/api/auth/me';
 
@@ -16,6 +17,15 @@ export type AuthSessionUser = {
   tenantId?: string;
   workspaceIds?: string[];
 };
+
+function parseStoredSession(raw: string): StoredSession {
+  const payload = JSON.parse(raw) as unknown;
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('Stored auth session was invalid');
+  }
+
+  return payload as StoredSession;
+}
 
 const VALID_ROLES = new Set<User['role']>(['ADMIN', 'USER', 'VIEWER']);
 
@@ -50,7 +60,7 @@ export function getStoredAccessToken(): string | null {
       return null;
     }
 
-    const parsed = JSON.parse(raw) as StoredSession;
+    const parsed = parseStoredSession(raw);
     return typeof parsed.token === 'string' && parsed.token.length > 0
       ? parsed.token
       : null;
@@ -84,7 +94,10 @@ export async function fetchAuthSession(
       return null;
     }
 
-    const user = (await response.json()) as AuthSessionUser;
+    const user = await parseJsonResponse<AuthSessionUser>(
+      response,
+      'fetch auth session'
+    );
     return user?.id ? user : null;
   } catch {
     return null;

@@ -264,16 +264,20 @@ export class RemoteErrorReporter implements ErrorReporter {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
 
-      void fetch(this.endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(report),
-        // Don't await response to avoid blocking
-        keepalive: true,
-      }).catch((reportError) => {
-        console.error('Failed to report error:', reportError);
-        console.error('Original error:', report);
-      });
+      void (async () => {
+        try {
+          await fetch(this.endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(report),
+            // Don't await response to avoid blocking callers
+            keepalive: true,
+          });
+        } catch (reportError) {
+          console.error('Failed to report error:', reportError);
+          console.error('Original error:', report);
+        }
+      })();
     } catch (reportError) {
       // Fallback to console if reporting fails
       console.error('Failed to report error:', reportError);

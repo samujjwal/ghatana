@@ -17,6 +17,36 @@ import {
   isServiceMode,
 } from './aep-mode';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await readResponseText(response, context);
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readResponseText(
+  response: Response,
+  context: string
+): Promise<string> {
+  try {
+    return await response.text();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} failed to read response body: ${detail}`);
+  }
+}
+
 /**
  * Base AEP client interface (supports both modes)
  */
@@ -276,10 +306,11 @@ class AepServiceClient implements AepClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to execute agent: ${response.statusText}`);
+      const detail = await readResponseText(response, 'AEP executeAgent');
+      throw new Error(`Failed to execute agent: ${response.status} ${detail}`);
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'AEP executeAgent');
   }
 
   async publishEvent(
@@ -299,7 +330,8 @@ class AepServiceClient implements AepClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to publish event: ${response.statusText}`);
+      const detail = await readResponseText(response, 'AEP publishEvent');
+      throw new Error(`Failed to publish event: ${response.status} ${detail}`);
     }
   }
 
@@ -314,10 +346,11 @@ class AepServiceClient implements AepClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to query events: ${response.statusText}`);
+      const detail = await readResponseText(response, 'AEP queryEvents');
+      throw new Error(`Failed to query events: ${response.status} ${detail}`);
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'AEP queryEvents');
   }
 
   async getPatterns(): Promise<unknown[]> {
@@ -330,10 +363,11 @@ class AepServiceClient implements AepClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get patterns: ${response.statusText}`);
+      const detail = await readResponseText(response, 'AEP getPatterns');
+      throw new Error(`Failed to get patterns: ${response.status} ${detail}`);
     }
 
-    return response.json();
+    return parseJsonResponse(response, 'AEP getPatterns');
   }
 
   async shutdown(): Promise<void> {
@@ -359,7 +393,7 @@ class AepServiceClient implements AepClient {
 
     try {
       const response = await this.fetch('/health', { method: 'GET' });
-      return response.json();
+      return parseJsonResponse(response, 'AEP health');
     } catch (error) {
       return { status: 'unhealthy' };
     }
@@ -394,7 +428,6 @@ class AepServiceClient implements AepClient {
     }
   }
 }
-
 /**
  * Global AEP client instance
  */
@@ -406,13 +439,11 @@ let globalClient: AepClient | null = null;
  * @param config Optional config (uses getAepConfig() if not provided)
  * @returns Appropriate AEP client instance
  *
- * @example
  * ```ts
  * // Automatically picks mode based on environment
  * const client = createAepClient();
  * await client.initialize();
  *
- * // In dev: runs library client
  * // In staging/prod: connects to service
  *
  * await client.executeAgent('my-agent', { input: 'data' });
@@ -457,7 +488,9 @@ export async function getGlobalAepClient(): Promise<AepClient> {
  */
 export function resetGlobalAepClient(): void {
   if (globalClient) {
-    globalClient.shutdown().catch(console.error);
+    void globalClient.shutdown().catch((error: unknown) => {
+      console.error('Failed to shutdown global AEP client:', error);
+    });
     globalClient = null;
   }
 }

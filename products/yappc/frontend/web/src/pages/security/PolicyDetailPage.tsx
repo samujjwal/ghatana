@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 interface PolicyRule {
   id: string;
@@ -59,8 +60,10 @@ const PolicyDetailPage: React.FC = () => {
       const res = await fetch(`/api/policies/${policyId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
       });
-      if (!res.ok) throw new Error('Failed to load policy');
-      return res.json() as Promise<PolicyDetail>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load policy'));
+      }
+      return parseJsonResponse<PolicyDetail>(res, 'policy detail');
     },
     enabled: !!policyId,
   });

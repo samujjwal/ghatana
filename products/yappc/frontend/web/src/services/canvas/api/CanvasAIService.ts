@@ -14,6 +14,7 @@ import type {
   CodeGenerationResult,
   GenerationProgress,
 } from '../agents/types';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 const API_URL = import.meta.env.DEV
   ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}`
@@ -42,6 +43,18 @@ export interface GenerateCodeRequest {
     includeConfiguration?: boolean;
     useAi?: boolean;
   };
+}
+
+function parseGenerationProgress(
+  raw: string,
+  context: string
+): GenerationProgress | null {
+  try {
+    return JSON.parse(raw) as GenerationProgress;
+  } catch (error) {
+    console.warn(`[CanvasAIService] Failed to parse ${context}:`, error);
+    return null;
+  }
 }
 
 class CanvasAIService {
@@ -81,10 +94,12 @@ class CanvasAIService {
     });
 
     if (!response.ok) {
-      throw new Error(`Validation failed: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(response, `Validation failed: ${response.statusText}`)
+      );
     }
 
-    return response.json();
+    return parseJsonResponse<ValidationReport>(response, 'canvas validation');
   }
 
   async generateCode(
@@ -101,10 +116,15 @@ class CanvasAIService {
     });
 
     if (!response.ok) {
-      throw new Error(`Code generation failed: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(
+          response,
+          `Code generation failed: ${response.statusText}`
+        )
+      );
     }
 
-    return response.json();
+    return parseJsonResponse<CodeGenerationResult>(response, 'code generation');
   }
 
   async *generateCodeStream(
@@ -121,7 +141,12 @@ class CanvasAIService {
     });
 
     if (!response.ok) {
-      throw new Error(`Code generation stream failed: ${response.statusText}`);
+      throw new Error(
+        await readErrorResponse(
+          response,
+          `Code generation stream failed: ${response.statusText}`
+        )
+      );
     }
 
     if (!response.body) {
@@ -143,11 +168,9 @@ class CanvasAIService {
 
         for (const line of lines) {
           if (line.trim()) {
-            try {
-              const progress = JSON.parse(line) as GenerationProgress;
+            const progress = parseGenerationProgress(line, 'stream line');
+            if (progress) {
               yield progress;
-            } catch (e) {
-              console.warn('[CanvasAIService] Failed to parse stream line:', e);
             }
           }
         }
@@ -155,11 +178,9 @@ class CanvasAIService {
 
       // Process remaining buffer
       if (buffer.trim()) {
-        try {
-          const progress = JSON.parse(buffer) as GenerationProgress;
+        const progress = parseGenerationProgress(buffer, 'final stream buffer');
+        if (progress) {
           yield progress;
-        } catch (e) {
-          console.warn('[CanvasAIService] Failed to parse final buffer:', e);
         }
       }
     } finally {

@@ -22,6 +22,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 /**
  * Rate limit status interface
@@ -69,8 +70,8 @@ export const RateLimitStatusWidget: React.FC<RateLimitStatusWidgetProps> = ({
         ? `/api/rate-limit/status/${userId}`
         : '/api/rate-limit/status/me';
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch rate limit status');
-      return response.json();
+      if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch rate limit status'));
+      return parseJsonResponse<RateLimitStatus>(response, 'fetch widget rate limit status');
     },
     refetchInterval: autoRefresh ? refreshInterval : false,
   });

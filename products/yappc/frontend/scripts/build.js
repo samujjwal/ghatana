@@ -66,14 +66,14 @@ if (analyze) {
   process.env.ANALYZE = 'true';
 }
 
-// Start the build process
-checkBrowsers(appDirectory)
-  .then(() => {
-    // First, read the current file sizes in build directory.
-    // This lets us display how much they changed later.
-    return measureFileSizesBeforeBuild('apps/web/dist');
-  })
-  .then(previousFileSizes => {
+function main() {
+  return checkBrowsers(appDirectory)
+    .then(() => {
+      // First, read the current file sizes in build directory.
+      // This lets us display how much they changed later.
+      return measureFileSizesBeforeBuild('apps/web/dist');
+    })
+    .then(previousFileSizes => {
     // Clean the build directory
     fs.emptyDirSync('apps/web/dist');
     
@@ -119,52 +119,52 @@ checkBrowsers(appDirectory)
     // Create compiler
     const compiler = webpack(config);
     
-    return new Promise((resolve, reject) => {
-      compiler.run((err, stats) => {
-        let messages;
-        
-        if (err) {
-          if (!err.message) {
-            return reject(err);
+      return new Promise((resolve, reject) => {
+        compiler.run((err, stats) => {
+          let messages;
+          
+          if (err) {
+            if (!err.message) {
+              return reject(err);
+            }
+            
+            messages = formatWebpackMessages({
+              errors: [err.message],
+              warnings: [],
+            });
+          } else {
+            messages = formatWebpackMessages(
+              stats.toJson({ all: false, warnings: true, errors: true })
+            );
           }
           
-          messages = formatWebpackMessages({
-            errors: [err.message],
-            warnings: [],
-          });
-        } else {
-          messages = formatWebpackMessages(
-            stats.toJson({ all: false, warnings: true, errors: true })
-          );
-        }
-        
-        if (messages.errors.length) {
-          // Only keep the first error. Others are often indicative
-          // of the same problem, but confuse the reader with noise.
-          if (messages.errors.length > 1) {
-            messages.errors.length = 1;
+          if (messages.errors.length) {
+            // Only keep the first error. Others are often indicative
+            // of the same problem, but confuse the reader with noise.
+            if (messages.errors.length > 1) {
+              messages.errors.length = 1;
+            }
+            return reject(new Error(messages.errors.join('\n\n')));
           }
-          return reject(new Error(messages.errors.join('\n\n')));
-        }
-        
-        // Write the webpack stats json if requested
-        if (writeStatsJson) {
-          fs.writeFileSync(
-            path.join('apps/web/dist', 'webpack-stats.json'),
-            JSON.stringify(stats.toJson(), null, 2)
-          );
-        }
-        
-        return resolve({
-          stats,
-          previousFileSizes,
-          warnings: messages.warnings,
+          
+          // Write the webpack stats json if requested
+          if (writeStatsJson) {
+            fs.writeFileSync(
+              path.join('apps/web/dist', 'webpack-stats.json'),
+              JSON.stringify(stats.toJson(), null, 2)
+            );
+          }
+          
+          return resolve({
+            stats,
+            previousFileSizes,
+            warnings: messages.warnings,
+          });
         });
       });
-    });
-  })
-  .then(
-    ({ stats, previousFileSizes, warnings }) => {
+    })
+    .then(
+      ({ stats, previousFileSizes, warnings }) => {
       console.timeEnd('Build time');
       
       if (warnings.length) {
@@ -265,16 +265,18 @@ checkBrowsers(appDirectory)
       console.log(
         `The ${chalk.cyan('dist')} folder is ready to be deployed.\n`
       );
-    },
-    err => {
-      console.log(chalk.red('Failed to compile.\n'));
-      printBuildError(err);
-      process.exit(1);
-    }
-  )
-  .catch(err => {
-    if (err && err.message) {
-      console.log(err.message);
-    }
-    process.exit(1);
-  });
+      },
+      err => {
+        console.log(chalk.red('Failed to compile.\n'));
+        printBuildError(err);
+        process.exit(1);
+      }
+    );
+}
+
+void main().catch(err => {
+  if (err && err.message) {
+    console.log(err.message);
+  }
+  process.exit(1);
+});

@@ -77,10 +77,34 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).isEqualTo("application/json");
-        assertThat(response.getBody().readRemaining()).isGreaterThan(0);
+        com.fasterxml.jackson.databind.JsonNode payload = objectMapper.readTree(response.getBody().getArray());
+        assertThat(payload.get("accessToken").asText()).isEqualTo(TEST_TOKEN);
+        assertThat(payload.get("refreshToken").asText()).isEqualTo(TEST_TOKEN);
+        assertThat(payload.get("tokenType").asText()).isEqualTo("Bearer");
+        assertThat(payload.get("expiresIn").asInt()).isEqualTo(3600);
+        assertThat(payload.get("user").get("email").asText()).isEqualTo(TEST_EMAIL);
 
         verify(jwtTokenProvider, times(1))
                 .generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class));
+    }
+
+    @Test
+    @DisplayName("Should default tenant when login payload omits tenantId")
+        void shouldDefaultTenantWhenLoginPayloadOmitsTenantId() throws Exception {
+        when(jwtTokenProvider.generateToken(any(TenantId.class), any(UserPrincipal.class), any(Duration.class)))
+                .thenReturn(Promise.of(TEST_TOKEN));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
+                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                        "email", TEST_EMAIL,
+                        "password", "password123"
+                )))
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleLogin(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(jwtTokenProvider).generateToken(eq(TenantId.of("tenant-123")), any(UserPrincipal.class), any(Duration.class));
     }
 
     @Test
@@ -101,6 +125,52 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(500);
     }
+
+        @Test
+        @DisplayName("Should return 400 when login payload is missing credentials")
+                void shouldReturn400WhenLoginPayloadMissingCredentials() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "email", TEST_EMAIL,
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleLogin(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when login payload is invalid JSON")
+                void shouldReturn400WhenLoginPayloadIsInvalidJson() {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
+                                .withBody("{not-json}".getBytes())
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleLogin(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when login payload contains blank credentials")
+                void shouldReturn400WhenLoginPayloadContainsBlankCredentials() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/login")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "email", "",
+                                                "password", "   ",
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleLogin(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
 
     @Test
     @DisplayName("Should validate token and return 200 when token is valid")
@@ -136,6 +206,45 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).isEqualTo("application/json");
+                com.fasterxml.jackson.databind.JsonNode payload = objectMapper.readTree(response.getBody().getArray());
+                assertThat(payload.get("valid").asBoolean()).isTrue();
+                assertThat(payload.get("expiresAt").asText()).isEqualTo(expiresAt.toString());
+                assertThat(payload.get("issuedAt").asText()).isEqualTo(now.toString());
+    }
+
+    @Test
+    @DisplayName("Should validate token with default tenant when tenantId omitted")
+        void shouldValidateTokenWithDefaultTenantWhenTenantIdOmitted() throws Exception {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(Duration.ofHours(1));
+
+        JwtClaims validClaims = JwtClaims.builder()
+                .tokenId(UUID.randomUUID().toString())
+                .subject(TEST_USER_ID)
+                .issuer("auth-platform")
+                .audience("api")
+                .issuedAt(now)
+                .expiresAt(expiresAt)
+                .tenantId(TenantId.of("default-tenant"))
+                .email(TEST_EMAIL)
+                .name("Test User")
+                .roles(Set.of("USER"))
+                .permissions(Set.of("READ"))
+                .build();
+
+        when(jwtTokenProvider.validateToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN)))
+                .thenReturn(Promise.of(validClaims));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/validate")
+                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                        "token", TEST_TOKEN
+                )))
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleValidate(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(jwtTokenProvider).validateToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN));
     }
 
     @Test
@@ -155,6 +264,34 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(401);
     }
+
+        @Test
+        @DisplayName("Should return 400 when validate payload is invalid JSON")
+                void shouldReturn400WhenValidatePayloadIsInvalidJson() {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/validate")
+                                .withBody("{not-json}".getBytes())
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleValidate(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when validate payload is missing token")
+                void shouldReturn400WhenValidatePayloadMissingToken() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/validate")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleValidate(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
 
     @Test
     @DisplayName("Should generate new token when refresh is successful")
@@ -201,6 +338,45 @@ class AuthHttpHandlerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Should use default tenant when refresh payload omits tenantId")
+        void shouldUseDefaultTenantWhenRefreshPayloadOmitsTenantId() throws Exception {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(Duration.ofHours(1));
+        String newToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.default-refresh";
+
+        JwtClaims refreshClaims = JwtClaims.builder()
+                .tokenId(UUID.randomUUID().toString())
+                .subject(TEST_USER_ID)
+                .issuer("auth-platform")
+                .audience("api")
+                .issuedAt(now)
+                .expiresAt(expiresAt)
+                .tenantId(TenantId.of(TEST_TENANT_ID))
+                .email(TEST_EMAIL)
+                .name("Test User")
+                .roles(Set.of("USER"))
+                .permissions(Set.of("READ"))
+                .build();
+
+        when(jwtTokenProvider.validateToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN)))
+                .thenReturn(Promise.of(refreshClaims));
+        when(jwtTokenProvider.generateToken(eq(TenantId.of(TEST_TENANT_ID)), any(UserPrincipal.class), any(Duration.class)))
+                .thenReturn(Promise.of(newToken));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/refresh")
+                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                        "refreshToken", TEST_TOKEN
+                )))
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleRefresh(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(jwtTokenProvider).validateToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN));
+        verify(jwtTokenProvider).generateToken(eq(TenantId.of(TEST_TENANT_ID)), any(UserPrincipal.class), any(Duration.class));
+    }
+
+    @Test
     @DisplayName("Should return 401 when refresh token validation fails")
         void shouldReturn401WhenRefreshTokenValidationFails() throws Exception {
         when(jwtTokenProvider.validateToken(any(TenantId.class), anyString()))
@@ -217,6 +393,50 @@ class AuthHttpHandlerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(401);
     }
+
+        @Test
+        @DisplayName("Should return 400 when refresh payload is missing refreshToken field")
+                void shouldReturn400WhenRefreshPayloadUsesWrongFieldName() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/refresh")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "token", TEST_TOKEN,
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleRefresh(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when refresh payload is missing token")
+                void shouldReturn400WhenRefreshPayloadMissingToken() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/refresh")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleRefresh(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when refresh payload is invalid JSON")
+                void shouldReturn400WhenRefreshPayloadIsInvalidJson() {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/refresh")
+                                .withBody("{not-json}".getBytes())
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleRefresh(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
 
     @Test
     @DisplayName("Should return 204 when revocation is successful")
@@ -240,6 +460,24 @@ class AuthHttpHandlerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Should revoke token with default tenant when tenantId omitted")
+        void shouldRevokeTokenWithDefaultTenantWhenTenantIdOmitted() throws Exception {
+        when(jwtTokenProvider.revokeToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN)))
+                .thenReturn(Promise.of(true));
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/revoke")
+                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                        "token", TEST_TOKEN
+                )))
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleRevoke(request));
+
+        assertThat(response.getCode()).isEqualTo(204);
+        verify(jwtTokenProvider).revokeToken(eq(TenantId.of("default-tenant")), eq(TEST_TOKEN));
+    }
+
+    @Test
     @DisplayName("Should return 500 when revocation fails")
         void shouldReturn500WhenRevocationFails() throws Exception {
         when(jwtTokenProvider.revokeToken(any(TenantId.class), anyString()))
@@ -257,6 +495,34 @@ class AuthHttpHandlerTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(500);
     }
 
+        @Test
+        @DisplayName("Should return 400 when revoke payload is invalid JSON")
+                void shouldReturn400WhenRevokePayloadIsInvalidJson() {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/revoke")
+                                .withBody("{not-json}".getBytes())
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleRevoke(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
+        @Test
+        @DisplayName("Should return 400 when revoke payload is missing token")
+                void shouldReturn400WhenRevokePayloadMissingToken() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/revoke")
+                                .withBody(objectMapper.writeValueAsBytes(java.util.Map.of(
+                                                "tenantId", TEST_TENANT_ID
+                                )))
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleRevoke(request));
+
+                assertThat(response.getCode()).isEqualTo(400);
+                verifyNoInteractions(jwtTokenProvider);
+        }
+
     @Test
     @DisplayName("Should return 200 with UP status for health check")
         void shouldReturn200WithUpStatusForHealthCheck() throws Exception {
@@ -269,6 +535,44 @@ class AuthHttpHandlerTest extends EventloopTestBase {
         assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).isEqualTo("application/json");
         assertThat(response.getBody().readRemaining()).isGreaterThan(0);
     }
+
+        @Test
+        @DisplayName("Should include status and components in health response body")
+                void shouldIncludeStatusAndComponentsInHealthResponseBody() throws Exception {
+                HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/health")
+                                .build();
+
+                HttpResponse response = runPromise(() -> handler.handleHealth(request));
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> payload = objectMapper.readValue(response.getBody().getArray(), java.util.Map.class);
+
+                assertThat(payload)
+                                .containsEntry("status", "UP")
+                                .containsKey("timestamp")
+                                .containsKey("components");
+        }
+
+    @Test
+    @DisplayName("Should not include authorization details in health response body")
+        void shouldNotIncludeAuthorizationDetailsInHealthResponseBody() throws Exception {
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost:8080/auth/health")
+                .build();
+
+        HttpResponse response = runPromise(() -> handler.handleHealth(request));
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> payload = objectMapper.readValue(response.getBody().getArray(), java.util.Map.class);
+
+        assertThat(payload)
+                .doesNotContainKeys("token", "secret", "authorization");
+    }
+
+        @Test
+        @DisplayName("Should reject null login requests")
+        void shouldRejectNullLoginRequests() {
+                assertThatThrownBy(() -> handler.handleLogin(null))
+                                .isInstanceOf(NullPointerException.class)
+                                .hasMessage("request cannot be null");
+        }
 
     @Test
     @DisplayName("Should throw NullPointerException when JWT provider is null")

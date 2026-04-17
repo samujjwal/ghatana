@@ -179,6 +179,15 @@ app.register(canvasRoutes, { prefix: '/v1' });
 app.register(lifecycleRoutes, { prefix: '/v1' });
 app.register(telemetryRoutes, { prefix: '/v1' });
 
+async function readResponseText(response: Response): Promise<string> {
+  try {
+    return await response.text();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read upstream response body: ${detail}`);
+  }
+}
+
 // Catch-all route for Java backend proxying
 // Handles /api/rail, /api/agents, and other Java backend routes
 app.all<{ Params: { '*': string } }>('/api/*', async (request, reply) => {
@@ -200,7 +209,7 @@ app.all<{ Params: { '*': string } }>('/api/*', async (request, reply) => {
     } as unknown);
 
     const contentType = response.headers.get('content-type');
-    const body = await response.text();
+    const body = await readResponseText(response);
 
     reply.code(response.status);
     if (contentType) {
@@ -237,7 +246,7 @@ app.all<{ Params: { '*': string } }>('/v1/*', async (request, reply) => {
     } as unknown);
 
     const contentType = response.headers.get('content-type');
-    const body = await response.text();
+    const body = await readResponseText(response);
 
     reply.code(response.status);
     if (contentType) {
@@ -276,12 +285,20 @@ app.all('/graphql', async (req, reply) => {
     serverContext
   );
 
-  response.headers.forEach((value, key) => {
-    reply.header(key, value);
-  });
+  try {
+    response.headers.forEach((value, key) => {
+      reply.header(key, value);
+    });
 
-  reply.status(response.status);
-  reply.send(await response.text());
+    reply.status(response.status);
+    reply.send(await readResponseText(response));
+  } catch (error) {
+    req.log.error(error, 'Failed to proxy GraphQL response body');
+    reply.status(502).send({
+      error: 'Bad Gateway',
+      message: 'Could not read GraphQL upstream response',
+    });
+  }
 });
 
 const PORT = parseInt(process.env.PORT || '7002', 10);

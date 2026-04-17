@@ -451,6 +451,10 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
 
         // THEN: No revocation attempted
         verify(sessionStore, never()).invalidate(any(), any());
+        verify(metrics, never()).incrementCounter(
+            eq("auth.logout.success"),
+            any(), any()
+        );
     }
 
     // ==================== VALIDATE SESSION TESTS ====================
@@ -550,6 +554,49 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
     }
 
     /**
+     * Verifies session validation fails when the session has been invalidated.
+     *
+     * GIVEN: Session exists but valid=false
+     * WHEN: validateSession() called
+     * THEN: Returns false
+     */
+    @Test
+    @DisplayName("Should fail validation for invalidated session")
+    void shouldFailValidationForInvalidatedSession() {
+        // GIVEN: Session exists but has been invalidated
+        SessionId sessionId = SessionId.random();
+        Session session = Session.builder()
+            .tenantId(TENANT_ID)
+            .sessionId(sessionId)
+            .userId(UserId.random())
+            .createdAt(Instant.now().minus(Duration.ofHours(1)))
+            .expiresAt(Instant.now().plus(Duration.ofHours(1)))
+            .lastAccessedAt(Instant.now())
+            .ipAddress("127.0.0.1")
+            .userAgent("test-agent")
+            .valid(false)
+            .build();
+
+        when(sessionStore.findById(TENANT_ID, sessionId))
+            .thenReturn(Promise.of(Optional.of(session)));
+
+        // WHEN: Validate invalidated session
+        boolean isValid = runPromise(() ->
+            authService.validateSession(TENANT_ID, sessionId)
+        );
+
+        // THEN: Session is invalid
+        assertThat(isValid)
+            .as("Invalidated session should be rejected")
+            .isFalse();
+        verify(metrics).incrementCounter(
+            eq("auth.session.validation"),
+            eq("tenant"), eq(TENANT_ID.value()),
+            eq("valid"), eq("false")
+        );
+    }
+
+    /**
      * Verifies session validation fails for non-existent session.
      *
      * GIVEN: Session does not exist
@@ -633,6 +680,33 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
             eq("auth.session.refresh"),
             eq("tenant"), eq(TENANT_ID.value())
         );
+    }
+
+    @Test
+    @DisplayName("Should refresh session with gateway default client metadata")
+    void shouldRefreshSessionWithGatewayDefaultClientMetadata() {
+        SessionId sessionId = SessionId.random();
+        Session session = Session.builder()
+            .tenantId(TENANT_ID)
+            .sessionId(sessionId)
+            .userId(UserId.random())
+            .createdAt(Instant.now().minus(Duration.ofHours(2)))
+            .expiresAt(Instant.now().plus(Duration.ofHours(1)))
+            .lastAccessedAt(Instant.now().minus(Duration.ofMinutes(15)))
+            .ipAddress("203.0.113.9")
+            .userAgent("original-agent")
+            .valid(true)
+            .build();
+
+        when(sessionStore.findById(TENANT_ID, sessionId))
+            .thenReturn(Promise.of(Optional.of(session)));
+        when(sessionStore.store(any(Session.class)))
+            .thenReturn(Promise.of((Void) null));
+
+        Session refreshed = runPromise(() -> authService.refreshSession(TENANT_ID, sessionId));
+
+        assertThat(refreshed.getIpAddress()).contains("127.0.0.1");
+        assertThat(refreshed.getUserAgent()).contains("unknown");
     }
 
     /**
@@ -789,6 +863,37 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
         verify(userRepository, never()).save(any());
     }
 
+    /**
+     * Verifies password change fails when the user is missing.
+     *
+     * GIVEN: No user exists for the provided ID
+     * WHEN: changePassword() called
+     * THEN: Exception thrown and no downstream invalidation occurs
+     */
+    @Test
+    @DisplayName("Should fail password change when user does not exist")
+    void shouldFailPasswordChangeWhenUserDoesNotExist() {
+        // GIVEN: User is missing
+        UserId userId = UserId.random();
+        when(userRepository.findByUserId(TENANT_ID, userId))
+            .thenReturn(Promise.of(Optional.empty()));
+
+        // WHEN/THEN: Change password fails
+        assertThatThrownBy(() ->
+            runPromise(() -> authService.changePassword(
+                TENANT_ID,
+                userId,
+                "old-password",
+                "new-password"
+            ))
+        )
+        .as("Should throw exception when user is missing")
+        .hasMessageContaining("User not found");
+
+        verify(userRepository, never()).save(any());
+        verify(sessionStore, never()).invalidateAllForUser(any(), any());
+    }
+
     // ==================== REQUEST PASSWORD RESET TESTS ====================
 
     /**
@@ -850,6 +955,10 @@ class AuthenticationServiceImplTest extends EventloopTestBase {
         assertThat(resetToken)
             .as("Should return empty to prevent email enumeration")
             .isEmpty();
+        verify(metrics, never()).incrementCounter(
+            eq("auth.password.reset.request"),
+            any(), any()
+        );
     }
 
     // ==================== HELPER METHODS ====================

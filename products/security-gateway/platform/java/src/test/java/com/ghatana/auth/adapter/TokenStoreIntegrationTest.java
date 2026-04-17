@@ -70,7 +70,6 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
     private TenantId tenant1;
     private TenantId tenant2;
     private UserId userId1;
-    private UserId userId2;
 
     @BeforeEach
     void setUp() {
@@ -88,7 +87,6 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
         tenant1 = TenantId.of("tenant-1");
         tenant2 = TenantId.of("tenant-2");
         userId1 = UserId.of("user-1");
-        userId2 = UserId.of("user-2");
     }
 
     /**
@@ -228,6 +226,41 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
         }
     }
 
+                @Test
+                @DisplayName("All adapters consistently delete expired tokens without touching active tokens")
+                void shouldDeleteExpiredTokensConsistently() {
+                for (AdapterTestFixture fixture : adapters) {
+                    Token validToken = createTestToken(tenant1, userId1);
+                    Token expiredToken = Token.builder()
+                        .tenantId(tenant1)
+                        .tokenId(TokenId.random())
+                        .tokenType(TokenType.ACCESS_TOKEN)
+                        .userId(userId1)
+                        .clientId(ClientId.of("test-client"))
+                        .tokenValue("expired_token_" + System.nanoTime())
+                        .issuedAt(java.time.Instant.now().minus(java.time.Duration.ofDays(2)))
+                        .expiresAt(java.time.Instant.now().minus(java.time.Duration.ofMinutes(1)))
+                        .build();
+
+                    runPromise(() -> fixture.adapter.store(validToken));
+                    runPromise(() -> fixture.adapter.store(expiredToken));
+
+                    Integer deletedCount = runPromise(() -> fixture.adapter.deleteExpired(tenant1));
+                    Optional<Token> survivingToken = runPromise(() -> fixture.adapter.findById(tenant1, validToken.getTokenId()));
+                    Optional<Token> removedToken = runPromise(() -> fixture.adapter.findById(tenant1, expiredToken.getTokenId()));
+
+                    assertThat(deletedCount)
+                        .as("[%s] Exactly one expired token should be deleted", fixture.name)
+                        .isEqualTo(1);
+                    assertThat(survivingToken)
+                        .as("[%s] Active token should remain", fixture.name)
+                        .isPresent();
+                    assertThat(removedToken)
+                        .as("[%s] Expired token should be removed", fixture.name)
+                        .isEmpty();
+                }
+                }
+
     /**
      * Verifies token lookup by value works consistently.
      *
@@ -253,6 +286,21 @@ class TokenStoreIntegrationTest extends EventloopTestBase {
                     .isNotNull()
                     .extracting(Token::getTokenId)
                     .isEqualTo(token.getTokenId());
+        }
+    }
+
+    @Test
+    @DisplayName("All adapters isolate lookup-by-value across tenants")
+    void shouldIsolateLookupByValueAcrossTenants() {
+        for (AdapterTestFixture fixture : adapters) {
+            Token token = createTestToken(tenant1, userId1);
+            runPromise(() -> fixture.adapter.store(token));
+
+            Optional<Token> wrongTenantLookup = runPromise(() -> fixture.adapter.findByValue(tenant2, token.getTokenValue()));
+
+            assertThat(wrongTenantLookup)
+                    .as("[%s] Wrong tenant should not resolve token by value", fixture.name)
+                    .isEmpty();
         }
     }
 
@@ -376,6 +424,56 @@ java.util.List<Promise<Void>> saves = tokens.stream()
                     .containsOnly("client-a");
         }
     }
+
+                @Test
+                @DisplayName("All adapters consistently revoke tokens for a single client")
+                void shouldRevokeAllTokensForClientConsistently() {
+                for (AdapterTestFixture fixture : adapters) {
+                    Token clientAToken1 = createTestToken(tenant1, userId1);
+                    Token clientAToken2 = Token.builder()
+                        .tenantId(tenant1)
+                        .tokenId(TokenId.random())
+                        .tokenType(TokenType.ACCESS_TOKEN)
+                        .userId(userId1)
+                        .clientId(ClientId.of("test-client"))
+                        .tokenValue("test_token_" + System.nanoTime())
+                        .issuedAt(java.time.Instant.now())
+                        .expiresAt(java.time.Instant.now().plus(java.time.Duration.ofHours(1)))
+                        .build();
+                    Token clientBToken = Token.builder()
+                        .tenantId(tenant1)
+                        .tokenId(TokenId.random())
+                        .tokenType(TokenType.ACCESS_TOKEN)
+                        .userId(userId1)
+                        .clientId(ClientId.of("other-client"))
+                        .tokenValue("test_token_" + System.nanoTime())
+                        .issuedAt(java.time.Instant.now())
+                        .expiresAt(java.time.Instant.now().plus(java.time.Duration.ofHours(1)))
+                        .build();
+
+                    runPromise(() -> fixture.adapter.store(clientAToken1));
+                    runPromise(() -> fixture.adapter.store(clientAToken2));
+                    runPromise(() -> fixture.adapter.store(clientBToken));
+
+                    runPromise(() -> fixture.adapter.revokeAllForClient(tenant1, ClientId.of("test-client")));
+
+                    java.util.List<Token> remainingClientATokens = runPromise(() ->
+                        fixture.adapter.findByClientId(tenant1, ClientId.of("test-client"))
+                    );
+                    java.util.List<Token> remainingClientBTokens = runPromise(() ->
+                        fixture.adapter.findByClientId(tenant1, ClientId.of("other-client"))
+                    );
+
+                    assertThat(remainingClientATokens)
+                        .as("[%s] Target client tokens should be revoked", fixture.name)
+                        .isEmpty();
+                    assertThat(remainingClientBTokens)
+                        .as("[%s] Non-target client tokens should remain", fixture.name)
+                        .hasSize(1)
+                        .extracting(Token::getTokenId)
+                        .containsExactly(clientBToken.getTokenId());
+                }
+                }
 
     /**
      * Nested tests for adapter-specific scenarios.

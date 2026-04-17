@@ -48,11 +48,13 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
 
   useEffect(() => {
     if (!mockCollaborationProvider.isConnected()) {
-      mockCollaborationProvider
-        .connect('canvas-collaboration', currentUser)
-        .catch((error) =>
-          console.warn('Failed to init collaboration provider', error),
-        );
+      void (async () => {
+        try {
+          await mockCollaborationProvider.connect('canvas-collaboration', currentUser);
+        } catch (error) {
+          console.warn('Failed to init collaboration provider', error);
+        }
+      })();
     }
 
     // Subscribe to comments changes

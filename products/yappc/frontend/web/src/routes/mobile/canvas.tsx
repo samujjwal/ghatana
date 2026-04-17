@@ -15,6 +15,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useIsDarkMode } from '@ghatana/theme';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import {
   Box,
   Typography,
@@ -75,8 +76,15 @@ export default function MobileCanvasRoute() {
         setLoading(true);
         try {
             const res = await fetch(`/api/canvas/${projectId}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: { nodes: CanvasNode[] } = await res.json();
+            if (!res.ok) {
+                throw new Error(
+                    await readErrorResponse(res, `Failed to load canvas: ${res.status}`)
+                );
+            }
+            const data = await parseJsonResponse<{ nodes: CanvasNode[] }>(
+                res,
+                'mobile canvas load'
+            );
             const loadedNodes = data.nodes ?? [];
             setNodes(loadedNodes);
             // Seed history with initial state

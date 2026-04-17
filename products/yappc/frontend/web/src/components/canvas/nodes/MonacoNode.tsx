@@ -76,11 +76,14 @@ let LazyMonaco: React.LazyExoticComponent<
     }>
 > | null = null;
 
+async function loadMonacoEditor() {
+    const module = await import('@monaco-editor/react');
+    return { default: module.Editor };
+}
+
 try {
     // Dynamic import — tree-shaken out if the package isn't present
-    LazyMonaco = lazy(() =>
-        import('@monaco-editor/react').then((m) => ({ default: m.Editor }))
-    );
+    LazyMonaco = lazy(loadMonacoEditor);
 } catch {
     // Package not installed — use textarea fallback
     LazyMonaco = null;

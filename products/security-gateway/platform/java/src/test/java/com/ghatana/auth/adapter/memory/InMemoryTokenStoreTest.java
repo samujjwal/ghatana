@@ -337,6 +337,53 @@ class InMemoryTokenStoreTest extends EventloopTestBase {
             .isEmpty();
     }
 
+    @Test
+    @DisplayName("Should scope user token revocation to the target tenant")
+    void shouldScopeUserTokenRevocationToTargetTenant() {
+        TenantId otherTenant = TenantId.of("tenant-other-456");
+        Token tenantToken = createToken(tenantId, "tenant-primary");
+        Token otherTenantToken = createToken(otherTenant, "tenant-secondary");
+
+        runPromise(() -> tokenStore.store(tenantToken));
+        runPromise(() -> tokenStore.store(otherTenantToken));
+
+        runPromise(() -> tokenStore.revokeAllForUser(tenantId, userId));
+
+        List<Token> targetTenantTokens = runPromise(() -> tokenStore.findByUserId(tenantId, userId));
+        List<Token> survivingOtherTenantTokens = runPromise(() -> tokenStore.findByUserId(otherTenant, userId));
+
+        assertThat(targetTenantTokens).isEmpty();
+        assertThat(survivingOtherTenantTokens)
+            .hasSize(1)
+            .extracting(Token::getTokenId)
+            .containsExactly(otherTenantToken.getTokenId());
+    }
+
+    @Test
+    @DisplayName("Should revoke only the targeted client tokens")
+    void shouldRevokeAllTokensForClient() {
+        ClientId targetClient = ClientId.of("target-client");
+        ClientId otherClient = ClientId.of("other-client");
+        Token targetToken1 = createToken(tenantId, userId, targetClient, "target-1");
+        Token targetToken2 = createToken(tenantId, userId, targetClient, "target-2");
+        Token otherToken = createToken(tenantId, userId, otherClient, "other-1");
+
+        runPromise(() -> tokenStore.store(targetToken1));
+        runPromise(() -> tokenStore.store(targetToken2));
+        runPromise(() -> tokenStore.store(otherToken));
+
+        runPromise(() -> tokenStore.revokeAllForClient(tenantId, targetClient));
+
+        List<Token> targetTokens = runPromise(() -> tokenStore.findByClientId(tenantId, targetClient));
+        List<Token> otherTokens = runPromise(() -> tokenStore.findByClientId(tenantId, otherClient));
+
+        assertThat(targetTokens).isEmpty();
+        assertThat(otherTokens)
+            .hasSize(1)
+            .extracting(Token::getTokenId)
+            .containsExactly(otherToken.getTokenId());
+    }
+
     /**
      * Verifies cleanup of expired tokens.
      *

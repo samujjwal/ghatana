@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -63,8 +64,10 @@ async function fetchBilling(): Promise<BillingResponse> {
   const res = await fetch('/api/billing', {
     headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}` },
   });
-  if (!res.ok) throw new Error('Failed to load billing');
-  return res.json();
+  if (!res.ok) {
+    throw new Error(await readErrorResponse(res, 'Failed to load billing'));
+  }
+  return parseJsonResponse<BillingResponse>(res, 'billing page');
 }
 
 // ============================================================================

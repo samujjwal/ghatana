@@ -74,6 +74,51 @@ export interface CopilotMessageInput {
   context?: Record<string, unknown>;
 }
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  endpoint: string
+): Promise<string> {
+  const raw = await response.text();
+
+  if (!raw) {
+    return `Java backend error: ${response.status} ${response.statusText}`;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return `Java backend error: ${response.status} ${response.statusText} (${endpoint})`;
+}
+
 /**
  * AI Service implementation
  */
@@ -414,12 +459,10 @@ export class AIService {
     });
 
     if (!response.ok) {
-      throw new Error(
-        `Java backend error: ${response.status} ${response.statusText}`
-      );
+      throw new Error(await readErrorResponse(response, endpoint));
     }
 
-    return response.json();
+    return parseJsonResponse<unknown>(response, `Java backend ${endpoint}`);
   }
 }
 

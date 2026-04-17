@@ -9,6 +9,34 @@
 import { createProviderFactory, ILLMProvider } from '../stubs/ai/providers';
 
 import { getPrismaClient, type PrismaClient } from '../database/client';
+import { getArray, getString, isRecord } from '../utils/type-guards';
+
+async function readResponseText(response: Response): Promise<string> {
+  try {
+    return await response.text();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read embedding provider response body: ${detail}`);
+  }
+}
+
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await readResponseText(response);
+
+  if (!raw) {
+    throw new Error(`${context}: empty response body`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context}: invalid JSON response (${detail})`);
+  }
+}
 
 /**
  * Create embedding provider based on environment configuration.
@@ -42,13 +70,14 @@ function createConfiguredProvider(): ILLMProvider {
           }),
         });
         if (!response.ok) {
+          const errorBody = await readResponseText(response);
           throw new Error(
-            `OpenAI embedding API error: ${response.status} ${await response.text()}`
+            `OpenAI embedding API error: ${response.status} ${errorBody}`
           );
         }
-        const json = (await response.json()) as {
+        const json = await parseJsonResponse<{
           data: Array<{ embedding: number[] }>;
-        };
+        }>(response, 'OpenAI embedding API');
         return json.data[0].embedding;
       },
       async generateEmbedding(text: string): Promise<number[]> {
@@ -71,11 +100,15 @@ function createConfiguredProvider(): ILLMProvider {
           body: JSON.stringify({ model, prompt: text }),
         });
         if (!response.ok) {
+          const errorBody = await readResponseText(response);
           throw new Error(
-            `Ollama embedding API error: ${response.status} ${await response.text()}`
+            `Ollama embedding API error: ${response.status} ${errorBody}`
           );
         }
-        const json = (await response.json()) as { embedding: number[] };
+        const json = await parseJsonResponse<{ embedding: number[] }>(
+          response,
+          'Ollama embedding API'
+        );
         return json.embedding;
       },
       async generateEmbedding(text: string): Promise<number[]> {
@@ -95,11 +128,7 @@ function createConfiguredProvider(): ILLMProvider {
   return factory.getDefaultProvider();
 }
 
-const prisma: PrismaClient = new Proxy({} as PrismaClient, {
-  get(_target, property) {
-    return (getPrismaClient() as unknown)[property];
-  },
-});
+const prisma: PrismaClient = getPrismaClient();
 
 interface EmbeddingBatch {
   itemId: string;
@@ -141,18 +170,25 @@ function computeContentHash(content: string): string {
  * Extract content from item for embedding generation
  */
 function extractItemContent(item: unknown): string {
+  if (!isRecord(item)) {
+    return '';
+  }
+
   const parts: string[] = [];
 
-  if (item.title) parts.push(`Title: ${item.title}`);
-  if (item.description) parts.push(`Description: ${item.description}`);
-  if (item.acceptanceCriteria)
-    parts.push(`Criteria: ${item.acceptanceCriteria}`);
-  if (item.notes) parts.push(`Notes: ${item.notes}`);
-  if (item.tags && Array.isArray(item.tags)) {
+  if (getString(item.title)) parts.push(`Title: ${getString(item.title)}`);
+  if (getString(item.description)) {
+    parts.push(`Description: ${getString(item.description)}`);
+  }
+  if (getString(item.acceptanceCriteria)) {
+    parts.push(`Criteria: ${getString(item.acceptanceCriteria)}`);
+  }
+  if (getString(item.notes)) parts.push(`Notes: ${getString(item.notes)}`);
+  if (Array.isArray(item.tags)) {
     parts.push(
-      `Tags: ${item.tags
-        .map((t: unknown) => t.tag?.name)
-        .filter(Boolean)
+      `Tags: ${getArray<unknown>(item.tags)
+        .map((tag) => (isRecord(tag) && isRecord(tag.tag) ? getString(tag.tag.name) : undefined))
+        .filter((tagName): tagName is string => typeof tagName === 'string')
         .join(', ')}`
     );
   }
@@ -200,7 +236,7 @@ async function findItemsNeedingEmbeddings(
 
     // Check if embedding exists and is up-to-date
     const existingEmbedding = item.itemEmbeddings.find(
-      (emb: unknown) => emb.model === config.modelName
+      (embedding) => embedding.model === config.modelName
     );
 
     if (!existingEmbedding || existingEmbedding.contentHash !== contentHash) {
@@ -384,7 +420,9 @@ export async function runEmbeddingPipeline(
     // Create provider from environment configuration (OpenAI / Ollama / stub)
     const provider = createConfiguredProvider();
 
-    console.log(`[EmbeddingPipeline] Using provider: ${provider.name}`);
+    console.log(
+      `[EmbeddingPipeline] Using provider: ${'name' in provider ? String(provider.name) : 'unknown'}`
+    );
 
     // Find items needing embeddings
     const itemsNeedingEmbeddings = await findItemsNeedingEmbeddings(
@@ -461,15 +499,21 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   const mode = args[0] || 'once';
 
-  if (mode === 'schedule') {
-    scheduleEmbeddingPipeline().catch((error) => {
-      console.error('[EmbeddingPipeline] Scheduler failed:', error);
+  void (async () => {
+    try {
+      if (mode === 'schedule') {
+        await scheduleEmbeddingPipeline();
+      } else {
+        await runEmbeddingPipeline();
+      }
+    } catch (error) {
+      console.error(
+        mode === 'schedule'
+          ? '[EmbeddingPipeline] Scheduler failed:'
+          : '[EmbeddingPipeline] Job failed:',
+        error
+      );
       process.exit(1);
-    });
-  } else {
-    runEmbeddingPipeline().catch((error) => {
-      console.error('[EmbeddingPipeline] Job failed:', error);
-      process.exit(1);
-    });
-  }
+    }
+  })();
 }

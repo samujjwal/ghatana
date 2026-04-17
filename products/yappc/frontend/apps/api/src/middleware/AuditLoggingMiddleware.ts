@@ -119,9 +119,13 @@ export class AuditLoggingMiddleware {
         const duration = Date.now() - startTime;
 
         // Create audit log entry
-        self.auditLog(req, res, data, duration).catch((err: unknown) => {
-          console.error('Failed to log audit entry:', err);
-        });
+        void (async () => {
+          try {
+            await self.auditLog(req, res, data, duration);
+          } catch (err: unknown) {
+            console.error('Failed to log audit entry:', err);
+          }
+        })();
 
         // Call original send
         return originalSend.call(this, data);

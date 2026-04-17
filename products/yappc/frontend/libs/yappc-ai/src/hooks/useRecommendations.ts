@@ -15,6 +15,50 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { AIAgentClientFactory } from '../agents';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
+async function readErrorResponse(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  const raw = await response.text();
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(raw) as { message?: unknown; error?: unknown };
+    if (typeof payload.message === 'string' && payload.message.length > 0) {
+      return payload.message;
+    }
+    if (typeof payload.error === 'string' && payload.error.length > 0) {
+      return payload.error;
+    }
+  } catch {
+    if (raw.trim().length > 0) {
+      return raw.trim();
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * Recommendation types
  */
@@ -274,7 +318,10 @@ export function useRecommendations(
           continue;
         }
 
-        const data = await response.json();
+        const data = await parseJsonResponse<Record<string, unknown>>(
+          response,
+          `${type} recommendations`
+        );
 
         if (data.success && data.data?.recommendations) {
           for (const rec of data.data.recommendations) {
@@ -355,7 +402,10 @@ export function useRecommendations(
           return [];
         }
 
-        const data = await response.json();
+        const data = await parseJsonResponse<Record<string, unknown>>(
+          response,
+          `${type} recommendations`
+        );
 
         if (data.success && data.data?.recommendations) {
           return data.data.recommendations.map(
@@ -402,14 +452,30 @@ export function useRecommendations(
     (recommendationId: string, helpful: boolean) => {
       feedbackRef.current.set(recommendationId, helpful);
 
-      // Send feedback to backend
-      fetch(`${baseUrl}/api/v1/recommendations/${recommendationId}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ helpful }),
-      }).catch(console.error);
+      void (async () => {
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/v1/recommendations/${recommendationId}/feedback`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ helpful }),
+            }
+          );
+
+          if (!response.ok) {
+            console.error(
+              'Failed to persist recommendation feedback:',
+              recommendationId,
+              response.status
+            );
+          }
+        } catch (error: unknown) {
+          console.error('Failed to persist recommendation feedback:', error);
+        }
+      })();
     },
     [baseUrl]
   );

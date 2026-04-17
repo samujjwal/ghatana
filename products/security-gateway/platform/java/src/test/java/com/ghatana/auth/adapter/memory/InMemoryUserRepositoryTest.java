@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -179,6 +180,23 @@ class InMemoryUserRepositoryTest extends EventloopTestBase {
         assertThat(result).isEmpty();
     }
 
+    @Test
+    @DisplayName("Should list users only for the requested tenant")
+    void shouldListUsersOnlyForRequestedTenant() {
+        User tenantOneUser = createUser(tenant1, "alice@example.com", "Alice");
+        User tenantTwoUser = createUser(tenant2, "bob@example.com", "Bob");
+
+        runPromise(() -> repository.save(tenantOneUser));
+        runPromise(() -> repository.save(tenantTwoUser));
+
+        List<User> tenantOneUsers = runPromise(() -> repository.findAllByTenant(tenant1));
+
+        assertThat(tenantOneUsers)
+            .hasSize(1)
+            .extracting(User::getEmail)
+            .containsExactly("alice@example.com");
+    }
+
     /**
      * Should update user.
      *
@@ -210,6 +228,38 @@ class InMemoryUserRepositoryTest extends EventloopTestBase {
         // THEN
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getDisplayName()).isEqualTo("Alice Updated");
+    }
+
+    @Test
+    @DisplayName("Should return empty when locked user authenticates")
+    void shouldReturnEmptyForLockedUserAuthentication() {
+        User lockedUser = User.forInternalAuth()
+                .tenantId(tenant1)
+                .userId(UserId.random())
+                .username("alice")
+                .email("alice@example.com")
+                .status(UserStatus.ACTIVE)
+                .passwordHash("hash")
+                .displayName("Alice")
+                .locked(true)
+                .build();
+
+        runPromise(() -> repository.save(lockedUser));
+
+        Optional<User> authenticated = runPromise(() ->
+                repository.authenticate(tenant1, "alice", "hash")
+        );
+
+        assertThat(authenticated).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should fail password update for missing user")
+    void shouldRejectPasswordUpdateForMissingUser() {
+        assertThatThrownBy(() ->
+                runPromise(() -> repository.updatePassword(tenant1, UserId.random(), "new-password"))
+        )
+            .hasMessageContaining("User not found");
     }
 
     /**

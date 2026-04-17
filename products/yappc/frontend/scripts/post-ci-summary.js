@@ -61,7 +61,13 @@ function printLocalSummary() {
     console.log('Dependency graph: depcruise.svg');
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+async function run() {
+  try {
+    await main();
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+void run();

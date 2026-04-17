@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
 type IncidentStatus = 'investigating' | 'identified' | 'monitoring' | 'resolved';
@@ -69,8 +70,10 @@ const WarRoomPage: React.FC = () => {
     queryKey: ['warroom', incidentId],
     queryFn: async () => {
       const res = await fetch(`/api/warroom/${incidentId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load incident');
-      return res.json() as Promise<IncidentData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load incident'));
+      }
+      return parseJsonResponse<IncidentData>(res, 'war room incident');
     },
     enabled: !!incidentId,
     refetchInterval: 10_000,
@@ -82,7 +85,7 @@ const WarRoomPage: React.FC = () => {
         method: 'POST',
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error('Escalation failed');
+      if (!res.ok) throw new Error(await readErrorResponse(res, 'Escalation failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warroom', incidentId] });
@@ -95,7 +98,7 @@ const WarRoomPage: React.FC = () => {
         method: 'POST',
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error('Resolution failed');
+      if (!res.ok) throw new Error(await readErrorResponse(res, 'Resolution failed'));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warroom', incidentId] });

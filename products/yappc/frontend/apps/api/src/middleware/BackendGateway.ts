@@ -13,8 +13,9 @@
  * @doc.layer platform
  * @doc.pattern Proxy, Middleware
  */
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import fetch from 'node-fetch';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fetch, { type RequestInit } from 'node-fetch';
+import { isRecord } from '../utils/type-guards';
 
 // Java backend service location
 const JAVA_BACKEND = process.env.JAVA_BACKEND_URL || 'http://localhost:7003';
@@ -45,18 +46,21 @@ async function proxyToJavaBackend(
 ): Promise<void> {
   try {
     const targetUrl = new URL(JAVA_BACKEND + request.url);
+    const requestBody =
+      request.method !== 'GET' && request.method !== 'HEAD'
+        ? await readProxyBody(request)
+        : undefined;
 
-    const proxyResponse = await fetch(targetUrl.toString(), {
-      method: request.method as unknown,
+    const requestInit: RequestInit = {
+      method: request.method,
       headers: {
         ...request.headers,
         host: targetUrl.hostname,
       },
-      body:
-        request.method !== 'GET' && request.method !== 'HEAD'
-          ? JSON.stringify(await request.json().catch(() => ({})))
-          : undefined,
-    } as unknown);
+      body: requestBody,
+    };
+
+    const proxyResponse = await fetch(targetUrl.toString(), requestInit);
 
     const contentType = proxyResponse.headers.get('content-type');
     const body = await proxyResponse.text();
@@ -77,6 +81,22 @@ async function proxyToJavaBackend(
       details: error instanceof Error ? error.message : String(error),
     });
   }
+}
+
+async function readProxyBody(request: FastifyRequest): Promise<string> {
+  if (typeof request.body === 'string') {
+    return request.body;
+  }
+
+  if (Buffer.isBuffer(request.body)) {
+    return request.body.toString('utf8');
+  }
+
+  if (isRecord(request.body) || Array.isArray(request.body)) {
+    return JSON.stringify(request.body);
+  }
+
+  return JSON.stringify({});
 }
 
 /**

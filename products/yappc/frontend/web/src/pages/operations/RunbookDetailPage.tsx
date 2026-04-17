@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 type StepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 type RunStatus = 'success' | 'failure' | 'running' | 'cancelled';
@@ -71,8 +72,10 @@ const RunbookDetailPage: React.FC = () => {
     queryKey: ['runbook', runbookId],
     queryFn: async () => {
       const res = await fetch(`/api/runbooks/${runbookId}`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('Failed to load runbook');
-      return res.json() as Promise<RunbookData>;
+      if (!res.ok) {
+        throw new Error(await readErrorResponse(res, 'Failed to load runbook'));
+      }
+      return parseJsonResponse<RunbookData>(res, 'runbook detail');
     },
     enabled: !!runbookId,
   });

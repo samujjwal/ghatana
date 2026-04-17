@@ -289,4 +289,7 @@ async function main() {
   }
 }
 
-main();
+void main().catch(error => {
+  console.error(chalk.red('\n❌ Unhandled TypeScript configuration failure:'), error);
+  process.exit(1);
+});

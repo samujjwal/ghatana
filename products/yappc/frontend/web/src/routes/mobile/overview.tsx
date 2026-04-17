@@ -26,6 +26,7 @@ import { SwipeableDrawer } from '@ghatana/design-system';
 // MUI hooks and utilities
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // Types
 /**
@@ -102,10 +103,13 @@ export default function Component() {
       // Fetch projects to calculate metrics
       const projectsResponse = await fetch(`/api/projects?workspaceId=${currentWorkspaceId}`);
       if (!projectsResponse.ok) {
-        throw new Error('Failed to fetch projects');
+        throw new Error(await readErrorResponse(projectsResponse, 'Failed to fetch projects'));
       }
 
-      const projectsData = await projectsResponse.json();
+      const projectsData = await parseJsonResponse<Record<string, unknown>>(
+        projectsResponse,
+        'mobile overview projects query'
+      );
       const allProjects = [...(projectsData.owned || []), ...(projectsData.included || [])];
 
       // Calculate metrics from real data

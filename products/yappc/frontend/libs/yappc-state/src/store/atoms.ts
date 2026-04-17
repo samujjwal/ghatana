@@ -16,6 +16,24 @@ import { atom } from 'jotai';
 
 import { StateManager } from './StateManager';
 
+async function parseJsonResponse<T>(
+  response: Response,
+  context: string
+): Promise<T> {
+  const raw = await response.text();
+
+  if (!raw) {
+    throw new Error(`${context} returned an empty response`);
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`${context} returned invalid JSON: ${detail}`);
+  }
+}
+
 // ============================================================================
 // Theme State
 // ============================================================================
@@ -586,10 +604,13 @@ export const storeLoginAtom = StateManager.createWritableDerivedAtom<
         throw new Error('Login failed');
       }
 
-      const data = await response.json();
-      set(storeAccessTokenAtom, data.accessToken ?? null);
-      set(storeRefreshTokenAtom, data.refreshToken ?? null);
-      set(storeUserAtom, data.user ?? null);
+      const data = await parseJsonResponse<Record<string, unknown>>(
+        response,
+        'legacy store login'
+      );
+      set(storeAccessTokenAtom, (data.accessToken as string | null | undefined) ?? null);
+      set(storeRefreshTokenAtom, (data.refreshToken as string | null | undefined) ?? null);
+      set(storeUserAtom, (data.user as StoreUser | null | undefined) ?? null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
       set(storeAuthErrorAtom, message);
@@ -639,9 +660,12 @@ export const storeRefreshTokensAtom = StateManager.createWritableDerivedAtom<
         throw new Error('Token refresh failed');
       }
 
-      const data = await response.json();
-      set(storeAccessTokenAtom, data.accessToken ?? null);
-      set(storeRefreshTokenAtom, data.refreshToken ?? null);
+      const data = await parseJsonResponse<Record<string, unknown>>(
+        response,
+        'legacy store token refresh'
+      );
+      set(storeAccessTokenAtom, (data.accessToken as string | null | undefined) ?? null);
+      set(storeRefreshTokenAtom, (data.refreshToken as string | null | undefined) ?? null);
     } catch {
       set(storeLogoutAtom);
     }

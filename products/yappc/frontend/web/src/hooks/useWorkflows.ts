@@ -9,7 +9,11 @@
  * @doc.pattern React Hook
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+function createLocalId(): string {
+  return Math.random().toString(36).slice(2, 11);
+}
 
 export interface Workflow {
   id: string;
@@ -36,11 +40,7 @@ export function useWorkflows() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
-
-  const fetchWorkflows = async () => {
+  const fetchWorkflows = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -97,7 +97,11 @@ export function useWorkflows() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchWorkflows();
+  }, [fetchWorkflows]);
 
   const createWorkflow = async (
     workflow: Omit<Workflow, 'id' | 'createdAt' | 'updatedAt'>
@@ -105,7 +109,7 @@ export function useWorkflows() {
     // NOTE: Implement API call
     const newWorkflow: Workflow = {
       ...workflow,
-      id: Math.random().toString(36).substr(2, 9),
+      id: createLocalId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

@@ -104,4 +104,56 @@ class OAuth2ControllerTest extends EventloopTestBase {
         assertThat(callbackResponse.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
             .contains("Missing OAuth flow state");
     }
+
+    @Test
+    @DisplayName("callback with mismatched state is rejected")
+    void callbackWithMismatchedStateIsRejected() {
+        HttpRequest authorizeRequest = HttpRequest.get("http://localhost/oauth2/authorize")
+            .withHeader(HttpHeaders.HOST, "localhost:8080")
+            .build();
+        HttpResponse authorizeResponse = runPromise(() -> servlet.serve(authorizeRequest));
+        String cookieHeader = authorizeResponse.getHeader(HttpHeaders.SET_COOKIE);
+        String cookieValue = cookieHeader.substring(0, cookieHeader.indexOf(';'));
+
+        HttpRequest callbackRequest = HttpRequest.get("http://localhost/oauth2/callback?code=abc123&state=wrong-state")
+            .withHeader(HttpHeaders.HOST, "localhost:8080")
+            .withHeader(HttpHeaders.COOKIE, cookieValue)
+            .build();
+
+        HttpResponse callbackResponse = runPromise(() -> servlet.serve(callbackRequest));
+
+        assertThat(callbackResponse.getCode()).isEqualTo(400);
+        assertThat(callbackResponse.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("Invalid state parameter");
+    assertThat(callbackResponse.getHeader(HttpHeaders.SET_COOKIE)).contains("Max-Age=0");
+    }
+
+    @Test
+    @DisplayName("authorize without host header returns server error")
+    void authorizeWithoutHostHeaderReturnsServerError() {
+        HttpRequest request = HttpRequest.get("http://localhost/oauth2/authorize")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(500);
+        assertThat(response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("Failed to initiate OAuth2 flow");
+    }
+
+    @Test
+    @DisplayName("callback with stale flow cookie is rejected as expired")
+    void callbackWithStaleFlowCookieIsRejected() {
+        HttpRequest callbackRequest = HttpRequest.get("http://localhost/oauth2/callback?code=abc123&state=expected-state")
+            .withHeader(HttpHeaders.HOST, "localhost:8080")
+            .withHeader(HttpHeaders.COOKIE, "ghatana_oauth_flow=stale-flow")
+            .build();
+
+        HttpResponse callbackResponse = runPromise(() -> servlet.serve(callbackRequest));
+
+        assertThat(callbackResponse.getCode()).isEqualTo(400);
+        assertThat(callbackResponse.getBody().getString(java.nio.charset.StandardCharsets.UTF_8))
+            .contains("Expired OAuth flow");
+        assertThat(callbackResponse.getHeader(HttpHeaders.SET_COOKIE)).contains("Max-Age=0");
+    }
 }

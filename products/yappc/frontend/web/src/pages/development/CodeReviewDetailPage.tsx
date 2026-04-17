@@ -13,6 +13,7 @@ import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Spinner as LoadingSpinner } from '@ghatana/design-system';
 import { ErrorBoundary } from '@ghatana/design-system';
+import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 
 // ============================================================================
 // Types
@@ -108,8 +109,8 @@ interface PullRequest {
 
 const fetchPullRequest = async (projectId: string, prId: string): Promise<PullRequest> => {
   const response = await fetch(`/api/projects/${projectId}/reviews/${prId}`);
-  if (!response.ok) throw new Error('Failed to fetch pull request');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch pull request'));
+  return parseJsonResponse<PullRequest>(response, 'fetch pull request');
 };
 
 const submitReview = async (
@@ -123,8 +124,8 @@ const submitReview = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, body }),
   });
-  if (!response.ok) throw new Error('Failed to submit review');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to submit review'));
+  return parseJsonResponse<Review>(response, 'submit review');
 };
 
 const addInlineComment = async (
@@ -142,8 +143,8 @@ const addInlineComment = async (
       body: JSON.stringify({ filePath, lineNumber, content }),
     }
   );
-  if (!response.ok) throw new Error('Failed to add comment');
-  return response.json();
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to add comment'));
+  return parseJsonResponse<InlineComment>(response, 'add inline comment');
 };
 
 const resolveComment = async (
@@ -155,7 +156,7 @@ const resolveComment = async (
     `/api/projects/${projectId}/reviews/${prId}/comments/${commentId}/resolve`,
     { method: 'POST' }
   );
-  if (!response.ok) throw new Error('Failed to resolve comment');
+  if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to resolve comment'));
 };
 
 const mergePullRequest = async (

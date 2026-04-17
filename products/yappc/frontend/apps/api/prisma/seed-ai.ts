@@ -554,11 +554,15 @@ async function main() {
 }
 
 // Execute seed
-main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
+async function runSeed(): Promise<void> {
+    try {
+        await main();
+    } catch (error) {
+        console.error(error);
+        process.exitCode = 1;
+    } finally {
         await prisma.$disconnect();
-    });
+    }
+}
+
+void runSeed();
