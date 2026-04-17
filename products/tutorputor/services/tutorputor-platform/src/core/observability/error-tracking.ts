@@ -39,9 +39,19 @@ export function setupErrorTracking(app: FastifyInstance) {
     },
   });
 
-  app.addHook("onError", (_request, _reply, error, done) => {
+  app.addHook("onError", (request, _reply, error, done) => {
     if (!error.validation) {
-      Sentry.captureException(error);
+      Sentry.withScope((scope) => {
+        if (request.correlationId) {
+          scope.setTag("correlation_id", request.correlationId);
+        }
+        scope.setTag("request_id", request.id);
+        scope.setContext("request", {
+          method: request.method,
+          path: request.url,
+        });
+        Sentry.captureException(error);
+      });
     }
 
     done();

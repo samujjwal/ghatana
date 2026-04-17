@@ -39,13 +39,19 @@ tutorputor-mobile (RN)     ─┤                            ↓                
 |------|------|---------|
 | `apps/tutorputor-web/` | React app | Student-facing learning UI |
 | `apps/tutorputor-admin/` | React app | Educator / admin dashboard |
-| `apps/tutorputor-mobile/` | React Native | Mobile student app |
+| `apps/tutorputor-mobile/` | React Native | Mobile offline and sync foundation; full learner app shell is still pending |
 | `apps/api-gateway/` | Node.js | API gateway + BFF layer |
 | `services/tutorputor-platform/` | Node.js | Main platform service |
 | `libs/tutorputor-core/` | Shared lib | Prisma schema & client |
 | `libs/tutorputor-ai/` | Shared lib | AI utilities |
 | `libs/tutorputor-ui/` | Shared lib | UI components |
 | `contracts/` | TypeScript | API contracts |
+
+## Current Delivery Notes
+
+- Mobile is not a production-ready learner application yet. The repo contains React Native storage, sync, and offline primitives, but no shipped application shell or navigation entrypoint.
+- Web offline support is partially implemented through a service worker, IndexedDB-backed caching, and queued progress mutations in `apps/tutorputor-web`.
+- Real-time support exists in platform analytics and collaboration services, while some web collaboration surfaces still use polling fallbacks instead of full live updates.
 
 ## Prerequisites
 

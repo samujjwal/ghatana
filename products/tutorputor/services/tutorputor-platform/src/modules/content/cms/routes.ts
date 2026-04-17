@@ -14,6 +14,7 @@
 
 import type { FastifyInstance, FastifyReply } from "fastify";
 import type { CMSService } from "@tutorputor/contracts/v1/services";
+import { z } from "zod";
 import type {
   ModuleDraftInput,
   ModuleDraftPatch,
@@ -35,6 +36,43 @@ import {
 interface CMSRouteContext {
   cmsService: CMSService;
 }
+
+const listModulesQuerySchema = z.object({
+  status: z.string().trim().min(1).optional(),
+  cursor: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+});
+
+const moduleIdParamsSchema = z.object({
+  moduleId: z.string().trim().min(1),
+});
+
+const createModuleBodySchema = z.object({
+  title: z.string().trim().min(1),
+  description: z.string().trim().min(1).optional(),
+  domain: z.string().trim().min(1),
+  gradeRange: z.string().trim().min(1).optional(),
+  tags: z.array(z.string().trim().min(1)).optional(),
+  content: z.record(z.unknown()).optional(),
+});
+
+const updateModuleBodySchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  status: z.string().trim().min(1).optional(),
+  gradeRange: z.string().trim().min(1).optional(),
+  tags: z.array(z.string().trim().min(1)).optional(),
+  content: z.record(z.unknown()).optional(),
+});
+
+const generateDraftBodySchema = z.object({
+  intent: z.string().trim().min(1),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
 
 async function respondWithErrors<T>(
   reply: FastifyReply,
@@ -95,7 +133,14 @@ export function registerCMSRoutes(
     Querystring: { status?: string; cursor?: string; limit?: number };
   }>(`${prefix}/modules`, async (req, reply) => {
     const tenantId = getTenantId(req) as TenantId;
-    const { status, cursor, limit } = req.query;
+    const queryResult = listModulesQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(queryResult.error.issues));
+    }
+
+    const { status, cursor, limit } = queryResult.data;
 
     await respondWithErrors(reply, () =>
       cmsService.listModules({
@@ -118,7 +163,14 @@ export function registerCMSRoutes(
     const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
-    const input = req.body;
+    const bodyResult = createModuleBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(bodyResult.error.issues));
+    }
+
+    const input = bodyResult.data as ModuleDraftInput;
     await respondWithErrors(reply, () =>
       cmsService.createModuleDraft({
         tenantId,
@@ -144,8 +196,22 @@ export function registerCMSRoutes(
     const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
-    const { moduleId } = req.params;
-    const patch = req.body;
+    const paramsResult = moduleIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(paramsResult.error.issues));
+    }
+
+    const bodyResult = updateModuleBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(bodyResult.error.issues));
+    }
+
+    const { moduleId } = paramsResult.data;
+    const patch = bodyResult.data as ModuleDraftPatch;
 
     await respondWithErrors(reply, () =>
       cmsService.updateModuleDraft({
@@ -168,7 +234,14 @@ export function registerCMSRoutes(
     const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin"]);
 
-    const { moduleId } = req.params;
+    const paramsResult = moduleIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(paramsResult.error.issues));
+    }
+
+    const { moduleId } = paramsResult.data;
 
     await respondWithErrors(reply, () =>
       cmsService.publishModule({
@@ -194,7 +267,14 @@ export function registerCMSRoutes(
     const userId = getUserId(req) as UserId;
     requireRole(req, ["teacher", "admin", "creator"]);
 
-    const { intent } = req.body;
+    const bodyResult = generateDraftBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply
+        .code(400)
+        .send(validationErrorResponse(bodyResult.error.issues));
+    }
+
+    const { intent } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       cmsService.generateDraftFromIntent({

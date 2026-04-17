@@ -6,9 +6,13 @@ description = "Cross-domain integration tests for PHR and Finance workflows"
 
 dependencies {
     testImplementation(project(":platform-kernel:kernel-core"))
+    testImplementation(project(":platform-plugins:plugin-audit-trail"))
     testImplementation(project(":platform-plugins:plugin-billing-ledger"))
+    testImplementation(project(":platform-plugins:plugin-consent"))
+    testImplementation(project(":platform-plugins:plugin-human-approval"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:phr"))
     testImplementation(project(":products:finance"))
     testImplementation(libs.bundles.testing.core)
+    testImplementation(libs.h2)
 }

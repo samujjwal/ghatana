@@ -48,3 +48,23 @@ docs/
 | **Product Spec** | [architecture/specs/PRODUCT_SPEC.md](architecture/specs/PRODUCT_SPEC.md) |
 | **Commands** | [bin/README.md](../bin/README.md) |
 | **Coding Standards** | [guidelines/CODING.md](guidelines/CODING.md) |
+| **Operations** | [operations/OPERATIONS.md](operations/OPERATIONS.md) |
+| **At-Rest Encryption Audit** | [operations/AT_REST_ENCRYPTION_AUDIT_2026-04-16.md](operations/AT_REST_ENCRYPTION_AUDIT_2026-04-16.md) |
+| **Critical Journey E2E Evidence** | [operations/CRITICAL_JOURNEY_E2E_EVIDENCE_2026-04-16.md](operations/CRITICAL_JOURNEY_E2E_EVIDENCE_2026-04-16.md) |
+| **GDPR Deletion Flow Runbook** | [operations/GDPR_DELETION_FLOW_RUNBOOK.md](operations/GDPR_DELETION_FLOW_RUNBOOK.md) |
+| **Critical Journey Environment Evidence** | [operations/CRITICAL_JOURNEY_EVIDENCE_LOCAL_2026-04-16.md](operations/CRITICAL_JOURNEY_EVIDENCE_LOCAL_2026-04-16.md) |
+| **GDPR Environment Evidence** | [operations/GDPR_DELETION_EVIDENCE_LOCAL_2026-04-16.md](operations/GDPR_DELETION_EVIDENCE_LOCAL_2026-04-16.md) |
+| **Encryption Environment Evidence** | [operations/ENCRYPTION_EVIDENCE_LOCAL_2026-04-16.md](operations/ENCRYPTION_EVIDENCE_LOCAL_2026-04-16.md) |
+| **Proof Status Matrix** | [operations/REMEDIATION_PROOF_STATUS_MATRIX_2026-04-16.md](operations/REMEDIATION_PROOF_STATUS_MATRIX_2026-04-16.md) |
+| **Route Validation Matrix** | [operations/ROUTE_VALIDATION_ROLLOUT_MATRIX_2026-04-16.md](operations/ROUTE_VALIDATION_ROLLOUT_MATRIX_2026-04-16.md) |
+| **LTI Validation Evidence** | [operations/LTI_VALIDATION_EVIDENCE_2026-04-16.md](operations/LTI_VALIDATION_EVIDENCE_2026-04-16.md) |
+| **LTI Phase 2 Validation Evidence** | [operations/LTI_PHASE2_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md](operations/LTI_PHASE2_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md) |
+| **LTI Phase 2 Proof Matrix** | [operations/LTI_PHASE2_PROOF_STATUS_MATRIX_2026-04-16.md](operations/LTI_PHASE2_PROOF_STATUS_MATRIX_2026-04-16.md) |
+| **Social Validation Evidence** | [operations/SOCIAL_VALIDATION_EVIDENCE_2026-04-16.md](operations/SOCIAL_VALIDATION_EVIDENCE_2026-04-16.md) |
+| **Social Proof Matrix** | [operations/SOCIAL_PROOF_STATUS_MATRIX_2026-04-16.md](operations/SOCIAL_PROOF_STATUS_MATRIX_2026-04-16.md) |
+| **Content Validation Evidence** | [operations/CONTENT_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md](operations/CONTENT_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md) |
+| **Content Proof Matrix** | [operations/CONTENT_PROOF_STATUS_MATRIX_2026-04-16.md](operations/CONTENT_PROOF_STATUS_MATRIX_2026-04-16.md) |
+| **Content Phase 2 Validation Evidence** | [operations/CONTENT_PHASE2_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md](operations/CONTENT_PHASE2_ROUTE_VALIDATION_EVIDENCE_2026-04-16.md) |
+| **Content Phase 2 Proof Matrix** | [operations/CONTENT_PHASE2_PROOF_STATUS_MATRIX_2026-04-16.md](operations/CONTENT_PHASE2_PROOF_STATUS_MATRIX_2026-04-16.md) |
+| **Route Validation Batch 3 Evidence** | [operations/ROUTE_VALIDATION_BATCH3_EVIDENCE_2026-04-16.md](operations/ROUTE_VALIDATION_BATCH3_EVIDENCE_2026-04-16.md) |
+| **Route Validation Batch 3 Matrix** | [operations/ROUTE_VALIDATION_BATCH3_STATUS_MATRIX_2026-04-16.md](operations/ROUTE_VALIDATION_BATCH3_STATUS_MATRIX_2026-04-16.md) |

@@ -8,6 +8,19 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { AutoRevisionService } from "./service";
 import { getTenantId, roleGuard } from "../../core/http/requestContext.js";
+import { z } from "zod";
+
+const experienceIdParamsSchema = z.object({
+  experienceId: z.string().min(1),
+});
+
+const experimentIdParamsSchema = z.object({
+  experimentId: z.string().min(1),
+});
+
+const createABExperimentBodySchema = z.object({
+  treatmentVersion: z.coerce.number().int().positive().optional(),
+});
 
 export interface AutoRevisionRoutes {
   // Drift detection endpoints
@@ -48,7 +61,16 @@ export function registerAutoRevisionRoutes(
     "/experiences/:experienceId/drift",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { experienceId } = request.params as { experienceId: string };
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experience id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const { experienceId } = paramsResult.data;
       void getTenantId(request);
 
       try {
@@ -85,7 +107,16 @@ export function registerAutoRevisionRoutes(
     "/experiences/:experienceId/regenerate",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { experienceId } = request.params as { experienceId: string };
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experience id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const { experienceId } = paramsResult.data;
       void getTenantId(request);
 
       try {
@@ -129,8 +160,26 @@ export function registerAutoRevisionRoutes(
     "/experiences/:experienceId/ab-experiment",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { experienceId } = request.params as { experienceId: string };
-      const { treatmentVersion } = request.body as { treatmentVersion: number };
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experience id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const bodyResult = createABExperimentBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid A/B experiment payload",
+          issues: bodyResult.error.issues,
+        };
+      }
+      const { experienceId } = paramsResult.data;
+      const { treatmentVersion } = bodyResult.data;
       void getTenantId(request);
 
       try {
@@ -170,7 +219,16 @@ export function registerAutoRevisionRoutes(
     "/experiences/:experienceId/history",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { experienceId } = request.params as { experienceId: string };
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experience id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const { experienceId } = paramsResult.data;
       void getTenantId(request);
 
       try {
@@ -190,7 +248,16 @@ export function registerAutoRevisionRoutes(
     "/ab-experiments/:experimentId/results",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { experimentId } = request.params as { experimentId: string };
+      const paramsResult = experimentIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experiment id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const { experimentId } = paramsResult.data;
       void getTenantId(request);
 
       try {

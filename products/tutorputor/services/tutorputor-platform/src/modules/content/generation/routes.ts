@@ -17,6 +17,7 @@ import {
   roleGuard,
 } from "../../../core/http/requestContext.js";
 import { writeSseEvent } from "../../../core/http/sse.js";
+import { z } from "zod";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import { GenerationPlannerService } from "./planner-service.js";
@@ -36,6 +37,38 @@ type RedisPubSubClient = Redis & {
   on(event: string, listener: (...args: unknown[]) => void): unknown;
   subscribe(channel: string): Promise<unknown>;
 };
+
+const requestIdParamsSchema = z.object({
+  requestId: z.string().trim().min(1),
+});
+
+const createRequestBodySchema = z.object({
+  title: z.string().trim().min(1),
+  description: z.string().trim().min(1).optional(),
+  domain: z.string().trim().min(1),
+  conceptId: z.string().trim().min(1).optional(),
+  targetGrades: z.array(z.string().trim().min(1)).optional(),
+  requestConfig: z.record(z.unknown()).optional(),
+});
+
+const listQuerySchema = z.object({
+  status: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(500).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+const streamQuerySchema = z.object({
+  includeOutput: z.enum(["true", "false"]).optional(),
+});
+
+const resultsBodySchema = z.object({
+  results: z.array(z.record(z.unknown())).min(1),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
 
 // =============================================================================
 // Register
@@ -72,6 +105,13 @@ export function registerGenerationRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request);
       const requestedBy = getUserId(request);
+      const bodyResult = createRequestBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
       const {
         title,
         description,
@@ -79,13 +119,7 @@ export function registerGenerationRoutes(
         conceptId,
         targetGrades,
         requestConfig,
-      } = request.body;
-
-      if (!title || !domain) {
-        return reply
-          .status(400)
-          .send({ error: "title and domain are required" });
-      }
+      } = bodyResult.data;
 
       const result = await service.createRequest({
         tenantId,
@@ -112,12 +146,19 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { status, limit, offset } = request.query;
+      const queryResult = listQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(queryResult.error.issues));
+      }
+
+      const { status, limit, offset } = queryResult.data;
 
       const result = await service.listRequests(tenantId, {
         ...(status ? { status } : {}),
-        ...(limit ? { limit: parseInt(limit, 10) } : {}),
-        ...(offset ? { offset: parseInt(offset, 10) } : {}),
+        ...(limit !== undefined ? { limit } : {}),
+        ...(offset !== undefined ? { offset } : {}),
       });
 
       return reply.send(result);
@@ -134,7 +175,14 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const result = await service.getRequest(tenantId, requestId);
       if (!result) {
@@ -158,8 +206,22 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
-      const includeOutput = request.query.includeOutput !== "false";
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const queryResult = streamQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(queryResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
+      const includeOutput = queryResult.data.includeOutput !== "false";
 
       const snapshot = await executionService.getExecutionSnapshot(
         tenantId,
@@ -291,7 +353,14 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       try {
         const result = await service.planRequest(tenantId, requestId);
@@ -313,7 +382,14 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       try {
         const result = await service.cancelRequest(tenantId, requestId);
@@ -336,7 +412,14 @@ export function registerGenerationRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       try {
         await executionService.startExecution(tenantId, requestId);
@@ -367,17 +450,27 @@ export function registerGenerationRoutes(
     "/generation/requests/:requestId/results",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { requestId } = request.params;
-      const { results } = request.body;
-
-      if (!results || !Array.isArray(results)) {
-        return reply.status(400).send({ error: "results array is required" });
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
       }
+
+      const bodyResult = resultsBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply
+          .status(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
+      const { results } = bodyResult.data;
 
       try {
         const summary = await executionService.recordBatchResults(
           requestId,
-          results,
+          results as JobExecutionResult[],
         );
         return reply.send(summary);
       } catch (err: unknown) {

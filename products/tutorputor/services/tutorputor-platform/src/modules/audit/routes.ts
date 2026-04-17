@@ -9,9 +9,59 @@ import type { FastifyPluginAsync } from "fastify";
 import { AuditServiceImpl } from "./service";
 import type { TenantId, UserId } from "@tutorputor/contracts";
 import { getTenantId, requireRole } from "../../core/http/requestContext.js";
+import { z } from "zod";
 
-export const auditRoutes: FastifyPluginAsync = async (app) => {
-  const auditService = new AuditServiceImpl(app.prisma);
+type AuditRoutesService = Pick<
+  AuditServiceImpl,
+  "queryAuditEvents" | "getAuditSummary" | "exportAuditLog"
+>;
+
+type AuditRoutesOptions = {
+  service?: AuditRoutesService;
+};
+
+const DateInputSchema = z
+  .string()
+  .min(1)
+  .refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: "Invalid date format",
+  });
+
+const AuditQuerySchema = z.object({
+  action: z.string().min(1).optional(),
+  actorId: z.string().min(1).optional(),
+  resourceType: z.string().min(1).optional(),
+  resourceId: z.string().min(1).optional(),
+  startDate: DateInputSchema.optional(),
+  endDate: DateInputSchema.optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  sortBy: z.enum(["timestamp", "actorId", "action", "resourceType"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
+
+const AuditSummaryQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).optional(),
+});
+
+const AuditExportBodySchema = z.object({
+  startDate: DateInputSchema,
+  endDate: DateInputSchema,
+});
+
+function createValidationErrorResponse(error: z.ZodError) {
+  const primaryIssue = error.issues[0];
+  return {
+    error: "Validation Error",
+    message: primaryIssue?.message ?? "Invalid request payload",
+  };
+}
+
+export const auditRoutes: FastifyPluginAsync<AuditRoutesOptions> = async (
+  app,
+  options,
+) => {
+  const auditService = options.service ?? new AuditServiceImpl(app.prisma);
   const auditRoles = ["admin", "superadmin"];
 
   /**
@@ -35,6 +85,11 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, auditRoles);
 
+    const parseResult = AuditQuerySchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
     const {
       action,
       actorId,
@@ -46,7 +101,7 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
       limit,
       sortBy,
       sortOrder,
-    } = request.query;
+    } = parseResult.data;
 
     try {
       const result = await auditService.queryAuditEvents({
@@ -86,7 +141,12 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, auditRoles);
 
-    const { days } = request.query;
+    const parseResult = AuditSummaryQuerySchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
+    const { days } = parseResult.data;
 
     try {
       const summary = await auditService.getAuditSummary({
@@ -116,7 +176,12 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, auditRoles);
 
-    const { startDate, endDate } = request.body;
+    const parseResult = AuditExportBodySchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
+    const { startDate, endDate } = parseResult.data;
 
     try {
       const result = await auditService.exportAuditLog({

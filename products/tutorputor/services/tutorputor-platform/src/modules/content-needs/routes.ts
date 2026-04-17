@@ -10,6 +10,55 @@ import type { ContentNeeds } from "@tutorputor/contracts/v1/learning-unit";
 import type { ContentNeedsAnalyzer } from "./service";
 import type { ContentDriftDetector } from "./drift-detector";
 import type { ContentQualityMLPipeline } from "../content/quality-ml/pipeline";
+import { z } from "zod";
+
+const analyzeClaimBodySchema = z.object({
+  claim: z.object({
+    id: z.string().min(1),
+    text: z.string().min(1),
+    bloomLevel: z.string().min(1),
+  }),
+  context: z.object({
+    domain: z.string().min(1),
+    gradeRange: z.string().min(1),
+    subject: z.string().min(1),
+    topic: z.string().min(1),
+    prerequisites: z.array(z.string()),
+    learningObjectives: z.array(z.string()),
+  }),
+});
+
+const experienceIdParamsSchema = z.object({
+  experienceId: z.string().min(1),
+});
+
+const generateContentParamsSchema = z.object({
+  claimId: z.string().min(1),
+});
+
+const generateContentBodySchema = z.object({
+  needs: z.unknown(),
+});
+
+const batchAnalyzeBodySchema = z.object({
+  claims: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        text: z.string().min(1),
+        bloomLevel: z.string().min(1),
+      }),
+    )
+    .min(1),
+  context: z.object({
+    domain: z.string().min(1),
+    gradeRange: z.string().min(1),
+    subject: z.string().min(1),
+    topic: z.string().min(1),
+    prerequisites: z.array(z.string()),
+    learningObjectives: z.array(z.string()),
+  }),
+});
 
 export function registerContentNeedsRoutes(
   fastify: FastifyInstance,
@@ -19,17 +68,16 @@ export function registerContentNeedsRoutes(
 ): void {
   // Analyze content needs for a specific claim
   fastify.post("/analyze-claim", async (request, reply) => {
-    const { claim, context } = request.body as {
-      claim: { id: string; text: string; bloomLevel: string };
-      context: {
-        domain: string;
-        gradeRange: string;
-        subject: string;
-        topic: string;
-        prerequisites: string[];
-        learningObjectives: string[];
+    const bodyResult = analyzeClaimBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid analyze-claim payload",
+        issues: bodyResult.error.issues,
       };
-    };
+    }
+    const { claim, context } = bodyResult.data;
 
     try {
       const needs = await contentNeedsAnalyzer.analyzeClaimNeeds(
@@ -46,7 +94,16 @@ export function registerContentNeedsRoutes(
 
   // Analyze content needs for entire experience
   fastify.post("/analyze-experience/:experienceId", async (request, reply) => {
-    const { experienceId } = request.params as { experienceId: string };
+    const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid experience id",
+        issues: paramsResult.error.issues,
+      };
+    }
+    const { experienceId } = paramsResult.data;
 
     try {
       const analyses =
@@ -61,8 +118,26 @@ export function registerContentNeedsRoutes(
 
   // Generate content based on analyzed needs
   fastify.post("/generate-content/:claimId", async (request, reply) => {
-    const { claimId } = request.params as { claimId: string };
-    const { needs } = request.body as { needs: unknown };
+    const paramsResult = generateContentParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid claim id",
+        issues: paramsResult.error.issues,
+      };
+    }
+    const bodyResult = generateContentBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid generate-content payload",
+        issues: bodyResult.error.issues,
+      };
+    }
+    const { claimId } = paramsResult.data;
+    const { needs } = bodyResult.data;
 
     try {
       const content = await contentNeedsAnalyzer.generateContentForClaim(
@@ -79,7 +154,16 @@ export function registerContentNeedsRoutes(
 
   // Get content needs analysis history
   fastify.get("/experience/:experienceId/history", async (request, reply) => {
-    const { experienceId } = request.params as { experienceId: string };
+    const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid experience id",
+        issues: paramsResult.error.issues,
+      };
+    }
+    const { experienceId } = paramsResult.data;
 
     try {
       const history =
@@ -94,17 +178,16 @@ export function registerContentNeedsRoutes(
 
   // Batch analyze multiple claims
   fastify.post("/batch-analyze", async (request, reply) => {
-    const { claims, context } = request.body as {
-      claims: { id: string; text: string; bloomLevel: string }[];
-      context: {
-        domain: string;
-        gradeRange: string;
-        subject: string;
-        topic: string;
-        prerequisites: string[];
-        learningObjectives: string[];
+    const bodyResult = batchAnalyzeBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: "Invalid batch-analyze payload",
+        issues: bodyResult.error.issues,
       };
-    };
+    }
+    const { claims, context } = bodyResult.data;
 
     try {
       const results = await Promise.all(
@@ -139,7 +222,16 @@ export function registerContentNeedsRoutes(
     });
 
     fastify.post("/drift/scan/:experienceId", async (request, reply) => {
-      const { experienceId } = request.params as { experienceId: string };
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        reply.code(400);
+        return {
+          success: false,
+          error: "Invalid experience id",
+          issues: paramsResult.error.issues,
+        };
+      }
+      const { experienceId } = paramsResult.data;
       const tenantId = request.headers["x-tenant-id"] as string;
 
       try {
@@ -157,7 +249,16 @@ export function registerContentNeedsRoutes(
 
     if (qualityPipeline) {
       fastify.post("/drift/scan/:experienceId/apply-quality", async (request, reply) => {
-        const { experienceId } = request.params as { experienceId: string };
+        const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+        if (!paramsResult.success) {
+          reply.code(400);
+          return {
+            success: false,
+            error: "Invalid experience id",
+            issues: paramsResult.error.issues,
+          };
+        }
+        const { experienceId } = paramsResult.data;
         const tenantId = request.headers["x-tenant-id"] as string;
 
         try {

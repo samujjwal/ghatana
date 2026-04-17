@@ -1,6 +1,28 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@tutorputor/core", () => ({
+  AuthorizationError: class AuthorizationError extends Error {
+    statusCode = 401;
+    details: unknown;
+
+    constructor(message: string, details?: unknown) {
+      super(message);
+      this.details = details;
+    }
+  },
+  ValidationError: class ValidationError extends Error {
+    statusCode: number;
+    code: string;
+
+    constructor(message: string, statusCode = 400, code = "VALIDATION_ERROR") {
+      super(message);
+      this.statusCode = statusCode;
+      this.code = code;
+    }
+  },
+}));
+
 import { ltiRoutes } from "./routes.js";
 
 /**
@@ -184,6 +206,21 @@ describe("LTI integration routes", () => {
     );
   });
 
+  it("rejects malformed deep-linking payloads", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/deep-linking",
+      payload: {
+        content_items: [],
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid deep-linking payload",
+    });
+  });
+
   it("rejects platform registration without an admin role", async () => {
     const response = await app.inject({
       method: "POST",
@@ -237,6 +274,26 @@ describe("LTI integration routes", () => {
     expect(prisma.lTIPlatform.upsert).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects invalid registration URLs", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/register",
+      headers: {
+        "x-tenant-id": "tenant-1",
+        "x-user-role": "admin",
+      },
+      payload: {
+        platformName: "Canvas",
+        issuer: "https://canvas.example.com",
+        clientId: "canvas-client-id",
+        jwksUrl: "not-a-url",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(prisma.lTIPlatform.upsert).not.toHaveBeenCalled();
+  });
+
   it("delegates grade passback to the LTI grade service when a session id is provided", async () => {
     prisma.ltiSession.findUnique.mockResolvedValue(null);
 
@@ -264,6 +321,73 @@ describe("LTI integration routes", () => {
       error: "Line item not found",
     });
     expect(prisma.ltiSession.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects malformed launch payload before validation", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/launch",
+      payload: {
+        id_token: "",
+        state: "",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid LTI launch payload",
+    });
+  });
+
+  it("rejects malformed platform parameter for config route", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/config/%20",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid platform parameter",
+    });
+  });
+
+  it("rejects grade passback when score exceeds maxScore", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/grade-passback",
+      payload: {
+        sessionId: "session-1",
+        userId: "lti-user-1",
+        score: 110,
+        maxScore: 100,
+        lineItemId: "line-item-1",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid grade-passback payload",
+    });
+  });
+
+  it("rejects grade passback when activityProgress value is invalid", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/grade-passback",
+      payload: {
+        sessionId: "session-1",
+        userId: "lti-user-1",
+        score: 90,
+        maxScore: 100,
+        lineItemId: "line-item-1",
+        activityProgress: "done",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      error: "Invalid grade-passback payload",
+    });
   });
 });
 

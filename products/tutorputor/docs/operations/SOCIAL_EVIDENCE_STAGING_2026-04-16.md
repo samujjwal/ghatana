@@ -1,0 +1,17 @@
+# Social Evidence - Staging
+
+Date: 2026-04-16
+Environment: staging
+
+## Validation
+
+- Test output file:
+- API verification output:
+- Correlation IDs:
+
+## Status
+
+- [ ] Pass
+- [ ] Fail
+
+Notes:

@@ -10,7 +10,30 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
+import { z } from "zod";
 import { ContentQualityMLPipeline } from "./pipeline.js";
+
+const assetIdParamsSchema = z.object({
+  assetId: z.string().trim().min(1),
+});
+
+const experienceIdParamsSchema = z.object({
+  experienceId: z.string().trim().min(1),
+});
+
+const predictBatchBodySchema = z.object({
+  limit: z.number().int().positive().max(500).optional(),
+  assetIds: z.array(z.string().trim().min(1)).optional(),
+});
+
+const applyExperienceBodySchema = z.object({
+  limit: z.number().int().positive().max(500).optional(),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
 
 export function registerQualityMLRoutes(
   app: FastifyInstance,
@@ -23,9 +46,16 @@ export function registerQualityMLRoutes(
     "/quality-ml/assets/:assetId/predict",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
       const prediction = await pipeline.predictAssetQuality(
         getTenantId(request),
-        request.params.assetId,
+        paramsResult.data.assetId,
       );
       return reply.status(200).send(prediction);
     },
@@ -37,9 +67,16 @@ export function registerQualityMLRoutes(
     "/quality-ml/predict-batch",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const bodyResult = predictBatchBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
       const predictions = await pipeline.backfillPredictions(
         getTenantId(request),
-        request.body ?? {},
+        bodyResult.data,
       );
       return reply.status(200).send({
         predictions,
@@ -55,10 +92,24 @@ export function registerQualityMLRoutes(
     "/quality-ml/experiences/:experienceId/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const bodyResult = applyExperienceBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
       const predictions = await pipeline.applyPredictionsForExperience(
         getTenantId(request),
-        request.params.experienceId,
-        request.body ?? {},
+        paramsResult.data.experienceId,
+        bodyResult.data,
       );
       return reply.status(200).send({
         predictions,
@@ -71,9 +122,16 @@ export function registerQualityMLRoutes(
     "/quality-ml/assets/:assetId/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
       const applied = await pipeline.applyPrediction(
         getTenantId(request),
-        request.params.assetId,
+        paramsResult.data.assetId,
       );
       return reply.status(200).send(applied);
     },
@@ -85,9 +143,16 @@ export function registerQualityMLRoutes(
     "/quality-ml/predict-batch/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const bodyResult = predictBatchBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
       const predictions = await pipeline.applyPredictionsBatch(
         getTenantId(request),
-        request.body ?? {},
+        bodyResult.data,
       );
       return reply.status(200).send({
         predictions,

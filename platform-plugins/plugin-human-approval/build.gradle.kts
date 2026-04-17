@@ -1,0 +1,50 @@
+/**
+ * Human Approval Plugin
+ *
+ * @doc.type build-script
+ * @doc.purpose Human-in-the-loop approval workflow plugin for regulated operations
+ * @doc.layer platform
+ */
+plugins {
+    id("java-module")
+}
+
+group = "com.ghatana.plugin"
+version = rootProject.version
+description = "Human Approval Plugin - human-in-the-loop approval SPI for regulated workflows"
+
+dependencies {
+    // Kernel and Platform libraries via BOMs
+    implementation(platform(project(":platform-kernel:kernel-bom")))
+    implementation(platform(project(":platform:java:platform-bom")))
+
+    // Kernel modules
+    api(project(":platform-kernel:kernel-core"))
+    api(project(":platform-kernel:kernel-plugin"))
+
+    // Plugin-specific dependencies
+    api(libs.activej.promise)
+
+    // Testing
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.h2)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+tasks.test {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}

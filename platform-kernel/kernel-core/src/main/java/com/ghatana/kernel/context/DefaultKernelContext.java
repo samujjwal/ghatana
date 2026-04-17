@@ -4,6 +4,8 @@ import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.event.EventHandler;
 import com.ghatana.kernel.registry.KernelRegistry;
+import com.ghatana.kernel.security.EnvironmentSecretProvider;
+import com.ghatana.kernel.security.SecretProvider;
 import io.activej.eventloop.Eventloop;
 
 import java.util.*;
@@ -52,6 +54,10 @@ public class DefaultKernelContext implements KernelContext {
         this.namedDependencies = new ConcurrentHashMap<>();
         this.eventHandlers = new ConcurrentHashMap<>();
         this.tenantContexts = new ConcurrentHashMap<>();
+
+        // Register kernel-provided defaults so modules can rely on them without
+        // explicit wiring. Callers may override by calling registerDependency() later.
+        this.dependencies.put(SecretProvider.class, EnvironmentSecretProvider.INSTANCE);
     }
 
     // ==================== Dependency Registration ====================

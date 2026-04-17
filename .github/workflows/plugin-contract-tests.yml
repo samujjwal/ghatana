@@ -1,0 +1,214 @@
+name: Platform Plugin Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - 'platform-plugins/**'
+      - 'platform-kernel/**'
+      - 'platform/shared-services/**'
+      - 'integration-tests/phr-finance-integration/**'
+      - 'products/phr/**'
+      - 'products/finance/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'platform-plugins/**'
+      - 'platform-kernel/**'
+      - 'platform/shared-services/**'
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Plugin unit + contract tests per plugin module ───────────────────────
+  plugin-unit-contracts:
+    name: Plugin Unit & Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build and test all platform-plugins
+        run: |
+          ./gradlew \
+            :platform-plugins:plugin-audit-trail:test \
+            :platform-plugins:plugin-billing-ledger:test \
+            :platform-plugins:plugin-compliance:test \
+            :platform-plugins:plugin-consent:test \
+            :platform-plugins:plugin-fraud-detection:test \
+            :platform-plugins:plugin-human-approval:test \
+            :platform-plugins:plugin-risk-management:test \
+            --continue \
+            --no-daemon
+
+      - name: Upload plugin test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-unit-test-reports
+          path: platform-plugins/**/build/reports/tests/**
+          retention-days: 7
+
+  # ── 2. Kernel bridge unit tests ─────────────────────────────────────────────
+  kernel-bridge-tests:
+    name: Kernel Bridge Extension Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build and test kernel bridges
+        run: |
+          ./gradlew \
+            :platform:shared-services:data-cloud-kernel-bridge:test \
+            :platform:shared-services:aep-kernel-bridge:test \
+            :platform:shared-services:yappc-kernel-bridge:test \
+            --no-daemon
+
+      - name: Upload bridge test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridge-test-reports
+          path: platform/shared-services/**/build/reports/tests/**
+          retention-days: 7
+
+  # ── 3. Cross-product plugin isolation tests (consent plugin) ────────────────
+  plugin-isolation-tests:
+    name: Plugin Isolation Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build consent plugin isolation tests
+        run: |
+          ./gradlew \
+            :platform-plugins:plugin-consent:test \
+            --tests "com.ghatana.plugin.consent.impl.DurableConsentPluginCrossProductTest" \
+            --no-daemon
+
+      - name: Upload isolation test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-isolation-reports
+          path: platform-plugins/plugin-consent/build/reports/tests/**
+          retention-days: 7
+
+  # ── 4. Integration tests: plugin durable storage + cross-product audit ───────
+  plugin-integration-tests:
+    name: Plugin Integration Tests (No DB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Run cross-product integration tests
+        run: |
+          ./gradlew \
+            :integration-tests:phr-finance-integration:test \
+            --tests "com.ghatana.integration.phrfinance.DurablePluginIntegrationIT" \
+            --tests "com.ghatana.integration.phrfinance.CrossDomainAuditTrailIT" \
+            --tests "com.ghatana.integration.phrfinance.FinanceFraudModelHotReloadIT" \
+            --tests "com.ghatana.integration.phrfinance.FlagshipThinSliceDemoIT" \
+            --no-daemon
+
+      - name: Upload integration test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-integration-reports
+          path: integration-tests/phr-finance-integration/build/reports/tests/**
+          retention-days: 7
+
+  # ── 5. Observability baseline check — health/metrics endpoints ──────────────
+  observability-baseline:
+    name: Observability Baseline Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Verify kernel health and metrics contracts
+        run: |
+          ./gradlew \
+            :platform-kernel:kernel-core:test \
+            --tests "com.ghatana.kernel.test.integration.*" \
+            --no-daemon
+
+      - name: Upload kernel test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-integration-reports
+          path: platform-kernel/kernel-core/build/reports/tests/**
+          retention-days: 7
+
+  # ── Summary gate — all jobs must pass ───────────────────────────────────────
+  plugin-contracts-summary:
+    name: All Plugin Contract Gates Passed
+    if: always()
+    needs:
+      - plugin-unit-contracts
+      - kernel-bridge-tests
+      - plugin-isolation-tests
+      - plugin-integration-tests
+      - observability-baseline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.plugin-unit-contracts.result }}" != "success" ]] ||
+             [[ "${{ needs.kernel-bridge-tests.result }}" != "success" ]] ||
+             [[ "${{ needs.plugin-isolation-tests.result }}" != "success" ]] ||
+             [[ "${{ needs.plugin-integration-tests.result }}" != "success" ]] ||
+             [[ "${{ needs.observability-baseline.result }}" != "success" ]]; then
+            echo "One or more plugin contract gates failed."
+            exit 1
+          fi
+          echo "All plugin contract gates passed."

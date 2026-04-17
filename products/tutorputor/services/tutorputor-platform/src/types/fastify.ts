@@ -34,6 +34,11 @@ declare module "fastify" {
      */
     learnerProfileGrpcRuntimeState?: LearnerProfileGrpcRuntimeState;
   }
+
+  interface FastifyRequest {
+    correlationId?: string;
+  }
+
   interface FastifySchema {
     description?: string;
     tags?: string[];

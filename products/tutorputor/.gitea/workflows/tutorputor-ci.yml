@@ -100,6 +100,15 @@ jobs:
         env:
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
 
+      - name: Prevent new @ts-nocheck usage
+        run: |
+          ACTUAL=$(rg -l "@ts-nocheck" products/tutorputor --glob '!**/node_modules/**' | sort || true)
+          ALLOWED=$(cat products/tutorputor/config/ts-nocheck-allowlist.txt)
+          if ! diff -u <(printf "%s\n" "$ALLOWED") <(printf "%s\n" "$ACTUAL"); then
+            echo "❌ @ts-nocheck usage changed. Update allowlist only after removing debt or approving a narrowly scoped exception."
+            exit 1
+          fi
+
       - name: Run tests
         run: pnpm --filter @tutorputor/platform test:coverage
         env:
@@ -107,6 +116,16 @@ jobs:
           DATABASE_URL: postgresql://tutorputor:tutorputor@localhost:5432/tutorputor_test
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+
+      - name: Check coverage threshold (75%)
+        run: |
+          COVERAGE=$(cat products/tutorputor/services/tutorputor-platform/coverage/lcov-report/index.json | jq -r '.total.lines.pct')
+          if (( $(echo "$COVERAGE < 75" | bc -l) )); then
+            echo "❌ Coverage $COVERAGE% is below threshold 75%"
+            exit 1
+          else
+            echo "✅ Coverage $COVERAGE% meets threshold 75%"
+          fi
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4

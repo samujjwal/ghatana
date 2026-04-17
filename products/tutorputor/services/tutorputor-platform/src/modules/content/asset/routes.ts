@@ -13,6 +13,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
+import { z } from "zod";
 import type {
   ContentAssetStatus,
   ContentAssetType,
@@ -42,6 +43,49 @@ type RelatedQuery = {
   limit?: string;
 };
 
+const assetListQuerySchema = z.object({
+  assetType: z
+    .enum([
+      "explainer",
+      "module",
+      "example_set",
+      "simulation",
+      "animation",
+      "assessment",
+      "pathway",
+      "reference_pack",
+    ])
+    .optional(),
+  status: z
+    .enum([
+      "draft",
+      "validating",
+      "review",
+      "approved",
+      "published",
+      "archived",
+    ])
+    .optional(),
+  domain: z.string().trim().min(1).optional(),
+  authorId: z.string().trim().min(1).optional(),
+  search: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+const assetIdParamsSchema = z.object({
+  assetId: z.string().trim().min(1),
+});
+
+const relatedQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
+
 // =============================================================================
 // Route Registration
 // =============================================================================
@@ -58,24 +102,6 @@ export function registerContentAssetRoutes(
   context: AssetRouteContext,
 ): void {
   const service = new ContentAssetReadService(context.prisma);
-  const contentAssetTypes = new Set<ContentAssetType>([
-    "explainer",
-    "module",
-    "example_set",
-    "simulation",
-    "animation",
-    "assessment",
-    "pathway",
-    "reference_pack",
-  ]);
-  const contentAssetStatuses = new Set<ContentAssetStatus>([
-    "draft",
-    "validating",
-    "review",
-    "approved",
-    "published",
-    "archived",
-  ]);
 
   const readGuard = roleGuard([
     "admin",
@@ -93,22 +119,25 @@ export function registerContentAssetRoutes(
     { preHandler: [readGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
+      const queryResult = assetListQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(queryResult.error.issues));
+      }
+
       const { assetType, status, domain, authorId, search, limit, offset } =
-        request.query;
-      const normalizedAssetType =
-        assetType && contentAssetTypes.has(assetType) ? assetType : undefined;
-      const normalizedStatus =
-        status && contentAssetStatuses.has(status) ? status : undefined;
+        queryResult.data;
 
       const result = await service.listAssets({
         tenantId,
-        ...(normalizedAssetType ? { assetType: normalizedAssetType } : {}),
-        ...(normalizedStatus ? { status: normalizedStatus } : {}),
+        ...(assetType ? { assetType: assetType as ContentAssetType } : {}),
+        ...(status ? { status: status as ContentAssetStatus } : {}),
         ...(domain ? { domain } : {}),
         ...(authorId ? { authorId } : {}),
         ...(search ? { search } : {}),
-        ...(limit ? { limit: parseInt(limit, 10) } : {}),
-        ...(offset ? { offset: parseInt(offset, 10) } : {}),
+        ...(limit !== undefined ? { limit } : {}),
+        ...(offset !== undefined ? { offset } : {}),
       });
 
       return reply.send({
@@ -126,7 +155,14 @@ export function registerContentAssetRoutes(
     { preHandler: [readGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { assetId } = paramsResult.data;
 
       const detail = await service.getAssetDetail(tenantId, assetId);
       if (!detail) {
@@ -145,10 +181,22 @@ export function registerContentAssetRoutes(
     { preHandler: [readGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
-      const limit = request.query.limit
-        ? parseInt(request.query.limit, 10)
-        : 10;
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const queryResult = relatedQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(queryResult.error.issues));
+      }
+
+      const { assetId } = paramsResult.data;
+      const limit = queryResult.data.limit ?? 10;
 
       const related = await service.getRelatedAssets(tenantId, assetId, limit);
       return reply.send({ data: related });
@@ -163,7 +211,14 @@ export function registerContentAssetRoutes(
     { preHandler: [readGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { assetId } = paramsResult.data;
 
       const revisions = await service.getRevisionHistory(tenantId, assetId);
       return reply.send({ data: revisions });

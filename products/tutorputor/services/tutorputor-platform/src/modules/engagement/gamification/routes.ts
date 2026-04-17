@@ -7,6 +7,30 @@ import {
   requireSelfOrRole,
   requireRole,
 } from "../../../core/http/requestContext.js";
+import { z } from "zod";
+
+const leaderboardQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
+});
+
+const userIdParamsSchema = z.object({
+  userId: z.string().min(1),
+});
+
+const awardPointsBodySchema = z.object({
+  userId: z.string().min(1),
+  points: z.coerce.number(),
+  reason: z.string().min(1).optional(),
+  sourceType: z
+    .enum(["module_complete", "assessment", "streak", "daily_login", "bonus"])
+    .optional(),
+});
+
+const unlockAchievementBodySchema = z.object({
+  userId: z.string().min(1),
+  achievementId: z.string().min(1),
+});
 
 /**
  * Gamification routes - points, leaderboards, and achievements.
@@ -76,7 +100,14 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/gamification/leaderboard", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { limit } = request.query as { limit?: number };
+    const queryResult = leaderboardQuerySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid leaderboard query",
+        issues: queryResult.error.issues,
+      });
+    }
+    const { limit } = queryResult.data;
 
     try {
       const leaderboard = await service.getLeaderboard({
@@ -97,7 +128,14 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/users/:userId/points", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
+    const paramsResult = userIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid user id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { userId } = paramsResult.data as { userId: UserId };
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
@@ -123,23 +161,17 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/points/award", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, ["teacher", "admin", "superadmin"]);
-    const body = request.body as Record<string, unknown>;
-    const userId = typeof body["userId"] === "string" ? (body["userId"] as UserId) : undefined;
-    const points = typeof body["points"] === "number" ? body["points"] : Number(body["points"]);
-    const reason = typeof body["reason"] === "string" ? body["reason"] : "Admin award";
-    const rawSourceType = typeof body["sourceType"] === "string" ? body["sourceType"] : "bonus";
-    const sourceType =
-      rawSourceType === "module_complete" ||
-      rawSourceType === "assessment" ||
-      rawSourceType === "streak" ||
-      rawSourceType === "daily_login" ||
-      rawSourceType === "bonus"
-        ? rawSourceType
-        : "bonus";
-
-    if (!userId || Number.isNaN(points)) {
-      return reply.code(400).send({ error: "Valid userId and points are required" });
+    const bodyResult = awardPointsBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid award payload",
+        issues: bodyResult.error.issues,
+      });
     }
+    const userId = bodyResult.data.userId as UserId;
+    const points = bodyResult.data.points;
+    const reason = bodyResult.data.reason ?? "Admin award";
+    const sourceType = bodyResult.data.sourceType ?? "bonus";
 
     try {
       const result = await service.awardPoints({
@@ -163,10 +195,14 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/leaderboard", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { limit, offset } = request.query as {
-      limit?: number;
-      offset?: number;
-    };
+    const queryResult = leaderboardQuerySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid leaderboard query",
+        issues: queryResult.error.issues,
+      });
+    }
+    const { limit, offset } = queryResult.data;
 
     try {
       const leaderboard = await service.getLeaderboard({
@@ -186,7 +222,14 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/users/:userId/achievements", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
+    const paramsResult = userIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid user id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { userId } = paramsResult.data as { userId: UserId };
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
@@ -205,16 +248,17 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/achievements/unlock", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, ["teacher", "admin", "superadmin"]);
-    const { userId, achievementId } = request.body as {
+    const bodyResult = unlockAchievementBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid unlock payload",
+        issues: bodyResult.error.issues,
+      });
+    }
+    const { userId, achievementId } = bodyResult.data as {
       userId: UserId;
       achievementId: string;
     };
-
-    if (!userId || !achievementId) {
-      return reply
-        .code(400)
-        .send({ error: "User ID and achievement ID are required" });
-    }
 
     try {
       const userAchievement = await prisma.userAchievement.create({
@@ -241,7 +285,14 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/streaks/:userId", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
+    const paramsResult = userIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid user id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { userId } = paramsResult.data as { userId: UserId };
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {

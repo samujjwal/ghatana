@@ -15,6 +15,7 @@ import {
   getUserId,
   roleGuard,
 } from "../../../core/http/requestContext.js";
+import { z } from "zod";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { GenerationReviewService } from "./review-service.js";
 import { GenerationQualityLoopService } from "./quality-loop-service.js";
@@ -25,6 +26,25 @@ interface SubmitReviewDecisionInput {
   decisionNote?: string;
   regenerateJobIds?: string[];
 }
+
+const requestIdParamsSchema = z.object({
+  requestId: z.string().trim().min(1),
+});
+
+const reviewDecisionBodySchema = z.object({
+  status: z.enum(["approved", "rejected", "regeneration_requested"]),
+  decisionNote: z.string().trim().min(1).optional(),
+  regenerateJobIds: z.array(z.string().trim().min(1)).optional(),
+});
+
+const processQualityLoopBodySchema = z.object({
+  autoPublish: z.boolean().optional(),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
 
 export function registerReviewRoutes(
   app: FastifyInstance,
@@ -46,11 +66,25 @@ export function registerReviewRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request);
       const reviewedBy = getUserId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const bodyResult = reviewDecisionBodySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const input: SubmitReviewDecisionInput = {
         requestId,
-        ...request.body,
+        ...bodyResult.data,
       };
 
       const decision = await service.submitDecision(tenantId, reviewedBy, input);
@@ -66,7 +100,14 @@ export function registerReviewRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const decisions = await service.listDecisions(tenantId, requestId);
       return reply.status(200).send({ decisions });
@@ -81,7 +122,14 @@ export function registerReviewRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const decision = await service.getLatestDecision(tenantId, requestId);
       if (!decision) {
@@ -99,7 +147,14 @@ export function registerReviewRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const summary = await qualityLoopService.processRequestOutcome(
         tenantId,
@@ -124,13 +179,29 @@ export function registerReviewRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request);
       const reviewedBy = getUserId(request);
-      const { requestId } = request.params;
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const bodyResult = processQualityLoopBodySchema.safeParse(
+        request.body ?? {},
+      );
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { requestId } = paramsResult.data;
 
       const summary = await qualityLoopService.processRequestOutcome(
         tenantId,
         requestId,
         {
-          autoPublish: request.body?.autoPublish ?? true,
+          autoPublish: bodyResult.data.autoPublish ?? true,
           actorId: reviewedBy,
         },
       );

@@ -23,6 +23,18 @@ import {
   evaluateAchievements,
   SimulationResult,
 } from "./rules/simulation-achievement-rules";
+import { z } from "zod";
+
+const simulationResultSchema = z.object({
+  userId: z.string().min(1),
+  simulationId: z.string().min(1),
+  simulationName: z.string().min(1),
+  score: z.number(),
+  maxScore: z.number().positive(),
+  completionTime: z.number().nonnegative(),
+  attempts: z.number().int().positive(),
+  domainPackId: z.string().min(1).optional(),
+});
 
 export async function credentialRoutes(
   fastify: FastifyInstance,
@@ -36,7 +48,23 @@ export async function credentialRoutes(
     "/users/:userId/credentials",
     async (request, reply) => {
       const { userId } = request.params;
-      const filter = CredentialFilterSchema.parse(request.query);
+      const query = request.query as Record<string, unknown>;
+      const filterResult = CredentialFilterSchema.safeParse({
+        ...query,
+        ...(typeof query.page === "string" ? { page: Number(query.page) } : {}),
+        ...(typeof query.limit === "string"
+          ? { limit: Number(query.limit) }
+          : {}),
+      });
+      if (!filterResult.success) {
+        reply.code(400).send({
+          error: "Invalid credential filter query",
+          issues: filterResult.error.issues,
+        });
+        return;
+      }
+
+      const filter = filterResult.data;
       const tenantId = getTenantId(request);
       const currentUserId = getUserId(request);
 
@@ -69,7 +97,16 @@ export async function credentialRoutes(
   fastify.post<{ Body: IssueCredentialDTO }>(
     "/credentials",
     async (request, reply) => {
-      const dto = IssueCredentialDTOSchema.parse(request.body);
+      const dtoResult = IssueCredentialDTOSchema.safeParse(request.body);
+      if (!dtoResult.success) {
+        reply.code(400).send({
+          error: "Invalid credential issue payload",
+          issues: dtoResult.error.issues,
+        });
+        return;
+      }
+
+      const dto = dtoResult.data;
       const tenantId = getTenantId(request);
       void getUserId(request);
       requireRole(request, privilegedCredentialRoles);
@@ -192,7 +229,16 @@ export async function credentialRoutes(
   fastify.post<{ Body: SimulationResult }>(
     "/credentials/evaluate",
     async (request, reply) => {
-      const result = request.body;
+      const resultValidation = simulationResultSchema.safeParse(request.body);
+      if (!resultValidation.success) {
+        reply.code(400).send({
+          error: "Invalid simulation result payload",
+          issues: resultValidation.error.issues,
+        });
+        return;
+      }
+
+      const result = resultValidation.data as SimulationResult;
       const tenantId = getTenantId(request);
       const requesterId = getUserId(request);
 

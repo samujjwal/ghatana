@@ -6,6 +6,22 @@ import {
   requireSelfOrRole,
   requireRole,
 } from "../../../core/http/requestContext.js";
+import { z } from "zod";
+
+const userIdParamsSchema = z.object({
+  userId: z.string().min(1),
+});
+
+const awardBadgeBodySchema = z.object({
+  userId: z.string().min(1),
+  badgeId: z.string().min(1),
+  reason: z.string().optional(),
+});
+
+const generateCertificateBodySchema = z.object({
+  moduleId: z.string().min(1),
+  completionDate: z.string().datetime().optional(),
+});
 
 /**
  * Credentials routes - badges and certificates.
@@ -45,7 +61,14 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/users/:userId/badges", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
+    const paramsResult = userIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid user id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { userId } = paramsResult.data as { userId: UserId };
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
@@ -72,17 +95,18 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     const adminUserId = getUserId(request) as UserId;
     requireRole(request, ["teacher", "admin", "superadmin"]);
-    const { userId, badgeId, reason } = request.body as {
+    const bodyResult = awardBadgeBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid badge award payload",
+        issues: bodyResult.error.issues,
+      });
+    }
+    const { userId, badgeId, reason } = bodyResult.data as {
       userId: UserId;
       badgeId: string;
       reason?: string;
     };
-
-    if (!userId || !badgeId) {
-      return reply
-        .code(400)
-        .send({ error: "User ID and badge ID are required" });
-    }
 
     try {
       const userBadge = await prisma.userBadge.create({
@@ -135,14 +159,14 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
   app.post("/certificates/generate", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
-    const { moduleId, completionDate } = request.body as {
-      moduleId: string;
-      completionDate?: string;
-    };
-
-    if (!moduleId) {
-      return reply.code(400).send({ error: "Module ID is required" });
+    const bodyResult = generateCertificateBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid certificate payload",
+        issues: bodyResult.error.issues,
+      });
     }
+    const { moduleId, completionDate } = bodyResult.data;
 
     try {
       const certificate = await prisma.certificate.create({

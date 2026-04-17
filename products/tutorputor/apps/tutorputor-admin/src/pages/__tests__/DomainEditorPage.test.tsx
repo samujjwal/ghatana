@@ -19,21 +19,19 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-
-// Mock the DomainEditorPage component (source file doesn't exist yet)
-const DomainEditorPage = () => <div>DomainEditorPage (Placeholder)</div>;
+import { DomainEditorPage } from "../DomainEditorPage";
 
 // Mock fetch
 global.fetch = vi.fn();
 
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-    },
-});
-
 const renderWithProviders = (component: React.ReactElement) => {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+        },
+    });
+
     return render(
         <QueryClientProvider client={queryClient}>
             {component}
@@ -41,11 +39,9 @@ const renderWithProviders = (component: React.ReactElement) => {
     );
 };
 
-// TODO: Re-enable when DomainEditorPage component is implemented
-describe.skip("DomainEditorPage", () => {
+describe("DomainEditorPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        queryClient.clear();
     });
 
     describe("Domain List Display", () => {

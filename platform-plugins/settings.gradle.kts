@@ -14,6 +14,7 @@ include("plugin-compliance")
 include("plugin-consent")
 include("plugin-risk-management")
 include("plugin-audit-trail")
+include("plugin-human-approval")
 
 // =============================================================================
 // Version Catalog Bridge

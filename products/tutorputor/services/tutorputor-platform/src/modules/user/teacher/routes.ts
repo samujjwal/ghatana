@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { TeacherServiceImpl } from "./service";
+import { z } from "zod";
 import {
   getTenantId,
   getUserId,
@@ -12,6 +13,60 @@ import type {
   ModuleId,
 } from "@tutorputor/contracts/v1/types";
 
+type TeacherRoutesService = Pick<
+  TeacherServiceImpl,
+  | "getTeacherDashboard"
+  | "createClassroom"
+  | "getClassroom"
+  | "addStudentToClassroom"
+  | "removeStudentFromClassroom"
+  | "assignModule"
+  | "getClassroomProgress"
+  | "checkHealth"
+>;
+
+type TeacherRoutesOptions = {
+  service?: TeacherRoutesService;
+};
+
+const ClassroomParamsSchema = z.object({
+  classroomId: z.string().min(1),
+});
+
+const ClassroomStudentParamsSchema = z.object({
+  classroomId: z.string().min(1),
+  studentId: z.string().min(1),
+});
+
+const CreateClassroomBodySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1).optional(),
+});
+
+const AddStudentBodySchema = z.object({
+  studentId: z.string().min(1),
+  displayName: z.string().min(1),
+  email: z.string().email().optional(),
+});
+
+const AssignModuleBodySchema = z.object({
+  moduleId: z.string().min(1),
+  dueAt: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: "Invalid date format",
+    })
+    .optional(),
+});
+
+function createValidationErrorResponse(error: z.ZodError) {
+  const primaryIssue = error.issues[0];
+  return {
+    error: "Validation Error",
+    message: primaryIssue?.message ?? "Invalid request payload",
+  };
+}
+
 /**
  * Teacher routes - classroom management and student progress tracking.
  *
@@ -20,8 +75,11 @@ import type {
  * @doc.layer product
  * @doc.pattern REST API
  */
-export const teacherRoutes: FastifyPluginAsync = async (app) => {
-  const teacherService = new TeacherServiceImpl(app.prisma);
+export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
+  app,
+  options,
+) => {
+  const teacherService = options.service ?? new TeacherServiceImpl(app.prisma);
   const teacherRoles = ["teacher", "admin", "superadmin"];
 
   /**
@@ -57,14 +115,12 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
     const teacherId = getUserId(request) as UserId;
     requireRole(request, teacherRoles);
 
-    const { name, description } = request.body as {
-      name: string;
-      description?: string;
-    };
-
-    if (!name) {
-      return reply.code(400).send({ error: "Classroom name is required" });
+    const parseResult = CreateClassroomBodySchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
     }
+
+    const { name, description } = parseResult.data;
 
     try {
       const classroom = await teacherService.createClassroom({
@@ -89,8 +145,16 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/classrooms/:classroomId", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { classroomId } = request.params as { classroomId: ClassroomId };
     requireRole(request, teacherRoles);
+
+    const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(paramsParseResult.error));
+    }
+
+    const { classroomId } = paramsParseResult.data;
 
     try {
       const classroom = await teacherService.getClassroom({
@@ -116,20 +180,24 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post("/classrooms/:classroomId/students", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { classroomId } = request.params as { classroomId: ClassroomId };
-    const { studentId, displayName, email } = request.body as {
-      studentId: UserId;
-      displayName: string;
-      email?: string;
-    };
-
     requireRole(request, teacherRoles);
 
-    if (!studentId || !displayName) {
+    const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
       return reply
         .code(400)
-        .send({ error: "Student ID and display name are required" });
+        .send(createValidationErrorResponse(paramsParseResult.error));
     }
+
+    const bodyParseResult = AddStudentBodySchema.safeParse(request.body);
+    if (!bodyParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(bodyParseResult.error));
+    }
+
+    const { classroomId } = paramsParseResult.data;
+    const { studentId, displayName, email } = bodyParseResult.data;
 
     try {
       const classroom = await teacherService.addStudentToClassroom({
@@ -160,11 +228,18 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
     "/classrooms/:classroomId/students/:studentId",
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
-      const { classroomId, studentId } = request.params as {
-        classroomId: ClassroomId;
-        studentId: UserId;
-      };
       requireRole(request, teacherRoles);
+
+      const paramsParseResult = ClassroomStudentParamsSchema.safeParse(
+        request.params,
+      );
+      if (!paramsParseResult.success) {
+        return reply
+          .code(400)
+          .send(createValidationErrorResponse(paramsParseResult.error));
+      }
+
+      const { classroomId, studentId } = paramsParseResult.data;
 
       try {
         const classroom = await teacherService.removeStudentFromClassroom({
@@ -192,17 +267,24 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post("/classrooms/:classroomId/assignments", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { classroomId } = request.params as { classroomId: ClassroomId };
-    const { moduleId, dueAt } = request.body as {
-      moduleId: ModuleId;
-      dueAt?: string;
-    };
-
     requireRole(request, teacherRoles);
 
-    if (!moduleId) {
-      return reply.code(400).send({ error: "Module ID is required" });
+    const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(paramsParseResult.error));
     }
+
+    const bodyParseResult = AssignModuleBodySchema.safeParse(request.body);
+    if (!bodyParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(bodyParseResult.error));
+    }
+
+    const { classroomId } = paramsParseResult.data;
+    const { moduleId, dueAt } = bodyParseResult.data;
 
     try {
       const dueAtIso = dueAt ? new Date(dueAt).toISOString() : undefined;
@@ -231,8 +313,16 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/classrooms/:classroomId/progress", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const { classroomId } = request.params as { classroomId: ClassroomId };
     requireRole(request, teacherRoles);
+
+    const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(paramsParseResult.error));
+    }
+
+    const { classroomId } = paramsParseResult.data;
 
     try {
       const progress = await teacherService.getClassroomProgress({

@@ -62,13 +62,12 @@ public class ContractValidationGate {
     }
 
     private void registerDefaultValidators() {
-        // TODO: Re-enable validators after fixing schema/metadata compatibility issues
-        // validators.put(KernelContract.ContractFamily.API, new APIContractValidator());
-        // validators.put(KernelContract.ContractFamily.SCHEMA, new SchemaContractValidator());
-        // validators.put(KernelContract.ContractFamily.EVENT, new EventContractValidator());
-        // validators.put(KernelContract.ContractFamily.EXPERIENCE, new ExperienceContractValidator());
-        // validators.put(KernelContract.ContractFamily.ANALYTICS, new AnalyticsContractValidator());
-        // validators.put(KernelContract.ContractFamily.AUTONOMOUS, new AutonomousContractValidator());
+        validators.put(KernelContract.ContractFamily.API, new APIContractValidator());
+        validators.put(KernelContract.ContractFamily.SCHEMA, new SchemaContractValidator());
+        validators.put(KernelContract.ContractFamily.EXPERIENCE, new ExperienceContractValidator());
+        validators.put(KernelContract.ContractFamily.ANALYTICS, new AnalyticsContractValidator());
+        validators.put(KernelContract.ContractFamily.AUTONOMY, new AutonomousContractValidator());
+        validators.put(KernelContract.ContractFamily.PACKAGING, new PackagingContractValidator());
     }
 
     /**

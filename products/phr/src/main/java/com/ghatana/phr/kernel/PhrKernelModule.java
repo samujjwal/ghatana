@@ -11,6 +11,7 @@ import com.ghatana.kernel.module.AbstractKernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.api.FhirController;
 import com.ghatana.phr.api.NepalHieController;
+import com.ghatana.phr.api.PhrHttpServer;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.hie.HttpNepalHieClient;
 import com.ghatana.phr.hie.NepalHieConfig;
@@ -161,6 +162,8 @@ public class PhrKernelModule extends AbstractKernelModule {
         CaregiverService caregivers = new CaregiverService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
+        PhrHttpServer phrHttpServer = new PhrHttpServer(fhirServer, fhirController);
+        context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
         context.registerService(FhirController.class, fhirController);
         context.registerService(NepalHieIntegrationService.class, nepalHieIntegration);
@@ -190,6 +193,7 @@ public class PhrKernelModule extends AbstractKernelModule {
         services.add(medications);
         services.add(labResults);
         services.add(immunizations);
+        services.add(phrHttpServer);
         services.add(fhirServer);
         services.add(nepalHieIntegration);
         services.add(hl7LabIntegration);

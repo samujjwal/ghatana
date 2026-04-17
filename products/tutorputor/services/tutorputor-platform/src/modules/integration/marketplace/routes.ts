@@ -15,6 +15,7 @@ import {
   respondWithErrors,
 } from "../../../core/http/requestContext.js";
 import { createMarketplaceService } from "./service.js";
+import { z } from "zod";
 
 const SIMULATION_TEMPLATE_DIFFICULTIES = [
   "BEGINNER",
@@ -31,6 +32,43 @@ function isSimulationTemplateDifficulty(
   );
 }
 
+const listingQuerySchema = z.object({
+  status: z.string().min(1).optional(),
+  visibility: z.string().min(1).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+const createListingBodySchema = z.object({
+  moduleId: z.string().min(1),
+  priceCents: z.number().int().nonnegative(),
+  visibility: z.string().min(1),
+});
+
+const listingIdParamsSchema = z.object({
+  listingId: z.string().min(1),
+});
+
+const updateListingBodySchema = z.object({
+  status: z.string().min(1).optional(),
+  visibility: z.string().min(1).optional(),
+  priceCents: z.number().int().nonnegative().optional(),
+});
+
+const templateQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(100).optional(),
+  domains: z.string().optional(),
+  difficulties: z.string().optional(),
+  tags: z.string().optional(),
+  isPremium: z.enum(["true", "false"]).optional(),
+  isVerified: z.enum(["true", "false"]).optional(),
+  minRating: z.coerce.number().min(0).max(5).optional(),
+  search: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
+
 /**
  * Marketplace routes.
  *
@@ -39,21 +77,30 @@ function isSimulationTemplateDifficulty(
  * @doc.layer product
  * @doc.pattern Modular Plugin
  */
-export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
+export const marketplaceRoutes: FastifyPluginAsync<{
+  service?: ReturnType<typeof createMarketplaceService>;
+}> = async (app, options) => {
   const prisma = app.prisma;
-  const marketplaceService = createMarketplaceService(prisma);
+  const marketplaceService = options.service ?? createMarketplaceService(prisma);
 
   // GET /listings
   app.get("/listings", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { status, visibility, cursor, limit } = (req.query ?? {}) as any;
+    const queryResult = listingQuerySchema.safeParse(req.query ?? {});
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid marketplace listing query",
+        issues: queryResult.error.issues,
+      });
+    }
+    const { status, visibility, cursor, limit } = queryResult.data;
 
     const listings = await marketplaceService.listListings({
       tenantId: tenantId as TenantId,
       ...(status ? { status } : {}),
       ...(visibility ? { visibility } : {}),
       ...(cursor ? { cursor } : {}),
-      ...(limit ? { limit: Number(limit) } : {}),
+      ...(limit ? { limit } : {}),
     });
     reply.send(listings);
   });
@@ -64,11 +111,14 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
     const creatorId = getUserId(req);
     requireRole(req, ["creator", "admin", "teacher"]);
 
-    const payload = req.body as {
-      moduleId: string;
-      priceCents: number;
-      visibility: MarketplaceListing["visibility"];
-    };
+    const payloadResult = createListingBodySchema.safeParse(req.body);
+    if (!payloadResult.success) {
+      return reply.code(400).send({
+        error: "Invalid marketplace listing payload",
+        issues: payloadResult.error.issues,
+      });
+    }
+    const payload = payloadResult.data;
 
     await respondWithErrors(reply, () =>
       marketplaceService.createListing({
@@ -87,8 +137,22 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
     const userId = getUserId(req);
     requireRole(req, ["creator", "admin", "teacher"]);
     const userRole = getUserRole(req);
-    const { listingId } = req.params as { listingId: string };
-    const body = req.body as Partial<
+    const paramsResult = listingIdParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid listing id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const bodyResult = updateListingBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid listing update payload",
+        issues: bodyResult.error.issues,
+      });
+    }
+    const { listingId } = paramsResult.data;
+    const body = bodyResult.data as Partial<
       Pick<MarketplaceListing, "status" | "visibility" | "priceCents">
     >;
 
@@ -118,6 +182,14 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
   // GET /templates
   app.get("/templates", async (req, reply) => {
     const tenantId = getTenantId(req);
+    const queryResult = templateQuerySchema.safeParse(req.query ?? {});
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid template query",
+        issues: queryResult.error.issues,
+      });
+    }
+
     const {
       page,
       pageSize,
@@ -130,7 +202,7 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
       search,
       sortBy,
       sortOrder,
-    } = (req.query ?? {}) as any;
+    } = queryResult.data;
 
     await respondWithErrors(reply, () =>
       marketplaceService.listSimulationTemplates({

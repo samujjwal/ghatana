@@ -15,7 +15,29 @@ const CreateSubscriptionSchema = z.object({
   trialDays: z.number().int().min(0).optional(),
 });
 
+const CancelSubscriptionSchema = z.object({
+  atPeriodEnd: z.boolean().optional(),
+  reason: z.string().min(1).optional(),
+});
+
+const ChangeSubscriptionSchema = z.object({
+  planId: z.string().min(1),
+  billingInterval: z.enum(["monthly", "quarterly", "annual"]),
+});
+
+const BillingPortalSchema = z.object({
+  returnUrl: z.string().url().optional(),
+});
+
 type CreateSubscriptionDto = z.infer<typeof CreateSubscriptionSchema>;
+
+function createValidationErrorResponse(error: z.ZodError) {
+  const primaryIssue = error.issues[0];
+  return {
+    error: "Validation Error",
+    message: primaryIssue?.message ?? "Invalid request payload",
+  };
+}
 
 /**
  * Subscription management routes.
@@ -47,7 +69,12 @@ export async function paymentRoutes(
   fastify.post<{ Body: CreateSubscriptionDto }>(
     "/payments/subscriptions",
     async (request, reply) => {
-      const body = CreateSubscriptionSchema.parse(request.body);
+      const parseResult = CreateSubscriptionSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+
+      const body = parseResult.data;
       const tenantId = getTenantId(request) as TenantId;
 
       const subscription = await service.createSubscription({
@@ -83,8 +110,12 @@ export async function paymentRoutes(
     "/payments/subscription/cancel",
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
-      const { atPeriodEnd = true, reason } =
-        (request.body as { atPeriodEnd?: boolean; reason?: string }) ?? {};
+      const parseResult = CancelSubscriptionSchema.safeParse(request.body ?? {});
+      if (!parseResult.success) {
+        return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+
+      const { atPeriodEnd = true, reason } = parseResult.data;
 
       await respondWithErrors(reply, async () => {
         const currentSub = await service.getCurrentSubscription({ tenantId });
@@ -112,16 +143,12 @@ export async function paymentRoutes(
     "/payments/subscription/change",
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
-      const { planId, billingInterval } = request.body as {
-        planId: string;
-        billingInterval: string;
-      };
-
-      if (!planId || !billingInterval) {
-        return reply
-          .code(400)
-          .send({ error: "planId and billingInterval are required" });
+      const parseResult = ChangeSubscriptionSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.code(400).send(createValidationErrorResponse(parseResult.error));
       }
+
+      const { planId, billingInterval } = parseResult.data;
 
       await respondWithErrors(reply, async () => {
         const currentSub = await service.getCurrentSubscription({ tenantId });
@@ -150,7 +177,12 @@ export async function paymentRoutes(
    */
   fastify.post<{ Body: { returnUrl?: string } }>(
     "/payments/portal",
-    async (_request, reply) => {
+    async (request, reply) => {
+      const parseResult = BillingPortalSchema.safeParse(request.body ?? {});
+      if (!parseResult.success) {
+        return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+
       return reply.code(501).send({
         message:
           "Billing portal sessions require Stripe configuration. Set STRIPE_SECRET_KEY to enable.",
