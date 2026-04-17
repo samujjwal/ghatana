@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Deep Linking Utilities for Lifecycle
  * 

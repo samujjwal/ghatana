@@ -114,7 +114,7 @@ export const IntentDrawer: React.FC<IntentDrawerProps> = ({
         try {
             const result = await onSave(kind, data);
             // After saving, navigate to the project canvas with artifacts panel
-            navigate(`/app/p/${result.projectId}/canvas?panel=artifacts`);
+            navigate(`/p/${result.projectId}/canvas?panel=artifacts`);
         } finally {
             setIsSubmitting(false);
         }

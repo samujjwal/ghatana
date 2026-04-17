@@ -47,6 +47,7 @@ if (!RUN) {
   const { authRoutes } = await import('../routes/auth');
   const workspaceRoutes = (await import('../routes/workspaces')).default;
   const projectRoutes = (await import('../routes/projects')).default;
+  const canvasRoutes = (await import('../routes/canvas')).default;
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -59,6 +60,7 @@ if (!RUN) {
     void app.register(authRoutes);
     void app.register(workspaceRoutes);
     void app.register(projectRoutes);
+    void app.register(canvasRoutes);
 
     return { app, prisma };
   }
@@ -362,6 +364,59 @@ if (!RUN) {
         const body = JSON.parse(response.body) as unknown[];
         expect(Array.isArray(body)).toBe(true);
         expect(body.length).toBeGreaterThan(0);
+      });
+
+      it('saves and reloads unified canvas state for a project', async () => {
+        if (!projectId) return;
+
+        const canvasPayload = {
+          nodes: [
+            {
+              id: 'node-1',
+              type: 'input',
+              position: { x: 120, y: 140 },
+              data: { label: 'Release Gate Node' },
+            },
+          ],
+          edges: [],
+          viewport: {
+            x: 0,
+            y: 0,
+            zoom: 1,
+          },
+        };
+
+        const saveResponse = await app.inject({
+          method: 'PUT',
+          url: `/projects/${projectId}/canvas`,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          payload: {
+            data: canvasPayload,
+            changeType: 'MANUAL_SAVE',
+            changeSummary: 'Canvas save/load E2E proof',
+          },
+        });
+
+        expect(saveResponse.statusCode).toBe(200);
+
+        const loadResponse = await app.inject({
+          method: 'GET',
+          url: `/canvas/${projectId}/unified-canvas`,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        expect(loadResponse.statusCode).toBe(200);
+        const loadedBody = JSON.parse(loadResponse.body) as {
+          canvas?: { data?: { nodes?: Array<{ id: string; data?: { label?: string } }> } };
+        };
+        expect(loadedBody.canvas?.data?.nodes?.[0]?.id).toBe('node-1');
+        expect(loadedBody.canvas?.data?.nodes?.[0]?.data?.label).toBe(
+          'Release Gate Node'
+        );
       });
     });
   });

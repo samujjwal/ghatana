@@ -17,7 +17,7 @@ vi.mock('react-router', async (importOriginal) => {
     ...actual,
     useParams: () => ({ projectId: 'proj-42' }),
     useNavigate: () => vi.fn(),
-    useLocation: () => ({ pathname: '/app/p/proj-42/canvas' }),
+    useLocation: () => ({ pathname: '/p/proj-42/canvas' }),
     Outlet: () => <div data-testid="outlet" />,
     NavLink: ({
       to,
@@ -107,10 +107,11 @@ describe('Project shell — navigation tabs', () => {
 
   it('renders the tab bar with all expected tabs', () => {
     render(<Layout />);
-    const tabs = ['Canvas', 'Workspace', 'Preview', 'Lifecycle', 'Deploy', 'Settings'];
+    const tabs = ['Canvas', 'Workspace', 'Lifecycle', 'Deploy', 'Settings'];
     for (const label of tabs) {
       expect(screen.getByText(label)).toBeDefined();
     }
+    expect(screen.queryByText('Preview')).toBeNull();
   });
 
   it('renders a Lifecycle tab linking to the lifecycle route', () => {
@@ -144,7 +145,7 @@ describe('Project shell — non-canvas route tab visibility', () => {
         ...actual,
         useParams: () => ({ projectId: 'proj-42' }),
         useNavigate: () => vi.fn(),
-        useLocation: () => ({ pathname: '/app/p/proj-42/deploy' }),
+        useLocation: () => ({ pathname: '/p/proj-42/deploy' }),
         Outlet: () => <div data-testid="outlet" />,
         NavLink: ({ to, children, role }: { to: string; children: React.ReactNode; role?: string }) =>
           React.createElement('a', { href: to, role }, children),
@@ -152,7 +153,7 @@ describe('Project shell — non-canvas route tab visibility', () => {
     });
   });
 
-  it('renders all 6 tabs on non-canvas routes', () => {
+  it('renders all default tabs on non-canvas routes', () => {
     render(<Layout />);
     // Even without the override taking effect (vitest module caching), the component
     // still renders correctly — just verify no crash and outlet is present.

@@ -4,7 +4,6 @@
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/ui';
 import {
   CommentReply
 } from './types';
@@ -16,6 +15,11 @@ import type {
   Comment,
   CollaborationEvent
 } from './types';
+
+const demoUserColors = {
+  error: '#ef4444',
+  info: '#0ea5e9',
+} as const;
 
 /**
  *
@@ -268,13 +272,13 @@ export class MockCollaborationProvider implements CollaborationProvider {
         id: 'user-2',
         name: 'Alice Johnson',
         email: 'alice@example.com',
-        color: palette.error.main, // Red for user avatar
+        color: demoUserColors.error, // Red for user avatar
       },
       {
         id: 'user-3',
         name: 'Bob Smith',
         email: 'bob@example.com',
-        color: palette.info.main, // Teal for user avatar
+        color: demoUserColors.info, // Teal for user avatar
       },
     ];
 

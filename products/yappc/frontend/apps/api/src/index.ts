@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import { createYoga, createSchema } from 'graphql-yoga';
 import fastify from 'fastify';
+import { randomUUID } from 'node:crypto';
 import cors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
 import fs from 'fs';
@@ -31,6 +32,7 @@ import devsecopsRoutes from './routes/devsecops';
 import canvasRoutes from './routes/canvas';
 import lifecycleRoutes from './routes/lifecycle';
 import telemetryRoutes from './routes/telemetry';
+import aiRoutes from './routes/ai';
 import { devAuthBypass } from './middleware/devAuth';
 import {
   assertDevAuthBypassAllowed,
@@ -134,10 +136,22 @@ export async function createApp(
   await app.register(fastifyWebsocket);
 
   app.addHook('onRequest', async (request) => {
+    const headerValue = request.headers['x-correlation-id'];
+    const correlationId =
+      typeof headerValue === 'string' && headerValue.trim().length > 0
+        ? headerValue
+        : randomUUID();
+
+    request.correlationId = correlationId;
+    request.log = request.log.child({ correlationId });
+    request.headers['x-correlation-id'] = correlationId;
+
     request.startTime = Date.now();
   });
 
   app.addHook('onResponse', async (request, reply) => {
+    reply.header('x-correlation-id', request.correlationId);
+
     const duration = (Date.now() - request.startTime!) / 1000;
     const route = (request as unknown as { routerPath?: string }).routerPath || request.url;
     const method = request.method;
@@ -180,6 +194,7 @@ export async function createApp(
   registerApiPrefixes(app, canvasRoutes);
   registerApiPrefixes(app, lifecycleRoutes);
   registerApiPrefixes(app, telemetryRoutes);
+  registerApiPrefixes(app, aiRoutes);
 
 async function readResponseText(response: Response): Promise<string> {
   try {
@@ -223,6 +238,7 @@ async function readResponseText(response: Response): Promise<string> {
       reply.status(503).send({
         error: 'Service Unavailable',
         message: 'Could not reach backend service',
+        correlationId: request.correlationId,
       });
     }
   });
@@ -259,6 +275,7 @@ async function readResponseText(response: Response): Promise<string> {
       reply.status(503).send({
         error: 'Service Unavailable',
         message: 'Could not reach backend service',
+        correlationId: request.correlationId,
       });
     }
   });
@@ -295,6 +312,7 @@ async function readResponseText(response: Response): Promise<string> {
       reply.status(503).send({
         error: 'Service Unavailable',
         message: 'Could not reach backend service',
+        correlationId: request.correlationId,
       });
     }
   });
@@ -376,5 +394,6 @@ process.on('SIGTERM', async () => {
 declare module 'fastify' {
   interface FastifyRequest {
     startTime?: number;
+    correlationId: string;
   }
 }

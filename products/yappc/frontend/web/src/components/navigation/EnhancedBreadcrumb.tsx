@@ -387,7 +387,7 @@ export function EnhancedBreadcrumb({
                 label: ws.name,
                 icon: <Folder className="w-4 h-4" />,
                 badge: ws.isOwner ? 'Owner' : 'Member',
-                href: `/app`,
+                href: `/workspaces`,
                 isActive: ws.id === workspace.id,
             })),
             footer: showCreateActions ? [
@@ -399,7 +399,7 @@ export function EnhancedBreadcrumb({
                 {
                     label: 'Manage Workspaces',
                     icon: <Settings className="w-4 h-4" />,
-                    onClick: () => navigate('/app/workspaces'),
+                    onClick: () => navigate('/workspaces'),
                 },
             ] : undefined,
         };
@@ -429,7 +429,7 @@ export function EnhancedBreadcrumb({
                 id: p.id,
                 label: p.name,
                 icon: <Folder className="w-4 h-4" />,
-                href: `/app/p/${p.id}`,
+                href: `/p/${p.id}`,
                 isActive: p.id === project.id,
             })),
             sections: hasRecent ? [
@@ -439,7 +439,7 @@ export function EnhancedBreadcrumb({
                         id: p.id,
                         label: p.name,
                         icon: <Folder className="w-4 h-4" />,
-                        href: `/app/p/${p.id}`,
+                        href: `/p/${p.id}`,
                     })),
                 },
                 {
@@ -448,7 +448,7 @@ export function EnhancedBreadcrumb({
                         id: p.id,
                         label: p.name,
                         icon: <Folder className="w-4 h-4" />,
-                        href: `/app/p/${p.id}`,
+                        href: `/p/${p.id}`,
                     })),
                 },
             ] : undefined,
@@ -458,12 +458,12 @@ export function EnhancedBreadcrumb({
                 {
                     label: 'Create New Project',
                     icon: <Add className="w-4 h-4" />,
-                    onClick: onCreateProject || (() => navigate('/app')),
+                    onClick: onCreateProject || (() => navigate('/projects')),
                 },
                 {
                     label: 'Browse All Projects',
                     icon: <Folder className="w-4 h-4" />,
-                    onClick: () => navigate('/app/projects'),
+                    onClick: () => navigate('/projects'),
                 },
             ] : undefined,
         };
@@ -476,7 +476,7 @@ export function EnhancedBreadcrumb({
                 type: 'home',
                 label: 'Home',
                 icon: <Home className="w-4 h-4" />,
-                href: '/app',
+                href: '/',
             },
         ];
 

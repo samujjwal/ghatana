@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Header Bar
  * 
@@ -141,7 +140,7 @@ export function UnifiedHeaderBar({
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Logo */}
                 <Link
-                    to="/app"
+                    to="/"
                     className="flex items-center gap-2 px-3 py-2 no-underline hover:opacity-80 transition-opacity flex-shrink-0"
                     aria-label="YAPPC Home"
                 >

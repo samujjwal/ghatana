@@ -37,7 +37,7 @@ export default function NotFoundRoute() {
                 {/* Navigation Options */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Link
-                        to="/app"
+                        to="/"
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors no-underline"
                     >
                         <Home className="w-5 h-5" />
@@ -56,7 +56,7 @@ export default function NotFoundRoute() {
                 <p className="mt-8 text-sm text-text-secondary">
                     Need help?{' '}
                     <Link
-                        to="/app"
+                        to="/"
                         className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                     >
                         Contact support

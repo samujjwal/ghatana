@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Persona Icon Mapping
  * 
@@ -16,11 +15,12 @@ import { // Execution
     TrendingUp as TrendingIcon, ClipboardList as AssignmentIcon, GitBranch as AccountTreeIcon, LineChart as AnalyticsIcon, Users as GroupsIcon, BriefcaseBusiness as BusinessCenterIcon, User as PersonIcon, // Operations
     RocketLaunch as RocketIcon, HardDrive as StorageIcon, Headset as SupportAgentIcon, Headset as HeadsetIcon, // Administrative
     AdminPanelSettings as AdminIcon, Eye as VisibilityIcon, Settings as SettingsIcon } from 'lucide-react';
+import type { ReactElement } from 'react';
 
 /**
  * Icon mapping for each persona ID
  */
-export const PERSONA_ICONS: Record<string, React.ReactElement> = {
+export const PERSONA_ICONS: Record<string, ReactElement> = {
     // Technical
     'developer': <CodeIcon />,
     'tech-lead': <SupervisorIcon />,
@@ -58,6 +58,6 @@ export const PERSONA_ICONS: Record<string, React.ReactElement> = {
 /**
  * Get icon for a persona ID
  */
-export function getPersonaIcon(personaId: string): React.ReactElement {
+export function getPersonaIcon(personaId: string): ReactElement {
     return PERSONA_ICONS[personaId] || <PersonIcon />;
 }

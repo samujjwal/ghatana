@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useAICommand Hook
  *
@@ -539,7 +538,7 @@ export function useAICommand(): UseAICommandResult {
               type: 'navigate',
               summary: 'Navigate to project',
               details: {
-                targetUrl: '/app',
+                targetUrl: '/',
               },
               confidence: 0.9,
             };
@@ -743,7 +742,7 @@ export function useAICommand(): UseAICommandResult {
         }
 
         // Navigate to the new project's canvas with state
-        navigate(`/app/p/${project.id}/canvas`, {
+        navigate(`/p/${project.id}/canvas`, {
           state: {
             newProject: true,
             features: response.details.features,

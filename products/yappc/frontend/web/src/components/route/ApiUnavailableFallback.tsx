@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * API Unavailable Fallback Component
  *
@@ -29,11 +28,11 @@ export interface ApiUnavailableFallbackProps {
  * This component provides a polished error experience that explains to users
  * why the app isn't loading and what they can do about it.
  */
-export const ApiUnavailableFallback: React.FC<ApiUnavailableFallbackProps> = ({
+export function ApiUnavailableFallback({
   error,
   onRetry,
   isRetrying = false,
-}) => {
+}: ApiUnavailableFallbackProps): React.JSX.Element {
   return (
     <Box
       className="flex min-h-screen items-center justify-center p-4"
@@ -124,4 +123,4 @@ export const ApiUnavailableFallback: React.FC<ApiUnavailableFallbackProps> = ({
       </Container>
     </Box>
   );
-};
+}

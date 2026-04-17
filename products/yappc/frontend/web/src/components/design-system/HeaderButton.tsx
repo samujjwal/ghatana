@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * HeaderButton - Unified Button System for Top Bar
  * 
@@ -10,13 +9,13 @@
  * @doc.layer components
  */
 
-import React from 'react';
 import { IconButton, Tooltip, Badge } from '@ghatana/design-system';
 import { cn } from '../../lib/utils';
+import type { MouseEvent, ReactNode } from 'react';
 
 export interface HeaderButtonProps {
     /** Button icon */
-    icon?: React.ReactNode;
+    icon?: ReactNode;
     /** Button label (for non-icon buttons) */
     label?: string;
     /** Tooltip text */
@@ -30,7 +29,7 @@ export interface HeaderButtonProps {
     /** Is button disabled */
     disabled?: boolean;
     /** Click handler */
-    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
     /** Additional CSS classes */
     className?: string;
     /** Button size */
@@ -75,7 +74,6 @@ export function HeaderButton({
                 disabled && 'opacity-50 cursor-not-allowed',
                 className
             )}
-            className="rounded"
         >
             {icon}
         </IconButton>

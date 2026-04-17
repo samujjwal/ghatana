@@ -115,4 +115,22 @@ describe('WorkspacesRoute', () => {
     expect(mockSwitchWorkspace).toHaveBeenCalledWith('ws-1');
     expect(mockNavigate).toHaveBeenCalledWith('/projects');
   });
+
+  it('renders skeleton loading state while workspace data is loading', () => {
+    vi.mocked(useWorkspaceContext).mockReturnValue({
+      workspaces: [],
+      currentWorkspace: undefined,
+      currentWorkspaceId: null,
+      ownedProjects: [],
+      includedProjects: [],
+      isLoading: true,
+      error: null,
+      switchWorkspace: mockSwitchWorkspace,
+      refetch: vi.fn(),
+    });
+
+    renderRoute();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading workspaces...');
+  });
 });

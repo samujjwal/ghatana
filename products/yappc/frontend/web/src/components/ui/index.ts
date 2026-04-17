@@ -13,7 +13,19 @@ export {
   getPaletteMain,
 } from '@yappc/ui';
 export { usePersonas } from '@yappc/state/config-hooks';
-export { useKeyboardShortcuts } from '@yappc/ui/shortcuts';
+export {
+  CommandPalette,
+  ShortcutHelper,
+  useKeyboardShortcuts,
+  type Command,
+} from '@yappc/ui/shortcuts';
+export {
+  Breadcrumb,
+  TabNavigation,
+  StageNavigation,
+  type TabNavigationItem,
+  type StageNavigationProps,
+} from '@yappc/ui/navigation-ui';
 
 /**
  * UI Components Index

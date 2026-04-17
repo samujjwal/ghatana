@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Workflow Context Provider
  * 
@@ -142,7 +141,7 @@ const PHASE_ORDER: LifecyclePhase[] = [
  * Phase to route mapping
  */
 const PHASE_ROUTES: Record<LifecyclePhase, string> = {
-    [LifecyclePhase.INTENT]: '',  // /app/p/:id
+    [LifecyclePhase.INTENT]: '',  // /p/:id
     [LifecyclePhase.SHAPE]: 'canvas',
     [LifecyclePhase.VALIDATE]: 'canvas',  // Opens validation panel
     [LifecyclePhase.GENERATE]: 'canvas',  // Opens generation panel
@@ -303,7 +302,7 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
         else if (path.includes('/deploy')) section = 'deploy';
         else if (path.includes('/settings')) section = 'settings';
         else if (path.includes('/observe')) section = 'observe';
-        else if (path === '/app' || path === '/app/') section = 'intent';
+        else if (path === '/' || path === '/projects') section = 'intent';
         else if (isProjectRoute && !path.includes('/')) section = 'canvas'; // Default
 
         // Determine phase from section
@@ -467,9 +466,9 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
 
         const route = PHASE_ROUTES[phase];
         if (phase === LifecyclePhase.INTENT) {
-            navigate('/app');
+            navigate('/projects');
         } else {
-            navigate(`/app/p/${projectId}/${route}`);
+            navigate(`/p/${projectId}/${route}`);
         }
     }, [projectId, canTransitionTo, navigate]);
 

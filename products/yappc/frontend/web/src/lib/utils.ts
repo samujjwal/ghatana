@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cn as mergeCn } from '@ghatana/platform-utils';
 
 /**
@@ -76,7 +75,7 @@ export function debounce<T extends (...args: unknown[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {

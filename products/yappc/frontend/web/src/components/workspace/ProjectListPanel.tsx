@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Project List Panel
  * 
@@ -49,7 +48,7 @@ export function ProjectListPanel({
     })();
 
     const handleSelectProject = (project: ProjectWithOwnership) => {
-        navigate(`/app/project/${project.id}`);
+        navigate(`/p/${project.id}`);
     };
 
     // Get health color based on AI score

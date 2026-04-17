@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Header With Breadcrumb
  * 
@@ -12,7 +11,7 @@
  */
 import { useAtom } from 'jotai';
 
-import { Breadcrumb } from '@yappc/ui/navigation-ui';
+import { Breadcrumb } from '../ui';
 import { breadcrumbItemsAtom, navigationContextAtom } from '../../state/atoms/breadcrumbAtom';
 import { WorkspaceSelector } from './WorkspaceSelector';
 

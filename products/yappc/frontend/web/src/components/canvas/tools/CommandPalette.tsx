@@ -114,7 +114,7 @@ const createBuiltInCommands = ({
         keywords: ['home', 'dashboard', 'main'],
         shortcut: 'G H',
         icon: <Home className="w-4 h-4" />,
-        action: () => onNavigate('/app'),
+        action: () => onNavigate('/'),
       },
       {
         id: 'go-projects',
@@ -124,7 +124,7 @@ const createBuiltInCommands = ({
         keywords: ['projects', 'list', 'all'],
         shortcut: 'G P',
         icon: <Folder className="w-4 h-4" />,
-        action: () => onNavigate('/app/projects'),
+        action: () => onNavigate('/projects'),
       },
       {
         id: 'go-settings',

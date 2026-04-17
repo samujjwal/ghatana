@@ -45,6 +45,10 @@ type StoredSession = {
   expiresAt?: string;
 };
 
+type WorkspaceListResponse = {
+  workspaces?: Array<{ id: string }>;
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function loginAs(
@@ -76,6 +80,37 @@ async function writeStoredSession(
   await page.evaluate((nextSession) => {
     window.localStorage.setItem('auth-session', JSON.stringify(nextSession));
   }, session);
+}
+
+async function getAccessToken(
+  page: Parameters<Parameters<typeof test>[1]>[0]['page'],
+): Promise<string> {
+  const session = await readStoredSession(page);
+  if (!session?.token) {
+    throw new Error('Missing access token in auth-session localStorage entry');
+  }
+
+  return session.token;
+}
+
+async function getFirstWorkspaceId(
+  page: Parameters<Parameters<typeof test>[1]>[0]['page'],
+): Promise<string> {
+  const token = await getAccessToken(page);
+  const response = await page.request.get('/api/workspaces', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as WorkspaceListResponse;
+  const workspaceId = body.workspaces?.[0]?.id;
+  if (!workspaceId) {
+    throw new Error('No workspace available for release-gate CRUD checks');
+  }
+
+  return workspaceId;
 }
 
 async function logoutFromUserMenu(
@@ -122,7 +157,22 @@ test.describe('@release-gate Real backend smoke tests', () => {
   }) => {
     await loginAs(page, SMOKE_USER, SMOKE_PASSWORD);
 
+    const workspaceId = await getFirstWorkspaceId(page);
     const projectName = `smoke-${Date.now()}`;
+
+    const projectCreateRequestPromise = page.waitForRequest((request) => {
+      return (
+        request.method() === 'POST' &&
+        request.url().includes('/api/projects')
+      );
+    });
+
+    const projectCreateResponsePromise = page.waitForResponse((response) => {
+      return (
+        response.request().method() === 'POST' &&
+        response.url().includes('/api/projects')
+      );
+    });
 
     await page.goto('/projects');
     await expect(page.getByRole('heading', { name: /projects/i, level: 1 })).toBeVisible({ timeout: 10_000 });
@@ -131,6 +181,21 @@ test.describe('@release-gate Real backend smoke tests', () => {
     await page.getByTestId('project-name-input').fill(projectName);
     await page.getByTestId('project-description-input').fill('Release-gate browser proof');
     await page.getByTestId('create-project-submit').click();
+
+    const projectCreateRequest = await projectCreateRequestPromise;
+    expect(projectCreateRequest.postDataJSON()).toMatchObject({
+      name: projectName,
+      workspaceId,
+    });
+
+    const projectCreateResponse = await projectCreateResponsePromise;
+    expect(projectCreateResponse.ok()).toBeTruthy();
+
+    const projectCreateBody = (await projectCreateResponse.json()) as {
+      project?: { id?: string };
+    };
+    expect(projectCreateBody.project?.id).toBeTruthy();
+    expect(projectCreateBody.project?.id?.startsWith('temp-')).toBeFalsy();
 
     await page.waitForURL(/\/p\/[^/]+\/canvas/, { timeout: 15_000 });
 

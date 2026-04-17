@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Global Shortcut Context Provider
  * 
@@ -6,7 +5,12 @@
  * for the entire application. Manages context-aware shortcuts and power user features.
  */
 
-import { CommandPalette, ShortcutHelper, useKeyboardShortcuts, Command } from '@yappc/ui/shortcuts';
+import {
+    CommandPalette,
+    ShortcutHelper,
+    useKeyboardShortcuts,
+    type Command,
+} from '../components/ui';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -133,22 +137,22 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
             modifiers: ['cmd'],
             description: 'Open settings',
             category: 'Global',
-            handler: () => navigate('/app/settings')
+            handler: () => navigate('/settings')
         }));
 
         // Navigation shortcuts (⌘1-6)
-        const projectMatch = location.pathname.match(/\/app\/workspace\/([^/]+)\/project\/([^/]+)/);
+        const projectMatch = location.pathname.match(/\/p\/([^/]+)/);
         if (projectMatch) {
-            const [, workspaceId, projectId] = projectMatch;
-            const basePath = `/app/workspace/${workspaceId}/project/${projectId}`;
+            const [, projectId] = projectMatch;
+            const basePath = `/p/${projectId}`;
 
             const navShortcuts = [
-                { key: '1', path: '/overview', label: 'Overview' },
+                { key: '1', path: '/canvas', label: 'Canvas' },
                 { key: '2', path: '/canvas', label: 'Canvas' },
-                { key: '3', path: '/backlog', label: 'Backlog' },
-                { key: '4', path: '/build', label: 'Build' },
+                { key: '3', path: '/preview', label: 'Preview' },
+                { key: '4', path: '/deploy', label: 'Deploy' },
                 { key: '5', path: '/deploy', label: 'Deploy' },
-                { key: '6', path: '/monitor', label: 'Monitor' },
+                { key: '6', path: '/lifecycle', label: 'Lifecycle' },
             ];
 
             navShortcuts.forEach(({ key, path, label }) => {
@@ -224,9 +228,9 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
             shortcut: '⌘1',
             keywords: ['overview', 'home', 'dashboard'],
             action: () => {
-                const projectMatch = location.pathname.match(/\/app\/workspace\/([^/]+)\/project\/([^/]+)/);
+                const projectMatch = location.pathname.match(/\/p\/([^/]+)/);
                 if (projectMatch) {
-                    navigate(`/app/workspace/${projectMatch[1]}/project/${projectMatch[2]}/overview`);
+                    navigate(`/p/${projectMatch[1]}/canvas`);
                 }
             }
         },

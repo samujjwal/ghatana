@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Reusable Error Boundary for Route Modules
  * 
@@ -131,7 +130,7 @@ export function RouteErrorBoundary({
                     </button>
 
                     <Link
-                        to="/app/workspaces"
+                        to="/workspaces"
                         style={{
                             padding: "0.5rem 1rem",
                             backgroundColor: "transparent",

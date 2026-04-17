@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lifecycle Artifact Service
  *
@@ -167,6 +166,319 @@ function canUseStorage(): boolean {
 
 function artifactStorageKey(projectId: string): string {
   return `yappc.lifecycle.artifacts.${projectId}`;
+}
+
+const LIFECYCLE_API_BASE = import.meta.env.DEV
+  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}/api`
+  : '/api';
+
+type ApiLifecycleArtifact = {
+  id: string;
+  projectId: string;
+  title: string;
+  type: string;
+  description?: string | null;
+  content?: string | null;
+  status: string;
+  phase?: LifecyclePhase;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  metadata?: Record<string, unknown>;
+};
+
+function getAuthToken(): string | null {
+  if (!canUseStorage()) {
+    return null;
+  }
+
+  const rawSession = window.localStorage.getItem('auth-session');
+  if (!rawSession) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawSession) as { token?: string };
+    return parsed.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function mapStatusToApi(status: ArtifactStatus): string {
+  if (status === 'validated') {
+    return 'approved';
+  }
+  if (status === 'complete') {
+    return 'review';
+  }
+  if (status === 'archived') {
+    return 'approved';
+  }
+  return 'draft';
+}
+
+function mapStatusFromApi(status: string): ArtifactStatus {
+  if (status === 'approved') {
+    return 'validated';
+  }
+  if (status === 'review') {
+    return 'complete';
+  }
+  if (status === 'archived') {
+    return 'archived';
+  }
+  return 'draft';
+}
+
+function getFallbackKindForPhase(phase?: LifecyclePhase): LifecycleArtifactKind {
+  const firstMatch = (
+    Object.values(LIFECYCLE_ARTIFACT_CATALOG) as LifecycleArtifactMetadata[]
+  ).find((metadata) => metadata.phase === phase);
+
+  return firstMatch?.kind ?? 'idea_brief';
+}
+
+function resolveKindFromApiArtifact(
+  artifact: ApiLifecycleArtifact
+): LifecycleArtifactKind {
+  const explicitKind = artifact.metadata?.kind;
+  if (
+    typeof explicitKind === 'string' &&
+    explicitKind in LIFECYCLE_ARTIFACT_CATALOG
+  ) {
+    return explicitKind as LifecycleArtifactKind;
+  }
+
+  const byType = (
+    Object.values(LIFECYCLE_ARTIFACT_CATALOG) as LifecycleArtifactMetadata[]
+  ).find((metadata) => {
+    return (
+      metadata.label.toLowerCase() === artifact.type.toLowerCase() ||
+      metadata.kind.toLowerCase() === artifact.type.toLowerCase()
+    );
+  });
+
+  return byType?.kind ?? getFallbackKindForPhase(artifact.phase);
+}
+
+function parsePayload(content?: string | null): Record<string, unknown> {
+  if (!content) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function mapApiArtifactToLifecycleArtifact(
+  artifact: ApiLifecycleArtifact
+): LifecycleArtifact {
+  const kind = resolveKindFromApiArtifact(artifact);
+  const metadata = artifact.metadata ?? {};
+
+  return {
+    id: artifact.id,
+    projectId: artifact.projectId,
+    kind,
+    title: artifact.title,
+    payload: parsePayload(artifact.content),
+    status: mapStatusFromApi(artifact.status),
+    tags: Array.isArray(metadata.tags)
+      ? metadata.tags.filter((tag): tag is string => typeof tag === 'string')
+      : [createArtifactTag(kind)],
+    version: typeof metadata.version === 'number' ? metadata.version : 1,
+    createdAt: artifact.createdAt ?? new Date().toISOString(),
+    updatedAt: artifact.updatedAt ?? new Date().toISOString(),
+    createdBy: artifact.createdBy ?? 'system',
+    updatedBy:
+      typeof metadata.updatedBy === 'string' ? metadata.updatedBy : artifact.createdBy ?? 'system',
+    aiGeneration:
+      metadata.aiGeneration && typeof metadata.aiGeneration === 'object'
+        ? (metadata.aiGeneration as LifecycleArtifact['aiGeneration'])
+        : undefined,
+  };
+}
+
+/**
+ * API-backed artifact repository with local fallback.
+ */
+export class ApiBackedLifecycleArtifactRepository
+  implements ILifecycleArtifactRepository
+{
+  constructor(
+    private readonly fallback: ILifecycleArtifactRepository =
+      new LocalStorageLifecycleArtifactRepository()
+  ) {}
+
+  async save(artifact: LifecycleArtifact): Promise<void> {
+    await this.fallback.save(artifact);
+
+    try {
+      await this.request('/artifacts', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: artifact.id,
+          projectId: artifact.projectId,
+          title: artifact.title,
+          type: LIFECYCLE_ARTIFACT_CATALOG[artifact.kind].label,
+          content: JSON.stringify(artifact.payload ?? {}),
+          status: mapStatusToApi(artifact.status),
+          phase: LIFECYCLE_ARTIFACT_CATALOG[artifact.kind].phase,
+          createdBy: artifact.createdBy,
+          metadata: {
+            kind: artifact.kind,
+            version: artifact.version,
+            tags: artifact.tags,
+            updatedBy: artifact.updatedBy,
+            aiGeneration: artifact.aiGeneration,
+          },
+        }),
+      });
+    } catch {
+      // Keep local copy to preserve UX when backend is unavailable.
+    }
+  }
+
+  async findById(id: string): Promise<LifecycleArtifact | null> {
+    try {
+      const artifact = await this.request<ApiLifecycleArtifact>(
+        `/artifacts/${encodeURIComponent(id)}`
+      );
+      const mapped = mapApiArtifactToLifecycleArtifact(artifact);
+      await this.fallback.save(mapped);
+      return mapped;
+    } catch {
+      return this.fallback.findById(id);
+    }
+  }
+
+  async findByProjectAndKind(
+    projectId: string,
+    kind: LifecycleArtifactKind
+  ): Promise<LifecycleArtifact[]> {
+    const artifacts = await this.findByProject(projectId);
+    return artifacts.filter((artifact) => artifact.kind === kind);
+  }
+
+  async findByProject(projectId: string): Promise<LifecycleArtifact[]> {
+    try {
+      const artifacts = await this.request<ApiLifecycleArtifact[]>(
+        `/projects/${encodeURIComponent(projectId)}/artifacts`
+      );
+
+      const mapped = artifacts.map(mapApiArtifactToLifecycleArtifact);
+      for (const artifact of mapped) {
+        await this.fallback.save(artifact);
+      }
+
+      return mapped;
+    } catch {
+      return this.fallback.findByProject(projectId);
+    }
+  }
+
+  async findByFilter(filter: ArtifactFilter): Promise<LifecycleArtifact[]> {
+    const artifacts = filter.projectId
+      ? await this.findByProject(filter.projectId)
+      : await this.fallback.findByFilter(filter);
+
+    return artifacts.filter((artifact) => {
+      if (filter.kinds && !filter.kinds.includes(artifact.kind)) {
+        return false;
+      }
+      if (filter.phases) {
+        const metadata = LIFECYCLE_ARTIFACT_CATALOG[artifact.kind];
+        if (!filter.phases.includes(metadata.phase)) {
+          return false;
+        }
+      }
+      if (filter.status && !filter.status.includes(artifact.status)) {
+        return false;
+      }
+      if (filter.search) {
+        const search = filter.search.toLowerCase();
+        if (!artifact.title.toLowerCase().includes(search)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  async update(artifact: LifecycleArtifact): Promise<void> {
+    await this.fallback.update(artifact);
+
+    try {
+      await this.request(`/artifacts/${encodeURIComponent(artifact.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: artifact.title,
+          content: JSON.stringify(artifact.payload ?? {}),
+          status: mapStatusToApi(artifact.status),
+          metadata: {
+            kind: artifact.kind,
+            version: artifact.version,
+            tags: artifact.tags,
+            updatedBy: artifact.updatedBy,
+            aiGeneration: artifact.aiGeneration,
+          },
+        }),
+      });
+    } catch {
+      // Keep local update even if remote persistence fails.
+    }
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const deleted = await this.fallback.delete(id);
+
+    try {
+      await this.request(`/artifacts/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      return true;
+    } catch {
+      return deleted;
+    }
+  }
+
+  private async request<T = unknown>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const token = getAuthToken();
+    const response = await fetch(`${LIFECYCLE_API_BASE}${endpoint}`, {
+      ...options,
+      headers: {
+        Accept: 'application/json',
+        ...(options.body
+          ? {
+              'Content-Type': 'application/json',
+            }
+          : {}),
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Lifecycle API request failed (${response.status})`);
+    }
+
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return (await response.json()) as T;
+  }
 }
 
 // ============================================================================
@@ -705,7 +1017,7 @@ export class LifecycleArtifactService {
    */
   getArtifactUrl(projectId: string, kind: LifecycleArtifactKind): string {
     const placement = this.getPlacement(kind);
-    const base = `/app/p/${projectId}`;
+    const base = `/p/${projectId}`;
 
     switch (placement.surface) {
       case 'app':
@@ -878,7 +1190,7 @@ import React from 'react';
 export function useLifecycleArtifacts(projectId: string) {
   const [service] = React.useState(
     () =>
-      new LifecycleArtifactService(new LocalStorageLifecycleArtifactRepository())
+      new LifecycleArtifactService(new ApiBackedLifecycleArtifactRepository())
   );
   const [artifacts, setArtifacts] = React.useState<ArtifactSummary[]>([]);
   const [loading, setLoading] = React.useState(true);

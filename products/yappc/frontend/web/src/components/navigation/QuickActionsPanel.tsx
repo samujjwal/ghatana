@@ -138,58 +138,68 @@ export function QuickActionsPanel({
     }
 
     // Project-specific actions (only show when in project context)
+    const shareEnabled = import.meta.env.VITE_FEATURE_PROJECT_SHARE === 'true';
+    const exportEnabled = import.meta.env.VITE_FEATURE_PROJECT_EXPORT === 'true';
+    const historyEnabled = import.meta.env.VITE_FEATURE_PROJECT_HISTORY === 'true';
+
     const projectActions: QuickAction[] = projectId ? [
         {
             id: 'project-settings',
             label: 'Project Settings',
             icon: <Settings className="w-4 h-4" />,
             onClick: () => {
-                navigate(`/app/p/${projectId}/settings`);
+                navigate(`/p/${projectId}/settings`);
                 setIsOpen(false);
             },
         },
-        {
-            id: 'share-project',
-            label: 'Share Project',
-            icon: <Share className="w-4 h-4" />,
-            onClick: () => {
-                navigate(`/app/p/${projectId}/share`);
-                setIsOpen(false);
-            },
-        },
-        {
-            id: 'export-project',
-            label: 'Export Project',
-            icon: <GetApp className="w-4 h-4" />,
-            onClick: () => {
-                void (async () => {
-                    try {
-                        const res = await fetch(`/api/projects/${projectId}/export`);
-                        if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-                        const blob = await res.blob();
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `project-${projectId}.zip`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    } catch (err) {
-                        console.error('[QuickActionsPanel] Export failed:', err);
-                    }
-                })();
-                setIsOpen(false);
-            },
-        },
-        {
-            id: 'view-history',
-            label: 'View History',
-            icon: <History className="w-4 h-4" />,
-            onClick: () => {
-                navigate(`/app/p/${projectId}/history`);
-                setIsOpen(false);
-            },
-            divider: true,
-        },
+        ...(shareEnabled
+            ? [{
+                id: 'share-project',
+                label: 'Share Project',
+                icon: <Share className="w-4 h-4" />,
+                onClick: () => {
+                    navigate(`/p/${projectId}/share`);
+                    setIsOpen(false);
+                },
+            } satisfies QuickAction]
+            : []),
+        ...(exportEnabled
+            ? [{
+                id: 'export-project',
+                label: 'Export Project',
+                icon: <GetApp className="w-4 h-4" />,
+                onClick: () => {
+                    void (async () => {
+                        try {
+                            const res = await fetch(`/api/projects/${projectId}/export`);
+                            if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `project-${projectId}.zip`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        } catch (err) {
+                            console.error('[QuickActionsPanel] Export failed:', err);
+                        }
+                    })();
+                    setIsOpen(false);
+                },
+            } satisfies QuickAction]
+            : []),
+        ...(historyEnabled
+            ? [{
+                id: 'view-history',
+                label: 'View History',
+                icon: <History className="w-4 h-4" />,
+                onClick: () => {
+                    navigate(`/p/${projectId}/history`);
+                    setIsOpen(false);
+                },
+                divider: true,
+            } satisfies QuickAction]
+            : []),
     ] : [];
 
     // Help actions

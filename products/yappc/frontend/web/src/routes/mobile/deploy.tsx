@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mobile Deploy Route
  * 

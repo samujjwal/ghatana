@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Canvas Export Utilities
  * 
@@ -12,6 +11,7 @@
  */
 
 import type { CanvasMode, AbstractionLevel } from '../types/canvas';
+import type { RefObject } from 'react';
 
 export type ExportFormat = 'png' | 'svg' | 'pdf';
 
@@ -193,7 +193,7 @@ export async function exportCanvas(
 export function useCanvasExport(
     mode: CanvasMode,
     level: AbstractionLevel,
-    elementRef: React.RefObject<HTMLElement>
+    elementRef: RefObject<HTMLElement>
 ) {
     const exportAs = async (format: ExportFormat, customOptions?: Partial<ExportOptions>) => {
         if (!elementRef.current) {

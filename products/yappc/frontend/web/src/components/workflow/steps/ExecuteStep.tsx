@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ExecuteStep - UI for the Execute step of the workflow
  *

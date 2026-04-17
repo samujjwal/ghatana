@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Keyboard Shortcuts Help Modal
  * 
@@ -14,6 +13,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { X as Close, Search, Keyboard, Pencil as Edit, Eye as Visibility, LayoutDashboard as Dashboard, Sparkles as AutoAwesome, Navigation, FolderOpen, CloudUpload, HelpCircle as HelpOutline } from 'lucide-react';
 import { Modal, Fade, Modal as Backdrop, InputAdornment, TextField, Box, Typography } from '@ghatana/design-system';
+import type { ReactNode } from 'react';
 
 import { TRANSITIONS, RADIUS } from '../../styles/design-tokens';
 import ActionRegistry, { type ActionDefinition, type ActionCategory, type ActionState } from '../../services/ActionRegistry';
@@ -35,7 +35,7 @@ export interface KeyboardShortcutsHelpProps {
 // Constants
 // ============================================================================
 
-const CATEGORY_ICONS: Record<ActionCategory, React.ReactNode> = {
+const CATEGORY_ICONS: Record<ActionCategory, ReactNode> = {
     file: <FolderOpen className="w-5 h-5" />,
     edit: <Edit className="w-5 h-5" />,
     view: <Visibility className="w-5 h-5" />,
@@ -215,7 +215,7 @@ export function KeyboardShortcutsHelp({
                                         {/* Category Header */}
                                         <div className="flex items-center gap-2 mb-3 text-text-secondary">
                                             {group.icon}
-                                            <Typography as="p" className="text-sm font-medium" className="font-semibold uppercase tracking-wide text-xs">
+                                            <Typography as="p" className="font-semibold uppercase tracking-wide text-xs">
                                                 {group.label}
                                             </Typography>
                                         </div>

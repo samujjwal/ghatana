@@ -662,6 +662,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
       const artifact = await prisma.lifecycleArtifact.create({
         data: {
+          id: body.id,
           projectId: body.projectId,
           title: body.title,
           type: body.type,
@@ -672,6 +673,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           fowStage: body.fowStage || 1,
           createdBy: body.createdBy || 'system',
           linkedArtifacts: body.linkedArtifacts || [],
+          metadata: body.metadata || {},
         },
       });
 
@@ -693,6 +695,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           description: body.description,
           content: body.content,
           status: body.status,
+          metadata: body.metadata,
         },
       });
 

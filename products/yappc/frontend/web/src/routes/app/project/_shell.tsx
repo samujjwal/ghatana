@@ -40,7 +40,7 @@ import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { UnifiedContextHeader } from '../../../components/navigation';
 
 // Simplified tabs - only essential views
-const projectTabs = [
+const BASE_PROJECT_TABS = [
   {
     key: 'canvas',
     label: 'Canvas',
@@ -52,12 +52,6 @@ const projectTabs = [
     label: 'Workspace',
     icon: Workspaces,
     tooltip: 'Production workspace with lifecycle integration',
-  },
-  {
-    key: 'preview',
-    label: 'Preview',
-    icon: Visibility,
-    tooltip: 'Preview your application',
   },
   {
     key: 'lifecycle',
@@ -77,7 +71,14 @@ const projectTabs = [
     icon: SettingsIcon,
     tooltip: 'Project settings',
   },
-];
+] as const;
+
+const PREVIEW_TAB = {
+  key: 'preview',
+  label: 'Preview',
+  icon: Visibility,
+  tooltip: 'Preview your application',
+} as const;
 
 interface ProjectShellData {
   name: string;
@@ -93,10 +94,12 @@ interface ProjectShellData {
 export function Layout() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const basePath = `/app/p/${projectId}`;
+  const basePath = `/p/${projectId}`;
   const isHeaderVisible = useAtomValue(headerVisibleAtom);
   const location = useLocation();
   const isCanvasView = location.pathname.endsWith('/canvas');
+  const previewEnabled = import.meta.env.VITE_FEATURE_PROJECT_PREVIEW === 'true';
+  const aiAssistEnabled = import.meta.env.VITE_FEATURE_AI_ASSIST === 'true';
 
   const { setLastOpenedProject } = useLastOpenedProject();
   const { currentWorkspace, workspaces, ownedProjects, includedProjects } = useWorkspaceContext();
@@ -159,14 +162,22 @@ export function Layout() {
   }));
 
   // Define project-specific actions
+  const shareEnabled = import.meta.env.VITE_FEATURE_PROJECT_SHARE === 'true';
+  const exportEnabled =
+    import.meta.env.VITE_FEATURE_PROJECT_EXPORT === 'true';
+
   const contextActions = [
-    {
-      id: 'share',
-      label: 'Share',
-      icon: Share,
-      onClick: () => navigate(`${basePath}/share`),
-      tooltip: 'Share project with team',
-    },
+    ...(shareEnabled
+      ? [
+          {
+            id: 'share',
+            label: 'Share',
+            icon: Share,
+            onClick: () => navigate(`${basePath}/share`),
+            tooltip: 'Share project with team',
+          },
+        ]
+      : []),
     {
       id: 'settings',
       label: 'Settings',
@@ -174,30 +185,34 @@ export function Layout() {
       onClick: () => navigate(`${basePath}/settings`),
       tooltip: 'Project settings',
     },
-    {
-      id: 'export',
-      label: 'Export',
-      icon: FileDownload,
-      onClick: () => {
-        void (async () => {
-          try {
-            const res = await fetch(`/api/projects/${projectId}/export`);
-            if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `project-${projectId}.zip`;
-            a.click();
-            URL.revokeObjectURL(url);
-          } catch (err) {
-            console.error('[ProjectShell] Export failed:', err);
-          }
-        })();
-      },
-      tooltip: 'Export project',
-      divider: true,
-    },
+    ...(exportEnabled
+      ? [
+          {
+            id: 'export',
+            label: 'Export',
+            icon: FileDownload,
+            onClick: () => {
+              void (async () => {
+                try {
+                  const res = await fetch(`/api/projects/${projectId}/export`);
+                  if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `project-${projectId}.zip`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch (err) {
+                  console.error('[ProjectShell] Export failed:', err);
+                }
+              })();
+            },
+            tooltip: 'Export project',
+            divider: true,
+          },
+        ]
+      : []),
   ];
 
   // Track last opened project
@@ -232,6 +247,16 @@ export function Layout() {
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
 
   const projectName = project?.name || 'Loading...';
+  const projectTabs = previewEnabled
+    ? [
+        BASE_PROJECT_TABS[0],
+        BASE_PROJECT_TABS[1],
+        PREVIEW_TAB,
+        BASE_PROJECT_TABS[2],
+        BASE_PROJECT_TABS[3],
+        BASE_PROJECT_TABS[4],
+      ]
+    : [...BASE_PROJECT_TABS];
 
   // Initialize lifecycle services
   const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(
@@ -262,7 +287,6 @@ export function Layout() {
   );
 
   const handleAIAssist = useCallback(async (kind: LifecycleArtifactKind) => {
-    const aiAssistEnabled = import.meta.env.VITE_FEATURE_AI_ASSIST === 'true';
     if (!aiAssistEnabled) {
       return null;
     }
@@ -276,7 +300,7 @@ export function Layout() {
       response,
       'project shell AI assist'
     );
-  }, [projectId]);
+  }, [projectId, aiAssistEnabled]);
 
   // Load existing intent data from artifacts
   const intentData = useMemo(() => {
@@ -323,7 +347,7 @@ export function Layout() {
       {/* IntentDrawer - URL-driven drawer for INTENT phase artifacts */}
       <IntentDrawer
         onSave={handleIntentSave}
-        onAIAssist={handleAIAssist}
+        onAIAssist={aiAssistEnabled ? handleAIAssist : undefined}
         existingData={intentData}
       />
     </div>

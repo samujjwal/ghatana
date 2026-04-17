@@ -52,7 +52,7 @@ export function RecentProjectsStrip({
                 {recentProjects.map((project) => (
                     <Link
                         key={project.id}
-                        to={`/app/p/${project.id}`}
+                        to={`/p/${project.id}`}
                         className="group flex-shrink-0 flex flex-col gap-2 px-4 py-3 bg-bg-paper border border-divider rounded-lg hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-sm transition-all no-underline w-[220px]"
                     >
                         <div className="flex items-center gap-3">

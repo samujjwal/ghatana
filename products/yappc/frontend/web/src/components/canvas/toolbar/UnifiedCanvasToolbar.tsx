@@ -14,10 +14,8 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import { useTheme } from '@mui/material/styles';
-import { useMediaQuery } from '@mui/material';
 import { Undo2 as Undo, Redo2 as Redo, Sparkles as AutoAwesome, HelpCircle as Help, CheckCircle, AlertTriangle as Warning, AlertCircle as ErrorIcon, Code as CodeIcon, CloudCheck as CloudDone, CloudOff, RefreshCw as Sync, MoreVertical as MoreVert, Navigation as NavigationIcon, Paintbrush as BrushIcon, GitBranch as DiagramIcon } from 'lucide-react';
-import { Menu, MenuItem, Tooltip } from '@ghatana/design-system';
+import { Menu, MenuItem, Tooltip, useTheme, useMediaQuery } from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import { ModeDropdown } from './ModeDropdown';

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Coordinate transformation utilities for React Flow ↔ Konva sync
  * Centralizes viewport math to prevent drift between layers

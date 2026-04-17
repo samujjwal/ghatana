@@ -76,7 +76,7 @@ export function useKeyboardNavigation({
                     onProjectSwitcher();
                 } else {
                     // Default: Navigate to home (which shows projects)
-                    navigate('/app');
+                    navigate('/projects');
                 }
                 return;
             }
@@ -88,7 +88,7 @@ export function useKeyboardNavigation({
                     onWorkspaceSwitcher();
                 } else {
                     // Default: Navigate to workspaces page
-                    navigate('/app/workspaces');
+                    navigate('/workspaces');
                 }
                 return;
             }
@@ -100,7 +100,7 @@ export function useKeyboardNavigation({
                     onNewProject();
                 } else {
                     // Default: Navigate to home (new project flow)
-                    navigate('/app');
+                    navigate('/projects');
                 }
                 return;
             }
@@ -108,7 +108,7 @@ export function useKeyboardNavigation({
             // Cmd/Ctrl + H: Home
             if (enableHome && isMod && event.key === 'h') {
                 event.preventDefault();
-                navigate('/app');
+                navigate('/');
                 return;
             }
         }

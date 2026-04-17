@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC Frontend - Real-time Stage Navigation Component
@@ -8,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { StageNavigation, StageNavigationProps } from '@yappc/ui/navigation-ui';
+import { StageNavigation, type StageNavigationProps } from '../ui';
 import { useRealtimeLifecycle } from '../../hooks/useRealtimeLifecycle';
 
 // Define lifecycle stage type locally to avoid import issues

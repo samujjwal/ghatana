@@ -344,7 +344,6 @@ function ShellContent({
           notificationCount={notificationCount}
           showAgentActivity={showAgentActivity}
           darkMode={isDarkMode}
-          onNew={() => navigate('/app/new')}
           onSearch={() => {
             // Dispatch mod+k to open CommandPalette (which listens on window)
             const isMac = navigator.platform.toUpperCase().includes('MAC');

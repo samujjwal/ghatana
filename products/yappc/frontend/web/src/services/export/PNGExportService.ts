@@ -4,10 +4,15 @@
  */
 
 import { logger } from '../../utils/Logger';
-import { palette } from '@yappc/ui';
 
 import type { ExportOptions, ExportResult } from './types';
 import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms';
+
+const neutralPalette = {
+  300: '#d4d4d8',
+  500: '#71717a',
+  900: '#18181b',
+} as const;
 
 /**
  *
@@ -158,13 +163,13 @@ class PNGExportServiceClass {
     ctx.fillRect(0, 0, width, height);
 
     // Node border
-    ctx.strokeStyle = element.style?.borderColor || palette.neutral[300];
+    ctx.strokeStyle = element.style?.borderColor || neutralPalette[300];
     ctx.lineWidth = 2;
     ctx.strokeRect(0, 0, width, height);
 
     // Node label
     if (element.data?.label) {
-      ctx.fillStyle = element.style?.color || palette.neutral[900];
+      ctx.fillStyle = element.style?.color || neutralPalette[900];
       ctx.font = '14px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -179,7 +184,7 @@ class PNGExportServiceClass {
     const { shapeType, width = 100, height = 100 } = element.data || {};
 
     ctx.fillStyle = element.style?.fill || 'rgba(0, 0, 0, 0.1)';
-    ctx.strokeStyle = element.style?.stroke || palette.neutral[900];
+    ctx.strokeStyle = element.style?.stroke || neutralPalette[900];
     ctx.lineWidth = element.style?.strokeWidth || 2;
 
     switch (shapeType) {
@@ -229,7 +234,7 @@ class PNGExportServiceClass {
   private async renderRectangle(ctx: CanvasRenderingContext2D, width: number, height: number): Promise<void> {
     ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
     ctx.fillRect(0, 0, width, height);
-    ctx.strokeStyle = palette.neutral[500];
+    ctx.strokeStyle = neutralPalette[500];
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, width, height);
   }
