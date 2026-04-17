@@ -144,8 +144,8 @@ export class EvidenceBundleGenerator {
               sourcePublisher: content.publisher,
               sourcePublicationDate: content.publicationDate,
               excerpt: content.content.substring(0, 500), // First 500 chars
-              structuredFact: undefined, // TODO: Implement fact extraction
-              supportKind: 'SUPPORTS', // TODO: Implement support detection
+              structuredFact: (this.extractStructuredFact(content.content, claimText) as Record<string, unknown> | undefined),
+              supportKind: this.detectSupportKind(content.content, claimText),
               credibilityScore: this.calculateCredibilityScore(content, sourceType),
               retrievedAt: new Date(),
               freshnessStatus: 'CURRENT',
@@ -211,6 +211,126 @@ export class EvidenceBundleGenerator {
         totalResultsFound,
       };
     }
+  }
+
+  /**
+   * Extract structured facts from evidence content.
+   * Uses heuristics to identify factual statements, entities, and relationships.
+   */
+  private extractStructuredFact(content: string, claimText: string): {
+    mainStatement: string;
+    entities: string[];
+    relationships: string[];
+    confidence: number;
+  } | null {
+    if (!content || content.length < 50) {
+      return null;
+    }
+
+    // Extract sentences from content
+    const sentences = content
+      .split(/[.!?]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 20);
+
+    if (sentences.length === 0) {
+      return null;
+    }
+
+    // Find the most relevant sentence (simple heuristic: longest sentence with claim keywords)
+    const claimKeywords = claimText.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+    let bestSentence = sentences[0];
+    let bestScore = 0;
+
+    for (const sentence of sentences) {
+      const lowerSentence = sentence.toLowerCase();
+      const keywordMatches = claimKeywords.filter((kw) => lowerSentence.includes(kw)).length;
+      const lengthScore = sentence.length / content.length;
+      const score = keywordMatches * 2 + lengthScore;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestSentence = sentence;
+      }
+    }
+
+    // Extract entities (capitalized words, numbers, units)
+    const entityPattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b|\b\d+(?:\.\d+)?\s*(?:kg|m|s|°C|°F|N|J|W|Hz|Pa|mol|L|g|cm|km|mph)\b/g;
+    const entities = [...new Set(bestSentence.match(entityPattern) || [])];
+
+    // Extract relationships (verbs and prepositions)
+    const relationshipPattern = /\b(?:is|are|was|were|has|have|had|causes|caused|results in|resulted in|leads to|led to|depends on|affects|affected by|relates to|related to)\b/gi;
+    const relationships = [...new Set(bestSentence.match(relationshipPattern) || [])];
+
+    // Calculate confidence based on entity count and relationship presence
+    const confidence = Math.min(1.0, (entities.length * 0.3) + (relationships.length * 0.2) + 0.3);
+
+    return {
+      mainStatement: bestSentence,
+      entities,
+      relationships,
+      confidence,
+    };
+  }
+
+  /**
+   * Detect support kind for evidence relative to claim.
+   * Analyzes semantic similarity and sentiment to determine if evidence supports, contradicts, or is neutral.
+   */
+  private detectSupportKind(evidenceContent: string, claimText: string): 'SUPPORTS' | 'CONTRADICTS' | 'NEUTRAL' {
+    const lowerEvidence = evidenceContent.toLowerCase();
+    const lowerClaim = claimText.toLowerCase();
+
+    // Check for explicit contradiction indicators
+    const contradictionIndicators = [
+      'not', 'never', 'cannot', 'impossible', 'false', 'incorrect', 'wrong',
+      'disprove', 'contradict', 'opposite', 'contrary', 'however', 'although',
+      'despite', 'unlike', 'differs from', 'different from'
+    ];
+
+    const hasContradiction = contradictionIndicators.some((indicator) =>
+      lowerEvidence.includes(indicator) && lowerClaim.split(/\s+/).some((word) =>
+        lowerEvidence.includes(word) && word.length > 3
+      )
+    );
+
+    if (hasContradiction) {
+      return 'CONTRADICTS';
+    }
+
+    // Check for explicit support indicators
+    const supportIndicators = [
+      'confirms', 'demonstrates', 'shows', 'proves', 'establishes', 'validates',
+      'supports', 'agrees with', 'consistent with', 'according to', 'as stated',
+      'evidence shows', 'research indicates', 'studies show', 'data shows'
+    ];
+
+    const hasSupport = supportIndicators.some((indicator) => lowerEvidence.includes(indicator));
+
+    if (hasSupport) {
+      return 'SUPPORTS';
+    }
+
+    // Calculate keyword overlap as fallback
+    const claimWords = new Set(lowerClaim.split(/\s+/).filter((w) => w.length > 3));
+    const evidenceWords = new Set(lowerEvidence.split(/\s+/).filter((w) => w.length > 3));
+
+    let overlap = 0;
+    for (const word of claimWords) {
+      if (evidenceWords.has(word)) {
+        overlap++;
+      }
+    }
+
+    const overlapRatio = overlap / Math.max(claimWords.size, 1);
+
+    // If significant overlap (>30%), treat as support
+    if (overlapRatio > 0.3) {
+      return 'SUPPORTS';
+    }
+
+    // Default to neutral
+    return 'NEUTRAL';
   }
 
   /**

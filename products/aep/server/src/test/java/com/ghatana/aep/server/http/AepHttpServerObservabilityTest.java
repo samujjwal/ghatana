@@ -6,8 +6,11 @@ package com.ghatana.aep.server.http;
 
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
@@ -27,8 +30,12 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for Phase-6 observability endpoints.
@@ -124,6 +131,38 @@ class AepHttpServerObservabilityTest {
                 "pipeline-storage",
                 "memory-store",
                 "execution-history");
+        }
+
+        @Test
+        @DisplayName("deep health probe verifies Data Cloud connectivity when configured")
+        void deepHealthProbeVerifiesDataCloudConnectivity() throws Exception {
+            if (server != null) {
+                server.stop();
+            }
+
+            DataCloudClient mockDataCloud = mock(DataCloudClient.class);
+            when(mockDataCloud.entityStore()).thenReturn(mock(com.ghatana.datacloud.spi.EntityStore.class));
+            when(mockDataCloud.eventLogStore()).thenReturn(mock(EventLogStore.class));
+            when(mockDataCloud.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.of(java.util.List.of()));
+
+            server = new AepHttpServer(
+                engine,
+                port,
+                mockDataCloud,
+                MetricsCollectorFactory.createNoop());
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/health/deep");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
+            assertThat(components).containsEntry("data-cloud.connectivity", "ok");
+            verify(mockDataCloud).queryEvents(anyString(), any(DataCloudClient.EventQuery.class));
         }
     }
 

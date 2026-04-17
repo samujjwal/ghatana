@@ -28,7 +28,11 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    logger.warning("torch/torchaudio not available, speaker embedding will use mock mode")
+    logger.warning("torch/torchaudio not available, speaker embedding extraction is unavailable")
+
+
+class EmbeddingDependencyError(RuntimeError):
+    """Raised when speaker embedding dependencies are unavailable."""
 
 
 @dataclass
@@ -101,9 +105,9 @@ class SpeakerEmbeddingExtractor:
             return True
 
         if not TORCH_AVAILABLE:
-            logger.warning("PyTorch not available, using mock embeddings")
-            self._loaded = True
-            return True
+            raise EmbeddingDependencyError(
+                "Speaker embedding extraction requires the Python dependencies 'torch' and 'torchaudio'."
+            )
 
         try:
             model_path = self.model_manager.ensure_model(self.MODEL_ID)
@@ -117,32 +121,16 @@ class SpeakerEmbeddingExtractor:
                 )
                 logger.info(f"Loaded ECAPA-TDNN model on {self.device}")
             except ImportError:
-                logger.warning("speechbrain not available, using fallback embeddings")
-                # Create a simple fallback model
-                self._create_fallback_model()
+                raise EmbeddingDependencyError(
+                    "Speaker embedding extraction requires the Python dependency 'speechbrain'. "
+                    "Fallback embedding models are blocked."
+                )
 
             self._loaded = True
             return True
         except Exception as e:
             logger.error(f"Failed to load speaker embedding model: {e}")
-            return False
-
-    def _create_fallback_model(self):
-        """Create a simple fallback model when speechbrain is not available."""
-        if not TORCH_AVAILABLE:
-            return
-
-        # Simple CNN-based embedding extractor as fallback
-        self.model = torch.nn.Sequential(
-            torch.nn.Conv1d(1, 64, kernel_size=5, stride=2),
-            torch.nn.ReLU(),
-            torch.nn.Conv1d(64, 128, kernel_size=5, stride=2),
-            torch.nn.ReLU(),
-            torch.nn.AdaptiveAvgPool1d(1),
-            torch.nn.Flatten(),
-            torch.nn.Linear(128, self.EMBEDDING_DIM)
-        ).to(self.device)
-        logger.info("Created fallback embedding model")
+            raise
 
     def extract(self, audio_path: str) -> EmbeddingResult:
         """
@@ -157,9 +145,10 @@ class SpeakerEmbeddingExtractor:
         if not self._loaded:
             self.load()
 
-        if not TORCH_AVAILABLE:
-            # Mock embedding for testing
-            return self._mock_embedding(audio_path)
+        if not TORCH_AVAILABLE or self.model is None:
+            raise EmbeddingDependencyError(
+                "Speaker embedding model is unavailable. Mock speaker embeddings are blocked."
+            )
 
         try:
             # Load and preprocess audio
@@ -202,21 +191,6 @@ class SpeakerEmbeddingExtractor:
         except Exception as e:
             logger.error(f"Failed to extract embedding from {audio_path}: {e}")
             raise
-
-    def _mock_embedding(self, audio_path: str) -> EmbeddingResult:
-        """Create a mock embedding for testing."""
-        # Generate deterministic embedding based on filename
-        path_hash = hash(audio_path)
-        np.random.seed(path_hash % (2**32))
-        embedding = np.random.randn(self.EMBEDDING_DIM).astype(np.float32)
-        embedding = embedding / np.linalg.norm(embedding)  # Normalize
-
-        return EmbeddingResult(
-            embedding=embedding,
-            confidence=0.8,
-            duration_seconds=3.0,
-            sample_rate=self.TARGET_SAMPLE_RATE
-        )
 
     def extract_batch(
         self,

@@ -734,29 +734,17 @@ export class ForumServiceImpl implements ForumService {
     reason: string;
     details?: string;
   }): Promise<{ reportId: string }> {
-    const contentReport = (
-      this.prisma as PrismaClient & {
-        contentReport?: ContentReportDelegate;
-      }
-    ).contentReport;
-
-    if (!contentReport) {
-      throw createHttpError(
-        501,
-        "SOCIAL_MODERATION_UNAVAILABLE",
-        "Content moderation reporting is not configured",
-      );
-    }
-
-    const report = await contentReport.create({
+    const report = await (this.prisma as PrismaClient & {
+      contentReport: any;
+    }).contentReport.create({
       data: {
         tenantId: args.tenantId,
-        contentType: args.contentType,
-        contentId: args.contentId,
-        reporterId: args.reporterId,
+        userId: args.reporterId,
+        entityType: args.contentType === "topic" ? "forumPost" : "comment",
+        entityId: args.contentId,
         reason: args.reason,
         details: args.details ?? null,
-        status: "PENDING",
+        status: "pending",
       },
     });
     return { reportId: report.id };
@@ -797,6 +785,84 @@ export class ForumServiceImpl implements ForumService {
         },
       });
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Follow Graph Methods
+  // ---------------------------------------------------------------------------
+
+  async followUser(args: {
+    tenantId: TenantId;
+    followerId: UserId;
+    followingId: UserId;
+  }): Promise<void> {
+    if (args.followerId === args.followingId) {
+      throw new Error("Cannot follow yourself");
+    }
+
+    await (this.prisma as PrismaClient & {
+      follow: any;
+    }).follow.create({
+      data: {
+        tenantId: args.tenantId,
+        followerId: args.followerId,
+        followingId: args.followingId,
+      },
+    });
+  }
+
+  async unfollowUser(args: {
+    tenantId: TenantId;
+    followerId: UserId;
+    followingId: UserId;
+  }): Promise<void> {
+    await (this.prisma as PrismaClient & {
+      follow: any;
+    }).follow.deleteMany({
+      where: {
+        tenantId: args.tenantId,
+        followerId: args.followerId,
+        followingId: args.followingId,
+      },
+    });
+  }
+
+  async getFollowers(args: {
+    tenantId: TenantId;
+    userId: UserId;
+  }): Promise<UserId[]> {
+    const follows = await (this.prisma as PrismaClient & {
+      follow: any;
+    }).follow.findMany({
+      where: {
+        tenantId: args.tenantId,
+        followingId: args.userId,
+      },
+      select: {
+        followerId: true,
+      },
+    });
+
+    return follows.map((f: any) => f.followerId);
+  }
+
+  async getFollowing(args: {
+    tenantId: TenantId;
+    userId: UserId;
+  }): Promise<UserId[]> {
+    const follows = await (this.prisma as PrismaClient & {
+      follow: any;
+    }).follow.findMany({
+      where: {
+        tenantId: args.tenantId,
+        followerId: args.userId,
+      },
+      select: {
+        followingId: true,
+      },
+    });
+
+    return follows.map((f: any) => f.followingId);
   }
 
   // ---------------------------------------------------------------------------

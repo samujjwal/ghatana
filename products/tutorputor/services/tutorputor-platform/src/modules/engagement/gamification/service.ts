@@ -134,9 +134,10 @@ export class GamificationService {
         break;
       }
     }
-    // @ts-ignore
-    const nextLevelXp =
-      this.LEVEL_XP[level] ?? this.LEVEL_XP[this.LEVEL_XP.length - 1]! * 2;
+    const nextLevelXp: number =
+      level < this.LEVEL_XP.length && this.LEVEL_XP[level]
+        ? this.LEVEL_XP[level]!
+        : this.LEVEL_XP[this.LEVEL_XP.length - 1]! * 2;
     return { level, xpToNextLevel: nextLevelXp - points };
   }
 

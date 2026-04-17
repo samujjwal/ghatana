@@ -11,6 +11,14 @@ import React from 'react';
 import { clsx } from 'clsx';
 import type { VoiceModel } from '../../types';
 
+function formatVoiceQuality(model: VoiceModel): string {
+  if (typeof model.quality !== 'number') {
+    return 'Pending analysis';
+  }
+
+  return `${Math.round(model.quality * 100)}%`;
+}
+
 interface VoiceModelSelectorProps {
   models: VoiceModel[];
   selectedModelId: string | null;
@@ -61,7 +69,7 @@ export const VoiceModelSelector: React.FC<VoiceModelSelectorProps> = ({
             >
               <div className="font-medium text-sm">{model.name}</div>
               <div className="text-xs opacity-70">
-                Quality: {Math.round(model.quality * 100)}%
+                Quality: {formatVoiceQuality(model)}
               </div>
             </button>
           ))}

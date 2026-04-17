@@ -13,15 +13,26 @@ Handles:
 """
 
 import numpy as np
-import torch
 from pathlib import Path
 from typing import Dict, Optional, Callable, Tuple
 from dataclasses import dataclass, asdict
 import logging
 import time
 
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("torch not available, voice conversion runtime is unavailable")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class ConversionDependencyError(RuntimeError):
+    """Raised when voice conversion runtime dependencies are unavailable."""
 
 
 @dataclass
@@ -385,7 +396,7 @@ class VoiceConverter:
                 output_path=self.config.output_path,
                 duration=duration,
                 rtf=rtf,
-                quality_score=0.85,  # Placeholder
+                quality_score=self._calculate_quality_score(converted_audio, sr),
                 error=None
             )
 
@@ -406,27 +417,46 @@ class VoiceConverter:
             import librosa
             audio, sr = librosa.load(path, sr=self.config.target_sample_rate)
             return audio, sr
-        except ImportError:
-            # Fallback
-            return np.zeros(44100), 22050
+        except ImportError as exc:
+            raise ConversionDependencyError(
+                "Voice conversion requires the Python dependency 'librosa' to load source audio."
+            ) from exc
 
     def _apply_voice_model(self, audio: np.ndarray, f0: np.ndarray) -> np.ndarray:
         """
         Apply voice conversion model.
-
-        This is a placeholder - would use actual RVC/so-vits-svc model.
         """
-        # Placeholder: just return modified audio
-        return audio * 0.9  # Slight attenuation
+        raise ConversionDependencyError(
+            "Voice conversion model inference is not available in this runtime yet. "
+            "Placeholder conversion output is blocked."
+        )
 
     def _save_audio(self, audio: np.ndarray, path: str, sample_rate: int):
         """Save audio file."""
         try:
             import soundfile as sf
             sf.write(path, audio, sample_rate)
-        except ImportError:
-            # Fallback: save as numpy
-            np.save(path + '.npy', audio)
+        except ImportError as exc:
+            raise ConversionDependencyError(
+                "Voice conversion requires the Python dependency 'soundfile' to write converted audio."
+            ) from exc
+
+    def _calculate_quality_score(self, audio: np.ndarray, sample_rate: int) -> float:
+        """Estimate output quality from simple waveform health metrics."""
+        if audio.size == 0:
+            return 0.0
+
+        rms = float(np.sqrt(np.mean(np.square(audio, dtype=np.float64))))
+        peak = float(np.max(np.abs(audio)))
+        clipping_ratio = float(np.mean(np.abs(audio) >= 0.999))
+        dynamic_range = peak - float(np.min(np.abs(audio)))
+
+        loudness_score = min(1.0, rms / 0.2)
+        clipping_penalty = min(1.0, clipping_ratio * 10.0)
+        dynamics_score = min(1.0, dynamic_range)
+
+        score = (0.5 * loudness_score) + (0.35 * dynamics_score) + (0.15 * (1.0 - clipping_penalty))
+        return float(np.clip(score, 0.0, 1.0))
 
 
 def convert_voice(config_dict: Dict) -> Dict:

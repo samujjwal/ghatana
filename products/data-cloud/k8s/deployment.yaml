@@ -79,7 +79,7 @@ spec:
           # Liveness: restart if process is stuck
           livenessProbe:
             httpGet:
-              path: /live
+              path: /health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10

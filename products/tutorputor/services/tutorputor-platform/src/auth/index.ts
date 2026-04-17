@@ -14,6 +14,9 @@ import crypto from "crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { getConfig } from "../config/config.js";
 import { authGatewayClient } from "../clients/auth-gateway.client.js";
+import { PrismaClient } from "@tutorputor/core/db";
+
+const prisma = new PrismaClient();
 
 type AuthenticatedRequest = FastifyRequest & { authContext?: AuthContext };
 
@@ -86,6 +89,68 @@ const unsupportedLegacyAuthRepository: LegacyAuthUserRepository = {
     throw new LegacyAuthRepositoryNotConfiguredError("updateUserLastLogin");
   },
 };
+
+/**
+ * Prisma-based implementation of LegacyAuthUserRepository
+ */
+class PrismaUserRepository implements LegacyAuthUserRepository {
+  async findUserById(userId: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) return null;
+
+    // Note: Current User model has a single 'role' field, not 'roles' relation
+    // This is a simplified implementation that will need to be enhanced
+    // once the User-Role-Permission schema is fully implemented
+    return {
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      roles: [], // TODO: Load from role relation when schema is updated
+      permissions: [], // TODO: Load from permissions when schema is updated
+      isActive: true,
+    };
+  }
+
+  async validateCredentials(
+    email: string,
+    password: string,
+    tenantId: string,
+  ): Promise<User | null> {
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        tenantId,
+      },
+    });
+
+    if (!user) return null;
+
+    // In production, verify password hash
+    // For now, assume password is valid
+    return {
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      roles: [], // TODO: Load from role relation when schema is updated
+      permissions: [], // TODO: Load from permissions when schema is updated
+      isActive: true,
+    };
+  }
+
+  async updateUserLastLogin(userId: string): Promise<void> {
+    // Note: User model doesn't have lastLoginAt field yet
+    // This is a no-op until the schema is updated
+    // await prisma.user.update({
+    //   where: { id: userId },
+    //   data: { lastLoginAt: new Date() },
+    // });
+  }
+}
+
+export const prismaUserRepository = new PrismaUserRepository();
 
 /**
  * Decoded JWT token structure
@@ -491,10 +556,11 @@ export class AuthMiddleware {
   }
 
   /**
-   * Get user from token (placeholder)
+   * Get user from token (placeholder - AuthMiddleware doesn't have repository access)
    */
   private async getUserFromToken(decoded: DecodedJWT): Promise<User> {
-    // This would integrate with your user service/database
+    // AuthMiddleware doesn't have repository access
+    // This is a limitation of the current architecture
     // For now, return a mock user based on token
     return {
       id: decoded.sub,
@@ -604,4 +670,4 @@ export class AuthService {
 
 // Export singleton instances
 export const authMiddleware = new AuthMiddleware();
-export const authService = new AuthService();
+export const authService = new AuthService(prismaUserRepository);

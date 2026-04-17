@@ -17,6 +17,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class TrainingDependencyError(RuntimeError):
+    """Raised when required training dependencies are unavailable."""
+
+
 class TrainingStatus(Enum):
     PENDING = "pending"
     PREPROCESSING = "preprocessing"
@@ -68,18 +72,34 @@ class VoiceModelTrainer:
             self._progress_callback(progress)
         logger.info(f"Progress: {progress.status.value} - {progress.progress:.1f}%")
 
+    def _require_librosa(self):
+        try:
+            import librosa
+        except ImportError as exc:
+            raise TrainingDependencyError(
+                "Voice training requires the Python dependency 'librosa'. "
+                "Install the AI Voice training dependencies before starting training."
+            ) from exc
+        return librosa
+
+    def _require_torch(self):
+        try:
+            import torch
+        except ImportError as exc:
+            raise TrainingDependencyError(
+                "Voice training requires the Python dependency 'torch'. "
+                "Install the AI Voice training dependencies before starting training."
+            ) from exc
+        return torch
+
     def preprocess_samples(self, sample_paths: List[str]) -> List[np.ndarray]:
         self._report_progress(TrainingProgress(
             status=TrainingStatus.PREPROCESSING, progress=0.0,
             message="Starting preprocessing..."
         ))
-        
+
         processed = []
-        try:
-            import librosa
-        except ImportError:
-            logger.warning("librosa not available, using dummy data")
-            return [np.random.randn(self.config.sample_rate * 5) for _ in sample_paths]
+        librosa = self._require_librosa()
 
         for i, path in enumerate(sample_paths):
             if self._should_stop:
@@ -96,6 +116,9 @@ class VoiceModelTrainer:
                 ))
             except Exception as e:
                 logger.error(f"Failed to preprocess {path}: {e}")
+
+        if not processed:
+            raise ValueError("No valid audio samples were available for preprocessing")
         return processed
 
     def extract_features(self, audio_samples: List[np.ndarray]) -> List[Dict]:
@@ -103,13 +126,9 @@ class VoiceModelTrainer:
             status=TrainingStatus.EXTRACTING, progress=0.0,
             message="Extracting features..."
         ))
-        
+
         features = []
-        try:
-            import librosa
-        except ImportError:
-            return [{"mel": np.random.randn(128, 100), "f0": np.random.randn(100)} 
-                    for _ in audio_samples]
+        librosa = self._require_librosa()
 
         for i, audio in enumerate(audio_samples):
             if self._should_stop:
@@ -134,6 +153,9 @@ class VoiceModelTrainer:
                 ))
             except Exception as e:
                 logger.error(f"Feature extraction failed: {e}")
+
+        if not features:
+            raise ValueError("Feature extraction produced no usable samples")
         return features
 
     def train_model(self, features: List[Dict]) -> str:
@@ -143,28 +165,11 @@ class VoiceModelTrainer:
             message="Starting training..."
         ))
 
-        try:
-            import torch
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        except ImportError:
-            # Simulate training without torch
-            for epoch in range(self.config.epochs):
-                if self._should_stop:
-                    raise InterruptedError("Stopped by user")
-                self._report_progress(TrainingProgress(
-                    status=TrainingStatus.TRAINING,
-                    progress=(epoch + 1) / self.config.epochs * 100,
-                    current_epoch=epoch + 1, total_epochs=self.config.epochs,
-                    loss=1.0 / (epoch + 1),
-                    message=f"Epoch {epoch + 1}/{self.config.epochs}"
-                ))
-            model_path = self.output_dir / f"{self.config.model_name}.pth"
-            model_path.write_text("{}")
-            self._report_progress(TrainingProgress(
-                status=TrainingStatus.COMPLETED, progress=100.0,
-                message="Training completed!"
-            ))
-            return str(model_path)
+        if not features:
+            raise ValueError("Training requires at least one extracted feature sample")
+
+        torch = self._require_torch()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Real training with torch
         model = torch.nn.Sequential(
@@ -209,6 +214,8 @@ class VoiceModelTrainer:
     def train_from_samples(self, sample_paths: List[str]) -> str:
         try:
             audio_samples = self.preprocess_samples(sample_paths)
+            if not audio_samples:
+                raise ValueError("No valid audio samples were available for training")
             features = self.extract_features(audio_samples)
             return self.train_model(features)
         except InterruptedError as e:

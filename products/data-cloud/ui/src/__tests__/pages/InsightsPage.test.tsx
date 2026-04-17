@@ -26,6 +26,7 @@ vi.mock('../../api/brain.service', () => ({
       totalRecordsProcessed: 1234,
       activePatterns: 7,
       hotTierRecords: 55,
+      timestamp: '2026-04-17T12:34:00Z',
     }),
   },
 }));
@@ -187,6 +188,12 @@ describe('InsightsPage', () => {
     expect(screen.getByText('Voice dependencies are optional in this launcher profile.')).toBeInTheDocument();
   });
 
+  it('shows when the current insight snapshot was generated', async () => {
+    render(<InsightsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findAllByText(/Generated /)).not.toHaveLength(0);
+  });
+
   it('shows an honest unavailable state when analytics capability is disabled', async () => {
     analyticsMocks.useCapabilityRegistry.mockReturnValue({
       data: {
@@ -212,5 +219,33 @@ describe('InsightsPage', () => {
 
     expect(await screen.findByText('Analytics unavailable')).toBeInTheDocument();
     expect(screen.getByText('Analytics connectors are not configured for this launcher profile.')).toBeInTheDocument();
+  });
+
+  it('shows a capability loading state before runtime truth is available', async () => {
+    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    render(<InsightsPage />, { wrapper: TestWrapper });
+
+    expect(screen.getByText('Loading runtime capabilities')).toBeInTheDocument();
+    expect(screen.getByText('Checking which optional insights dependencies are active before rendering AI suggestions.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }));
+
+    expect(screen.getByText('Confirming analytics and federated query dependencies before enabling live dashboards.')).toBeInTheDocument();
+  });
+
+  it('shows an honest empty state when no suggestions are returned', async () => {
+    analyticsMocks.useAnalyticsAiSuggestions.mockReturnValue({
+      data: [],
+      isLoading: false,
+    });
+
+    render(<InsightsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText('No suggestions right now')).toBeInTheDocument();
+    expect(screen.getByText('No active AI insights')).toBeInTheDocument();
   });
 });

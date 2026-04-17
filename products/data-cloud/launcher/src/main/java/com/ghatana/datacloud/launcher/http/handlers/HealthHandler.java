@@ -96,6 +96,17 @@ public class HealthHandler {
     public Promise<HttpResponse> handleHealthDetail(HttpRequest request) {
         Map<String, Object> subsystems = buildSubsystemSnapshot();
 
+        return Promise.of(buildHealthDetailResponse(subsystems));
+    }
+
+    public Promise<HttpResponse> handleHealthDeep(HttpRequest request) {
+        Map<String, Object> subsystems = normalizeDeepSubsystemSnapshot(buildSubsystemSnapshot());
+
+        return Promise.of(buildHealthDetailResponse(subsystems));
+    }
+
+    private HttpResponse buildHealthDetailResponse(Map<String, Object> subsystems) {
+
         Map<String, Object> sloTargets = Map.of(
             "availability_pct",       SLO_AVAILABILITY_TARGET * 100,
             "p99_latency_target_ms",  SLO_P99_LATENCY_TARGET_MS,
@@ -110,7 +121,7 @@ public class HealthHandler {
         body.put("slo_targets", sloTargets);
         body.put("subsystems",  subsystems);
 
-        return Promise.of(httpSupport.jsonResponse(body));
+        return httpSupport.jsonResponse(body);
     }
 
     private Map<String, Object> buildSubsystemSnapshot() {
@@ -152,21 +163,49 @@ public class HealthHandler {
         return subsystems;
     }
 
+    private Map<String, Object> normalizeDeepSubsystemSnapshot(Map<String, Object> subsystems) {
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : subsystems.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> subsystem && "NOT_CONFIGURED".equals(subsystem.get("status"))) {
+                Map<String, Object> enriched = new LinkedHashMap<>();
+                subsystem.forEach((key, nestedValue) -> enriched.put(String.valueOf(key), nestedValue));
+                enriched.put("status", "UNKNOWN");
+                normalized.put(entry.getKey(), Collections.unmodifiableMap(enriched));
+                continue;
+            }
+            normalized.put(entry.getKey(), value);
+        }
+        return normalized;
+    }
+
     private Map<String, Object> safeSubsystemSnapshot(String name,
                                                       Supplier<Map<String, Object>> supplier) {
+        long startedAtNanos = System.nanoTime();
         try {
             Map<String, Object> snapshot = supplier.get();
             if (snapshot == null || snapshot.isEmpty()) {
-                return Map.of("status", "UNKNOWN", "note", "empty-health-snapshot");
+                return Map.of(
+                    "status", "UNKNOWN",
+                    "note", "empty-health-snapshot",
+                    "response_time_ms", elapsedMillis(startedAtNanos)
+                );
             }
-            return Collections.unmodifiableMap(new LinkedHashMap<>(snapshot));
+            Map<String, Object> enrichedSnapshot = new LinkedHashMap<>(snapshot);
+            enrichedSnapshot.putIfAbsent("response_time_ms", elapsedMillis(startedAtNanos));
+            return Collections.unmodifiableMap(enrichedSnapshot);
         } catch (RuntimeException exception) {
             return Map.of(
                 "status", "DOWN",
                 "error", exception.getClass().getSimpleName(),
-                "message", exception.getMessage() == null ? (name + " probe failed") : exception.getMessage()
+                "message", exception.getMessage() == null ? (name + " probe failed") : exception.getMessage(),
+                "response_time_ms", elapsedMillis(startedAtNanos)
             );
         }
+    }
+
+    private long elapsedMillis(long startedAtNanos) {
+        return Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
     }
 
     private Map<String, Object> notConfiguredSubsystem() {

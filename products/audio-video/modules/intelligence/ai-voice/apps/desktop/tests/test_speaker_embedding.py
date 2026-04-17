@@ -9,14 +9,17 @@ Unit tests for speaker embedding extraction.
 import unittest
 import numpy as np
 from pathlib import Path
-import tempfile
 import sys
+from unittest.mock import patch
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src-tauri" / "python"))
 
-from speaker_embedding import SpeakerEmbeddingExtractor, EmbeddingResult
-from models.model_manager import ModelManager
+from speaker_embedding import (
+    SpeakerEmbeddingExtractor,
+    EmbeddingDependencyError,
+    EmbeddingResult,
+)
 
 
 class MockModelManager:
@@ -49,32 +52,10 @@ class TestSpeakerEmbeddingExtractor(unittest.TestCase):
         device = self.extractor._resolve_device("cpu")
         self.assertEqual(device, "cpu")
 
-    def test_mock_embedding_generation(self):
-        """Test mock embedding generation."""
-        result = self.extractor._mock_embedding("/path/to/audio.wav")
-
-        self.assertIsInstance(result, EmbeddingResult)
-        self.assertEqual(result.embedding.shape, (256,))
-        self.assertGreaterEqual(result.confidence, 0.0)
-        self.assertLessEqual(result.confidence, 1.0)
-        self.assertGreater(result.duration_seconds, 0)
-
-    def test_embedding_consistency(self):
-        """Test that same input produces same embedding."""
-        path = "/path/to/test.wav"
-        result1 = self.extractor._mock_embedding(path)
-        result2 = self.extractor._mock_embedding(path)
-
-        # Same path should produce same embedding
-        np.testing.assert_array_equal(result1.embedding, result2.embedding)
-
-    def test_embedding_normalized(self):
-        """Test that mock embeddings are normalized."""
-        result = self.extractor._mock_embedding("/path/to/test.wav")
-        norm = np.linalg.norm(result.embedding)
-
-        # Should be normalized to unit length
-        self.assertAlmostEqual(norm, 1.0, places=5)
+    def test_load_requires_real_dependencies(self):
+        """Test loading fails explicitly without the real embedding runtime."""
+        with self.assertRaises(EmbeddingDependencyError):
+            self.extractor.load()
 
     def test_average_embedding(self):
         """Test averaging multiple embeddings."""
@@ -141,7 +122,14 @@ class TestSpeakerEmbeddingExtractor(unittest.TestCase):
         def progress_callback(progress):
             progress_updates.append(progress)
 
-        results = self.extractor.extract_batch(audio_paths, progress_callback)
+        mocked_result = EmbeddingResult(
+            embedding=np.ones(256, dtype=np.float32),
+            confidence=0.9,
+            duration_seconds=3.0,
+            sample_rate=16000,
+        )
+        with patch.object(self.extractor, "extract", return_value=mocked_result):
+            results = self.extractor.extract_batch(audio_paths, progress_callback)
 
         self.assertEqual(len(results), 5)
         self.assertGreater(len(progress_updates), 0)
@@ -153,13 +141,14 @@ class TestSpeakerEmbeddingExtractor(unittest.TestCase):
 
     def test_extract_batch_handles_errors(self):
         """Test that batch extraction handles individual errors gracefully."""
-        # This would fail in real extraction, but mock should handle it
         audio_paths = ["/nonexistent/file.wav"]
 
-        results = self.extractor.extract_batch(audio_paths)
+        with patch.object(self.extractor, "extract", side_effect=EmbeddingDependencyError("missing runtime")):
+            results = self.extractor.extract_batch(audio_paths)
 
         # Should return a list with None for failed extractions
         self.assertEqual(len(results), 1)
+        self.assertIsNone(results[0])
 
 
 class TestEmbeddingResult(unittest.TestCase):

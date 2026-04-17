@@ -8,6 +8,7 @@
  * @doc.purpose Authorization and SSO logic
  * @doc.layer product
  * @doc.pattern Service
+ * @doc.import type { FastifyInstance } from "fastify";
  */
 
 import type { SsoService } from "@tutorputor/contracts/v1/services";
@@ -18,6 +19,8 @@ import type {
   UserRole,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import jwt from "jsonwebtoken";
+import { fieldEncryption } from "../../core/encryption/field-encryption.js";
 import { OidcClient } from "./oidc/OidcClient.js";
 import { randomUUID } from "crypto";
 
@@ -176,11 +179,9 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     // Provider Management
     // -------------------------------------------------------------------------
 
-    // @ts-ignore
     async listProviders({ tenantId }) {
-      // @ts-ignore - Prisma typing might need adjustment based on generated client
       const providers = await prisma.identityProvider.findMany({
-        where: { tenantId },
+        where: { tenantId: tenantId as string },
         orderBy: { displayName: "asc" },
       });
       return providers.map(mapDbProviderToConfig);
@@ -192,9 +193,8 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       });
       if (!tenant) return [];
 
-      // @ts-ignore
       const providers = await prisma.identityProvider.findMany({
-        where: { tenantId: tenant.id, enabled: true },
+        where: { tenantId: tenant.id as string, enabled: true },
         select: { id: true, displayName: true, type: true },
       });
       return providers.map((provider) => ({
@@ -205,12 +205,11 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     },
 
     async createProvider({ tenantId, config }) {
-      // @ts-ignore
       const created = await prisma.identityProvider.create({
         data: {
-          tenantId,
+          tenantId: tenantId as string,
           displayName: config.displayName,
-          type: config.type,
+          type: config.type as string,
           enabled: config.enabled,
           discoveryEndpoint: config.discoveryEndpoint,
           clientId: config.clientId,
@@ -255,10 +254,9 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         data.roleMapping = JSON.stringify(patch.roleMapping);
       }
 
-      // @ts-ignore
       const updated = await prisma.identityProvider.update({
-        where: { id: providerId },
-        data,
+        where: { id: providerId as string },
+        data: data as Record<string, unknown>,
       });
       // Clear cache
       oidcClientCache.delete(providerId);
@@ -266,22 +264,18 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     },
 
     async deleteProvider({ tenantId, providerId }) {
-      // @ts-ignore
       const current = await prisma.identityProvider.findFirst({
-        where: { id: providerId, tenantId },
+        where: { id: providerId as string, tenantId: tenantId as string },
       });
       if (!current) throw new Error("Provider not found");
 
-      // @ts-ignore
-      await prisma.identityProvider.delete({ where: { id: providerId } });
+      await prisma.identityProvider.delete({ where: { id: providerId as string } });
       oidcClientCache.delete(providerId);
     },
 
     async testProvider({ tenantId, providerId }) {
-      // Placeholder check
-      // @ts-ignore
       const provider = await prisma.identityProvider.findFirst({
-        where: { id: providerId, tenantId },
+        where: { id: providerId as string, tenantId: tenantId as string },
       });
       if (!provider) return { success: false, message: "Provider not found" };
 
@@ -297,7 +291,29 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           };
         }
       }
-      return { success: true, message: "SAML test not implemented" };
+
+      if (provider.type === "saml") {
+        // SAML test: validate configuration
+        if (!provider.discoveryEndpoint) {
+          return { success: false, message: "SAML metadata URL is required" };
+        }
+        if (!provider.clientId) {
+          return { success: false, message: "SAML entity ID is required" };
+        }
+        try {
+          // In a real implementation, this would fetch and validate the SAML metadata
+          // For now, we validate that required fields are present
+          new URL(provider.discoveryEndpoint);
+          return { success: true, message: "SAML configuration is valid" };
+        } catch (e: unknown) {
+          return {
+            success: false,
+            message: e instanceof Error ? e.message : String(e),
+          };
+        }
+      }
+
+      return { success: false, message: "Unknown provider type" };
     },
 
     // -------------------------------------------------------------------------
@@ -437,6 +453,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           data: {
             tenantId: storedState.tenantId,
             email: externalUser.email,
+            emailEncrypted: JSON.stringify(fieldEncryption.encrypt(externalUser.email)),
             displayName:
               externalUser.name ??
               externalUser.email.split("@")[0] ??

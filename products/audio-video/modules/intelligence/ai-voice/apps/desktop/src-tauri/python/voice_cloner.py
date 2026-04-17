@@ -26,7 +26,11 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    logger.warning("torch/torchaudio not available, voice cloning will use mock mode")
+    logger.warning("torch/torchaudio not available, voice cloning is unavailable")
+
+
+class CloningDependencyError(RuntimeError):
+    """Raised when voice cloning dependencies are unavailable."""
 
 
 @dataclass
@@ -104,37 +108,23 @@ class VoiceCloner:
             return True
 
         if not TORCH_AVAILABLE:
-            logger.warning("PyTorch not available, using mock mode")
-            self._loaded = True
-            return True
+            raise CloningDependencyError(
+                "Voice cloning requires the Python dependencies 'torch' and 'torchaudio'. "
+                "Install the AI Voice cloning dependencies before cloning a voice."
+            )
 
         try:
             # Load base TTS model (VITS or similar)
-            model_path = self.model_manager.ensure_model("vits-base")
+            self.model_manager.ensure_model("vits-base")
 
-            # In production, load actual model
-            # For now, create a placeholder
-            self._create_placeholder_model()
+            raise CloningDependencyError(
+                "Voice cloning base-model loading is not fully implemented for this runtime yet. "
+                "Placeholder voice-clone models are blocked."
+            )
 
-            self._loaded = True
-            logger.info("Base TTS model loaded successfully")
-            return True
         except Exception as e:
             logger.error(f"Failed to load base model: {e}")
-            return False
-
-    def _create_placeholder_model(self):
-        """Create a placeholder model for development."""
-        if not TORCH_AVAILABLE:
-            return
-
-        # Simple placeholder model
-        self.base_model = torch.nn.Sequential(
-            torch.nn.Linear(256, 512),
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 256)
-        ).to(self.device)
-        logger.info("Created placeholder base model")
+            raise
 
     def clone(
         self,
@@ -228,6 +218,7 @@ class VoiceCloner:
                 voice_name,
                 target_embedding,
                 model_path,
+                len(validated_samples),
                 similarity_score
             )
 
@@ -338,13 +329,9 @@ class VoiceCloner:
         model_path = output_dir / "model.pt"
 
         if not TORCH_AVAILABLE:
-            # Mock training
-            logger.info("Mock training (PyTorch not available)")
-            time.sleep(2)  # Simulate training time
-
-            # Create mock model file
-            model_path.write_text("mock_model")
-            return model_path, 0.01
+            raise CloningDependencyError(
+                "Voice cloning training requires the Python dependencies 'torch' and 'torchaudio'."
+            )
 
         # Actual training loop
         logger.info(f"Training voice model with {config.epochs} epochs")
@@ -366,15 +353,17 @@ class VoiceCloner:
                     estimated_time_remaining=estimated_remaining
                 ))
 
+        if self.base_model is None:
+            raise CloningDependencyError(
+                "Voice cloning base model is unavailable; placeholder model serialization is blocked."
+            )
+
         # Save model
-        if self.base_model is not None:
-            torch.save({
-                'model_state_dict': self.base_model.state_dict(),
-                'config': config.__dict__,
-                'voice_id': voice_id
-            }, model_path)
-        else:
-            model_path.write_text("placeholder_model")
+        torch.save({
+            'model_state_dict': self.base_model.state_dict(),
+            'config': config.__dict__,
+            'voice_id': voice_id
+        }, model_path)
 
         final_loss = 0.01
         logger.info(f"Training complete. Final loss: {final_loss:.4f}")
@@ -393,9 +382,22 @@ class VoiceCloner:
         Returns:
             Similarity score (0-1)
         """
-        # In production, would synthesize test audio and compare embeddings
-        # For now, return a realistic mock score
-        return 0.87
+        if not model_path.exists():
+            raise FileNotFoundError(f"Trained voice model not found: {model_path}")
+
+        sample_result = self.embedding_extractor.extract(sample_audio)
+
+        if hasattr(self.embedding_extractor, "compute_similarity"):
+            similarity = self.embedding_extractor.compute_similarity(
+                sample_result.embedding,
+                target_embedding,
+            )
+            return float(np.clip(similarity, 0.0, 1.0))
+
+        sample_norm = sample_result.embedding / (np.linalg.norm(sample_result.embedding) + 1e-8)
+        target_norm = target_embedding / (np.linalg.norm(target_embedding) + 1e-8)
+        similarity = float((np.dot(sample_norm, target_norm) + 1.0) / 2.0)
+        return float(np.clip(similarity, 0.0, 1.0))
 
     def _save_voice_metadata(
         self,
@@ -403,6 +405,7 @@ class VoiceCloner:
         voice_name: str,
         embedding: np.ndarray,
         model_path: Path,
+        training_samples: int,
         similarity_score: float
     ) -> Path:
         """
@@ -421,6 +424,7 @@ class VoiceCloner:
         metadata = {
             'voice_id': voice_id,
             'voice_name': voice_name,
+            'training_samples': training_samples,
             'similarity_score': similarity_score,
             'embedding_dim': len(embedding),
             'model_path': str(model_path),

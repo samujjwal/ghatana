@@ -12,11 +12,12 @@ from pathlib import Path
 import tempfile
 import json
 import sys
+from unittest.mock import patch
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src-tauri" / "python"))
 
-from voice_cloner import VoiceCloner, CloningConfig, CloningResult
+from voice_cloner import VoiceCloner, CloningConfig, CloningDependencyError, CloningResult
 from speaker_embedding import SpeakerEmbeddingExtractor
 
 
@@ -48,6 +49,25 @@ class MockEmbeddingExtractor:
         """Mock average embedding."""
         embeddings = np.array([r.embedding for r in results if r is not None])
         return np.mean(embeddings, axis=0)
+
+    def extract(self, audio_path):
+        """Mock single extraction."""
+        from speaker_embedding import EmbeddingResult
+        seed = abs(hash(audio_path)) % (2**32)
+        rng = np.random.default_rng(seed)
+        embedding = rng.normal(size=256).astype(np.float32)
+        return EmbeddingResult(
+            embedding=embedding,
+            confidence=0.95,
+            duration_seconds=3.0,
+            sample_rate=16000,
+        )
+
+    def compute_similarity(self, embedding1, embedding2):
+        """Mock cosine similarity."""
+        emb1_norm = embedding1 / (np.linalg.norm(embedding1) + 1e-8)
+        emb2_norm = embedding2 / (np.linalg.norm(embedding2) + 1e-8)
+        return float((np.dot(emb1_norm, emb2_norm) + 1.0) / 2.0)
 
 
 class TestVoiceCloner(unittest.TestCase):
@@ -132,17 +152,33 @@ class TestVoiceCloner(unittest.TestCase):
         def progress_callback(progress):
             progress_updates.append(progress)
 
-        result = self.cloner.clone(
-            audio_samples,
-            "Test Voice",
-            config,
-            progress_callback
-        )
+        trained_model_path = Path(self.temp_dir) / "trained-model.pt"
+        trained_model_path.write_text("trained-model")
+
+        with patch.object(self.cloner, "load_base_model", return_value=True):
+            with patch.object(self.cloner, "_train_model", return_value=(trained_model_path, 0.01)):
+                result = self.cloner.clone(
+                    audio_samples,
+                    "Test Voice",
+                    config,
+                    progress_callback
+                )
 
         self.assertTrue(result.success)
         self.assertIsNotNone(result.voice_id)
         self.assertGreater(result.similarity_score, 0.0)
         self.assertGreater(len(progress_updates), 0)
+
+    def test_clone_reports_dependency_error_when_base_model_unavailable(self):
+        """Test cloning fails clearly when runtime dependencies are unavailable."""
+        audio_path = Path(self.temp_dir) / "audio.wav"
+        audio_path.write_bytes(b"RIFF\x24\x00\x00\x00WAVEfmt ")
+
+        with patch.object(self.cloner, "load_base_model", side_effect=CloningDependencyError("missing torch")):
+            result = self.cloner.clone([str(audio_path)] * 3, "Test Voice")
+
+        self.assertFalse(result.success)
+        self.assertIn("missing torch", result.error)
 
     def test_cloning_config_defaults(self):
         """Test CloningConfig default values."""
@@ -183,6 +219,7 @@ class TestVoiceCloner(unittest.TestCase):
             voice_name,
             embedding,
             model_path,
+            5,
             0.87
         )
 
@@ -200,11 +237,28 @@ class TestVoiceCloner(unittest.TestCase):
 
         self.assertEqual(metadata['voice_id'], voice_id)
         self.assertEqual(metadata['voice_name'], voice_name)
-        self.assertEqual(metadata['similarity_score'], 0.87)
+        self.assertEqual(metadata['training_samples'], 5)
+        self.assertAlmostEqual(metadata['similarity_score'], 0.87)
 
         # Clean up
         import shutil
         shutil.rmtree(model_dir)
+
+    def test_compute_similarity_score_uses_embedding_similarity(self):
+        """Test similarity score is computed from real embedding comparisons."""
+        model_path = Path(self.temp_dir) / "model.pt"
+        model_path.write_text("trained-model")
+        target_embedding = np.ones(256, dtype=np.float32)
+
+        similarity = self.cloner._compute_similarity_score(
+            "sample-a.wav",
+            model_path,
+            target_embedding,
+        )
+
+        self.assertGreaterEqual(similarity, 0.0)
+        self.assertLessEqual(similarity, 1.0)
+        self.assertNotEqual(similarity, 0.87)
 
 
 class TestCloningResult(unittest.TestCase):

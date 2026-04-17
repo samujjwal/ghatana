@@ -130,6 +130,22 @@ function normalizeCollectionsResponse(
   return Array.isArray(response) ? response : response.data;
 }
 
+function formatInsightTimestamp(timestamp?: string): string | null {
+  if (!timestamp) {
+    return null;
+  }
+
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 // =============================================================================
 // TAB NAVIGATION
 // =============================================================================
@@ -170,6 +186,7 @@ function OverviewTab({
   costBreakdown,
   aiSuggestions,
   capabilities,
+  insightTimestamp,
 }: {
   brainStats?: BrainStats;
   activePipelines?: number;
@@ -177,6 +194,7 @@ function OverviewTab({
   costBreakdown?: Partial<CostBreakdown>;
   aiSuggestions: AnalyticsAiSuggestion[];
   capabilities: CapabilitySignal[];
+  insightTimestamp: string | null;
 }) {
   const spotlightItems = toSpotlightItems(aiSuggestions);
   const overviewActivities = toOverviewActivities(costBreakdown);
@@ -227,9 +245,16 @@ function OverviewTab({
               <Zap className="h-4 w-4 text-yellow-500" />
               AI Spotlight
             </h3>
-            <span className="text-xs text-gray-500">
-              {brainStats?.hotTierRecords || 0} hot-tier records
-            </span>
+            <div className="text-right">
+              <span className="block text-xs text-gray-500">
+                {brainStats?.hotTierRecords || 0} hot-tier records
+              </span>
+              {insightTimestamp && (
+                <span className="block text-[11px] text-gray-400">
+                  Updated {insightTimestamp}
+                </span>
+              )}
+            </div>
           </div>
           <div className="space-y-3">
             {spotlightItems.length > 0 ? (
@@ -611,6 +636,22 @@ function CapabilityUnavailableState({
   );
 }
 
+function CapabilityLoadingState({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 text-center">
+      <Loader2 className="h-8 w-8 text-gray-400 mx-auto mb-3 animate-spin" />
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h3>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+    </div>
+  );
+}
+
 // =============================================================================
 // COST TAB
 // =============================================================================
@@ -944,7 +985,7 @@ export function InsightsPage() {
   const collectionNames = normalizeCollectionsResponse(collectionsData)
     .map((collection) => collection.name ?? collection.id)
     .filter((name) => name.length > 0);
-  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const { data: capabilityRegistry, isLoading: capabilitiesLoading } = useCapabilityRegistry();
   const analyticsCapability = getCapabilitySignal(
     capabilityRegistry?.capabilities,
     ['analytics', 'trino', 'federated_query', 'federatedQuery'],
@@ -955,6 +996,7 @@ export function InsightsPage() {
   );
   const analyticsUnavailable = analyticsCapability?.status === 'unavailable';
   const aiUnavailable = aiAssistCapability?.status === 'unavailable';
+  const insightTimestamp = formatInsightTimestamp(brainStats?.timestamp ?? capabilityRegistry?.generatedAt);
 
   // AI sidebar: fetch real suggestions from POST /api/v1/analytics/suggest
   const { data: aiSuggestions, isLoading: aiLoading } = useAnalyticsAiSuggestions();
@@ -974,6 +1016,11 @@ export function InsightsPage() {
           title="AI insights unavailable"
           message={aiAssistCapability?.detail ?? 'This deployment does not have the AI assistance capability enabled.'}
         />
+      ) : capabilitiesLoading && !capabilityRegistry ? (
+        <CapabilityLoadingState
+          title="Loading runtime capabilities"
+          message="Checking which optional insights dependencies are active before rendering AI suggestions."
+        />
       ) : aiLoading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-4 justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -981,6 +1028,11 @@ export function InsightsPage() {
         </div>
       ) : (
         <div className="space-y-3">
+          {insightTimestamp && (
+            <p className="text-[11px] text-gray-400 text-center">
+              Generated {insightTimestamp}
+            </p>
+          )}
           {(aiSuggestions ?? []).map((s) => (
             <AISuggestion
               key={s.key}
@@ -1045,11 +1097,17 @@ export function InsightsPage() {
             costBreakdown={costData}
             aiSuggestions={aiSuggestions ?? []}
             capabilities={capabilityRegistry?.capabilities ?? []}
+            insightTimestamp={insightTimestamp}
           />
         )}
         {activeTab === 'brain' && <BrainTab />}
         {activeTab === 'analytics' && (
-          analyticsUnavailable ? (
+          capabilitiesLoading && !capabilityRegistry ? (
+            <CapabilityLoadingState
+              title="Loading runtime capabilities"
+              message="Confirming analytics and federated query dependencies before enabling live dashboards."
+            />
+          ) : analyticsUnavailable ? (
             <CapabilityUnavailableState
               title="Analytics unavailable"
               message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live dashboard queries.'}

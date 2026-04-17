@@ -8,6 +8,7 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,6 +58,7 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
     @NotNull
     public Promise<List<ReviewItem>> getPending(@Nullable ReviewFilter filter) {
         var stream = items.values().stream()
+            .map(this::expireIfNeeded)
                 .filter(item -> item.getStatus() == ReviewStatus.PENDING
                         || item.getStatus() == ReviewStatus.IN_REVIEW);
 
@@ -84,7 +86,8 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
     @Override
     @NotNull
     public Promise<@Nullable ReviewItem> getById(@NotNull String reviewId) {
-        return Promise.of(items.get(reviewId));
+        ReviewItem item = items.get(reviewId);
+        return Promise.of(item != null ? expireIfNeeded(item) : null);
     }
 
     @Override
@@ -95,6 +98,7 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
             return Promise.ofException(
                     new IllegalArgumentException("Review item not found: " + reviewId));
         }
+        item = expireIfNeeded(item);
         if (item.getStatus() != ReviewStatus.PENDING && item.getStatus() != ReviewStatus.IN_REVIEW) {
             return Promise.ofException(
                     new IllegalStateException("Review item " + reviewId + " is not pending: " + item.getStatus()));
@@ -113,6 +117,7 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
             return Promise.ofException(
                     new IllegalArgumentException("Review item not found: " + reviewId));
         }
+        item = expireIfNeeded(item);
         if (item.getStatus() != ReviewStatus.PENDING && item.getStatus() != ReviewStatus.IN_REVIEW) {
             return Promise.ofException(
                     new IllegalStateException("Review item " + reviewId + " is not pending: " + item.getStatus()));
@@ -131,6 +136,7 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
             return Promise.ofException(
                     new IllegalArgumentException("Review item not found: " + reviewId));
         }
+        item = expireIfNeeded(item);
         if (item.getStatus() != ReviewStatus.PENDING && item.getStatus() != ReviewStatus.IN_REVIEW) {
             return Promise.ofException(
                     new IllegalStateException("Review item " + reviewId + " cannot be escalated from state: " + item.getStatus()));
@@ -142,8 +148,9 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
     @Override
     @NotNull
     public Promise<List<ReviewItem>> findOverdue(long thresholdSeconds, @Nullable String tenantId) {
-        java.time.Instant cutoff = java.time.Instant.now().minusSeconds(thresholdSeconds);
+        Instant cutoff = Instant.now().minusSeconds(thresholdSeconds);
         List<ReviewItem> overdue = items.values().stream()
+            .map(this::expireIfNeeded)
                 .filter(i -> i.getStatus() == ReviewStatus.PENDING
                         || i.getStatus() == ReviewStatus.IN_REVIEW)
                 .filter(i -> i.getCreatedAt().isBefore(cutoff))
@@ -156,9 +163,18 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
     @NotNull
     public Promise<Long> pendingCount() {
         long count = items.values().stream()
+                .map(this::expireIfNeeded)
                 .filter(i -> i.getStatus() == ReviewStatus.PENDING
                         || i.getStatus() == ReviewStatus.IN_REVIEW)
                 .count();
         return Promise.of(count);
+    }
+
+    private ReviewItem expireIfNeeded(ReviewItem item) {
+        if ((item.getStatus() == ReviewStatus.PENDING || item.getStatus() == ReviewStatus.IN_REVIEW)
+                && item.isExpired(Instant.now())) {
+            item.markExpired();
+        }
+        return item;
     }
 }

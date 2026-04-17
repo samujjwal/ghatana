@@ -601,6 +601,15 @@ export interface BillingService {
     userId: UserId;
     moduleId: ModuleId;
   }): Promise<boolean>;
+
+  /**
+   * Create a billing portal session for managing subscription.
+   */
+  createBillingPortalSession(args: {
+    tenantId: TenantId;
+    userId: UserId;
+    returnUrl?: string;
+  }): Promise<{ url: string }>;
 }
 
 // =============================================================================

@@ -160,9 +160,20 @@ MODEL_REGISTRY: Dict[str, ModelInfo] = {
     ),
 }
 
+UNSUPPORTED_PLACEHOLDER_MODELS: Dict[str, str] = {
+    'vits-base': 'VITS base model download metadata is still placeholder-backed in this runtime.',
+    'rvc-base': 'RVC base model download metadata is still placeholder-backed in this runtime.',
+    'mosnet': 'MOSNet download metadata is still placeholder-backed in this runtime.',
+}
+
 
 class ModelManager:
     """Manages ML model lifecycle."""
+
+    def _ensure_supported_model(self, model_id: str) -> None:
+        reason = UNSUPPORTED_PLACEHOLDER_MODELS.get(model_id)
+        if reason is not None:
+            raise RuntimeError(f"{reason} Placeholder model download/load is blocked.")
 
     def _build_download_headers(self) -> Dict[str, str]:
         return {
@@ -320,6 +331,8 @@ class ModelManager:
         if model_id not in MODEL_REGISTRY:
             raise ValueError(f"Unknown model: {model_id}")
 
+        self._ensure_supported_model(model_id)
+
         model_info = MODEL_REGISTRY[model_id]
 
         # Check if already downloaded
@@ -431,6 +444,8 @@ class ModelManager:
         Returns:
             Loaded PyTorch model
         """
+        self._ensure_supported_model(model_id)
+
         if not self.is_downloaded(model_id):
             logger.info(f"Model {model_id} not found, downloading...")
             self.download_model(model_id)

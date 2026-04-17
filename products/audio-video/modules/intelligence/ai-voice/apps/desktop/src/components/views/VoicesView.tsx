@@ -14,6 +14,14 @@ import { createLogger, invokeWithLog } from '../../utils/logger';
 
 const logger = createLogger('VoicesView');
 
+function formatVoiceQuality(voice: VoiceModel): string {
+  if (typeof voice.quality !== 'number') {
+    return 'pending analysis';
+  }
+
+  return `${Math.round(voice.quality * 100)}%`;
+}
+
 interface VoicesViewProps {
   onOpenTraining?: () => void;
 }
@@ -144,7 +152,7 @@ export const VoicesView: React.FC<VoicesViewProps> = ({ onOpenTraining }) => {
                   <div>
                     <h3 className="font-medium text-white">{voice.name}</h3>
                     <p className="text-sm text-gray-400">
-                      {voice.trainingSamples} samples • Quality: {Math.round(voice.quality * 100)}%
+                      {voice.trainingSamples} samples • Quality: {formatVoiceQuality(voice)}
                     </p>
                   </div>
                   {voice.isDefault && (

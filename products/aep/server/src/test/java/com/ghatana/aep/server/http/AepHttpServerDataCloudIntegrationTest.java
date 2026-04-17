@@ -3,6 +3,8 @@ package com.ghatana.aep.server.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.agent.learning.review.DataCloudHumanReviewQueue;
+import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
@@ -224,6 +226,50 @@ class AepHttpServerDataCloudIntegrationTest {
         Map<?, ?> historyBody = mapper.readValue(history.body(), Map.class);
         assertThat(((Number) historyBody.get("count")).intValue()).isEqualTo(1);
         assertThat(((List<?>) historyBody.get("versions")).toString()).contains("release-1");
+    }
+
+    @Test
+    @DisplayName("pending HITL reviews persist across server restart when Data-Cloud is configured")
+    void pendingHitlReviewsPersistAcrossServerRestart() throws Exception {
+        dataCloud = DataCloud.embedded();
+        DataCloudHumanReviewQueue initialQueue = new DataCloudHumanReviewQueue(dataCloud);
+        ReviewItem pending = ReviewItem.builder()
+            .reviewId("review-persist-1")
+            .tenantId("tenant-hitl")
+            .skillId("skill-review")
+            .proposedVersion("v1")
+            .confidenceScore(0.52)
+            .build();
+        initialQueue.enqueue(pending).getResult();
+
+        int firstPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, firstPort, initialQueue, dataCloud);
+        server.start();
+        waitForServerReady(firstPort);
+
+        HttpResponse<String> firstPending = get(firstPort, "/api/v1/hitl/pending?tenantId=tenant-hitl");
+        assertThat(firstPending.statusCode()).isEqualTo(200);
+        Map<?, ?> firstBody = mapper.readValue(firstPending.body(), Map.class);
+        assertThat(((Number) firstBody.get("count")).intValue()).isEqualTo(1);
+
+        server.stop();
+        engine.close();
+        server = null;
+        engine = null;
+
+        DataCloudHumanReviewQueue restartedQueue = new DataCloudHumanReviewQueue(dataCloud);
+        int secondPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, secondPort, restartedQueue, dataCloud);
+        server.start();
+        waitForServerReady(secondPort);
+
+        HttpResponse<String> secondPending = get(secondPort, "/api/v1/hitl/pending?tenantId=tenant-hitl");
+        assertThat(secondPending.statusCode()).isEqualTo(200);
+        Map<?, ?> secondBody = mapper.readValue(secondPending.body(), Map.class);
+        assertThat(((Number) secondBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) secondBody.get("pending")).toString()).contains("review-persist-1");
     }
 
     private HttpResponse<String> get(int port, String path) throws Exception {

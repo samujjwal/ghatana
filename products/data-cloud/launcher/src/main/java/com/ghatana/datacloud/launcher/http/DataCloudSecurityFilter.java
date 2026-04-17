@@ -216,6 +216,14 @@ public final class DataCloudSecurityFilter {
                 return Promise.of(unauthorized("JWT missing required identity claims"));
             }
 
+            String requestedTenantId = requestedTenantId(request);
+            if (requestedTenantId != null && !requestedTenantId.equals(tenantId)) {
+                log.warn("Forbidden request: JWT tenant claim does not match requested tenant claimTenant={} requestedTenant={}",
+                        tenantId,
+                        requestedTenantId);
+                return Promise.of(forbiddenTenantMismatch());
+            }
+
             Principal principal = new Principal(userId, jwtProvider.getRolesFromToken(token), tenantId);
             return serveAsPrincipal(request, tenantWrapped, principal, sensitivity);
         } catch (RuntimeException exception) {
@@ -433,6 +441,20 @@ public final class DataCloudSecurityFilter {
         }
     }
 
+    private static String requestedTenantId(io.activej.http.HttpRequest request) {
+        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        if (tenantHeader != null && !tenantHeader.isBlank()) {
+            return tenantHeader.trim();
+        }
+
+        String tenantQuery = request.getQueryParameter("tenantId");
+        if (tenantQuery != null && !tenantQuery.isBlank()) {
+            return tenantQuery.trim();
+        }
+
+        return null;
+    }
+
     private Promise<HttpResponse> serveDelegate(AsyncServlet delegate, io.activej.http.HttpRequest request) {
         try {
             return delegate.serve(request);
@@ -455,6 +477,15 @@ public final class DataCloudSecurityFilter {
         String body = "{\"error\":{\"code\":\"FORBIDDEN\"," 
             + "\"message\":\"Request requires role " + requiredAccess.name() + " or higher\"," 
             + "\"requestId\":\"" + requestId + "\"}}";
+        return HttpResponse.ofCode(403)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
+    private static HttpResponse forbiddenTenantMismatch() {
+        String body = "{\"error\":{\"code\":\"FORBIDDEN\","
+            + "\"message\":\"Requested tenant does not match authenticated tenant\"}}";
         return HttpResponse.ofCode(403)
             .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
             .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))

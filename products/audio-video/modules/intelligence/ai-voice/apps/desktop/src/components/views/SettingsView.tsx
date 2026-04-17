@@ -28,11 +28,22 @@ export const SettingsView: React.FC = () => {
     try {
       const available = await invokeWithLog<ModelDownloadInfo[]>(logger, 'ai_voice_list_available_models');
       setModels(available);
-      const missingRequiredModels = available.some((model) => !model.isDownloaded && (model.type === 'demucs' || model.type === 'rvc'));
+      const missingRequiredModels = available.some(
+        (model) => model.isAvailable && !model.isDownloaded && model.type === 'demucs'
+      );
+      const blockedVoiceConversion = available.some(
+        (model) => model.type === 'rvc' && !model.isAvailable
+      );
       if (missingRequiredModels) {
         setRuntimeMode({
           mode: 'degraded',
           reason: 'Required local models are missing. Separation and conversion remain blocked until the missing dependencies are installed.',
+          exportAllowed: false,
+        });
+      } else if (blockedVoiceConversion) {
+        setRuntimeMode({
+          mode: 'degraded',
+          reason: 'Voice conversion is not installable in this runtime yet, so cloned-voice conversion and export remain blocked.',
           exportAllowed: false,
         });
       } else if (state.runtimeMode.mode !== 'demo') {
@@ -110,6 +121,9 @@ export const SettingsView: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-white">{model.name}</h4>
                   <p className="text-sm text-gray-400">{model.description}</p>
+                  {!model.isAvailable && model.availabilityReason && (
+                    <p className="text-xs text-amber-400 mt-1">{model.availabilityReason}</p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
                     {(model.size / 1024 / 1024).toFixed(0)} MB • {model.type}
                   </p>
@@ -117,6 +131,10 @@ export const SettingsView: React.FC = () => {
                 {model.isDownloaded ? (
                   <span className="px-3 py-1.5 text-sm rounded-lg bg-green-600/20 text-green-400">
                     Installed
+                  </span>
+                ) : !model.isAvailable ? (
+                  <span className="px-3 py-1.5 text-sm rounded-lg bg-amber-600/20 text-amber-300">
+                    Unavailable
                   </span>
                 ) : (
                   <button

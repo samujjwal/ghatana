@@ -27,6 +27,7 @@ import java.util.UUID;
 public final class RequestObservationFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RequestObservationFilter.class);
+    private static final String API_PREFIX = "/api/v1/";
 
     private final HttpHandlerSupport httpSupport;
     private final DataCloudBusinessMetrics businessMetrics;
@@ -51,23 +52,36 @@ public final class RequestObservationFilter {
             long startNanos = System.nanoTime();
             String requestId = httpSupport.resolveCorrelationId(request);
             String tenantId = httpSupport.peekTenantId(request);
-                TraceParent traceParent = parseTraceParent(request.getHeader(HttpHeaders.of("traceparent")));
-                String traceId = traceParent != null ? traceParent.traceId() : requestId;
-                String requestSpanId = UUID.randomUUID().toString();
-                boolean sampled = traceParent != null ? traceParent.sampled() : shouldSample(requestId, samplingRate);
+            TraceParent traceParent = parseTraceParent(request.getHeader(HttpHeaders.of("traceparent")));
+            String traceId = traceParent != null ? traceParent.traceId() : requestId;
+            String requestSpanId = UUID.randomUUID().toString();
+            boolean sampled = traceParent != null ? traceParent.sampled() : shouldSample(requestId, samplingRate);
             String method = request.getMethod().name();
             String path = request.getPath();
 
-                RequestMetadataAttachment metadata = new RequestMetadataAttachment(
-                    requestId,
-                    tenantId,
-                    traceId,
-                    requestSpanId,
-                    traceParent != null ? traceParent.parentSpanId() : null,
-                    method,
-                    path,
-                    sampled);
+            RequestMetadataAttachment metadata = new RequestMetadataAttachment(
+                requestId,
+                tenantId,
+                traceId,
+                requestSpanId,
+                traceParent != null ? traceParent.parentSpanId() : null,
+                method,
+                path,
+                sampled);
             request.attach(RequestMetadataAttachment.class, metadata);
+
+            if (httpSupport.isStrictTenantResolution() && requiresTenant(path)) {
+                if (!httpSupport.hasExplicitTenantCandidate(request)) {
+                    return Promise.of(httpSupport.errorResponse(401,
+                        "X-Tenant-Id header or tenantId parameter required",
+                        requestId));
+                }
+                if (tenantId == null) {
+                    return Promise.of(httpSupport.errorResponse(400,
+                        "Invalid tenant identifier format",
+                        requestId));
+                }
+            }
 
             RequestContext context = tenantId == null || tenantId.isBlank()
                     ? RequestContext.bindRequest(requestId, traceId, method, path)
@@ -117,6 +131,19 @@ public final class RequestObservationFilter {
                 context.close();
             });
         };
+    }
+
+    private static boolean requiresTenant(String path) {
+        if (path == null || !path.startsWith(API_PREFIX)) {
+            return false;
+        }
+        return !path.equals("/api/v1/health")
+            && !path.equals("/api/v1/health/detail")
+            && !path.equals("/api/v1/health/deep")
+            && !path.equals("/api/v1/ready")
+            && !path.equals("/api/v1/live")
+            && !path.equals("/api/v1/metrics")
+            && !path.equals("/api/v1/info");
     }
 
     private void recordBusinessMetrics(RequestMetadataAttachment metadata, int statusCode, long durationMs) {

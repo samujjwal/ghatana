@@ -405,6 +405,7 @@ public class AepHttpServer {
                 : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
         this.healthController.addDeepDependencyCheck("execution-history",
             () -> this.agentDataCloud != null && this.agentDataCloud.eventLogStore() != null ? "ok" : "disabled");
+        this.healthController.addAsyncDeepDependencyCheck("data-cloud.connectivity", this::dataCloudConnectivityStatus);
         new PipelineController(this.pipelineRepository, this.objectMapper);
         this.agentController = new AgentController(this.engine, this.agentDataCloud);
         this.marketplaceController = new AgentMarketplaceController(this.agentDataCloud);
@@ -442,6 +443,19 @@ public class AepHttpServer {
         this.lifecycleController = new LifecycleController(
             changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
             recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
+    }
+
+    private Promise<String> dataCloudConnectivityStatus() {
+        if (this.agentDataCloud == null) {
+            return Promise.of("disabled");
+        }
+        if (this.agentDataCloud.eventLogStore() == null) {
+            return Promise.of("misconfigured");
+        }
+
+        return this.agentDataCloud.queryEvents("health-check-tenant", DataCloudClient.EventQuery.all())
+            .map(ignored -> "ok")
+            .then(Promise::of, error -> Promise.of("error: " + error.getClass().getSimpleName()));
     }
 
     /**

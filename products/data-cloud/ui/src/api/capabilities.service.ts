@@ -146,6 +146,8 @@ export function useCapabilityRegistry(): UseQueryResult<CapabilityRegistrySnapsh
     queryKey: ['capability-registry'],
     queryFn: fetchCapabilityRegistry,
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 

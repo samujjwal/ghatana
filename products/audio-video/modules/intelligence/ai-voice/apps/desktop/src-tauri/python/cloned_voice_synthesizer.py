@@ -24,7 +24,11 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    logger.warning("torch/torchaudio not available, synthesis will use mock mode")
+    logger.warning("torch/torchaudio not available, cloned-voice synthesis is unavailable")
+
+
+class SynthesisDependencyError(RuntimeError):
+    """Raised when cloned-voice synthesis dependencies are unavailable."""
 
 
 @dataclass
@@ -89,47 +93,19 @@ class ClonedVoiceSynthesizer:
             True if loaded successfully
         """
         if not TORCH_AVAILABLE:
-            logger.warning("PyTorch not available, using mock mode")
-            return True
+            raise SynthesisDependencyError(
+                "Cloned-voice synthesis requires the Python dependencies 'torch' and 'torchaudio'. "
+                "Install the AI Voice synthesis dependencies before previewing cloned voices."
+            )
 
         try:
-            # Load TTS model (e.g., VITS, Tacotron2)
-            logger.info("Loading base TTS model...")
-            self._create_placeholder_tts_model()
-
-            # Load vocoder (e.g., HiFi-GAN)
-            logger.info("Loading vocoder...")
-            self._create_placeholder_vocoder()
-
-            logger.info("Base models loaded successfully")
-            return True
+            raise SynthesisDependencyError(
+                "Cloned-voice synthesis base-model loading is not fully implemented for this runtime yet. "
+                "Placeholder TTS/vocoder models are blocked."
+            )
         except Exception as e:
             logger.error(f"Failed to load base models: {e}")
-            return False
-
-    def _create_placeholder_tts_model(self):
-        """Create placeholder TTS model."""
-        if not TORCH_AVAILABLE:
-            return
-
-        # Simple placeholder - in production would be actual VITS/Tacotron2
-        self.base_tts_model = torch.nn.Sequential(
-            torch.nn.Linear(256 + 100, 512),  # embedding + text features
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 80 * 100),   # mel spectrogram
-        ).to(self.device)
-
-    def _create_placeholder_vocoder(self):
-        """Create placeholder vocoder model."""
-        if not TORCH_AVAILABLE:
-            return
-
-        # Simple placeholder - in production would be HiFi-GAN
-        self.vocoder = torch.nn.Sequential(
-            torch.nn.Linear(80, 256),
-            torch.nn.ReLU(),
-            torch.nn.Linear(256, 512),
-        ).to(self.device)
+            raise
 
     def load_voice(self, voice_id: str, model_path: str, embedding_path: str) -> bool:
         """
@@ -144,15 +120,15 @@ class ClonedVoiceSynthesizer:
             True if loaded successfully
         """
         try:
+            if not Path(model_path).exists():
+                raise FileNotFoundError(f"Voice model not found: {model_path}")
+
             # Load speaker embedding
             embedding = np.load(embedding_path)
 
             if TORCH_AVAILABLE:
                 # Load model checkpoint
-                if Path(model_path).exists():
-                    checkpoint = torch.load(model_path, map_location=self.device)
-                else:
-                    checkpoint = None
+                checkpoint = torch.load(model_path, map_location=self.device)
 
                 self.loaded_voices[voice_id] = {
                     'embedding': torch.tensor(embedding).to(self.device),
@@ -313,8 +289,10 @@ class ClonedVoiceSynthesizer:
             Mel spectrogram array
         """
         if not TORCH_AVAILABLE or self.base_tts_model is None:
-            # Mock mel spectrogram
-            return np.random.randn(80, 100).astype(np.float32)
+            raise SynthesisDependencyError(
+                "Cloned-voice synthesis base TTS model is unavailable. "
+                "Placeholder mel generation is blocked."
+            )
 
         # In production, use VITS/XTTS decoder conditioned on speaker embedding
         with torch.no_grad():
@@ -344,8 +322,9 @@ class ClonedVoiceSynthesizer:
             Audio waveform
         """
         if not TORCH_AVAILABLE or self.vocoder is None:
-            # Mock audio (1 second of silence)
-            return np.zeros(22050, dtype=np.float32)
+            raise SynthesisDependencyError(
+                "Cloned-voice synthesis vocoder is unavailable. Placeholder waveform generation is blocked."
+            )
 
         # In production, use HiFi-GAN or similar vocoder
         with torch.no_grad():

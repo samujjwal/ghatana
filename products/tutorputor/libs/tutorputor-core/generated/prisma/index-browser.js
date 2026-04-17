@@ -361,6 +361,7 @@ exports.Prisma.CheckoutSessionScalarFieldEnum = {
   amountCents: 'amountCents',
   status: 'status',
   paymentUrl: 'paymentUrl',
+  stripeSessionId: 'stripeSessionId',
   successUrl: 'successUrl',
   cancelUrl: 'cancelUrl',
   createdAt: 'createdAt',
@@ -375,6 +376,21 @@ exports.Prisma.PurchaseScalarFieldEnum = {
   moduleId: 'moduleId',
   amountCents: 'amountCents',
   purchasedAt: 'purchasedAt'
+};
+
+exports.Prisma.PayoutScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeAccountId: 'stripeAccountId',
+  stripePayoutId: 'stripePayoutId',
+  amountCents: 'amountCents',
+  currency: 'currency',
+  status: 'status',
+  arrivalDate: 'arrivalDate',
+  description: 'description',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.StripeCustomerScalarFieldEnum = {
@@ -1147,6 +1163,7 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   email: 'email',
+  emailEncrypted: 'emailEncrypted',
   displayName: 'displayName',
   role: 'role',
   createdAt: 'createdAt',
@@ -1262,6 +1279,29 @@ exports.Prisma.SsoUserLinkScalarFieldEnum = {
   lastClaims: 'lastClaims',
   linkedAt: 'linkedAt',
   lastLoginAt: 'lastLoginAt'
+};
+
+exports.Prisma.ContentReportScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  reason: 'reason',
+  details: 'details',
+  status: 'status',
+  reportedAt: 'reportedAt',
+  resolvedAt: 'resolvedAt',
+  resolvedBy: 'resolvedBy',
+  resolutionDetails: 'resolutionDetails'
+};
+
+exports.Prisma.FollowScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  followerId: 'followerId',
+  followingId: 'followingId',
+  followedAt: 'followedAt'
 };
 
 exports.Prisma.DataExportRequestScalarFieldEnum = {
@@ -2991,6 +3031,7 @@ exports.Prisma.ModelName = {
   HelpRequest: 'HelpRequest',
   CheckoutSession: 'CheckoutSession',
   Purchase: 'Purchase',
+  Payout: 'Payout',
   StripeCustomer: 'StripeCustomer',
   Subscription: 'Subscription',
   PaymentMethod: 'PaymentMethod',
@@ -3046,6 +3087,8 @@ exports.Prisma.ModelName = {
   LearningPathway: 'LearningPathway',
   IdentityProvider: 'IdentityProvider',
   SsoUserLink: 'SsoUserLink',
+  ContentReport: 'ContentReport',
+  Follow: 'Follow',
   DataExportRequest: 'DataExportRequest',
   DataDeletionRequest: 'DataDeletionRequest',
   DeletionVerification: 'DeletionVerification',

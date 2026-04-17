@@ -26,9 +26,6 @@ pub async fn list_available_models() -> Result<Vec<String>, String> {
         "demucs-htdemucs".to_string(),
         "demucs-htdemucs_ft".to_string(),
         "demucs-htdemucs_6s".to_string(),
-        "vits-base".to_string(),
-        "rvc-base".to_string(),
-        "mosnet".to_string(),
         "whisper-base".to_string(),
         "ecapa-tdnn".to_string(),
     ])

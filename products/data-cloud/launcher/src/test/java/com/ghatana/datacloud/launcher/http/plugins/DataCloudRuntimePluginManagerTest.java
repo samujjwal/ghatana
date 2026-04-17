@@ -85,6 +85,60 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         restartedManager.close();
     }
 
+    @Test
+    @DisplayName("cancelExecution persists CANCELLED status and cancellation log")
+    void cancelExecutionPersistsCancelledState() {
+        InMemoryDataCloudClient client = new InMemoryDataCloudClient();
+        String executionId = "exec-running-001";
+        Instant startedAt = Instant.now().minusSeconds(5);
+        Map<String, Object> runningNode = new LinkedHashMap<>();
+        runningNode.put("id", "extract");
+        runningNode.put("name", "Extract");
+        runningNode.put("state", "RUNNING");
+        runningNode.put("startedAt", startedAt.toString());
+        runningNode.put("duration", 0);
+        Map<String, Object> runningExecution = new LinkedHashMap<>();
+        runningExecution.put("id", executionId);
+        runningExecution.put("tenantId", TENANT_ID);
+        runningExecution.put("workflowId", PIPELINE_ID);
+        runningExecution.put("workflowName", "Order Ingestion");
+        runningExecution.put("status", "RUNNING");
+        runningExecution.put("progress", 50);
+        runningExecution.put("startedAt", startedAt.toString());
+        runningExecution.put("nodeStatuses", List.of(runningNode));
+        runningExecution.put("output", Map.of());
+        Map<String, Object> initialLogEntry = new LinkedHashMap<>();
+        initialLogEntry.put("timestamp", startedAt.toString());
+        initialLogEntry.put("level", "info");
+        initialLogEntry.put("message", "Workflow execution started");
+        initialLogEntry.put("metadata", Map.of("workflowId", PIPELINE_ID));
+
+        runPromise(() -> client.save(TENANT_ID, "dc_workflow_executions", runningExecution));
+        runPromise(() -> client.save(TENANT_ID, "dc_workflow_execution_logs", Map.of(
+            "id", executionId,
+            "tenantId", TENANT_ID,
+            "executionId", executionId,
+            "workflowId", PIPELINE_ID,
+            "entries", List.of(initialLogEntry)
+        )));
+
+        DataCloudRuntimePluginManager manager = new DataCloudRuntimePluginManager();
+        manager.registerWorkflowPlugin(client);
+
+        WorkflowExecutionCapability capability = manager.findCapability(WorkflowExecutionCapability.class)
+            .orElseThrow(() -> new AssertionError("workflow capability missing"));
+
+        WorkflowExecutionCapability.ExecutionSnapshot cancelled = runPromise(() -> capability.cancelExecution(TENANT_ID, executionId));
+        List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> capability.getExecutionLogs(TENANT_ID, executionId));
+
+        assertThat(cancelled.status()).isEqualTo("CANCELLED");
+        assertThat(cancelled.completedAt()).isNotNull();
+        assertThat(logs).extracting(WorkflowExecutionCapability.ExecutionLogEntry::message)
+            .contains("Execution cancelled");
+
+        manager.close();
+    }
+
     private static final class InMemoryDataCloudClient implements DataCloudClient {
 
         private final Map<String, Map<String, Entity>> recordsByCollection = new ConcurrentHashMap<>();

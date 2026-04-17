@@ -535,17 +535,18 @@ enum CheckoutStatus {
 }
 
 model CheckoutSession {
-  id          String         @id @default(cuid())
-  tenantId    String
-  userId      String
-  listingId   String
-  amountCents Int
-  status      CheckoutStatus @default(PENDING)
-  paymentUrl  String?
-  successUrl  String?
-  cancelUrl   String?
-  createdAt   DateTime       @default(now())
-  completedAt DateTime?
+  id              String         @id @default(cuid())
+  tenantId        String
+  userId          String
+  listingId       String
+  amountCents     Int
+  status          CheckoutStatus @default(PENDING)
+  paymentUrl      String?
+  stripeSessionId String?
+  successUrl      String?
+  cancelUrl       String?
+  createdAt       DateTime       @default(now())
+  completedAt     DateTime?
 
   @@index([tenantId, userId])
   @@index([tenantId, status])
@@ -563,6 +564,25 @@ model Purchase {
   @@unique([tenantId, userId, moduleId])
   @@index([tenantId, userId])
   @@index([tenantId, moduleId])
+}
+
+model Payout {
+  id              String    @id @default(cuid())
+  tenantId        String
+  stripeAccountId String
+  stripePayoutId  String    @unique
+  amountCents     Int
+  currency        String    @default("usd")
+  status          String    @default("PENDING")
+  arrivalDate     DateTime?
+  description     String?
+  metadata        String? // JSON string
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, stripeAccountId])
+  @@index([tenantId, status])
+  @@index([stripePayoutId])
 }
 
 // =============================================================================
@@ -1891,14 +1911,15 @@ model TenantSettings {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantId    String
-  email       String
-  displayName String
-  role        String   @default("student")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId       String
+  email          String
+  emailEncrypted String? // Encrypted PII: email
+  displayName    String
+  role           String   @default("student")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   ssoLinks       SsoUserLink[]
   learnerProfile LearnerProfile?
@@ -2074,6 +2095,37 @@ model SsoUserLink {
 // =============================================================================
 // Compliance & Audit (Block 4 - Day 39-40)
 // =============================================================================
+
+model ContentReport {
+  id                String    @id @default(cuid())
+  tenantId          String
+  userId            String
+  entityType        String // "forumPost", "comment", "user"
+  entityId          String
+  reason            String
+  details           String?
+  status            String    @default("pending")
+  reportedAt        DateTime  @default(now())
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolutionDetails String?
+
+  @@index([tenantId, status])
+  @@index([tenantId, userId])
+  @@index([entityType, entityId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  tenantId    String
+  followerId  String
+  followingId String
+  followedAt  DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([tenantId, followerId])
+  @@index([tenantId, followingId])
+}
 
 model DataExportRequest {
   id                    String    @id @default(cuid())

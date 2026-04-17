@@ -11,8 +11,18 @@ from typing import Optional, Dict
 from dataclasses import dataclass
 import logging
 
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class ConversionDependencyError(RuntimeError):
+    """Raised when legacy voice conversion runtime dependencies are unavailable."""
 
 
 @dataclass
@@ -44,26 +54,15 @@ class VoiceConverter:
     def _load_model(self):
         if not self.model_path.exists():
             raise FileNotFoundError(f"Model not found: {self.model_path}")
-        
-        try:
-            import torch
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            checkpoint = torch.load(self.model_path, map_location=self.device)
-            
-            self.model = torch.nn.Sequential(
-                torch.nn.Linear(128, 256),
-                torch.nn.ReLU(),
-                torch.nn.Linear(256, 128)
-            ).to(self.device)
-            
-            if "model_state_dict" in checkpoint:
-                self.model.load_state_dict(checkpoint["model_state_dict"])
-            
-            self.model.eval()
-            logger.info(f"Loaded model from {self.model_path}")
-        except ImportError:
-            logger.warning("torch not available, using passthrough mode")
-            self.model = None
+
+        if not TORCH_AVAILABLE:
+            raise ConversionDependencyError(
+                "Voice conversion requires the Python dependency 'torch'. Passthrough conversion is blocked."
+            )
+
+        raise ConversionDependencyError(
+            "Legacy voice conversion model loading is not implemented for this runtime. Placeholder models are blocked."
+        )
 
     def extract_features(self, audio: np.ndarray) -> Dict:
         try:
@@ -80,8 +79,10 @@ class VoiceConverter:
             )
             f0 = np.nan_to_num(f0)
             return {"mel": mel_db, "f0": f0}
-        except ImportError:
-            return {"mel": np.random.randn(128, 100), "f0": np.random.randn(100)}
+        except ImportError as exc:
+            raise ConversionDependencyError(
+                "Voice conversion requires the Python dependency 'librosa' for feature extraction."
+            ) from exc
 
     def shift_pitch(self, audio: np.ndarray, semitones: float) -> np.ndarray:
         if semitones == 0:
@@ -91,8 +92,10 @@ class VoiceConverter:
             return librosa.effects.pitch_shift(
                 audio, sr=self.sample_rate, n_steps=semitones
             )
-        except ImportError:
-            return audio
+        except ImportError as exc:
+            raise ConversionDependencyError(
+                "Voice conversion requires the Python dependency 'librosa' for pitch shifting."
+            ) from exc
 
     def convert(self, input_path: str, output_path: str, 
                 config: Optional[ConversionConfig] = None) -> ConversionResult:
@@ -104,11 +107,10 @@ class VoiceConverter:
                 import librosa
                 import soundfile as sf
                 audio, sr = librosa.load(input_path, sr=self.sample_rate, mono=True)
-            except ImportError:
-                import wave
-                with wave.open(input_path, 'rb') as wf:
-                    audio = np.frombuffer(wf.readframes(wf.getnframes()), dtype=np.int16)
-                    audio = audio.astype(np.float32) / 32768.0
+            except ImportError as exc:
+                raise ConversionDependencyError(
+                    "Voice conversion requires the Python dependencies 'librosa' and 'soundfile' to load audio."
+                ) from exc
 
             # Apply pitch shift
             if config.pitch_shift != 0:
@@ -117,55 +119,8 @@ class VoiceConverter:
             # Extract features
             features = self.extract_features(audio)
 
-            # Convert through model
-            if self.model is not None:
-                import torch
-                with torch.no_grad():
-                    mel = torch.tensor(features["mel"], dtype=torch.float32).to(self.device)
-                    converted_mel = self.model(mel.T).T
-                    # Reconstruct audio from mel (simplified)
-                    try:
-                        import librosa
-                        converted_audio = librosa.feature.inverse.mel_to_audio(
-                            librosa.db_to_power(converted_mel.cpu().numpy()),
-                            sr=self.sample_rate, hop_length=320
-                        )
-                    except:
-                        converted_audio = audio
-            else:
-                converted_audio = audio
-
-            # Apply RMS mixing
-            if config.rms_mix_rate > 0:
-                original_rms = np.sqrt(np.mean(audio ** 2))
-                converted_rms = np.sqrt(np.mean(converted_audio ** 2))
-                if converted_rms > 0:
-                    converted_audio = converted_audio * (original_rms / converted_rms)
-
-            # Normalize
-            max_val = np.max(np.abs(converted_audio))
-            if max_val > 0:
-                converted_audio = converted_audio / max_val * 0.95
-
-            # Save output
-            try:
-                import soundfile as sf
-                sf.write(output_path, converted_audio, self.sample_rate)
-            except ImportError:
-                import wave
-                with wave.open(output_path, 'wb') as wf:
-                    wf.setnchannels(1)
-                    wf.setsampwidth(2)
-                    wf.setframerate(self.sample_rate)
-                    wf.writeframes((converted_audio * 32767).astype(np.int16).tobytes())
-
-            duration = len(converted_audio) / self.sample_rate
-            logger.info(f"Converted {input_path} -> {output_path} ({duration:.2f}s)")
-            
-            return ConversionResult(
-                success=True,
-                output_path=output_path,
-                duration=duration
+            raise ConversionDependencyError(
+                "Legacy voice conversion model inference is not available in this runtime. Placeholder conversion is blocked."
             )
 
         except Exception as e:

@@ -6,10 +6,12 @@ package com.ghatana.agent.learning.review;
 
 import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,18 +64,22 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
 
     @Override
     public @NotNull Promise<List<ReviewItem>> getPending(@Nullable ReviewFilter filter) {
-        return queryAll().map(items -> items.stream()
-            .filter(this::isActive)
-            .filter(item -> matchesFilter(item, filter))
-            .limit(filter != null && filter.limit() > 0 ? filter.limit() : QUERY_LIMIT)
-            .toList());
+        return queryAll()
+            .then(this::normalizeExpiredItems)
+            .map(items -> items.stream()
+                .filter(this::isActive)
+                .filter(item -> matchesFilter(item, filter))
+                .limit(filter != null && filter.limit() > 0 ? filter.limit() : QUERY_LIMIT)
+                .toList());
     }
 
     @Override
     public @NotNull Promise<@Nullable ReviewItem> getById(@NotNull String reviewId) {
         Objects.requireNonNull(reviewId, "reviewId");
         return dataCloudClient.findById(STORAGE_TENANT, COLLECTION, reviewId)
-            .map(entity -> entity.map(this::fromEntity).orElse(null));
+            .then(entity -> entity.isPresent()
+                ? expireIfNeeded(fromEntity(entity.get())).map(item -> (ReviewItem) item)
+                : Promise.of(null));
     }
 
     @Override
@@ -113,16 +119,20 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
     @Override
     public @NotNull Promise<List<ReviewItem>> findOverdue(long thresholdSeconds, @Nullable String tenantId) {
         Instant cutoff = Instant.now().minusSeconds(thresholdSeconds);
-        return queryAll().map(items -> items.stream()
-            .filter(this::isActive)
-            .filter(item -> item.getCreatedAt().isBefore(cutoff))
-            .filter(item -> tenantId == null || tenantId.equals(item.getTenantId()))
-            .toList());
+        return queryAll()
+            .then(this::normalizeExpiredItems)
+            .map(items -> items.stream()
+                .filter(this::isActive)
+                .filter(item -> item.getCreatedAt().isBefore(cutoff))
+                .filter(item -> tenantId == null || tenantId.equals(item.getTenantId()))
+                .toList());
     }
 
     @Override
     public @NotNull Promise<Long> pendingCount() {
-        return queryAll().map(items -> items.stream().filter(this::isActive).count());
+        return queryAll()
+            .then(this::normalizeExpiredItems)
+            .map(items -> items.stream().filter(this::isActive).count());
     }
 
     private Promise<ReviewItem> loadActiveItem(String reviewId) {
@@ -141,6 +151,25 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
     private Promise<ReviewItem> saveUpdated(ReviewItem item) {
         return dataCloudClient.save(STORAGE_TENANT, COLLECTION, toRecord(item))
             .map(this::fromEntity);
+    }
+
+    private Promise<List<ReviewItem>> normalizeExpiredItems(List<ReviewItem> items) {
+        List<ReviewItem> normalized = new ArrayList<>(items.size());
+        return Promises.all(items.stream()
+                .map(item -> expireIfNeeded(item).map(expiredItem -> {
+                    normalized.add(expiredItem);
+                    return expiredItem;
+                }))
+                .toList())
+            .map(ignored -> normalized);
+    }
+
+    private Promise<ReviewItem> expireIfNeeded(ReviewItem item) {
+        if (isActive(item) && item.isExpired(Instant.now())) {
+            item.markExpired();
+            return saveUpdated(item);
+        }
+        return Promise.of(item);
     }
 
     private Promise<List<ReviewItem>> queryAll() {
@@ -183,6 +212,7 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
         record.put("confidenceScore", item.getConfidenceScore());
         record.put("context", item.getContext());
         record.put("createdAt", item.getCreatedAt().toString());
+        putIfNotNull(record, "expiresAt", item.getExpiresAt() != null ? item.getExpiresAt().toString() : null);
         record.put("status", item.getStatus().name());
         putIfNotNull(record, "evaluationSummary", item.getEvaluationSummary());
         putIfNotNull(record, "assignedTo", item.getAssignedTo());
@@ -232,6 +262,7 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
             .evaluationSummary(nullableString(data.get("evaluationSummary")))
             .context(context)
             .createdAt(parseInstant(data.get("createdAt"), entity.createdAt()))
+            .expiresAt(data.get("expiresAt") != null ? parseInstant(data.get("expiresAt"), entity.updatedAt()) : null)
             .status(parseStatus(data.get("status")))
             .decision(decision)
             .decidedAt(data.get("decidedAt") != null ? parseInstant(data.get("decidedAt"), entity.updatedAt()) : null)

@@ -20,7 +20,7 @@ import {
  */
 
 describe('Collections API Contract', () => {
-  describe('GET /api/v1/collections', () => {
+  describe('GET /api/v1/entities/dc_collections', () => {
     it('should return paginated collections matching schema', () => {
       const mockResponse = {
         items: [
@@ -64,7 +64,7 @@ describe('Collections API Contract', () => {
     });
   });
 
-  describe('GET /api/v1/collections/:id', () => {
+  describe('GET /api/v1/entities/dc_collections/:id', () => {
     it('should return single collection matching schema', () => {
       const mockResponse = {
         id: 'col-1',
@@ -104,7 +104,7 @@ describe('Collections API Contract', () => {
     });
   });
 
-  describe('POST /api/v1/collections', () => {
+  describe('POST /api/v1/entities/dc_collections', () => {
     it('should accept valid create request', () => {
       const validRequest = {
         name: 'New Collection',
@@ -143,7 +143,7 @@ describe('Collections API Contract', () => {
     });
   });
 
-  describe('PUT /api/v1/collections/:id', () => {
+  describe('PUT /api/v1/entities/dc_collections/:id', () => {
     it('should accept valid update request', () => {
       const validRequest = {
         name: 'Updated Collection',
@@ -174,7 +174,7 @@ describe('Collections API Contract', () => {
     });
   });
 
-  describe('DELETE /api/v1/collections/:id', () => {
+  describe('DELETE /api/v1/entities/dc_collections/:id', () => {
     it('should return success response', () => {
       const DeleteResponseSchema = z.object({
         success: z.boolean(),

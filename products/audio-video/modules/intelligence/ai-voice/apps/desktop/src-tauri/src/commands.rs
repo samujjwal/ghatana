@@ -22,6 +22,16 @@ struct PersistedTrainingStatus {
     error: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct PersistedVoiceMetadata {
+    voice_id: String,
+    voice_name: String,
+    training_samples: Option<u32>,
+    similarity_score: f32,
+    model_path: String,
+    created_at: f64,
+}
+
 fn training_status_path(state: &AppState, session_id: &str) -> PathBuf {
     state
         .data_dir
@@ -57,6 +67,79 @@ fn apply_training_status(
     if matches!(status.status, TrainingStatus::Completed | TrainingStatus::Failed) {
         session.completed_at = Some(completed_at.to_string());
     }
+}
+
+fn cloned_voices_dir() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_default()
+        .join(".ghatana")
+        .join("voices")
+}
+
+fn normalize_audio_format(value: &str) -> String {
+    value
+        .trim()
+        .trim_start_matches('.')
+        .to_ascii_lowercase()
+}
+
+fn requested_export_matches_source(input_path: &str, output_path: &str, format: &str) -> Result<bool, AppError> {
+    let metadata = audio::load_audio_metadata(input_path)?;
+    let source_format = normalize_audio_format(&metadata.format);
+    let requested_format = normalize_audio_format(format);
+    let output_extension = Path::new(output_path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(normalize_audio_format);
+
+    Ok(source_format == requested_format
+        && output_extension.as_deref().map(|ext| ext == requested_format).unwrap_or(false))
+}
+
+fn discover_cloned_voice_models() -> Result<Vec<VoiceModel>, AppError> {
+    let voices_dir = cloned_voices_dir();
+    if !voices_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut discovered = Vec::new();
+    for entry in std::fs::read_dir(&voices_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let metadata_path = path.join("metadata.json");
+        if !metadata_path.exists() {
+            continue;
+        }
+
+        let contents = std::fs::read_to_string(&metadata_path)?;
+        let metadata: PersistedVoiceMetadata = serde_json::from_str(&contents)
+            .map_err(|e| AppError::Model(format!("Invalid cloned voice metadata: {}", e)))?;
+
+        discovered.push(VoiceModel {
+            id: metadata.voice_id,
+            name: metadata.voice_name,
+            path: metadata.model_path,
+            created_at: chrono::DateTime::<chrono::Utc>::from_timestamp(metadata.created_at as i64, 0)
+                .map(|dt| dt.to_rfc3339())
+                .unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+            training_samples: metadata.training_samples.unwrap_or(0),
+            quality: Some(metadata.similarity_score),
+            is_default: false,
+        });
+    }
+
+    Ok(discovered)
+}
+
+fn voice_conversion_unavailable_error() -> AppError {
+    AppError::Conversion(
+        "Voice conversion is not available in this runtime yet. Placeholder conversion output is blocked."
+            .to_string(),
+    )
 }
 
 // ============================================================================
@@ -137,7 +220,14 @@ pub async fn ai_voice_export_audio(
     format: String,
 ) -> Result<(), AppError> {
     tracing::info!("Exporting audio: {} -> {} ({})", input_path, output_path, format);
-    // Would use speech-audio-rust for format conversion
+
+    if !requested_export_matches_source(&input_path, &output_path, &format)? {
+        return Err(AppError::Audio(
+            "Audio format conversion is not implemented in this runtime yet. Export currently supports only same-format copies with matching output extensions; placeholder conversion is blocked."
+                .to_string(),
+        ));
+    }
+
     std::fs::copy(&input_path, &output_path)?;
     Ok(())
 }
@@ -374,17 +464,9 @@ pub async fn ai_voice_convert_phrase(
     let _model = models
         .get(&voice_model_id)
         .ok_or_else(|| AppError::Model(format!("Model not found: {}", voice_model_id)))?;
-    
-    let output_path = state.temp_path(&format!("converted_{}.wav", phrase_id));
 
-    // Placeholder: generate an audible file so the UI can preview takes.
-    // (Real implementation will slice vocals and run RVC conversion.)
-    write_example_wav(&output_path, duration_seconds, 44_100u32, 440.0)?;
-
-    Ok(ConversionResult {
-        path: output_path.to_string_lossy().to_string(),
-        duration: duration_seconds,
-    })
+    let _ = (phrase_id, start_time, end_time, duration_seconds);
+    Err(voice_conversion_unavailable_error())
 }
 
 /// Convert full audio using AI voice.
@@ -402,14 +484,9 @@ pub async fn ai_voice_convert_full(
         .get(&voice_model_id)
         .ok_or_else(|| AppError::Model(format!("Model not found: {}", voice_model_id)))?;
     
-    let output_path = state.temp_path(&format!("converted_{}.wav", uuid::Uuid::new_v4()));
-    
-    python::convert_voice(
-        &input_path,
-        output_path.to_str().unwrap_or(""),
-        &model.path,
-        pitch_shift,
-    )
+    let _ = (input_path, pitch_shift, state, model);
+
+    Err(voice_conversion_unavailable_error())
 }
 
 // ============================================================================
@@ -423,38 +500,23 @@ pub async fn ai_voice_list_models(
 ) -> Result<Vec<VoiceModel>, AppError> {
     {
         let models = state.voice_models.read().await;
-        if !models.is_empty() {
-            return Ok(models.values().cloned().collect());
+        let mut combined: Vec<VoiceModel> = models.values().cloned().collect();
+        let known_ids: std::collections::HashSet<String> = combined.iter().map(|model| model.id.clone()).collect();
+        drop(models);
+
+        let discovered = discover_cloned_voice_models()?;
+        combined.extend(
+            discovered
+                .into_iter()
+                .filter(|model| !known_ids.contains(&model.id)),
+        );
+
+        if !combined.is_empty() {
+            return Ok(combined);
         }
     }
 
-    let mut discovered: Vec<VoiceModel> = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(&state.models_dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if !path.is_file() {
-                continue;
-            }
-
-            let id = match path.file_stem().and_then(|s| s.to_str()) {
-                Some(v) if !v.is_empty() => v.to_string(),
-                _ => continue,
-            };
-
-            let name = id.clone();
-            let created_at = chrono::Utc::now().to_rfc3339();
-
-            discovered.push(VoiceModel {
-                id,
-                name,
-                path: path.to_string_lossy().to_string(),
-                created_at,
-                training_samples: 0,
-                quality: 0.0,
-                is_default: false,
-            });
-        }
-    }
+    let discovered = discover_cloned_voice_models()?;
 
     if !discovered.is_empty() {
         let mut models = state.voice_models.write().await;
@@ -490,7 +552,17 @@ pub async fn ai_voice_delete_model(
     if let Some(model) = models.remove(&model_id) {
         let path = std::path::Path::new(&model.path);
         if path.exists() {
-            std::fs::remove_file(path)?;
+            if let Some(parent) = path.parent() {
+                let metadata_path = parent.join("metadata.json");
+                let embedding_path = parent.join("embedding.npy");
+                if metadata_path.exists() || embedding_path.exists() {
+                    std::fs::remove_dir_all(parent)?;
+                } else {
+                    std::fs::remove_file(path)?;
+                }
+            } else {
+                std::fs::remove_file(path)?;
+            }
         }
     }
     
@@ -505,15 +577,16 @@ pub async fn ai_voice_test_model(
     state: State<'_, AppState>,
 ) -> Result<String, AppError> {
     tracing::info!("Testing model {} with text: {}", model_id, text);
-    
+
     let models = state.voice_models.read().await;
     let _model = models
         .get(&model_id)
         .ok_or_else(|| AppError::Model(format!("Model not found: {}", model_id)))?;
-    
-    // In a real implementation, this would synthesize speech
-    // and return the path to the audio file
-    Ok(state.temp_path("test_output.wav").to_string_lossy().to_string())
+
+    Err(AppError::Model(
+        "Voice preview synthesis is not available in this runtime yet. Placeholder preview output is blocked."
+            .to_string(),
+    ))
 }
 
 // ============================================================================
@@ -548,6 +621,7 @@ pub async fn ai_voice_start_training(
     sessions.insert(session_id.clone(), TrainingSession {
         id: session_id.clone(),
         model_name,
+        sample_count: sample_paths.len() as u32,
         status: TrainingStatus::Pending,
         progress: 0.0,
         started_at: Some(chrono::Utc::now().to_rfc3339()),
@@ -582,14 +656,22 @@ pub async fn ai_voice_training_status(
             if let Some(model_name) = maybe_model_name {
                 let model_path = state.model_path(&model_name);
                 if model_path.exists() {
+                    let sample_count = {
+                        let sessions = state.training_sessions.read().await;
+                        sessions
+                            .get(&session_id)
+                            .map(|session| session.sample_count)
+                            .unwrap_or(0)
+                    };
+
                     let mut models = state.voice_models.write().await;
                     models.entry(model_name.clone()).or_insert_with(|| VoiceModel {
                         id: model_name.clone(),
                         name: model_name,
                         path: model_path.to_string_lossy().to_string(),
                         created_at: chrono::Utc::now().to_rfc3339(),
-                        training_samples: 0,
-                        quality: 0.0,
+                        training_samples: sample_count,
+                        quality: None,
                         is_default: false,
                     });
                 }
@@ -608,7 +690,10 @@ pub async fn ai_voice_training_status(
         });
     }
 
-    python::get_training_status(&session_id)
+    Err(AppError::NotInitialized(format!(
+        "Training session not found: {}",
+        session_id
+    )))
 }
 
 #[cfg(test)]
@@ -640,6 +725,7 @@ mod tests {
         let mut session = TrainingSession {
             id: "session-1".to_string(),
             model_name: "demo".to_string(),
+            sample_count: 3,
             status: TrainingStatus::Pending,
             progress: 0.0,
             started_at: Some("2026-04-17T00:00:00Z".to_string()),
@@ -657,6 +743,61 @@ mod tests {
         assert_eq!(session.status, TrainingStatus::Completed);
         assert_eq!(session.progress, 100.0);
         assert_eq!(session.completed_at.as_deref(), Some("2026-04-17T00:01:00Z"));
+    }
+
+    #[test]
+    fn voice_conversion_unavailable_error_is_conversion_error() {
+        let error = voice_conversion_unavailable_error();
+
+        match error {
+            AppError::Conversion(message) => {
+                assert!(message.contains("placeholder conversion output is blocked"));
+            }
+            other => panic!("expected conversion error, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn missing_training_status_returns_not_initialized_error() {
+        let session_id = "missing-session";
+        let error = AppError::NotInitialized(format!("Training session not found: {}", session_id));
+
+        match error {
+            AppError::NotInitialized(message) => {
+                assert!(message.contains(session_id));
+            }
+            other => panic!("expected not initialized error, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn normalize_audio_format_strips_dot_and_case() {
+        assert_eq!(normalize_audio_format(".WAV"), "wav");
+        assert_eq!(normalize_audio_format("Mp3"), "mp3");
+    }
+
+    #[test]
+    fn requested_export_matches_source_requires_matching_format_and_extension() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let input_path = temp_dir.path().join("input.wav");
+        write_example_wav(&input_path, 0.1, 16_000, 220.0).expect("write wav");
+
+        let output_wav = temp_dir.path().join("copy.wav");
+        let output_mp3 = temp_dir.path().join("copy.mp3");
+
+        assert!(requested_export_matches_source(
+            input_path.to_str().unwrap_or(""),
+            output_wav.to_str().unwrap_or(""),
+            "wav",
+        )
+        .expect("wav match"));
+
+        assert!(!requested_export_matches_source(
+            input_path.to_str().unwrap_or(""),
+            output_mp3.to_str().unwrap_or(""),
+            "mp3",
+        )
+        .expect("mp3 mismatch"));
     }
 }
 
@@ -751,6 +892,8 @@ pub async fn ai_voice_list_available_models(
             size: 2_400 * 1024 * 1024,
             url: "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th".to_string(),
             model_type: "demucs".to_string(),
+            is_available: true,
+            availability_reason: None,
             is_downloaded: is_downloaded("demucs-htdemucs", "htdemucs-v4.th"),
             download_progress: None,
         },
@@ -761,6 +904,8 @@ pub async fn ai_voice_list_available_models(
             size: 2_400 * 1024 * 1024,
             url: "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th".to_string(),
             model_type: "demucs".to_string(),
+            is_available: true,
+            availability_reason: None,
             is_downloaded: is_downloaded("demucs-htdemucs_ft", "htdemucs_ft-v4.th"),
             download_progress: None,
         },
@@ -771,26 +916,38 @@ pub async fn ai_voice_list_available_models(
             size: 2_400 * 1024 * 1024,
             url: "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th".to_string(),
             model_type: "demucs".to_string(),
+            is_available: true,
+            availability_reason: None,
             is_downloaded: is_downloaded("demucs-htdemucs_6s", "htdemucs_6s-v4.th"),
             download_progress: None,
         },
         AvailableModel {
             id: "rvc-base".to_string(),
             name: "RVC Base".to_string(),
-            description: "Base model for voice conversion".to_string(),
+            description: "Base model for voice conversion (currently unavailable in this runtime)".to_string(),
             size: 150 * 1024 * 1024,
             url: "".to_string(),
             model_type: "rvc".to_string(),
+            is_available: false,
+            availability_reason: Some(
+                "Voice conversion download metadata is still placeholder-backed, so installation is blocked."
+                    .to_string(),
+            ),
             is_downloaded: state.models_dir.join("rvc_base.pth").exists(),
             download_progress: None,
         },
         AvailableModel {
             id: "crepe-full".to_string(),
             name: "CREPE Full".to_string(),
-            description: "Pitch detection model".to_string(),
+            description: "Pitch detection model (manual install required)".to_string(),
             size: 25 * 1024 * 1024,
             url: "".to_string(),
             model_type: "crepe".to_string(),
+            is_available: false,
+            availability_reason: Some(
+                "CREPE model download is not wired in this runtime yet. Manual dependency installation is required."
+                    .to_string(),
+            ),
             is_downloaded: state.models_dir.join("crepe_full.h5").exists(),
             download_progress: None,
         },
@@ -803,6 +960,13 @@ pub async fn ai_voice_download_model(
     model_id: String,
     state: State<'_, AppState>,
 ) -> Result<(), AppError> {
+    if matches!(model_id.as_str(), "rvc-base" | "crepe-full") {
+        return Err(AppError::Model(
+            "This model is not installable in the current runtime yet. Placeholder-backed downloads are blocked."
+                .to_string(),
+        ));
+    }
+
     let cache_dir: PathBuf = state.models_dir.clone();
     tracing::info!(
         model_id = model_id.as_str(),
@@ -903,10 +1067,14 @@ pub async fn ai_voice_export_project(
     state: State<'_, AppState>,
 ) -> Result<String, AppError> {
     tracing::info!("Exporting project: {}", project_id);
-    
-    let output_path = state.projects_dir.join(format!("{}_export.wav", project_id));
-    
-    // In a real implementation, this would mix all stems and export
+
+    let storage = ProjectStorage::new(state.projects_dir.clone())
+        .map_err(|e| AppError::InvalidRequest(format!("Failed to initialize project storage: {}", e)))?;
+    let export_dir = state.projects_dir.join("exports");
+    let output_path = storage
+        .export_project(&project_id, &export_dir)
+        .map_err(|e| AppError::Audio(format!("Failed to export project: {}", e)))?;
+
     Ok(output_path.to_string_lossy().to_string())
 }
 

@@ -983,6 +983,7 @@ public class DataCloudHttpServer {
             // Health endpoints — delegated to HealthHandler (P7-2b)
             .with(HttpMethod.GET, "/health", healthHandler::handleHealth)
             .with(HttpMethod.GET, "/health/detail", healthHandler::handleHealthDetail)
+            .with(HttpMethod.GET, "/health/deep", healthHandler::handleHealthDeep)
             .with(HttpMethod.GET, "/ready", healthHandler::handleReady)
             .with(HttpMethod.GET, "/live", healthHandler::handleLive)
 

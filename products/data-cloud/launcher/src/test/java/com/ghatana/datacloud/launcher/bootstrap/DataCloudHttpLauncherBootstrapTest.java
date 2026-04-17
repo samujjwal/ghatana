@@ -17,9 +17,23 @@ import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.ai.AIModelManager;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.sun.net.httpserver.HttpServer;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
+import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -90,6 +104,26 @@ class DataCloudHttpLauncherBootstrapTest {
         assertThat(provider.validateToken(token)).isTrue();
         assertThat(provider.getUserIdFromToken(token)).contains("svc-user");
         assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-a");
+    }
+
+    @Test
+    @DisplayName("buildJwtProvider creates JWKS-backed provider when JWKS URL is configured")
+    void buildJwtProviderCreatesJwksProvider() throws Exception {
+        Logger log = mock(Logger.class);
+
+        try (RsaJwksFixture fixture = RsaJwksFixture.create()) {
+            JwtTokenProvider provider = DataCloudHttpLauncherBootstrap.buildJwtProvider(
+                    Map.of(
+                            "DATACLOUD_JWT_JWKS_URL", fixture.jwksUrl(),
+                            "DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"),
+                    log);
+
+            assertThat(provider).isNotNull();
+            String token = fixture.createToken("svc-jwks", java.util.List.of("reader"), Map.of("tenant_id", "tenant-jwks"));
+            assertThat(provider.validateToken(token)).isTrue();
+            assertThat(provider.getUserIdFromToken(token)).contains("svc-jwks");
+            assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-jwks");
+        }
     }
 
     @Test
@@ -343,5 +377,61 @@ class DataCloudHttpLauncherBootstrapTest {
                 eq("Failed to start analytics engine, continuing without: {}"),
                 eq("analytics failed"),
                 any(IllegalStateException.class));
+    }
+
+    private static final class RsaJwksFixture implements AutoCloseable {
+        private final RSAKey rsaKey;
+        private final HttpServer server;
+
+        private RsaJwksFixture(RSAKey rsaKey, HttpServer server) {
+            this.rsaKey = rsaKey;
+            this.server = server;
+        }
+
+        static RsaJwksFixture create() throws Exception {
+            RSAKey rsaKey = new RSAKeyGenerator(2048)
+                    .keyID("kid-" + UUID.randomUUID())
+                    .generate();
+            HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+            String jwks = new JWKSet(rsaKey.toPublicJWK()).toString();
+            server.createContext("/jwks", exchange -> {
+                byte[] body = jwks.getBytes();
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, body.length);
+                try (OutputStream outputStream = exchange.getResponseBody()) {
+                    outputStream.write(body);
+                }
+            });
+            server.start();
+            return new RsaJwksFixture(rsaKey, server);
+        }
+
+        String jwksUrl() {
+            return "http://localhost:" + server.getAddress().getPort() + "/jwks";
+        }
+
+        String createToken(String userId, java.util.List<String> roles, Map<String, Object> additionalClaims)
+                throws JOSEException {
+            JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
+                    .subject(userId)
+                    .claim("roles", roles)
+                    .issueTime(new java.util.Date())
+                    .expirationTime(new java.util.Date(System.currentTimeMillis() + 60_000L));
+            additionalClaims.forEach(claimsBuilder::claim);
+
+            SignedJWT signedJwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256)
+                            .keyID(rsaKey.getKeyID())
+                            .type(JOSEObjectType.JWT)
+                            .build(),
+                    claimsBuilder.build());
+            signedJwt.sign(new RSASSASigner(rsaKey.toPrivateKey()));
+            return signedJwt.serialize();
+        }
+
+        @Override
+        public void close() {
+            server.stop(0);
+        }
     }
 }

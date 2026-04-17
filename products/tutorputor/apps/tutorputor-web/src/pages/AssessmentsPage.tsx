@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Badge, Spinner } from "@/components/ui";
 import { PageHeader } from "../components/PageHeader";
-
-interface AssessmentListItem {
-    id: string;
-    title: string;
-    status: string;
-    itemCount: number;
-    timeLimitMinutes?: number;
-}
+import { assessmentApi, type AssessmentListItem, type AssessmentStatus } from "@/api/assessmentApi";
 
 /**
  * Page for viewing and taking assessments.
@@ -22,14 +15,23 @@ interface AssessmentListItem {
  */
 export function AssessmentsPage() {
     const navigate = useNavigate();
-    const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
+    const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
 
     const { data, isLoading, error } = useQuery({
         queryKey: ["assessments", filter],
         queryFn: async (): Promise<{ items: AssessmentListItem[] }> => {
-            // Placeholder - assessments endpoint to be implemented on apiClient
-            return { items: [] };
-        }
+            const statusFilter: AssessmentStatus | undefined = filter === "all" 
+                ? undefined 
+                : filter === "active" 
+                    ? "ACTIVE" 
+                    : "GRADED";
+            
+            const response = await assessmentApi.listAssessments({
+                status: statusFilter,
+                limit: 50,
+            });
+            return response;
+        },
     });
 
     if (isLoading) {
@@ -58,7 +60,7 @@ export function AssessmentsPage() {
                     description="View and take assessments"
                     actions={
                         <Box className="flex gap-2">
-                            {(["all", "pending", "completed"] as const).map((f) => (
+                            {(["all", "active", "completed"] as const).map((f) => (
                                 <Button
                                     key={f}
                                     variant={filter === f ? "solid" : "outline"}
@@ -75,7 +77,21 @@ export function AssessmentsPage() {
 
                 {assessments.length === 0 ? (
                     <Card className="p-8 text-center">
-                        <Text className="text-gray-500 dark:text-gray-300">No assessments found.</Text>
+                        <Text className="text-gray-500 dark:text-gray-400">
+                            {filter === "all" 
+                                ? "No assessments available. Check back later!" 
+                                : `No ${filter} assessments found.`}
+                        </Text>
+                        <Text className="text-sm text-gray-400 mt-2">
+                            {filter !== "all" && (
+                                <button 
+                                    onClick={() => setFilter("all")}
+                                    className="text-blue-500 hover:underline"
+                                >
+                                    View all assessments
+                                </button>
+                            )}
+                        </Text>
                     </Card>
                 ) : (
                     <Box className="space-y-4">

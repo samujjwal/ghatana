@@ -21,6 +21,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -373,7 +374,9 @@ public class DataLifecycleHandler {
                     log.warn("[DC-E5] purge REJECTED invalid token: {} collection={} tenant={}",
                              tokenResult.reason(), collection, tenantId);
                     emitAudit(tenantId, requestId, "RETENTION_PURGE_REJECTED",
-                              collection, Map.of("reason", tokenResult.reason()));
+                              collection, Map.of(
+                                  "reason", tokenResult.reason(),
+                                  "confirmationTokenHash", sha256Hex(confirmationToken)));
                     return Promise.of(http.envelopeResponse(
                         ApiResponse.error("INVALID_CONFIRMATION_TOKEN",
                             "Confirmation token is invalid or expired: " + tokenResult.reason(),
@@ -415,7 +418,8 @@ public class DataLifecycleHandler {
                                     collection, Map.of(
                                         "dryRun", false,
                                         "deletedCount", batchResult.successCount(),
-                                        "requestedCount", entityIds.size()));
+                                        "requestedCount", entityIds.size(),
+                                        "confirmationTokenHash", sha256Hex(confirmationToken)));
                                 emitGovernanceEvent(
                                     tenantContext,
                                     requestId,
@@ -511,12 +515,14 @@ public class DataLifecycleHandler {
                         EntityStore.Entity existingEntity = entityOpt.get();
                         Map<String, Object> redactedData = new HashMap<>(existingEntity.data());
                         List<String> changedFields = new ArrayList<>();
+                        Map<String, String> previousValueHashes = new LinkedHashMap<>();
 
                         for (String field : fieldsToRedact) {
                             Object currentValue = redactedData.get(field);
                             if (currentValue == null || REDACTED_VALUE.equals(currentValue)) {
                                 continue;
                             }
+                            previousValueHashes.put(field, sha256Hex(String.valueOf(currentValue)));
                             redactedData.put(field, REDACTED_VALUE);
                             changedFields.add(field);
                         }
@@ -551,6 +557,7 @@ public class DataLifecycleHandler {
                                         "entityId", entityId,
                                         "fieldCount", changedFields.size(),
                                         "fields", changedFields,
+                                        "previousValueHashes", previousValueHashes,
                                         "reason", reason));
                                 emitGovernanceEvent(
                                     tenantContext,
@@ -944,7 +951,7 @@ public class DataLifecycleHandler {
             .resourceId(resourceId)
             .success(true)
             .detail("requestId", requestId);
-        details.forEach((k, v) -> builder.detail(k, String.valueOf(v)));
+        details.forEach(builder::detail);
         auditService.record(builder.build())
             .whenException(e -> log.warn("[DC-E5] audit emit failed: {}", e.getMessage()));
     }
@@ -1087,6 +1094,15 @@ public class DataLifecycleHandler {
             return HexFormat.of().formatHex(result);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new IllegalStateException("HMAC-SHA256 unavailable", e);
+        }
+    }
+
+    static String sha256Hex(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
         }
     }
 

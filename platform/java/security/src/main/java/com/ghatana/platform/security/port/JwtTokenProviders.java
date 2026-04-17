@@ -1,5 +1,6 @@
 package com.ghatana.platform.security.port;
 
+import com.ghatana.platform.security.jwt.JwksJwtTokenProvider;
 import com.ghatana.platform.security.jwt.JwtKeyManager;
 
 /**
@@ -33,5 +34,15 @@ public final class JwtTokenProviders {
      */
     public static JwtTokenProvider fromKeyManager(JwtKeyManager keyManager, long validityInMilliseconds) {
         return new com.ghatana.platform.security.jwt.JwtTokenProvider(keyManager, validityInMilliseconds);
+    }
+
+    /**
+     * Create a JWT provider backed by a remote JWKS endpoint for verification-only flows.
+     *
+     * @param jwksUrl remote JWKS endpoint URL
+     * @return canonical JWT provider exposed as the port type
+     */
+    public static JwtTokenProvider fromJwksUrl(String jwksUrl) {
+        return new JwksJwtTokenProvider(jwksUrl);
     }
 }

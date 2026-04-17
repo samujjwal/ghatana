@@ -184,6 +184,36 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
             .isEqualTo("review-overdue");
     }
 
+    @Test
+    @DisplayName("getPending marks explicitly expired items as EXPIRED and excludes them")
+    void getPendingExpiresElapsedItems() {
+        Instant createdAt = Instant.now().minusSeconds(3600);
+        Instant expiresAt = Instant.now().minusSeconds(60);
+        ReviewItem expired = ReviewItem.builder()
+            .reviewId("review-expired")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
+            .createdAt(createdAt)
+            .expiresAt(expiresAt)
+            .build();
+
+        when(dataCloudClient.query(eq(DataCloudHumanReviewQueue.STORAGE_TENANT),
+                eq(DataCloudHumanReviewQueue.COLLECTION), any()))
+            .thenReturn(Promise.of(List.of(entityFrom(expired, ReviewStatus.PENDING, null, null))));
+        when(dataCloudClient.save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT),
+                eq(DataCloudHumanReviewQueue.COLLECTION), any()))
+            .thenReturn(Promise.of(entityFrom(expired, ReviewStatus.EXPIRED, null, Instant.now())));
+
+        List<ReviewItem> pending = runPromise(() -> queue.getPending(ReviewFilter.forTenant("tenant-a")));
+
+        assertThat(pending).isEmpty();
+        verify(dataCloudClient).save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT),
+            eq(DataCloudHumanReviewQueue.COLLECTION), recordCaptor.capture());
+        assertThat(recordCaptor.getValue()).containsEntry("status", ReviewStatus.EXPIRED.name());
+        assertThat(recordCaptor.getValue()).containsEntry("expiresAt", expiresAt.toString());
+    }
+
     private DataCloudClient.Entity entityFrom(ReviewItem item,
                                               ReviewStatus status,
                                               ReviewDecision decision,
@@ -198,6 +228,9 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
         data.put("confidenceScore", item.getConfidenceScore());
         data.put("context", item.getContext());
         data.put("createdAt", item.getCreatedAt().toString());
+        if (item.getExpiresAt() != null) {
+            data.put("expiresAt", item.getExpiresAt().toString());
+        }
         data.put("status", status.name());
         if (item.getEvaluationSummary() != null) {
             data.put("evaluationSummary", item.getEvaluationSummary());

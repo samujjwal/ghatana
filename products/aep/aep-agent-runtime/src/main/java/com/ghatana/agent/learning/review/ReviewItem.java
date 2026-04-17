@@ -34,6 +34,7 @@ public final class ReviewItem {
     private final String evaluationSummary;
     private final Map<String, Object> context;
     private final Instant createdAt;
+    private final Instant expiresAt;
 
     private volatile ReviewStatus status;
     private volatile ReviewDecision decision;
@@ -50,6 +51,7 @@ public final class ReviewItem {
         this.evaluationSummary = builder.evaluationSummary;
         this.context = builder.context != null ? Map.copyOf(builder.context) : Map.of();
         this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
+        this.expiresAt = builder.expiresAt;
         this.status = builder.status != null ? builder.status : ReviewStatus.PENDING;
         this.decision = builder.decision;
         this.decidedAt = builder.decidedAt;
@@ -69,6 +71,7 @@ public final class ReviewItem {
     @Nullable public String getEvaluationSummary() { return evaluationSummary; }
     @NotNull public Map<String, Object> getContext() { return context; }
     @NotNull public Instant getCreatedAt() { return createdAt; }
+    @Nullable public Instant getExpiresAt() { return expiresAt; }
     @NotNull public ReviewStatus getStatus() { return status; }
     @Nullable public ReviewDecision getDecision() { return decision; }
     @Nullable public Instant getDecidedAt() { return decidedAt; }
@@ -101,10 +104,21 @@ public final class ReviewItem {
         this.decidedAt = Instant.now();
     }
 
+    /** Marks this item as expired once it passes its explicit expiry instant. */
+    void markExpired() {
+        this.status = ReviewStatus.EXPIRED;
+        this.decidedAt = Instant.now();
+    }
+
     /** Assigns this item to a reviewer. */
     void assignTo(@NotNull String reviewer) {
         this.assignedTo = reviewer;
         this.status = ReviewStatus.IN_REVIEW;
+    }
+
+    boolean isExpired(@NotNull Instant now) {
+        Objects.requireNonNull(now, "now");
+        return expiresAt != null && !now.isBefore(expiresAt);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -123,6 +137,7 @@ public final class ReviewItem {
         private String evaluationSummary;
         private Map<String, Object> context;
         private Instant createdAt;
+        private Instant expiresAt;
         private ReviewStatus status;
         private ReviewDecision decision;
         private Instant decidedAt;
@@ -139,6 +154,7 @@ public final class ReviewItem {
         public Builder evaluationSummary(String summary) { this.evaluationSummary = summary; return this; }
         public Builder context(Map<String, Object> context) { this.context = context; return this; }
         public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
+        public Builder expiresAt(Instant expiresAt) { this.expiresAt = expiresAt; return this; }
         public Builder status(ReviewStatus status) { this.status = status; return this; }
         public Builder decision(ReviewDecision decision) { this.decision = decision; return this; }
         public Builder decidedAt(Instant decidedAt) { this.decidedAt = decidedAt; return this; }

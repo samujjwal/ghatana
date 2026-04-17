@@ -269,10 +269,11 @@ public final class DataCloudHttpLauncherBootstrap {
     }
 
     /**
-     * Builds a shared-secret JWT provider from standalone launcher environment variables.
+     * Builds a JWT provider from standalone launcher environment variables.
      *
      * <p>Required variables when enabled:
      * <ul>
+     *   <li>{@code DATACLOUD_JWT_JWKS_URL} — optional JWKS endpoint used for verification-only JWT auth</li>
      *   <li>{@code DATACLOUD_JWT_SECRET} — shared secret used to sign and validate tokens</li>
      *   <li>{@code DATACLOUD_JWT_VALIDITY_MS} — optional token validity, default 3600000</li>
      * </ul>
@@ -280,6 +281,14 @@ public final class DataCloudHttpLauncherBootstrap {
      * @return JWT provider or {@code null} when JWT auth is not configured
      */
     static JwtTokenProvider buildJwtProvider(Map<String, String> env, Logger log) {
+        String jwksUrl = env.get("DATACLOUD_JWT_JWKS_URL");
+        if (jwksUrl != null && !jwksUrl.isBlank()) {
+            log.info("[DC-E1] JWT authentication enabled via JWKS endpoint {} (tenant claim: {})",
+                    jwksUrl,
+                    env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"));
+            return JwtTokenProviders.fromJwksUrl(jwksUrl);
+        }
+
         String secret = env.get("DATACLOUD_JWT_SECRET");
         if (secret == null || secret.isBlank()) {
             return null;

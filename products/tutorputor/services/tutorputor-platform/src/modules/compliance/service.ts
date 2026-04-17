@@ -65,52 +65,48 @@ export class ComplianceServiceImpl implements ComplianceService {
       throw new Error("User not found");
     }
 
-    const requestId = `req_${Date.now()}_${randomBytes(4).toString("hex")}`;
     const now = new Date();
 
-    // Note: DataRequest model not in current schema.
-    // In production, should persist this request.
-    const request = {
-      id: requestId,
-      userId: params.userId,
-      tenantId: params.tenantId,
-      status: "pending",
-      requestedAt: now.toISOString(),
-      estimatedCompletionAt: new Date(
-        now.getTime() + 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      completedAt: undefined,
-      downloadUrl: undefined,
-      error: undefined,
-    };
+    // Persist the data export request using the existing DataExportRequest model
+    const request = await this.prisma.dataExportRequest.create({
+      data: {
+        tenantId: params.tenantId,
+        userId: params.userId,
+        status: "pending",
+        requestedAt: now,
+        estimatedCompletionAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      },
+    });
 
-    return request as unknown as DataExportRequest;
+    return request;
   }
 
   async getExportStatus(args: {
     requestId: string;
     tenantId: TenantId;
   }): Promise<any> {
-    // NOTE: Data export requests need persistent storage (DataRequest model in Prisma schema)
-    // Currently requests are created in-memory by requestUserExport()
-    //
-    // Production implementation should:
-    // 1. Add DataRequest model to Prisma schema
-    // 2. Persist requests in requestUserExport()
-    // 3. Query status from database here
-    // 4. Use job queue (BullMQ) for async processing
-    //
-    // For now, return a "not found" response instead of throwing
-    return {
-      id: args.requestId,
-      userId: "" as UserId,
-      tenantId: args.tenantId,
-      status: "not_found",
-      requestedAt: new Date().toISOString(),
-      estimatedCompletionAt: new Date().toISOString(),
-      error:
-        "Export request not found. The request may have expired or was not persisted.",
-    };
+    // Query the data export request from database
+    const request = await this.prisma.dataExportRequest.findFirst({
+      where: {
+        id: args.requestId,
+        tenantId: args.tenantId,
+      },
+    });
+
+    if (!request) {
+      return {
+        id: args.requestId,
+        userId: "" as UserId,
+        tenantId: args.tenantId,
+        status: "not_found",
+        requestedAt: new Date().toISOString(),
+        estimatedCompletionAt: new Date().toISOString(),
+        error:
+          "Export request not found. The request may have expired or was not persisted.",
+      };
+    }
+
+    return request;
   }
 
   async downloadExport(_args: {
@@ -171,8 +167,6 @@ export class ComplianceServiceImpl implements ComplianceService {
     });
 
     // Send email mock
-    // console.log(`Deletion token for ${params.userEmail}: ${token}`);
-
     return {
       message: "A confirmation token has been sent to your email address.",
       expiresAt,

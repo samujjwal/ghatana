@@ -11,11 +11,17 @@ import numpy as np
 from pathlib import Path
 import tempfile
 import sys
+from unittest.mock import patch
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src-tauri" / "python"))
 
-from cloned_voice_synthesizer import ClonedVoiceSynthesizer, SynthesisConfig, SynthesisResult
+from cloned_voice_synthesizer import (
+    ClonedVoiceSynthesizer,
+    SynthesisConfig,
+    SynthesisDependencyError,
+    SynthesisResult,
+)
 
 
 class TestClonedVoiceSynthesizer(unittest.TestCase):
@@ -39,8 +45,8 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
 
     def test_load_base_models(self):
         """Test loading base models."""
-        result = self.synthesizer.load_base_models()
-        self.assertTrue(result)
+        with self.assertRaises(SynthesisDependencyError):
+            self.synthesizer.load_base_models()
 
     def test_load_voice_missing_files(self):
         """Test loading voice with missing files."""
@@ -49,6 +55,20 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
         embedding_path = "/nonexistent/embedding.npy"
 
         result = self.synthesizer.load_voice(voice_id, model_path, embedding_path)
+        self.assertFalse(result)
+
+    def test_load_voice_missing_model_rejected_even_with_embedding(self):
+        """Test loading voice fails when the model file is missing."""
+        voice_id = "test_voice"
+        embedding_path = Path(self.temp_dir) / "embedding.npy"
+        np.save(embedding_path, np.random.randn(256).astype(np.float32))
+
+        result = self.synthesizer.load_voice(
+            voice_id,
+            "/nonexistent/model.pt",
+            str(embedding_path),
+        )
+
         self.assertFalse(result)
 
     def test_load_voice_success(self):
@@ -107,9 +127,10 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
 
         self.synthesizer.load_voice(voice_id, str(model_path), str(embedding_path))
 
-        # Synthesize
         config = SynthesisConfig(speed=1.0, pitch_shift=0.0)
-        result = self.synthesizer.synthesize("Hello world", voice_id, config)
+        with patch.object(self.synthesizer, "_generate_mel", return_value=np.ones((80, 16), dtype=np.float32)):
+            with patch.object(self.synthesizer, "_vocoder_inference", return_value=np.ones(22050, dtype=np.float32)):
+                result = self.synthesizer.synthesize("Hello world", voice_id, config)
 
         self.assertIsInstance(result, SynthesisResult)
         self.assertIsInstance(result.audio, np.ndarray)
@@ -134,11 +155,13 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
         def progress_callback(progress):
             progress_values.append(progress)
 
-        result = self.synthesizer.synthesize(
-            "Hello world",
-            voice_id,
-            progress_callback=progress_callback
-        )
+        with patch.object(self.synthesizer, "_generate_mel", return_value=np.ones((80, 16), dtype=np.float32)):
+            with patch.object(self.synthesizer, "_vocoder_inference", return_value=np.ones(22050, dtype=np.float32)):
+                result = self.synthesizer.synthesize(
+                    "Hello world",
+                    voice_id,
+                    progress_callback=progress_callback
+                )
 
         self.assertGreater(len(progress_values), 0)
         self.assertEqual(progress_values[-1], 1.0)
@@ -158,7 +181,9 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
 
         # Synthesize with multiple sentences
         text = "Hello world. This is a test. How are you?"
-        chunks = list(self.synthesizer.synthesize_streaming(text, voice_id))
+        with patch.object(self.synthesizer, "_generate_mel", return_value=np.ones((80, 16), dtype=np.float32)):
+            with patch.object(self.synthesizer, "_vocoder_inference", return_value=np.ones(22050, dtype=np.float32)):
+                chunks = list(self.synthesizer.synthesize_streaming(text, voice_id))
 
         self.assertGreater(len(chunks), 0)
 
@@ -235,6 +260,20 @@ class TestClonedVoiceSynthesizer(unittest.TestCase):
         voices = self.synthesizer.get_loaded_voices()
         self.assertEqual(len(voices), 1)
         self.assertIn(voice_id, voices)
+
+    def test_synthesize_fails_without_base_models(self):
+        """Test synthesis fails explicitly when base models are unavailable."""
+        voice_id = "test_voice"
+        model_path = Path(self.temp_dir) / "model.pt"
+        embedding_path = Path(self.temp_dir) / "embedding.npy"
+
+        model_path.write_text("mock_model")
+        np.save(embedding_path, np.random.randn(256).astype(np.float32))
+
+        self.synthesizer.load_voice(voice_id, str(model_path), str(embedding_path))
+
+        with self.assertRaises(SynthesisDependencyError):
+            self.synthesizer.synthesize("Hello world", voice_id)
 
 
 class TestSynthesisResult(unittest.TestCase):

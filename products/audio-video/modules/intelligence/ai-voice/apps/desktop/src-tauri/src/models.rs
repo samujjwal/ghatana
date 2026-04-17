@@ -11,7 +11,7 @@ pub struct VoiceModel {
     pub path: String,
     pub created_at: String,
     pub training_samples: u32,
-    pub quality: f32,
+    pub quality: Option<f32>,
     pub is_default: bool,
 }
 
@@ -21,6 +21,7 @@ pub struct VoiceModel {
 pub struct TrainingSession {
     pub id: String,
     pub model_name: String,
+    pub sample_count: u32,
     pub status: TrainingStatus,
     pub progress: f32,
     pub started_at: Option<String>,
@@ -146,6 +147,8 @@ pub struct AvailableModel {
     pub url: String,
     #[serde(rename = "type")]
     pub model_type: String,
+    pub is_available: bool,
+    pub availability_reason: Option<String>,
     pub is_downloaded: bool,
     pub download_progress: Option<f32>,
 }

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +58,7 @@ class DataCloudHttpServerGovernanceTest {
 
     private DataCloudClient mockClient;
     private EntityStore mockEntityStore;
+    private AuditService mockAuditService;
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
@@ -64,7 +70,22 @@ class DataCloudHttpServerGovernanceTest {
         entityState.clear();
         mockClient = mock(DataCloudClient.class);
         mockEntityStore = mock(EntityStore.class);
+        mockAuditService = mock(AuditService.class);
         when(mockClient.entityStore()).thenReturn(mockEntityStore);
+        when(mockAuditService.record(any())).thenReturn(Promise.complete());
+        when(mockClient.findById(any(), any(), any())).thenAnswer(invocation -> {
+            String collection = invocation.getArgument(1);
+            String entityId = invocation.getArgument(2);
+            EntityStore.Entity entity = entityState.getOrDefault(collection, Map.of()).get(entityId);
+            if (entity == null) {
+                return Promise.of(Optional.empty());
+            }
+            return Promise.of(Optional.of(DataCloudClient.Entity.of(
+                entity.id().value(),
+                entity.collection(),
+                entity.data()
+            )));
+        });
         when(mockEntityStore.save(any(), any())).thenAnswer(invocation -> {
             EntityStore.Entity entity = invocation.getArgument(1);
             if (entity == null) {
@@ -329,7 +350,7 @@ class DataCloudHttpServerGovernanceTest {
             storeEntity(entity("old-1", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(300).toString())));
             storeEntity(entity("old-2", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(120).toString())));
 
-            server = new DataCloudHttpServer(mockClient, port);
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
             server.start();
             waitForServerReady(port);
 
@@ -358,6 +379,15 @@ class DataCloudHttpServerGovernanceTest {
             assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
             assertThat(data.get("deletedRows")).isEqualTo(2);
             verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 2));
+            verify(mockAuditService).record(argThat(event ->
+                "RETENTION_PURGE".equals(event.eventType())
+                    && sha256Hex(confirmationToken)
+                        .equals(event.getDetail("confirmationTokenHash"))
+                    && !confirmationToken.equals(event.getDetail("confirmationTokenHash"))));
+
+            HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/old_events/old-1");
+
+            assertThat(deletedEntityResponse.statusCode()).isEqualTo(404);
         }
 
         @Test
@@ -398,7 +428,7 @@ class DataCloudHttpServerGovernanceTest {
             );
             storeEntity(existingEntity);
 
-            server = new DataCloudHttpServer(mockClient, port);
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
             server.start();
             waitForServerReady(port);
 
@@ -424,6 +454,29 @@ class DataCloudHttpServerGovernanceTest {
                 "[REDACTED]".equals(entity.data().get("email"))
                     && "[REDACTED]".equals(entity.data().get("phone"))
                     && "admin".equals(entity.data().get("role"))));
+            verify(mockAuditService).record(argThat(event -> {
+                if (!"PII_REDACT".equals(event.eventType())) {
+                    return false;
+                }
+                Object rawHashes = event.getDetail("previousValueHashes");
+                if (!(rawHashes instanceof Map<?, ?> hashes)) {
+                    return false;
+                }
+                return sha256Hex("user@example.com").equals(hashes.get("email"))
+                    && sha256Hex("+1-555-0101").equals(hashes.get("phone"))
+                    && !hashes.containsValue("user@example.com")
+                    && !hashes.containsValue("+1-555-0101");
+            }));
+
+                    HttpResponse<String> getResponse = get("/api/v1/entities/user_profiles/ent-abc123");
+
+                    assertThat(getResponse.statusCode()).isEqualTo(200);
+                    Map<String, Object> getBody = mapper.readValue(getResponse.body(), Map.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> entityData = (Map<String, Object>) getBody.get("data");
+                    assertThat(entityData.get("email")).isEqualTo("[REDACTED]");
+                    assertThat(entityData.get("phone")).isEqualTo("[REDACTED]");
+                    assertThat(entityData.get("role")).isEqualTo("admin");
         }
 
         @Test
@@ -683,5 +736,14 @@ class DataCloudHttpServerGovernanceTest {
     private void storeEntity(EntityStore.Entity entity) {
         entityState.computeIfAbsent(entity.collection(), ignored -> new ConcurrentHashMap<>())
             .put(entity.id().value(), entity);
+    }
+
+    private static String sha256Hex(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 }

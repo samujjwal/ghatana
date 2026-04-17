@@ -84,6 +84,43 @@ class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("JWT request with mismatched tenant header returns 403")
+    void jwtRequestWithMismatchedTenantHeaderReturns403() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-other")
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+        assertThat(status).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("JWT request with mismatched tenant query parameter returns 403")
+    void jwtRequestWithMismatchedTenantQueryReturns403() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health?tenantId=tenant-other")
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+        assertThat(status).isEqualTo(403);
+    }
+
+    @Test
     @DisplayName("API key is checked before JWT when both credentials are present")
     void apiKeyCheckedBeforeJwt() {
         when(apiKeyResolver.resolve("bad-key")).thenReturn(Optional.empty());

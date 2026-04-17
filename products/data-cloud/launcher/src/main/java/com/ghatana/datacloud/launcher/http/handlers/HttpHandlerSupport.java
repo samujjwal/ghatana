@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Shared HTTP helper methods for all handler classes extracted from
@@ -24,10 +25,13 @@ import java.util.UUID;
  */
 public class HttpHandlerSupport {
 
+    private static final Pattern TENANT_ID_PATTERN = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9-]{1,62}[A-Za-z0-9]$");
+
     private final ObjectMapper objectMapper;
     private final String corsAllowOrigin;
     private final String corsAllowMethods;
     private final String corsAllowHeaders;
+    private final boolean strictTenantResolution;
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
                               String corsAllowOrigin,
@@ -45,6 +49,7 @@ public class HttpHandlerSupport {
         this.corsAllowOrigin        = corsAllowOrigin;
         this.corsAllowMethods       = corsAllowMethods;
         this.corsAllowHeaders       = corsAllowHeaders;
+        this.strictTenantResolution = strictTenantResolution;
     }
 
     /**
@@ -249,12 +254,13 @@ public class HttpHandlerSupport {
     }
 
     /**
-     * Resolves tenant from {@code X-Tenant-Id} header or query parameter.
+    * Resolves tenant from {@code X-Tenant-Id} header or query parameter.
+    *
+    * Resolves the tenant ID from the request, returning {@code null} when none is present or
+    * the supplied value fails the shared tenant identifier format validation.
      *
-     * Resolves the tenant ID from the request, returning {@code null} when none is present.
-     *
-     * <p>Handlers in non-local profiles should prefer this method and return HTTP 400
-     * to the caller when the result is {@code null}.  Example usage:
+    * <p>Handlers in non-local profiles should prefer this method and reject {@code null}
+    * results. Example usage:
      * <pre>{@code
      * String tenantId = http.requireTenantIdOrFail(request);
      * if (tenantId == null) {
@@ -267,12 +273,10 @@ public class HttpHandlerSupport {
      */
     public String requireTenantIdOrFail(HttpRequest request) {
         RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
-        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) return metadata.tenantId();
-        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
-        String fromQuery = request.getQueryParameter("tenantId");
-        if (fromQuery != null && !fromQuery.isBlank()) return fromQuery;
-        return null;
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) {
+            return sanitizeTenantId(metadata.tenantId());
+        }
+        return resolveTenantId(request);
     }
 
     /**
@@ -280,12 +284,61 @@ public class HttpHandlerSupport {
      */
     public String peekTenantId(HttpRequest request) {
         RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
-        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) return metadata.tenantId();
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) {
+            return sanitizeTenantId(metadata.tenantId());
+        }
+        return resolveTenantId(request);
+    }
+
+    /**
+     * Returns whether strict tenant resolution is enabled for this HTTP surface.
+     */
+    public boolean isStrictTenantResolution() {
+        return strictTenantResolution;
+    }
+
+    /**
+     * Returns whether the request carries an explicit tenant identifier candidate before validation.
+     */
+    public boolean hasExplicitTenantCandidate(HttpRequest request) {
+        RequestMetadataAttachment metadata = request.getAttachment(RequestMetadataAttachment.class);
+        if (metadata != null && metadata.tenantId() != null && !metadata.tenantId().isBlank()) {
+            return true;
+        }
+        return findRawTenantCandidate(request) != null;
+    }
+
+    private String resolveTenantId(HttpRequest request) {
+        String candidate = findRawTenantCandidate(request);
+        return candidate == null ? null : sanitizeTenantId(candidate);
+    }
+
+    private static String findRawTenantCandidate(HttpRequest request) {
         String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
+        if (fromHeader != null && !fromHeader.isBlank()) {
+            return fromHeader;
+        }
+
         String fromQuery = request.getQueryParameter("tenantId");
-        if (fromQuery != null && !fromQuery.isBlank()) return fromQuery;
+        if (fromQuery != null && !fromQuery.isBlank()) {
+            return fromQuery;
+        }
+
         return null;
+    }
+
+    private static String sanitizeTenantId(String rawTenantId) {
+        String candidate = rawTenantId == null ? null : rawTenantId.trim();
+        if (candidate == null || candidate.isBlank()) {
+            return null;
+        }
+        if (candidate.length() < 3 || candidate.length() > 64) {
+            return null;
+        }
+        if (!TENANT_ID_PATTERN.matcher(candidate).matches()) {
+            return null;
+        }
+        return candidate;
     }
 
     /**

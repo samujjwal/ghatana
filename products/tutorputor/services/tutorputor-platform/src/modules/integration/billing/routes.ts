@@ -61,7 +61,7 @@ export const billingRoutes: FastifyPluginAsync<{
       ];
       const Stripe = (await import("stripe")).default;
       const stripe = new Stripe(stripeSecretKey, {
-        apiVersion: "2026-02-25.clover",
+        apiVersion: "2026-03-25.dahlia",
         maxNetworkRetries: 3,
       });
       return stripe.webhooks.constructEvent(
@@ -172,6 +172,39 @@ export const billingRoutes: FastifyPluginAsync<{
     });
 
     return reply.send({ purchased: hasPurchased });
+  });
+
+  /**
+   * POST /portal
+   * Create a billing portal session for managing subscriptions
+   */
+  app.post("/portal", async (req, reply) => {
+    const tenantId = getTenantId(req);
+    const bodySchema = z.object({
+      returnUrl: z.string().url(),
+    });
+    const bodyResult = bodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid portal payload",
+        issues: bodyResult.error.issues,
+      });
+    }
+    const { returnUrl } = bodyResult.data;
+
+    try {
+      const session = await billingService.createBillingPortalSession({
+        tenantId: tenantId as TenantId,
+        returnUrl,
+      });
+      return reply.send(session);
+    } catch (error) {
+      app.log.error(error, "Failed to create billing portal session");
+      return reply.code(500).send({
+        error: "Failed to create billing portal session",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   });
 
   // ===========================================================================

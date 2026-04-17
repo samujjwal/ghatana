@@ -9,8 +9,10 @@ import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,8 @@ public class HealthController implements AepController {
     private final List<Map.Entry<String, Supplier<String>>> componentChecks = new CopyOnWriteArrayList<>();
     /** Deeper startup/runtime checks used by {@code /health/deep}. */
     private final List<Map.Entry<String, Supplier<String>>> deepComponentChecks = new CopyOnWriteArrayList<>();
+    /** Asynchronous deep dependency checks used for runtime connectivity verification. */
+    private final List<Map.Entry<String, Supplier<Promise<String>>>> asyncDeepComponentChecks = new CopyOnWriteArrayList<>();
 
     public HealthController(String version) {
         this.version = version != null ? version : "unknown";
@@ -72,6 +76,16 @@ public class HealthController implements AepController {
         deepComponentChecks.add(Map.entry(name, check));
     }
 
+    /**
+     * Registers an asynchronous deep dependency probe exposed only through {@code /health/deep}.
+     *
+     * <p>Use this for lightweight connectivity probes that complete asynchronously
+     * without blocking the request thread.
+     */
+    public void addAsyncDeepDependencyCheck(String name, Supplier<Promise<String>> check) {
+        asyncDeepComponentChecks.add(Map.entry(name, check));
+    }
+
     @Override
     public String getBasePath() {
         return "/";
@@ -91,13 +105,28 @@ public class HealthController implements AepController {
     }
 
     private Promise<HttpResponse> handleHealth() {
-        return Promise.of(healthResponse(componentChecks, "shallow"));
+        return Promise.of(buildHealthResponse(evaluateChecks(componentChecks), "shallow"));
     }
 
     private Promise<HttpResponse> handleDeepHealth() {
-        List<Map.Entry<String, Supplier<String>>> checks = new java.util.ArrayList<>(componentChecks);
+        List<Map.Entry<String, Supplier<String>>> checks = new ArrayList<>(componentChecks);
         checks.addAll(deepComponentChecks);
-        return Promise.of(healthResponse(checks, "deep"));
+        Map<String, Object> components = evaluateChecks(checks);
+        if (asyncDeepComponentChecks.isEmpty()) {
+            return Promise.of(buildHealthResponse(components, "deep"));
+        }
+
+        List<Promise<Map.Entry<String, String>>> asyncChecks = asyncDeepComponentChecks.stream()
+            .map(this::evaluateAsyncCheck)
+            .toList();
+
+        return Promises.toList(asyncChecks)
+            .map(results -> {
+                for (Map.Entry<String, String> entry : results) {
+                    components.put(entry.getKey(), entry.getValue());
+                }
+                return buildHealthResponse(components, "deep");
+            });
     }
 
     private Promise<HttpResponse> handleReady() {
@@ -132,21 +161,36 @@ public class HealthController implements AepController {
         this.ready = false;
     }
 
-    private HttpResponse healthResponse(List<Map.Entry<String, Supplier<String>>> checks, String probeType) {
+    private Map<String, Object> evaluateChecks(List<Map.Entry<String, Supplier<String>>> checks) {
         Map<String, Object> components = new LinkedHashMap<>();
-        boolean allHealthy = true;
         for (Map.Entry<String, Supplier<String>> entry : checks) {
             try {
                 String status = entry.getValue().get();
                 components.put(entry.getKey(), status);
-                if (!"ok".equals(status)) {
-                    allHealthy = false;
-                }
             } catch (Exception e) {
-                components.put(entry.getKey(), "error: " + e.getMessage());
-                allHealthy = false;
+                components.put(entry.getKey(), errorStatus(e));
             }
         }
+
+        return components;
+    }
+
+    private Promise<Map.Entry<String, String>> evaluateAsyncCheck(Map.Entry<String, Supplier<Promise<String>>> entry) {
+        try {
+            Promise<String> promise = entry.getValue().get();
+            if (promise == null) {
+                return Promise.of(Map.entry(entry.getKey(), "error: null health promise"));
+            }
+            return promise
+                .map(status -> Map.entry(entry.getKey(), status))
+                .then(Promise::of, error -> Promise.of(Map.entry(entry.getKey(), errorStatus(error))));
+        } catch (Exception error) {
+            return Promise.of(Map.entry(entry.getKey(), errorStatus(error)));
+        }
+    }
+
+    private HttpResponse buildHealthResponse(Map<String, Object> components, String probeType) {
+        boolean allHealthy = components.values().stream().allMatch("ok"::equals);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", allHealthy ? "healthy" : "degraded");
@@ -157,5 +201,10 @@ public class HealthController implements AepController {
             response.put("components", components);
         }
         return HttpHelper.jsonResponse(response);
+    }
+
+    private String errorStatus(Throwable error) {
+        String message = error.getMessage();
+        return message == null || message.isBlank() ? "error" : "error: " + message;
     }
 }

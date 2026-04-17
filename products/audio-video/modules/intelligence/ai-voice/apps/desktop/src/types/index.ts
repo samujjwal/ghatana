@@ -101,7 +101,7 @@ export interface VoiceModel {
   path: string;
   createdAt: string;
   trainingSamples: number;
-  quality: number;
+  quality?: number;
   isDefault: boolean;
 }
 
@@ -221,6 +221,8 @@ export interface ModelDownloadInfo {
   size: number;
   url: string;
   type: 'demucs' | 'rvc' | 'crepe';
+  isAvailable: boolean;
+  availabilityReason?: string;
   isDownloaded: boolean;
   downloadProgress?: number;
 }

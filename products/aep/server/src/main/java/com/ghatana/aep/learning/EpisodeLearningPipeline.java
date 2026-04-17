@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,9 @@ public class EpisodeLearningPipeline {
 
     /** Maximum number of recent episodes to include per reflection run. */
     private static final int MAX_EPISODES_PER_RUN = 500;
+
+        /** Review requests stay actionable for seven days before expiring automatically. */
+        private static final Duration REVIEW_ITEM_TTL = Duration.ofDays(7);
 
     private final DataCloudClient agentDataCloud;
     private final CompositeEvaluationGate evaluationGate;
@@ -287,6 +292,7 @@ public class EpisodeLearningPipeline {
                 .evaluationSummary(changeDescription
                         + (autoPromotable ? " [auto-promotable: confidence \u2265 " + autoPromoteThreshold + "]" : ""))
                 .context(Map.copyOf(context))
+                .expiresAt(Instant.now().plus(REVIEW_ITEM_TTL))
                 .build();
 
         log.info("[learning-pipeline] queuing review for skill={} confidence={} auto-promotable={}",

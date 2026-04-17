@@ -780,6 +780,7 @@ export const socialRoutes: FastifyPluginAsync<{
 
   app.post("/follow", async (request, reply) => {
     const userId = getUserId(request) as UserId;
+    const tenantId = getTenantId(request) as TenantId;
     const bodyResult = followBodySchema.safeParse(request.body);
     if (!bodyResult.success) {
       return sendValidationError(reply, bodyResult.error);
@@ -790,9 +791,12 @@ export const socialRoutes: FastifyPluginAsync<{
     }
 
     try {
-      return reply.code(501).send({
-        error: "Follow graph is not implemented in the current social module",
+      await forumService.followUser({
+        tenantId,
+        followerId: userId,
+        followingId: followUserId,
       });
+      return reply.code(204).send();
     } catch (error) {
       app.log.error(error, "Failed to follow user");
       return reply.code(500).send({
@@ -807,10 +811,17 @@ export const socialRoutes: FastifyPluginAsync<{
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
     }
+    const userId = getUserId(request) as UserId;
+    const tenantId = getTenantId(request) as TenantId;
+    const { followUserId } = paramsResult.data as { followUserId: UserId };
+
     try {
-      return reply.code(501).send({
-        error: "Follow graph is not implemented in the current social module",
+      await forumService.unfollowUser({
+        tenantId,
+        followerId: userId,
+        followingId: followUserId,
       });
+      return reply.code(204).send();
     } catch (error) {
       app.log.error(error, "Failed to unfollow user");
       return reply.code(500).send({
@@ -820,11 +831,20 @@ export const socialRoutes: FastifyPluginAsync<{
     }
   });
 
-  app.get("/users/:userId/followers", async (_request, reply) => {
+  app.get("/users/:userId/followers", async (request, reply) => {
+    const paramsResult = userIdParamSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      return sendValidationError(reply, paramsResult.error);
+    }
+    const tenantId = getTenantId(request) as TenantId;
+    const { userId } = paramsResult.data as { userId: UserId };
+
     try {
-      return reply.code(501).send({
-        error: "Follow graph is not implemented in the current social module",
+      const followers = await socialService.getFollowers({
+        tenantId,
+        userId,
       });
+      return reply.code(200).send({ followers });
     } catch (error) {
       app.log.error(error, "Failed to get followers");
       return reply.code(500).send({
@@ -839,10 +859,15 @@ export const socialRoutes: FastifyPluginAsync<{
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
     }
+    const tenantId = getTenantId(request) as TenantId;
+    const { userId } = paramsResult.data as { userId: UserId };
+
     try {
-      return reply.code(501).send({
-        error: "Follow graph is not implemented in the current social module",
+      const following = await forumService.getFollowing({
+        tenantId,
+        userId,
       });
+      return reply.code(200).send({ following });
     } catch (error) {
       app.log.error(error, "Failed to get following");
       return reply.code(500).send({

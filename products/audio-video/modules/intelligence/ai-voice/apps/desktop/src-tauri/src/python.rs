@@ -9,7 +9,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use crate::error::{AppError, AppResult};
-use crate::models::{StemsOutput, StemResult, DetectedPhrase, ConversionResult, TrainingStatusResponse, TrainingStatus};
+use crate::models::{StemsOutput, StemResult, DetectedPhrase, ConversionResult};
 use tokio::process::Command;
 use std::path::PathBuf;
 
@@ -379,63 +379,12 @@ pub fn convert_voice(
     model_path: &str,
     pitch_shift: f32,
 ) -> AppResult<ConversionResult> {
-    Python::with_gil(|py| {
-        let code = r#"
-def convert_with_rvc(input_path, output_path, model_path, pitch_shift):
-    try:
-        # RVC conversion would go here
-        # For now, just copy the file as a placeholder
-        import shutil
-        shutil.copy(input_path, output_path)
-        
-        import wave
-        with wave.open(output_path, 'rb') as f:
-            duration = f.getnframes() / f.getframerate()
-        
-        return {'path': output_path, 'duration': float(duration)}
-    except Exception as e:
-        return {'path': output_path, 'duration': 0.0, 'error': str(e)}
-"#;
+    let _ = (input_path, output_path, model_path, pitch_shift);
 
-        py.run_bound(code, None, None)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-
-        let locals = PyDict::new_bound(py);
-        locals.set_item("input_path", input_path)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-        locals.set_item("output_path", output_path)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-        locals.set_item("model_path", model_path)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-        locals.set_item("pitch_shift", pitch_shift)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-
-        py.run_bound("result = convert_with_rvc(input_path, output_path, model_path, pitch_shift)", None, Some(&locals))
-            .map_err(|e| AppError::Conversion(e.to_string()))?;
-
-        let result_any = locals
-            .get_item("result")
-            .map_err(|e| AppError::Conversion(e.to_string()))?
-            .ok_or_else(|| AppError::Conversion("No result".to_string()))?;
-        let result = result_any
-            .downcast::<PyDict>()
-            .map_err(|e| AppError::Conversion(format!("Invalid result: {}", e)))?;
-
-        let path: String = result
-            .get_item("path")
-            .ok()
-            .flatten()
-            .and_then(|v| v.extract().ok())
-            .unwrap_or_default();
-        let duration: f64 = result
-            .get_item("duration")
-            .ok()
-            .flatten()
-            .and_then(|v| v.extract().ok())
-            .unwrap_or(0.0);
-
-        Ok(ConversionResult { path, duration })
-    })
+    Err(AppError::Conversion(
+        "Voice conversion is not available in this runtime yet. Placeholder copy-through conversion is blocked."
+            .to_string(),
+    ))
 }
 
 /// Train RVC model from samples using Python voice_trainer module.
@@ -516,15 +465,6 @@ def start_training(sample_paths, output_path, model_name, status_path):
             .map_err(|e| AppError::Training(e.to_string()))?;
 
         Ok(())
-    })
-}
-
-/// Get training status from Python trainer.
-pub fn get_training_status(_session_id: &str) -> AppResult<TrainingStatusResponse> {
-    Ok(TrainingStatusResponse {
-        status: TrainingStatus::Pending,
-        progress: 0.0,
-        error: None,
     })
 }
 

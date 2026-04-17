@@ -49,6 +49,15 @@ class HealthControllerTest {
         return MAPPER.readValue(body, new com.fasterxml.jackson.core.type.TypeReference<>() {});
     }
 
+    private Map<String, Object> getDeepHealth() throws Exception {
+        HttpRequest request = mock(HttpRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.GET);
+        Promise<HttpResponse> promise = controller.handle(request, "health/deep");
+        HttpResponse response = promise.getResult();
+        String body = response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
+        return MAPPER.readValue(body, new com.fasterxml.jackson.core.type.TypeReference<>() {});
+    }
+
     @Nested
     @DisplayName("handleHealth with no checks")
     class NoChecks {
@@ -125,13 +134,7 @@ class HealthControllerTest {
             controller.addDependencyCheck("dep-a", () -> "ok");
             controller.addDeepDependencyCheck("dep-deep", () -> "misconfigured");
 
-            HttpRequest request = mock(HttpRequest.class);
-            when(request.getMethod()).thenReturn(HttpMethod.GET);
-
-            HttpResponse response = controller.handle(request, "health/deep").getResult();
-            String body = response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8);
-            Map<String, Object> parsed = MAPPER.readValue(body,
-                new com.fasterxml.jackson.core.type.TypeReference<>() {});
+            Map<String, Object> parsed = getDeepHealth();
 
             assertThat(parsed.get("status")).isEqualTo("degraded");
             assertThat(parsed.get("probe")).isEqualTo("deep");
@@ -139,6 +142,22 @@ class HealthControllerTest {
             Map<String, Object> components = (Map<String, Object>) parsed.get("components");
             assertThat(components).containsEntry("dep-a", "ok");
             assertThat(components).containsEntry("dep-deep", "misconfigured");
+        }
+
+        @Test
+        @DisplayName("deep probe includes async dependency checks")
+        void deepProbeIncludesAsyncChecks() throws Exception {
+            controller.addDependencyCheck("dep-a", () -> "ok");
+            controller.addAsyncDeepDependencyCheck("dep-connectivity", () -> Promise.of("ok"));
+
+            Map<String, Object> parsed = getDeepHealth();
+
+            assertThat(parsed.get("status")).isEqualTo("healthy");
+            assertThat(parsed.get("probe")).isEqualTo("deep");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) parsed.get("components");
+            assertThat(components).containsEntry("dep-a", "ok");
+            assertThat(components).containsEntry("dep-connectivity", "ok");
         }
     }
 

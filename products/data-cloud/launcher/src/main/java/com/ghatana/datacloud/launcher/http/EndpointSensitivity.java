@@ -64,6 +64,7 @@ public enum EndpointSensitivity {
     public static final Set<String> PUBLIC_PATHS = Set.of(
         "/health",
         "/health/detail",
+        "/health/deep",
         "/ready",
         "/live",
         "/metrics",

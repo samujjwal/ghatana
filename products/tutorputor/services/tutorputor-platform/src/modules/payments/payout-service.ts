@@ -12,6 +12,7 @@
 
 import { createStandaloneLogger } from "@tutorputor/core/logger";
 import Stripe from "stripe";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 const logger = createStandaloneLogger({ component: "PayoutService" });
 
@@ -52,9 +53,11 @@ export enum PayoutStatus {
  */
 export class PayoutService {
   private stripe: Stripe;
+  private prisma: TutorPrismaClient;
 
-  constructor(secretKey: string) {
+  constructor(secretKey: string, prisma: TutorPrismaClient) {
     this.stripe = new Stripe(secretKey);
+    this.prisma = prisma;
   }
 
   /**
@@ -87,6 +90,21 @@ export class PayoutService {
       );
 
       const status = this.mapPayoutStatus(payout.status);
+
+      // Persist payout record to database
+      await this.prisma.payout.create({
+        data: {
+          tenantId: config.metadata?.tenantId || "default",
+          stripeAccountId: config.accountId,
+          stripePayoutId: payout.id,
+          amountCents: config.amount,
+          currency: config.currency || "usd",
+          status,
+          arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null,
+          description: config.description,
+          metadata: config.metadata ? JSON.stringify(config.metadata) : null,
+        },
+      });
 
       logger.info({ payoutId: payout.id, status }, "Payout created successfully");
 
@@ -174,10 +192,11 @@ export class PayoutService {
   }
 
   /**
-   * Get payout history for an account
+   * Get payout history for an account from database
    */
   async getPayoutHistory(
     accountId: string,
+    tenantId?: string,
     limit: number = 20,
   ): Promise<Array<{
     id: string;
@@ -188,21 +207,21 @@ export class PayoutService {
     description?: string;
   }>> {
     try {
-      const payouts = await this.stripe.payouts.list(
-        {
-          limit,
+      const payouts = await this.prisma.payout.findMany({
+        where: {
+          stripeAccountId: accountId,
+          ...(tenantId ? { tenantId } : {}),
         },
-        {
-          stripeAccount: accountId,
-        },
-      );
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      });
 
-      return payouts.data.map((payout: any) => ({
-        id: payout.id,
-        amount: payout.amount,
+      return payouts.map((payout: any) => ({
+        id: payout.stripePayoutId,
+        amount: payout.amountCents,
         currency: payout.currency,
-        status: this.mapPayoutStatus(payout.status),
-        arrivalDate: new Date(payout.arrival_date * 1000),
+        status: payout.status as PayoutStatus,
+        arrivalDate: payout.arrivalDate || new Date(payout.createdAt),
         description: payout.description ?? undefined,
       }));
     } catch (error) {
@@ -227,6 +246,12 @@ export class PayoutService {
           stripeAccount: accountId,
         } as any,
       );
+
+      // Update database record
+      await this.prisma.payout.updateMany({
+        where: { stripePayoutId: payoutId },
+        data: { status: "CANCELLED" },
+      });
 
       logger.info({ payoutId }, "Payout cancelled successfully");
     } catch (error) {
@@ -307,12 +332,12 @@ export class PayoutService {
  */
 let payoutServiceInstance: PayoutService | null = null;
 
-export function getPayoutService(secretKey?: string): PayoutService {
+export function getPayoutService(secretKey?: string, prisma?: TutorPrismaClient): PayoutService {
   if (!payoutServiceInstance) {
-    if (!secretKey) {
-      throw new Error("PayoutService secretKey required for first initialization");
+    if (!secretKey || !prisma) {
+      throw new Error("PayoutService secretKey and prisma required for first initialization");
     }
-    payoutServiceInstance = new PayoutService(secretKey);
+    payoutServiceInstance = new PayoutService(secretKey, prisma);
   }
   return payoutServiceInstance;
 }
