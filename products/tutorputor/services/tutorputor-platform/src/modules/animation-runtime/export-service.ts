@@ -78,6 +78,16 @@ export interface ExportProgress {
 
 export type ExportProgressCallback = (progress: ExportProgress) => void;
 
+export class ExportEncodingUnavailableError extends Error {
+  constructor(format: "video" | "gif") {
+    super(
+      `${format.toUpperCase()} export requires a configured encoder. ` +
+        "TutorPutor no longer returns placeholder binary data for animation exports.",
+    );
+    this.name = "ExportEncodingUnavailableError";
+  }
+}
+
 /**
  * Animation Export Service
  * Handles exporting animations to various formats
@@ -167,17 +177,28 @@ export class AnimationExportService {
 
     // In a real implementation, this would send frames to a server-side
     // encoder (ffmpeg) or use WebCodecs API for browser-based encoding
-    const videoBlob = await this.encodeFramesToVideo(frames, fps, quality);
+    try {
+      const videoBlob = await this.encodeFramesToVideo(frames, fps, quality);
 
-    onProgress?.({
-      progress: 1,
-      currentFrame: totalFrames,
-      totalFrames,
-      status: "complete",
-      message: "Video export complete!",
-    });
+      onProgress?.({
+        progress: 1,
+        currentFrame: totalFrames,
+        totalFrames,
+        status: "complete",
+        message: "Video export complete!",
+      });
 
-    return videoBlob;
+      return videoBlob;
+    } catch (error) {
+      onProgress?.({
+        progress: 1,
+        currentFrame: totalFrames,
+        totalFrames,
+        status: "error",
+        message: error instanceof Error ? error.message : "Video export failed",
+      });
+      throw error;
+    }
   }
 
   /**
@@ -245,17 +266,28 @@ export class AnimationExportService {
       message: "Encoding GIF...",
     });
 
-    const gifBlob = await this.encodeFramesToGIF(frames, frameInterval);
+    try {
+      const gifBlob = await this.encodeFramesToGIF(frames, frameInterval);
 
-    onProgress?.({
-      progress: 1,
-      currentFrame: totalFrames,
-      totalFrames,
-      status: "complete",
-      message: "GIF export complete!",
-    });
+      onProgress?.({
+        progress: 1,
+        currentFrame: totalFrames,
+        totalFrames,
+        status: "complete",
+        message: "GIF export complete!",
+      });
 
-    return gifBlob;
+      return gifBlob;
+    } catch (error) {
+      onProgress?.({
+        progress: 1,
+        currentFrame: totalFrames,
+        totalFrames,
+        status: "error",
+        message: error instanceof Error ? error.message : "GIF export failed",
+      });
+      throw error;
+    }
   }
 
   /**
@@ -281,21 +313,12 @@ export class AnimationExportService {
     _fps: number,
     _quality: number,
   ): Promise<Blob> {
-    // This is a placeholder implementation
-    // In production, you would either:
-    // 1. Use WebCodecs API (browser-based encoding)
-    // 2. Send frames to server for ffmpeg encoding
-    // 3. Use a library like ffmpeg.wasm
-
-    // For now, return a mock blob
     logger.warn({
-      message: 'Video encoding not fully implemented, returning placeholder',
+      message: 'Video export blocked because no encoder is configured',
       frameCount: frames.length,
     });
 
-    // Placeholder: Create a simple data URL
-    const mockData = new Uint8Array(frames.length * 100);
-    return new Blob([mockData], { type: "video/mp4" });
+    throw new ExportEncodingUnavailableError("video");
   }
 
   /**
@@ -305,20 +328,12 @@ export class AnimationExportService {
     frames: BrowserImageData[],
     _frameDelay: number,
   ): Promise<Blob> {
-    // This is a placeholder implementation
-    // In production, you would use a GIF encoding library like:
-    // - gif.js
-    // - omggif
-    // - gifenc
-
     logger.warn({
-      message: 'GIF encoding not fully implemented, returning placeholder',
+      message: 'GIF export blocked because no encoder is configured',
       frameCount: frames.length,
     });
 
-    // Placeholder: Create a simple data URL
-    const mockData = new Uint8Array(frames.length * 100);
-    return new Blob([mockData], { type: "image/gif" });
+    throw new ExportEncodingUnavailableError("gif");
   }
 
   /**

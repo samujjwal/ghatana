@@ -566,18 +566,68 @@ export class EmailAlertChannel implements AlertChannel {
   }
 
   async send(alert: Alert): Promise<void> {
-    // Implementation would use nodemailer or similar
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY is required for email alert delivery");
+    }
+
+    if (this.config.to.length === 0) {
+      throw new Error("Email alert channel requires at least one recipient");
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: this.config.from,
+        to: this.config.to,
+        subject: `[${alert.severity.toUpperCase()}] ${alert.name}`,
+        text: buildAlertEmailBody(alert),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      logger.error(
+        {
+          alertId: alert.id,
+          alertName: alert.name,
+          severity: alert.severity,
+          recipients: this.config.to,
+          status: response.status,
+          errorBody,
+        },
+        "Failed to send email alert",
+      );
+      throw new Error(`Email alert delivery failed with status ${response.status}`);
+    }
+
     logger.info(
       {
         alertId: alert.id,
         alertName: alert.name,
         severity: alert.severity,
-        message: alert.message,
         recipients: this.config.to,
       },
-      "Email alert sent (placeholder implementation)",
+      "Email alert delivered",
     );
   }
+}
+
+function buildAlertEmailBody(alert: Alert): string {
+  return [
+    `Alert: ${alert.name}`,
+    `Severity: ${alert.severity}`,
+    `Status: ${alert.status}`,
+    `Message: ${alert.message}`,
+    `Triggered at: ${alert.triggeredAt.toISOString()}`,
+    alert.resolvedAt ? `Resolved at: ${alert.resolvedAt.toISOString()}` : undefined,
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
 }
 
 export class WebhookAlertChannel implements AlertChannel {

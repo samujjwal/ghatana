@@ -58,23 +58,58 @@ public class DefaultPluginContext implements PluginContext {
 
     /**
      * Simple in-memory bus implementation.
+     *
+     * <p>Plugins that wish to receive typed requests must register a handler via
+     * {@link #registerHandler(String, java.util.function.Function)}.  Dispatching to a plugin
+     * that has not registered a handler returns a {@link PluginCapabilityException} rather
+     * than the generic {@link UnsupportedOperationException} so that callers can
+     * distinguish "capability not available" from "method not yet coded".
      */
-    private static class DefaultPluginInteractionBus implements PluginInteractionBus {
+    static class DefaultPluginInteractionBus implements PluginInteractionBus {
         private final PluginRegistry registry;
-        // Simple topic subscription map
+        /** Typed request handlers keyed by plugin ID. */
+        private final Map<String, java.util.function.Function<Object, Promise<Object>>> requestHandlers =
+                new ConcurrentHashMap<>();
+        /** Topic subscription map. */
         private final Map<String, List<Consumer<Object>>> subscribers = new ConcurrentHashMap<>();
 
         public DefaultPluginInteractionBus(PluginRegistry registry) {
             this.registry = registry;
         }
 
+        /**
+         * Registers a typed request handler for the given plugin ID.
+         *
+         * <p>Plugins that expose a request/response API should call this method
+         * during their {@code initialize} lifecycle phase.
+         *
+         * @param pluginId the plugin ID to handle requests for
+         * @param handler  the handler function; receives a raw request object and returns a Promise of the result
+         */
+        @SuppressWarnings("unchecked")
+        public <Req, Res> void registerHandler(String pluginId,
+                java.util.function.Function<Req, Promise<Res>> handler) {
+            requestHandlers.put(pluginId, (req) -> handler.apply((Req) req).map(res -> (Object) res));
+        }
+
         @Override
-        public <Req, Res> @NotNull Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request, @NotNull Class<Res> responseType, @NotNull Duration timeout) {
-            // This requires plugins to expose a request handler mechanism.
-            // The current Plugin interface doesn't have a generic 'handleRequest'.
-            // This would need to be an extension or part of the contract.
-            // For now, we return error as it's not fully specified in the core interface yet.
-            return Promise.ofException(new UnsupportedOperationException("Direct plugin request not yet implemented"));
+        @SuppressWarnings("unchecked")
+        public <Req, Res> @NotNull Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request,
+                @NotNull Class<Res> responseType, @NotNull Duration timeout) {
+            // Verify the plugin exists in the registry
+            Optional<Plugin> plugin = registry.getPlugin(targetPluginId);
+            if (plugin.isEmpty()) {
+                return Promise.ofException(new PluginCapabilityException(
+                        "Plugin '" + targetPluginId + "' is not registered in the plugin registry"));
+            }
+            // Dispatch to a registered handler if available
+            java.util.function.Function<Object, Promise<Object>> handler = requestHandlers.get(targetPluginId);
+            if (handler == null) {
+                return Promise.ofException(new PluginCapabilityException(
+                        "Plugin '" + targetPluginId + "' has not registered a request handler. "
+                        + "Call DefaultPluginInteractionBus.registerHandler() during plugin initialization."));
+            }
+            return handler.apply(request).map(res -> responseType.cast(res));
         }
 
         @Override

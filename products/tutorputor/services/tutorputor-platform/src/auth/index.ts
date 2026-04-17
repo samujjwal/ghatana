@@ -55,6 +55,38 @@ export interface AuthContext {
   tenantId: string;
 }
 
+export interface LegacyAuthUserRepository {
+  findUserById(userId: string): Promise<User | null>;
+  validateCredentials(
+    email: string,
+    password: string,
+    tenantId: string,
+  ): Promise<User | null>;
+  updateUserLastLogin(userId: string): Promise<void>;
+}
+
+export class LegacyAuthRepositoryNotConfiguredError extends Error {
+  constructor(operation: string) {
+    super(
+      `Legacy auth adapter is not wired to a user repository for ${operation}. ` +
+        "This compatibility layer now fails closed instead of returning mock users.",
+    );
+    this.name = "LegacyAuthRepositoryNotConfiguredError";
+  }
+}
+
+const unsupportedLegacyAuthRepository: LegacyAuthUserRepository = {
+  async findUserById(): Promise<User | null> {
+    throw new LegacyAuthRepositoryNotConfiguredError("findUserById");
+  },
+  async validateCredentials(): Promise<User | null> {
+    throw new LegacyAuthRepositoryNotConfiguredError("validateCredentials");
+  },
+  async updateUserLastLogin(): Promise<void> {
+    throw new LegacyAuthRepositoryNotConfiguredError("updateUserLastLogin");
+  },
+};
+
 /**
  * Decoded JWT token structure
  */
@@ -78,9 +110,13 @@ export interface DecodedJWT {
 export class JWTManager {
   private readonly config = getConfig();
   private readonly jwtSecret: string;
+  private readonly userRepository: LegacyAuthUserRepository;
 
-  constructor() {
+  constructor(
+    userRepository: LegacyAuthUserRepository = unsupportedLegacyAuthRepository,
+  ) {
     this.jwtSecret = this.config.JWT_SECRET;
+    this.userRepository = userRepository;
   }
 
   /**
@@ -162,7 +198,6 @@ export class JWTManager {
       throw new Error("Invalid token type for refresh");
     }
 
-    // In a real implementation, fetch user from database
     const user = await this.getUserById(decoded.sub);
 
     if (!user || !user.isActive) {
@@ -181,20 +216,8 @@ export class JWTManager {
     };
   }
 
-  /**
-   * Get user by ID (placeholder - would integrate with database)
-   */
   private async getUserById(userId: string): Promise<User | null> {
-    // This would integrate with your user service/database
-    // For now, return a mock user
-    return {
-      id: userId,
-      email: "user@example.com",
-      tenantId: "default",
-      roles: [],
-      permissions: [],
-      isActive: true,
-    };
+    return this.userRepository.findUserById(userId);
   }
 }
 
@@ -496,8 +519,16 @@ export class AuthMiddleware {
  * Authentication Service
  */
 export class AuthService {
-  private readonly jwtManager = new JWTManager();
+  private readonly jwtManager: JWTManager;
   private readonly rbacManager = new RBACManager();
+  private readonly userRepository: LegacyAuthUserRepository;
+
+  constructor(
+    userRepository: LegacyAuthUserRepository = unsupportedLegacyAuthRepository,
+  ) {
+    this.userRepository = userRepository;
+    this.jwtManager = new JWTManager(userRepository);
+  }
 
   /**
    * User login
@@ -507,7 +538,6 @@ export class AuthService {
     password: string,
     tenantId: string,
   ): Promise<AuthToken> {
-    // In a real implementation, validate credentials against database
     const user = await this.validateCredentials(email, password, tenantId);
 
     if (!user || !user.isActive) {
@@ -545,31 +575,30 @@ export class AuthService {
     return this.jwtManager.refreshToken(refreshToken);
   }
 
-  /**
-   * Validate credentials (placeholder)
-   */
   private async validateCredentials(
     email: string,
-    _password: string,
+    password: string,
     tenantId: string,
   ): Promise<User | null> {
-    // This would integrate with your user service/database
-    // For now, return a mock user
-    return {
-      id: "user-123",
+    const user = await this.userRepository.validateCredentials(
       email,
+      password,
       tenantId,
-      roles: [this.rbacManager.getRole("student")!],
-      permissions: [],
-      isActive: true,
+    );
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      ...user,
+      roles: user.roles.length > 0 ? user.roles : [this.rbacManager.getRole("student")!],
+      permissions: user.permissions,
     };
   }
 
-  /**
-   * Update user last login (placeholder)
-   */
-  private async updateUserLastLogin(_userId: string): Promise<void> {
-    // This would update the user in the database
+  private async updateUserLastLogin(userId: string): Promise<void> {
+    await this.userRepository.updateUserLastLogin(userId);
   }
 }
 

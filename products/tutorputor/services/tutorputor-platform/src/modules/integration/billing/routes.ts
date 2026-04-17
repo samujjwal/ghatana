@@ -14,6 +14,26 @@ import {
 } from "../../../core/http/requestContext.js";
 import { createBillingService } from "./service.js";
 import { createPaymentCircuitBreaker } from "../../../utils/circuit-breaker.js";
+import { z } from "zod";
+
+const checkoutBodySchema = z.object({
+  listingId: z.string().min(1),
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
+});
+
+const verifyBodySchema = z.object({
+  sessionId: z.string().min(1),
+});
+
+const purchasesQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+const purchasedParamsSchema = z.object({
+  moduleId: z.string().min(1),
+});
 
 /**
  * Billing routes - subscriptions and payments.
@@ -23,9 +43,11 @@ import { createPaymentCircuitBreaker } from "../../../utils/circuit-breaker.js";
  * @doc.layer product
  * @doc.pattern Modular Plugin
  */
-export const billingRoutes: FastifyPluginAsync = async (app) => {
+export const billingRoutes: FastifyPluginAsync<{
+  service?: ReturnType<typeof createBillingService>;
+}> = async (app, options) => {
   const prisma = app.prisma;
-  const billingService = createBillingService(prisma);
+  const billingService = options.service ?? createBillingService(prisma);
 
   // Create circuit breakers for external services
   const stripeCircuitBreaker = createPaymentCircuitBreaker(
@@ -58,15 +80,14 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   app.post("/checkout", async (req, reply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { listingId, successUrl, cancelUrl } = req.body as {
-      listingId: MarketplaceListingId;
-      successUrl?: string;
-      cancelUrl?: string;
-    };
-
-    if (!listingId) {
-      return reply.code(400).send({ error: "listingId is required" });
+    const bodyResult = checkoutBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid checkout payload",
+        issues: bodyResult.error.issues,
+      });
     }
+    const { listingId, successUrl, cancelUrl } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       billingService.createCheckoutSession({
@@ -85,11 +106,14 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post("/verify", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { sessionId } = req.body as { sessionId: CheckoutSessionId };
-
-    if (!sessionId) {
-      return reply.code(400).send({ error: "sessionId is required" });
+    const bodyResult = verifyBodySchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid verify payload",
+        issues: bodyResult.error.issues,
+      });
     }
+    const { sessionId } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       billingService.verifyPayment({
@@ -106,17 +130,21 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   app.get("/purchases", async (req, reply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { cursor, limit } = req.query as {
-      cursor?: string;
-      limit?: string;
-    };
+    const queryResult = purchasesQuerySchema.safeParse(req.query);
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid purchases query",
+        issues: queryResult.error.issues,
+      });
+    }
+    const { cursor, limit } = queryResult.data;
 
     await respondWithErrors(reply, () =>
       billingService.listPurchases({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         ...(cursor ? { cursor } : {}),
-        limit: limit ? parseInt(limit, 10) : 20,
+        limit: limit ?? 20,
       }),
     );
   });
@@ -128,7 +156,14 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   app.get("/purchased/:moduleId", async (req, reply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
-    const { moduleId } = req.params as { moduleId: ModuleId };
+    const paramsResult = purchasedParamsSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid module id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { moduleId } = paramsResult.data;
 
     const hasPurchased = await billingService.hasPurchased({
       tenantId: tenantId as TenantId,

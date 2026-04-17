@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreakerProfiles;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,17 +33,31 @@ public class DefaultFraudModelInferenceService implements FraudModelInferenceSer
     private static final int DEFAULT_REMOTE_INFERENCE_MAX_ATTEMPTS = 3;
     private static final int DEFAULT_REMOTE_INFERENCE_MAX_CONCURRENCY = 8;
 
+    /** Counter emitted each time remote inference fails and the local fallback model is used. */
+    private static final String FALLBACK_COUNTER_NAME = "finance.fraud.inference.fallback_total";
+
     private final ModelRepository modelRepository;
     private final FraudInferenceTransport transport;
+    private final Counter fallbackCounter;
 
     public DefaultFraudModelInferenceService(ModelRepository modelRepository) {
-        this(modelRepository, defaultTransport());
+        this(modelRepository, defaultTransport(), Metrics.globalRegistry);
     }
 
     public DefaultFraudModelInferenceService(ModelRepository modelRepository,
                                             FraudInferenceTransport transport) {
+        this(modelRepository, transport, Metrics.globalRegistry);
+    }
+
+    public DefaultFraudModelInferenceService(ModelRepository modelRepository,
+                                            FraudInferenceTransport transport,
+                                            MeterRegistry registry) {
         this.modelRepository = Objects.requireNonNull(modelRepository, "modelRepository cannot be null");
         this.transport = Objects.requireNonNull(transport, "transport cannot be null");
+        this.fallbackCounter = Counter.builder(FALLBACK_COUNTER_NAME)
+                .description("Number of times remote inference failed and the deterministic fallback model was used")
+                .tag("service", "fraud-detection")
+                .register(Objects.requireNonNull(registry, "registry cannot be null"));
     }
 
     @Override
@@ -58,6 +75,7 @@ public class DefaultFraudModelInferenceService implements FraudModelInferenceSer
             } catch (RuntimeException exception) {
                 logger.warn("Remote fraud inference failed for model '{}' via '{}': {}",
                     modelId, endpointConfig.getEndpoint(), exception.getMessage());
+                fallbackCounter.increment();
             }
         }
 

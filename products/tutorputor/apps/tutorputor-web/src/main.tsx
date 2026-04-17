@@ -1,4 +1,5 @@
 import { createLogger } from './utils/logger.js';
+import { initializeErrorTracking } from './utils/errorTracking.js';
 const logger = createLogger('main');
 
 import { StrictMode } from "react";
@@ -6,6 +7,8 @@ import { createRoot } from "react-dom/client";
 import { MinimalThemeProvider } from "./providers/MinimalThemeProvider";
 import { App } from "./App";
 import "./index.css";
+
+initializeErrorTracking();
 
 // Simple ErrorBoundary component
 class ErrorBoundary extends React.Component<

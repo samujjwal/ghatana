@@ -1275,9 +1275,6 @@ importers:
 
   products/aep/ui:
     dependencies:
-      ...:
-        specifier: link:...
-        version: link:...
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
@@ -3861,6 +3858,9 @@ importers:
       '@ghatana/tokens':
         specifier: workspace:*
         version: link:../../../../platform/typescript/tokens
+      '@sentry/browser':
+        specifier: ^10.49.0
+        version: 10.49.0
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -4262,6 +4262,9 @@ importers:
       nanoid:
         specifier: ^5.1.7
         version: 5.1.7
+      nodemailer:
+        specifier: ^8.0.5
+        version: 8.0.5
       opossum:
         specifier: ^9.0.0
         version: 9.0.0
@@ -4654,7 +4657,7 @@ importers:
         version: 2.0.0(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
       vite-plugin-pages:
         specifier: ^0.33.3
-        version: 0.33.3(@vue/compiler-sfc@3.5.30)(react-router@5.3.4(react@19.2.4))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+        version: 0.33.3(@vue/compiler-sfc@3.5.30)(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
       vite-plugin-pwa:
         specifier: ^1.2.0
         version: 1.2.0(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))(workbox-build@7.4.0(@types/babel__core@7.20.5))(workbox-window@7.4.0)
@@ -11692,8 +11695,16 @@ packages:
     resolution: {integrity: sha512-SCiTLBXzugFKxev6NoKYBIhQoDk0gUh0AVVVepCBqfCJiWBG01Zvv0R5tCVohr4cWRllkQ8mlBdNQd/I7s9tdA==}
     engines: {node: '>=18'}
 
+  '@sentry-internal/browser-utils@10.49.0':
+    resolution: {integrity: sha512-n0QRx0Ysx6mPfIydTkz7VP0FmwM+/EqMZiRqdsU3aTYsngE9GmEDV0OL1bAy6a8N/C1xf9vntkuAtj6N/8Z51w==}
+    engines: {node: '>=18'}
+
   '@sentry-internal/feedback@10.48.0':
     resolution: {integrity: sha512-tGkEyOM1HDS9qebDphUMEnyk3qq/50AnuTBiFmMJyjNzowylVGmRRk0sr3xkmbVHCDXQCiYnDmSVlJ2x4SDMrQ==}
+    engines: {node: '>=18'}
+
+  '@sentry-internal/feedback@10.49.0':
+    resolution: {integrity: sha512-JNsUBGv0faCFE7MeZUH99Y9lU9qq3LBALbLxpE1x7ngNrQnVYRlcFgdqaD/btNBKr8awjYL8gmcSkHBWskGqLQ==}
     engines: {node: '>=18'}
 
   '@sentry-internal/node-cpu-profiler@2.2.0':
@@ -11704,8 +11715,16 @@ packages:
     resolution: {integrity: sha512-9nWuN2z4O+iwbTfuYV5ZmngBgJU/ZxfOo47A5RJP3Nu/kl59aJ1lUhILYOKyeNOIC/JyeERmpIcTxnlPXQzZ3Q==}
     engines: {node: '>=18'}
 
+  '@sentry-internal/replay-canvas@10.49.0':
+    resolution: {integrity: sha512-7D/NrgH1Qwx5trDYaaTSSJmCb1yVQQLqFG4G/S9x2ltzl9876lSGJL8UeW8ReNQgF3CDAcwbmm/9aXaVSBUNZA==}
+    engines: {node: '>=18'}
+
   '@sentry-internal/replay@10.48.0':
     resolution: {integrity: sha512-sevRTePfuk4PNuz9KAKpmTZEomAU0aLXyIhOwA0OnUDdxPhkY8kq5lwDbuxTHv6DQUjUX3YgFbY45VH1JEqHKA==}
+    engines: {node: '>=18'}
+
+  '@sentry-internal/replay@10.49.0':
+    resolution: {integrity: sha512-IEy4lwHVMiRE3JAcn+kFKjsTgalDOCSTf20SoFd+nkt6rN/k1RDyr4xpdfF//Kj3UdeTmbuibYjK5H/FLhhnGg==}
     engines: {node: '>=18'}
 
   '@sentry-internal/tracing@7.116.0':
@@ -11722,6 +11741,10 @@ packages:
 
   '@sentry/browser@10.48.0':
     resolution: {integrity: sha512-4jt2zX2ExgFcNe2x+W+/k81fmDUsOrquGtt028CiGuDuma6kEsWBI4JbooT1jhj2T+eeUxe3YGbM23Zhh7Ghhw==}
+    engines: {node: '>=18'}
+
+  '@sentry/browser@10.49.0':
+    resolution: {integrity: sha512-bGCHc+wK2Dx67YoSbmtlt04alqWfQ+dasD/GVipVOq50gvw/BBIDHTEWRJEjACl+LrvszeY54V+24p8z4IgysA==}
     engines: {node: '>=18'}
 
   '@sentry/bundler-plugin-core@5.2.0':
@@ -11782,6 +11805,10 @@ packages:
 
   '@sentry/core@10.48.0':
     resolution: {integrity: sha512-h8F+fXVwYC9ro5ZaO8V+v3vqc0awlXHGblEAuVxSGgh4IV/oFX+QVzXeDTTrFOFS6v/Vn5vAyu240eJrJAS6/g==}
+    engines: {node: '>=18'}
+
+  '@sentry/core@10.49.0':
+    resolution: {integrity: sha512-UaFeum3LUM1mB0d67jvKnqId1yWQjyqmaDV6kWngG03x+jqXb08tJdGpSoxjXZe13jFBbiBL/wKDDYIK7rCK4g==}
     engines: {node: '>=18'}
 
   '@sentry/core@7.116.0':
@@ -14828,6 +14855,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   batch@0.6.1:
     resolution: {integrity: sha512-x+VAiMRL6UPkx+kudNvxTl6hB2XNNCG2r+7wixVfIYwu/2HKRXimwQyaumLjMveWvT2Hkd/cAJw+QBMfJ/EKVw==}
@@ -34150,9 +34178,7 @@ snapshots:
       metro-runtime: 0.84.2
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.74.89': {}
 
@@ -35041,9 +35067,17 @@ snapshots:
     dependencies:
       '@sentry/core': 10.48.0
 
+  '@sentry-internal/browser-utils@10.49.0':
+    dependencies:
+      '@sentry/core': 10.49.0
+
   '@sentry-internal/feedback@10.48.0':
     dependencies:
       '@sentry/core': 10.48.0
+
+  '@sentry-internal/feedback@10.49.0':
+    dependencies:
+      '@sentry/core': 10.49.0
 
   '@sentry-internal/node-cpu-profiler@2.2.0':
     dependencies:
@@ -35055,10 +35089,20 @@ snapshots:
       '@sentry-internal/replay': 10.48.0
       '@sentry/core': 10.48.0
 
+  '@sentry-internal/replay-canvas@10.49.0':
+    dependencies:
+      '@sentry-internal/replay': 10.49.0
+      '@sentry/core': 10.49.0
+
   '@sentry-internal/replay@10.48.0':
     dependencies:
       '@sentry-internal/browser-utils': 10.48.0
       '@sentry/core': 10.48.0
+
+  '@sentry-internal/replay@10.49.0':
+    dependencies:
+      '@sentry-internal/browser-utils': 10.49.0
+      '@sentry/core': 10.49.0
 
   '@sentry-internal/tracing@7.116.0':
     dependencies:
@@ -35081,6 +35125,14 @@ snapshots:
       '@sentry-internal/replay': 10.48.0
       '@sentry-internal/replay-canvas': 10.48.0
       '@sentry/core': 10.48.0
+
+  '@sentry/browser@10.49.0':
+    dependencies:
+      '@sentry-internal/browser-utils': 10.49.0
+      '@sentry-internal/feedback': 10.49.0
+      '@sentry-internal/replay': 10.49.0
+      '@sentry-internal/replay-canvas': 10.49.0
+      '@sentry/core': 10.49.0
 
   '@sentry/bundler-plugin-core@5.2.0(encoding@0.1.13)':
     dependencies:
@@ -35140,6 +35192,8 @@ snapshots:
       - supports-color
 
   '@sentry/core@10.48.0': {}
+
+  '@sentry/core@10.49.0': {}
 
   '@sentry/core@7.116.0':
     dependencies:
@@ -37575,7 +37629,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.0.18(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.1.4)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+      vitest: 4.0.18(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.0.18)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
       ws: 8.20.0
     transitivePeerDependencies:
       - bufferutil
@@ -37629,7 +37683,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.0.0
       tinyrainbow: 3.1.0
-      vitest: 4.0.18(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.1.4)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+      vitest: 4.0.18(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/ui@4.0.18)(esbuild@0.27.3)(jiti@2.6.1)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
     optionalDependencies:
       '@vitest/browser': 4.1.4(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))(vitest@4.0.18)
 
@@ -51679,7 +51733,7 @@ snapshots:
       undici: 8.0.2
       vite: 8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
 
-  vite-plugin-pages@0.33.3(@vue/compiler-sfc@3.5.30)(react-router@5.3.4(react@19.2.4))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)):
+  vite-plugin-pages@0.33.3(@vue/compiler-sfc@3.5.30)(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@types/debug': 4.1.13
       debug: 4.4.3(supports-color@10.2.2)
@@ -51694,7 +51748,6 @@ snapshots:
       yaml: 2.8.3
     optionalDependencies:
       '@vue/compiler-sfc': 3.5.30
-      react-router: 5.3.4(react@19.2.4)
     transitivePeerDependencies:
       - supports-color
 

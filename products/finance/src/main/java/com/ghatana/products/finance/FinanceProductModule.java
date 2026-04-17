@@ -15,6 +15,7 @@ import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.products.finance.bff.FinanceBFF;
+import com.ghatana.products.finance.http.FinanceHttpServer;
 import com.ghatana.products.finance.domains.corporateactions.CorporateActionsDomainModule;
 import com.ghatana.products.finance.domains.ems.EmsDomainModule;
 import com.ghatana.products.finance.domains.marketdata.MarketDataDomainModule;
@@ -96,6 +97,7 @@ public final class FinanceProductModule implements KernelModule {
     private FinanceTransactionRuntimeService transactionRuntimeService;
     private FinanceProductShell productShell;
     private FinanceBFF bff;
+    private FinanceHttpServer httpServer;
     private KernelContext context;
 
     private OmsDomainModule omsModule;
@@ -239,9 +241,12 @@ public final class FinanceProductModule implements KernelModule {
 
         return kernelStart.then($ -> aiRuntimeService.start()).then($ -> transactionRuntimeService.start()).then($ -> {
             context.registerService(TransactionService.class, transactionRuntimeService.getTransactionService());
+            httpServer = new FinanceHttpServer(transactionRuntimeService.getTransactionService());
+            context.registerService(FinanceHttpServer.class, httpServer);
             startDomainModules();
             productShell.start();
             bff.start();
+            httpServer.start();
 
             log.info("Finance product module started successfully");
             return Promise.complete();
@@ -273,6 +278,9 @@ public final class FinanceProductModule implements KernelModule {
     public Promise<Void> stop() {
         log.info("Stopping Finance product module");
 
+        if (httpServer != null) {
+            httpServer.stop();
+        }
         if (bff != null) {
             bff.stop();
         }

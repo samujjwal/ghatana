@@ -13,9 +13,38 @@ import {
   getUserId,
   requireRole,
 } from "../../core/http/requestContext.js";
+import { z } from "zod";
 
-export const complianceRoutes: FastifyPluginAsync = async (app) => {
-  const complianceService = new ComplianceServiceImpl(app.prisma);
+type ComplianceRoutesService = Pick<
+  ComplianceServiceImpl,
+  "requestUserExport" | "createDeletionVerification" | "verifyAndProcessDeletion"
+>;
+
+type ComplianceRoutesOptions = {
+  service?: ComplianceRoutesService;
+};
+
+const ExportBodySchema = z.object({
+  userId: z.string().min(1).optional(),
+});
+
+const DeletionVerifyBodySchema = z.object({
+  token: z.string().min(1),
+});
+
+function createValidationErrorResponse(error: z.ZodError) {
+  const primaryIssue = error.issues[0];
+  return {
+    error: "Validation Error",
+    message: primaryIssue?.message ?? "Invalid request payload",
+  };
+}
+
+export const complianceRoutes: FastifyPluginAsync<ComplianceRoutesOptions> = async (
+  app,
+  options,
+) => {
+  const complianceService = options.service ?? new ComplianceServiceImpl(app.prisma);
   const adminRoles = ["admin", "superadmin"];
 
   /**
@@ -29,8 +58,13 @@ export const complianceRoutes: FastifyPluginAsync = async (app) => {
   }>("/export", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const requesterId = getUserId(request) as UserId;
+    const parseResult = ExportBodySchema.safeParse(request.body ?? {});
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
     const targetUserId =
-      (request.body?.userId as UserId | undefined) ?? requesterId;
+      (parseResult.data.userId as UserId | undefined) ?? requesterId;
 
     if (targetUserId !== requesterId) {
       requireRole(request, adminRoles);
@@ -81,7 +115,13 @@ export const complianceRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
       const userId = getUserId(request) as UserId;
-      const { token } = request.body;
+      const parseResult = DeletionVerifyBodySchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply
+          .code(400)
+          .send(createValidationErrorResponse(parseResult.error));
+      }
+      const { token } = parseResult.data;
 
       try {
         const result = await complianceService.verifyAndProcessDeletion({

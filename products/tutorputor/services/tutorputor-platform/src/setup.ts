@@ -7,6 +7,7 @@ import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
 import Stripe from "stripe";
 import type { Logger } from "pino";
+import crypto from "crypto";
 
 import {
   setupMetrics,
@@ -106,6 +107,17 @@ export async function setupPlatform(
   app: FastifyInstance,
   options: PlatformOptions = {},
 ) {
+  app.addHook("onRequest", async (req, reply) => {
+    const headerValue = req.headers["x-correlation-id"];
+    const correlationId =
+      (Array.isArray(headerValue) ? headerValue[0] : headerValue) ||
+      req.id ||
+      crypto.randomUUID();
+
+    req.correlationId = correlationId;
+    reply.header("x-correlation-id", correlationId);
+  });
+
   // Security
   await app.register(helmet as any, {
     contentSecurityPolicy: {
@@ -239,7 +251,7 @@ export async function setupPlatform(
         req as typeof req & { jwtVerify: () => Promise<void> }
       ).jwtVerify();
     } catch (err) {
-      req.log.warn({ url, err }, "Authentication failure");
+      req.log.warn({ url, err, correlationId: req.correlationId }, "Authentication failure");
       reply.code(401).header("x-request-id", req.id).send({
         error: "Unauthorized",
         message: "A valid Bearer token is required.",

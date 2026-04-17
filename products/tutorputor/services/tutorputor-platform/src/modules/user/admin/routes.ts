@@ -7,15 +7,92 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { InstitutionAdminServiceImpl } from "./service";
-import type { TenantId, UserId } from "@tutorputor/contracts";
+import type { InstitutionAdminService, TenantId, UserId } from "@tutorputor/contracts";
 import {
   getTenantId,
   getUserId,
   requireRole,
 } from "../../../core/http/requestContext.js";
+import { z } from "zod";
 
-export const adminRoutes: FastifyPluginAsync = async (app) => {
-  const adminService = new InstitutionAdminServiceImpl(app.prisma);
+type AdminRoutesService = Pick<
+  InstitutionAdminService,
+  | "getTenantSummary"
+  | "listTenantUsers"
+  | "getTenantUsage"
+  | "bulkImportUsers"
+  | "updateUserRole"
+  | "assignPathToClassroom"
+>;
+
+type AdminRoutesOptions = {
+  service?: AdminRoutesService;
+};
+
+const TenantUsersQuerySchema = z.object({
+  role: z.string().min(1).optional(),
+  searchQuery: z.string().min(1).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  sortBy: z.enum(["displayName", "email", "role", "createdAt"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
+
+const DateInputSchema = z
+  .string()
+  .min(1)
+  .refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: "Invalid date format",
+  });
+
+const TenantUsageQuerySchema = z.object({
+  startDate: DateInputSchema.optional(),
+  endDate: DateInputSchema.optional(),
+});
+
+const ImportUsersBodySchema = z.object({
+  users: z
+    .array(
+      z.object({
+        email: z.string().email(),
+        role: z.string().min(1),
+        displayName: z.string().min(1).optional(),
+        classroomIds: z.array(z.string().min(1)).optional(),
+      }),
+    )
+    .min(1),
+  sendInvites: z.boolean().optional(),
+});
+
+const UpdateUserRoleParamsSchema = z.object({
+  userId: z.string().min(1),
+});
+
+const UpdateUserRoleBodySchema = z.object({
+  newRole: z.string().min(1),
+});
+
+const AssignPathParamsSchema = z.object({
+  classroomId: z.string().min(1),
+});
+
+const AssignPathBodySchema = z.object({
+  pathwayId: z.string().min(1),
+});
+
+function createValidationErrorResponse(error: z.ZodError) {
+  const primaryIssue = error.issues[0];
+  return {
+    error: "Validation Error",
+    message: primaryIssue?.message ?? "Invalid request payload",
+  };
+}
+
+export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
+  app,
+  options,
+) => {
+  const adminService = options.service ?? new InstitutionAdminServiceImpl(app.prisma);
   const adminRoles = ["admin", "superadmin"];
 
   /**
@@ -55,8 +132,13 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, adminRoles);
 
+    const parseResult = TenantUsersQuerySchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
     const { role, searchQuery, cursor, limit, sortBy, sortOrder } =
-      request.query;
+      parseResult.data;
 
     try {
       const result = await adminService.listTenantUsers({
@@ -93,12 +175,17 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, adminRoles);
 
+    const parseResult = TenantUsageQuerySchema.safeParse(request.query);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
     // Default to last 30 days if not provided
-    const end = request.query.endDate
-      ? new Date(request.query.endDate)
+    const end = parseResult.data.endDate
+      ? new Date(parseResult.data.endDate)
       : new Date();
-    const start = request.query.startDate
-      ? new Date(request.query.startDate)
+    const start = parseResult.data.startDate
+      ? new Date(parseResult.data.startDate)
       : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     try {
@@ -138,13 +225,18 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     const adminId = getUserId(request) as UserId;
     requireRole(request, adminRoles);
 
+    const parseResult = ImportUsersBodySchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+    }
+
     try {
       const result = await adminService.bulkImportUsers({
         tenantId,
         importedBy: adminId,
-        users: request.body.users,
-        ...(typeof request.body.sendInvites === "boolean"
-          ? { sendInvites: request.body.sendInvites }
+        users: parseResult.data.users,
+        ...(typeof parseResult.data.sendInvites === "boolean"
+          ? { sendInvites: parseResult.data.sendInvites }
           : {}),
       });
       return reply.send(result);
@@ -167,9 +259,24 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
   }>("/tenant/users/:userId/role", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const adminId = getUserId(request) as UserId;
-    const { userId } = request.params;
-    const { newRole } = request.body;
     requireRole(request, adminRoles);
+
+    const paramsParseResult = UpdateUserRoleParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(paramsParseResult.error));
+    }
+
+    const bodyParseResult = UpdateUserRoleBodySchema.safeParse(request.body);
+    if (!bodyParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(bodyParseResult.error));
+    }
+
+    const { userId } = paramsParseResult.data;
+    const { newRole } = bodyParseResult.data;
 
     try {
       const user = await adminService.updateUserRole({
@@ -198,9 +305,24 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
   }>("/classrooms/:classroomId/assign-path", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const adminId = getUserId(request) as UserId;
-    const { classroomId } = request.params;
-    const { pathwayId } = request.body;
     requireRole(request, adminRoles);
+
+    const paramsParseResult = AssignPathParamsSchema.safeParse(request.params);
+    if (!paramsParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(paramsParseResult.error));
+    }
+
+    const bodyParseResult = AssignPathBodySchema.safeParse(request.body);
+    if (!bodyParseResult.success) {
+      return reply
+        .code(400)
+        .send(createValidationErrorResponse(bodyParseResult.error));
+    }
+
+    const { classroomId } = paramsParseResult.data;
+    const { pathwayId } = bodyParseResult.data;
 
     try {
       const result = await adminService.assignPathToClassroom({

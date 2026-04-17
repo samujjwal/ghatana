@@ -3,6 +3,11 @@
  * Provides structured logging with component/module names
  */
 
+import {
+  captureClientError,
+  captureClientMessage,
+} from './errorTracking.js';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export interface Logger {
@@ -23,6 +28,7 @@ export function createLogger(namespace: string): Logger {
   const logWithPrefix = (level: LogLevel, message: string, ...args: unknown[]) => {
     const prefix = `[${namespace}]`;
     const timestamp = new Date().toISOString();
+    const renderedMessage = `${timestamp} ${prefix} ${level.toUpperCase()}: ${message}`;
     
     // In development, log to console
     if (isDev) {
@@ -31,14 +37,30 @@ export function createLogger(namespace: string): Logger {
         : level === 'debug' ? console.debug 
         : console.log;
       
-      consoleMethod(`${timestamp} ${prefix} ${level.toUpperCase()}: ${message}`, ...args);
+      consoleMethod(renderedMessage, ...args);
     }
-    
-    // In production, could send to logging service
-    // TODO: Integrate with Sentry or other error tracking for production
-    if (level === 'error' && !isDev) {
-      // Send to error tracking service
-      console.error(`${timestamp} ${prefix} ERROR: ${message}`, ...args);
+
+    if (!isDev) {
+      const context = args.length > 0 ? { args } : undefined;
+      if (level === 'error') {
+        const firstArgument = args[0];
+        if (firstArgument instanceof Error) {
+          captureClientError(firstArgument, { namespace, message, args: args.slice(1) });
+        } else {
+          captureClientMessage(level, renderedMessage, { namespace, args });
+        }
+
+        console.error(renderedMessage, ...args);
+        return;
+      }
+
+      if (level === 'warn') {
+        captureClientMessage(level, renderedMessage, { namespace, args });
+      }
+
+      if (context) {
+        void context;
+      }
     }
   };
 

@@ -19,6 +19,7 @@ import {
   type TenantSettings,
 } from "./service.js";
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 
 const DOMAIN_PACK_STATUSES = [
   "draft",
@@ -46,6 +47,36 @@ interface DomainPackListQuery {
 
 /** Request body for updating tenant configuration */
 type TenantConfigUpdate = Partial<TenantSettings>;
+
+const domainPackListQuerySchema = z.object({
+  domain: z.string().min(1).optional(),
+  status: z.string().min(1).optional(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().max(500).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+const createDomainPackSchema = z.object({
+  metadata: z
+    .object({
+      name: z.string().min(1).optional(),
+      version: z.string().min(1).optional(),
+      domain: z.string().min(1).optional(),
+      tags: z.array(z.string().min(1)).optional(),
+      description: z.string().optional(),
+      thumbnailUrl: z.string().url().optional(),
+      author: z.string().optional(),
+      license: z.string().optional(),
+    })
+    .optional(),
+  status: z.string().optional(),
+  visibility: z.string().optional(),
+  simulations: z.array(z.unknown()).optional(),
+});
+
+const idParamSchema = z.object({
+  id: z.string().min(1),
+});
 
 /** Request body for SSO provider creation */
 interface SSOProviderCreateRequest {
@@ -87,9 +118,11 @@ function maskSecret(provider: Record<string, unknown>) {
  * @doc.layer product
  * @doc.pattern REST API
  */
-export const tenantRoutes: FastifyPluginAsync = async (app) => {
+export const tenantRoutes: FastifyPluginAsync<{
+  service?: ReturnType<typeof createTenantService>;
+}> = async (app, options) => {
   const prisma = app.prisma;
-  const tenantService = createTenantService(prisma);
+  const tenantService = options.service ?? createTenantService(prisma);
 
   // ===========================================================================
   // Tenant Configuration
@@ -118,7 +151,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/config", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "superadmin"]);
-    const updates = req.body as TenantConfigUpdate;
+    const updatesResult = z.record(z.unknown()).safeParse(req.body);
+    if (!updatesResult.success) {
+      return reply.code(400).send({
+        error: "Invalid tenant config payload",
+        issues: updatesResult.error.issues,
+      });
+    }
+    const updates = updatesResult.data as TenantConfigUpdate;
 
     await respondWithErrors(reply, () =>
       tenantService.updateTenantConfig(tenantId as TenantId, updates),
@@ -135,8 +175,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/domain-packs", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { domain, status, search, page, limit } = (req.query ??
-      {}) as DomainPackListQuery;
+    const queryResult = domainPackListQuerySchema.safeParse(req.query ?? {});
+    if (!queryResult.success) {
+      return reply.code(400).send({
+        error: "Invalid domain pack query",
+        issues: queryResult.error.issues,
+      });
+    }
+    const { domain, status, search, page, limit } = queryResult.data;
     const normalizedDomain =
       domain && isSimulationDomain(domain) ? domain : undefined;
     const normalizedStatus =
@@ -147,8 +193,8 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
         domain: normalizedDomain,
         status: normalizedStatus,
         search,
-        page: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
       }),
     );
   });
@@ -160,7 +206,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.post("/domain-packs", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "content_creator"]);
-    const body = req.body as Partial<DomainPack>;
+    const bodyResult = createDomainPackSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({
+        error: "Invalid domain pack payload",
+        issues: bodyResult.error.issues,
+      });
+    }
+    const body = bodyResult.data as Partial<DomainPack>;
 
     const pack: DomainPack = {
       id: randomUUID(),
@@ -194,7 +247,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/domain-packs/:id", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { id } = req.params as { id: string };
+    const paramsResult = idParamSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid domain pack id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { id } = paramsResult.data;
     const pack = await tenantService.getDomainPack(id);
     if (!pack) return reply.code(404).send({ error: "Domain Pack not found" });
 
@@ -215,7 +275,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/domain-packs/:id", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "content_creator"]);
-    const { id } = req.params as { id: string };
+    const paramsResult = idParamSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid domain pack id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { id } = paramsResult.data;
     const updates = req.body as Partial<DomainPack>;
 
     const pack = await tenantService.getDomainPack(id);
@@ -234,7 +301,14 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.delete("/domain-packs/:id", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin"]);
-    const { id } = req.params as { id: string };
+    const paramsResult = idParamSchema.safeParse(req.params);
+    if (!paramsResult.success) {
+      return reply.code(400).send({
+        error: "Invalid domain pack id",
+        issues: paramsResult.error.issues,
+      });
+    }
+    const { id } = paramsResult.data;
 
     const pack = await tenantService.getDomainPack(id);
     if (!pack) return reply.code(404).send({ error: "Domain Pack not found" });

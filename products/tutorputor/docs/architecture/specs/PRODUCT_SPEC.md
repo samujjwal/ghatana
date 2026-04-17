@@ -55,8 +55,8 @@ TutorPutor is a **simulation-first AI learning platform** that teaches STEAM con
 | **Web** (primary) | `apps/tutorputor-web` — React 19 + Vite + Tailwind |
 | **Admin** | `apps/tutorputor-admin` — CMS/Content Studio |
 | **Student** | `apps/tutorputor-student` — Dedicated student portal |
-| **Mobile** | `apps/tutorputor-mobile` — React Native (planned) |
-| **Offline** | `docs/offline-mode-spec.md` — IndexedDB + ServiceWorker (spec complete) |
+| **Mobile** | `apps/tutorputor-mobile` — React Native storage/sync foundation; user-facing shell still pending |
+| **Offline** | `apps/tutorputor-web/src/hooks/useOffline.ts`, `apps/tutorputor-web/src/sw.ts` — partial web implementation with caching and queued mutations |
 | **VR/AR** | `services/tutorputor-vr` — standalone VR simulation runtime (scaffold) |
 
 ---
@@ -680,7 +680,7 @@ Storage: `context.getMemoryStore()` — Event-sourced via GAA platform `agent-me
 |:---|:---|:---|
 | Multi-tenant | `tenantId` on all DB models; tenant-scoped indexes | `schema.prisma` — `@@index([tenantId, ...])` |
 | Concurrent classrooms | Module + Enrollment model supports multiple cohorts | `schema.prisma` — Enrollment model |
-| Offline mode | IndexedDB + ServiceWorker + mutation queue | `docs/offline-mode-spec.md` |
+| Offline mode | IndexedDB + ServiceWorker + mutation queue foundation; stronger end-to-end sync proof still pending | `apps/tutorputor-web/src/hooks/useOffline.ts`, `apps/tutorputor-web/src/sw.ts` |
 | Plugin extensibility | Kernel Registry for 3rd-party simulation kernels | `tutorputor-kernel-registry/` |
 
 ### 8.3 Reliability
@@ -924,8 +924,8 @@ Evidence: `sim-sdk/base-kernel.ts`
 | **Auto-revision pipeline untested** | Medium | A/B experiment statistical analysis and drift detection have no regression tests. |
 | **6 E2E Playwright tests exist** | — | `simulation-playback.spec.ts`, `simulation-tutor.spec.ts`, `cross-domain-simulation.spec.ts`, `cms-authoring.spec.ts`, `simulation-assessment.spec.ts`, `instructor-simulation-analytics.spec.ts` |
 | **Platform service has some integration tests** | — | `pathways-service.test.ts`, `assessment-service.test.ts`, `routes.test.ts`, `knowledge-base/service.test.ts`, `ai/routes.test.ts`, `ai/OllamaAIProxyService.test.ts` |
-| **Offline mode is spec-only** | Low | `offline-mode-spec.md` exists but no implementation |
-| **Mobile app is scaffold** | Low | `tutorputor-mobile/` exists with minimal content |
+| **Offline mode needs stronger proof** | Medium | Web service worker, caching, and queued mutation code exist, but release-grade E2E sync proof remains incomplete |
+| **Mobile app is infrastructure-only** | Medium | `tutorputor-mobile/` contains storage, sync, and offline hooks, but no runnable learner shell or navigation entrypoint |
 
 ---
 

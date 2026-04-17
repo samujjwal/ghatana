@@ -13,6 +13,7 @@
 
 import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
+import { z } from "zod";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { SemanticChunkService } from "./chunk-service.js";
 import { SemanticSearchService } from "./semantic-search-service.js";
@@ -41,6 +42,32 @@ type HybridSearchQuery = {
   offset?: string;
   explain?: string;
 };
+
+const assetIdParamsSchema = z.object({
+  assetId: z.string().trim().min(1),
+});
+
+const reindexBodySchema = z.object({
+  force: z.boolean().optional(),
+});
+
+const pendingChunksQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(500).optional(),
+});
+
+const hybridSearchQuerySchema = z.object({
+  q: z.string().trim().min(1),
+  assetTypes: z.string().trim().min(1).optional(),
+  domain: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(200).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+  explain: z.enum(["true", "false"]).optional(),
+});
+
+const validationErrorResponse = (issues: z.ZodIssue[]) => ({
+  error: "Invalid request",
+  details: issues,
+});
 
 // =============================================================================
 // Route Registration
@@ -76,8 +103,22 @@ export function registerSemanticRoutes(
     "/assets/:assetId/reindex",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const { assetId } = request.params;
-      const force = request.body?.force ?? false;
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(paramsResult.error.issues));
+      }
+
+      const bodyResult = reindexBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { assetId } = paramsResult.data;
+      const force = bodyResult.data.force ?? false;
 
       const result = await service.indexAsset(assetId, { force });
 
@@ -102,9 +143,14 @@ export function registerSemanticRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const limit = request.query.limit
-        ? parseInt(request.query.limit, 10)
-        : 100;
+      const queryResult = pendingChunksQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
+        return reply
+          .code(400)
+          .send(validationErrorResponse(queryResult.error.issues));
+      }
+
+      const limit = queryResult.data.limit ?? 100;
 
       const chunks = await service.getPendingChunks(tenantId, limit);
       return reply.send({ data: chunks, count: chunks.length });
@@ -119,13 +165,14 @@ export function registerSemanticRoutes(
     { preHandler: [readGuard] },
     async (request, reply) => {
       const tenantId = getTenantId(request);
-      const { q, assetTypes, domain, limit, offset, explain } = request.query;
-
-      if (!q || q.trim().length === 0) {
+      const queryResult = hybridSearchQuerySchema.safeParse(request.query);
+      if (!queryResult.success) {
         return reply
           .code(400)
-          .send({ error: "Query parameter 'q' is required" });
+          .send(validationErrorResponse(queryResult.error.issues));
       }
+
+      const { q, assetTypes, domain, limit, offset, explain } = queryResult.data;
 
       const result = await searchService.search({
         tenantId,
@@ -138,8 +185,8 @@ export function registerSemanticRoutes(
             }
           : {}),
         ...(domain ? { domain } : {}),
-        ...(limit ? { limit: parseInt(limit, 10) } : {}),
-        ...(offset ? { offset: parseInt(offset, 10) } : {}),
+        ...(limit !== undefined ? { limit } : {}),
+        ...(offset !== undefined ? { offset } : {}),
         explain: explain === "true",
       });
 

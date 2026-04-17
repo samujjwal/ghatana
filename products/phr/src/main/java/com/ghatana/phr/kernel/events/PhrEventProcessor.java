@@ -1,9 +1,12 @@
 package com.ghatana.phr.kernel.events;
 
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -21,21 +24,41 @@ import java.util.Set;
  * @doc.purpose PHR event stream/pipeline setup — consent, clinical, document workflows
  * @doc.layer product
  * @doc.pattern Service
+ * @implNote AEP integration is pending adoption (deferred). {@link #initializeEventStreams()}
+ *           is a no-op if no {@link AepPlatform} is provided (pass {@code null} to skip).
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
 public class PhrEventProcessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(PhrEventProcessor.class);
+
     private final AepPlatform aepPlatform;
 
+    /**
+     * Creates a new {@code PhrEventProcessor}.
+     *
+     * @param aepPlatform the AEP platform adapter; may be {@code null} when AEP integration
+     *                    is not yet enabled — in that case {@link #initializeEventStreams()}
+     *                    will be a no-op.
+     */
     public PhrEventProcessor(AepPlatform aepPlatform) {
         this.aepPlatform = aepPlatform;
     }
 
     /**
      * Initializes all PHR event streams and pipelines.
+     *
+     * <p>Returns immediately with a no-op if no AEP platform was supplied
+     * (AEP integration is pending adoption).
      */
     public Promise<Void> initializeEventStreams() {
+        if (aepPlatform == null) {
+            LOG.warn("AEP platform not configured — PHR event streams will not be initialized. "
+                    + "Enable AEP integration to activate consent, clinical, and document workflows.");
+            return Promise.complete();
+        }
+
         // Patient lifecycle events
         aepPlatform.createStream("patient.registered");
         aepPlatform.createStream("patient.updated");

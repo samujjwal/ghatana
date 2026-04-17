@@ -59,6 +59,10 @@ dependencies {
 
     // ActiveJ
     api(libs.bundles.activej.core)
+    api(libs.bundles.activej.http)
+
+    // Platform Core (JsonUtils)
+    api(project(":platform:java:core"))
 
     // Observability
     implementation(libs.bundles.observability.core)

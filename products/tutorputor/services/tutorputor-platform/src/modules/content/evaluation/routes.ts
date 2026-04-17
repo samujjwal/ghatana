@@ -12,6 +12,26 @@ import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { EvaluationService } from "./evaluation-service.js";
 import { SearchSystemValidator } from "./search-validator.js";
+import { z } from "zod";
+
+const requestIdParamsSchema = z.object({
+  requestId: z.string().trim().min(1),
+});
+
+const evaluationIdParamsSchema = z.object({
+  evaluationId: z.string().trim().min(1),
+});
+
+function sendValidationError(
+  reply: { status: (code: number) => { send: (body: unknown) => unknown } },
+  error: z.ZodError,
+  message: string,
+) {
+  return reply.status(400).send({
+    error: message,
+    issues: error.issues,
+  });
+}
 
 export function registerEvaluationRoutes(
   app: FastifyInstance,
@@ -28,8 +48,13 @@ export function registerEvaluationRoutes(
     "/evaluation/requests/:requestId/evaluate",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid request id");
+      }
+
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const { requestId } = paramsResult.data;
 
       const scorecard = await service.evaluateGenerationRequest(
         tenantId,
@@ -47,8 +72,13 @@ export function registerEvaluationRoutes(
     "/evaluation/requests/:requestId/evaluations",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = requestIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid request id");
+      }
+
       const tenantId = getTenantId(request);
-      const { requestId } = request.params;
+      const { requestId } = paramsResult.data;
 
       const records = await service.getEvaluationsByRequest(
         tenantId,
@@ -66,8 +96,17 @@ export function registerEvaluationRoutes(
     "/evaluation/records/:evaluationId",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = evaluationIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid evaluation id",
+        );
+      }
+
       const tenantId = getTenantId(request);
-      const { evaluationId } = request.params;
+      const { evaluationId } = paramsResult.data;
 
       const record = await service.getEvaluation(tenantId, evaluationId);
 

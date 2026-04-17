@@ -18,6 +18,7 @@ import { RecommendationService } from "./recommendation-service.js";
 import { RecommendationEngine } from "./recommendation-engine.js";
 import { AssetOutcomeService } from "./asset-outcome-service.js";
 import { ExperienceRemediationService } from "./experience-remediation-service.js";
+import { z } from "zod";
 
 // =============================================================================
 // Types
@@ -30,6 +31,59 @@ type AssetIdParams = {
 type LimitQuery = {
   limit?: string;
 };
+
+const assetIdParamsSchema = z.object({
+  assetId: z.string().trim().min(1),
+});
+
+const experienceIdParamsSchema = z.object({
+  experienceId: z.string().trim().min(1),
+});
+
+const limitQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+const recomputeRecommendationsBodySchema = z.object({
+  sourceAssetId: z.string().trim().min(1).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+});
+
+const outcomeRecomputeBodySchema = z.object({
+  apply: z.boolean().optional(),
+  recomputeRecommendations: z.boolean().optional(),
+});
+
+const remediationRankingApplyBodySchema = z.object({
+  limit: z.number().int().min(1).max(100).optional(),
+});
+
+const tenantInterventionsQuerySchema = z.object({
+  experienceLimit: z.coerce.number().int().min(1).max(100).optional(),
+  interventionsPerExperience: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+const tenantInterventionsApplyBodySchema = z.object({
+  experienceLimit: z.number().int().min(1).max(100).optional(),
+  interventionsPerExperience: z.number().int().min(1).max(100).optional(),
+  maxActions: z.number().int().min(1).max(100).optional(),
+});
+
+const remediationApplyBodySchema = z.object({
+  autoPromoteExperiments: z.boolean().optional(),
+  recomputeRecommendations: z.boolean().optional(),
+});
+
+function sendValidationError(
+  reply: { status: (code: number) => { send: (body: unknown) => unknown } },
+  error: z.ZodError,
+  message: string,
+) {
+  return reply.status(400).send({
+    error: message,
+    issues: error.issues,
+  });
+}
 
 // =============================================================================
 // Route Registration
@@ -66,11 +120,19 @@ export function registerRecommendationRoutes(
     "/assets/:assetId/recommendations",
     { preHandler: [readGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid asset id");
+      }
+
+      const queryResult = limitQuerySchema.safeParse(request.query ?? {});
+      if (!queryResult.success) {
+        return sendValidationError(reply, queryResult.error, "Invalid limit query");
+      }
+
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
-      const limit = request.query.limit
-        ? parseInt(request.query.limit, 10)
-        : 10;
+      const { assetId } = paramsResult.data;
+      const limit = queryResult.data.limit ?? 10;
 
       const result = await engine.getRecommendations({
         tenantId,
@@ -88,9 +150,19 @@ export function registerRecommendationRoutes(
     "/assets/:assetId/next-steps",
     { preHandler: [readGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid asset id");
+      }
+
+      const queryResult = limitQuerySchema.safeParse(request.query ?? {});
+      if (!queryResult.success) {
+        return sendValidationError(reply, queryResult.error, "Invalid limit query");
+      }
+
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
-      const limit = request.query.limit ? parseInt(request.query.limit, 10) : 5;
+      const { assetId } = paramsResult.data;
+      const limit = queryResult.data.limit ?? 5;
 
       const suggestions = await engine.getNextSteps({
         tenantId,
@@ -108,8 +180,13 @@ export function registerRecommendationRoutes(
     "/assets/:assetId/bootstrap-edges",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid asset id");
+      }
+
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
+      const { assetId } = paramsResult.data;
 
       const result = await service.bootstrapEdges(tenantId, assetId);
       return reply.send({ data: result });
@@ -125,13 +202,24 @@ export function registerRecommendationRoutes(
     "/recommendations/recompute",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const bodyResult = recomputeRecommendationsBodySchema.safeParse(
+        request.body ?? {},
+      );
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid recompute payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await service.recomputeOutcomeAwareEdges(tenantId, {
-        ...(request.body?.sourceAssetId
-          ? { sourceAssetId: request.body.sourceAssetId }
+        ...(bodyResult.data.sourceAssetId
+          ? { sourceAssetId: bodyResult.data.sourceAssetId }
           : {}),
-        ...(request.body?.limit !== undefined
-          ? { limit: request.body.limit }
+        ...(bodyResult.data.limit !== undefined
+          ? { limit: bodyResult.data.limit }
           : {}),
       });
 
@@ -146,8 +234,13 @@ export function registerRecommendationRoutes(
     "/assets/:assetId/outcome-summary",
     { preHandler: [readGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid asset id");
+      }
+
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
+      const { assetId } = paramsResult.data;
       const result = await outcomeService.analyzeAsset(tenantId, assetId);
       return reply.send({ data: result });
     },
@@ -163,12 +256,25 @@ export function registerRecommendationRoutes(
     "/assets/:assetId/outcome-summary/recompute",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = assetIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(reply, paramsResult.error, "Invalid asset id");
+      }
+
+      const bodyResult = outcomeRecomputeBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid outcome recompute payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
-      const { assetId } = request.params;
+      const { assetId } = paramsResult.data;
       const result = await outcomeService.analyzeAsset(tenantId, assetId, {
-        apply: request.body?.apply ?? true,
-        recomputeRecommendations:
-          request.body?.recomputeRecommendations ?? true,
+        apply: bodyResult.data.apply ?? true,
+        recomputeRecommendations: bodyResult.data.recomputeRecommendations ?? true,
       });
       return reply.send({ data: result });
     },
@@ -178,10 +284,19 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/outcome-summary",
     { preHandler: [readGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await outcomeService.analyzeExperienceAssets(
         tenantId,
-        request.params.experienceId,
+        paramsResult.data.experienceId,
       );
       return reply.send({ data: result });
     },
@@ -194,14 +309,31 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/outcome-summary/recompute",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
+      const bodyResult = outcomeRecomputeBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid outcome recompute payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await outcomeService.analyzeExperienceAssets(
         tenantId,
-        request.params.experienceId,
+        paramsResult.data.experienceId,
         {
-          apply: request.body?.apply ?? true,
-          recomputeRecommendations:
-            request.body?.recomputeRecommendations ?? true,
+          apply: bodyResult.data.apply ?? true,
+          recomputeRecommendations: bodyResult.data.recomputeRecommendations ?? true,
         },
       );
       return reply.send({ data: result });
@@ -212,10 +344,19 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/remediation-summary",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.summarizeExperience(
         tenantId,
-        request.params.experienceId,
+        paramsResult.data.experienceId,
       );
       return reply.send({ data: result });
     },
@@ -225,10 +366,19 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/remediation-policy",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.summarizeExperience(
         tenantId,
-        request.params.experienceId,
+        paramsResult.data.experienceId,
       );
       return reply.send({
         data: {
@@ -244,10 +394,19 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/remediation-rankings",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.rankExperienceInterventions(
         tenantId,
-        request.params.experienceId,
+        paramsResult.data.experienceId,
       );
       return reply.send({ data: result });
     },
@@ -260,11 +419,31 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/remediation-rankings/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
+      const bodyResult = remediationRankingApplyBodySchema.safeParse(
+        request.body ?? {},
+      );
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid remediation ranking payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.applyRankedExperienceInterventions(
         tenantId,
-        request.params.experienceId,
-        request.body ?? {},
+        paramsResult.data.experienceId,
+        bodyResult.data,
       );
       return reply.send({ data: result });
     },
@@ -335,10 +514,21 @@ export function registerRecommendationRoutes(
     "/remediation-policy/tenant/interventions",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const queryResult = tenantInterventionsQuerySchema.safeParse(
+        request.query ?? {},
+      );
+      if (!queryResult.success) {
+        return sendValidationError(
+          reply,
+          queryResult.error,
+          "Invalid tenant interventions query",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.rankTenantPortfolioInterventions(
         tenantId,
-        request.query ?? {},
+        queryResult.data,
       );
       return reply.send({ data: result });
     },
@@ -354,10 +544,21 @@ export function registerRecommendationRoutes(
     "/remediation-policy/tenant/interventions/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const bodyResult = tenantInterventionsApplyBodySchema.safeParse(
+        request.body ?? {},
+      );
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid tenant intervention apply payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.applyTenantPortfolioInterventions(
         tenantId,
-        request.body ?? {},
+        bodyResult.data,
       );
       return reply.send({ data: result });
     },
@@ -370,11 +571,29 @@ export function registerRecommendationRoutes(
     "/experiences/:experienceId/remediation-summary/apply",
     { preHandler: [adminGuard] },
     async (request, reply) => {
+      const paramsResult = experienceIdParamsSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return sendValidationError(
+          reply,
+          paramsResult.error,
+          "Invalid experience id",
+        );
+      }
+
+      const bodyResult = remediationApplyBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return sendValidationError(
+          reply,
+          bodyResult.error,
+          "Invalid remediation apply payload",
+        );
+      }
+
       const tenantId = getTenantId(request);
       const result = await remediationService.applyExperienceRemediation(
         tenantId,
-        request.params.experienceId,
-        request.body ?? {},
+        paramsResult.data.experienceId,
+        bodyResult.data,
       );
       return reply.send({ data: result });
     },

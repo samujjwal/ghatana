@@ -32,4 +32,5 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.h2)
 }

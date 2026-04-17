@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { CollaborationServiceImpl } from "./service";
+import type { CollaborationServiceImpl } from "./service";
 import type {
   TenantId,
   UserId,
@@ -12,6 +12,80 @@ import {
   getUserId,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
+import { z } from "zod";
+
+const threadIdParamsSchema = z.object({
+  threadId: z.string().min(1),
+});
+
+const noteIdParamsSchema = z.object({
+  noteId: z.string().min(1),
+});
+
+const createThreadBodySchema = z.object({
+  authorName: z.string().min(1),
+  moduleId: z.string().min(1).optional(),
+  title: z.string().min(1),
+  content: z.string().min(1),
+});
+
+const listThreadsQuerySchema = z.object({
+  moduleId: z.string().min(1).optional(),
+  status: z.enum(["OPEN", "RESOLVED", "CLOSED"]).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+const replyBodySchema = z.object({
+  authorName: z.string().min(1),
+  content: z.string().min(1),
+});
+
+const markAnswerBodySchema = z.object({
+  postId: z.string().min(1),
+});
+
+const createNoteBodySchema = z.object({
+  title: z.string().min(1),
+  content: z.string().min(1),
+  moduleId: z.string().min(1).optional(),
+  lessonId: z.string().min(1).optional(),
+  studyGroupId: z.string().min(1).optional(),
+  allowEditing: z.boolean().optional(),
+  allowComments: z.boolean().optional(),
+});
+
+const updateNoteBodySchema = z.object({
+  content: z.string().min(1),
+});
+
+const shareNoteBodySchema = z.object({
+  shareWith: z
+    .array(
+      z.object({
+        userId: z.string().min(1),
+        permission: z.enum(["view", "comment", "edit"]),
+      }),
+    )
+    .min(1),
+});
+
+const listNotesQuerySchema = z.object({
+  studyGroupId: z.string().min(1).optional(),
+  moduleId: z.string().min(1).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+});
+
+function sendValidationError(
+  reply: { code: (statusCode: number) => { send: (payload: unknown) => void } },
+  error: z.ZodError,
+): void {
+  reply.code(400).send({
+    error: "Invalid request payload",
+    issues: error.issues,
+  });
+}
 
 /**
  * Collaboration routes - discussion threads and shared notes.
@@ -22,8 +96,12 @@ import {
  * @doc.pattern REST API
  * @doc.gaa.security Resource ownership verified for all write operations
  */
-export const collaborationRoutes: FastifyPluginAsync = async (app) => {
-  const collaborationService = new CollaborationServiceImpl(app.prisma);
+export const collaborationRoutes: FastifyPluginAsync<{
+  service?: CollaborationServiceImpl;
+}> = async (app, options) => {
+  const collaborationService = options.service
+    ? options.service
+    : new (await import("./service")).CollaborationServiceImpl(app.prisma);
 
   /**
    * POST /threads
@@ -32,18 +110,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/threads", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { authorName, moduleId, title, content } = request.body as {
-      authorName: string;
-      moduleId?: ModuleId;
-      title: string;
-      content: string;
-    };
-
-    if (!title || !content || !authorName) {
-      return reply
-        .code(400)
-        .send({ error: "Title, content, and author name are required" });
+    const bodyResult = createThreadBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
     }
+    const { authorName, moduleId, title, content } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.postQuestion({
@@ -63,12 +135,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/threads", async (request, reply) => {
     const tenantId = getTenantId(request);
-    const { moduleId, status, cursor, limit } = request.query as {
-      moduleId?: ModuleId;
-      status?: "OPEN" | "RESOLVED" | "CLOSED";
-      cursor?: ThreadId;
-      limit?: string;
-    };
+    const queryResult = listThreadsQuerySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      sendValidationError(reply, queryResult.error);
+      return;
+    }
+    const { moduleId, status, cursor, limit } = queryResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.listThreads({
@@ -76,7 +148,7 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         ...(moduleId ? { moduleId } : {}),
         ...(status ? { status } : {}),
         ...(cursor ? { cursor } : {}),
-        limit: limit ? parseInt(limit, 10) : 20,
+        limit: limit ?? 20,
       }),
     );
   });
@@ -87,7 +159,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/threads/:threadId", async (request, reply) => {
     const tenantId = getTenantId(request);
-    const { threadId } = request.params as { threadId: ThreadId };
+    const paramsResult = threadIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
+    }
+    const { threadId } = paramsResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.getThread({
@@ -104,17 +181,18 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/threads/:threadId/reply", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { threadId } = request.params as { threadId: ThreadId };
-    const { authorName, content } = request.body as {
-      authorName: string;
-      content: string;
-    };
-
-    if (!content || !authorName) {
-      return reply
-        .code(400)
-        .send({ error: "Content and author name are required" });
+    const paramsResult = threadIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
     }
+    const bodyResult = replyBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
+    }
+    const { threadId } = paramsResult.data;
+    const { authorName, content } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.reply({
@@ -134,12 +212,18 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/threads/:threadId/mark-answer", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { threadId } = request.params as { threadId: ThreadId };
-    const { postId } = request.body as { postId: PostId };
-
-    if (!postId) {
-      return reply.code(400).send({ error: "Post ID is required" });
+    const paramsResult = threadIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
     }
+    const bodyResult = markAnswerBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
+    }
+    const { threadId } = paramsResult.data;
+    const { postId } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.markAsAnswer({
@@ -158,7 +242,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/threads/:threadId/close", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { threadId } = request.params as { threadId: ThreadId };
+    const paramsResult = threadIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
+    }
+    const { threadId } = paramsResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.closeThread({
@@ -176,6 +265,11 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/notes", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
+    const bodyResult = createNoteBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
+    }
     const {
       title,
       content,
@@ -184,19 +278,7 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       studyGroupId,
       allowEditing,
       allowComments,
-    } = request.body as {
-      title: string;
-      content: string;
-      moduleId?: ModuleId;
-      lessonId?: string;
-      studyGroupId?: string;
-      allowEditing?: boolean;
-      allowComments?: boolean;
-    };
-
-    if (!title || !content) {
-      return reply.code(400).send({ error: "Title and content are required" });
-    }
+    } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.createSharedNote({
@@ -220,7 +302,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.get("/notes/:noteId", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { noteId } = request.params as { noteId: string };
+    const paramsResult = noteIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
+    }
+    const { noteId } = paramsResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.getSharedNote({
@@ -238,12 +325,18 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/notes/:noteId", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { noteId } = request.params as { noteId: string };
-    const { content } = request.body as { content: string };
-
-    if (!content) {
-      return reply.code(400).send({ error: "Content is required" });
+    const paramsResult = noteIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
     }
+    const bodyResult = updateNoteBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
+    }
+    const { noteId } = paramsResult.data;
+    const { content } = bodyResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.updateSharedNote({
@@ -262,17 +355,18 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/notes/:noteId/share", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { noteId } = request.params as { noteId: string };
-    const { shareWith } = request.body as {
-      shareWith: Array<{
-        userId: UserId;
-        permission: "view" | "comment" | "edit";
-      }>;
-    };
-
-    if (!shareWith || !Array.isArray(shareWith) || shareWith.length === 0) {
-      return reply.code(400).send({ error: "Share with list is required" });
+    const paramsResult = noteIdParamsSchema.safeParse(request.params);
+    if (!paramsResult.success) {
+      sendValidationError(reply, paramsResult.error);
+      return;
     }
+    const bodyResult = shareNoteBodySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      sendValidationError(reply, bodyResult.error);
+      return;
+    }
+    const { noteId } = paramsResult.data;
+    const { shareWith } = bodyResult.data;
 
     try {
       const note = await collaborationService.shareNote({
@@ -303,12 +397,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
   app.get("/notes", async (request, reply) => {
     const tenantId = getTenantId(request);
     const userId = getUserId(request);
-    const { studyGroupId, moduleId, cursor, limit } = request.query as {
-      studyGroupId?: string;
-      moduleId?: ModuleId;
-      cursor?: string;
-      limit?: string;
-    };
+    const queryResult = listNotesQuerySchema.safeParse(request.query);
+    if (!queryResult.success) {
+      sendValidationError(reply, queryResult.error);
+      return;
+    }
+    const { studyGroupId, moduleId, cursor, limit } = queryResult.data;
 
     await respondWithErrors(reply, () =>
       collaborationService.listSharedNotes({
@@ -318,7 +412,7 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         ...(moduleId ? { moduleId } : {}),
         pagination: {
           ...(cursor ? { cursor } : {}),
-          limit: limit ? parseInt(limit, 10) : 20,
+          limit: limit ?? 20,
         },
       }),
     );

@@ -1,9 +1,14 @@
 package com.ghatana.phr.kernel.data;
 
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -29,219 +34,48 @@ import java.util.stream.Stream;
  */
 public class PhrPatientDataService {
 
-    private final DataCloudPlatform dataCloud;
+    private static final Logger LOG = LoggerFactory.getLogger(PhrPatientDataService.class);
+
+    private final DataCloudKernelAdapter dataCloud;
     private final String tenantId;
 
-    public PhrPatientDataService(DataCloudPlatform dataCloud, String tenantId) {
-        this.dataCloud = dataCloud;
-        this.tenantId = tenantId;
+    public PhrPatientDataService(DataCloudKernelAdapter dataCloud, String tenantId) {
+        this.dataCloud = Objects.requireNonNull(dataCloud, "dataCloud cannot be null");
+        this.tenantId = Objects.requireNonNull(tenantId, "tenantId cannot be null");
     }
 
     /**
-     * Initializes all PHR data stores with healthcare governance.
+     * Initializes all PHR data schemas in Data-Cloud with healthcare governance.
      *
-     * @return Promise that completes when all stores are initialized
+     * <p>Each schema maps to a logical store with retention, governance, encryption,
+     * and audit options encoded into the {@link SchemaCreateRequest} options map.
+     *
+     * @return Promise that completes when all schemas are initialized
      */
     public Promise<Void> initializeStores() {
-        return Promises.all(
-            Stream.of(
-                initializePatientRecordsStore(),
-                initializeConsentRecordsStore(),
-                initializeClinicalDocumentsStore(),
-                initializeAuditRecordsStore(),
-                initializeImagingStore(),
-                initializeMedicationStore()
-            )
-        );
+        LOG.info("Initializing PHR data schemas in Data-Cloud for tenant={}", tenantId);
+        return Promises.all(Stream.of(
+            createSchema("patient.records",    "patient-schema-v1",    25, "HEALTHCARE", "STRONG", "DETAILED", false),
+            createSchema("patient.consents",   "consent-schema-v1",    10, "HEALTHCARE", "STRONG", "DETAILED", true),
+            createSchema("clinical.documents", "document-schema-v1",    7, "HEALTHCARE", "STRONG", "DETAILED", false),
+            createSchema("phr.audit",          "audit-schema-v1",      10, "HEALTHCARE", "STRONG", "FULL",     true),
+            createSchema("medical.imaging",    "imaging-schema-v1",    25, "HEALTHCARE", "STRONG", "DETAILED", false),
+            createSchema("medication.records", "medication-schema-v1",  7, "HEALTHCARE", "STRONG", "DETAILED", false)
+        ));
     }
 
-    /**
-     * Initializes the patient records store with 25-year retention.
-     */
-    private Promise<Void> initializePatientRecordsStore() {
-        // Patient master data store with extended retention
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("patient.records")
-            .withSchema("patient-schema-v1")
-            .withRetention(Retention.ofYears(25)) // Healthcare requirement
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.DETAILED)
-            .withImmutable(false)
-            .withTags(Set.of("healthcare", "phi", "master-data"))
-            .build();
+    // ─── Private helpers ──────────────────────────────────────────────────────
 
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    /**
-     * Initializes the consent records store with 10-year retention.
-     */
-    private Promise<Void> initializeConsentRecordsStore() {
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("patient.consents")
-            .withSchema("consent-schema-v1")
-            .withRetention(Retention.ofYears(10))
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.DETAILED)
-            .withImmutable(true) // Consent records are immutable once recorded
-            .withTags(Set.of("healthcare", "consent", "legal"))
-            .build();
-
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    /**
-     * Initializes the clinical documents store with 7-year retention.
-     */
-    private Promise<Void> initializeClinicalDocumentsStore() {
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("clinical.documents")
-            .withSchema("document-schema-v1")
-            .withRetention(Retention.ofYears(7))
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.DETAILED)
-            .withImmutable(false)
-            .withTags(Set.of("healthcare", "clinical", "documents"))
-            .build();
-
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    /**
-     * Initializes the audit records store with 10-year retention.
-     */
-    private Promise<Void> initializeAuditRecordsStore() {
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("phr.audit")
-            .withSchema("audit-schema-v1")
-            .withRetention(Retention.ofYears(10))
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.FULL)
-            .withImmutable(true) // Audit records must be immutable
-            .withTags(Set.of("healthcare", "audit", "compliance"))
-            .build();
-
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    /**
-     * Initializes the medical imaging store.
-     */
-    private Promise<Void> initializeImagingStore() {
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("medical.imaging")
-            .withSchema("imaging-schema-v1")
-            .withRetention(Retention.ofYears(25)) // Same as patient records
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.DETAILED)
-            .withImmutable(false)
-            .withTags(Set.of("healthcare", "imaging", "dicom"))
-            .build();
-
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    /**
-     * Initializes the medication records store.
-     */
-    private Promise<Void> initializeMedicationStore() {
-        DataStoreConfig config = DataStoreConfig.builder()
-            .withName("medication.records")
-            .withSchema("medication-schema-v1")
-            .withRetention(Retention.ofYears(7))
-            .withGovernance(DataGovernance.HEALTHCARE)
-            .withEncryption(EncryptionLevel.STRONG)
-            .withAuditLevel(AuditLevel.DETAILED)
-            .withImmutable(false)
-            .withTags(Set.of("healthcare", "medication", "prescriptions"))
-            .build();
-
-        return Promise.ofFuture(dataCloud.createStore(tenantId, config));
-    }
-
-    // ==================== Placeholder Classes ====================
-    // These would be imported from the actual Data-Cloud platform
-
-    public interface DataCloudPlatform {
-        java.util.concurrent.CompletableFuture<Void> createStore(String tenantId, DataStoreConfig config);
-    }
-
-    public static class DataStoreConfig {
-        private final String name;
-        private final String schema;
-        private final Retention retention;
-        private final DataGovernance governance;
-        private final EncryptionLevel encryption;
-        private final AuditLevel auditLevel;
-        private final boolean immutable;
-        private final Set<String> tags;
-
-        private DataStoreConfig(Builder builder) {
-            this.name = builder.name;
-            this.schema = builder.schema;
-            this.retention = builder.retention;
-            this.governance = builder.governance;
-            this.encryption = builder.encryption;
-            this.auditLevel = builder.auditLevel;
-            this.immutable = builder.immutable;
-            this.tags = builder.tags;
-        }
-
-        public static Builder builder() { return new Builder(); }
-
-        public static class Builder {
-            private String name;
-            private String schema;
-            private Retention retention;
-            private DataGovernance governance;
-            private EncryptionLevel encryption;
-            private AuditLevel auditLevel;
-            private boolean immutable;
-            private Set<String> tags = Set.of();
-
-            public Builder withName(String name) { this.name = name; return this; }
-            public Builder withSchema(String schema) { this.schema = schema; return this; }
-            public Builder withRetention(Retention retention) { this.retention = retention; return this; }
-            public Builder withGovernance(DataGovernance governance) { this.governance = governance; return this; }
-            public Builder withEncryption(EncryptionLevel encryption) { this.encryption = encryption; return this; }
-            public Builder withAuditLevel(AuditLevel auditLevel) { this.auditLevel = auditLevel; return this; }
-            public Builder withImmutable(boolean immutable) { this.immutable = immutable; return this; }
-            public Builder withTags(Set<String> tags) { this.tags = tags; return this; }
-            public DataStoreConfig build() { return new DataStoreConfig(this); }
-        }
-    }
-
-    public static class Retention {
-        private final int years;
-
-        private Retention(int years) { this.years = years; }
-
-        public static Retention ofYears(int years) { return new Retention(years); }
-
-        public int getYears() { return years; }
-    }
-
-    public enum DataGovernance {
-        HEALTHCARE,
-        FINANCIAL,
-        GENERAL
-    }
-
-    public enum EncryptionLevel {
-        NONE,
-        STANDARD,
-        STRONG
-    }
-
-    public enum AuditLevel {
-        NONE,
-        BASIC,
-        DETAILED,
-        FULL
+    private Promise<Void> createSchema(
+            String name, String schema, int retentionYears,
+            String governance, String encryption, String auditLevel, boolean immutable) {
+        String datasetId = tenantId + "." + name;
+        Map<String, String> options = Map.of(
+                "retention.years", String.valueOf(retentionYears),
+                "governance", governance,
+                "encryption", encryption,
+                "audit_level", auditLevel,
+                "immutable", String.valueOf(immutable));
+        return dataCloud.createSchema(new SchemaCreateRequest(datasetId, Map.of("schema", schema), options));
     }
 }

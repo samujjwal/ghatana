@@ -93,6 +93,7 @@ include(":platform-kernel:kernel-bom")
 // Platform Plugins
 // =============================================================================
 include(":platform-plugins:plugin-audit-trail")
+include(":platform-plugins:plugin-human-approval")
 include(":platform-plugins:plugin-billing-ledger")
 include(":platform-plugins:plugin-compliance")
 include(":platform-plugins:plugin-consent")
@@ -313,6 +314,13 @@ include(":products:finance:domains:surveillance")
 include(":products:finance:extensions")
 include(":products:finance:integration-testing")
 include(":products:finance:client-onboarding")
+
+// =============================================================================
+// Platform Shared Services (Kernel Bridges)
+// =============================================================================
+include(":platform:shared-services:data-cloud-kernel-bridge")
+include(":platform:shared-services:aep-kernel-bridge")
+include(":platform:shared-services:yappc-kernel-bridge")
 
 // =============================================================================
 // Shared Services

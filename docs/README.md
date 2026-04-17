@@ -23,6 +23,8 @@
 | Agent System | [agent-system/](./agent-system/) |
 | Platform TypeScript Libraries | [platform-libraries/LIBRARY_INDEX.md](./platform-libraries/LIBRARY_INDEX.md) |
 | Platform Architecture Plans | [architecture/](./architecture/) |
+| Kernel + Plugin Multi-Product Plan | [architecture/KERNEL_PLUGIN_MULTI_PRODUCT_EXECUTION_PLAN_2026-04-16.md](./architecture/KERNEL_PLUGIN_MULTI_PRODUCT_EXECUTION_PLAN_2026-04-16.md) |
+| Kernel + Plugin Remaining Items Tracker | [architecture/KERNEL_PLUGIN_REMAINING_ITEMS_TRACKER_2026-04-16.md](./architecture/KERNEL_PLUGIN_REMAINING_ITEMS_TRACKER_2026-04-16.md) |
 | Quarterly Process | [process/QUARTERLY_BOUNDARY_REVIEW.md](./process/QUARTERLY_BOUNDARY_REVIEW.md) |
 | Swagger UI setup | [SWAGGER_UI_README.md](./SWAGGER_UI_README.md) |
 
