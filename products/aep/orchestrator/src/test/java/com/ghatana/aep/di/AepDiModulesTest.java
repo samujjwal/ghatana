@@ -33,6 +33,7 @@ import com.ghatana.aep.connector.strategy.sqs.SqsConfig;
 import com.ghatana.aep.connector.strategy.sqs.SqsConsumerStrategy;
 import com.ghatana.aep.connector.strategy.sqs.SqsProducerStrategy;
 import com.ghatana.aep.event.EventCloud;
+import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.PipelineExecutionEngine;
@@ -60,6 +61,7 @@ import io.activej.inject.Key;
 import io.activej.inject.module.Module;
 import io.activej.inject.module.ModuleBuilder;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.jupiter.api.Assumptions;
@@ -137,7 +139,6 @@ class AepDiModulesTest {
             assertThat(executor).isNotNull();
             assertThat(executor.isShutdown()).isFalse();
 
-            // Cleanup
             executor.shutdown();
         }
 
@@ -151,7 +152,6 @@ class AepDiModulesTest {
             assertThat(scheduler).isNotNull();
             assertThat(scheduler.isShutdown()).isFalse();
 
-            // Cleanup
             scheduler.shutdown();
         }
 
@@ -166,7 +166,6 @@ class AepDiModulesTest {
             assertThat(injector.getInstance(ExecutorService.class)).isNotNull();
             assertThat(injector.getInstance(ScheduledExecutorService.class)).isNotNull();
 
-            // Cleanup
             injector.getInstance(ExecutorService.class).shutdown();
             injector.getInstance(ScheduledExecutorService.class).shutdown();
         }
@@ -191,10 +190,6 @@ class AepDiModulesTest {
     @DisplayName("AepOrchestrationModule")
     class AepOrchestrationModuleTests {
 
-        /**
-         * Creates an injector with AepOrchestrationModule and all required
-         * external dependencies stubbed.
-         */
         private Injector createOrchestrationInjector() {
             return Injector.of(orchestrationStubModule(), new AepOrchestrationModule());
         }
@@ -207,6 +202,38 @@ class AepDiModulesTest {
             OrchestratorConfig config = injector.getInstance(OrchestratorConfig.class);
 
             assertThat(config).isNotNull();
+        }
+
+        @Test
+        @DisplayName("fails fast when no LLM provider env is configured")
+        void failsFastWhenNoLlmProviderEnvConfigured() {
+            assertThatCode(() -> AepOrchestrationModule.createLlmProvider(Map.of(), mock(MetricsCollector.class)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("No LLM provider configured for AEP");
+        }
+
+        @Test
+        @DisplayName("fails fast when Ollama host is not a valid absolute URL")
+        void failsFastWhenOllamaHostIsInvalid() {
+            assertThatCode(() -> AepOrchestrationModule.createLlmProvider(
+                    Map.of("AEP_OLLAMA_HOST", "not-a-url"),
+                    mock(MetricsCollector.class)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("AEP_OLLAMA_HOST")
+                    .hasMessageContaining("valid absolute URL");
+        }
+
+        @Test
+        @DisplayName("creates LLM provider when OpenAI config is valid")
+        void createsLlmProviderWhenOpenAiConfigIsValid() {
+            LlmProvider provider = AepOrchestrationModule.createLlmProvider(
+                    Map.of(
+                            "AEP_OPENAI_API_KEY", "test-key",
+                            "AEP_OPENAI_MODEL", "gpt-4o-mini"
+                    ),
+                    mock(MetricsCollector.class));
+
+            assertThat(provider).isNotNull();
         }
 
         @Test

@@ -27,11 +27,16 @@
  */
 plugins {
     base
-    // alias(libs.plugins.openapi.generator)
 }
 
 group = "com.ghatana.aep"
 version = rootProject.version
+
+val openApiGeneratorCli by configurations.creating
+
+dependencies {
+    openApiGeneratorCli("org.openapitools:openapi-generator-cli:${libs.versions.openapi.generator.get()}")
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Canonical spec location
@@ -53,13 +58,14 @@ val specFile = file("openapi.yaml")
  * @doc.layer product
  * @doc.pattern Contract Validation
  */
-// tasks.register<org.openapitools.generator.gradle.plugin.tasks.ValidateTask>("validateAepSpec") {
-//     group = "contracts"
-//     description = "Validates the AEP OpenAPI 3.0 specification against the OpenAPI schema."
-// 
-//     inputSpec.set(specFile.absolutePath)
-//     recommend.set(true)
-// }
+tasks.register<JavaExec>("validateAepSpec") {
+    group = "contracts"
+    description = "Validates the AEP OpenAPI 3.0 specification against the OpenAPI schema."
+
+    classpath = openApiGeneratorCli
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    args("validate", "-i", specFile.absolutePath, "--recommend")
+}
 // 
 // // ─────────────────────────────────────────────────────────────────────────────
 // // TASK: Generate TypeScript types for the AEP BFF (api/ module)
@@ -76,27 +82,30 @@ val specFile = file("openapi.yaml")
 //  * @doc.layer product
 //  * @doc.pattern Code Generation
 //  */
-// tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateAepTypescriptTypes") {
-//     group = "contracts"
-//     description = "Generates TypeScript types and a fetch client from the AEP OpenAPI spec."
-// 
-//     generatorName.set("typescript-fetch")
-//     inputSpec.set(specFile.absolutePath)
-//     outputDir.set(layout.buildDirectory.dir("generated/typescript").get().asFile.absolutePath)
-// 
-//     apiPackage.set("com.ghatana.aep.api")
-//     modelPackage.set("com.ghatana.aep.model")
-// 
-//     configOptions.set(
-//         mapOf(
-//             "npmName" to "@ghatana/aep-client",
-//             "npmVersion" to project.version.toString(),
-//             "supportsES6" to "true",
-//            "typescriptThreePlus" to "true",
-//            "withInterfaces" to "true",
-//        )
-//    )
-//}
+tasks.register<JavaExec>("generateAepTypescriptTypes") {
+    group = "contracts"
+    description = "Generates TypeScript types and a fetch client from the AEP OpenAPI spec."
+
+    val outputDir = layout.buildDirectory.dir("generated/typescript")
+    classpath = openApiGeneratorCli
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    args(
+        "generate",
+        "-g", "typescript-fetch",
+        "-i", specFile.absolutePath,
+        "-o", outputDir.get().asFile.absolutePath,
+        "--api-package", "com.ghatana.aep.api",
+        "--model-package", "com.ghatana.aep.model",
+        "--additional-properties",
+        listOf(
+            "npmName=@ghatana/aep-client",
+            "npmVersion=${project.version}",
+            "supportsES6=true",
+            "typescriptThreePlus=true",
+            "withInterfaces=true"
+        ).joinToString(",")
+    )
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TASK: Generate Java SDK for integration tests
@@ -112,38 +121,40 @@ val specFile = file("openapi.yaml")
  * @doc.layer product
  * @doc.pattern Code Generation
  */
-// tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateAepJavaSdk") {
-//     group = "contracts"
-//     description = "Generates a Java (okhttp-gson) client SDK from the AEP OpenAPI spec."
-// 
-//     generatorName.set("java")
-//     inputSpec.set(specFile.absolutePath)
-//     outputDir.set(layout.buildDirectory.dir("generated/java-sdk").get().asFile.absolutePath)
-// 
-//     apiPackage.set("com.ghatana.aep.sdk.api")
-//     modelPackage.set("com.ghatana.aep.sdk.model")
-//     invokerPackage.set("com.ghatana.aep.sdk")
-// 
-//     groupId.set("com.ghatana")
-//     id.set("aep-java-sdk")
-//     version.set(project.version.toString())
-// 
-//     configOptions.set(
-//         mapOf(
-//             "library" to "okhttp-gson",
-//             "dateLibrary" to "java8",
-//             "openApiNullable" to "false",
-//             "useRxJava2" to "false",
-//             "useRxJava3" to "false",
-//         )
-//     )
-// }
+tasks.register<JavaExec>("generateAepJavaSdk") {
+    group = "contracts"
+    description = "Generates a Java (okhttp-gson) client SDK from the AEP OpenAPI spec."
+
+    val outputDir = layout.buildDirectory.dir("generated/java-sdk")
+    classpath = openApiGeneratorCli
+    mainClass.set("org.openapitools.codegen.OpenAPIGenerator")
+    args(
+        "generate",
+        "-g", "java",
+        "-i", specFile.absolutePath,
+        "-o", outputDir.get().asFile.absolutePath,
+        "--api-package", "com.ghatana.aep.sdk.api",
+        "--model-package", "com.ghatana.aep.sdk.model",
+        "--invoker-package", "com.ghatana.aep.sdk",
+        "--group-id", "com.ghatana",
+        "--artifact-id", "aep-java-sdk",
+        "--artifact-version", project.version.toString(),
+        "--additional-properties",
+        listOf(
+            "library=okhttp-gson",
+            "dateLibrary=java8",
+            "openApiNullable=false",
+            "useRxJava2=false",
+            "useRxJava3=false"
+        ).joinToString(",")
+    )
+}
 
 // Wire validate into the standard build lifecycle so `./gradlew build` always
 // validates the spec — failing fast on any API contract regression.
-//tasks.named("build") {
-//    dependsOn("validateAepSpec")
-//}
-//tasks.named("check") {
-//    dependsOn("validateAepSpec")
-//}
+tasks.named("build") {
+    dependsOn("validateAepSpec")
+}
+tasks.named("check") {
+    dependsOn("validateAepSpec")
+}

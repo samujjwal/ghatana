@@ -1,5 +1,8 @@
 name: Quality Gates
 
+env:
+  YAPPC_TS_NOCHECK_BASELINE: "431"
+
 on:
   pull_request:
     branches: [main, develop]
@@ -53,6 +56,18 @@ jobs:
           cd frontend
           pnpm install
           pnpm test
+        working-directory: products/yappc
+
+      - name: Prevent new @ts-nocheck debt
+        run: |
+          set -e
+          ACTUAL=$(rg -l --fixed-strings '@ts-nocheck' frontend/web/src | wc -l | tr -d ' ')
+          echo "Current @ts-nocheck file count: $ACTUAL"
+          if [ "$ACTUAL" -gt "$YAPPC_TS_NOCHECK_BASELINE" ]; then
+            echo "❌ @ts-nocheck usage increased above baseline ${YAPPC_TS_NOCHECK_BASELINE}."
+            exit 1
+          fi
+          echo "✅ @ts-nocheck usage has not increased above baseline ${YAPPC_TS_NOCHECK_BASELINE}."
         working-directory: products/yappc
       
       - name: Check Import Restrictions

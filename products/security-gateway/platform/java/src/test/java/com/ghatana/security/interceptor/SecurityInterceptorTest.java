@@ -5,6 +5,7 @@ import com.ghatana.security.audit.SecurityAuditLogger;
 import com.ghatana.platform.security.jwt.JwtTokenProvider;
 import com.ghatana.platform.security.rbac.PolicyService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -162,6 +163,34 @@ class SecurityInterceptorTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(401);
         assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isNotBlank();
     }
+
+        @Test
+        @DisplayName("should bypass authentication for OPTIONS preflight requests and preserve correlation ID")
+        void shouldBypassAuthenticationForOptionsPreflightRequestsAndPreserveCorrelationId() {
+                PolicyService policyService = mock(PolicyService.class);
+                JwtTokenProvider jwtTokenProvider = mock(JwtTokenProvider.class);
+                SecurityAuditLogger auditLogger = mock(SecurityAuditLogger.class);
+
+                SecurityInterceptor interceptor = new SecurityInterceptor(
+                                policyService,
+                                jwtTokenProvider,
+                                auditLogger,
+                                5,
+                                60
+                );
+
+                HttpRequest request = HttpRequest.builder(HttpMethod.OPTIONS, "http://localhost/api/orders")
+                                .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-preflight-1")
+                                .build();
+
+                HttpResponse response = runPromise(() -> interceptor.intercept(request, next -> Promise.of(HttpResponse.ok200().build())));
+
+                assertThat(response.getCode()).isEqualTo(200);
+                assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("corr-preflight-1");
+                verifyNoInteractions(jwtTokenProvider);
+                verifyNoInteractions(policyService);
+                verifyNoInteractions(auditLogger);
+        }
 
     @Test
     @DisplayName("should bypass authentication checks for public health endpoints")

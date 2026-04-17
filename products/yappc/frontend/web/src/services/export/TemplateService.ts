@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Template Service - Manage canvas templates
  */

@@ -10,6 +10,8 @@
  * It handles HTTP communication, serialization, and error handling.
  */
 
+import { loadServiceEnvironment } from '../config/service-env.js';
+
 interface ApprovalRequest {
     requestId: string;
     type: 'TIME_OFF' | 'EXPENSE' | 'HIRE' | 'PROMOTION' | 'PURCHASE';
@@ -112,8 +114,8 @@ async function readErrorResponse(response: Response): Promise<unknown> {
 export class JavaServiceClient {
     private baseUrl: string;
 
-    constructor(baseUrl: string = process.env.JAVA_SERVICE_URL || 'http://localhost:8080') {
-        this.baseUrl = baseUrl;
+    constructor(baseUrl?: string) {
+        this.baseUrl = baseUrl ?? loadServiceEnvironment().javaServiceUrl;
     }
 
     /**

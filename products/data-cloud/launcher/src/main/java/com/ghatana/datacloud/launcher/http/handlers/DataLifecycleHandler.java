@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
 import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -100,27 +101,18 @@ public class DataLifecycleHandler {
     private static final String POLICY_STATUS_CLASSIFIED = "CLASSIFIED";
     private static final String POLICY_STATUS_DEFAULT = "DEFAULT";
     private static final String MISSING_TENANT_ERROR = "MISSING_TENANT";
+    private static final String PURGE_TOKEN_SECRET_REQUIRED = "PURGE_TOKEN_SECRET_REQUIRED";
+    private static final String PURGE_TOKEN_SECRET_ENV = "DATACLOUD_PURGE_TOKEN_SECRET";
+    private static final String DATACLOUD_PROFILE_ENV = "DATACLOUD_PROFILE";
 
     private static final String REDACTED_VALUE = "[REDACTED]";
     private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
 
     /**
-     * Secret key used to sign and verify purge confirmation tokens.
-     * Resolved from {@code DATACLOUD_PURGE_TOKEN_SECRET} env var.
-     * Falls back to a process-stable random key so the server always boots.
-     * In production, set a persistent secret so tokens survive restarts.
+     * Ephemeral per-process fallback secret used only in local/embedded-style profiles.
      */
-    private static final byte[] PURGE_TOKEN_SECRET;
-    static {
-        String envSecret = System.getenv("DATACLOUD_PURGE_TOKEN_SECRET");
-        if (envSecret != null && !envSecret.isBlank()) {
-            PURGE_TOKEN_SECRET = envSecret.getBytes(StandardCharsets.UTF_8);
-        } else {
-            // Fallback: stable within jvm process, won't survive restarts.
-            // Production must set DATACLOUD_PURGE_TOKEN_SECRET.
-            PURGE_TOKEN_SECRET = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
-        }
-    }
+    private static final byte[] EPHEMERAL_PURGE_TOKEN_SECRET =
+        UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
 
     private final DataCloudClient client;
     private final ObjectMapper objectMapper;
@@ -319,6 +311,18 @@ public class DataLifecycleHandler {
                 if (collection.isBlank()) {
                     return Promise.of(http.envelopeResponse(
                         ApiResponse.error("MISSING_COLLECTION", "collection is required", tenantId, requestId),
+                        objectMapper));
+                }
+
+                TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
+                if (!tokenSecretRequirement.available()) {
+                    return Promise.of(http.envelopeResponse(
+                        ApiResponse.error(
+                            PURGE_TOKEN_SECRET_REQUIRED,
+                            tokenSecretRequirement.message(),
+                            Map.of("profile", tokenSecretRequirement.profile()),
+                            tenantId,
+                            requestId),
                         objectMapper));
                 }
 
@@ -978,8 +982,12 @@ public class DataLifecycleHandler {
      * <p>Format: {@code Base64Url( epochMs + "." + HMAC-SHA256(secret, tenantId+":"+collection+":"+epochMs) )}
      */
     static String buildPurgeToken(String tenantId, String collection, long issuedAtMs) {
+        return buildPurgeToken(tenantId, collection, issuedAtMs, runtimeEnvironment());
+    }
+
+    static String buildPurgeToken(String tenantId, String collection, long issuedAtMs, Map<String, String> env) {
         String payload = tenantId + ":" + collection + ":" + issuedAtMs;
-        String hmac = hmacSha256Hex(PURGE_TOKEN_SECRET, payload);
+        String hmac = hmacSha256Hex(resolvePurgeTokenSecret(env), payload);
         String raw = issuedAtMs + "." + hmac;
         return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
@@ -988,6 +996,10 @@ public class DataLifecycleHandler {
      * Validates a purge confirmation token against tenant + collection and expiry window.
      */
     static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection) {
+        return validatePurgeToken(token, tenantId, collection, runtimeEnvironment());
+    }
+
+    static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection, Map<String, String> env) {
         try {
             byte[] decoded = Base64.getUrlDecoder().decode(token);
             String raw = new String(decoded, StandardCharsets.UTF_8);
@@ -1006,7 +1018,7 @@ public class DataLifecycleHandler {
                 return TokenValidationResult.failure("token issued in the future");
             }
 
-            String expectedHmac = hmacSha256Hex(PURGE_TOKEN_SECRET,
+            String expectedHmac = hmacSha256Hex(resolvePurgeTokenSecret(env),
                     tenantId + ":" + collection + ":" + issuedAtMs);
             if (!constantTimeEquals(expectedHmac, providedHmac)) {
                 return TokenValidationResult.failure("token signature mismatch");
@@ -1014,6 +1026,56 @@ public class DataLifecycleHandler {
             return TokenValidationResult.success();
         } catch (IllegalArgumentException e) {
             return TokenValidationResult.failure("token decode error: " + e.getMessage());
+        }
+    }
+
+    static TokenSecretRequirement validatePurgeTokenSecretConfiguration(Map<String, String> env) {
+        if (resolveConfiguredPurgeTokenSecret(env).isPresent()) {
+            return TokenSecretRequirement.available(resolveProfileName(env));
+        }
+        if (allowsEphemeralPurgeTokenSecret(env)) {
+            return TokenSecretRequirement.available(resolveProfileName(env));
+        }
+        return TokenSecretRequirement.unavailable(
+            resolveProfileName(env),
+            PURGE_TOKEN_SECRET_ENV + " must be configured for purge operations outside local or sovereign profiles"
+        );
+    }
+
+    private static byte[] resolvePurgeTokenSecret(Map<String, String> env) {
+        return resolveConfiguredPurgeTokenSecret(env)
+            .orElse(EPHEMERAL_PURGE_TOKEN_SECRET);
+    }
+
+    private static Optional<byte[]> resolveConfiguredPurgeTokenSecret(Map<String, String> env) {
+        String configured = env.get(PURGE_TOKEN_SECRET_ENV);
+        if (configured == null || configured.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(configured.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static boolean allowsEphemeralPurgeTokenSecret(Map<String, String> env) {
+        return DataCloudLauncherSettings.isEmbeddedProfile(
+            DataCloudLauncherSettings.resolveProfile(new String[0], env));
+    }
+
+    private static String resolveProfileName(Map<String, String> env) {
+        String rawProfile = env.get(DATACLOUD_PROFILE_ENV);
+        return (rawProfile == null || rawProfile.isBlank()) ? "local" : rawProfile;
+    }
+
+    private static Map<String, String> runtimeEnvironment() {
+        Map<String, String> env = new HashMap<>(System.getenv());
+        putSystemPropertyOverride(env, DATACLOUD_PROFILE_ENV);
+        putSystemPropertyOverride(env, PURGE_TOKEN_SECRET_ENV);
+        return Map.copyOf(env);
+    }
+
+    private static void putSystemPropertyOverride(Map<String, String> env, String key) {
+        String value = System.getProperty(key);
+        if (value != null) {
+            env.put(key, value);
         }
     }
 
@@ -1042,5 +1104,15 @@ public class DataLifecycleHandler {
     record TokenValidationResult(boolean valid, String reason) {
         static TokenValidationResult success()                { return new TokenValidationResult(true, null); }
         static TokenValidationResult failure(String reason)   { return new TokenValidationResult(false, reason); }
+    }
+
+    record TokenSecretRequirement(boolean available, String profile, String message) {
+        static TokenSecretRequirement available(String profile) {
+            return new TokenSecretRequirement(true, profile, null);
+        }
+
+        static TokenSecretRequirement unavailable(String profile, String message) {
+            return new TokenSecretRequirement(false, profile, message);
+        }
     }
 }

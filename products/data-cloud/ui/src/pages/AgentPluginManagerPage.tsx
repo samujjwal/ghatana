@@ -1,9 +1,9 @@
 /**
- * Agent Plugin Manager Page
+ * Agent Catalog Page
  *
- * Displays all registered agents with live monitoring feed.
- * Supports agent registration, deregistration, capability management,
- * and real-time registry event streaming via SSE.
+ * Displays the launcher-exposed read-only agent catalog.
+ * Registry mutations and live event streaming are intentionally unavailable
+ * while AEP owns the executable control plane surface.
  *
  * @doc.type page
  * @doc.purpose Agent Registry management interface
@@ -11,12 +11,10 @@
  * @doc.pattern Page Component
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Bot,
-  Plus,
-  Trash2,
   RefreshCw,
   Activity,
   CheckCircle,
@@ -26,19 +24,15 @@ import {
   Radio,
   ChevronDown,
   ChevronRight,
-  X,
 } from 'lucide-react';
 import {
-  AGENT_REGISTRY_BOUNDARY_MESSAGE,
   agentRegistryService,
   type AgentDefinition,
-  type AgentRegistrationRequest,
   type AgentStatus,
-  type RegistryEvent,
 } from '../api/agent-registry.service';
 
-export const AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE =
-  'This launcher exposes a read-only agent catalog. Registration, deregistration, and live registry events are not available here.';
+export const AGENT_CATALOG_BOUNDARY_NOTE =
+  'This launcher exposes a read-only agent catalog. AEP owns registration, deregistration, execution history, and live registry events.';
 
 // =============================================================================
 // Status helpers
@@ -73,36 +67,15 @@ function statusBadge(status: AgentStatus): string {
   }
 }
 
-function eventTypeBadge(type: RegistryEvent['eventType']): string {
-  const base = 'px-2 py-0.5 rounded text-xs font-mono font-medium';
-  switch (type) {
-    case 'AGENT_REGISTERED':
-      return `${base} bg-blue-100 text-blue-700`;
-    case 'AGENT_DEREGISTERED':
-      return `${base} bg-red-100 text-red-700`;
-    case 'AGENT_STATUS_CHANGED':
-      return `${base} bg-yellow-100 text-yellow-700`;
-    case 'EXECUTION_STARTED':
-      return `${base} bg-purple-100 text-purple-700`;
-    case 'EXECUTION_COMPLETED':
-      return `${base} bg-green-100 text-green-700`;
-    default:
-      return `${base} bg-gray-100 text-gray-600`;
-  }
-}
-
 // =============================================================================
 // Agent Card
 // =============================================================================
 
 interface AgentCardProps {
   agent: AgentDefinition;
-  onDeregister?: (id: string) => void;
-  deregistering: boolean;
-  canManage: boolean;
 }
 
-function AgentCard({ agent, onDeregister, deregistering, canManage }: AgentCardProps): React.ReactElement {
+function AgentCard({ agent }: AgentCardProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -128,20 +101,9 @@ function AgentCard({ agent, onDeregister, deregistering, canManage }: AgentCardP
               {statusIcon(agent.status)}
               {agent.status}
             </span>
-            {canManage ? (
-              <button
-                onClick={() => onDeregister?.(agent.agentId)}
-                disabled={deregistering}
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                title="Deregister agent"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            ) : (
-              <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700">
-                Catalog only
-              </span>
-            )}
+            <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700">
+              Catalog only
+            </span>
           </div>
         </div>
 
@@ -180,160 +142,43 @@ function AgentCard({ agent, onDeregister, deregistering, canManage }: AgentCardP
 }
 
 // =============================================================================
-// Registration Modal
+// Surface Status Panel
 // =============================================================================
 
-interface RegistrationModalProps {
-  onClose: () => void;
-  onSubmit: (request: AgentRegistrationRequest) => void;
-  submitting: boolean;
-}
-
-function AgentRegistrationModal({
-  onClose,
-  onSubmit,
-  submitting,
-}: RegistrationModalProps): React.ReactElement {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [version, setVersion] = useState('1.0.0');
-  const [endpoint, setEndpoint] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({
-      name: name.trim(),
-      description: description.trim(),
-      version: version.trim(),
-      capabilities: [],
-      endpoint: endpoint.trim() || undefined,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">Register Agent</h2>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Agent Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="My Agent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="What does this agent do?"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Version</label>
-              <input
-                type="text"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="1.0.0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Endpoint</label>
-              <input
-                type="url"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="https://…"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !name.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {submitting ? 'Registering…' : 'Register Agent'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// Registry Events Feed
-// =============================================================================
-
-interface RegistryEventsFeedProps {
-  events: RegistryEvent[];
-  connected: boolean;
-  supported: boolean;
-}
-
-function RegistryEventsFeed({ events, connected, supported }: RegistryEventsFeedProps): React.ReactElement {
+function SurfaceStatusPanel(): React.ReactElement {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm h-full flex flex-col">
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="h-4 w-4 text-purple-500" />
-          <span className="text-sm font-medium text-gray-900">Live Registry Events</span>
+          <span className="text-sm font-medium text-gray-900">Registry Surface Status</span>
         </div>
-        <span className={`flex items-center gap-1.5 text-xs font-medium ${connected ? 'text-green-600' : 'text-gray-400'}`}>
-          <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-          {connected ? 'Connected' : 'Disconnected'}
+        <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700">
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          Catalog only
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 font-mono text-xs">
-        {!supported && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 font-sans text-sm text-amber-900">
-            <p className="font-medium">Live registry events are unavailable</p>
-            <p className="mt-1 text-xs leading-5 text-amber-800">{AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE}</p>
-          </div>
-        )}
-        {events.length === 0 && (
-          <div className="text-gray-400 text-center py-8 font-sans text-sm">
-            {supported ? 'Waiting for registry events…' : 'No live event stream available.'}
-          </div>
-        )}
-        {events.map((event) => (
-          <div key={event.id} className="flex items-start gap-2 bg-gray-50 rounded p-2">
-            <span className="text-gray-400 flex-shrink-0 tabular-nums">
-              {new Date(event.timestamp).toLocaleTimeString()}
-            </span>
-            <span className={eventTypeBadge(event.eventType)}>{event.eventType}</span>
-            <span className="text-gray-600 truncate">{event.agentId.slice(0, 12)}…</span>
-          </div>
-        ))}
+      <div className="flex-1 p-4 space-y-4 text-sm text-gray-700">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+          <p className="font-medium">AEP owns the executable registry surface</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">{AGENT_CATALOG_BOUNDARY_NOTE}</p>
+        </div>
+        <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Unavailable here</div>
+          <ul className="space-y-2 text-sm text-gray-700">
+            <li>Agent registration and deregistration</li>
+            <li>Execution history and runtime event streaming</li>
+            <li>Capability mutation and control-plane ownership</li>
+          </ul>
+        </div>
+        <div className="space-y-2 rounded-lg border border-green-200 bg-green-50 p-3 text-green-900">
+          <div className="text-xs font-semibold uppercase tracking-wide text-green-700">Available here</div>
+          <ul className="space-y-2 text-sm">
+            <li>Read-only launcher catalog entries</li>
+            <li>Capability summaries for exposed agents</li>
+            <li>Status snapshots for discovery purposes</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -344,17 +189,9 @@ function RegistryEventsFeed({ events, connected, supported }: RegistryEventsFeed
 // =============================================================================
 
 /**
- * AgentPluginManagerPage — registers, monitors, and manages Data-Cloud agents.
+ * AgentPluginManagerPage — shows the launcher-exposed agent catalog.
  */
 export function AgentPluginManagerPage(): React.ReactElement {
-  const registryMutationsSupported = false;
-  const registryEventsSupported = false;
-  const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
-  const [registryEvents, setRegistryEvents] = useState<RegistryEvent[]>([]);
-  const [sseConnected, setSseConnected] = useState(false);
-  const sseRef = useRef<EventSource | null>(null);
-
   // ── Fetch agents ──
   const {
     data: agents = [],
@@ -366,58 +203,6 @@ export function AgentPluginManagerPage(): React.ReactElement {
     queryFn: () => agentRegistryService.listAgents(),
     staleTime: 30_000,
   });
-
-  // ── Register mutation ──
-  const registerMutation = useMutation({
-    mutationFn: (request: AgentRegistrationRequest) =>
-      agentRegistryService.registerAgent(request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
-      setShowModal(false);
-    },
-  });
-
-  // ── Deregister mutation ──
-  const deregisterMutation = useMutation({
-    mutationFn: (agentId: string) => agentRegistryService.deregisterAgent(agentId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agents'] }),
-  });
-
-  // ── SSE stream ──
-  useEffect(() => {
-    if (!registryEventsSupported) {
-      setSseConnected(false);
-      return;
-    }
-
-    const source = agentRegistryService.streamRegistryEvents(
-      undefined,
-      (event) => {
-        setRegistryEvents((prev) => [event, ...prev].slice(0, 200));
-      },
-      () => setSseConnected(false)
-    );
-
-    source.onopen = () => setSseConnected(true);
-    sseRef.current = source;
-
-    return () => {
-      source.close();
-      sseRef.current = null;
-    };
-  }, []);
-
-  const handleDeregister = useCallback(
-    (agentId: string) => {
-      if (!registryMutationsSupported) {
-        return;
-      }
-      if (confirm('Deregister this agent? All executions history will be retained.')) {
-        deregisterMutation.mutate(agentId);
-      }
-    },
-    [deregisterMutation, registryMutationsSupported]
-  );
 
   const activeCount = agents.filter((a) => a.status === 'ACTIVE').length;
   const errorCount = agents.filter((a) => a.status === 'ERROR').length;
@@ -433,7 +218,7 @@ export function AgentPluginManagerPage(): React.ReactElement {
                 <Bot className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Agent Registry</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Agent Catalog</h1>
                 <p className="text-sm text-gray-500 mt-0.5">
                   Monitor the launcher-exposed agent catalog
                 </p>
@@ -447,20 +232,11 @@ export function AgentPluginManagerPage(): React.ReactElement {
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => setShowModal(true)}
-                disabled={!registryMutationsSupported}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                title={!registryMutationsSupported ? AGENT_REGISTRY_BOUNDARY_MESSAGE : 'Register Agent'}
-              >
-                <Plus className="h-4 w-4" />
-                Register Agent
-              </button>
             </div>
           </div>
 
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {AGENT_PLUGIN_MANAGER_BOUNDARY_NOTE}
+            {AGENT_CATALOG_BOUNDARY_NOTE}
           </div>
 
           {/* KPIs */}
@@ -508,35 +284,17 @@ export function AgentPluginManagerPage(): React.ReactElement {
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {agents.map((agent) => (
-                <AgentCard
-                  key={agent.agentId}
-                  agent={agent}
-                  onDeregister={handleDeregister}
-                  deregistering={
-                    deregisterMutation.isPending &&
-                    deregisterMutation.variables === agent.agentId
-                  }
-                  canManage={registryMutationsSupported}
-                />
+                <AgentCard key={agent.agentId} agent={agent} />
               ))}
             </div>
           </div>
 
-          {/* Events Feed (right col) */}
+          {/* Surface status (right col) */}
           <div className="lg:col-span-1 min-h-[400px]">
-            <RegistryEventsFeed events={registryEvents} connected={sseConnected} supported={registryEventsSupported} />
+            <SurfaceStatusPanel />
           </div>
         </div>
       </div>
-
-      {/* Registration Modal */}
-      {showModal && registryMutationsSupported && (
-        <AgentRegistrationModal
-          onClose={() => setShowModal(false)}
-          onSubmit={(req) => registerMutation.mutate(req)}
-          submitting={registerMutation.isPending}
-        />
-      )}
     </div>
   );
 }

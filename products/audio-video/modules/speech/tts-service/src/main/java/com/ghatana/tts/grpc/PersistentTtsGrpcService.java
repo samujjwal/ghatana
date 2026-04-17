@@ -25,12 +25,14 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
     private static final Logger LOG = LoggerFactory.getLogger(PersistentTtsGrpcService.class);
 
     private final PersistentTtsService persistentTtsService;
+    private final TtsGrpcService streamingDelegate;
 
     public PersistentTtsGrpcService(
             AudioVideoLibrary library,
             AudioFileService audioFileService,
             MeterRegistry metrics) {
         this.persistentTtsService = new PersistentTtsService(library, audioFileService, metrics);
+        this.streamingDelegate = new TtsGrpcService(library, metrics);
     }
 
     @Override
@@ -109,16 +111,29 @@ public class PersistentTtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase 
 
     @Override
     public void streamSynthesize(SynthesizeRequest request, StreamObserver<AudioChunk> responseObserver) {
-        // For streaming, we might want to store the final audio after streaming completes
-        // For now, delegate to base implementation without persistence
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED
-            .withDescription("Streaming with persistence not yet implemented")
-            .asRuntimeException());
+        String tenantId = getTenantId();
+        if (tenantId == null || tenantId.isEmpty()) {
+            responseObserver.onError(io.grpc.Status.UNAUTHENTICATED
+                .withDescription("Missing tenant ID")
+                .asRuntimeException());
+            return;
+        }
+
+        String userIdStr = getUserId();
+        String cid = cid();
+        try {
+            MDC.put("tenantId", tenantId);
+            MDC.put("userId", userIdStr);
+            MDC.put("cid", cid);
+            streamingDelegate.streamSynthesize(request, responseObserver);
+        } finally {
+            MDC.clear();
+        }
     }
 
     private String getTenantId() {
         String tenantId = MDC.get("tenantId");
-        return tenantId != null && !tenantId.isBlank() ? tenantId : "default";
+        return tenantId != null && !tenantId.isBlank() ? tenantId : null;
     }
 
     private String getUserId() {

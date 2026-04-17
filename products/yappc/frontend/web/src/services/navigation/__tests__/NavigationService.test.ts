@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, test, expect, beforeEach } from 'vitest';
 
 import { NavigationService } from '../NavigationService';

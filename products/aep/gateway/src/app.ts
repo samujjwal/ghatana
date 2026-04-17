@@ -2,8 +2,11 @@ import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import fastifyWebsocket from '@fastify/websocket';
 import fastifyCors from '@fastify/cors';
 import WebSocket from 'ws';
+import { randomUUID } from 'node:crypto';
 import { verifyJwt, extractBearerToken } from './jwt.js';
 import type { JwtPayload } from './jwt.js';
+
+const CORRELATION_ID_HEADER = 'x-correlation-id';
 
 function extractHeaderTenantId(value: string | string[] | undefined): string | null {
   if (typeof value === 'string' && value.trim().length > 0) {
@@ -20,6 +23,27 @@ function extractPayloadTenantId(payload: JwtPayload): string | null {
   return typeof tenantId === 'string' && tenantId.trim().length > 0 ? tenantId.trim() : null;
 }
 
+function extractCorrelationId(value: string | string[] | undefined): string | null {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value) && value.length > 0 && value[0].trim().length > 0) {
+    return value[0].trim();
+  }
+  return null;
+}
+
+function resolveCorrelationId(request: FastifyRequest): string {
+  return extractCorrelationId(request.headers[CORRELATION_ID_HEADER]) ?? randomUUID();
+}
+
+async function checkBackendReadiness(backendUrl: string, correlationId: string): Promise<Response> {
+  return fetch(`${backendUrl}/health`, {
+    method: 'GET',
+    headers: { [CORRELATION_ID_HEADER]: correlationId },
+  });
+}
+
 export interface GatewayConfig {
   jwtSecret: string;
   backendUrl: string;
@@ -33,7 +57,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   await fastify.register(fastifyCors, {
     origin: config.allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-Correlation-ID'],
     credentials: true,
   });
 
@@ -65,11 +89,49 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   }
 
   // ── Health probe (no auth) ───────────────────────────────────────────────────
-  fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+  fastify.get('/health', async (request, reply) => {
+    const correlationId = resolveCorrelationId(request);
+    reply.header('x-correlation-id', correlationId);
+    return { status: 'ok', timestamp: new Date().toISOString(), correlationId };
+  });
+
+  fastify.get('/ready', async (request, reply) => {
+    const correlationId = resolveCorrelationId(request);
+    reply.header('x-correlation-id', correlationId);
+
+    let backendRes: Response;
+    try {
+      backendRes = await checkBackendReadiness(config.backendUrl, correlationId);
+    } catch (err: unknown) {
+      fastify.log.error(err, `Backend readiness probe failed at ${config.backendUrl}/health`);
+      return reply.status(503).send({
+        status: 'not-ready',
+        dependency: 'aep-backend',
+        message: 'AEP backend unreachable',
+        correlationId,
+      });
+    }
+
+    if (!backendRes.ok) {
+      return reply.status(503).send({
+        status: 'not-ready',
+        dependency: 'aep-backend',
+        message: `AEP backend health probe returned ${backendRes.status}`,
+        correlationId,
+      });
+    }
+
+    return {
+      status: 'ready',
+      dependency: 'aep-backend',
+      correlationId,
+    };
+  });
 
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────
   fastify.all('/api/*', { preHandler: [authenticate] }, async (request, reply) => {
     const targetUrl = `${config.backendUrl}${request.url}`;
+    const correlationId = resolveCorrelationId(request);
 
     const proxyHeaders: Record<string, string> = {};
     if (request.headers['content-type']) {
@@ -84,6 +146,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     if (effectiveTenantId) {
       proxyHeaders['x-tenant-id'] = effectiveTenantId;
     }
+    proxyHeaders[CORRELATION_ID_HEADER] = correlationId;
 
     const method = request.method;
     const hasBody = method !== 'GET' && method !== 'HEAD' && method !== 'DELETE';
@@ -98,6 +161,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
 
     reply.status(backendRes.status);
+    reply.header('x-correlation-id', correlationId);
     const ct = backendRes.headers.get('content-type');
     if (ct) reply.header('content-type', ct);
     return reply.send(await backendRes.text());
@@ -131,10 +195,15 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     const params = new URLSearchParams();
     const effectiveTenantId = jwtTenantId ?? queryTenantId;
     if (effectiveTenantId) params.set('tenantId', effectiveTenantId);
+    const correlationId = resolveCorrelationId(request);
 
     const backendUrl = `${config.backendUrl}/events/stream?${params.toString()}`;
     const backendRes = await fetch(backendUrl, {
-      headers: { authorization: `Bearer ${token}`, accept: 'text/event-stream' },
+      headers: {
+        authorization: `Bearer ${token}`,
+        accept: 'text/event-stream',
+        [CORRELATION_ID_HEADER]: correlationId,
+      },
     }).catch(() => null);
 
     if (!backendRes || !backendRes.ok || !backendRes.body) {
@@ -146,6 +215,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
       'X-Accel-Buffering': 'no',
+      'X-Correlation-ID': correlationId,
     });
 
     const reader = backendRes.body.getReader();
@@ -170,16 +240,17 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   // ── WebSocket event-tailing proxy (legacy path: /tail/events) ────────────────
   await fastify.register(async function wsRoutes(scopedFastify) {
     scopedFastify.get('/tail/events', { websocket: true }, (con, req) => {
+      const clientSocket = ('socket' in con ? con.socket : con) as WebSocket;
       const queryToken = (req.query as Record<string, string>)['token'];
       const token = extractBearerToken(req.headers.authorization) ?? queryToken ?? null;
       if (!token) {
-        con.socket.close(4001, 'Authentication required');
+        clientSocket.close(4001, 'Authentication required');
         return;
       }
       try {
         verifyJwt(token, config.jwtSecret);
       } catch {
-        con.socket.close(4003, 'Invalid or expired token');
+        clientSocket.close(4003, 'Invalid or expired token');
         return;
       }
 
@@ -189,26 +260,26 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       });
 
       backendWs.on('message', (data) => {
-        if (con.socket.readyState === WebSocket.OPEN) {
-          con.socket.send(data.toString());
+        if (clientSocket.readyState === WebSocket.OPEN) {
+          clientSocket.send(data.toString());
         }
       });
       backendWs.on('error', (err) => {
         scopedFastify.log.error(err, 'Backend WebSocket error');
-        con.socket.close(1011, 'Backend connection failed');
+        clientSocket.close(1011, 'Backend connection failed');
       });
       backendWs.on('close', () => {
-        if (con.socket.readyState === WebSocket.OPEN) {
-          con.socket.close(1000, 'Backend closed connection');
+        if (clientSocket.readyState === WebSocket.OPEN) {
+          clientSocket.close(1000, 'Backend closed connection');
         }
       });
 
-      con.socket.on('message', (msg) => {
+      clientSocket.on('message', (msg) => {
         if (backendWs.readyState === WebSocket.OPEN) {
           backendWs.send(msg.toString());
         }
       });
-      con.socket.on('close', () => {
+      clientSocket.on('close', () => {
         if (backendWs.readyState !== WebSocket.CLOSED) {
           backendWs.close();
         }

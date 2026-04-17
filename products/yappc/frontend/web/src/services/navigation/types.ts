@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Navigation types for portal and hierarchical canvas navigation
  */

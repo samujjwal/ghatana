@@ -1,5 +1,6 @@
 import fastify, { type FastifyInstance } from "fastify";
 import { setupPlatform } from "@tutorputor/platform";
+import crypto from "crypto";
 
 export async function createServer(): Promise<FastifyInstance> {
   const app = fastify({
@@ -10,6 +11,18 @@ export async function createServer(): Promise<FastifyInstance> {
   if (!process.env.TUTORPUTOR_DATABASE_URL && process.env.DATABASE_URL) {
     process.env.TUTORPUTOR_DATABASE_URL = process.env.DATABASE_URL;
   }
+
+  // Correlation-ID middleware for distributed tracing
+  app.addHook("onRequest", async (req, reply) => {
+    const headerValue = req.headers["x-correlation-id"];
+    const correlationId =
+      (Array.isArray(headerValue) ? headerValue[0] : headerValue) ||
+      req.id ||
+      crypto.randomUUID();
+
+    (req as any).correlationId = correlationId;
+    reply.header("x-correlation-id", correlationId);
+  });
 
   // Initialize the Consolidated Platform
   // This sets up Database, Redis, Auth, Observability, and registers all modules

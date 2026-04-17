@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Registry Migration Utilities
  * Tools for migrating existing canvas implementations to use the unified registry

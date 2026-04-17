@@ -5,6 +5,7 @@
 package com.ghatana.aep.server.grpc;
 
 import com.ghatana.agent.registry.InMemoryAgentRegistry;
+import com.ghatana.agent.TypedAgent;
 import com.ghatana.contracts.agent.v1.AgentManagementServiceProtoGrpc;
 import com.ghatana.contracts.agent.v1.AgentManifestProto;
 import com.ghatana.contracts.agent.v1.CreateAgentRequestProto;
@@ -12,6 +13,7 @@ import com.ghatana.contracts.agent.v1.GetAgentRequestProto;
 import com.ghatana.contracts.agent.v1.ListAgentsRequestProto;
 import com.ghatana.contracts.agent.v1.ListAgentsResponseProto;
 import com.ghatana.contracts.agent.v1.MetadataProto;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,16 +36,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("AepGrpcServer")
-class AepGrpcServerTest {
+class AepGrpcServerTest extends EventloopTestBase {
 
     private AepGrpcServer server;
+    private InMemoryAgentRegistry agentRegistry;
     private ManagedChannel channel;
     private AgentManagementServiceProtoGrpc.AgentManagementServiceProtoBlockingStub stub;
 
     @BeforeEach
     void setUp() throws Exception {
         int port = findFreePort();
-        server = new AepGrpcServer(new InMemoryAgentRegistry(), port);
+        agentRegistry = new InMemoryAgentRegistry();
+        server = new AepGrpcServer(agentRegistry, port);
         server.start();
         channel = ManagedChannelBuilder.forAddress("127.0.0.1", port)
             .usePlaintext()
@@ -98,6 +103,29 @@ class AepGrpcServerTest {
         assertThat(response.getAgentsList())
             .extracting(agent -> agent.getMetadata().getDescription())
             .containsExactly("bravo description", "zulu description");
+    }
+
+    @Test
+    @DisplayName("createAgent registers manifest-only placeholder agents as non-executable")
+    void createAgentRegistersNonExecutablePlaceholderMetadata() {
+        stub.createAgent(CreateAgentRequestProto.newBuilder()
+            .setAgent(agentManifest("agent-shadow", "Agent Shadow", "1.0.0", "manifest only"))
+            .build());
+
+        Optional<TypedAgent<Object, Object>> resolved = awaitResolvedAgent("agent-shadow");
+
+        assertThat(resolved).isPresent();
+        assertThat(resolved.get().descriptor().getMetadata())
+            .containsEntry(AepGrpcServer.EXECUTABLE_METADATA_KEY, false)
+            .containsEntry(
+                AepGrpcServer.REGISTRATION_MODE_METADATA_KEY,
+                AepGrpcServer.REGISTRATION_MODE_MANIFEST_ONLY
+            );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<TypedAgent<Object, Object>> awaitResolvedAgent(String agentId) {
+        return (Optional<TypedAgent<Object, Object>>) (Optional<?>) runPromise(() -> agentRegistry.resolve(agentId));
     }
 
     private static AgentManifestProto agentManifest(String id, String name, String version, String description) {

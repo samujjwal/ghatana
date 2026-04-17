@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Mock Collaboration Provider - For development and testing
  * This simulates real-time collaboration without requiring a backend

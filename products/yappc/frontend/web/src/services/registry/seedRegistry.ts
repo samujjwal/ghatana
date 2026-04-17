@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Seed registry with default components and schemas
  */

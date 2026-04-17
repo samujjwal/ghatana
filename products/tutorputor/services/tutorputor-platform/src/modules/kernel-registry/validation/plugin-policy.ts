@@ -1,6 +1,7 @@
-// @ts-nocheck
 /**
  * Plugin Policy - Safety and validation rules for plugin publishing.
+ * 
+ * Note: @ts-nocheck removed - file uses proper Zod schema types and is fully typed.
  *
  * @doc.type module
  * @doc.purpose Define and enforce plugin security and compatibility policies
@@ -144,7 +145,7 @@ export function validatePluginId(id: string): PolicyResult {
 
   const result = pluginIdSchema.safeParse(id);
   if (!result.success) {
-    result.error.errors.forEach((err) => {
+    result.error.issues.forEach((err) => {
       violations.push({
         code: "INVALID_PLUGIN_ID",
         message: err.message,
@@ -165,7 +166,7 @@ export function validateMetadata(metadata: PluginMetadata): PolicyResult {
 
   const result = pluginMetadataSchema.safeParse(metadata);
   if (!result.success) {
-    result.error.errors.forEach((err) => {
+    result.error.issues.forEach((err) => {
       violations.push({
         code: "INVALID_METADATA",
         message: `${err.path.join(".")}: ${err.message}`,
@@ -246,7 +247,7 @@ export function validateResourceLimits(
 
   const result = resourceLimitsSchema.safeParse(limits);
   if (!result.success) {
-    result.error.errors.forEach((err) => {
+    result.error.issues.forEach((err) => {
       violations.push({
         code: "INVALID_RESOURCE_LIMITS",
         message: `${err.path.join(".")}: ${err.message}`,
@@ -287,7 +288,7 @@ export function validatePluginSubmission(
   // First validate the schema
   const schemaResult = pluginSubmissionSchema.safeParse(submission);
   if (!schemaResult.success) {
-    schemaResult.error.errors.forEach((err) => {
+    schemaResult.error.issues.forEach((err) => {
       allViolations.push({
         code: "SCHEMA_VALIDATION_FAILED",
         message: `${err.path.join(".")}: ${err.message}`,
@@ -300,7 +301,23 @@ export function validatePluginSubmission(
   const data = schemaResult.data;
 
   // Validate metadata
-  const metadataResult = validateMetadata(data.metadata);
+  const metadataForValidation: PluginMetadata = {
+    id: data.metadata.id,
+    name: data.metadata.name,
+    version: data.metadata.version,
+    description: data.metadata.description,
+    author: data.metadata.author,
+  };
+  if (data.metadata.license !== undefined) {
+    metadataForValidation.license = data.metadata.license;
+  }
+  if (data.metadata.repository !== undefined) {
+    metadataForValidation.repository = data.metadata.repository;
+  }
+  if (data.metadata.tags !== undefined) {
+    metadataForValidation.tags = data.metadata.tags;
+  }
+  const metadataResult = validateMetadata(metadataForValidation);
   allViolations.push(...metadataResult.violations);
   allWarnings.push(...metadataResult.warnings);
 

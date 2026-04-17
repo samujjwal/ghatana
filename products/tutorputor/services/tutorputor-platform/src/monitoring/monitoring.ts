@@ -167,6 +167,11 @@ export class MetricsRegistry {
     return result;
   }
 
+  getMetricValues(name: string): MetricValue[] {
+    const metric = this.metrics.get(name);
+    return metric?.values || [];
+  }
+
   reset(): void {
     for (const metric of this.metrics.values()) {
       metric.values = [];
@@ -623,7 +628,6 @@ function buildAlertEmailBody(alert: Alert): string {
     `Severity: ${alert.severity}`,
     `Status: ${alert.status}`,
     `Message: ${alert.message}`,
-    `Triggered at: ${alert.triggeredAt.toISOString()}`,
     alert.resolvedAt ? `Resolved at: ${alert.resolvedAt.toISOString()}` : undefined,
   ]
     .filter((line): line is string => Boolean(line))
@@ -681,6 +685,9 @@ export class MonitoringManager {
   private healthCheckRegistry: HealthCheckRegistry;
   private alertManager: AlertManager;
   private evaluationInterval: NodeJS.Timeout | undefined;
+  private sloWindowMs = 300000; // 5 minutes rolling window
+  private sloTargetAvailability = 0.999; // 99.9%
+  private sloTargetLatencyP95 = 500; // 500ms
 
   constructor() {
     this.metricsRegistry = new MetricsRegistry();
@@ -689,6 +696,66 @@ export class MonitoringManager {
 
     this.setupDefaultMetrics();
     this.setupDefaultAlerts();
+  }
+
+  /**
+   * Get current SLO status
+   */
+  getSLOStatus(): {
+    availability: { current: number; target: number; status: "ok" | "breach" };
+    latency: { current: number; target: number; status: "ok" | "breach" };
+    errorBudget: { remaining: number; burned: number; status: "ok" | "warning" | "critical" };
+  } {
+    const errors = this.metricsRegistry.getValue("http_errors_total") || 0;
+    const requests = this.metricsRegistry.getValue("http_requests_total") || 1;
+
+    const currentAvailability = 1 - (errors / requests);
+    const availabilityStatus = currentAvailability >= this.sloTargetAvailability ? "ok" : "breach";
+
+    const durationValues = this.metricsRegistry.getMetricValues("http_request_duration_ms");
+    let currentP95Latency = 0;
+    if (durationValues && durationValues.length > 0) {
+      const sortedDurations = durationValues.map((v: MetricValue) => v.value).sort((a: number, b: number) => a - b);
+      const p95Index = Math.floor(sortedDurations.length * 0.95);
+      currentP95Latency = sortedDurations[p95Index] || 0;
+    }
+    const latencyStatus = currentP95Latency <= this.sloTargetLatencyP95 ? "ok" : "breach";
+
+    const errorBudgetRemaining = Math.max(0, this.sloTargetAvailability - (1 - currentAvailability));
+    const errorBudgetBurned = 1 - errorBudgetRemaining;
+    let budgetStatus: "ok" | "warning" | "critical" = "ok";
+    if (errorBudgetBurned > 0.5) budgetStatus = "critical";
+    else if (errorBudgetBurned > 0.1) budgetStatus = "warning";
+
+    return {
+      availability: {
+        current: currentAvailability,
+        target: this.sloTargetAvailability,
+        status: availabilityStatus,
+      },
+      latency: {
+        current: currentP95Latency,
+        target: this.sloTargetLatencyP95,
+        status: latencyStatus,
+      },
+      errorBudget: {
+        remaining: errorBudgetRemaining,
+        burned: errorBudgetBurned,
+        status: budgetStatus,
+      },
+    };
+  }
+
+  /**
+   * Track HTTP request for SLO calculation
+   */
+  trackHTTPRequest(durationMs: number, success: boolean): void {
+    this.metricsRegistry.observe("http_request_duration_ms", durationMs);
+    this.metricsRegistry.increment("http_requests_total");
+
+    if (!success) {
+      this.metricsRegistry.increment("http_errors_total");
+    }
   }
 
   private setupDefaultMetrics(): void {
@@ -798,9 +865,77 @@ export class MonitoringManager {
         const errors = this.metricsRegistry.getValue("db_errors_total");
         return !!(errors && errors > 5);
       },
-      severity: "critical",
+      severity: "high",
       message: "Database errors detected",
+      cooldown: 300000,
+      enabled: true,
+    });
+
+    // SLO: Error budget burn rate alert
+    this.alertManager.addRule({
+      id: "slo_error_budget_burn",
+      name: "SLO Error Budget Burn Rate",
+      condition: (_metrics) => {
+        const requestCount = this.metricsRegistry.getValue("http_requests_total");
+        const errorCount = this.metricsRegistry.getValue("http_errors_total");
+
+        if (!requestCount || !errorCount || requestCount === 0) return false;
+
+        const errorRate = errorCount / requestCount;
+        // SLO: 99.9% success rate (0.1% error budget)
+        // Alert if error rate exceeds 1% (10x burn rate)
+        return errorRate > 0.01;
+      },
+      severity: "critical",
+      message: "SLO error budget burning at 10x rate - immediate action required",
       cooldown: 60000, // 1 minute
+      enabled: true,
+    });
+
+    // SLO: Latency SLO breach alert
+    this.alertManager.addRule({
+      id: "slo_latency_breach",
+      name: "SLO Latency Breach",
+      condition: (_metrics) => {
+        const durationValues = this.metricsRegistry.getMetricValues(
+          "http_request_duration_ms"
+        );
+
+        if (!durationValues || durationValues.length === 0) return false;
+
+        // Calculate p95 latency
+        const sortedDurations = durationValues
+          .map((v: MetricValue) => v.value)
+          .sort((a: number, b: number) => a - b);
+        const p95Index = Math.floor(sortedDurations.length * 0.95);
+        const p95Latency = sortedDurations[p95Index] || 0;
+
+        // SLO: 95th percentile latency < 500ms
+        return p95Latency > 500;
+      },
+      severity: "high",
+      message: "SLO latency breach detected - p95 latency exceeds 500ms",
+      cooldown: 300000,
+      enabled: true,
+    });
+
+    // SLO: Availability breach alert
+    this.alertManager.addRule({
+      id: "slo_availability_breach",
+      name: "SLO Availability Breach",
+      condition: (_metrics) => {
+        const errors = this.metricsRegistry.getValue("http_errors_total");
+        const requests = this.metricsRegistry.getValue("http_requests_total");
+
+        if (!requests || !errors || requests === 0) return false;
+
+        const successRate = 1 - (errors / requests);
+        // SLO: 99.9% availability
+        return successRate < 0.999;
+      },
+      severity: "critical",
+      message: "SLO availability breach detected - below 99.9%",
+      cooldown: 60000,
       enabled: true,
     });
 

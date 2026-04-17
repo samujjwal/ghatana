@@ -26,9 +26,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -123,16 +125,43 @@ class AgentExecutionServiceTest extends EventloopTestBase {
         assertThat(result).isEqualTo(memory);
     }
 
+    @Test
+    @DisplayName("execute rejects registry entries marked as discovery-only")
+    void executeRejectsDiscoveryOnlyAgents() {
+        when(agentRegistry.resolve("agent-placeholder"))
+            .thenReturn(Promise.of(Optional.of(new TestAgent(
+                AgentDescriptor.builder()
+                    .agentId("agent-placeholder")
+                    .name("Placeholder Agent")
+                    .type(AgentType.PROBABILISTIC)
+                    .metadata(Map.of(
+                        "executable", false,
+                        "registrationMode", "manifest-only"
+                    ))
+                    .build()
+            ))));
+
+        assertThatThrownBy(() -> runPromise(() -> service.execute("agent-placeholder", Map.of("message", "hello"))))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("cannot be executed");
+
+        verify(llmGateway, never()).complete(any(CompletionRequest.class));
+    }
+
     private static final class TestAgent implements TypedAgent<Object, Object> {
 
         private final AgentDescriptor descriptor;
 
         private TestAgent(String agentId) {
-            this.descriptor = AgentDescriptor.builder()
+            this(AgentDescriptor.builder()
                 .agentId(agentId)
                 .name("Test Agent")
                 .type(AgentType.PROBABILISTIC)
-                .build();
+                .build());
+        }
+
+        private TestAgent(AgentDescriptor descriptor) {
+            this.descriptor = descriptor;
         }
 
         @Override

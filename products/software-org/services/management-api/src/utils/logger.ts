@@ -11,6 +11,8 @@
  * @doc.pattern Utility
  */
 
+import { loadServiceEnvironment } from '../config/service-env.js';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -20,8 +22,17 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 40,
 };
 
-const minLevel: LogLevel =
-  (process.env['LOG_LEVEL'] as LogLevel | undefined) ?? 'info';
+function toLoggerLevel(level: ReturnType<typeof loadServiceEnvironment>['logLevel']): LogLevel {
+  if (level === 'trace') {
+    return 'debug';
+  }
+  if (level === 'warn' || level === 'info' || level === 'debug' || level === 'error') {
+    return level;
+  }
+  return 'error';
+}
+
+const minLevel: LogLevel = toLoggerLevel(loadServiceEnvironment().logLevel);
 
 function write(level: LogLevel, name: string, msg: string, extra?: unknown): void {
   if (LEVEL_PRIORITY[level] < LEVEL_PRIORITY[minLevel]) return;

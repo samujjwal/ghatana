@@ -70,8 +70,8 @@ public final class AepAuthFilter implements AsyncServlet {
 
     public AepAuthFilter(AsyncServlet next) {
         this(next,
-            System.getenv("AEP_JWT_SECRET"),
-            !"true".equalsIgnoreCase(System.getenv("AEP_AUTH_DISABLED")),
+            resolveSetting("AEP_JWT_SECRET"),
+            !"true".equalsIgnoreCase(resolveSetting("AEP_AUTH_DISABLED")),
             resolveEnvironment());
     }
 
@@ -116,8 +116,16 @@ public final class AepAuthFilter implements AsyncServlet {
      * Defaults to {@code "production"} when unset to fail-safe.
      */
     private static String resolveEnvironment() {
-        String env = System.getenv("AEP_ENV");
+        String env = resolveSetting("AEP_ENV");
         return (env == null || env.isBlank()) ? "production" : env.trim().toLowerCase();
+    }
+
+    private static String resolveSetting(String key) {
+        String propertyValue = System.getProperty(key);
+        if (propertyValue != null) {
+            return propertyValue;
+        }
+        return System.getenv(key);
     }
 
     @Override

@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck - VR module is scaffold-only; missing Prisma models and contract types
 /**
  * @doc.type service
  * @doc.purpose VR Asset management service with S3 integration

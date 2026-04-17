@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck - Mobile app is placeholder; not production-ready per audit findings
 /**
  * TutorPutor Mobile - SQLite Database
  *

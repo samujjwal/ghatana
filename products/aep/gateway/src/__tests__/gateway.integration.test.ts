@@ -41,11 +41,89 @@ describe('GET /health', () => {
     const body = res.json();
     expect(body.status).toBe('ok');
     expect(body.timestamp).toBeDefined();
+    expect(body.correlationId).toBeDefined();
+    expect(res.headers['x-correlation-id']).toBe(body.correlationId);
   });
 
   it('does not require authentication', async () => {
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.statusCode).toBe(200);
+  });
+
+  it('preserves an inbound correlation ID on health responses', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { 'x-correlation-id': 'corr-health-123' },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['x-correlation-id']).toBe('corr-health-123');
+    expect(res.json().correlationId).toBe('corr-health-123');
+  });
+});
+
+describe('GET /ready', () => {
+  let app: FastifyInstance;
+  let backend: ReturnType<typeof createServer>;
+  let backendUrl: string;
+  let lastReadyHeaders: Record<string, string | string[] | undefined> = {};
+
+  afterEach(async () => {
+    if (app) {
+      await app.close();
+    }
+    if (backend) {
+      await new Promise<void>((resolve) => { backend.close(() => resolve()); });
+    }
+  });
+
+  it('returns 200 when the backend health probe succeeds', async () => {
+    backend = createServer((req: IncomingMessage, res: ServerResponse) => {
+      lastReadyHeaders = req.headers as Record<string, string | string[] | undefined>;
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok' }));
+    });
+    await new Promise<void>((resolve) => { backend.listen(0, '127.0.0.1', resolve); });
+    const addr = backend.address() as AddressInfo;
+    backendUrl = `http://127.0.0.1:${addr.port}`;
+
+    app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl,
+      allowedOrigins: ['http://localhost:5173'],
+    });
+    await app.ready();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/ready',
+      headers: { 'x-correlation-id': 'corr-ready-123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['x-correlation-id']).toBe('corr-ready-123');
+    expect(res.json()).toMatchObject({
+      status: 'ready',
+      dependency: 'aep-backend',
+      correlationId: 'corr-ready-123',
+    });
+    expect(lastReadyHeaders['x-correlation-id']).toBe('corr-ready-123');
+  });
+
+  it('returns 503 when the backend health probe fails', async () => {
+    app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://127.0.0.1:1',
+      allowedOrigins: ['http://localhost:5173'],
+    });
+    await app.ready();
+
+    const res = await app.inject({ method: 'GET', url: '/ready' });
+
+    expect(res.statusCode).toBe(503);
+    expect(res.json().status).toBe('not-ready');
+    expect(res.json().dependency).toBe('aep-backend');
+    expect(res.headers['x-correlation-id']).toBeDefined();
   });
 });
 
@@ -153,6 +231,21 @@ describe('CORS', () => {
     expect(String(allowedHeaders).toLowerCase()).toContain('x-tenant-id');
   });
 
+  it('includes X-Correlation-ID in allowed headers', async () => {
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/health',
+      headers: {
+        origin: 'http://allowed-origin.example.com',
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': 'X-Correlation-ID',
+      },
+    });
+    const allowedHeaders = res.headers['access-control-allow-headers'];
+    expect(allowedHeaders).toBeDefined();
+    expect(String(allowedHeaders).toLowerCase()).toContain('x-correlation-id');
+  });
+
   it('rejects disallowed origin', async () => {
     const res = await app.inject({
       method: 'OPTIONS',
@@ -227,6 +320,18 @@ describe('HTTP Reverse Proxy', () => {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(lastRequest.headers['authorization']).toBe(`Bearer ${token}`);
+  });
+
+  it('forwards X-Correlation-ID header to backend', async () => {
+    await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: {
+        authorization: `Bearer ${validToken()}`,
+        'x-correlation-id': 'corr-proxy-789',
+      },
+    });
+    expect(lastRequest.headers['x-correlation-id']).toBe('corr-proxy-789');
   });
 
   it('forwards X-Tenant-Id header to backend', async () => {
@@ -348,12 +453,14 @@ describe('SSE /events/stream tenant handling', () => {
   let backend: ReturnType<typeof createServer>;
   let backendUrl: string;
   let lastSseRequestUrl: string;
+  let lastSseHeaders: Record<string, string | string[] | undefined>;
 
   beforeEach(async () => {
     backend = createServer((req: IncomingMessage, res: ServerResponse) => {
       lastSseRequestUrl = req.url ?? '';
+      lastSseHeaders = req.headers as Record<string, string | string[] | undefined>;
       res.writeHead(200, { 'content-type': 'text/event-stream' });
-      res.end('data: ok\\n\\n');
+      res.end('data: ok\n\n');
     });
     await new Promise<void>((resolve) => { backend.listen(0, '127.0.0.1', resolve); });
     const addr = backend.address() as AddressInfo;
@@ -394,5 +501,24 @@ describe('SSE /events/stream tenant handling', () => {
 
     expect(res.statusCode).toBe(200);
     expect(lastSseRequestUrl).toBe('/events/stream?tenantId=tenant-jwt');
+  });
+
+  it('forwards the event-stream payload and content type from the backend SSE contract', async () => {
+    const token = validToken({ tenantId: 'tenant-stream' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/events/stream',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'x-correlation-id': 'corr-sse-456',
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/event-stream');
+    expect(res.headers['x-correlation-id']).toBe('corr-sse-456');
+    expect(res.body).toBe('data: ok\n\n');
+    expect(lastSseRequestUrl).toBe('/events/stream?tenantId=tenant-stream');
+    expect(lastSseHeaders['x-correlation-id']).toBe('corr-sse-456');
   });
 });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Schema Registry - Central registry for Zod schemas with validation
  *

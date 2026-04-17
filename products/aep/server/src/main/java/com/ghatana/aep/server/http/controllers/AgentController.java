@@ -66,13 +66,11 @@ public class AgentController {
     public Promise<HttpResponse> handleListAgents(HttpRequest request) {
         String tenantId = HttpHelper.resolveTenantId(request);
         if (agentStore == null) {
-            return Promise.of(HttpHelper.jsonResponse(Map.of(
-                "tenantId", tenantId,
-                "agents", List.of(),
-                "count", 0,
-                "timestamp", Instant.now().toString(),
-                "note", "Agent store not configured — start with DC_SERVER_URL to enable agent registry"
-            )));
+            return Promise.of(HttpHelper.errorResponse(
+                503,
+                "Agent registry not available — DataCloudClient not configured",
+                Map.of("tenantId", tenantId)
+            ));
         }
         String limitParam = request.getQueryParameter("limit");
         int limit = limitParam != null ? Math.min(Integer.parseInt(limitParam), 1000) : 1000;

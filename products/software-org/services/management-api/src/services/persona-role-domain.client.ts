@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { loadServiceEnvironment } from '../config/service-env.js';
 import { MockPersonaRoleService } from './persona-role-mock.service.js';
 
 /**
@@ -79,8 +80,9 @@ export class PersonaRoleDomainClient {
     private client: AxiosInstance;
 
     constructor(baseUrl?: string) {
+        const serviceEnv = loadServiceEnvironment();
         this.client = axios.create({
-            baseURL: baseUrl || process.env.JAVA_API_BASE_URL || 'http://localhost:8080',
+            baseURL: baseUrl ?? serviceEnv.javaApiBaseUrl,
             timeout: 5000,
             headers: {
                 'Content-Type': 'application/json',
@@ -252,7 +254,7 @@ let _instance: PersonaRoleDomainClient | MockPersonaRoleService | null = null;
  */
 export function getPersonaRoleDomainClient(): PersonaRoleDomainClient | MockPersonaRoleService {
     if (!_instance) {
-        const useMock = process.env.JAVA_API_MOCK === 'true';
+        const useMock = loadServiceEnvironment().useJavaApiMock;
         _instance = useMock ? new MockPersonaRoleService() : new PersonaRoleDomainClient();
     }
     return _instance;

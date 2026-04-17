@@ -81,6 +81,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 /**
@@ -608,14 +610,43 @@ public class AepHttpServer {
      */
     public void stop() {
         sseController.shutdown();
-        if (server != null) {
+        if (eventloop != null) {
+            CountDownLatch shutdownLatch = new CountDownLatch(1);
+            eventloop.execute(() -> {
+                try {
+                    if (server != null) {
+                        server.close();
+                    }
+                } finally {
+                    eventloop.breakEventloop();
+                    shutdownLatch.countDown();
+                }
+            });
+            awaitShutdown(shutdownLatch);
+        } else if (server != null) {
             server.close();
         }
-        if (eventloop != null) {
-            eventloop.breakEventloop();
+        if (serverThread != null && serverThread != Thread.currentThread()) {
+            try {
+                serverThread.join(2_000);
+            } catch (InterruptedException interruptedException) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while waiting for AEP HTTP server thread to stop", interruptedException);
+            }
         }
-        
+
         log.info("AEP HTTP Server stopped");
+    }
+
+    private void awaitShutdown(CountDownLatch shutdownLatch) {
+        try {
+            if (!shutdownLatch.await(2, TimeUnit.SECONDS)) {
+                log.warn("Timed out waiting for AEP HTTP server shutdown to finish");
+            }
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting for AEP HTTP server shutdown", interruptedException);
+        }
     }
 
     // ==================== Info Endpoints ====================

@@ -55,6 +55,9 @@ class AepHttpServerAgentTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        System.setProperty("AEP_ENV", "test");
+        System.setProperty("AEP_AUTH_DISABLED", "true");
+        System.clearProperty("AEP_JWT_SECRET");
         engine = Aep.forTesting();
         mockDc = mock(DataCloudClient.class);
         mockEntityStore = mock(EntityStore.class);
@@ -67,24 +70,26 @@ class AepHttpServerAgentTest {
     void tearDown() {
         if (server != null) server.stop();
         if (engine != null) engine.close();
+        System.clearProperty("AEP_ENV");
+        System.clearProperty("AEP_AUTH_DISABLED");
+        System.clearProperty("AEP_JWT_SECRET");
     }
 
     // ==================== GET /api/v1/agents ====================
 
     @Test
-    @DisplayName("listAgents: no DataCloudClient → 200 with empty list and explanatory note")
-    void listAgents_whenDcNull_returns200WithEmptyListAndNote() throws Exception {
+    @DisplayName("listAgents: no DataCloudClient → 503 service unavailable")
+    void listAgents_whenDcNull_returns503() throws Exception {
         server = new AepHttpServer(engine, port);
         server.start();
         waitForServerReady(port);
 
         HttpResponse<String> resp = get("/api/v1/agents");
 
-        assertThat(resp.statusCode()).isEqualTo(200);
+        assertThat(resp.statusCode()).isEqualTo(503);
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body.get("count")).isEqualTo(0);
-        assertThat((List<?>) body.get("agents")).isEmpty();
-        assertThat(body.get("note").toString()).contains("Agent store not configured");
+        assertThat(body.get("error").toString()).contains("Agent registry not available");
+        assertThat(body.get("tenantId")).isNotNull();
     }
 
     @Test

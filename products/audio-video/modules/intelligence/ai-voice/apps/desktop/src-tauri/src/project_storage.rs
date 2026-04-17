@@ -19,6 +19,9 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use anyhow::{Context, Result};
 use serde_json;
+use speech_audio_rust::{write_wav, AudioBuffer};
+
+use crate::audio::load_wav_as_audio_buffer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AudioTrack {
@@ -248,22 +251,15 @@ impl ProjectStorage {
     ) -> Result<PathBuf> {
         let project = self.load_project(project_id)?;
 
-        // Create temporary directory for rendering
-        let temp_dir = std::env::temp_dir().join(format!("export_{}", project_id));
-        fs::create_dir_all(&temp_dir)?;
+        fs::create_dir_all(export_path)
+            .context("Failed to create export directory")?;
 
-        // TODO: Implement actual mixing/rendering
-        // For now, just copy the first track
-        if !project.tracks.is_empty() {
-            let first_track = &project.tracks[0];
-            if !first_track.audio_path.is_empty() {
-                let output_path = export_path.join(format!("{}.wav", project.name));
-                fs::copy(&first_track.audio_path, &output_path)?;
-                return Ok(output_path);
-            }
-        }
+        let mixdown = render_mixdown(&project)?;
+        let output_path = export_path.join(format!("{}.wav", project.name));
+        write_wav(&output_path, &mixdown)
+            .context("Failed to write rendered mixdown")?;
 
-        anyhow::bail!("No tracks to export")
+        Ok(output_path)
     }
 
     pub fn get_storage_size(&self) -> Result<u64> {
@@ -284,6 +280,114 @@ impl ProjectStorage {
         let total = dir_size(&self.storage_dir)?;
 
         Ok(total)
+    }
+}
+
+fn render_mixdown(project: &Project) -> Result<AudioBuffer> {
+    let active_tracks = collect_export_tracks(project)?;
+    if active_tracks.is_empty() {
+        anyhow::bail!("No active tracks to export")
+    }
+
+    let mut rendered_tracks: Vec<AudioBuffer> = Vec::with_capacity(active_tracks.len());
+    let mut reference_config = None;
+
+    for track in active_tracks {
+        let mut buffer = load_wav_as_audio_buffer(&track.audio_path)
+            .with_context(|| format!("Failed to load track '{}' for export", track.name))?;
+
+        match reference_config {
+            None => reference_config = Some(buffer.config),
+            Some(config) if config != buffer.config => {
+                anyhow::bail!(
+                    "Track '{}' has sample rate/channels {:?}, expected {:?}",
+                    track.name,
+                    buffer.config,
+                    config
+                )
+            }
+            _ => {}
+        }
+
+        apply_track_gain(&mut buffer, track.volume);
+        let shifted = apply_track_offset(buffer, track.start_time.max(0.0));
+        rendered_tracks.push(shifted);
+    }
+
+    let config = reference_config.context("No reference audio configuration available")?;
+    let max_samples = rendered_tracks
+        .iter()
+        .map(|buffer| buffer.samples.len())
+        .max()
+        .unwrap_or(0);
+    let mut mixed = vec![0.0f32; max_samples];
+
+    for buffer in &rendered_tracks {
+        for (index, sample) in buffer.samples.iter().copied().enumerate() {
+            mixed[index] += sample;
+        }
+    }
+
+    normalize_samples(&mut mixed);
+
+    Ok(AudioBuffer::new(mixed, config))
+}
+
+fn collect_export_tracks(project: &Project) -> Result<Vec<&AudioTrack>> {
+    let soloed_tracks: Vec<&AudioTrack> = project
+        .tracks
+        .iter()
+        .filter(|track| track.solo && !track.muted && !track.audio_path.is_empty())
+        .collect();
+    let candidate_tracks = if soloed_tracks.is_empty() {
+        project
+            .tracks
+            .iter()
+            .filter(|track| !track.muted && !track.audio_path.is_empty())
+            .collect()
+    } else {
+        soloed_tracks
+    };
+
+    for track in &candidate_tracks {
+        let path = Path::new(&track.audio_path);
+        if !path.exists() {
+            anyhow::bail!("Track '{}' references missing audio file '{}'.", track.name, track.audio_path)
+        }
+    }
+
+    Ok(candidate_tracks)
+}
+
+fn apply_track_gain(buffer: &mut AudioBuffer, volume: f32) {
+    let gain = volume.max(0.0);
+    for sample in &mut buffer.samples {
+        *sample *= gain;
+    }
+}
+
+fn apply_track_offset(buffer: AudioBuffer, start_time_seconds: f64) -> AudioBuffer {
+    let channels = buffer.config.channels.max(1) as usize;
+    let offset_frames = (start_time_seconds * buffer.config.sample_rate as f64).round() as usize;
+    let offset_samples = offset_frames.saturating_mul(channels);
+    if offset_samples == 0 {
+        return buffer;
+    }
+
+    let mut shifted = vec![0.0f32; offset_samples + buffer.samples.len()];
+    shifted[offset_samples..].copy_from_slice(&buffer.samples);
+    AudioBuffer::new(shifted, buffer.config)
+}
+
+fn normalize_samples(samples: &mut [f32]) {
+    let peak = samples
+        .iter()
+        .copied()
+        .fold(0.0f32, |max_peak, sample| max_peak.max(sample.abs()));
+    if peak > 1.0 {
+        for sample in samples {
+            *sample /= peak;
+        }
     }
 }
 
@@ -364,7 +468,27 @@ pub async fn export_project(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hound::{SampleFormat, WavReader, WavSpec, WavWriter};
     use tempfile::TempDir;
+
+    fn write_test_wav(path: &Path, samples: &[f32], sample_rate: u32) {
+        let spec = WavSpec {
+            channels: 1,
+            sample_rate,
+            bits_per_sample: 32,
+            sample_format: SampleFormat::Float,
+        };
+        let mut writer = WavWriter::create(path, spec).unwrap();
+        for sample in samples {
+            writer.write_sample(*sample).unwrap();
+        }
+        writer.finalize().unwrap();
+    }
+
+    fn read_test_wav(path: &Path) -> Vec<f32> {
+        let mut reader = WavReader::open(path).unwrap();
+        reader.samples::<f32>().map(|sample| sample.unwrap()).collect()
+    }
 
     #[test]
     fn test_create_project() {
@@ -427,6 +551,104 @@ mod tests {
 
         let projects = storage.list_projects().unwrap();
         assert_eq!(projects.len(), 0);
+    }
+
+    #[test]
+    fn test_export_project_renders_mixdown_with_offsets_and_volume() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = ProjectStorage::new(temp_dir.path().join("storage")).unwrap();
+        let source_dir = temp_dir.path().join("sources");
+        fs::create_dir_all(&source_dir).unwrap();
+
+        let track_one_path = source_dir.join("track1.wav");
+        let track_two_path = source_dir.join("track2.wav");
+        write_test_wav(&track_one_path, &[0.5, 0.5], 1);
+        write_test_wav(&track_two_path, &[1.0, 1.0], 1);
+
+        let mut project = Project::new("Mixdown".to_string());
+        project.add_track(AudioTrack {
+            id: "track1".to_string(),
+            name: "Track 1".to_string(),
+            audio_path: track_one_path.to_string_lossy().to_string(),
+            volume: 1.0,
+            pan: 0.0,
+            muted: false,
+            solo: false,
+            color: "#ff0000".to_string(),
+            effects: Vec::new(),
+            start_time: 0.0,
+            duration: 2.0,
+        });
+        project.add_track(AudioTrack {
+            id: "track2".to_string(),
+            name: "Track 2".to_string(),
+            audio_path: track_two_path.to_string_lossy().to_string(),
+            volume: 0.5,
+            pan: 0.0,
+            muted: false,
+            solo: false,
+            color: "#00ff00".to_string(),
+            effects: Vec::new(),
+            start_time: 1.0,
+            duration: 2.0,
+        });
+
+        storage.save_project(&project).unwrap();
+
+        let export_dir = temp_dir.path().join("export");
+        let output = storage.export_project(&project.id, &export_dir).unwrap();
+        let samples = read_test_wav(&output);
+
+        assert_eq!(samples, vec![0.5, 1.0, 0.5]);
+    }
+
+    #[test]
+    fn test_export_project_honors_solo_tracks() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = ProjectStorage::new(temp_dir.path().join("storage")).unwrap();
+        let source_dir = temp_dir.path().join("sources");
+        fs::create_dir_all(&source_dir).unwrap();
+
+        let muted_out_path = source_dir.join("ignored.wav");
+        let solo_path = source_dir.join("solo.wav");
+        write_test_wav(&muted_out_path, &[0.25, 0.25], 1);
+        write_test_wav(&solo_path, &[0.8, 0.4], 1);
+
+        let mut project = Project::new("Solo".to_string());
+        project.add_track(AudioTrack {
+            id: "track1".to_string(),
+            name: "Ignored".to_string(),
+            audio_path: muted_out_path.to_string_lossy().to_string(),
+            volume: 1.0,
+            pan: 0.0,
+            muted: false,
+            solo: false,
+            color: "#ff0000".to_string(),
+            effects: Vec::new(),
+            start_time: 0.0,
+            duration: 2.0,
+        });
+        project.add_track(AudioTrack {
+            id: "track2".to_string(),
+            name: "Solo".to_string(),
+            audio_path: solo_path.to_string_lossy().to_string(),
+            volume: 1.0,
+            pan: 0.0,
+            muted: false,
+            solo: true,
+            color: "#00ff00".to_string(),
+            effects: Vec::new(),
+            start_time: 0.0,
+            duration: 2.0,
+        });
+
+        storage.save_project(&project).unwrap();
+
+        let export_dir = temp_dir.path().join("export");
+        let output = storage.export_project(&project.id, &export_dir).unwrap();
+        let samples = read_test_wav(&output);
+
+        assert_eq!(samples, vec![0.8, 0.4]);
     }
 }
 

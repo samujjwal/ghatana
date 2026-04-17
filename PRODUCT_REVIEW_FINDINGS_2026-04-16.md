@@ -11,7 +11,7 @@
 - [products/data-cloud/RE_AUDIT_REPORT_2026-04-14.md](products/data-cloud/RE_AUDIT_REPORT_2026-04-14.md)
 - [products/audio-video/INFRASTRUCTURE_AUDIT_REPORT.md](products/audio-video/INFRASTRUCTURE_AUDIT_REPORT.md)
 
-> **Bottom line:** All four products are **NOT production-ready**. YAPPC has the most narrative ambition but the most internal contradiction (vision claims vs. type-safety/architecture violations). AEP, the keystone for cross-product agent execution, has a registry that *appears* live but routes to a `PlaceholderAgent` that throws on execute. Data-Cloud auth is **off by default**, query/filter logic returns empty/true, and governance is in-memory simulation. Audio-Video's flagship Vision and TTS services are explicit stubs (`UNIMPLEMENTED` / hash-seeded random). Cross-product integration claims are largely unsubstantiated outside the AEP↔Data-Cloud edge.
+> **Bottom line:** All four products are **NOT production-ready**. YAPPC still has the widest gap between architectural ambition and implementation rigor because strict TypeScript and repo-shape cleanup remain incomplete. AEP's registry surface is live, but manifest-only registrations are still discovery-only rather than real executable agent bindings. Data-Cloud has hardened several previously critical paths, but durable-store truthfulness and contract drift remain unresolved. Audio-Video still ships a fake Vision engine and a deceptive desktop mixdown path. Cross-product integration claims are largely unsubstantiated outside the AEP↔Data-Cloud edge.
 
 ---
 
@@ -30,29 +30,24 @@
 
 ### What improved since the last audits
 - **YAPPC:** Removed `dev-key`/`change-me-in-production` defaults; `default-tenant` silent fallback now throws `SecurityException` in `AgentStateRepository`, `DataCloudArtifactStore`, `ConversationRepository`, `PromptVersioningService`; runtime port aligned to 8082 across [Dockerfile](products/yappc/Dockerfile) and [kubernetes/base/yappc-deployment.yaml](products/yappc/deployment/kubernetes/base/yappc-deployment.yaml); auth split removed; `useVoiceCommands` deprecated.
-- **Data-Cloud:** Content-type middleware no longer 415s bodyless POSTs ([DataCloudHttpServer.java#L124](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java#L124)); gRPC tenant strict-rejects ([EventLogGrpcService.java#L173-L176](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/grpc/EventLogGrpcService.java#L173)); built tests passing.
-- **AEP:** `/api/v1/agents` registry endpoints exist and are tenant-scoped; security filter chain wired (JWT + sessions); UI pages present.
-- **Audio-Video:** Rust `speech-audio-rust` crate is genuinely production-grade (no `unsafe`, real Symphonia decode, mix, resample, slice). Persistence test coverage added.
+- **Data-Cloud:** Content-type middleware no longer 415s bodyless POSTs ([DataCloudHttpServer.java#L124](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java#L124)); non-embedded profiles now fail fast when `DATACLOUD_API_KEYS` is absent or blank ([DataCloudHttpLauncherBootstrap.java#L229-L259](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L229)); active HTTP handlers now use strict tenant resolution instead of silently defaulting; query execution and lakehouse filtering both route through real evaluators; purge-token operations now require a configured durable secret outside local/embedded profiles; PII hashing/tokenization no longer use placeholder `hashCode()` output.
+- **AEP:** `/api/v1/agents` now returns `503` when registry storage is unavailable instead of a false-empty success; manifest-only gRPC registrations are explicitly marked non-executable and rejected by the orchestrator execution path instead of failing via `UnsupportedOperationException`; security filter chain wired (JWT + sessions); UI pages present.
+- **Audio-Video:** persistent TTS synthesis and streaming paths are now implemented with tenant enforcement; persistent STT/TTS wrappers no longer silently fall back to a default tenant; `TranscriptionJobConsumer` now deserializes jobs through Jackson instead of throwing the JSON placeholder exception; Rust `speech-audio-rust` crate is genuinely production-grade (no `unsafe`, real Symphonia decode, mix, resample, slice). Persistence test coverage added.
 
 ### What is still open (top cross-cutting blockers)
-1. **AEP `PlaceholderAgent` throws `UnsupportedOperationException` on `process()`** — agents registered through gRPC cannot execute. [AepGrpcServer.java#L297-L300](products/aep/server/src/main/java/com/ghatana/aep/server/grpc/AepGrpcServer.java#L297).
-2. **AEP `/api/v1/agents` silently returns `[]` when Data-Cloud not configured** — false-empty registry. [AgentController.java#L68-L72](products/aep/server/src/main/java/com/ghatana/aep/server/http/controllers/AgentController.java#L68).
-3. **Data-Cloud auth disabled by default** — `buildApiKeyResolver` returns `null` when `DATACLOUD_API_KEYS` blank, only logs a warning. [DataCloudHttpLauncherBootstrap.java#L229-L250](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L229).
-4. **Data-Cloud HTTP tenant fallback to `"default"`** while gRPC strict-rejects — silent cross-tenant exposure on the HTTP path. [HttpHandlerSupport.java#L275](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java#L275).
-5. **Data-Cloud query/filter primitives are stubs** — `AdvancedQueryBuilder` returns empty results; `LakehouseConnector` filter always passes. [AdvancedQueryBuilder.java#L279,355-356](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/application/query/AdvancedQueryBuilder.java#L279); [LakehouseConnector.java#L616,628-629](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/infrastructure/storage/LakehouseConnector.java#L616).
-6. **Data-Cloud governance (purge/PII redaction) is in-memory simulation** with random per-boot token secret. [DataLifecycleHandler.java#L115-L160](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java#L115); [PIIDetectionService.java#L352-L358](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/security/PIIDetectionService.java#L352).
-7. **AEP OpenAPI contract validation tasks commented out** — [contracts/build.gradle.kts#L50-L60](products/aep/contracts/build.gradle.kts#L50). No compile-time contract enforcement; agent metadata typed as `Map<String, Object>`.
-8. **AEP no OpenTelemetry tracing, no propagated correlation IDs across services** — violates §19 of `.github/copilot-instructions.md`.
-9. **Audio-Video `VisionModelEngine` is a hash-seeded stub** for object detection and OCR; the test even self-documents it: *"Validate structural correctness (not exact label match — engine is a stub)"*. [VisionModelEngine.java#L60,L102-L103](products/audio-video/modules/vision/vision-service/src/main/java/com/ghatana/vision/engine/VisionModelEngine.java#L60); [DetectionAccuracyTest.java#L49](products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/vision/quality/DetectionAccuracyTest.java#L49).
-10. **Audio-Video TTS service returns `Status.UNIMPLEMENTED`** for synthesis. [PersistentTtsGrpcService.java#L114](products/audio-video/modules/speech/tts-service/src/main/java/com/ghatana/tts/grpc/PersistentTtsGrpcService.java#L114).
-11. **YAPPC: 30+ frontend files carry `@ts-nocheck`**, violating §7 and §26 (strict typing at implementation time). Examples: [PublicLayout.tsx#L1](products/yappc/frontend/web/src/layouts/PublicLayout.tsx#L1), [AppLayout.tsx#L1](products/yappc/frontend/web/src/layouts/AppLayout.tsx#L1), [UnifiedProjectDashboard.tsx#L1](products/yappc/frontend/web/src/pages/dashboard/UnifiedProjectDashboard.tsx#L1), [SecurityDashboardPage.tsx#L8](products/yappc/frontend/web/src/pages/security/SecurityDashboardPage.tsx#L8).
-12. **YAPPC: `DataCloudArtifactStore` bypasses the `YappcDataCloudRepository` adapter**, importing `DataCloudClient` directly — inconsistent with the same product's `ConversationRepository` and `PromptVersioningService` patterns. [DataCloudArtifactStore.java#L8,L47,L137-L143](products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/DataCloudArtifactStore.java#L8).
-13. **YAPPC: duplicate agent trees** (`core/agents/` vs `core/yappc-agents/`) and **duplicate web app** (`frontend/apps/web` only `DEPRECATED.md`'d, not removed) — repo drift and confusion.
-14. **AEP→Data-Cloud is the only verified cross-product link.** YAPPC, Virtual-Org, App-Platform claims of consuming AEP are unsubstantiated by imports.
-15. **Audio-Video `TranscriptionJobConsumer` throws `UnsupportedOperationException("JSON parsing not implemented")`** in a production messaging path. [TranscriptionJobConsumer.java#L150](products/audio-video/modules/infrastructure/messaging/src/main/java/com/ghatana/audio/video/infrastructure/messaging/TranscriptionJobConsumer.java#L150).
+1. **AEP manifest-only registrations are still discovery-only, not executable end-to-end agent bindings.** The failure mode is now explicit instead of throwing from `PlaceholderAgent`, but the registry still does not transparently bind external registrations to a real execution path.
+2. **AEP OpenAPI contract validation tasks remain commented out** — [contracts/build.gradle.kts#L50-L60](products/aep/contracts/build.gradle.kts#L50). No compile-time contract enforcement; agent metadata typed as `Map<String, Object>`.
+3. **AEP no OpenTelemetry tracing, no propagated correlation IDs across services** — violates §19 of `.github/copilot-instructions.md`.
+4. **Data-Cloud still has an in-memory entity-store fallback in core creation paths** — [DataCloud.java#L50](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/DataCloud.java#L50). Missing durable-store configuration can still degrade into non-persistent behavior.
+5. **Data-Cloud frontend/backend route and contract drift remain open** — UI, docs, and OpenAPI still disagree on `/collections` vs `/entities` style surfaces.
+6. **Audio-Video `VisionModelEngine` is a hash-seeded stub** for object detection and OCR; the test even self-documents it: *"Validate structural correctness (not exact label match — engine is a stub)"*. [VisionModelEngine.java#L60,L102-L103](products/audio-video/modules/vision/vision-service/src/main/java/com/ghatana/vision/engine/VisionModelEngine.java#L60); [DetectionAccuracyTest.java#L49](products/audio-video/modules/vision/vision-service/src/test/java/com/ghatana/vision/quality/DetectionAccuracyTest.java#L49).
+7. **YAPPC: 30+ frontend files still carry `@ts-nocheck` debt** even after low-risk shell/setup cleanup, violating §7 and §26 (strict typing at implementation time).
+8. **YAPPC: duplicate agent trees** (`core/agents/` vs `core/yappc-agents/`) and **duplicate web app** (`frontend/apps/web` only `DEPRECATED.md`'d, not removed) — repo drift and confusion.
+9. **AEP→Data-Cloud is the only verified cross-product link.** YAPPC, Virtual-Org, App-Platform claims of consuming AEP are unsubstantiated by imports.
+10. **Audio-Video desktop export mixdown still copies only the first track** — [project_storage.rs#L255](products/audio-video/modules/intelligence/ai-voice/apps/desktop/src-tauri/src/project_storage.rs#L255).
 
 ### What regressed
-- None of the audited products show explicit functional regression vs. the prior baselines, but the gap between **claimed status** and **code reality** has widened in three areas: (a) AEP "central registry complete" while execution path is a placeholder; (b) Data-Cloud "RE-AUDIT remediation snapshot" still shows ~10/13 critical findings unresolved; (c) YAPPC "AI-Native Maturity 3/10" per its own [YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md](products/yappc/docs/YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md) contradicts marketing posture in [README.md](products/yappc/README.md).
+- None of the audited products show explicit functional regression vs. the prior baselines, but the gap between **claimed status** and **code reality** remains material in three areas: (a) AEP "central registry complete" while manifest-only registrations are still not executable end-to-end; (b) Data-Cloud marketing/readiness language still outpaces durable-store and contract truth; (c) YAPPC "AI-Native Maturity 3/10" per its own [YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md](products/yappc/docs/YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md) contradicts marketing posture in [README.md](products/yappc/README.md).
 
 ---
 
@@ -69,17 +64,17 @@
 | Knowledge-graph reasoning | Developer | Semantic codebase Q&A | Differentiator (claimed moat) | [core/knowledge-graph](products/yappc/core/knowledge-graph) module | No visible accuracy benchmark or reasoning test | **Weakly justified** |
 | Real-time collaborative canvas | Team | Multi-user design surface | Stickiness | Canvas decomposed into `_canvas/` modules ✓; `RealTimeService` claimed to be Redis-backed (per prior audit) | Redis-backed claim not re-verified in code; collaboration room durability not tested | **Claimed but not implemented (verified)** |
 | Voice commands | Developer | Hands-free workflow control | Differentiator (claimed) | Hook deprecated; throws "Voice commands not available" | Marketing material may still imply availability | **Implemented as removed** |
-| Multi-tenant project isolation | Tenant admin | Strong tenant isolation | Compliance / SaaS requirement | TenantContext set per request; tests assert `default-tenant` rejection (`SecurityHardeningTest`, `SecurityAuditLoggerTest`) | One repo (`DataCloudArtifactStore`) bypasses adapter — risk of inconsistent tenant enforcement | **Supported but fragile** |
+| Multi-tenant project isolation | Tenant admin | Strong tenant isolation | Compliance / SaaS requirement | TenantContext set per request; tests assert `default-tenant` rejection (`SecurityHardeningTest`, `SecurityAuditLoggerTest`) | Broader end-to-end tenancy proof still needed across duplicate trees and remaining `@ts-nocheck` surfaces | **Supported but fragile** |
 
 ### 2.2 AEP — central agent execution & event-cloud platform
 
 | Use case | User | Problem | Implementation evidence | Missing pieces | Verdict |
 |---|---|---|---|---|---|
-| Central agent registry per §18 | All product teams | One canonical agent index | `/api/v1/agents`, `/api/v1/agents/:agentId`, `/api/v1/agents/:agentId/execute` wired in [AepHttpServer.java#L485-L494](products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java#L485) | Backed by Data-Cloud; null-safe falls back to empty list — silent failure | **Implemented but solving the wrong problem (registry pretends to work without backing store)** |
-| Execute typed agent | Product caller | Run agent with input → output | gRPC registers `PlaceholderAgent` whose `process()` throws `UnsupportedOperationException` ([AepGrpcServer.java#L169-L175,L297-L300](products/aep/server/src/main/java/com/ghatana/aep/server/grpc/AepGrpcServer.java#L169)) | Real execution split to separate `AgentExecutionService` in `orchestrator/`, integration unclear | **Claimed but not implemented end-to-end** |
+| Central agent registry per §18 | All product teams | One canonical agent index | `/api/v1/agents`, `/api/v1/agents/:agentId`, `/api/v1/agents/:agentId/execute` wired in [AepHttpServer.java#L485-L494](products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java#L485); missing registry storage now returns explicit `503` instead of fake-empty success | Backed by Data-Cloud and still dependent on that backing store | **Supported but fragile** |
+| Execute typed agent | Product caller | Run agent with input → output | Manifest-only registrations are now marked non-executable and rejected explicitly by orchestrator execution logic rather than failing inside `PlaceholderAgent` | Real execution split to separate `AgentExecutionService` in `orchestrator/`; registration-to-execution binding still incomplete | **Claimed but not implemented end-to-end** |
 | Event pipeline orchestration | Operator | Compose data-cloud event pipelines | `aep-engine`, `aep-event-cloud` modules + `EventCloudAgentStore`, `DataCloudPipelineStore` | All Data-Cloud I/O Mockito-mocked in tests — no real E2E | **Partially supported** |
 | Compliance (SOC2/GDPR/CCPA) | Compliance officer | Enforce data-handling rules | `AepComplianceService` exists | Mocked Data-Cloud in tests; real persistence flow not verified | **Weakly justified** |
-| Operator console (UI) | Platform operator | Inspect agents/pipelines/HITL | Rich React pages: `AgentRegistryPage.tsx`, `PipelineBuilderPage.tsx`, `HitlReviewPage.tsx`, `LearningPage.tsx` | Backend gap propagates: list shows `[]` if Data-Cloud absent | **Supported but fragile** |
+| Operator console (UI) | Platform operator | Inspect agents/pipelines/HITL | Rich React pages: `AgentRegistryPage.tsx`, `PipelineBuilderPage.tsx`, `HitlReviewPage.tsx`, `LearningPage.tsx` | Backend gap now surfaces as unavailable/error states, but full execution proof is still missing | **Supported but fragile** |
 
 ### 2.3 Data-Cloud — unified entity + event + AI context + governance fabric
 
@@ -87,9 +82,9 @@
 |---|---|---|---|---|---|
 | Entity CRUD per collection | App developer | Multi-tenant entity persistence | [EntityCrudHandler.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java) full flow | In-memory fallback when no plugin discovered ([DataCloud.java#L50](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/DataCloud.java#L50)) | **Supported but fragile** |
 | Event-log streaming | Service developer | Append + query events; subscribe | `platform-event` ready; event publisher pattern in `RegistryEventPublisher` (`stream = "agent-registry-events"`) | None critical | **Validated and fully supported** |
-| Federated/advanced queries | Analyst | Filter, project, aggregate across stores | `AdvancedQueryBuilder` returns empty; `LakehouseConnector` filter always passes | Real query parser/executor | **Misleadingly complete (returns success with empty/wrong data)** |
-| Governance: purge / redaction | DPO / compliance | GDPR right-to-erasure; PII redaction | `DataLifecycleHandler` purge token random per boot; `PIIDetectionService` "Simple placeholder hashing" | Durable token store; field-level redaction; audit log of governance ops | **Claimed but not implemented** |
-| API authentication | Operator | Block unauth callers | `DataCloudSecurityFilter` supports api-key/JWT but `buildApiKeyResolver` returns `null` if env not set | Fail-fast on missing keys in non-local profile | **Claimed but not enforced** |
+| Federated/advanced queries | Analyst | Filter, project, aggregate across stores | `AdvancedQueryBuilder` now executes against the runtime dataset and `LakehouseConnector` applies filter expressions through `QueryExpressionEvaluator` | Broader proof for complex query semantics and route-contract consistency | **Supported but fragile** |
+| Governance: purge / redaction | DPO / compliance | GDPR right-to-erasure; PII redaction | `DataLifecycleHandler` now requires a configured purge-token secret outside local/embedded profiles; `PIIDetectionService` uses SHA-256-based hashing/tokenization | Durable audit trail and broader lifecycle proof | **Supported but fragile** |
+| API authentication | Operator | Block unauth callers | `DataCloudSecurityFilter` supports api-key/JWT and bootstrap now fails fast in non-embedded profiles when API keys are missing/blank | JWT/provider posture still varies by deployment mode | **Supported but profile-sensitive** |
 | Cross-product event delivery | AEP | Push events across products | `RegistryEventPublisher` → `agent-registry-events` stream; AEP `EventCloudAgentStore` consumes | Tests mock the boundary | **Supported but fragile** |
 | AI assist | Internal user | Suggest entities/queries | LLM optional; falls back to heuristics with metric `AiRecommendationMetrics.fallback` | Documented degradation but UI does not surface "stub mode" | **Supported but fragile** |
 
@@ -98,11 +93,11 @@
 | Use case | User | Problem | Evidence | Missing pieces | Verdict |
 |---|---|---|---|---|---|
 | Speech-to-Text (STT) | Voice app dev | Transcribe audio | [SttGrpcService.java](products/audio-video/modules/speech/stt-service/src/main/java/com/ghatana/stt/grpc/SttGrpcService.java) with `INVALID_ARGUMENT` boundary checks, configurable concurrency, structured logging | Real test inputs not used; only mocked engine output | **Supported but fragile** |
-| Text-to-Speech (TTS) | Voice app dev | Synthesize speech | `PersistentTtsGrpcService.synthesize` returns `Status.UNIMPLEMENTED` | Whole synthesis path | **Claimed but not implemented** |
+| Text-to-Speech (TTS) | Voice app dev | Synthesize speech | `PersistentTtsGrpcService` now implements persisted unary synthesis and delegates streaming synthesis to the base `TtsGrpcService`, with tenant enforcement in both paths | Real voice/model accuracy and broader fixture coverage | **Supported but fragile** |
 | Vision (object detection / OCR / face) | Media app dev | Analyze images | `VisionModelEngine` returns hash-seeded random labels and `"Extracted text from image (N bytes)"` OCR text | Real model integration (YOLO/Tesseract/etc.) | **Claimed but not implemented** |
 | Multimodal fusion | App dev | Cross-modal analysis | `multimodal-service` defines `AudioTranscriptionAgent` (REACTIVE) and `MultimodalAnalysisAgent` (COMPOSITE) per AEP framework | Underlying engines stubbed; fusion is over fake outputs | **Misleadingly complete** |
 | Desktop audio recording / mixing | Creator | Record + mix tracks | Tauri app present; Rust `speech-audio-rust` real | `project_storage.rs` export only **copies first track**, comment: `// TODO: Implement actual mixing/rendering` | **Misleadingly complete** |
-| Async transcription jobs | Backend dev | Consume jobs from queue | `TranscriptionJobConsumer` receives messages but `throw new UnsupportedOperationException("JSON parsing not implemented - use Jackson ObjectMapper")` | Replace manual JSON with `ObjectMapper` | **Claimed but not implemented** |
+| Async transcription jobs | Backend dev | Consume jobs from queue | `TranscriptionJobConsumer` now deserializes job payloads through Jackson `ObjectMapper` and surfaces malformed-message errors explicitly | Broader queue fixture coverage | **Supported but fragile** |
 
 ---
 
@@ -121,7 +116,7 @@
 | Fake voice capability | P1 | UX | `useVoiceCommands` deprecated, throws on use | Resolved | Yes |
 | Collaboration in-memory only | P1 | Realtime | "Redis-backed" claimed in docs; not re-verified in code | Partial / Unclear | No (Unverified) |
 | Duplicate web apps | P1 | Repo hygiene | `frontend/apps/web` still present with only `DEPRECATED.md` | Partial | No |
-| Core modules bypass DC adapter | P1 | Architecture | `ConversationRepository`/`PromptVersioningService` use `YappcDataCloudRepository` ✓; `DataCloudArtifactStore` still uses `DataCloudClient` directly | Partial | No (one offender) |
+| Core modules bypass DC adapter | P1 | Architecture | `ConversationRepository`/`PromptVersioningService` use `YappcDataCloudRepository` ✓; `DataCloudArtifactStore` now also uses repository-backed infrastructure entities and mapper seam | Resolved | Yes |
 | Duplicate agent trees | P2 | Repo hygiene | `core/agents` AND `core/yappc-agents` both exist | Unresolved | No |
 | 833-line canvas route | P2 | Frontend | Decomposed under `_canvas/` modules | Resolved | Yes |
 | Strict TypeScript adoption | (implicit, §7/§26) | Code quality | 30+ files `@ts-nocheck` | Regressed/Unaddressed | No |
@@ -131,14 +126,14 @@
 | # | Finding | Prior status | Current verification | Status | Root cause fixed? |
 |---|---|---|---|---|---|
 | 1 | In-memory fallback in `DataCloud.create()` | Open | [DataCloud.java#L50](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/DataCloud.java#L50) → `InMemoryEntityStore` fallback; feature-store ingest also warns and uses in-memory | Open | No |
-| 2 | Auth inactive by default | Open (fake closure) | [DataCloudHttpLauncherBootstrap.java#L229-L250](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L229) returns `null` resolver; security filter only attached if non-null | Open | No |
-| 3 | Tenant silent fallback to `"default"` (HTTP) | Partial | [HttpHandlerSupport.java#L275](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java#L275) still warns and returns `"default"`; gRPC strict-rejects ✓ | Partial | No (HTTP path) |
+| 2 | Auth inactive by default | Open (fake closure) | [DataCloudHttpLauncherBootstrap.java#L229-L259](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L229) now throws in non-embedded profiles when `DATACLOUD_API_KEYS` is absent or blank | Resolved | Yes |
+| 3 | Tenant silent fallback to `"default"` (HTTP) | Partial | `HttpHandlerSupport.requireTenantIdOrFail(...)` now returns `null` instead of applying a default tenant, and active handlers convert the missing tenant into `400` responses | Resolved | Yes |
 | 4 | Content-type middleware 415 on bodyless POST | Open | `BODYLESS_MUTATION_ROUTES` whitelist added in [DataCloudHttpServer.java#L124](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java#L124) | Resolved | Yes |
 | 5 | Frontend/backend route drift | Open | UI uses remapped entity routes; `/collections` vs `/entities` mismatch | Open | No |
 | 6 | Collections contract inconsistency | Open | Multiple sources of truth (UI, docs, OpenAPI) drift | Open | No |
 | 7 | Workflow execution stubbed | Partial | `WorkflowExecutionHandler` wired; UI consistency unverified | Partial | Partial |
 | 8 | Plugin lifecycle (no upgrade) | Open | `PluginInstallHandler` exists; dynamic upgrade still incomplete | Open | No |
-| 9 | Governance simulates outcomes | Open | `DataLifecycleHandler` purge token in-memory; PII "Simple placeholder hashing" | Open | No |
+| 9 | Governance simulates outcomes | Open | `DataLifecycleHandler` now requires `DATACLOUD_PURGE_TOKEN_SECRET` outside local/embedded profiles and `PIIDetectionService` uses SHA-256-based hashing/tokenization; broader governance lifecycle still lacks full durable/audited workflow proof | Partial | Partial |
 | 10 | Health/ready not dependency-truthful | Open | Subsystem `NOT_CONFIGURED` detail added; overall still optimistic | Partial | Partial |
 | 11 | AI assist stub fallback | Open | LLM-absent → heuristic stubs ([Bootstrap#L335](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L335)) | Open | No |
 | 12 | UI insights hardcoded | Open | UI trend cards static; backend insights routes likely shallow | Open | No |
@@ -146,14 +141,14 @@
 | 14 | Coverage gates weak (>50%) | Open | No 60%+ enforcement | Open | No |
 | 15 | Generated docs overstate readiness | Open | README "Ready" markers contradict simulated implementations | Open | No |
 
-**Closure rate: ~3/15 genuinely fixed (~20%).** ~9 prior-critical findings remain or are only cosmetically addressed.
+**Closure rate: ~5/15 genuinely fixed (~33%).** Several previously critical Data-Cloud items are now actually closed, but durable-store truthfulness, route-contract drift, and broader governance/runtime proof remain open.
 
 ### 3.3 AEP — no formal prior audit doc found; against §18 requirements
 
 | Requirement (§18) | Current evidence | Status |
 |---|---|---|
 | Central registry replaces per-product `/api/agents` | Endpoints wired in `AepHttpServer` | Partial — works only if Data-Cloud configured |
-| Agents implement `TypedAgent<I,O>` | `PlaceholderAgent` masquerades as `TypedAgent`, throws on `process()` | Failed |
+| Agents implement `TypedAgent<I,O>` | manifest-only registrations are now explicitly marked non-executable and rejected by `AgentExecutionService`, but registry registration still does not yield a real executable binding | Partial |
 | Tenant scoping via `HttpHelper.resolveTenantId(request)` | Present | Resolved |
 | OpenAPI / contract enforcement | Tasks commented out in [contracts/build.gradle.kts#L50-L60](products/aep/contracts/build.gradle.kts#L50) | Failed |
 | Observability: OTel tracing + correlation IDs (§19) | Not present | Failed |
@@ -165,8 +160,8 @@
 |---|---|---|---|
 | Async at wrong layer (Promise on repos) | High | `IMPLEMENTATION_PROGRESS.md` claims fix; not directly observed in code search | Claimed, unverified |
 | Missing soft delete | Medium | Claimed in progress doc; production evidence not located | Claimed, unverified |
-| Manual JSON serialization | Low | Still present — `TranscriptionJobConsumer:150` throws `UnsupportedOperationException` | Not fixed |
-| Vision/TTS engine completeness | (Implicit) | Vision = stub (hash-seeded random); TTS = `UNIMPLEMENTED` | Open |
+| Manual JSON serialization | Low | `TranscriptionJobConsumer` now deserializes via Jackson `ObjectMapper` and throws `IllegalArgumentException` only for malformed payloads | Resolved |
+| Vision/TTS engine completeness | (Implicit) | Vision = stub (hash-seeded random); TTS unary + streaming synthesis paths now implemented with persistence/tenant enforcement | Partial |
 
 ---
 
@@ -178,11 +173,11 @@
 | "Multi-agent orchestration moat" | YAPPC | [YAPPC_DEEP_AUDIT_REPORT_2026-04-15.md#L32](products/yappc/docs/YAPPC_DEEP_AUDIT_REPORT_2026-04-15.md#L32) | Real agents under `core/agents/code-specialists/*` (195 files) | Orchestration coordination (planning, retries, HITL) not deeply tested | Partial |
 | Real-time collaborative canvas | YAPPC | Marketing & docs | Canvas modular code present | Redis-backed `RealTimeService` not re-verified; presence/CRDT durability missing | Partial |
 | AI-Native Maturity | YAPPC | Public posture: high | Self-rating 3/10 in [YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md](products/yappc/docs/YAPPC_AI_NATIVE_FEATURE_ANALYSIS.md) | Real AI workflow integration | Misleadingly complete |
-| AEP "central operator catalog + pipeline execution" | AEP | [README.md](products/aep/README.md) | Registry endpoints exist; pipeline DTOs exist | Execution path is `PlaceholderAgent`; no real cross-product execution proof | Misleadingly complete |
+| AEP "central operator catalog + pipeline execution" | AEP | [README.md](products/aep/README.md) | Registry endpoints exist; pipeline DTOs exist; manifest-only registrations now fail explicitly instead of exploding inside a placeholder | No real cross-product execution proof; registry registration still not equivalent to executable binding | Misleadingly complete |
 | AEP cross-product integrations (YAPPC/Virtual-Org/App-Platform) | AEP | README | Only Data-Cloud integration verified by imports | Other consumer wiring | Claimed but not implemented |
-| Data-Cloud "Ready" features (entity, event, pipelines, agent memory, RAG, governance) | Data-Cloud | [README.md](products/data-cloud/README.md) | Entity/event/launcher real; query/governance/AI-assist simulated | Real query exec, durable governance, real PII redaction | Misleadingly complete |
+| Data-Cloud "Ready" features (entity, event, pipelines, agent memory, RAG, governance) | Data-Cloud | [README.md](products/data-cloud/README.md) | Entity/event/launcher real; several previously simulated auth/query/governance paths are now implemented | Durable-store truthfulness, route-contract alignment, and full governance auditability | Misleadingly complete |
 | "Context-Native Data Fabric" — first AI-native operational data fabric | Data-Cloud | [STRATEGIC_POSITIONING_2026-04-13.md](products/data-cloud/STRATEGIC_POSITIONING_2026-04-13.md) | Architecture is consistent with claim; runtime is not | Trust-grade governance, query, auth | Strategically sound, operationally unproven |
-| Audio-Video reference implementation, AEP-aligned | A/V | [OWNER.md](products/audio-video/OWNER.md) (8/10 boundary) | Boundary good; persistence + cache + messaging modules present; security/governance reused | Vision and TTS engines real; mixing real | Misleadingly complete |
+| Audio-Video reference implementation, AEP-aligned | A/V | [OWNER.md](products/audio-video/OWNER.md) (8/10 boundary) | Boundary good; persistence + cache + messaging modules present; security/governance reused; TTS and transcription-consumer paths are now real on the verified surfaces | Vision engine real; mixing real | Misleadingly complete |
 
 ---
 
@@ -192,14 +187,14 @@
 - **YAPPC:** No verified end-to-end "intent → generated repo" success run with assertions. Recommend a golden journey suite (one full lifecycle per supported language template).
 - **YAPPC:** Knowledge-graph claim lacks accuracy/recall benchmarks; this is a stated moat — must be defensible.
 - **AEP:** No demonstrable cross-product execution (YAPPC, Virtual-Org). At minimum, one product should be wired through AEP to prove the central-runtime story.
-- **Data-Cloud:** Real query execution and filter evaluation are missing in the very components advertised as the analytics foundation.
-- **Audio-Video:** Two of five named services (Vision, TTS) do not function. Either ship real engines or remove from the catalog.
+- **Data-Cloud:** Durable-store truthfulness and route-contract alignment still lag behind the analytics/governance story presented in docs and UI.
+- **Audio-Video:** Vision and desktop mixdown still misrepresent readiness. Either ship real engines/rendering or remove those surfaces from the catalog.
 
 ### 5.2 Correctness
-- **AEP:** `PlaceholderAgent.process()` must not be reachable from the public registry; either route to `AgentExecutionService` transparently or refuse registration when no real `TypedAgent` is bound.
-- **Data-Cloud:** Tenant fallback to `"default"` on the HTTP path must be removed (gRPC already does the right thing).
-- **Data-Cloud:** `AdvancedQueryBuilder` and `LakehouseConnector` filter evaluation must be implemented or marked unavailable.
-- **YAPPC:** `DataCloudArtifactStore` must use `YappcDataCloudRepository` like its peers.
+- **AEP:** manifest-only registrations must not appear executable unless they transparently bind to `AgentExecutionService`; otherwise refuse registration.
+- **Data-Cloud:** durable-store fallback in `DataCloud.create()` must be removed or fail closed in non-local profiles.
+- **Data-Cloud:** route and contract drift must be eliminated so UI, OpenAPI, and backend surfaces describe the same collection/entity model.
+- **Audio-Video:** `VisionModelEngine` must be replaced or removed from supported workflows.
 
 ### 5.3 Architecture
 - **YAPPC:** Consolidate `core/agents` and `core/yappc-agents`; delete `frontend/apps/web` after migration.
@@ -211,15 +206,15 @@
 - **YAPPC web app**: Resolve all `@ts-nocheck` files; this is also a UX-quality risk because runtime errors leak through.
 
 ### 5.5 Hardening
-- **Data-Cloud:** Make `DATACLOUD_API_KEYS` (or JWT provider) **mandatory** in non-local profiles — fail-fast.
-- **Data-Cloud:** Make `DATACLOUD_PURGE_TOKEN_SECRET` mandatory — never random per boot.
+- **Data-Cloud:** Keep `DATACLOUD_API_KEYS` (or JWT provider) **mandatory** in non-local profiles and extend the same truthfulness to all deployment paths.
+- **Data-Cloud:** Keep `DATACLOUD_PURGE_TOKEN_SECRET` mandatory outside local/embedded profiles and add durable governance audit proof.
 - **AEP:** Replace stub `DataSource` fallback in `AepCoreModule` with required configuration.
 - **Audio-Video:** Add backpressure modeling (gRPC flow control, queue depths, timeouts) on STT/TTS/Vision.
 
 ### 5.6 Data / integrations
 - **Data-Cloud:** Single source of truth for routes (OpenAPI → SDK → UI). Remove drift.
 - **AEP:** Restore OpenAPI contract validation (the tasks are commented out in `contracts/build.gradle.kts`).
-- **A/V:** Fix `TranscriptionJobConsumer` JSON path with Jackson; today it crashes the consumer.
+- **A/V:** Add queue-backed integration coverage around `TranscriptionJobConsumer`; the JSON crash path is fixed, but real broker proof is still missing.
 
 ### 5.7 Testing / proof
 - **AEP:** Add a true end-to-end test that registers a real `TypedAgent` and executes via `/api/v1/agents/:id/execute` against a real Data-Cloud (not Mockito).
@@ -243,22 +238,12 @@
 
 | Location | Evidence | Why unacceptable | Risk | Required replacement |
 |---|---|---|---|---|
-| [products/aep/server/.../AepGrpcServer.java#L169-L175](products/aep/server/src/main/java/com/ghatana/aep/server/grpc/AepGrpcServer.java#L169) and [#L297-L300](products/aep/server/src/main/java/com/ghatana/aep/server/grpc/AepGrpcServer.java#L297) | `PlaceholderAgent` registered for every gRPC-bound agent; `process()` throws `UnsupportedOperationException` | Gives false impression that registration = executable agent | Production callers get runtime 5xx on every execute | Bind real `TypedAgent` adapter to `AgentExecutionService` or refuse registration |
-| [products/aep/server/.../AgentController.java#L68-L72](products/aep/server/src/main/java/com/ghatana/aep/server/http/controllers/AgentController.java#L68) | Returns `{"agents": [], "note": "Agent store not configured…"}` when Data-Cloud absent | Silent empty-success masks misconfiguration | Operators see "no agents" instead of "registry down" | Return 503 with explicit error |
+| [products/aep/server/.../AepGrpcServer.java#L169-L175](products/aep/server/src/main/java/com/ghatana/aep/server/grpc/AepGrpcServer.java#L169) plus orchestrator execution path | Manifest-only gRPC registrations are discoverable but still not backed by a real execution binding | Gives false impression that registration = executable agent | Registry and execution semantics remain split | Bind real `TypedAgent` adapter to `AgentExecutionService` or refuse registration |
 | [products/aep/server/.../AepCoreModule.java#L129](products/aep/server/src/main/java/com/ghatana/aep/di/AepCoreModule.java#L129) | "Fallback: use a minimal stub `DataSource` so in-memory impls still compile" | In-memory mode pretends to be persistent | Data loss; tests pass against stub | Required config; no stub in production paths |
 | [products/aep/contracts/build.gradle.kts#L50-L60](products/aep/contracts/build.gradle.kts#L50) | OpenAPI validation + codegen tasks commented out | No contract enforcement | Contract drift between server, SDKs, UI | Re-enable; CI gate |
-| [products/data-cloud/.../DataCloudHttpLauncherBootstrap.java#L229-L250](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java#L229) | Returns `null` resolver, only logs warning | Auth silently disabled | Public, unauthenticated production exposure | Fail startup in non-local |
-| [products/data-cloud/.../HttpHandlerSupport.java#L275](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/HttpHandlerSupport.java#L275) | Returns `"default"` tenant when missing on HTTP | Cross-tenant data exposure path | High | Match gRPC: reject with 400 |
-| [products/data-cloud/.../DataLifecycleHandler.java#L115-L125](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java#L115) | Random `PURGE_TOKEN_SECRET` per boot | Tokens invalid after restart; "purges" not durable | GDPR non-compliance | Mandatory env secret + durable token store |
-| [products/data-cloud/.../PIIDetectionService.java#L352-L358](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/security/PIIDetectionService.java#L352) | "Simple placeholder hashing" | Not real PII redaction | Compliance gap | Real field-level redaction with audit log |
-| [products/data-cloud/.../AdvancedQueryBuilder.java#L279,L355-L356](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/application/query/AdvancedQueryBuilder.java#L279) | Placeholder query exec returns empty | Analytics layer non-functional | Wrong customer outcomes | Real query execution |
-| [products/data-cloud/.../LakehouseConnector.java#L616,L628-L629](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/infrastructure/storage/LakehouseConnector.java#L616) | "filter always passes" | Returns wrong rows | Data integrity | Parse + apply filter |
 | [products/data-cloud/platform-launcher/.../DataCloud.java#L50](products/data-cloud/platform-launcher/src/main/java/com/ghatana/datacloud/DataCloud.java#L50) | `InMemoryEntityStore` fallback when no provider | Data loss on restart | High | Require provider in non-local |
 | [products/audio-video/.../VisionModelEngine.java#L60](products/audio-video/modules/vision/vision-service/src/main/java/com/ghatana/vision/engine/VisionModelEngine.java#L60), [#L102-L103](products/audio-video/modules/vision/vision-service/src/main/java/com/ghatana/vision/engine/VisionModelEngine.java#L102) | Hash-seeded random labels; OCR text = `"Extracted text from image (N bytes)"` | Pretends to be a real CV engine | Customers act on fake results | Real model integration or removal |
-| [products/audio-video/.../PersistentTtsGrpcService.java#L114](products/audio-video/modules/speech/tts-service/src/main/java/com/ghatana/tts/grpc/PersistentTtsGrpcService.java#L114) | `Status.UNIMPLEMENTED` for synthesis | Service catalog lies | High | Implement or remove |
-| [products/audio-video/.../TranscriptionJobConsumer.java#L150](products/audio-video/modules/infrastructure/messaging/src/main/java/com/ghatana/audio/video/infrastructure/messaging/TranscriptionJobConsumer.java#L150) | `throw new UnsupportedOperationException("JSON parsing not implemented - use Jackson ObjectMapper")` | Crashes consumer | Queue back-up | Use `ObjectMapper` |
 | [products/audio-video/.../project_storage.rs#L255](products/audio-video/modules/intelligence/ai-voice/apps/desktop/src-tauri/src/project_storage.rs#L255) | `// TODO: Implement actual mixing/rendering` — copies first track | Export feature deceptive | Customer trust | Real mixdown |
-| [products/yappc/.../DataCloudArtifactStore.java#L8,L47,L137-L143](products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/storage/DataCloudArtifactStore.java#L8) | Direct `DataCloudClient` import; bypasses `YappcDataCloudRepository` | Inconsistent tenancy/cache/observability across YAPPC repos | Medium-high | Refactor to adapter |
 | YAPPC frontend `@ts-nocheck` files (30+) | e.g., [PublicLayout.tsx#L1](products/yappc/frontend/web/src/layouts/PublicLayout.tsx#L1), [SecurityDashboardPage.tsx#L8](products/yappc/frontend/web/src/pages/security/SecurityDashboardPage.tsx#L8) | Violates §7/§26 | Latent runtime errors; lint shape | Type each properly |
 | YAPPC duplicate `frontend/apps/web` and `core/yappc-agents` | Trees still present | Repo drift | Confusion, maintenance | Delete after consolidation |
 | AEP test mocking — [DataCloudPipelineStoreTest.java#L35-L40](products/aep/server/src/test/java/com/ghatana/aep/server/store/DataCloudPipelineStoreTest.java#L35) | "Data-Cloud I/O is mocked via Mockito" — synchronous stubs | No true E2E proof of central registry | Misleading test count (2,613 `@Test`) | Add real E2E suite |
@@ -269,18 +254,11 @@
 
 | Workflow | Expected | Actual | Affected layers | Proof status | Severity | Required correction |
 |---|---|---|---|---|---|---|
-| AEP register agent → execute | Caller gets `Output` | `UnsupportedOperationException` from `PlaceholderAgent.process` | gRPC server → registry → execution | No real test | **Critical** | Bind real adapter or fail register |
-| AEP list agents (no Data-Cloud) | 503/clear error | `200` with `{agents: []}` | HTTP controller | None | High | Return 503 |
-| Data-Cloud HTTP entity write w/o tenant | 400/401 | Tenant becomes `"default"` (silent) | HTTP filter / handlers | None | **Critical** | Strict enforcement |
-| Data-Cloud advanced query | Filtered, projected results | Empty result set | Query builder | None | High | Real query exec |
-| Data-Cloud lakehouse filter | Predicate applied | Always passes | Connector | None | High | Real predicate eval |
-| Data-Cloud purge → recover after restart | Same token rejected post-purge | Token random per boot, post-restart all tokens invalid | Governance handler | None | High | Durable secret + tokens |
-| Data-Cloud PII redaction | Field-level redaction with audit | Placeholder hashing, no audit | Security service | None | High | Real implementation |
+| AEP register agent → execute | Registry registration yields an executable agent path | Manifest-only registrations remain discovery-only and are explicitly rejected rather than executed | gRPC server → registry → orchestrator | No real end-to-end proof | **Critical** | Bind real adapter or refuse registration entirely |
+| Data-Cloud boot without durable backing store | Fail closed or surface dependency truthfully | `DataCloud.create()` can still fall back to in-memory storage | bootstrap → storage core | No environment-level proof | High | Require durable provider in non-local |
+| Data-Cloud route contract | UI, OpenAPI, and backend agree on entity/collection routes | `/collections` vs `/entities` drift remains | UI + docs + backend | No unified contract gate | High | Single contract source of truth |
 | A/V Vision detect/classify | Real predictions | Hash-seeded random | Vision engine | Test self-admits stub | **Critical** | Real model |
-| A/V TTS synthesize | Audio out | `UNIMPLEMENTED` | TTS gRPC | None | **Critical** | Implement |
-| A/V transcription job consumed | Job processed | Consumer throws on JSON parse | Messaging | None | High | Jackson |
-| YAPPC artifact persistence | Tenant-scoped via adapter | Bypasses adapter, uses `DataCloudClient` directly | Storage | Indirect tests pass; pattern inconsistent | Medium-high | Refactor |
-| YAPPC frontend renders typed components | `tsc --noEmit` passes strict | 30+ files `@ts-nocheck` | Web app | Type checks bypassed | High | Remove suppressions |
+| YAPPC frontend renders typed components | `tsc --noEmit` passes strict | 30+ files `@ts-nocheck` still bypass type safety | Web app | Type checks bypassed | High | Remove suppressions |
 
 ---
 
@@ -291,9 +269,7 @@
 | AEP `AepCoreModule.java#L129` stub `DataSource` | In-memory pretends to persist | Data loss | Critical | Make persistence required |
 | AEP `/metrics` stub JSON when registry null ([AepHttpServer.java#L153](products/aep/server/src/main/java/com/ghatana/aep/server/http/AepHttpServer.java#L153)) | Operators see fake metrics | Wrong alerts/SLOs | High | Return 503 or omit |
 | AEP — no OTel tracing, no correlation ID propagation | Hard-to-diagnose distributed failures | Long MTTR | High | Implement per §19 |
-| Data-Cloud `DATACLOUD_API_KEYS` optional | Public access | Compromise | Critical | Mandatory in non-local |
-| Data-Cloud HTTP tenant fallback | Cross-tenant exposure | Compliance breach | Critical | Strict tenant |
-| Data-Cloud `PURGE_TOKEN_SECRET` random per-boot | Purges fail after restart | Compliance / data integrity | Critical | Mandatory env |
+| Data-Cloud in-memory entity-store fallback | Missing durable provider still degrades to non-persistent mode | Data loss / false green | Critical | Fail closed in non-local |
 | Data-Cloud health/ready optimistic | False green | Bad SLOs | High | Truthful 503 on missing deps |
 | Audio-Video — no flow control / queue limits / timeouts beyond gRPC defaults | Backpressure failures, OOM | Outage | High | Add explicit limits |
 | Audio-Video — distributed transaction boundaries unverified across cache/messaging/persistence | Inconsistent state | Data corruption | High | `@Transactional` + idempotency keys |
@@ -309,7 +285,7 @@
   - Phase action UX is legitimately wired to backend ([`PhaseActionService.ts`](products/yappc/frontend/web/src/services/canvas/phase-actions/PhaseActionService.ts#L1) → real controllers) — strong positive.
   - Voice UI surfaced to users should reflect deprecation explicitly.
 - **AEP**
-  - Pages (`AgentRegistryPage.tsx`, `PipelineBuilderPage.tsx`, `HitlReviewPage.tsx`, `LearningPage.tsx`) exist and tests are present, but rely on backends that may return empty or stub responses. UI does not surface "registry-not-configured" state.
+  - Pages (`AgentRegistryPage.tsx`, `PipelineBuilderPage.tsx`, `HitlReviewPage.tsx`, `LearningPage.tsx`) exist and tests are present, but still depend on partially proven backend execution paths. Error states are better than before, yet overall capability maturity is still overstated.
 - **Data-Cloud**
   - UI overstates backend (workflows execution surface, plugin marketplace, hardcoded insight cards). Routes drift between UI and launcher.
 - **Audio-Video**
@@ -337,7 +313,7 @@
 ### AEP — agent execution / orchestration
 - **Direct:** LangGraph (LangChain), CrewAI, Autogen, Inngest workflows, Temporal (general workflow), Prefect, Dapr workflows, Argo Workflows.
 - **Where they win:** real execution, deterministic workflow primitives (Temporal), open-source community.
-- **AEP whitespace:** central tenant-scoped registry + typed agents + event-cloud bridge with strong governance. **Only if** `PlaceholderAgent` is replaced with real execution.
+- **AEP whitespace:** central tenant-scoped registry + typed agents + event-cloud bridge with strong governance. **Only if** discovery-only registrations are replaced with a real executable binding.
 
 ### Data-Cloud — operational data fabric for AI
 - **Direct:** Snowflake (warehouse), Databricks (lakehouse), Confluent/Kafka (stream), Materialize, ClickHouse Cloud, Redpanda, Estuary, Tinybird, Pinot, Druid, Supabase, PlanetScale, MongoDB, Weaviate/Pinecone (vector).
@@ -375,12 +351,12 @@
 | YAPPC realtime room durability | Restart survival test | None | Restart test | Low | Add test |
 | AEP central registry execute | Real agent E2E | All Data-Cloud mocked | Real run | Low | Stand up real Data-Cloud + run typed agent |
 | AEP cross-product execution | YAPPC/Virtual-Org execute via AEP | Not present | Wiring + test | Very low | Add product-cross integration test |
-| Data-Cloud auth-disabled rejection | Test asserts non-local startup fails without keys | Not present | Test | Low | Add startup test |
-| Data-Cloud HTTP tenant strictness | 400 on missing tenant | Not present | Test | Low | Add request test |
+| Data-Cloud auth-disabled rejection | Test asserts non-local startup fails without keys | Verified in code path; focused regression test still limited | Stronger test coverage | Medium | Add startup/profile matrix test |
+| Data-Cloud HTTP tenant strictness | 400 on missing tenant | Verified in active handler flow; no dedicated shared regression suite | Dedicated request tests | Medium | Add request test |
 | Data-Cloud purge durability | Token survives restart | Not present | Test | Low | Add restart test |
 | Data-Cloud query/filter correctness | Result-equivalence with reference engine | Not present | Tests | Low | Reference test suite |
 | A/V Vision real detection | Accuracy on canonical images | Self-admitted stub | Real engine + tests | Very low | Choose engine; baseline accuracy |
-| A/V TTS synthesis | Output audio characteristics | None | Implementation + tests | Very low | Add |
+| A/V TTS synthesis | Output audio characteristics | Implementation exists; focused wrapper tests cover tenant/error behavior | Real fixture/audio-quality proof | Low | Add fixture-based synthesis tests |
 | A/V STT real audio | WAV/AAC transcription on canonical clips | Mocked | Real fixture tests | Low | Add |
 
 ---
@@ -389,26 +365,23 @@
 
 **YAPPC (primary)**
 1. 30+ `@ts-nocheck` files (§7/§26) — type-safety NRR.
-2. `DataCloudArtifactStore` adapter bypass.
-3. No verified end-to-end golden journey for any phase chain.
-4. Realtime room durability claim not re-verified.
+2. No verified end-to-end golden journey for any phase chain.
+3. Realtime room durability claim not re-verified.
+4. Duplicate agent trees / duplicate frontend app cleanup still incomplete.
 
 **AEP**
-5. `PlaceholderAgent.process()` failure path is reachable from public registry.
-6. `/api/v1/agents` returns silent empty list when Data-Cloud absent.
-7. OpenAPI contract validation disabled.
-8. No OTel tracing / correlation IDs.
+5. Manifest-only registrations are still not executable end-to-end.
+6. OpenAPI contract validation disabled.
+7. No OTel tracing / correlation IDs.
 
 **Data-Cloud**
-9. Auth disabled by default (env-optional).
-10. HTTP tenant fallback to `"default"`.
-11. Purge token random per-boot; PII redaction placeholder.
-12. `AdvancedQueryBuilder` and `LakehouseConnector` filter bypass.
-13. In-memory entity store fallback.
+8. In-memory entity store fallback.
+9. Frontend/backend route drift and collections contract inconsistency.
+10. AI assist and some UI insights still degrade into shallow behavior.
 
 **Audio-Video**
-14. Vision engine = hash-seeded stub; TTS = `UNIMPLEMENTED`; transcription consumer JSON path throws.
-15. Desktop "export mixdown" copies first track.
+11. Vision engine = hash-seeded stub.
+12. Desktop "export mixdown" copies first track.
 
 ---
 
@@ -417,17 +390,11 @@
 ### Phase 0 — Stop the bleeding (blockers + fake-completeness + correctness)
 | Item | Product | Why | Direction | Impact | Priority |
 |---|---|---|---|---|---|
-| Replace `PlaceholderAgent` with real adapter to `AgentExecutionService`; refuse register if no impl | AEP | Core promise broken | Bind real `TypedAgent` adapter | Restores executability | P0 |
-| Make `/api/v1/agents` 503 on missing Data-Cloud | AEP | Silent failure | Explicit error | Operator trust | P0 |
-| Fail startup if `DATACLOUD_API_KEYS`/JWT not configured in non-local | Data-Cloud | Public exposure | Required env | Closes auth gap | P0 |
-| HTTP strict tenant resolution (400 on missing) | Data-Cloud | Cross-tenant risk | Mirror gRPC behavior | Compliance | P0 |
-| Implement real `AdvancedQueryBuilder` and `LakehouseConnector` filter eval | Data-Cloud | Wrong results | Replace stubs | Correctness | P0 |
-| Required `DATACLOUD_PURGE_TOKEN_SECRET`; durable token store | Data-Cloud | GDPR | Required env + persistence | Compliance | P0 |
-| Replace placeholder PII redaction with real field-level redaction + audit | Data-Cloud | Compliance | Real implementation | Compliance | P0 |
+| Replace discovery-only registration with real executable binding, or refuse manifest-only register | AEP | Core promise broken | Bind real `TypedAgent` adapter | Restores executability | P0 |
+| Require durable provider instead of silent in-memory fallback | Data-Cloud | Data loss / false readiness | Fail closed in non-local | Correctness | P0 |
 | Remove all `@ts-nocheck` in `frontend/web/**` (30+) | YAPPC | §7/§26 NRR | Add proper types | Quality + safety | P0 |
-| Refactor `DataCloudArtifactStore` to use `YappcDataCloudRepository` | YAPPC | Architecture consistency | Adapter | Maintainability | P0 |
-| Implement TTS or remove from catalog; replace `VisionModelEngine` stub | Audio-Video | Service catalog lies | Real engine or removal | Trust | P0 |
-| Fix `TranscriptionJobConsumer` JSON path with Jackson | Audio-Video | Crash in production path | Use `ObjectMapper` | Stability | P0 |
+| Replace `VisionModelEngine` stub | Audio-Video | Service catalog lies | Real engine or removal | Trust | P0 |
+| Fix desktop mixdown/export to render all tracks | Audio-Video | Export feature deceptive | Real mix/render | Trust | P0 |
 
 ### Phase 1 — Hardening + proof + closure of prior critical findings
 | Item | Product | Direction | Priority |

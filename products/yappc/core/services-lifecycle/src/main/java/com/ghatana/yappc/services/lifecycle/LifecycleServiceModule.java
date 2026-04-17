@@ -34,8 +34,8 @@ import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
-import com.ghatana.yappc.storage.DataCloudArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.services.lifecycle.storage.YappcDataCloudArtifactStore;
 import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
@@ -285,9 +285,9 @@ public class LifecycleServiceModule extends AbstractModule {
     /**
      * Provides the durable {@link YappcArtifactRepository} backed by DataCloud.
      *
-     * <p>The {@link DataCloudArtifactStore} stores each artifact as a DataCloud entity
-     * in the {@code yappc-artifacts} collection, using {@link TenantContext} for
-     * multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
+    * <p>The infrastructure-side {@link YappcDataCloudArtifactStore} persists artifacts
+    * through the canonical YAPPC Data Cloud repository seam, using {@link TenantContext}
+    * for multi-tenant isolation. Survives service restarts (replaces InMemoryArtifactStore).
      *
      * @param client DataCloud SPI client
      * @return production-grade durable artifact repository
@@ -295,8 +295,8 @@ public class LifecycleServiceModule extends AbstractModule {
     @Provides
     YappcArtifactRepository artifactRepository(DataCloudClient client) {
         ObjectMapper mapper = new ObjectMapper();
-        logger.info("Creating YappcArtifactRepository backed by DataCloudArtifactStore");
-        return new YappcArtifactRepository(new DataCloudArtifactStore(client, mapper));
+        logger.info("Creating YappcArtifactRepository backed by YappcDataCloudArtifactStore");
+        return new YappcArtifactRepository(new YappcDataCloudArtifactStore(client, mapper));
     }
 
     /**

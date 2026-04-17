@@ -73,6 +73,30 @@ public final class HttpHelper {
     }
 
     /**
+     * Creates an error JSON response with additional payload fields.
+     */
+    public static HttpResponse errorResponse(int code, String message, Map<String, Object> fields) {
+        try {
+            java.util.LinkedHashMap<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("error", message);
+            payload.put("code", code);
+            payload.put("timestamp", Instant.now().toString());
+            if (fields != null) {
+                payload.putAll(fields);
+            }
+            String json = MAPPER.writeValueAsString(payload);
+            return HttpResponse.ofCode(code)
+                .withHeader(HttpHeaders.CONTENT_TYPE,
+                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("X-Content-Type-Options"), HttpHeaderValue.of("nosniff"))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return errorResponse(code, message);
+        }
+    }
+
+    /**
      * Resolves tenant ID from X-Tenant-Id header or tenantId query parameter.
      */
     public static String resolveTenantId(HttpRequest request) {

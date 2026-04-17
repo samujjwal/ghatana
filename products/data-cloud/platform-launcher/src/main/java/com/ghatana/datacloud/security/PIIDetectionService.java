@@ -6,10 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +53,7 @@ import com.ghatana.datacloud.infrastructure.config.JpaThreadPoolConfig;
 public class PIIDetectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(PIIDetectionService.class);
+    private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     private final DataSource dataSource;
 
@@ -349,15 +354,21 @@ public class PIIDetectionService {
     }
 
     private String applyHashing(String value) {
-        // In production: Use proper cryptographic hashing (SHA-256, etc.)
-        // For this implementation: Simple placeholder hashing
-        return "[HASH:" + Integer.toHexString(value.hashCode()) + "]";
+        return "[HASH:" + sha256Hex("hash", value) + "]";
     }
 
     private String applyTokenization(String value, String piiType) {
-        // In production: Use proper tokenization service
-        // For this implementation: Simple token placeholder
-        return "[TOKEN:" + piiType + ":" + Integer.toHexString(value.hashCode()) + "]";
+        return "[TOKEN:" + piiType + ":" + sha256Hex("token:" + piiType, value) + "]";
+    }
+
+    private String sha256Hex(String namespace, String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashed = digest.digest((namespace + ":" + value).getBytes(StandardCharsets.UTF_8));
+            return HEX_FORMAT.formatHex(hashed);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 digest not available", exception);
+        }
     }
 
     private void mergeFindings(Map<String, Integer> target, Map<String, Integer> source) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Collaboration types and interfaces
  */

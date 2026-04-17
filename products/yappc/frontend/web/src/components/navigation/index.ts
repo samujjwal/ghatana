@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Navigation Components Barrel Export
  *

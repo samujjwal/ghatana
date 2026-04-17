@@ -47,6 +47,33 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
+    @DisplayName("buildApiKeyResolver returns null for empty keys in local profile")
+    void buildApiKeyResolverReturnsNullForEmptyKeysInLocalProfile() {
+        Logger log = mock(Logger.class);
+
+        assertThat(DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "local",
+                    "DATACLOUD_API_KEYS", " , , "),
+                log))
+            .isNull();
+    }
+
+    @Test
+    @DisplayName("buildApiKeyResolver fails for empty keys in production profile")
+    void buildApiKeyResolverFailsForEmptyKeysInProductionProfile() {
+        Logger log = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "production",
+                    "DATACLOUD_API_KEYS", " , , "),
+                log))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("must contain at least one non-blank API key");
+    }
+
+    @Test
     @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured")
     void buildJwtProviderCreatesSharedSecretProvider() {
         Logger log = mock(Logger.class);

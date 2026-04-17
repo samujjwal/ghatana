@@ -31,6 +31,8 @@ public class AgentExecutionService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentExecutionService.class);
     private static final int DEFAULT_MAX_TOKENS = 1024;
+    private static final String EXECUTABLE_METADATA_KEY = "executable";
+    private static final String REGISTRATION_MODE_METADATA_KEY = "registrationMode";
 
     private final AgentRegistry agentRegistry;
     private final LLMGateway llmGateway;
@@ -89,6 +91,20 @@ public class AgentExecutionService {
                     new IllegalArgumentException("No agent registered with id: " + agentId));
             }
 
+            if (isNonExecutableRegistration(optAgent.get().descriptor())) {
+                String registrationMode = String.valueOf(
+                    optAgent.get().descriptor().getMetadata().getOrDefault(
+                        REGISTRATION_MODE_METADATA_KEY,
+                        "unknown"
+                    )
+                );
+                log.warn("[execution] Rejecting non-executable agent registration: agentId={} mode={}",
+                    agentId, registrationMode);
+                return Promise.ofException(new IllegalStateException(
+                    "Agent '" + agentId + "' is registered for discovery only and cannot be executed"
+                ));
+            }
+
             String prompt = input != null ? input.toString() : "";
             CompletionRequest request = CompletionRequest.builder()
                 .prompt(prompt)
@@ -122,6 +138,11 @@ public class AgentExecutionService {
             log.error("[execution] Failed: agentId={} executionId={}", agentId, executionId, e);
             return e;
         });
+    }
+
+    private boolean isNonExecutableRegistration(com.ghatana.agent.AgentDescriptor descriptor) {
+        Object executable = descriptor.getMetadata().get(EXECUTABLE_METADATA_KEY);
+        return Boolean.FALSE.equals(executable);
     }
 
     /**

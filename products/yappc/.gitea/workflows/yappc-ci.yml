@@ -39,6 +39,7 @@ env:
   JAVA_VERSION: "21"
   NODE_VERSION: "20"
   PNPM_VERSION: "9"
+  YAPPC_TS_NOCHECK_BASELINE: "431"
   REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
   IMAGE_NAME: ${{ gitea.repository }}/yappc
 
@@ -241,6 +242,18 @@ jobs:
       - name: Install frontend dependencies
         working-directory: products/yappc/frontend
         run: pnpm install --frozen-lockfile
+
+      - name: Prevent new @ts-nocheck debt
+        working-directory: products/yappc
+        run: |
+          set -e
+          ACTUAL=$(rg -l --fixed-strings '@ts-nocheck' frontend/web/src | wc -l | tr -d ' ')
+          echo "Current @ts-nocheck file count: $ACTUAL"
+          if [ "$ACTUAL" -gt "$YAPPC_TS_NOCHECK_BASELINE" ]; then
+            echo "❌ @ts-nocheck usage increased above baseline ${YAPPC_TS_NOCHECK_BASELINE}."
+            exit 1
+          fi
+          echo "✅ @ts-nocheck usage has not increased above baseline ${YAPPC_TS_NOCHECK_BASELINE}."
 
       - name: Lint (ESLint)
         working-directory: products/yappc/frontend

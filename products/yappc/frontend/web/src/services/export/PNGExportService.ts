@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * PNG Export Service - Canvas to PNG conversion
  * Simplified implementation without html-to-image dependency

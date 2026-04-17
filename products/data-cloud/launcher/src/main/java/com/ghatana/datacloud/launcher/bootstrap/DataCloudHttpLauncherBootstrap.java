@@ -249,6 +249,11 @@ public final class DataCloudHttpLauncherBootstrap {
                 .collect(Collectors.toUnmodifiableSet());
 
         if (validKeys.isEmpty()) {
+            if (!embeddedProfile) {
+                throw new IllegalStateException(
+                    "DATACLOUD_API_KEYS must contain at least one non-blank API key for non-embedded deployment profiles. " +
+                    "API key authentication cannot be configured with an empty key set in production environments.");
+            }
             log.warn("[DC-E1] DATACLOUD_API_KEYS is set but contains no valid keys — API key authentication is DISABLED");
             return null;
         }

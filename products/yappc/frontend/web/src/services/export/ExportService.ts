@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Export Service - Handle canvas exports to various formats
  */

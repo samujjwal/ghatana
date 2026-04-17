@@ -12,7 +12,6 @@ import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
-import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
@@ -34,6 +33,8 @@ import com.ghatana.orchestrator.store.StepCheckpointRepository;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -207,11 +208,15 @@ public class AepOrchestrationModule extends AbstractModule {
      */
     @Provides
     LlmProvider llmProvider(MetricsCollector metrics) {
+        return createLlmProvider(System.getenv(), metrics);
+    }
+
+    static LlmProvider createLlmProvider(Map<String, String> env, MetricsCollector metrics) {
         Map<String, CompletionService> services = new LinkedHashMap<>();
 
-        String anthropicKey = System.getenv("AEP_ANTHROPIC_API_KEY");
-        if (anthropicKey != null && !anthropicKey.isBlank()) {
-            String model = System.getenv().getOrDefault("AEP_ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022");
+        String anthropicKey = normalizedValue(env, "AEP_ANTHROPIC_API_KEY");
+        if (anthropicKey != null) {
+            String model = readModel(env, "AEP_ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022");
             LLMConfiguration cfg = LLMConfiguration.builder()
                     .apiKey(anthropicKey)
                     .modelName(model)
@@ -219,9 +224,9 @@ public class AepOrchestrationModule extends AbstractModule {
             services.put("anthropic", new ToolAwareAnthropicCompletionService(cfg, null, metrics));
         }
 
-        String openaiKey = System.getenv("AEP_OPENAI_API_KEY");
-        if (openaiKey != null && !openaiKey.isBlank()) {
-            String model = System.getenv().getOrDefault("AEP_OPENAI_MODEL", "gpt-4o-mini");
+        String openaiKey = normalizedValue(env, "AEP_OPENAI_API_KEY");
+        if (openaiKey != null) {
+            String model = readModel(env, "AEP_OPENAI_MODEL", "gpt-4o-mini");
             LLMConfiguration cfg = LLMConfiguration.builder()
                     .apiKey(openaiKey)
                     .modelName(model)
@@ -229,12 +234,12 @@ public class AepOrchestrationModule extends AbstractModule {
             services.put("openai", new ToolAwareOpenAICompletionService(cfg, null, metrics));
         }
 
-        String ollamaHost = System.getenv("AEP_OLLAMA_HOST");
-        if (ollamaHost != null && !ollamaHost.isBlank()) {
-            String model = System.getenv().getOrDefault("AEP_OLLAMA_MODEL", "llama3");
+        String ollamaHost = normalizedValue(env, "AEP_OLLAMA_HOST");
+        if (ollamaHost != null) {
+            String model = readModel(env, "AEP_OLLAMA_MODEL", "llama3");
             LLMConfiguration cfg = LLMConfiguration.builder()
                     .apiKey("ollama")
-                    .baseUrl(ollamaHost)
+                    .baseUrl(validateAbsoluteHttpUrl("AEP_OLLAMA_HOST", ollamaHost))
                     .modelName(model)
                     .build();
             services.put("ollama", new OllamaCompletionService(cfg, null, metrics));
@@ -263,6 +268,45 @@ public class AepOrchestrationModule extends AbstractModule {
                     .build();
             return service.complete(req);
         };
+    }
+
+    private static String readModel(Map<String, String> env, String key, String defaultValue) {
+        String configured = env.get(key);
+        if (configured == null) {
+            return defaultValue;
+        }
+
+        String normalized = configured.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalStateException(key + " must not be blank when its provider is configured");
+        }
+        return normalized;
+    }
+
+    private static String normalizedValue(Map<String, String> env, String key) {
+        String value = env.get(key);
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private static String validateAbsoluteHttpUrl(String key, String value) {
+        try {
+            URI uri = new URI(value);
+            String scheme = uri.getScheme();
+            if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                throw new IllegalStateException(key + " must be an absolute http(s) URL");
+            }
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                throw new IllegalStateException(key + " must include a host");
+            }
+            return uri.toString();
+        } catch (URISyntaxException ex) {
+            throw new IllegalStateException(key + " must be a valid absolute URL", ex);
+        }
     }
 
     /**

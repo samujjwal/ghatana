@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Export service types
  */
@@ -17,9 +16,12 @@ export interface ExportOptions {
   format: ExportFormat;
   quality?: number; // For PNG (0-1)
   scale?: number; // For PNG/SVG
+  width?: number;
+  height?: number;
   includeBackground?: boolean;
   backgroundColor?: string;
   filename?: string;
+  download?: boolean;
 }
 
 /**
@@ -29,6 +31,8 @@ export interface ExportResult {
   success: boolean;
   data?: string | Blob;
   filename?: string;
+  format?: ExportFormat;
+  metadata?: Record<string, unknown>;
   error?: string;
 }
 

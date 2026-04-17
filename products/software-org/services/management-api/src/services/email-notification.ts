@@ -3,6 +3,7 @@
  * Send email alerts for critical events
  */
 
+import { loadServiceEnvironment } from '../config/service-env.js';
 import type { Alert } from '../../generated/prisma-client/index.js';
 
 export interface EmailConfig {
@@ -41,15 +42,16 @@ export class EmailService {
     private config: EmailConfig;
 
     constructor(config?: Partial<EmailConfig>) {
+        const serviceEnv = loadServiceEnvironment();
         this.config = {
-            host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: process.env.SMTP_SECURE === 'true',
+            host: serviceEnv.smtp.host,
+            port: serviceEnv.smtp.port,
+            secure: serviceEnv.smtp.secure,
             auth: {
-                user: process.env.SMTP_USER || '',
-                pass: process.env.SMTP_PASS || '',
+                user: serviceEnv.smtp.auth.user ?? '',
+                pass: serviceEnv.smtp.auth.pass ?? '',
             },
-            from: process.env.SMTP_FROM || 'alerts@ghatana.com',
+            from: serviceEnv.smtp.from,
             ...config,
         };
     }

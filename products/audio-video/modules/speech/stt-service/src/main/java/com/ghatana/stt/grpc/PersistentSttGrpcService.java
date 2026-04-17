@@ -99,7 +99,7 @@ public class PersistentSttGrpcService extends STTServiceGrpc.STTServiceImplBase 
 
     private String getTenantId() {
         String tenantId = MDC.get("tenantId");
-        return tenantId != null && !tenantId.isBlank() ? tenantId : "default";
+        return tenantId != null && !tenantId.isBlank() ? tenantId : null;
     }
 
     private String getUserId() {

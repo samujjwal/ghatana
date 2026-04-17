@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Navigation Service - Manages portal navigation and canvas hierarchy
  */

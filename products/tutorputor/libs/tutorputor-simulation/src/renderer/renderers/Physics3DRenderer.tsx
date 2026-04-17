@@ -1,4 +1,4 @@
-// @ts-nocheck - Requires @types/three and @react-three/fiber for proper type checking
+// @ts-nocheck - Requires @types/three and @react-three/fiber dependencies for proper type checking
 /**
  * Physics 3D Renderer - React Three Fiber Integration
  *

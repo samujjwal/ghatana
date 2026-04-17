@@ -19,10 +19,20 @@ const ConfigSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 
   // Database Configuration
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z.string()
+    .min(1, 'DATABASE_URL is required')
+    .refine(
+      (url) => url.includes('sslmode=require') || url.includes('sslmode=verify-full') || url.includes('sslmode=verify-ca'),
+      'DATABASE_URL must enforce SSL/TLS (sslmode=require, sslmode=verify-full, or sslmode=verify-ca)'
+    ),
   
   // Redis Configuration
-  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+  REDIS_URL: z.string()
+    .min(1, 'REDIS_URL is required')
+    .refine(
+      (url) => url.startsWith('rediss://') || url.includes('tls='),
+      'REDIS_URL must use secure connection (rediss:// protocol or tls= parameter)'
+    ),
 
   // JWT Configuration
   JWT_SECRET: z.string()
@@ -41,6 +51,8 @@ const ConfigSchema = z.object({
   S3_ACCESS_KEY: z.string().min(1, 'S3_ACCESS_KEY is required').optional(),
   S3_SECRET_KEY: z.string().min(1, 'S3_SECRET_KEY is required').optional(),
   S3_BUCKET: z.string().min(1, 'S3_BUCKET is required').optional(),
+  S3_ENCRYPTION: z.enum(['AES256', 'aws:kms', 'none']).default('AES256'),
+  S3_KMS_KEY_ID: z.string().optional(),
 
   // Observability
   SENTRY_DSN: z.string().url().optional(),
@@ -107,6 +119,8 @@ export function loadConfig(): Config {
     S3_ACCESS_KEY: process.env.S3_ACCESS_KEY,
     S3_SECRET_KEY: process.env.S3_SECRET_KEY,
     S3_BUCKET: process.env.S3_BUCKET,
+    S3_ENCRYPTION: process.env.S3_ENCRYPTION,
+    S3_KMS_KEY_ID: process.env.S3_KMS_KEY_ID,
 
     // Observability
     SENTRY_DSN: process.env.SENTRY_DSN,
@@ -167,6 +181,15 @@ function validateProductionSecurity(config: Config): void {
     errors.push('S3 credentials are required in production');
   }
 
+  // Check for S3 encryption
+  if (config.S3_ENCRYPTION === 'none') {
+    errors.push('S3 encryption must be enabled in production (use AES256 or aws:kms)');
+  }
+
+  if (config.S3_ENCRYPTION === 'aws:kms' && !config.S3_KMS_KEY_ID) {
+    errors.push('S3_KMS_KEY_ID is required when using aws:kms encryption');
+  }
+
   if (!config.CORS_ORIGIN) {
     errors.push('CORS_ORIGIN should be explicitly set in production');
   }
@@ -174,6 +197,11 @@ function validateProductionSecurity(config: Config): void {
   // Check for development defaults
   if (config.DATABASE_URL.includes('localhost') || config.DATABASE_URL.includes('password')) {
     errors.push('DATABASE_URL appears to use development defaults');
+  }
+
+  // Check for SSL/TLS enforcement
+  if (!config.DATABASE_URL.includes('sslmode=')) {
+    errors.push('DATABASE_URL must enforce SSL/TLS with sslmode parameter');
   }
 
   if (errors.length > 0) {
@@ -236,6 +264,8 @@ export function getS3Config() {
     accessKey: config.S3_ACCESS_KEY,
     secretKey: config.S3_SECRET_KEY,
     bucket: config.S3_BUCKET,
+    encryption: config.S3_ENCRYPTION,
+    kmsKeyId: config.S3_KMS_KEY_ID,
   };
 }
 

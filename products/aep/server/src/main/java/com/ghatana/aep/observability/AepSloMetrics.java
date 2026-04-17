@@ -93,6 +93,10 @@ public final class AepSloMetrics {
     }
 
     private void registerGauges() {
+                if (meterRegistry == null) {
+                        log.debug("Skipping AEP SLO gauge registration because no MeterRegistry is configured");
+                        return;
+                }
         try {
             meterRegistry.gauge("aep.slo.run.failure.rate",
                     failedRuns, ref -> totalRuns.get() == 0

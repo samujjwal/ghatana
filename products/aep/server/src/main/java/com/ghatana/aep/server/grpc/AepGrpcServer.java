@@ -41,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +58,9 @@ import java.util.concurrent.TimeUnit;
 public class AepGrpcServer {
 
     private static final Logger log = LoggerFactory.getLogger(AepGrpcServer.class);
+    static final String EXECUTABLE_METADATA_KEY = "executable";
+    static final String REGISTRATION_MODE_METADATA_KEY = "registrationMode";
+    static final String REGISTRATION_MODE_MANIFEST_ONLY = "manifest-only";
 
     static final int DEFAULT_PORT = 9090;
 
@@ -156,6 +158,10 @@ public class AepGrpcServer {
                 .version(version)
                 .description(metadata.getDescription())
                 .type(AgentType.PROBABILISTIC)
+                .metadata(java.util.Map.of(
+                    EXECUTABLE_METADATA_KEY, false,
+                    REGISTRATION_MODE_METADATA_KEY, REGISTRATION_MODE_MANIFEST_ONLY
+                ))
                 .build();
 
             AgentConfig config = AgentConfig.builder()

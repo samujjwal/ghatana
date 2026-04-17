@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Public Layout
  *

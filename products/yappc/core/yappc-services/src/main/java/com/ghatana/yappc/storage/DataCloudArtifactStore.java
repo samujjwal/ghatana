@@ -7,14 +7,16 @@ package com.ghatana.yappc.storage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
+import com.ghatana.yappc.infrastructure.datacloud.entity.ArtifactContentEntity;
+import com.ghatana.yappc.infrastructure.datacloud.entity.ArtifactMetadataEntity;
+import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,8 +46,8 @@ public class DataCloudArtifactStore implements ArtifactStore {
     private static final String ARTIFACTS_COLLECTION = "yappc-artifacts";
     private static final String METADATA_COLLECTION  = "yappc-artifact-metadata";
 
-    private final DataCloudClient client;
-    private final ObjectMapper mapper;
+    private final YappcDataCloudRepository<ArtifactContentEntity> artifactRepository;
+    private final YappcDataCloudRepository<ArtifactMetadataEntity> metadataRepository;
 
     /**
      * Constructs a {@code DataCloudArtifactStore}.
@@ -54,8 +56,19 @@ public class DataCloudArtifactStore implements ArtifactStore {
      * @param mapper           Jackson ObjectMapper for JSON serialisation
      */
     public DataCloudArtifactStore(DataCloudClient client, ObjectMapper mapper) {
-        this.client  = client;
-        this.mapper  = mapper;
+        YappcEntityMapper entityMapper = new YappcEntityMapper(mapper);
+        this.artifactRepository = new YappcDataCloudRepository<>(
+            client,
+            entityMapper,
+            ARTIFACTS_COLLECTION,
+            ArtifactContentEntity.class
+        );
+        this.metadataRepository = new YappcDataCloudRepository<>(
+            client,
+            entityMapper,
+            METADATA_COLLECTION,
+            ArtifactMetadataEntity.class
+        );
     }
 
     // =========================================================================
@@ -71,25 +84,24 @@ public class DataCloudArtifactStore implements ArtifactStore {
     @Override
     public Promise<String> put(String path, byte[] content) {
         String tenantId = resolveTenantId();
+        String normalizedPath = normalizeArtifactPath(path);
         String version  = UUID.randomUUID().toString();
+        ArtifactContentEntity entity = new ArtifactContentEntity(
+            buildArtifactId(normalizedPath, version),
+            normalizedPath,
+            version,
+            Base64.getEncoder().encodeToString(content),
+            content.length,
+            tenantId,
+            System.currentTimeMillis()
+        );
 
-        Map<String, Object> entityData = new HashMap<>();
-        entityData.put("path",      path);
-        entityData.put("version",   version);
-        entityData.put("content",   Base64.getEncoder().encodeToString(content));
-        entityData.put("size",      content.length);
-        entityData.put("tenant_id", tenantId);
-        entityData.put("created_at", System.currentTimeMillis());
-
-        UUID entityUuid = UUID.nameUUIDFromBytes((path.replace("/", "_") + "_" + version).getBytes(StandardCharsets.UTF_8));
-        entityData.put("id", entityUuid.toString());
-
-        return client.save(tenantId, ARTIFACTS_COLLECTION, entityData)
-                .map(saved -> {
-                    log.info("Stored artifact: path={} version={} size={} tenant={}",
-                            path, version, content.length, tenantId);
-                    return version;
-                });
+        return artifactRepository.save(entity)
+            .map(saved -> {
+                log.info("Stored artifact via repository seam: path={} version={} size={} tenant={}",
+                    normalizedPath, saved.version(), content.length, tenantId);
+                return saved.version();
+            });
     }
 
     /**
@@ -99,27 +111,12 @@ public class DataCloudArtifactStore implements ArtifactStore {
      */
     @Override
     public Promise<byte[]> get(String path) {
-        String tenantId = resolveTenantId();
-
-        int lastSlash = path.lastIndexOf('/');
-        if (lastSlash < 0) {
-            return Promise.ofException(new IllegalArgumentException("Path must include version segment: " + path));
-        }
-        String basePath = path.substring(0, lastSlash);
-        String version  = path.substring(lastSlash + 1);
-        UUID entityUuid = UUID.nameUUIDFromBytes((basePath.replace("/", "_") + "_" + version).getBytes(StandardCharsets.UTF_8));
-
-        return client.findById(tenantId, ARTIFACTS_COLLECTION, entityUuid.toString())
-                .map(entityOpt -> {
-                    if (entityOpt.isEmpty() || entityOpt.get().data() == null) {
-                        throw new IllegalArgumentException("Artifact not found: " + path);
-                    }
-                    String encoded = (String) entityOpt.get().data().get("content");
-                    if (encoded == null) {
-                        throw new IllegalStateException("Artifact entity missing content field: " + path);
-                    }
-                    return Base64.getDecoder().decode(encoded);
-                });
+        resolveTenantId();
+        VersionedArtifactPath versionedPath = parseVersionedArtifactPath(path);
+        return artifactRepository.findById(buildArtifactId(versionedPath.basePath(), versionedPath.version()))
+            .map(entityOpt -> entityOpt
+                .map(entity -> Base64.getDecoder().decode(entity.content()))
+                .orElseThrow(() -> new IllegalArgumentException("Artifact not found: " + path)));
     }
 
     /**
@@ -130,24 +127,12 @@ public class DataCloudArtifactStore implements ArtifactStore {
      */
     @Override
     public Promise<List<String>> list(String prefix) {
-        String tenantId = resolveTenantId();
-
-        return client.query(
-                tenantId, ARTIFACTS_COLLECTION,
-                DataCloudClient.Query.builder()
-                        .filter(DataCloudClient.Filter.eq("path", prefix))
-                        .limit(Integer.MAX_VALUE)
-                        .build())
-                .map(entities -> {
-                    List<String> versions = new ArrayList<>();
-                    for (DataCloudClient.Entity e : entities) {
-                        Object v = e.data() != null ? e.data().get("version") : null;
-                        if (v != null) {
-                            versions.add(v.toString());
-                        }
-                    }
-                    return versions;
-                });
+        resolveTenantId();
+        String normalizedPrefix = normalizeArtifactPath(prefix);
+        return artifactRepository.findByField("path", normalizedPrefix)
+            .map(entities -> entities.stream()
+                .map(ArtifactContentEntity::version)
+                .toList());
     }
 
     /**
@@ -156,19 +141,17 @@ public class DataCloudArtifactStore implements ArtifactStore {
     @Override
     public Promise<Void> putMetadata(String path, Map<String, String> meta) {
         String tenantId = resolveTenantId();
+        String normalizedPath = normalizeMetadataPath(path);
+        ArtifactMetadataEntity entity = new ArtifactMetadataEntity(
+            buildMetadataId(normalizedPath),
+            normalizedPath,
+            Map.copyOf(meta),
+            tenantId,
+            System.currentTimeMillis()
+        );
 
-        Map<String, Object> entityData = new HashMap<>(meta);
-        entityData.put("path",      path);
-        entityData.put("tenant_id", tenantId);
-
-        UUID entityUuid = UUID.nameUUIDFromBytes(("meta_" + path.replace("/", "_")).getBytes(StandardCharsets.UTF_8));
-        entityData.put("id", entityUuid.toString());
-
-        return client.save(tenantId, METADATA_COLLECTION, entityData)
-                .map(saved -> {
-                    log.debug("Stored metadata for path={} tenant={}", path, tenantId);
-                    return (Void) null;
-                });
+        return metadataRepository.save(entity)
+            .map(saved -> null);
     }
 
     /**
@@ -177,23 +160,12 @@ public class DataCloudArtifactStore implements ArtifactStore {
     @Override
     @SuppressWarnings("unchecked")
     public Promise<Map<String, String>> getMetadata(String path) {
-        String tenantId = resolveTenantId();
-
-        UUID entityUuid = UUID.nameUUIDFromBytes(("meta_" + path.replace("/", "_")).getBytes(StandardCharsets.UTF_8));
-
-        return client.findById(tenantId, METADATA_COLLECTION, entityUuid.toString())
-                .map(entityOpt -> {
-                    if (entityOpt.isEmpty() || entityOpt.get().data() == null) {
-                        return Map.<String, String>of();
-                    }
-                    Map<String, String> result = new HashMap<>();
-                    for (Map.Entry<String, Object> entry : entityOpt.get().data().entrySet()) {
-                        if (!"path".equals(entry.getKey()) && !"tenant_id".equals(entry.getKey())) {
-                            result.put(entry.getKey(), String.valueOf(entry.getValue()));
-                        }
-                    }
-                    return result;
-                });
+        resolveTenantId();
+        String normalizedPath = normalizeMetadataPath(path);
+        return metadataRepository.findById(buildMetadataId(normalizedPath))
+            .map(entityOpt -> entityOpt
+                .map(ArtifactMetadataEntity::metadata)
+                .orElseGet(Map::of));
     }
 
     // =========================================================================
@@ -219,6 +191,46 @@ public class DataCloudArtifactStore implements ArtifactStore {
         return tenantId;
     }
 
+    private String normalizeArtifactPath(String path) {
+        String normalized = path.strip();
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    private String normalizeMetadataPath(String path) {
+        String normalized = path.strip();
+        if (!normalized.endsWith("/metadata")) {
+            throw new IllegalArgumentException("Metadata path must end with /metadata: " + path);
+        }
+        return normalized;
+    }
+
+    private VersionedArtifactPath parseVersionedArtifactPath(String path) {
+        String normalizedPath = normalizeArtifactPath(path);
+        int lastSlash = normalizedPath.lastIndexOf('/');
+        if (lastSlash < 0) {
+            throw new IllegalArgumentException("Path must include version segment: " + path);
+        }
+        return new VersionedArtifactPath(
+            normalizedPath.substring(0, lastSlash),
+            normalizedPath.substring(lastSlash + 1)
+        );
+    }
+
+    private UUID buildArtifactId(String path, String version) {
+        return UUID.nameUUIDFromBytes((path + "::" + version).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private UUID buildMetadataId(String metadataPath) {
+        return UUID.nameUUIDFromBytes(("metadata::" + metadataPath).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String buildMetadataPath(String path, String version) {
+        return path + "/" + version + "/metadata";
+    }
+
     /**
      * Deletes the artifact (and associated metadata) stored at {@code path}.
      *
@@ -232,18 +244,30 @@ public class DataCloudArtifactStore implements ArtifactStore {
      */
     @Override
     public Promise<Void> delete(String path) {
-        String tenantId = resolveTenantId();
-        log.info("DataCloudArtifactStore.delete: path={} tenant={}", path, tenantId);
-        return client.delete(tenantId, "yappc-artifacts", path)
-                .then(unused -> client.delete(tenantId, "yappc-artifact-metadata", path),
-                        ex -> {
-                            log.debug("Artifact entity not found during delete — treating as no-op: {}", path);
-                            return client.delete(tenantId, "yappc-artifact-metadata", path);
-                        })
-                .then(unused -> Promise.complete(),
-                        ex -> {
-                            log.debug("Metadata entity not found during delete — treating as no-op: {}", path);
-                            return Promise.complete();
-                        });
+        resolveTenantId();
+        if (path.endsWith("/metadata")) {
+            return deleteMetadataEntity(normalizeMetadataPath(path));
+        }
+
+        VersionedArtifactPath versionedPath = parseVersionedArtifactPath(path);
+        UUID artifactId = buildArtifactId(versionedPath.basePath(), versionedPath.version());
+        String metadataPath = buildMetadataPath(versionedPath.basePath(), versionedPath.version());
+
+        return artifactRepository.deleteById(artifactId)
+            .then(unused -> deleteMetadataEntity(metadataPath), ex -> {
+                log.debug("Artifact entity not found during delete, continuing with metadata cleanup: {}", path);
+                return deleteMetadataEntity(metadataPath);
+            });
+    }
+
+    private Promise<Void> deleteMetadataEntity(String metadataPath) {
+        return metadataRepository.deleteById(buildMetadataId(metadataPath))
+            .then(unused -> Promise.complete(), ex -> {
+                log.debug("Artifact metadata not found during delete, treating as no-op: {}", metadataPath);
+                return Promise.complete();
+            });
+    }
+
+    private record VersionedArtifactPath(String basePath, String version) {
     }
 }

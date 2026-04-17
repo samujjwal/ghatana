@@ -3,6 +3,7 @@
  * Send alert notifications to Slack channels via webhooks
  */
 
+import { loadServiceEnvironment } from '../config/service-env.js';
 import type { Alert } from '../../generated/prisma-client/index.js';
 
 export interface SlackConfig {
@@ -53,11 +54,12 @@ export class SlackService {
     private config: SlackConfig;
 
     constructor(config?: Partial<SlackConfig>) {
+        const serviceEnv = loadServiceEnvironment();
         this.config = {
-            webhookUrl: process.env.SLACK_WEBHOOK_URL || '',
-            channel: process.env.SLACK_CHANNEL || '#alerts',
-            username: process.env.SLACK_USERNAME || 'Ghatana Alerts',
-            iconEmoji: process.env.SLACK_ICON_EMOJI || ':warning:',
+            webhookUrl: serviceEnv.slack.webhookUrl ?? '',
+            channel: serviceEnv.slack.channel,
+            username: serviceEnv.slack.username,
+            iconEmoji: serviceEnv.slack.iconEmoji,
             ...config,
         };
     }

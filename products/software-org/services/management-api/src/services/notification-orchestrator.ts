@@ -3,6 +3,7 @@
  * Coordinates email, Slack, and other notification channels
  */
 
+import { loadServiceEnvironment } from '../config/service-env.js';
 import type { Alert } from '../../generated/prisma-client/index.js';
 import { emailService } from './email-notification.js';
 import { slackService } from './slack-integration.js';
@@ -34,11 +35,12 @@ export class NotificationOrchestrator {
     private config: NotificationConfig;
 
     constructor(config?: Partial<NotificationConfig>) {
+        const serviceEnv = loadServiceEnvironment();
         this.config = {
-            enableEmail: process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true',
-            enableSlack: process.env.ENABLE_SLACK_NOTIFICATIONS === 'true',
-            emailRecipients: process.env.ALERT_EMAIL_RECIPIENTS?.split(',') || [],
-            criticalThreshold: (process.env.CRITICAL_THRESHOLD as any) || 'high',
+            enableEmail: serviceEnv.notifications.enableEmail,
+            enableSlack: serviceEnv.notifications.enableSlack,
+            emailRecipients: serviceEnv.notifications.emailRecipients,
+            criticalThreshold: serviceEnv.notifications.criticalThreshold,
             ...config,
         };
     }

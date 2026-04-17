@@ -23,6 +23,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as yaml from 'js-yaml';
+import { loadServiceEnvironment } from '../config/service-env.js';
 import {
     OrgConfig,
     DepartmentConfig,
@@ -502,12 +503,13 @@ let configLoaderInstance: ConfigLoader | null = null;
  */
 export function getConfigLoader(basePath?: string): ConfigLoader {
     if (!configLoaderInstance) {
-        const defaultPath = process.env.CONFIG_PATH ??
+        const serviceEnv = loadServiceEnvironment();
+        const defaultPath = serviceEnv.configPath ??
             path.join(__dirname, '../../../../config');
 
         configLoaderInstance = new FileSystemConfigLoader({
             basePath: basePath ?? defaultPath,
-            watchForChanges: process.env.NODE_ENV === 'development',
+            watchForChanges: serviceEnv.isDevelopment,
         });
     }
     return configLoaderInstance;

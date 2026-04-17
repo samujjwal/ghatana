@@ -161,9 +161,9 @@ describe('AgentPluginManagerPage', () => {
   // --------------------------------------------------------------------------
   // 1. Renders page header
   // --------------------------------------------------------------------------
-  it('renders "Agent Registry" heading', () => {
+  it('renders "Agent Catalog" heading', () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Agent Registry')).toBeDefined();
+    expect(screen.getByText('Agent Catalog')).toBeDefined();
     expect(screen.getByText(/monitor the launcher-exposed agent catalog/i)).toBeDefined();
   });
 
@@ -230,7 +230,7 @@ describe('AgentPluginManagerPage', () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
     await waitFor(() => {
       expect(
-        screen.getAllByText(/registration, deregistration, and live registry events are not available here/i).length,
+        screen.getAllByText(/aep owns registration, deregistration, execution history, and live registry events/i).length,
       ).toBeGreaterThan(0);
     });
   });
@@ -255,12 +255,11 @@ describe('AgentPluginManagerPage', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 6. Registration is disabled in launcher mode
+  // 6. Registration controls are removed in launcher mode
   // --------------------------------------------------------------------------
-  it('disables the register button because launcher mode is read-only', async () => {
+  it('does not render register controls because launcher mode is catalog-only', async () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    const headerBtn = screen.getByRole('button', { name: /register agent/i });
-    expect(headerBtn).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /register agent/i })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Register Agent' })).toBeNull();
   });
 
@@ -276,11 +275,11 @@ describe('AgentPluginManagerPage', () => {
   });
 
   // --------------------------------------------------------------------------
-  // 8. SSE live feed boundary
+  // 8. Registry surface boundary panel
   // --------------------------------------------------------------------------
-  it('renders "Live Registry Events" feed panel', () => {
+  it('renders "Registry Surface Status" panel', () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    expect(screen.getByText('Live Registry Events')).toBeDefined();
+    expect(screen.getByText('Registry Surface Status')).toBeDefined();
   });
 
   it('does not establish SSE stream on mount in launcher mode', () => {
@@ -288,10 +287,11 @@ describe('AgentPluginManagerPage', () => {
     expect(agentRegistryService.streamRegistryEvents).not.toHaveBeenCalled();
   });
 
-  it('renders an explicit boundary note for the unavailable live event stream', async () => {
+  it('renders explicit ownership boundaries for the catalog surface', async () => {
     render(<AgentPluginManagerPage />, { wrapper: TestWrapper });
-    expect(screen.getByText(/live registry events are unavailable/i)).toBeDefined();
-    expect(screen.getByText(/no live event stream available/i)).toBeDefined();
+    expect(screen.getByText(/aep owns the executable registry surface/i)).toBeDefined();
+    expect(screen.getByText(/execution history and runtime event streaming/i)).toBeDefined();
+    expect(screen.getByText(/read-only launcher catalog entries/i)).toBeDefined();
   });
 
   // --------------------------------------------------------------------------

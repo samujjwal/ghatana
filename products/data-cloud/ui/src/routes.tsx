@@ -286,7 +286,7 @@ export const routes: RouteObject[] = [
         path: 'fabric',
         element: withSuspense(DataFabricPage),
       },
-      // Agent Registry — manage and monitor registered agents
+      // Agent Catalog — launcher-exposed read-only view while AEP owns control-plane registry
       {
         path: 'agents',
         element: withSuspense(AgentPluginManagerPage),
