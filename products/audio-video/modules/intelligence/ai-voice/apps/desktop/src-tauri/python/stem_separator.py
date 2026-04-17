@@ -60,8 +60,9 @@ class StemSeparator:
                 self.model.cuda()
             logger.info(f"Loaded Demucs model: {self.model_name}")
         except ImportError:
-            logger.warning("Demucs not available, using fallback separation")
-            self.model = None
+            raise RuntimeError(
+                "Demucs is not installed. Install the stem-separation dependencies to produce real stems."
+            )
 
     def separate(self, input_path: str, output_dir: str) -> SeparationResult:
         self._load_model()
@@ -88,14 +89,13 @@ class StemSeparator:
                     audio = np.stack([audio, audio])
                 wav = torch.tensor(audio)
             except ImportError:
-                return self._fallback_separate(input_path, output_dir)
+                raise RuntimeError(
+                    "Neither torchaudio nor librosa is available. Install audio dependencies to run real stem separation."
+                )
 
         self._report_progress(20, "Separating stems...")
 
-        if self.model is not None:
-            return self._demucs_separate(wav, sr, output_path)
-        else:
-            return self._fallback_separate(input_path, output_dir)
+        return self._demucs_separate(wav, sr, output_path)
 
     def _demucs_separate(self, wav, sr, output_path: Path) -> SeparationResult:
         import torch
@@ -140,40 +140,6 @@ class StemSeparator:
             other=results['other'],
             durations=durations
         )
-
-    def _fallback_separate(self, input_path: str, output_dir: str) -> SeparationResult:
-        """Fallback: copy input to all stems (for testing without Demucs)."""
-        import shutil
-        
-        output_path = Path(output_dir)
-        results = {}
-        durations = {}
-
-        try:
-            import librosa
-            audio, sr = librosa.load(input_path, sr=44100)
-            duration = len(audio) / sr
-        except ImportError:
-            duration = 0.0
-
-        for name in ['vocals', 'drums', 'bass', 'other']:
-            stem_path = output_path / f"{name}.wav"
-            shutil.copy(input_path, stem_path)
-            results[name] = str(stem_path)
-            durations[name] = duration
-            self._report_progress(25 + list(['vocals', 'drums', 'bass', 'other']).index(name) * 20,
-                                  f"Created {name} (fallback)")
-
-        self._report_progress(100, "Separation complete (fallback mode)")
-
-        return SeparationResult(
-            vocals=results['vocals'],
-            drums=results['drums'],
-            bass=results['bass'],
-            other=results['other'],
-            durations=durations
-        )
-
 
 def separate_stems(input_path: str, output_dir: str, 
                    model_name: str = "htdemucs",

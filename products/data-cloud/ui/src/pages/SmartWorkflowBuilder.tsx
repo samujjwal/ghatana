@@ -2,11 +2,12 @@
  * Smart Workflow Builder Page
  *
  * Intent-based workflow creation with progressive disclosure.
- * Users describe what they want in natural language, AI generates the pipeline.
+ * Users describe what they want in natural language, then continue in the
+ * runtime-backed pipeline editor when automation is unavailable.
  *
  * Features:
  * - Natural language pipeline description
- * - AI-generated pipeline steps with confidence scores
+ * - Explicit boundary handling when AI generation is unavailable
  * - Simple list-based editing for basic workflows
  * - "Advanced mode" toggle to expand to full canvas
  *
@@ -407,6 +408,7 @@ export function SmartWorkflowBuilder() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationBoundaryMessage, setGenerationBoundaryMessage] = useState<string | null>(null);
   const [workflow, setWorkflow] = useState<GeneratedWorkflow | null>(null);
   const [advancedMode, setAdvancedMode] = useState(false);
 
@@ -416,56 +418,10 @@ export function SmartWorkflowBuilder() {
 
     setIsGenerating(true);
 
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Mock generated workflow
-    const generatedWorkflow: GeneratedWorkflow = {
-      id: Date.now().toString(),
-      name: 'Generated Pipeline',
-      description: prompt,
-      aiConfidence: 0.87,
-      steps: [
-        {
-          id: '1',
-          type: 'source',
-          name: 'Load from S3',
-          description: 'Read data from S3 bucket',
-          aiGenerated: true,
-          confidence: 0.92,
-          status: 'valid',
-        },
-        {
-          id: '2',
-          type: 'transform',
-          name: 'Clean & Validate',
-          description: 'Clean email addresses and validate format',
-          aiGenerated: true,
-          confidence: 0.85,
-          status: 'valid',
-        },
-        {
-          id: '3',
-          type: 'transform',
-          name: 'Filter Invalid',
-          description: 'Remove records with invalid data',
-          aiGenerated: true,
-          confidence: 0.78,
-          status: 'pending',
-        },
-        {
-          id: '4',
-          type: 'destination',
-          name: 'Save to PostgreSQL',
-          description: 'Write cleaned data to PostgreSQL database',
-          aiGenerated: true,
-          confidence: 0.91,
-          status: 'valid',
-        },
-      ],
-    };
-
-    setWorkflow(generatedWorkflow);
+    setWorkflow(null);
+    setGenerationBoundaryMessage(
+      'Natural-language pipeline generation is not exposed by the current Data Cloud launcher API. Use this page to capture intent, then continue in the manual pipeline editor.',
+    );
     setIsGenerating(false);
   }, [prompt]);
 
@@ -546,7 +502,7 @@ export function SmartWorkflowBuilder() {
               Smart Workflow Builder
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Describe your pipeline in natural language, AI will build it
+              Capture pipeline intent here, then continue in the runtime-backed pipeline editor
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -640,11 +596,32 @@ export function SmartWorkflowBuilder() {
                 ) : (
                   <>
                     <Zap className="h-4 w-4" />
-                    Generate Pipeline
+                    Check AI Builder Availability
                   </>
                 )}
               </button>
             </div>
+
+            {generationBoundaryMessage && (
+              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <p className="font-medium">AI pipeline builder unavailable</p>
+                <p className="mt-1">{generationBoundaryMessage}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => navigate('/pipelines')}
+                    className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:bg-gray-900 dark:text-amber-200 dark:hover:bg-gray-800"
+                  >
+                    Open Pipelines
+                  </button>
+                  <button
+                    onClick={() => setGenerationBoundaryMessage(null)}
+                    className="rounded-lg border border-amber-400 px-3 py-2 text-xs font-medium hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Example prompts */}
             <div className="mt-4">
@@ -653,7 +630,10 @@ export function SmartWorkflowBuilder() {
                 {EXAMPLE_PROMPTS.map((example, index) => (
                   <button
                     key={index}
-                    onClick={() => setPrompt(example)}
+                    onClick={() => {
+                      setPrompt(example);
+                      setGenerationBoundaryMessage(null);
+                    }}
                     className={cn(
                       'px-3 py-1.5 rounded-full text-xs',
                       'bg-white dark:bg-gray-800',
@@ -671,14 +651,14 @@ export function SmartWorkflowBuilder() {
           </div>
         </div>
 
-        {/* Generated Pipeline */}
+        {/* Pipeline Draft */}
         {workflow && (
           <div className="max-w-3xl mx-auto">
             {/* Pipeline Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Generated Pipeline
+                  Pipeline Draft
                 </h2>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">
                   <Sparkles className="h-3 w-3" />
@@ -763,8 +743,7 @@ export function SmartWorkflowBuilder() {
                     template={template}
                     onSelect={() => {
                       setPrompt(template.prompt);
-                      // Auto-generate after template selection
-                      setTimeout(() => handleGenerate(), 100);
+                      setGenerationBoundaryMessage(null);
                     }}
                   />
                 ))}

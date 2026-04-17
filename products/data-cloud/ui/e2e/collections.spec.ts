@@ -108,11 +108,11 @@ test.describe('Collections', () => {
 
   test('should handle empty state', async ({ page }) => {
     // Mock empty response or navigate to empty state
-    await page.route('**/api/v1/collections*', async (route) => {
+    await page.route('**/api/v1/entities/dc_collections*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10, hasMore: false }),
+        body: JSON.stringify({ entities: [], count: 0 }),
       });
     });
     
@@ -124,7 +124,7 @@ test.describe('Collections', () => {
 
   test('should handle API errors gracefully', async ({ page }) => {
     // Mock API error
-    await page.route('**/api/v1/collections*', async (route) => {
+    await page.route('**/api/v1/entities/dc_collections*', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',

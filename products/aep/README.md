@@ -1,4 +1,4 @@
-# AEP — Agentic Event Processor
+# AEP — Agentic Execution Runtime
 
 **Product Owner:** @ghatana/aep-team  
 **Status:** Active  
@@ -6,94 +6,85 @@
 
 ## Purpose
 
-The **Agentic Event Processor** (AEP) is the central event-driven operator pipeline for the Ghatana platform. It provides:
+The **Agentic Event Processor** is the execution runtime for Ghatana’s agentic workloads. It is not just an older event-pattern engine and should not be described that way in new documentation.
 
-- **Operator catalog** — registry of all domain operators (`UnifiedOperator` implementations)
-- **Pipeline execution** — composable, YAML-configurable operator chains
-- **Event routing** — subscribe to Data Cloud event-cloud streams and dispatch to the correct operator pipeline
-- **Multi-tenant isolation** — all pipelines are tenant-scoped
+AEP owns the runtime surfaces that let operators and other products:
 
-AEP is the canonical home for the `Operator`, `OperatorCatalog`, and `Pipeline` interfaces used across the platform.
+- register and inspect agents
+- define and execute pipelines
+- track run state and execution evidence
+- route human-in-the-loop review and learning flows
+- expose governance, compliance, and audit summaries
+- publish analytics, reporting, lifecycle, and deployment controls around the runtime
+
+The current product shape is best understood as an **agentic execution plane with operator tooling**, not as a generic CEP or pattern-only subsystem.
 
 ## Boundary With Data Cloud
 
 Data Cloud and AEP are tightly integrated but intentionally asymmetric:
 
-- **Data Cloud owns** data management, events, analytics, reporting, feature storage, model metadata, and plugin-driven data capabilities
-- **AEP owns** agentic processing, planning, orchestration, tool use, long-running multi-step execution, and the AEP-owned durable execution-history and agent-memory/task-state persistence paths when DB-backed runtime services are configured
+- **Data Cloud owns** data management, canonical event storage, analytics persistence, reporting stores, and general-purpose platform data capabilities
+- **AEP owns** execution orchestration, pipeline runs, agent invocation, HITL review, policy promotion, and runtime governance/operator surfaces
 - **Dependency direction** is one-way at compile time: AEP may depend on Data Cloud public contracts and APIs; Data Cloud must not import AEP modules
-- **Runtime integration** happens through event-cloud and Data Cloud-owned persistence surfaces: AEP consumes requests and data from Data Cloud, then writes results, telemetry, checkpoints, and memory updates back
+- **Runtime integration** happens through Data Cloud-backed persistence and event-log surfaces where configured
 
-## Architecture
+## Capability Model
 
-```
-Data Cloud events / intents  →  AEP Server  →  PipelineExecutionEngine  →  OperatorCatalog
-                                           │
-                                  ┌────────┴────────┐
-                            OperatorChain     UnifiedOperator impls
-                                           │
-                                           └── results / checkpoints / telemetry → Data Cloud
-```
+| Capability | What AEP owns |
+| --- | --- |
+| Agent runtime | Agent listing, execution, memory views, and marketplace/runtime metadata |
+| Pipeline runtime | Pipeline CRUD, versioning, publish/rollback, run listing, run detail, and cancellation |
+| HITL | Review queue, approve/reject/escalate flows, learning reflection triggers |
+| Governance | Kill-switch, degradation mode, policy evaluation, compliance summary, audit summary, security scans |
+| Analytics and reporting | Anomalies, forecasting, reporting, deployment lifecycle endpoints |
 
-### Key Modules
+## HTTP Surface
 
-| Module | Purpose |
-|--------|---------|
-| `platform/` | Core interfaces: `Operator`, `Pipeline`, `OperatorCatalog`, `AgentRegistryService` |
-| `api/` | REST API for pipeline management and operator catalog queries |
-| `server/` | ActiveJ HTTP server, bootstrap and event-loop wiring |
-| `agent-catalog/` | YAML-based catalog of built-in operators |
-| `k8s/` | Kubernetes manifests for production deployment |
-| `helm/` | Helm charts |
+The documented public route families live in the AEP OpenAPI specs at:
 
-## Prerequisites
+- `products/aep/contracts/openapi.yaml`
+- `products/aep/server/src/main/resources/openapi.yaml`
 
-- Java 21
-- Docker (for local infrastructure)
-- Access to `data-cloud` event stream
+Core public families exercised by server tests include:
 
-## Production Notes
+- health and observability: `/health`, `/ready`, `/live`, `/info`, `/metrics`, `/health/deep`, `/metrics/slo`
+- agents: `/api/v1/agents`, `/api/v1/agents/{agentId}`, `/api/v1/agents/{agentId}/execute`, `/api/v1/agents/{agentId}/memory`
+- runs: `/api/v1/runs`, `/api/v1/runs/{runId}`, `/api/v1/runs/{runId}/cancel`
+- HITL and learning: `/api/v1/hitl/*`, `/api/v1/learning/*`
+- governance and compliance: `/governance/*`, `/api/v1/compliance/*`
+- analytics, reporting, deployments, and patterns: `/api/v1/analytics/*`, `/api/v1/reports`, `/api/v1/deployments`, `/api/v1/patterns`
 
-- Set `AEP_PROFILE=production` for production deployments.
-- In production, `AEP_DB_URL` and `AEP_JWT_SECRET` are mandatory and startup now fails fast when either is missing.
-- Durable governance, execution history, and memory persistence require the database-backed path; without `AEP_DB_URL`, AEP remains suitable only for non-production or reduced-scope deployments.
-- `GET /metrics` serves Prometheus text format when the launcher wires a `PrometheusMeterRegistry`; otherwise embedded and fixture-backed modes return a JSON fallback payload.
-- `GET /health` is the shallow liveness-style aggregate, while `GET /health/deep` exposes deeper dependency state for the injected database, Redis, Data Cloud backing stores, pipeline durability, memory storage, and execution-history persistence.
-- `POST /api/v1/session` is now wired into the HTTP server chain through `SessionFilter`; in authenticated environments it sits behind JWT auth and issues short-lived `X-AEP-Session` tokens for repeated requests.
+## Runtime Truth
+
+- Production startup must fail closed when required secrets and DB-backed runtime dependencies are absent.
+- Governance and compliance endpoints remain operationally useful, but full production-grade durability still depends on the configured backing stores.
+- `GET /metrics` serves Prometheus text only when a Prometheus registry is wired; otherwise embedded and fixture-backed modes return JSON fallback metrics.
+- `GET /health` is the shallow service signal, while `GET /health/deep` reports dependency state across persistence and runtime integrations.
 
 ## Local Development
 
 ```bash
-# Build the platform module
-./gradlew :products:aep:platform:build
-
-# Build everything
 ./gradlew :products:aep:build
-
-# Run tests
 ./gradlew :products:aep:test
-
-# Run locally (requires Kafka/Redis)
 ./gradlew :products:aep:server:run
 ```
 
-## Integration Tests
-
-Phase-1 integration coverage is grouped under `IntegrationTestSuite` in the server module. Local execution requires Docker because the suite uses Testcontainers for PostgreSQL, Redis, and Kafka.
-
-Measured repository inventory on 2026-04-15: `products/aep` currently contains 229 `*Test.java` files and 2,613 `@Test` methods. Coverage percentage still requires a fresh CI/build report.
+## Focused Verification
 
 ```bash
-./gradlew :products:aep:server:test --tests com.ghatana.aep.server.integration.IntegrationTestSuite
+./gradlew :products:aep:server:test --tests com.ghatana.aep.server.AepGoldenPathSystemTest
+./gradlew :products:aep:server:test --tests com.ghatana.aep.server.http.AepHttpServerGovernanceTest
+./gradlew :products:aep:contracts:validateAepSpec
 ```
 
-## Key Design Decisions
+## Design Constraints
 
-- **ActiveJ only** — no Spring Reactor/WebFlux. All async via `Promise`.
-- **Operator SPI** — operators are discovered via `ServiceLoader`. Add new operators by implementing `UnifiedOperator`.
-- **Agentic boundary** — AEP handles agentic execution; Data Cloud remains the AI/ML-native system of record and data foundation.
-- **Cross-product rule** — consumer products may depend on `products/aep/platform` only where AEP contracts are intentionally exposed; Data Cloud integration remains one-way from AEP to Data Cloud public contracts. See [remediation plan](../../docs/PRODUCTION_REMEDIATION_PLAN.md).
+- **ActiveJ only**: no Spring Reactor/WebFlux. Async flows stay on `Promise`.
+- **Explicit boundaries**: runtime logic, transport controllers, and persistence adapters remain separate.
+- **Truthful operator surfaces**: UI pages and docs must not present placeholder capability as live runtime evidence.
+- **Cross-product discipline**: AEP consumes Data Cloud contracts; Data Cloud does not take compile-time dependencies on AEP.
 
-## Related ADRs
+## Related Docs
 
-- `docs/adr/` — architectural decision records for operator design, event routing, multi-tenancy
+- [products/aep/docs/API_DOCUMENTATION.md](/Users/samujjwal/Development/ghatana/products/aep/docs/API_DOCUMENTATION.md)
+- [products/aep/docs/OPERATIONAL_RUNBOOK.md](/Users/samujjwal/Development/ghatana/products/aep/docs/OPERATIONAL_RUNBOOK.md)

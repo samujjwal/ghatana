@@ -60,7 +60,7 @@ const AIVoicePanel: React.FC = () => {
             disabled
             className="w-full"
           >
-            AI Voice Coming Soon
+            AI Voice Unavailable In This Build
           </Button>
         </div>
       </Card>

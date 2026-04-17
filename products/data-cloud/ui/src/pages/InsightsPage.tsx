@@ -14,6 +14,11 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import {
+  getCapabilitySignal,
+  useCapabilityRegistry,
+  type CapabilitySignal,
+} from '../api/capabilities.service';
 import { brainService, type BrainStats } from '../api/brain.service';
 import { costService, type CostBreakdown } from '../api/cost.service';
 import { workflowsApi } from '../lib/api/workflows';
@@ -53,6 +58,7 @@ import {
 } from '../components/layout/PageLayout';
 import { SpotlightRing } from '../components/brain/SpotlightRing';
 import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
+import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
 
 // =============================================================================
 // TYPES
@@ -163,12 +169,14 @@ function OverviewTab({
   monthlyCost,
   costBreakdown,
   aiSuggestions,
+  capabilities,
 }: {
   brainStats?: BrainStats;
   activePipelines?: number;
   monthlyCost?: number;
   costBreakdown?: Partial<CostBreakdown>;
   aiSuggestions: AnalyticsAiSuggestion[];
+  capabilities: CapabilitySignal[];
 }) {
   const spotlightItems = toSpotlightItems(aiSuggestions);
   const overviewActivities = toOverviewActivities(costBreakdown);
@@ -176,34 +184,36 @@ function OverviewTab({
 
   return (
     <div className="space-y-6">
+      <CapabilityTruthPanel
+        title="Runtime Capability Truth"
+        description="Live capability registration from the launcher. Operators can confirm which optional subsystems are active, degraded, or unavailable without inferring from UI behavior."
+        capabilities={capabilities}
+      />
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Records Processed"
           value={brainStats?.totalRecordsProcessed || 0}
           icon={<Sparkles className="h-5 w-5" />}
-          trend={{ value: 12, direction: 'up' }}
           color="purple"
         />
         <StatCard
           label="Active Patterns"
           value={brainStats?.activePatterns || 0}
           icon={<Brain className="h-5 w-5" />}
-          trend={{ value: 5, direction: 'up' }}
           color="blue"
         />
         <StatCard
           label="Active Pipelines"
           value={activePipelines ?? '–'}
           icon={<Activity className="h-5 w-5" />}
-          trend={{ value: 0, direction: 'neutral' }}
           color="green"
         />
         <StatCard
           label="Est. Monthly Cost"
           value={monthlyCost != null ? `$${monthlyCost.toLocaleString()}` : '–'}
           icon={<DollarSign className="h-5 w-5" />}
-          trend={{ value: 3, direction: 'down' }}
           color="yellow"
         />
       </div>
@@ -585,6 +595,22 @@ function AnalyticsTab({ collections }: { collections: string[] }) {
   );
 }
 
+function CapabilityUnavailableState({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 text-center">
+      <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
+      <h3 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h3>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+    </div>
+  );
+}
+
 // =============================================================================
 // COST TAB
 // =============================================================================
@@ -918,6 +944,17 @@ export function InsightsPage() {
   const collectionNames = normalizeCollectionsResponse(collectionsData)
     .map((collection) => collection.name ?? collection.id)
     .filter((name) => name.length > 0);
+  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const analyticsCapability = getCapabilitySignal(
+    capabilityRegistry?.capabilities,
+    ['analytics', 'trino', 'federated_query', 'federatedQuery'],
+  );
+  const aiAssistCapability = getCapabilitySignal(
+    capabilityRegistry?.capabilities,
+    ['ai_assist', 'aiAssist', 'assist', 'brain'],
+  );
+  const analyticsUnavailable = analyticsCapability?.status === 'unavailable';
+  const aiUnavailable = aiAssistCapability?.status === 'unavailable';
 
   // AI sidebar: fetch real suggestions from POST /api/v1/analytics/suggest
   const { data: aiSuggestions, isLoading: aiLoading } = useAnalyticsAiSuggestions();
@@ -932,7 +969,12 @@ export function InsightsPage() {
   // AI Sidebar content — wired to real POST /api/v1/analytics/suggest
   const aiSidebarContent = (
     <AISidebar title="AI Insights">
-      {aiLoading ? (
+      {aiUnavailable ? (
+        <CapabilityUnavailableState
+          title="AI insights unavailable"
+          message={aiAssistCapability?.detail ?? 'This deployment does not have the AI assistance capability enabled.'}
+        />
+      ) : aiLoading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-4 justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading suggestions…
@@ -1002,10 +1044,20 @@ export function InsightsPage() {
             monthlyCost={costData?.total}
             costBreakdown={costData}
             aiSuggestions={aiSuggestions ?? []}
+            capabilities={capabilityRegistry?.capabilities ?? []}
           />
         )}
         {activeTab === 'brain' && <BrainTab />}
-        {activeTab === 'analytics' && <AnalyticsTab collections={collectionNames} />}
+        {activeTab === 'analytics' && (
+          analyticsUnavailable ? (
+            <CapabilityUnavailableState
+              title="Analytics unavailable"
+              message={analyticsCapability?.detail ?? 'Configure analytics connectors such as Trino or ClickHouse to enable live dashboard queries.'}
+            />
+          ) : (
+            <AnalyticsTab collections={collectionNames} />
+          )
+        )}
         {activeTab === 'cost' && <CostTab costBreakdown={costData} aiSuggestions={aiSuggestions ?? []} />}
       </PageContent>
     </div>

@@ -1,6 +1,30 @@
 import { Page } from '@playwright/test';
 import { mockCollections, mockWorkflows, mockExecutions, mockEntities, mockAlerts } from '../fixtures/test-data';
 
+const COLLECTION_LIST_ROUTE = '**/api/v1/entities/dc_collections';
+const COLLECTION_ITEM_ROUTE = '**/api/v1/entities/dc_collections/*';
+
+function toCollectionEntity(collection: (typeof mockCollections)[number]) {
+  return {
+    id: collection.id,
+    data: {
+      name: collection.name,
+      description: collection.description,
+      schemaType: collection.schemaType,
+      status: collection.status,
+      isActive: collection.status === 'active',
+      entityCount: collection.entityCount,
+      schema: collection.schema,
+      tags: collection.tags,
+      createdBy: collection.createdBy,
+      createdAt: collection.createdAt,
+      updatedAt: collection.updatedAt,
+    },
+    createdAt: collection.createdAt,
+    updatedAt: collection.updatedAt,
+  };
+}
+
 /**
  * API Mock Helpers
  * 
@@ -16,38 +40,35 @@ import { mockCollections, mockWorkflows, mockExecutions, mockEntities, mockAlert
  */
 export async function mockCollectionsAPI(page: Page) {
   // List collections
-  await page.route('**/api/v1/collections', async (route) => {
+  await page.route(COLLECTION_LIST_ROUTE, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          items: mockCollections,
-          total: mockCollections.length,
-          page: 1,
-          pageSize: 10,
-          hasMore: false,
+          entities: mockCollections.map(toCollectionEntity),
+          count: mockCollections.length,
         }),
       });
     } else if (route.request().method() === 'POST') {
-      const body = route.request().postDataJSON();
+      const body = route.request().postDataJSON() as Record<string, unknown>;
+      const id = typeof body.id === 'string' ? body.id : `col-${Date.now()}`;
+      const timestamp = new Date().toISOString();
       await route.fulfill({
-        status: 201,
+        status: typeof body.id === 'string' ? 200 : 201,
         contentType: 'application/json',
         body: JSON.stringify({
-          id: `col-${Date.now()}`,
-          ...body,
-          entityCount: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          createdBy: 'test-user',
+          id,
+          collection: 'dc_collections',
+          createdAt: timestamp,
+          timestamp,
         }),
       });
     }
   });
 
   // Get collection by ID
-  await page.route('**/api/v1/collections/*', async (route) => {
+  await page.route(COLLECTION_ITEM_ROUTE, async (route) => {
     const url = route.request().url();
     const id = url.split('/').pop()?.split('?')[0];
     const collection = mockCollections.find(c => c.id === id);
@@ -57,7 +78,7 @@ export async function mockCollectionsAPI(page: Page) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify(collection),
+          body: JSON.stringify(toCollectionEntity(collection)),
         });
       } else {
         await route.fulfill({
@@ -72,18 +93,48 @@ export async function mockCollectionsAPI(page: Page) {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          ...collection,
-          ...body,
-          updatedAt: new Date().toISOString(),
+          id,
+          collection: 'dc_collections',
+          createdAt: collection?.createdAt ?? new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         }),
       });
     } else if (route.request().method() === 'DELETE') {
       await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true }),
+        status: 204,
+        body: '',
       });
     }
+  });
+
+  // Legacy compatibility while older tests migrate to canonical entity routes.
+  await page.route('**/api/v1/collections', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          entities: mockCollections.map(toCollectionEntity),
+          count: mockCollections.length,
+        }),
+      });
+    } else {
+      await route.fulfill({
+        status: 308,
+        headers: { Location: '/api/v1/entities/dc_collections' },
+        body: '',
+      });
+    }
+  });
+
+  await page.route('**/api/v1/collections/*', async (route) => {
+    const url = route.request().url();
+    const suffix = url.split('/api/v1/collections/')[1] ?? '';
+    await route.fulfill({
+      status: 308,
+      headers: { Location: `/api/v1/entities/dc_collections/${suffix}` },
+      body: '',
+    });
   });
 }
 

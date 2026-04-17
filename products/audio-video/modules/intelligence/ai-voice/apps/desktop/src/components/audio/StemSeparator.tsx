@@ -127,12 +127,14 @@ export function StemSeparator() {
       try {
         const window = getCurrentWindow();
         unlisten = await window.onDragDropEvent((event) => {
-          if (event.payload.type === 'over') {
+          const dragEventType = event.payload.type;
+
+          if (dragEventType === 'enter' || dragEventType === 'over') {
             setDragActive(true);
             return;
           }
 
-          if (event.payload.type === 'drop') {
+          if (dragEventType === 'drop') {
             setDragActive(false);
             const payload = event.payload as unknown as { type: 'drop'; paths?: string[] };
             const path = payload.paths?.[0];
@@ -147,9 +149,7 @@ export function StemSeparator() {
             return;
           }
 
-          if (event.payload.type === 'cancel') {
-            setDragActive(false);
-          }
+          setDragActive(false);
         });
       } catch (err) {
         logger.warn('DragDrop:listener:unavailable', { message: err instanceof Error ? err.message : String(err) });
@@ -277,8 +277,6 @@ export function StemSeparator() {
         drums: { path: string; duration: number };
         bass: { path: string; duration: number };
         other: { path: string; duration: number };
-        usedFallback?: boolean;
-        warning?: string | null;
       }>(logger, 'ai_voice_separate_stems', {
         audio_path: selectedFile,
         audio_duration: audioDuration,
@@ -303,7 +301,7 @@ export function StemSeparator() {
         success: true,
       };
 
-      setWarning(stems.usedFallback ? stems.warning ?? 'Used placeholder stems (constant tones).' : null);
+      setWarning(null);
 
       logger.info('SeparateStems:success', { totalTime, modelUsed: separationResult.model_used });
       setResult(separationResult);

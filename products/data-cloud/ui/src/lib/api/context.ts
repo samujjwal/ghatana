@@ -25,6 +25,12 @@ import {
     type UpsertContextResponse,
 } from '../../contracts/schemas';
 
+export type {
+    ContextResponse,
+    ContextSnapshot,
+    UpsertContextResponse,
+} from '../../contracts/schemas';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**

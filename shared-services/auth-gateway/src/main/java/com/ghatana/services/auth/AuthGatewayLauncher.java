@@ -77,6 +77,7 @@ public class AuthGatewayLauncher extends Launcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthGatewayLauncher.class);
     private static final int DEFAULT_PORT = 8081;
+    private static final String DEFAULT_PLATFORM_JWT_SECRET = "dev-platform-jwt-secret-change-me-in-prod!";
 
     // Constants for duplicate literals
     private static final String AUTH_GATEWAY = "auth-gateway";
@@ -84,6 +85,37 @@ public class AuthGatewayLauncher extends Launcher {
     private static final String TENANT_ID = "tenantId";
     private static final String TOKEN_TYPE = "tokenType";
     private static final String UNAUTHORIZED = "UNAUTHORIZED";
+
+    static String resolvePlatformJwtSecret(String deploymentEnv, String configuredSecret) {
+        String normalizedEnv = deploymentEnv == null ? "development" : deploymentEnv.trim().toLowerCase();
+        boolean localProfile = normalizedEnv.isBlank()
+                || "local".equals(normalizedEnv)
+                || "development".equals(normalizedEnv)
+                || "dev".equals(normalizedEnv)
+                || "test".equals(normalizedEnv);
+
+        if (localProfile) {
+            if (configuredSecret == null || configuredSecret.isBlank()) {
+                LOGGER.warn("PLATFORM_JWT_SECRET not set for local profile '{}'; using development-only fallback", normalizedEnv);
+                return DEFAULT_PLATFORM_JWT_SECRET;
+            }
+            return configuredSecret;
+        }
+
+        if (configuredSecret == null || configuredSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "PLATFORM_JWT_SECRET environment variable must be set for non-local deployment profiles.");
+        }
+
+        if (configuredSecret.length() < 32 || DEFAULT_PLATFORM_JWT_SECRET.equals(configuredSecret)) {
+            throw new IllegalStateException(
+                    "PLATFORM_JWT_SECRET environment variable must be set to a secure value " +
+                    "(minimum 32 characters and not the development fallback)."
+            );
+        }
+
+        return configuredSecret;
+    }
 
     @Provides
     ConfigManager configManager() {
@@ -209,8 +241,10 @@ public class AuthGatewayLauncher extends Launcher {
         // Platform JWT for cross-product token exchange.
         // Products forward their own JWT here; we validate it and return a
         // short-lived platform-wide token accepted by all services.
-        final String platformSecret = config.getString("PLATFORM_JWT_SECRET")
-                .orElse("dev-platform-jwt-secret-change-me-in-prod!");
+        final String platformSecret = resolvePlatformJwtSecret(
+            config.getString("DEPLOYMENT_ENV").orElse("development"),
+            config.getString("PLATFORM_JWT_SECRET").orElse(null)
+        );
         final long platformTokenTtlMs = config.getLong("PLATFORM_TOKEN_TTL_MS")
                 .orElse(15L * 60 * 1000);
         final JwtTokenProvider platformTokenProvider = JwtTokenProviders.fromSharedSecret(platformSecret, platformTokenTtlMs);

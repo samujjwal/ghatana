@@ -8,6 +8,8 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.datacloud.DataCloudClient.Query;
 import com.ghatana.pipeline.registry.model.Pipeline;
+import com.ghatana.pipeline.registry.model.PipelineRegistration;
+import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
 import com.ghatana.platform.core.common.pagination.Page;
 import com.ghatana.platform.domain.auth.TenantId;
 import io.activej.promise.Promise;
@@ -76,7 +78,7 @@ class DataCloudPipelineStoreTest {
 
             Pipeline result = store.save(p).getResult();
 
-            ArgumentCaptor<Map<String, Object>> cap = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
             verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), cap.capture());
             assertThat(cap.getValue().get("id")).isNotNull().asString().isNotBlank();
             assertThat(result).isNotNull();
@@ -92,9 +94,30 @@ class DataCloudPipelineStoreTest {
 
             store.save(p).getResult();
 
-            ArgumentCaptor<Map<String, Object>> cap = ArgumentCaptor.forClass(Map.class);
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
             verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), cap.capture());
             assertThat(cap.getValue().get("id")).isEqualTo(id);
+        }
+
+        @Test
+        @DisplayName("save: persists version label and status metadata")
+        void save_persistsVersionMetadata() {
+            String id = UUID.randomUUID().toString();
+            Pipeline p = pipeline(id);
+            p.setVersionLabel("release-2026-04");
+            p.setVersionStatus(PipelineVersionStatus.PUBLISHED);
+            p.setVersionControl(7L);
+            when(client.save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), anyMap()))
+                    .thenReturn(Promise.of(pipelineEntity(id, p)));
+
+            store.save(p).getResult();
+
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
+            verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), cap.capture());
+            assertThat(cap.getValue())
+                    .containsEntry("versionLabel", "release-2026-04")
+                    .containsEntry("versionStatus", PipelineVersionStatus.PUBLISHED.name())
+                    .containsEntry("versionControl", 7L);
         }
     }
 
@@ -279,6 +302,72 @@ class DataCloudPipelineStoreTest {
         assertThat(count).isEqualTo(0L);
     }
 
+        // =========================================================================
+        // Version snapshots
+        // =========================================================================
+
+        @Test
+        @DisplayName("saveVersionSnapshot: writes snapshot into version collection with stable composite id")
+        void saveVersionSnapshot_writesToVersionCollection() {
+        String pipelineId = "pipeline-123";
+        Pipeline snapshot = pipelineWithVersion(pipelineId, 3);
+        snapshot.setVersionLabel("v3.0.0");
+        snapshot.setVersionStatus(PipelineVersionStatus.PUBLISHED);
+        when(client.save(eq(TENANT_STR), eq(DataCloudPipelineStore.VERSION_COLLECTION), anyMap()))
+            .thenReturn(Promise.of(versionEntity(pipelineId, snapshot)));
+
+        store.saveVersionSnapshot(pipelineId, snapshot).getResult();
+
+        ArgumentCaptor<Map<String, Object>> cap = mapCaptor();
+        verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.VERSION_COLLECTION), cap.capture());
+        assertThat(cap.getValue())
+            .containsEntry("id", pipelineId + ":v3")
+            .containsEntry("pipelineId", pipelineId)
+            .containsEntry("snapshotVersion", 3)
+            .containsEntry("versionLabel", "v3.0.0")
+            .containsEntry("versionStatus", PipelineVersionStatus.PUBLISHED.name());
+        }
+
+        @Test
+        @DisplayName("findVersionHistory: returns snapshots sorted by version")
+        void findVersionHistory_returnsSortedSnapshots() {
+        String pipelineId = "versioned-pipeline";
+        Pipeline v3 = pipelineWithVersion(pipelineId, 3);
+        v3.setVersionLabel("v3");
+        Pipeline v1 = pipelineWithVersion(pipelineId, 1);
+        v1.setVersionLabel("v1");
+        when(client.query(eq(TENANT_STR), eq(DataCloudPipelineStore.VERSION_COLLECTION), any(Query.class)))
+            .thenReturn(Promise.of(List.of(versionEntity(pipelineId, v3), versionEntity(pipelineId, v1))));
+
+        List<PipelineRegistration> history = store.findVersionHistory(pipelineId, TENANT_STR).getResult();
+
+        assertThat(history)
+            .extracting(PipelineRegistration::getVersion)
+            .containsExactly(1, 3);
+        assertThat(history)
+            .extracting(PipelineRegistration::getVersionLabel)
+            .containsExactly("v1", "v3");
+        }
+
+        @Test
+        @DisplayName("findVersionSnapshot: returns snapshot with original pipeline id and version metadata")
+        void findVersionSnapshot_returnsSnapshot() {
+        String pipelineId = "pipeline-rollback";
+        Pipeline snapshot = pipelineWithVersion(pipelineId, 4);
+        snapshot.setVersionLabel("release-4");
+        snapshot.setVersionStatus(PipelineVersionStatus.ARCHIVED);
+        when(client.findById(TENANT_STR, DataCloudPipelineStore.VERSION_COLLECTION, pipelineId + ":v4"))
+            .thenReturn(Promise.of(Optional.of(versionEntity(pipelineId, snapshot))));
+
+        Optional<PipelineRegistration> result = store.findVersionSnapshot(pipelineId, 4, TENANT_STR).getResult();
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(pipelineId);
+        assertThat(result.get().getVersion()).isEqualTo(4);
+        assertThat(result.get().getVersionLabel()).isEqualTo("release-4");
+        assertThat(result.get().getVersionStatus()).isEqualTo(PipelineVersionStatus.ARCHIVED);
+        }
+
     // =========================================================================
     // constructor guard
     // =========================================================================
@@ -295,6 +384,11 @@ class DataCloudPipelineStoreTest {
     // Helpers
     // =========================================================================
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static ArgumentCaptor<Map<String, Object>> mapCaptor() {
+        return (ArgumentCaptor) ArgumentCaptor.forClass(Map.class);
+    }
+
     private static Pipeline pipeline(String id) {
         Pipeline p = new Pipeline();
         if (id != null) p.setId(id);
@@ -307,6 +401,9 @@ class DataCloudPipelineStoreTest {
         p.setUpdatedAt(Instant.now());
         p.setCreatedBy("test");
         p.setUpdatedBy("test");
+        p.setVersionLabel("");
+        p.setVersionStatus(PipelineVersionStatus.DRAFT);
+        p.setVersionControl(0L);
         return p;
     }
 
@@ -334,6 +431,29 @@ class DataCloudPipelineStoreTest {
         data.put("updatedAt",   Instant.now().toString());
         data.put("createdBy",   "test");
         data.put("updatedBy",   "test");
+        data.put("versionLabel", p.getVersionLabel() != null ? p.getVersionLabel() : "");
+        data.put("versionStatus", p.getVersionStatus() != null ? p.getVersionStatus().name() : PipelineVersionStatus.DRAFT.name());
+        data.put("versionControl", p.getVersionControl());
         return Entity.of(id, DataCloudPipelineStore.COLLECTION, data);
+    }
+
+    private static Entity versionEntity(String pipelineId, Pipeline p) {
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("id", pipelineId + ":v" + p.getVersion());
+        data.put("pipelineId", pipelineId);
+        data.put("tenantId", TENANT_STR);
+        data.put("name", p.getName() != null ? p.getName() : "test-pipeline");
+        data.put("version", p.getVersion());
+        data.put("snapshotVersion", p.getVersion());
+        data.put("active", p.isActive());
+        data.put("config", p.getConfig() != null ? p.getConfig() : "{}");
+        data.put("createdAt", Instant.now().toString());
+        data.put("updatedAt", Instant.now().toString());
+        data.put("createdBy", "test");
+        data.put("updatedBy", "test");
+        data.put("versionLabel", p.getVersionLabel() != null ? p.getVersionLabel() : "");
+        data.put("versionStatus", p.getVersionStatus() != null ? p.getVersionStatus().name() : PipelineVersionStatus.DRAFT.name());
+        data.put("versionControl", p.getVersionControl());
+        return Entity.of(pipelineId + ":v" + p.getVersion(), DataCloudPipelineStore.VERSION_COLLECTION, data);
     }
 }

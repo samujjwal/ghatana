@@ -7,16 +7,20 @@ import com.ghatana.aep.di.AepCoreModule;
 import com.ghatana.aep.di.AepProductionModule;
 import com.ghatana.aep.di.AepRuntimeProfile;
 import com.ghatana.aep.server.grpc.AepGrpcServer;
+import com.ghatana.agent.learning.review.DataCloudHumanReviewQueue;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.agent.learning.review.InMemoryHumanReviewQueue;
 import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.agent.learning.review.ReviewNotificationSpi;
+import com.ghatana.agent.spi.AgentRegistry;
 import com.ghatana.aep.server.http.AepHttpServer;
-import com.ghatana.agent.registry.InMemoryAgentRegistry;
+import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;
 import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.spi.OperatorProviderRegistry;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.client.DataCloudClientFactory;
+import com.ghatana.datacloud.deployment.ServerConfig;
 import com.ghatana.platform.incident.GracefulDegradationManager;
 import com.ghatana.platform.incident.KillSwitchService;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -35,6 +39,7 @@ import redis.clients.jedis.JedisPool;
 
 import javax.sql.DataSource;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * AEP Standalone Launcher - Entry point for standalone deployment.
@@ -57,6 +62,7 @@ import java.util.Map;
 public class AepLauncher {
 
     private static final Logger log = LoggerFactory.getLogger(AepLauncher.class);
+    private static final String DEFAULT_AGENT_REGISTRY_TENANT = "platform";
 
     public static void main(String[] args) {
         log.info("Starting AEP Standalone...");
@@ -77,10 +83,15 @@ public class AepLauncher {
             // definitions from classpath resources/operators/ and registers them
             loadOperatorCatalog();
 
+            DataCloudClient agentDataCloud = createAgentDataCloudClient(System.getenv());
+
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Shutting down AEP...");
                 engine.close();
+                if (agentDataCloud != null) {
+                    agentDataCloud.close();
+                }
                 log.info("AEP shutdown complete");
             }));
 
@@ -88,11 +99,11 @@ public class AepLauncher {
             // These are always created so HITL/learning endpoints are available.
             java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef =
                 new java.util.concurrent.atomic.AtomicReference<>();
-            HumanReviewQueue humanReviewQueue = createHumanReviewQueue(httpServerRef);
+            HumanReviewQueue humanReviewQueue = createHumanReviewQueue(agentDataCloud, httpServerRef);
 
             // Start HTTP server if configured
             if (shouldStartHttpServer(args)) {
-                startHttpServer(engine, config, httpServerRef, humanReviewQueue);
+                startHttpServer(engine, config, agentDataCloud, httpServerRef, humanReviewQueue);
             }
 
             // Start gRPC server if configured
@@ -177,18 +188,79 @@ public class AepLauncher {
     }
 
     private static void startGrpcServer() {
+        startGrpcServer(System.getenv());
+    }
+
+    static void startGrpcServer(Map<String, String> environment) {
         try {
-            AepGrpcServer grpcServer = new AepGrpcServer(new InMemoryAgentRegistry());
+            GrpcRegistryRuntime registryRuntime = createGrpcRegistryRuntime(environment);
+            AepGrpcServer grpcServer = new AepGrpcServer(registryRuntime.agentRegistry());
             grpcServer.start();
             log.info("gRPC server started on port {}", grpcServer.getPort());
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Stopping gRPC server...");
                 grpcServer.close();
+                registryRuntime.close();
             }));
         } catch (Exception e) {
             log.error("Failed to start gRPC server", e);
+            throw new IllegalStateException("Failed to start AEP gRPC server", e);
         }
+    }
+
+    static GrpcRegistryRuntime createGrpcRegistryRuntime(Map<String, String> environment) {
+        com.ghatana.datacloud.client.DataCloudClient registryDataCloud = createRegistryDataCloudClient(environment);
+        AgentRegistry agentRegistry = new DataCloudAgentRegistry(
+            registryDataCloud,
+            resolveAgentRegistryTenant(environment)
+        );
+        return new GrpcRegistryRuntime(agentRegistry, registryDataCloud);
+    }
+
+    static com.ghatana.datacloud.client.DataCloudClient createRegistryDataCloudClient(
+            Map<String, String> environment) {
+        Objects.requireNonNull(environment, "environment");
+
+        String dataCloudUrl = trimToNull(environment.get("DATACLOUD_URL"));
+        if (dataCloudUrl != null) {
+            log.info("Creating standalone Data-Cloud client for AEP gRPC registry: {}", dataCloudUrl);
+            return DataCloudClientFactory.standalone(dataCloudUrl);
+        }
+
+        if (hasDataCloudEnvironment(environment)) {
+            log.info("Creating Data-Cloud client for AEP gRPC registry from Data-Cloud environment settings");
+            return DataCloudClientFactory.fromEnvironment(environment);
+        }
+
+        if (AepRuntimeProfile.isProduction(environment)) {
+            throw new IllegalStateException(
+                "DATACLOUD_URL must be configured when AEP_PROFILE=production"
+            );
+        }
+
+        log.info("Creating embedded Data-Cloud client for AEP gRPC registry in non-production profile '{}'",
+            AepRuntimeProfile.resolve(environment));
+        return DataCloudClientFactory.embedded(ServerConfig.defaultConfig());
+    }
+
+    private static boolean hasDataCloudEnvironment(Map<String, String> environment) {
+        return trimToNull(environment.get("DC_DEPLOYMENT_MODE")) != null
+            || trimToNull(environment.get("DC_SERVER_URL")) != null
+            || trimToNull(environment.get("DC_CLUSTER_URLS")) != null;
+    }
+
+    private static String resolveAgentRegistryTenant(Map<String, String> environment) {
+        String tenant = trimToNull(environment.get("AEP_AGENT_REGISTRY_TENANT"));
+        return tenant != null ? tenant : DEFAULT_AGENT_REGISTRY_TENANT;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**
@@ -201,7 +273,8 @@ public class AepLauncher {
      * @param httpServerRef lazy reference to the HTTP server set after construction
      * @return in-memory human-review queue
      */
-    private static HumanReviewQueue createHumanReviewQueue(
+        private static HumanReviewQueue createHumanReviewQueue(
+            @org.jetbrains.annotations.Nullable DataCloudClient agentDataCloud,
             java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef) {
         ReviewNotificationSpi spi = new ReviewNotificationSpi() {
             @Override
@@ -223,11 +296,16 @@ public class AepLauncher {
             @Override public void onItemApproved(ReviewItem item) {}
             @Override public void onItemRejected(ReviewItem item) {}
         };
+        if (agentDataCloud != null) {
+            log.info("Creating DataCloud-backed HumanReviewQueue with SSE notification SPI");
+            return new DataCloudHumanReviewQueue(agentDataCloud, spi);
+        }
         log.info("Creating in-memory HumanReviewQueue with SSE notification SPI");
         return new InMemoryHumanReviewQueue(spi);
     }
 
     private static void startHttpServer(AepEngine engine, Aep.AepConfig config,
+                                        @org.jetbrains.annotations.Nullable DataCloudClient agentDataCloud,
                                         @org.jetbrains.annotations.Nullable java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef,
                                         @org.jetbrains.annotations.Nullable HumanReviewQueue humanReviewQueue) {
         int port = 8080;
@@ -237,7 +315,6 @@ public class AepLauncher {
         }
 
         try {
-            DataCloudClient agentDataCloud = createAgentDataCloudClient();
             PrometheusMeterRegistry promRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             MetricsCollector metricsCollector = MetricsCollectorFactory.create(promRegistry);
             Injector injector = createGovernanceInjector();
@@ -265,9 +342,6 @@ public class AepLauncher {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Stopping HTTP server...");
                 httpServer.stop();
-                if (agentDataCloud != null) {
-                    agentDataCloud.close();
-                }
             }));
         } catch (Exception e) {
             log.error("Failed to start HTTP server on port {}", port, e);
@@ -299,13 +373,69 @@ public class AepLauncher {
      *
      * @return configured client, or {@code null} on failure (agent registry endpoints degrade gracefully)
      */
-    private static DataCloudClient createAgentDataCloudClient() {
+    static DataCloudClient createAgentDataCloudClient(Map<String, String> environment) {
         try {
-            log.info("Creating embedded DataCloudClient for agent registry");
+            String sovereignDataDir = trimToNull(environment.get("DATACLOUD_SOVEREIGN_DATA_DIR"));
+            if (sovereignDataDir != null) {
+                log.info("Creating sovereign DataCloudClient for AEP using {}", sovereignDataDir);
+                return DataCloud.create(DataCloud.DataCloudConfig.builder()
+                    .profile(DataCloud.DataCloudConfig.DataCloudProfile.SOVEREIGN)
+                    .customConfig(Map.of("sovereign.dataDir", sovereignDataDir))
+                    .build());
+            }
+
+            if (AepRuntimeProfile.isProduction(environment)) {
+                log.info("Creating durable production DataCloudClient for AEP");
+                return DataCloud.create(DataCloud.DataCloudConfig.builder()
+                    .profile(DataCloud.DataCloudConfig.DataCloudProfile.PRODUCTION)
+                    .build());
+            }
+
+            log.info("Creating embedded DataCloudClient for AEP in non-production profile '{}'",
+                AepRuntimeProfile.resolve(environment));
             return DataCloud.embedded();
         } catch (Exception e) {
+            if (AepRuntimeProfile.isProduction(environment)) {
+                throw new IllegalStateException("Failed to create durable DataCloudClient for AEP", e);
+            }
             log.warn("DataCloudClient creation failed — agent registry endpoints will be unavailable: {}", e.getMessage());
             return null;
+        }
+    }
+
+    static final class GrpcRegistryRuntime implements AutoCloseable {
+        private final AgentRegistry agentRegistry;
+        private final com.ghatana.datacloud.client.DataCloudClient registryDataCloud;
+
+        GrpcRegistryRuntime(AgentRegistry agentRegistry,
+                            com.ghatana.datacloud.client.DataCloudClient registryDataCloud) {
+            this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry");
+            this.registryDataCloud = Objects.requireNonNull(registryDataCloud, "registryDataCloud");
+        }
+
+        AgentRegistry agentRegistry() {
+            return agentRegistry;
+        }
+
+        com.ghatana.datacloud.client.DataCloudClient registryDataCloud() {
+            return registryDataCloud;
+        }
+
+        @Override
+        public void close() {
+            if (agentRegistry instanceof AutoCloseable closeableRegistry) {
+                try {
+                    closeableRegistry.close();
+                } catch (Exception e) {
+                    log.warn("Failed to close gRPC agent registry cleanly: {}", e.getMessage(), e);
+                }
+            }
+
+            try {
+                registryDataCloud.close();
+            } catch (Exception e) {
+                log.warn("Failed to close gRPC registry Data-Cloud client cleanly: {}", e.getMessage(), e);
+            }
         }
     }
 }

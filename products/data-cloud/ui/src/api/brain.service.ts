@@ -103,7 +103,7 @@ export interface AutonomyState {
 export interface MemoryRecall {
   id: string;
   timestamp: string;
-  tier: 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL';
+  tier: 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL' | 'PREFERENCE';
   similarity: number;
   content: string;
   context: Record<string, any>;

@@ -15,8 +15,6 @@ import {
     cardStyles,
     textStyles,
     bgStyles,
-    buttonStyles,
-    inputStyles,
 } from '../lib/theme';
 
 /**
@@ -76,52 +74,54 @@ export function SettingsPage(): React.ReactElement {
     );
 }
 
+function UnavailablePanel({
+    title,
+    summary,
+    details,
+}: {
+    title: string;
+    summary: string;
+    details: string[];
+}): React.ReactElement {
+    return (
+        <div>
+            <h2 className={cn(textStyles.h2, 'mb-6')}>{title}</h2>
+
+            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-3xl')}>
+                <div className="space-y-4">
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                        <p className="font-medium">Unavailable in current deployment</p>
+                        <p className="mt-1 text-sm">{summary}</p>
+                    </div>
+
+                    <div>
+                        <h3 className={cn(textStyles.h3, 'mb-3')}>Current boundary</h3>
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                            {details.map((detail) => (
+                                <li key={detail}>{detail}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /**
  * Profile Section
  */
 function ProfileSection(): React.ReactElement {
     return (
-        <div>
-            <h2 className={cn(textStyles.h2, 'mb-6')}>Profile Settings</h2>
-
-            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-2xl')}>
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
-                            JD
-                        </div>
-                        <div>
-                            <button className={buttonStyles.secondary}>Change Avatar</button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className={cn(textStyles.label, 'block mb-1')}>First Name</label>
-                            <input type="text" defaultValue="John" className={inputStyles.base} />
-                        </div>
-                        <div>
-                            <label className={cn(textStyles.label, 'block mb-1')}>Last Name</label>
-                            <input type="text" defaultValue="Doe" className={inputStyles.base} />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Email</label>
-                        <input type="email" defaultValue="john.doe@example.com" className={inputStyles.base} />
-                    </div>
-
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Role</label>
-                        <input type="text" defaultValue="Data Steward" disabled className={cn(inputStyles.base, 'bg-gray-100 dark:bg-gray-600')} />
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button className={buttonStyles.primary}>Save Changes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <UnavailablePanel
+            title="Profile Settings"
+            summary="User profile management is not exposed by the current Data Cloud UI backend, so this page no longer fabricates operator identity fields."
+            details={[
+                'Profile data must come from the authenticated identity provider or a dedicated user-profile API.',
+                'Role and tenant membership are runtime concerns and should be surfaced from auth or session state, not hard-coded defaults.',
+                'No save action is shown until a real write endpoint exists.',
+            ]}
+        />
     );
 }
 
@@ -129,68 +129,16 @@ function ProfileSection(): React.ReactElement {
  * Preferences Section
  */
 function PreferencesSection(): React.ReactElement {
-    const [theme, setTheme] = useState('system');
-    const [language, setLanguage] = useState('en');
-
     return (
-        <div>
-            <h2 className={cn(textStyles.h2, 'mb-6')}>Preferences</h2>
-
-            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-2xl')}>
-                <div className="space-y-6">
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Theme</label>
-                        <select
-                            value={theme}
-                            onChange={(e) => setTheme(e.target.value)}
-                            className={inputStyles.select}
-                        >
-                            <option value="system">System Default</option>
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Language</label>
-                        <select
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
-                            className={inputStyles.select}
-                        >
-                            <option value="en">English</option>
-                            <option value="es">Spanish</option>
-                            <option value="fr">French</option>
-                            <option value="de">German</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Timezone</label>
-                        <select className={inputStyles.select}>
-                            <option>UTC</option>
-                            <option>America/New_York</option>
-                            <option>America/Los_Angeles</option>
-                            <option>Europe/London</option>
-                            <option>Asia/Tokyo</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className={cn(textStyles.label, 'block mb-1')}>Date Format</label>
-                        <select className={inputStyles.select}>
-                            <option>MM/DD/YYYY</option>
-                            <option>DD/MM/YYYY</option>
-                            <option>YYYY-MM-DD</option>
-                        </select>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button className={buttonStyles.primary}>Save Preferences</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <UnavailablePanel
+            title="Preferences"
+            summary="Preference persistence is not wired to a user settings API in this deployment."
+            details={[
+                'Theme, locale, timezone, and date formatting should be backed by a real user-preference store.',
+                'Showing static defaults would imply persistence that does not exist.',
+                'The shell still exposes the section so the missing capability is explicit instead of being faked.',
+            ]}
+        />
     );
 }
 
@@ -198,71 +146,16 @@ function PreferencesSection(): React.ReactElement {
  * Notifications Section
  */
 function NotificationsSection(): React.ReactElement {
-    const [emailAlerts, setEmailAlerts] = useState(true);
-    const [slackAlerts, setSlackAlerts] = useState(false);
-    const [workflowNotifs, setWorkflowNotifs] = useState(true);
-    const [dataQualityNotifs, setDataQualityNotifs] = useState(true);
-
     return (
-        <div>
-            <h2 className={cn(textStyles.h2, 'mb-6')}>Notification Settings</h2>
-
-            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-2xl')}>
-                <div className="space-y-6">
-                    <div>
-                        <h3 className={cn(textStyles.h3, 'mb-4')}>Channels</h3>
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    checked={emailAlerts}
-                                    onChange={(e) => setEmailAlerts(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300"
-                                />
-                                <span className={textStyles.body}>Email Notifications</span>
-                            </label>
-                            <label className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    checked={slackAlerts}
-                                    onChange={(e) => setSlackAlerts(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300"
-                                />
-                                <span className={textStyles.body}>Slack Notifications</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h3 className={cn(textStyles.h3, 'mb-4')}>Notification Types</h3>
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    checked={workflowNotifs}
-                                    onChange={(e) => setWorkflowNotifs(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300"
-                                />
-                                <span className={textStyles.body}>Workflow Execution Updates</span>
-                            </label>
-                            <label className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    checked={dataQualityNotifs}
-                                    onChange={(e) => setDataQualityNotifs(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300"
-                                />
-                                <span className={textStyles.body}>Data Quality Alerts</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <button className={buttonStyles.primary}>Save Notification Settings</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <UnavailablePanel
+            title="Notification Settings"
+            summary="Notification channel preferences are not backed by a delivery or user-preference service here."
+            details={[
+                'Email, Slack, workflow, and quality-alert subscriptions require a real notification backend.',
+                'Hard-coded checked states looked live but were not connected to delivery behavior.',
+                'Operators should configure notifications through the owning service until this surface is implemented.',
+            ]}
+        />
     );
 }
 
@@ -270,39 +163,19 @@ function NotificationsSection(): React.ReactElement {
  * API Keys Section
  */
 function ApiKeysSection(): React.ReactElement {
-    const mockApiKeys = [
-        { id: 'key-1', name: 'Production API Key', prefix: 'dc_prod_****', createdAt: '2024-01-01', lastUsed: '2024-01-12' },
-        { id: 'key-2', name: 'Development Key', prefix: 'dc_dev_****', createdAt: '2024-01-05', lastUsed: '2024-01-11' },
-    ];
-
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
-                <h2 className={textStyles.h2}>API Keys</h2>
-                <button className={buttonStyles.primary}>+ Generate New Key</button>
-            </div>
+            <UnavailablePanel
+                title="API Keys"
+                summary="API key inventory and rotation are enforced at launcher bootstrap, but the current UI does not expose key-management endpoints."
+                details={[
+                    'No API key list is rendered because there is no safe read endpoint for secret material or key metadata in this UI surface.',
+                    'No Generate, Regenerate, or Revoke action is shown until a dedicated management API exists.',
+                    'For non-local profiles, runtime enforcement is driven by DATACLOUD_API_KEYS and launcher validation.',
+                ]}
+            />
 
-            <div className={cn(cardStyles.base, 'max-w-2xl overflow-hidden')}>
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {mockApiKeys.map((key) => (
-                        <div key={key.id} className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className={textStyles.h4}>{key.name}</p>
-                                <p className={cn(textStyles.mono, 'mt-1')}>{key.prefix}</p>
-                                <p className={cn(textStyles.xs, 'mt-1')}>
-                                    Created: {key.createdAt} • Last used: {key.lastUsed}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Regenerate</button>
-                                <button className={cn(buttonStyles.danger, buttonStyles.sm)}>Revoke</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-2xl mt-6')}>
+            <div className={cn(cardStyles.base, cardStyles.padded, 'max-w-3xl mt-6')}>
                 <h3 className={cn(textStyles.h3, 'mb-2')}>API Documentation</h3>
                 <p className={textStyles.muted}>
                     Learn how to use the Data Cloud API to integrate with your applications.

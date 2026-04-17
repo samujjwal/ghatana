@@ -8,11 +8,56 @@ use crate::python;
 use crate::state::AppState;
 use crate::audio;
 use hound::{SampleFormat, WavSpec, WavWriter};
+use serde::Deserialize;
 use serde_json::Value;
 use std::f32::consts::PI;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use tauri::State;
+
+#[derive(Debug, Deserialize)]
+struct PersistedTrainingStatus {
+    status: TrainingStatus,
+    progress: f32,
+    error: Option<String>,
+}
+
+fn training_status_path(state: &AppState, session_id: &str) -> PathBuf {
+    state
+        .data_dir
+        .join("training-sessions")
+        .join(format!("{}.json", session_id))
+}
+
+fn read_training_status_file(path: &Path) -> Result<Option<TrainingStatusResponse>, AppError> {
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let contents = std::fs::read_to_string(path)?;
+    let persisted: PersistedTrainingStatus = serde_json::from_str(&contents)
+        .map_err(|e| AppError::Training(format!("Invalid training status file: {}", e)))?;
+
+    Ok(Some(TrainingStatusResponse {
+        status: persisted.status,
+        progress: persisted.progress,
+        error: persisted.error,
+    }))
+}
+
+fn apply_training_status(
+    session: &mut TrainingSession,
+    status: &TrainingStatusResponse,
+    completed_at: &str,
+) {
+    session.status = status.status;
+    session.progress = status.progress;
+    session.error = status.error.clone();
+
+    if matches!(status.status, TrainingStatus::Completed | TrainingStatus::Failed) {
+        session.completed_at = Some(completed_at.to_string());
+    }
+}
 
 // ============================================================================
 // Audio Commands
@@ -219,20 +264,6 @@ pub async fn ai_voice_separate_stems(
         audio_duration
     );
 
-    let mut duration = meta.duration;
-    if duration <= 0.0 {
-        if let Some(d) = audio_duration {
-            duration = d;
-            tracing::info!("Using frontend-provided duration (audio_duration): {}", duration);
-        } else {
-            tracing::warn!(
-                "Audio duration unavailable from metadata; defaulting to 0.5s placeholder stems"
-            );
-        }
-    }
-    let duration = duration.max(0.5);
-    tracing::info!("Stem separation duration resolved: {}", duration);
-
     let log_wav_duration = |label: &str, path: &str| {
         match crate::audio::load_audio_metadata(path) {
             Ok(m) => tracing::info!("Stem WAV duration on disk: {} duration={}", label, m.duration),
@@ -285,48 +316,13 @@ pub async fn ai_voice_separate_stems(
         }
         Err(AppError::Python(message)) if message.contains("stem_separator_enhanced") => {
             tracing::warn!(
-                "Stem separation Python module unavailable, using placeholder stems: {}",
+                "Stem separation Python module unavailable; returning explicit failure: {}",
                 message
             );
-
-            let vocals_path = output_dir.join("vocals.wav");
-            let drums_path = output_dir.join("drums.wav");
-            let bass_path = output_dir.join("bass.wav");
-            let other_path = output_dir.join("other.wav");
-
-            write_example_wav(&vocals_path, duration, 44_100u32, 440.0)?;
-            write_example_wav(&drums_path, duration, 44_100u32, 220.0)?;
-            write_example_wav(&bass_path, duration, 44_100u32, 110.0)?;
-            write_example_wav(&other_path, duration, 44_100u32, 330.0)?;
-
-            log_wav_duration("vocals", &vocals_path.to_string_lossy());
-            log_wav_duration("drums", &drums_path.to_string_lossy());
-            log_wav_duration("bass", &bass_path.to_string_lossy());
-            log_wav_duration("other", &other_path.to_string_lossy());
-
-            Ok(StemsOutput {
-                vocals: StemResult {
-                    path: vocals_path.to_string_lossy().to_string(),
-                    duration,
-                },
-                drums: StemResult {
-                    path: drums_path.to_string_lossy().to_string(),
-                    duration,
-                },
-                bass: StemResult {
-                    path: bass_path.to_string_lossy().to_string(),
-                    duration,
-                },
-                other: StemResult {
-                    path: other_path.to_string_lossy().to_string(),
-                    duration,
-                },
-                used_fallback: true,
-                warning: Some(
-                    "Python stem separation is unavailable. Generated placeholder sine-wave stems (constant tones). Install Python deps (demucs/torch) to get real stems."
-                        .to_string(),
-                ),
-            })
+            Err(AppError::Python(
+                "Stem separation is unavailable in this environment. Install the Python stem-separation dependencies (demucs, torch, torchaudio) to produce real stems; placeholder output is blocked."
+                    .to_string(),
+            ))
         }
         Err(err) => Err(err),
     }
@@ -532,14 +528,22 @@ pub async fn ai_voice_start_training(
     state: State<'_, AppState>,
 ) -> Result<String, AppError> {
     tracing::info!("Starting training for model: {}", model_name);
-    
+
+    let session_id = uuid::Uuid::new_v4().to_string();
     let output_path = state.model_path(&model_name);
-    let session_id = python::train_voice_model(
+    let status_path = training_status_path(&state, &session_id);
+    if let Some(parent) = status_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    python::train_voice_model(
+        &session_id,
         &sample_paths,
         output_path.to_str().unwrap_or(""),
         &model_name,
+        status_path.to_str().unwrap_or(""),
     )?;
-    
+
     let mut sessions = state.training_sessions.write().await;
     sessions.insert(session_id.clone(), TrainingSession {
         id: session_id.clone(),
@@ -560,16 +564,99 @@ pub async fn ai_voice_training_status(
     session_id: String,
     state: State<'_, AppState>,
 ) -> Result<TrainingStatusResponse, AppError> {
+    let status_path = training_status_path(&state, &session_id);
+
+    if let Some(status) = read_training_status_file(&status_path)? {
+        let now = chrono::Utc::now().to_rfc3339();
+        let maybe_model_name = {
+            let mut sessions = state.training_sessions.write().await;
+            if let Some(session) = sessions.get_mut(&session_id) {
+                apply_training_status(session, &status, &now);
+                Some(session.model_name.clone())
+            } else {
+                None
+            }
+        };
+
+        if matches!(status.status, TrainingStatus::Completed) {
+            if let Some(model_name) = maybe_model_name {
+                let model_path = state.model_path(&model_name);
+                if model_path.exists() {
+                    let mut models = state.voice_models.write().await;
+                    models.entry(model_name.clone()).or_insert_with(|| VoiceModel {
+                        id: model_name.clone(),
+                        name: model_name,
+                        path: model_path.to_string_lossy().to_string(),
+                        created_at: chrono::Utc::now().to_rfc3339(),
+                        training_samples: 0,
+                        quality: 0.0,
+                        is_default: false,
+                    });
+                }
+            }
+        }
+
+        return Ok(status);
+    }
+
     let sessions = state.training_sessions.read().await;
-    
     if let Some(session) = sessions.get(&session_id) {
-        Ok(TrainingStatusResponse {
+        return Ok(TrainingStatusResponse {
             status: session.status,
             progress: session.progress,
             error: session.error.clone(),
-        })
-    } else {
-        python::get_training_status(&session_id)
+        });
+    }
+
+    python::get_training_status(&session_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    #[test]
+    fn reads_persisted_training_status_file() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let status_path = temp_dir.path().join("session.json");
+        std::fs::write(
+            &status_path,
+            r#"{"status":"training","progress":42.5,"error":null}"#,
+        )
+        .expect("write status");
+
+        let result = read_training_status_file(&status_path)
+            .expect("status read")
+            .expect("status exists");
+
+        assert_eq!(result.status, TrainingStatus::Training);
+        assert_eq!(result.progress, 42.5);
+        assert_eq!(result.error, None);
+    }
+
+    #[test]
+    fn apply_training_status_marks_session_complete() {
+        let mut session = TrainingSession {
+            id: "session-1".to_string(),
+            model_name: "demo".to_string(),
+            status: TrainingStatus::Pending,
+            progress: 0.0,
+            started_at: Some("2026-04-17T00:00:00Z".to_string()),
+            completed_at: None,
+            error: None,
+        };
+        let status = TrainingStatusResponse {
+            status: TrainingStatus::Completed,
+            progress: 100.0,
+            error: None,
+        };
+
+        apply_training_status(&mut session, &status, "2026-04-17T00:01:00Z");
+
+        assert_eq!(session.status, TrainingStatus::Completed);
+        assert_eq!(session.progress, 100.0);
+        assert_eq!(session.completed_at.as_deref(), Some("2026-04-17T00:01:00Z"));
     }
 }
 

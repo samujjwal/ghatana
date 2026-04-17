@@ -14,6 +14,7 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 import { dataConnectorApi, storageProfileApi } from '../api';
+import { CompressionType, EncryptionType, StorageType } from '../../types';
 
 describe('data fabric api service', () => {
   beforeEach(() => {
@@ -89,11 +90,11 @@ describe('data fabric api service', () => {
 
     const created = await storageProfileApi.create({
       name: 'Archive Storage',
-      type: 'AZURE_BLOB',
+      type: StorageType.AZURE_BLOB,
       description: 'Archive blob store',
       config: { container: 'archive' },
-      encryption: { type: 'MANAGED' },
-      compression: { type: 'ZSTD' },
+      encryption: { type: EncryptionType.MANAGED },
+      compression: { type: CompressionType.ZSTD },
       isDefault: false,
     });
 

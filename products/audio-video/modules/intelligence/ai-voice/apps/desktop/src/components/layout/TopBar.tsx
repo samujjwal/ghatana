@@ -23,7 +23,7 @@ function formatTime(seconds: number): string {
 }
 
 export const TopBar: React.FC = () => {
-  const { state, createProject, setAudioFile, setError, setPlayback } = useProject();
+  const { state, createProject, setAudioFile, setError, setPlayback, setRuntimeMode } = useProject();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [examplePickerOpen, setExamplePickerOpen] = useState(false);
@@ -142,10 +142,15 @@ export const TopBar: React.FC = () => {
     logger.info('NewProject:request', { name });
     createProject(name);
     setPlayback({ isPlaying: false, currentTime: 0, duration: 0 });
+    setRuntimeMode({
+      mode: 'degraded',
+      reason: 'Open a real project input and verify dependencies before treating this session as production-capable.',
+      exportAllowed: false,
+    });
     setError(null);
     showNotice('success', 'Created new project');
     logger.info('NewProject:success', { name });
-  }, [createProject, setError, setPlayback, showNotice]);
+  }, [createProject, setError, setPlayback, setRuntimeMode, showNotice]);
 
   const handleOpenFile = useCallback(async () => {
     try {
@@ -186,6 +191,11 @@ export const TopBar: React.FC = () => {
           ...metadata,
         });
 
+        setRuntimeMode({
+          mode: 'production',
+          reason: 'Working with operator-provided audio input. Export remains enabled unless later runtime checks downgrade the session.',
+          exportAllowed: true,
+        });
         setError(null);
         setPlayback({ isPlaying: false, currentTime: 0, duration: metadata.duration });
         showNotice('success', 'Audio loaded');
@@ -197,7 +207,7 @@ export const TopBar: React.FC = () => {
       setError(message);
       showNotice('error', message);
     }
-  }, [createProject, setAudioFile, setError, setPlayback, showNotice, state.project]);
+  }, [createProject, setAudioFile, setError, setPlayback, setRuntimeMode, showNotice, state.project]);
 
   const handleLoadExampleAudio = useCallback(async () => {
     try {
@@ -253,6 +263,11 @@ export const TopBar: React.FC = () => {
           ...chosen,
         });
 
+        setRuntimeMode({
+          mode: 'demo',
+          reason: 'Example audio is loaded. Treat generated outputs as demo-only and keep export blocked.',
+          exportAllowed: false,
+        });
         setError(null);
         setPlayback({ isPlaying: false, currentTime: 0, duration: chosen.duration });
         showNotice('success', `Loaded example: ${chosen.name}`);
@@ -261,7 +276,7 @@ export const TopBar: React.FC = () => {
         setExampleChoices([]);
       }
     },
-    [createProject, setAudioFile, setError, setPlayback, showNotice, state.project]
+    [createProject, setAudioFile, setError, setPlayback, setRuntimeMode, showNotice, state.project]
   );
 
   const handleExport = useCallback(async () => {
@@ -269,6 +284,12 @@ export const TopBar: React.FC = () => {
       if (!state.project) {
         logger.info('ExportProject:blocked', { reason: 'no_project' });
         showNotice('info', 'Create a project before exporting');
+        return;
+      }
+
+      if (!state.runtimeMode.exportAllowed) {
+        logger.info('ExportProject:blocked', { reason: state.runtimeMode.mode, detail: state.runtimeMode.reason });
+        showNotice('info', `Export blocked in ${state.runtimeMode.mode} mode`);
         return;
       }
 
@@ -286,7 +307,7 @@ export const TopBar: React.FC = () => {
       setError(message);
       showNotice('error', message);
     }
-  }, [state.project, setError, showNotice]);
+  }, [state.project, state.runtimeMode.exportAllowed, state.runtimeMode.mode, state.runtimeMode.reason, setError, showNotice]);
 
   const handleTogglePlay = useCallback(() => {
     if (!audioSrc) {
@@ -385,6 +406,18 @@ export const TopBar: React.FC = () => {
         <h1 className="text-lg font-semibold text-white">
           {state.project?.name || 'AI Voice Studio'}
         </h1>
+        <span
+          className={
+            state.runtimeMode.mode === 'production'
+              ? 'inline-flex items-center rounded-full bg-emerald-900/60 px-2 py-1 text-xs font-medium text-emerald-300'
+              : state.runtimeMode.mode === 'demo'
+                ? 'inline-flex items-center rounded-full bg-blue-900/60 px-2 py-1 text-xs font-medium text-blue-300'
+                : 'inline-flex items-center rounded-full bg-amber-900/60 px-2 py-1 text-xs font-medium text-amber-300'
+          }
+          title={state.runtimeMode.reason}
+        >
+          {state.runtimeMode.mode.toUpperCase()}
+        </span>
         {state.project?.audioFile && (
           <span className="text-sm text-gray-400">
             {state.project.audioFile.name}
@@ -471,9 +504,15 @@ export const TopBar: React.FC = () => {
         </button>
         <button
           onClick={handleExport}
-          disabled={!state.project}
+          disabled={!state.project || !state.runtimeMode.exportAllowed}
           className="px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          title={state.project ? 'Export current project' : 'Create a project before exporting'}
+          title={
+            !state.project
+              ? 'Create a project before exporting'
+              : state.runtimeMode.exportAllowed
+                ? 'Export current project'
+                : `Export is blocked in ${state.runtimeMode.mode} mode`
+          }
         >
           Export
         </button>

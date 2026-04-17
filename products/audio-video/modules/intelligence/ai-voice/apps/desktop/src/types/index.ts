@@ -14,6 +14,14 @@ export type View =
   | 'library'
   | 'settings';
 
+export type RuntimeMode = 'production' | 'degraded' | 'demo';
+
+export interface RuntimeModeState {
+  mode: RuntimeMode;
+  reason: string;
+  exportAllowed: boolean;
+}
+
 /** Project state */
 export interface Project {
   id: string;

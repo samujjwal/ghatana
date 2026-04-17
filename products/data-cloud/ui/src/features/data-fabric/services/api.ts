@@ -24,14 +24,16 @@ import {
   type StorageProfile as ContractStorageProfile,
   type StorageProfileMetrics as ContractStorageProfileMetrics,
 } from "@/contracts/schemas";
-import type {
+import {
   CompressionType,
+  EncryptionType,
+  StorageType,
+} from "../types";
+import type {
   StorageProfile,
   StorageProfileFormInput,
   DataConnector,
   DataConnectorFormInput,
-  EncryptionType,
-  StorageType,
   StorageMetrics,
   SyncStatistics,
 } from "../types";
@@ -56,17 +58,17 @@ const SyncStatisticsSchema = z.object({
 });
 
 const STORAGE_TYPE_BY_CONTRACT: Record<string, StorageType> = {
-  's3': 'S3',
-  'azure-blob': 'AZURE_BLOB',
-  'gcs': 'GCS',
-  'postgresql': 'POSTGRESQL',
-  'timescaledb': 'POSTGRESQL',
-  'clickhouse': 'DATABRICKS',
-  'in-memory': 'HDFS',
+  's3': StorageType.S3,
+  'azure-blob': StorageType.AZURE_BLOB,
+  'gcs': StorageType.GCS,
+  'postgresql': StorageType.POSTGRESQL,
+  'timescaledb': StorageType.POSTGRESQL,
+  'clickhouse': StorageType.DATABRICKS,
+  'in-memory': StorageType.HDFS,
 };
 
 function normalizeStorageType(type: string): StorageType {
-  return STORAGE_TYPE_BY_CONTRACT[type.toLowerCase()] ?? 'POSTGRESQL';
+  return STORAGE_TYPE_BY_CONTRACT[type.toLowerCase()] ?? StorageType.POSTGRESQL;
 }
 
 function toStorageProfileStatus(profile: ContractStorageProfile): boolean {
@@ -85,8 +87,10 @@ function readBoolean(record: Record<string, unknown>, key: string): boolean | un
 
 function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
   const config = profile.config;
-  const encryption = (config.encryption as { type?: EncryptionType; keyId?: string } | undefined) ?? { type: 'NONE' };
-  const compression = (config.compression as { type?: CompressionType } | undefined) ?? { type: 'NONE' };
+  const encryption: { type?: EncryptionType; keyId?: string } =
+    (config.encryption as { type?: EncryptionType; keyId?: string } | undefined) ?? { type: EncryptionType.NONE };
+  const compression: { type?: CompressionType } =
+    (config.compression as { type?: CompressionType } | undefined) ?? { type: CompressionType.NONE };
 
   return {
     id: profile.id,
@@ -95,11 +99,11 @@ function mapStorageProfile(profile: ContractStorageProfile): StorageProfile {
     description: readString(config, 'description'),
     config,
     encryption: {
-      type: encryption.type ?? 'NONE',
+      type: encryption.type ?? EncryptionType.NONE,
       keyId: encryption.keyId,
     },
     compression: {
-      type: compression.type ?? 'NONE',
+      type: compression.type ?? CompressionType.NONE,
     },
     isDefault: profile.isDefault,
     isActive: toStorageProfileStatus(profile),

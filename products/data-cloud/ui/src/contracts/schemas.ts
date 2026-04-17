@@ -864,6 +864,8 @@ export const EventQueryResponseSchema = z.object({
   timestamp: z.string(),
 });
 
+export const PaginatedEventResponseSchema = EventQueryResponseSchema;
+
 // ---------------------------------------------------------------------------
 // Memory Plane
 // ---------------------------------------------------------------------------

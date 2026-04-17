@@ -98,14 +98,12 @@ export const StudioView: React.FC = () => {
         drums: { path: string; duration: number };
         bass: { path: string; duration: number };
         other: { path: string; duration: number };
-        usedFallback?: boolean;
-        warning?: string | null;
       }>(logger, 'ai_voice_separate_stems', {
         audio_path: state.project.audioFile.path,
         audio_duration: audioDuration,
       });
 
-      setSeparationWarning(stems.usedFallback ? stems.warning ?? 'Used placeholder stems (constant tones).' : null);
+      setSeparationWarning(null);
 
       setStems({
         id: crypto.randomUUID(),

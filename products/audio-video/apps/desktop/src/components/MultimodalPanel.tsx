@@ -52,7 +52,7 @@ const MultimodalPanel: React.FC = () => {
             disabled
             className="w-full"
           >
-            Multimodal Processing Coming Soon
+            Multimodal Processing Unavailable In This Build
           </Button>
         </div>
       </Card>

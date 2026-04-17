@@ -3,8 +3,12 @@ package com.ghatana.aep.server.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.pipeline.registry.model.Pipeline;
+import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
+import com.ghatana.platform.domain.auth.TenantId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -157,21 +161,99 @@ class AepHttpServerDataCloudIntegrationTest {
             .contains("aep.anomaly", "aep.kpi");
     }
 
+    @Test
+    @DisplayName("pipeline version metadata and snapshots persist across server restart when Data-Cloud is configured")
+    void pipelineVersioningPersistsAcrossServerRestart() throws Exception {
+        dataCloud = DataCloud.embedded();
+
+        String pipelineId = "pipeline-durable-1";
+        DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud);
+        Pipeline published = new Pipeline();
+        published.setId(pipelineId);
+        published.setTenantId(TenantId.of("tenant-pipeline"));
+        published.setName("Durable Pipeline");
+        published.setVersion(1);
+        published.setActive(true);
+        published.setConfig("{\"stages\":[{\"name\":\"step1\",\"type\":\"transform\"}]}");
+        published.setCreatedBy("test");
+        published.setUpdatedBy("test");
+        published.setVersionLabel("release-1");
+        published.setVersionStatus(PipelineVersionStatus.PUBLISHED);
+        pipelineStore.save(published).getResult();
+        pipelineStore.saveVersionSnapshot(pipelineId, published).getResult();
+
+        int firstPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, firstPort, null, dataCloud);
+        server.start();
+        waitForServerReady(firstPort);
+
+        HttpResponse<String> firstGet = get(firstPort,
+            "/api/v1/pipelines/" + pipelineId,
+            "tenant-pipeline");
+        assertThat(firstGet.statusCode()).isEqualTo(200);
+
+        HttpResponse<String> firstHistory = get(firstPort,
+            "/api/v1/pipelines/" + pipelineId + "/versions",
+            "tenant-pipeline");
+        assertThat(firstHistory.statusCode()).isEqualTo(200);
+
+        server.stop();
+        engine.close();
+        server = null;
+        engine = null;
+
+        int secondPort = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, secondPort, null, dataCloud);
+        server.start();
+        waitForServerReady(secondPort);
+
+        HttpResponse<String> getPipeline = get(secondPort,
+            "/api/v1/pipelines/" + pipelineId,
+            "tenant-pipeline");
+        assertThat(getPipeline.statusCode()).isEqualTo(200);
+        Map<?, ?> pipelineBody = mapper.readValue(getPipeline.body(), Map.class);
+        assertThat(pipelineBody.get("versionLabel")).isEqualTo("release-1");
+        assertThat(pipelineBody.get("versionStatus")).isEqualTo("PUBLISHED");
+
+        HttpResponse<String> history = get(secondPort,
+            "/api/v1/pipelines/" + pipelineId + "/versions",
+            "tenant-pipeline");
+        assertThat(history.statusCode()).isEqualTo(200);
+        Map<?, ?> historyBody = mapper.readValue(history.body(), Map.class);
+        assertThat(((Number) historyBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) historyBody.get("versions")).toString()).contains("release-1");
+    }
+
     private HttpResponse<String> get(int port, String path) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        return get(port, path, null);
+    }
+
+    private HttpResponse<String> get(int port, String path, String tenantId) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create("http://127.0.0.1:" + port + path))
-            .GET()
-            .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            .GET();
+        if (tenantId != null) {
+            builder.header("X-Tenant-Id", tenantId);
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(int port, String path, String body) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        return post(port, path, body, null);
+    }
+
+    private HttpResponse<String> post(int port, String path, String body, String tenantId) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            .header("Content-Type", "application/json");
+        if (tenantId != null) {
+            builder.header("X-Tenant-Id", tenantId);
+        }
+        return httpClient.send(
+            builder.POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.ofString());
     }
 
     private static int findFreePort() throws IOException {

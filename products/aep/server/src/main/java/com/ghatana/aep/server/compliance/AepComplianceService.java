@@ -99,6 +99,15 @@ public final class AepComplianceService {
         }
     }
 
+    /**
+     * Returns the collections included in compliance operations.
+     *
+     * @return immutable collection list
+     */
+    public List<String> registeredCollections() {
+        return List.copyOf(registeredCollections);
+    }
+
     // =========================================================================
     // Right of Access (GDPR Art.15 / CCPA §1798.110)
     // =========================================================================

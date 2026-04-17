@@ -101,11 +101,17 @@ public class LearningController {
     }
 
     public Promise<HttpResponse> handleListPolicies(HttpRequest request) {
-        if (humanReviewQueue == null) {
-            return Promise.of(HttpHelper.errorResponse(501,
-                "Policy store not available — start AEP with AepLearningModule"));
-        }
         String tenantId = HttpHelper.resolveTenantId(request);
+        if (humanReviewQueue == null) {
+            return Promise.of(HttpHelper.jsonResponse(Map.of(
+                "policies", List.of(),
+                "count", 0,
+                "tenantId", tenantId,
+                "configured", false,
+                "message", "Policy store not available — start AEP with AepLearningModule",
+                "timestamp", Instant.now().toString()
+            )));
+        }
         ReviewFilter filter = new ReviewFilter(tenantId, ReviewItemType.POLICY, null, null, 200);
         return humanReviewQueue.getPending(filter)
             .map(items -> {

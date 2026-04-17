@@ -1,26 +1,40 @@
 # AI Voice Production Studio
 
 **Version:** 1.0.0  
-**Status:** ✅ **Production Ready**  
-**Last Updated:** Implementation Complete
+**Status:** Experimental / Internal Preview  
+**Last Updated:** 2026-04-17
 
-Interactive voice replacement and music production studio with professional stem separation, voice training, voice conversion, and multi-track production capabilities.
+Interactive voice replacement and music production studio with stem separation, voice training, voice conversion, and multi-track production capabilities.
+
+This module is not release-ready as a production product surface. Runtime behavior still depends on optional Python and model dependencies, and unsupported fallback paths are blocked instead of being presented as successful production output.
+
+## Product Boundary
+
+AI Voice currently belongs to the `audio-video` product workspace as an experimental creator-facing application, not as a shared platform capability that other products should treat as a stable contract. Shared media primitives can still graduate into platform modules later, but the current desktop app, Python ML stack, and workflow claims remain product-scoped and preview-only.
+
+## Runtime Modes
+
+| Runtime mode | Meaning | Export policy |
+| --- | --- | --- |
+| `production` | Real user audio plus verified local model prerequisites for the current workstation session | Enabled |
+| `degraded` | Missing models, failed runtime checks, or unresolved local dependency state | Blocked |
+| `demo` | Example audio or guided preview session intended to demonstrate flows only | Blocked |
 
 ---
 
 ## 🎯 Features
 
-### ✅ D3: Stem Separation (COMPLETE)
+### D3: Stem Separation
 - **Professional audio separation** into vocals, drums, bass, and other instruments
 - **Real-time progress tracking** with time estimates and stage indicators
 - **Quality metrics** per stem (RMS, peak, spectral centroid)
 - **Drag & drop interface** with instant upload
 - **WaveSurfer.js visualization** with multi-stem playback
 - **Individual controls** per stem (play, pause, volume, mute)
-- **Performance:** < 20s for 3-minute audio (33% faster than target)
-- **Tests:** 15 comprehensive integration tests
+- **Current mode:** real stems only when Python separation dependencies are installed; otherwise the operation fails explicitly
+- **Verification:** Python integration tests exist, but production-readiness claims are not evidence-backed end-to-end
 
-### ✅ D4: Voice Training (MVP COMPLETE)
+### D4: Voice Training
 - **Complete training pipeline** with dataset validation
 - **Preprocessing** (silence removal, normalization, resampling)
 - **Training loop** with checkpoint management
@@ -30,7 +44,7 @@ Interactive voice replacement and music production studio with professional stem
 - **Architecture ready** for VITS, RVC, and custom models
 - **Checkpoint versioning** with metadata tracking
 
-### ✅ D5: Voice Conversion (CORE COMPLETE)
+### D5: Voice Conversion
 - **Advanced pitch extraction** (4 methods: CREPE, pYIN, HARVEST, fallback)
 - **Pitch shifting** with semitone control
 - **DTW timing alignment** for natural speech patterns
@@ -40,9 +54,21 @@ Interactive voice replacement and music production studio with professional stem
   - Dynamic compression (ratio-based)
   - De-essing (sibilance reduction)
 - **Flexible configuration** (pitch, formant, timing, quality)
-- **Performance:** RTF 0.4 (20% faster than target)
+- **Performance note:** Local measurements vary by hardware and dependency availability; this repository does not currently treat them as release evidence.
 
-### ✅ D6: Multi-Track Production (MVP COMPLETE)
+### D6: Multi-Track Production
+
+---
+
+## Capability Matrix
+
+| Capability | Current classification | Notes |
+| --- | --- | --- |
+| Stem separation | Real ML-backed when dependencies are installed | Demucs-backed separation runs only when Python and model dependencies are present; unsupported dependencies fail explicitly |
+| Voice training | Degraded / partial | UI and pipeline scaffolding exist, but end-to-end model-quality claims are not release evidence |
+| Voice conversion | Degraded / partial | Conversion flow exists, but quality and latency claims remain environment-dependent |
+| Multi-track editing | Functional local editor | Useful for local editing, but not evidence of production release readiness |
+| Export / publish workflows | Not releaseable | Treat as preview workflows until end-to-end validation and persistence evidence are in place |
 - **Professional DAW-like timeline** editor
 - **Canvas-based rendering** with waveform visualization
 - **Complete track controls:**
@@ -88,7 +114,7 @@ Interactive voice replacement and music production studio with professional stem
 - **Bridge:** PyO3 for Rust ↔ Python interop
 - **Visualization:** WaveSurfer.js, Canvas API
 - **State:** Jotai (atomic state management)
-- **Testing:** Jest, pytest, cargo test
+- **Testing:** Vitest, Playwright, pytest, cargo test
 
 ---
 
@@ -132,9 +158,10 @@ pnpm tauri dev
 pnpm dev
 
 # Run tests
-pnpm test          # React tests
-cargo test         # Rust tests
-pytest tests/      # Python tests
+pnpm test              # UI unit tests
+pnpm test:e2e          # Playwright desktop/browser smoke tests
+pnpm test:integration  # Python stem-separation integration tests
+cargo test             # Rust tests
 ```
 
 ### Production Build
@@ -226,20 +253,15 @@ pnpm test
 - **Voice Conversion:** Core engine tested ✅
 - **Multi-Track:** UI components tested ✅
 
-**Total:** 90+ tests passing
+Treat this as reproducible test entrypoint coverage, not as proof of production readiness.
 
 ---
 
 ## 📊 Performance
 
-### Benchmarks (All Targets Exceeded)
+### Performance Notes
 
-| Feature | Target | Achieved | Status |
-|---------|--------|----------|--------|
-| **Stem Separation** | < 30s (3min) | ~20s | ✅ 33% faster |
-| **Voice Conversion** | RTF < 0.5 | ~0.4 | ✅ 20% faster |
-| **Timeline Rendering** | 60fps | 60fps | ✅ Perfect |
-| **Playback Latency** | < 100ms | ~50ms | ✅ 50% better |
+The repository contains implementation notes and local measurements, but it does not currently include a reproducible benchmark suite in CI for this module. Treat historical latency or throughput numbers in older documents as illustrative developer measurements, not release criteria.
 
 ### Hardware Recommendations
 
@@ -378,11 +400,10 @@ export PYTHONPATH=/path/to/ai-voice/apps/desktop/src-tauri/python
 
 ## 📈 Roadmap
 
-### ✅ Phase 1-3: Complete (100%)
-- All MVP features implemented
-- Code quality: 9.5/10
-- Performance targets exceeded
-- Production ready
+### Current status
+- Experimental / internal preview
+- Reproducible test entrypoints exist from the desktop package
+- Core capabilities remain dependency-sensitive and should be treated as preview workflows unless validated in the target environment
 
 ### Phase 4: Optional Enhancements (5-7 weeks)
 
@@ -444,23 +465,23 @@ MIT
 
 ## 🎉 Project Status
 
-**Implementation:** ✅ **COMPLETE (88% total, 100% MVP)**  
-**Code Quality:** 9.5/10 (Enterprise-grade)  
-**Test Coverage:** 90+ tests passing  
-**Performance:** All targets exceeded  
-**Production Ready:** ✅ **YES**  
+**Implementation:** Preview feature set with mixed maturity  
+**Code Quality:** Repository-internal assessment only; do not treat it as release certification  
+**Test Coverage:** Reproducible test entrypoints are available from the desktop package.  
+**Performance:** Environment-dependent; no release-grade benchmark evidence is claimed here  
+**Release Status:** Experimental / Internal Preview  
 
 **Completion by Feature:**
-- D3 (Stem Separation): 96% ✅
-- D4 (Voice Training): 85% (MVP: 100%) ✅
-- D5 (Voice Conversion): 87% (Core: 100%) ✅
-- D6 (Multi-Track): 79% (MVP: 100%) ✅
+- D3 (Stem Separation): real separation path available with dependencies installed
+- D4 (Voice Training): partial / preview
+- D5 (Voice Conversion): partial / preview
+- D6 (Multi-Track): local editor workflow available
 
 ---
 
-**Last Updated:** Implementation Complete  
+**Last Updated:** 2026-04-17  
 **Version:** 1.0.0  
-**Status:** 🚀 **READY FOR LAUNCH**
+**Status:** Experimental / Internal Preview
 
 ---
 

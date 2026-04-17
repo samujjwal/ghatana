@@ -55,11 +55,13 @@ import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.pipeline.registry.service.CapabilitiesService;
 import com.ghatana.pipeline.registry.validation.PipelineValidator;
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.aep.eventcloud.store.EventCloudRunLedger;
 import com.ghatana.aep.observability.AepSloMetrics;
 import com.ghatana.aep.observability.RunLedgerService;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.domain.eventstore.EventLogStore.EventEntry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import io.activej.http.*;
@@ -75,6 +77,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.Instant;
@@ -152,6 +155,8 @@ public class AepHttpServer {
     private final AepSloMetrics sloMetrics;
     /** Phase-6: Durable run-ledger service for distributed trace correlation. */
     private final RunLedgerService runLedgerService;
+    @Nullable
+    private final EventCloudRunLedger runLedger;
     private final MeterRegistry integrationMeterRegistry;
     /**
      * Prometheus meter registry used to serve the {@code /metrics} scrape endpoint.
@@ -349,6 +354,7 @@ public class AepHttpServer {
         EventCloudRunLedger runLedger = (agentDataCloud != null && agentDataCloud.eventLogStore() != null)
             ? new EventCloudRunLedger(agentDataCloud.eventLogStore())
             : null;
+        this.runLedger = runLedger;
         this.runLedgerService = runLedger != null
             ? new RunLedgerService(runLedger)
             : new RunLedgerService();
@@ -430,7 +436,9 @@ public class AepHttpServer {
             policyEngine       != null ? policyEngine       : new InMemoryPolicyEngine(),
             egressMonitor      != null ? egressMonitor      : new DefaultEgressMonitor(),
             injectionDetector  != null ? injectionDetector  : new RegexPromptInjectionDetector(),
-            this::jsonResponse);
+            this::jsonResponse,
+            this.complianceService,
+            this.soc2Framework);
         this.lifecycleController = new LifecycleController(
             changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
             recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
@@ -555,6 +563,8 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
             .with(HttpMethod.GET, "/governance/degradation", governanceController::handleDegradationStatus)
             .with(HttpMethod.POST, "/governance/degradation", governanceController::handleSetDegradation)
+            .with(HttpMethod.GET, "/governance/compliance/summary", governanceController::handleComplianceSummary)
+            .with(HttpMethod.GET, "/governance/audit/summary", this::handleGovernanceAuditSummary)
             .with(HttpMethod.POST, "/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
             .with(HttpMethod.GET,  "/governance/security/egress", governanceController::handleEgressStats)
             .with(HttpMethod.POST, "/governance/security/scan", governanceController::handleInjectionScan)
@@ -1263,11 +1273,21 @@ public class AepHttpServer {
             return Promise.of(errorResponse(400, "runId path parameter is required"));
         }
         String tenantId = resolveTenantId(request);
-        return recentRuns.stream()
-            .filter(r -> runId.equals(r.get("runId")) && tenantId.equals(r.get("tenantId")))
-            .findFirst()
-            .map(run -> Promise.of(jsonResponse(run)))
-            .orElseGet(() -> Promise.of(errorResponse(404, "Run not found: " + runId)));
+        return readRunEvidence(tenantId, runId)
+            .map(evidence -> {
+                Map<String, Object> baseRun = recentRuns.stream()
+                    .filter(r -> runId.equals(r.get("runId")) && tenantId.equals(r.get("tenantId")))
+                    .findFirst()
+                    .map(java.util.LinkedHashMap::new)
+                    .orElseGet(java.util.LinkedHashMap::new);
+
+                if (baseRun.isEmpty() && evidence.isEmpty()) {
+                    return errorResponse(404, "Run not found: " + runId);
+                }
+
+                return jsonResponse(reconstructRunDetail(runId, tenantId, evidence, baseRun));
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to load run detail: " + e.getMessage())));
     }
 
     /**
@@ -1294,6 +1314,20 @@ public class AepHttpServer {
             "status", "CANCELLED",
             "timestamp", Instant.now().toString()
         )));
+    }
+
+    private Promise<HttpResponse> handleGovernanceAuditSummary(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        int limit = parseIntQuery(request.getQueryParameter("limit"), 20);
+        return readGovernanceAuditEntries(tenantId, limit)
+            .map(entries -> jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "configured", runLedger != null,
+                "entries", entries,
+                "count", entries.size(),
+                "timestamp", Instant.now().toString()
+            )))
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to load governance audit summary: " + e.getMessage())));
     }
 
     /**
@@ -1431,6 +1465,197 @@ public class AepHttpServer {
 
     private String asString(Object value) {
         return value != null ? String.valueOf(value) : null;
+    }
+
+    private Promise<List<Map<String, Object>>> readRunEvidence(String tenantId, String runId) {
+        if (runLedger == null) {
+            return Promise.of(List.of());
+        }
+        return runLedger.readRunEvents(tenantId, Offset.zero(), 500)
+            .map(entries -> entries.stream()
+                .map(this::toLedgerEvent)
+                .filter(event -> runId.equals(asString(event.get("runId"))))
+                .toList());
+    }
+
+    private Promise<List<Map<String, Object>>> readGovernanceAuditEntries(String tenantId, int limit) {
+        if (runLedger == null) {
+            return Promise.of(recentRuns.stream()
+                .filter(run -> tenantId.equals(run.get("tenantId")))
+                .sorted((left, right) -> String.valueOf(right.getOrDefault("completedAt", ""))
+                    .compareTo(String.valueOf(left.getOrDefault("completedAt", ""))))
+                .limit(limit)
+                .map(run -> Map.<String, Object>of(
+                    "eventType", "run.summary",
+                    "timestamp", asString(run.get("completedAt")) != null ? asString(run.get("completedAt")) : Instant.now().toString(),
+                    "runId", asString(run.get("runId")),
+                    "pipelineId", asString(run.get("pipelineId")),
+                    "status", asString(run.get("status"))
+                ))
+                .toList());
+        }
+
+        return runLedger.readRunEvents(tenantId, Offset.zero(), Math.max(limit * 10, 100))
+            .map(entries -> entries.stream()
+                .map(this::toLedgerEvent)
+                .sorted((left, right) -> String.valueOf(right.getOrDefault("timestamp", ""))
+                    .compareTo(String.valueOf(left.getOrDefault("timestamp", ""))))
+                .limit(limit)
+                .toList());
+    }
+
+    private Map<String, Object> toLedgerEvent(EventEntry entry) {
+        Map<String, Object> payload = parsePayload(entry.payload());
+        Map<String, Object> event = new java.util.LinkedHashMap<>();
+        event.put("eventId", entry.eventId().toString());
+        event.put("eventType", entry.eventType());
+        event.put("timestamp", entry.timestamp().toString());
+        event.put("runId", entry.headers().getOrDefault("runId", asString(payload.get("runId"))));
+        event.put("pipelineId", entry.headers().getOrDefault("pipelineId", asString(payload.get("pipelineId"))));
+        event.put("payload", payload);
+        return Map.copyOf(event);
+    }
+
+    private Map<String, Object> parsePayload(ByteBuffer payloadBuffer) {
+        try {
+            ByteBuffer duplicate = payloadBuffer.asReadOnlyBuffer();
+            byte[] bytes = new byte[duplicate.remaining()];
+            duplicate.get(bytes);
+            if (bytes.length == 0) {
+                return Map.of();
+            }
+            return rawObjectMap(objectMapper.readValue(bytes, Map.class));
+        } catch (Exception ignored) {
+            return Map.of();
+        }
+    }
+
+    private Map<String, Object> reconstructRunDetail(
+            String runId,
+            String tenantId,
+            List<Map<String, Object>> evidence,
+            Map<String, Object> baseRun) {
+        List<Map<String, Object>> lineage = evidence.stream()
+            .map(event -> {
+                Map<String, Object> payload = rawObjectMap(event.get("payload"));
+                Map<String, Object> row = new java.util.LinkedHashMap<>();
+                row.put("eventType", event.get("eventType"));
+                row.put("timestamp", event.get("timestamp"));
+                row.put("pipelineId", event.get("pipelineId"));
+                row.put("stepType", payload.getOrDefault("stepType", event.get("eventType")));
+                row.put("status", payload.getOrDefault("status", baseRun.getOrDefault("status", "UNKNOWN")));
+                row.put("details", payload);
+                return Map.copyOf(row);
+            })
+            .toList();
+
+        List<Map<String, Object>> decisions = evidence.stream()
+            .map(event -> rawObjectMap(event.get("payload")))
+            .filter(payload -> "review.decision".equals(payload.get("stepType")))
+            .map(payload -> Map.<String, Object>of(
+                "reviewItemId", payload.getOrDefault("reviewItemId", ""),
+                "skillId", payload.getOrDefault("skillId", ""),
+                "decision", payload.getOrDefault("decision", ""),
+                "decidedAt", payload.getOrDefault("decidedAt", ""),
+                "stepType", payload.getOrDefault("stepType", "review.decision")
+            ))
+            .toList();
+
+        List<Map<String, Object>> policies = evidence.stream()
+            .map(event -> rawObjectMap(event.get("payload")))
+            .filter(payload -> "policy.promoted".equals(payload.get("stepType")))
+            .map(payload -> Map.<String, Object>of(
+                "policyId", payload.getOrDefault("policyId", ""),
+                "skillId", payload.getOrDefault("skillId", ""),
+                "version", payload.getOrDefault("version", ""),
+                "promotedAt", payload.getOrDefault("promotedAt", ""),
+                "stepType", payload.getOrDefault("stepType", "policy.promoted")
+            ))
+            .toList();
+
+        String pipelineId = asString(baseRun.get("pipelineId"));
+        if (pipelineId == null || pipelineId.isBlank()) {
+            pipelineId = evidence.stream()
+                .map(event -> asString(event.get("pipelineId")))
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElse("event");
+        }
+
+        String status = asString(baseRun.get("status"));
+        if (status == null || status.isBlank()) {
+            status = evidence.stream()
+                .map(event -> rawObjectMap(event.get("payload")))
+                .map(payload -> asString(payload.get("status")))
+                .filter(value -> value != null && !value.isBlank())
+                .reduce((first, second) -> second)
+                .orElse("RUNNING");
+        }
+
+        String startedAt = asString(baseRun.get("startedAt"));
+        if (startedAt == null || startedAt.isBlank()) {
+            startedAt = evidence.stream()
+                .map(event -> rawObjectMap(event.get("payload")))
+                .map(payload -> asString(payload.get("startedAt")))
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElseGet(() -> evidence.stream()
+                    .map(event -> asString(event.get("timestamp")))
+                    .findFirst()
+                    .orElse(Instant.now().toString()));
+        }
+
+        String finishedAt = asString(baseRun.get("completedAt"));
+        if (finishedAt == null || finishedAt.isBlank()) {
+            finishedAt = evidence.stream()
+                .map(event -> rawObjectMap(event.get("payload")))
+                .map(payload -> {
+                    String completedAt = asString(payload.get("completedAt"));
+                    if (completedAt != null && !completedAt.isBlank()) {
+                        return completedAt;
+                    }
+                    String failedAt = asString(payload.get("failedAt"));
+                    return failedAt != null && !failedAt.isBlank() ? failedAt : null;
+                })
+                .filter(value -> value != null && !value.isBlank())
+                .reduce((first, second) -> second)
+                .orElse(null);
+        }
+
+        long durationMs = baseRun.get("durationMs") instanceof Number number
+            ? number.longValue()
+            : evidence.stream()
+                .map(event -> rawObjectMap(event.get("payload")))
+                .map(payload -> payload.get("durationMs"))
+                .filter(Number.class::isInstance)
+                .map(Number.class::cast)
+                .mapToLong(Number::longValue)
+                .max()
+                .orElse(0L);
+
+        Map<String, Object> reconstructed = new java.util.LinkedHashMap<>();
+        reconstructed.put("id", baseRun.getOrDefault("runId", runId));
+        reconstructed.put("runId", baseRun.getOrDefault("runId", runId));
+        reconstructed.put("tenantId", tenantId);
+        reconstructed.put("pipelineId", pipelineId);
+        reconstructed.put("pipelineName", baseRun.getOrDefault("pipelineName", pipelineId));
+        reconstructed.put("status", status);
+        reconstructed.put("startedAt", startedAt);
+        if (finishedAt != null && !finishedAt.isBlank()) {
+            reconstructed.put("completedAt", finishedAt);
+            reconstructed.put("finishedAt", finishedAt);
+        }
+        reconstructed.put("durationMs", durationMs);
+        reconstructed.put("eventsProcessed", baseRun.getOrDefault("eventsProcessed", lineage.size()));
+        reconstructed.put("errorsCount", baseRun.getOrDefault("errorsCount", evidence.stream()
+            .map(event -> asString(event.get("eventType")))
+            .filter("run.failed"::equals)
+            .count()));
+        reconstructed.put("lineage", lineage);
+        reconstructed.put("decisions", decisions);
+        reconstructed.put("policies", policies);
+        reconstructed.put("evidence", evidence);
+        return Map.copyOf(reconstructed);
     }
 
     private Map<String, Object> rawObjectMap(Object value) {

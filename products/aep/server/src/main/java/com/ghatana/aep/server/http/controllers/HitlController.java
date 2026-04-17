@@ -64,7 +64,15 @@ public final class HitlController {
     /** GET /api/v1/hitl/pending — lists pending review items for a tenant. */
     public Promise<HttpResponse> handleListPending(HttpRequest request) {
         if (reviewQueue == null) {
-            return Promise.of(HttpHelper.errorResponse(501, "HITL queue not configured"));
+            String tenantId = request.getQueryParameter("tenantId");
+            return Promise.of(HttpHelper.jsonResponse(Map.of(
+                "pending", java.util.List.of(),
+                "count", 0,
+                "configured", false,
+                "tenantId", tenantId == null ? "default" : tenantId,
+                "message", "HITL queue not configured",
+                "timestamp", Instant.now().toString()
+            )));
         }
         String tenantId = request.getQueryParameter("tenantId");
         ReviewFilter filter = tenantId != null ? ReviewFilter.forTenant(tenantId) : null;

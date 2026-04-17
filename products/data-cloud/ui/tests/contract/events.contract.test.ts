@@ -61,7 +61,7 @@ describe('Events API Contract', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject event missing tenantId', () => {
+    it('should accept event missing tenantId because tenant may be supplied by the enclosing response', () => {
       const eventWithoutTenant = {
         id: 'evt-001',
         type: 'SOME_EVENT',
@@ -71,7 +71,7 @@ describe('Events API Contract', () => {
       };
 
       const result = EventSchema.safeParse(eventWithoutTenant);
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
 
     it('should reject event with non-numeric offset', () => {
@@ -145,7 +145,7 @@ describe('Events API Contract', () => {
     it('should accept a valid append response', () => {
       const response = {
         offset: 100,
-        eventId: 'evt-generated-123',
+        type: 'ORDER_PLACED',
         timestamp: '2026-01-15T10:00:00Z',
       };
 
@@ -155,7 +155,7 @@ describe('Events API Contract', () => {
 
     it('should reject response missing offset', () => {
       const result = AppendEventResponseSchema.safeParse({
-        eventId: 'evt-123',
+        type: 'ORDER_PLACED',
         timestamp: '2026-01-15T10:00:00Z',
       });
       expect(result.success).toBe(false);
@@ -164,7 +164,7 @@ describe('Events API Contract', () => {
     it('should reject response where offset is non-numeric', () => {
       const result = AppendEventResponseSchema.safeParse({
         offset: 'abc',
-        eventId: 'evt-123',
+        type: 'ORDER_PLACED',
         timestamp: '2026-01-15T10:00:00Z',
       });
       expect(result.success).toBe(false);
@@ -176,27 +176,25 @@ describe('Events API Contract', () => {
   describe('EventQueryRequestSchema', () => {
     it('should accept a valid event query with all filters', () => {
       const validQuery = {
-        eventTypes: ['ORDER_PLACED', 'ORDER_SHIPPED'],
-        startTime: '2026-01-01T00:00:00Z',
-        endTime: '2026-01-31T23:59:59Z',
+        tenantId: 'tenant-abc',
+        type: 'ORDER_PLACED',
         limit: 500,
-        offset: 0,
-        filters: { status: 'completed' },
+        from: 0,
       };
 
       const result = EventQueryRequestSchema.safeParse(validQuery);
       expect(result.success).toBe(true);
     });
 
-    it('should accept query with no eventTypes (all types)', () => {
+    it('should accept query with no type filter (all types)', () => {
       const result = EventQueryRequestSchema.safeParse({ limit: 50 });
       expect(result.success).toBe(true);
     });
 
-    it('should reject query with eventTypes as empty array', () => {
+    it('should reject query with negative from offset', () => {
       const result = EventQueryRequestSchema.safeParse({
-        eventTypes: [], // min(1) violation
         limit: 50,
+        from: -1,
       });
       expect(result.success).toBe(false);
     });
@@ -211,9 +209,14 @@ describe('Events API Contract', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject query with negative offset', () => {
+    it('should accept query with no from offset', () => {
+      const result = EventQueryRequestSchema.safeParse({ limit: 50 });
+      expect(result.success).toBe(true);
+    });
+
+    it('should ignore a legacy offset alias that is not part of the canonical contract', () => {
       const result = EventQueryRequestSchema.safeParse({ limit: 50, offset: -1 });
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -222,7 +225,7 @@ describe('Events API Contract', () => {
   describe('PaginatedEventResponseSchema', () => {
     it('should accept a valid paginated event response', () => {
       const mockResponse = {
-        items: [
+        events: [
           {
             id: 'evt-001',
             tenantId: 'tenant-abc',
@@ -232,24 +235,25 @@ describe('Events API Contract', () => {
             timestamp: '2026-01-15T10:00:00Z',
           },
         ],
-        total: 1,
-        page: 1,
-        pageSize: 10,
-        hasMore: false,
+        count: 1,
+        fromOffset: 1,
         nextOffset: 2,
+        tenantId: 'tenant-abc',
+        timestamp: '2026-01-15T10:00:01Z',
       };
 
       const result = PaginatedEventResponseSchema.safeParse(mockResponse);
       expect(result.success).toBe(true);
     });
 
-    it('should accept paginated response without nextOffset (optional)', () => {
+    it('should accept an empty paginated response envelope', () => {
       const mockResponse = {
-        items: [],
-        total: 0,
-        page: 1,
-        pageSize: 10,
-        hasMore: false,
+        events: [],
+        count: 0,
+        fromOffset: 0,
+        nextOffset: 0,
+        tenantId: 'tenant-abc',
+        timestamp: '2026-01-15T10:00:01Z',
       };
 
       const result = PaginatedEventResponseSchema.safeParse(mockResponse);
@@ -258,13 +262,14 @@ describe('Events API Contract', () => {
 
     it('should reject paginated response with invalid event in items', () => {
       const mockResponse = {
-        items: [
+        events: [
           { id: 'evt-bad', type: '' }, // missing required fields, empty type
         ],
-        total: 1,
-        page: 1,
-        pageSize: 10,
-        hasMore: false,
+        count: 1,
+        fromOffset: 0,
+        nextOffset: 1,
+        tenantId: 'tenant-abc',
+        timestamp: '2026-01-15T10:00:01Z',
       };
 
       const result = PaginatedEventResponseSchema.safeParse(mockResponse);
@@ -273,10 +278,11 @@ describe('Events API Contract', () => {
 
     it('should reject paginated response missing total', () => {
       const invalid = {
-        items: [],
-        page: 1,
-        pageSize: 10,
-        hasMore: false,
+        events: [],
+        fromOffset: 0,
+        nextOffset: 0,
+        tenantId: 'tenant-abc',
+        timestamp: '2026-01-15T10:00:01Z',
       };
 
       const result = PaginatedEventResponseSchema.safeParse(invalid);

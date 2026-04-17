@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpResponse;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -383,6 +385,8 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                 @Test
                 @DisplayName("returns an execution id and exposes execution detail routes")
                 void executePipeline_returnsExecutionAndStatus() throws Exception {
+                        Map<String, DataCloudClient.Entity> persistedExecutions = new HashMap<>();
+                        Map<String, DataCloudClient.Entity> persistedExecutionLogs = new HashMap<>();
                         DataCloudClient.Entity pipeline = DataCloudClient.Entity.of(
                                         TestConstants.PIPELINE_ID_1,
                                         "dc_pipelines",
@@ -394,6 +398,32 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                                                 )));
                         when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_pipelines"), eq(TestConstants.PIPELINE_ID_1)))
                                         .thenReturn(Promise.of(Optional.of(pipeline)));
+                        when(mockClient.save(eq(TestConstants.TENANT_DEFAULT), eq("dc_workflow_executions"), any()))
+                                        .thenAnswer(invocation -> {
+                                                @SuppressWarnings("unchecked")
+                                                Map<String, Object> payload = new LinkedHashMap<>((Map<String, Object>) invocation.getArgument(2));
+                                                String id = String.valueOf(payload.get("id"));
+                                                DataCloudClient.Entity entity = DataCloudClient.Entity.of(id, "dc_workflow_executions", payload);
+                                                persistedExecutions.put(id, entity);
+                                                return Promise.of(entity);
+                                        });
+                        when(mockClient.save(eq(TestConstants.TENANT_DEFAULT), eq("dc_workflow_execution_logs"), any()))
+                                        .thenAnswer(invocation -> {
+                                                @SuppressWarnings("unchecked")
+                                                Map<String, Object> payload = new LinkedHashMap<>((Map<String, Object>) invocation.getArgument(2));
+                                                String id = String.valueOf(payload.get("id"));
+                                                DataCloudClient.Entity entity = DataCloudClient.Entity.of(id, "dc_workflow_execution_logs", payload);
+                                                persistedExecutionLogs.put(id, entity);
+                                                return Promise.of(entity);
+                                        });
+                        when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_workflow_executions"), anyString()))
+                                        .thenAnswer(invocation -> Promise.of(Optional.ofNullable(
+                                                persistedExecutions.get(invocation.getArgument(2, String.class))
+                                        )));
+                        when(mockClient.findById(eq(TestConstants.TENANT_DEFAULT), eq("dc_workflow_execution_logs"), anyString()))
+                                        .thenAnswer(invocation -> Promise.of(Optional.ofNullable(
+                                                persistedExecutionLogs.get(invocation.getArgument(2, String.class))
+                                        )));
 
                         startServer();
 
@@ -416,6 +446,16 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                         assertThat(detailBody).containsEntry("pipelineId", TestConstants.PIPELINE_ID_1);
                         assertThat(detailBody).containsEntry("status", "completed");
                         assertThat(detailBody.get("nodes")).isInstanceOf(List.class);
+
+                        HttpResponse<String> logsResponse = get(
+                                        "/api/v1/executions/" + executionId + "/logs",
+                                        withTenant(TestConstants.TENANT_DEFAULT));
+
+                        assertStatusCode(logsResponse, TestConstants.HTTP_OK);
+                        List<?> logs = mapper.readValue(
+                                        logsResponse.body(),
+                                        mapper.getTypeFactory().constructCollectionType(List.class, Object.class));
+                        assertThat(logs).hasSize(4);
                 }
 
                 @Test

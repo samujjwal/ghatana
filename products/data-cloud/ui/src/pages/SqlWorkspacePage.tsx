@@ -16,6 +16,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router';
 import {
   Play,
   Save,
@@ -32,6 +33,7 @@ import {
   Send,
   Wand2,
   Network,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   cn,
@@ -45,6 +47,8 @@ import {
 import { SavedQueries, type SavedQuery } from '../components/sql/SavedQueries';
 import { dataCloudApi } from '../lib/api/data-cloud-api';
 import { executeAnalyticsQuery, executeFederatedQuery, type QueryResultData } from '../api/analytics.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
 
 interface QueryHistoryItem {
   id: number;
@@ -93,9 +97,9 @@ function AIQueryAssist({
   const handleGenerate = useCallback(async () => {
     if (!naturalQuery.trim()) return;
     setIsGenerating(true);
-    // AI SQL generation is not yet available — show the prompt as a comment
-    // so the user can refine it manually.
-    setGeneratedSql(`-- AI SQL generation coming soon.\n-- Your query: "${naturalQuery}"\n-- Please write your SQL query below.\nSELECT * FROM \n`);
+    // AI SQL generation is unavailable in this deployment, so keep the user's
+    // prompt visible and require manual SQL authoring.
+    setGeneratedSql(`-- AI SQL generation is unavailable in this deployment.\n-- Your query: "${naturalQuery}"\n-- Please write your SQL query below.\nSELECT * FROM \n`);
     setIsGenerating(false);
   }, [naturalQuery]);
 
@@ -254,6 +258,7 @@ function AISuggestionsSidebar({ suggestions }: { suggestions: typeof AI_SUGGESTI
  * @returns JSX element
  */
 export function SqlWorkspacePage(): React.ReactElement {
+  const location = useLocation();
   const [query, setQuery] = useState('SELECT * FROM events\nWHERE timestamp > NOW() - INTERVAL 1 DAY\nLIMIT 100;');
   const [isRunning, setIsRunning] = useState(false);
   const [queryResult, setQueryResult] = useState<QueryResultData | null>(null);
@@ -264,6 +269,15 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [isFederated, setIsFederated] = useState(false); // B13: Federated Trino query toggle
   const [schemas, setSchemas] = useState<SchemaItem[]>([]);
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
+  const { data: capabilityRegistry } = useCapabilityRegistry();
+
+  const analyticsCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['analytics']);
+  const federatedCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['trino', 'federated_query', 'federatedQuery']);
+  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'aiAssist', 'assist']);
+  const capabilitySubset = capabilityRegistry?.capabilities.filter((capability) =>
+    ['analytics', 'trino', 'federated_query', 'federatedQuery', 'ai_assist', 'aiAssist', 'assist', 'voice'].includes(capability.key),
+  ) ?? [];
+  const federatedUnavailable = federatedCapability?.status !== 'active';
 
   useEffect(() => {
     dataCloudApi.getCollections().then((res) => {
@@ -275,6 +289,13 @@ export function SqlWorkspacePage(): React.ReactElement {
       if (items.length > 0) setExpandedSchema(items[0].name);
     }).catch(() => {/* schema load is non-critical */});
   }, []);
+
+  useEffect(() => {
+    const routeState = location.state as { query?: string } | null;
+    if (routeState?.query) {
+      setQuery(routeState.query);
+    }
+  }, [location.state]);
 
   const handleSelectSavedQuery = (savedQuery: SavedQuery) => {
     setQuery(savedQuery.sql);
@@ -327,6 +348,7 @@ export function SqlWorkspacePage(): React.ReactElement {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAIAssist(!showAIAssist)}
+                title={aiAssistCapability?.detail ?? 'AI assist status is derived from the capability registry and current deployment behavior.'}
                 className={cn(
                   buttonStyles.secondary,
                   'flex items-center gap-2',
@@ -339,11 +361,17 @@ export function SqlWorkspacePage(): React.ReactElement {
               {/* B13: Federated Trino query toggle */}
               <button
                 onClick={() => setIsFederated((f) => !f)}
-                title={isFederated ? 'Using Trino federated query (all tiers)' : 'Using direct analytics engine'}
+                title={federatedUnavailable
+                  ? federatedCapability?.detail ?? 'Federated query is unavailable until the Trino capability is active.'
+                  : isFederated
+                    ? 'Using Trino federated query (all tiers)'
+                    : 'Using direct analytics engine'}
+                disabled={federatedUnavailable}
                 className={cn(
                   buttonStyles.secondary,
                   'flex items-center gap-2',
-                  isFederated && 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300'
+                  isFederated && 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300',
+                  federatedUnavailable && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 <Network className="h-4 w-4" />
@@ -364,6 +392,31 @@ export function SqlWorkspacePage(): React.ReactElement {
             </div>
           </div>
         </div>
+
+        {capabilitySubset.length > 0 && (
+          <div className="mb-6">
+            <CapabilityTruthPanel
+              title="Query Runtime Truth"
+              description="This workspace reads the live capability registry before enabling optional query paths."
+              capabilities={capabilitySubset}
+              compact
+            />
+          </div>
+        )}
+
+        {(analyticsCapability?.status === 'degraded' || analyticsCapability?.status === 'unavailable' || federatedCapability?.status === 'degraded' || federatedCapability?.status === 'unavailable') && (
+          <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6 border-amber-300 bg-amber-50 text-amber-900')}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5" />
+              <div>
+                <h2 className={textStyles.h3}>Optional Query Dependencies Are Not Fully Available</h2>
+                <p className={textStyles.muted}>
+                  {analyticsCapability?.detail ?? federatedCapability?.detail ?? 'The launcher reports degraded or unavailable query dependencies. Direct analytics and federated query behaviors may fail explicitly until operators configure the missing services.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Schema Browser Sidebar */}

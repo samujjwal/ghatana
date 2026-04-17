@@ -13,26 +13,25 @@ use crate::models::{StemsOutput, StemResult, DetectedPhrase, ConversionResult, T
 use tokio::process::Command;
 use std::path::PathBuf;
 
+fn add_embedded_python_path(py: Python<'_>) -> AppResult<()> {
+    let sys = py.import_bound("sys").map_err(|e| AppError::Python(e.to_string()))?;
+    sys.setattr("dont_write_bytecode", true)
+        .map_err(|e| AppError::Python(e.to_string()))?;
+    let path = sys.getattr("path").map_err(|e| AppError::Python(e.to_string()))?;
+
+    let python_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("python");
+    if python_dir.exists() {
+        path.call_method1("insert", (0, python_dir.to_str().unwrap_or("")))
+            .map_err(|e| AppError::Python(e.to_string()))?;
+    }
+
+    Ok(())
+}
+
 /// Initialize Python environment.
 pub fn init_python() -> AppResult<()> {
     Python::with_gil(|py| {
-        // Add our Python modules to path
-        let sys = py.import_bound("sys").map_err(|e| AppError::Python(e.to_string()))?;
-        sys.setattr("dont_write_bytecode", true)
-            .map_err(|e| AppError::Python(e.to_string()))?;
-        let path = sys.getattr("path").map_err(|e| AppError::Python(e.to_string()))?;
-        
-        // Add the python directory to path
-        let python_dir = std::env::current_dir()
-            .unwrap_or_default()
-            .join("python");
-        
-        if python_dir.exists() {
-            path.call_method1("insert", (0, python_dir.to_str().unwrap_or("")))
-                .map_err(|e| AppError::Python(e.to_string()))?;
-        }
-
-        Ok(())
+        add_embedded_python_path(py)
     })
 }
 
@@ -441,43 +440,56 @@ def convert_with_rvc(input_path, output_path, model_path, pitch_shift):
 
 /// Train RVC model from samples using Python voice_trainer module.
 pub fn train_voice_model(
+    session_id: &str,
     sample_paths: &[String],
     output_path: &str,
     model_name: &str,
-) -> AppResult<String> {
+    status_path: &str,
+) -> AppResult<()> {
     Python::with_gil(|py| {
+        add_embedded_python_path(py)?;
+
         let code = r#"
-import sys
 import os
+import json
+import threading
 
-# Add python module path
-python_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'python')
-if python_dir not in sys.path:
-    sys.path.insert(0, python_dir)
+from voice_trainer import train_voice_model
 
-def start_training(sample_paths, output_dir, model_name):
-    try:
-        from voice_trainer import train_voice_model
-        import threading
-        import uuid
-        
-        session_id = str(uuid.uuid4())
-        
-        # Start training in background thread
-        def train_thread():
-            try:
-                train_voice_model(sample_paths, output_dir, model_name)
-            except Exception as e:
-                print(f"Training error: {e}")
-        
-        thread = threading.Thread(target=train_thread, daemon=True)
-        thread.start()
-        
-        return session_id
-    except ImportError as e:
-        # Fallback if modules not available
-        import uuid
-        return str(uuid.uuid4())
+def write_status(status_path, status, progress, error=None):
+    directory = os.path.dirname(status_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    with open(status_path, "w", encoding="utf-8") as fh:
+        json.dump({
+            "status": status,
+            "progress": float(progress),
+            "error": error,
+        }, fh)
+
+def make_progress_callback(status_path):
+    def callback(progress):
+        error = getattr(progress, "error", None)
+        write_status(status_path, progress.status.value, progress.progress, error)
+    return callback
+
+def start_training(sample_paths, output_path, model_name, status_path):
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    write_status(status_path, "pending", 0.0, None)
+
+    def train_thread():
+        try:
+            callback = make_progress_callback(status_path)
+            train_voice_model(sample_paths, output_dir, model_name, progress_callback=callback)
+            write_status(status_path, "completed", 100.0, None)
+        except Exception as exc:
+            write_status(status_path, "failed", 0.0, str(exc))
+
+    thread = threading.Thread(target=train_thread, daemon=True)
+    thread.start()
 "#;
 
         py.run_bound(code, None, None)
@@ -485,35 +497,33 @@ def start_training(sample_paths, output_dir, model_name):
 
         let locals = PyDict::new_bound(py);
         let paths_list: Vec<&str> = sample_paths.iter().map(|s| s.as_str()).collect();
+        locals.set_item("session_id", session_id)
+            .map_err(|e| AppError::Python(e.to_string()))?;
         locals.set_item("sample_paths", paths_list)
             .map_err(|e| AppError::Python(e.to_string()))?;
-        locals.set_item("output_dir", output_path)
+        locals.set_item("output_path", output_path)
             .map_err(|e| AppError::Python(e.to_string()))?;
         locals.set_item("model_name", model_name)
             .map_err(|e| AppError::Python(e.to_string()))?;
+        locals.set_item("status_path", status_path)
+            .map_err(|e| AppError::Python(e.to_string()))?;
 
-        py.run_bound("session_id = start_training(sample_paths, output_dir, model_name)", None, Some(&locals))
+        py.run_bound(
+            "start_training(sample_paths, output_path, model_name, status_path)",
+            None,
+            Some(&locals),
+        )
             .map_err(|e| AppError::Training(e.to_string()))?;
 
-        let session_any = locals
-            .get_item("session_id")
-            .map_err(|e| AppError::Training(e.to_string()))?
-            .ok_or_else(|| AppError::Training("No session ID returned".to_string()))?;
-        let session_id: String = session_any
-            .extract()
-            .map_err(|e| AppError::Training(e.to_string()))?;
-
-        Ok(session_id)
+        Ok(())
     })
 }
 
 /// Get training status from Python trainer.
 pub fn get_training_status(_session_id: &str) -> AppResult<TrainingStatusResponse> {
-    // In production, this would query the actual training progress
-    // For now, return a simulated response
     Ok(TrainingStatusResponse {
-        status: TrainingStatus::Completed,
-        progress: 100.0,
+        status: TrainingStatus::Pending,
+        progress: 0.0,
         error: None,
     })
 }

@@ -49,8 +49,11 @@ public final class ReviewItem {
         this.confidenceScore = builder.confidenceScore;
         this.evaluationSummary = builder.evaluationSummary;
         this.context = builder.context != null ? Map.copyOf(builder.context) : Map.of();
-        this.createdAt = Instant.now();
-        this.status = ReviewStatus.PENDING;
+        this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
+        this.status = builder.status != null ? builder.status : ReviewStatus.PENDING;
+        this.decision = builder.decision;
+        this.decidedAt = builder.decidedAt;
+        this.assignedTo = builder.assignedTo;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -119,6 +122,11 @@ public final class ReviewItem {
         private double confidenceScore;
         private String evaluationSummary;
         private Map<String, Object> context;
+        private Instant createdAt;
+        private ReviewStatus status;
+        private ReviewDecision decision;
+        private Instant decidedAt;
+        private String assignedTo;
 
         private Builder() {}
 
@@ -130,6 +138,11 @@ public final class ReviewItem {
         public Builder confidenceScore(double score) { this.confidenceScore = score; return this; }
         public Builder evaluationSummary(String summary) { this.evaluationSummary = summary; return this; }
         public Builder context(Map<String, Object> context) { this.context = context; return this; }
+        public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
+        public Builder status(ReviewStatus status) { this.status = status; return this; }
+        public Builder decision(ReviewDecision decision) { this.decision = decision; return this; }
+        public Builder decidedAt(Instant decidedAt) { this.decidedAt = decidedAt; return this; }
+        public Builder assignedTo(String assignedTo) { this.assignedTo = assignedTo; return this; }
 
         public ReviewItem build() { return new ReviewItem(this); }
     }

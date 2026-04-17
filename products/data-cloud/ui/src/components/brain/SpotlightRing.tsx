@@ -9,81 +9,18 @@
  * @doc.layer frontend
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Zap, TrendingUp, Activity } from 'lucide-react';
+import { brainService, type SpotlightItem } from '../../api/brain.service';
 import BaseCard from '../cards/BaseCard';
 import StatusBadge from '../common/StatusBadge';
-
-interface SalienceScore {
-  score: number;
-  breakdown: {
-    recency: number;
-    novelty: number;
-    impact: number;
-    urgency: number;
-  };
-}
-
-interface SpotlightItem {
-  id: string;
-  tenantId: string;
-  summary: string;
-  salienceScore: SalienceScore;
-  emergency: boolean;
-  priority: number;
-  category: string;
-  spotlightedAt: string;
-  expiresAt: string;
-  accessCount: number;
-  tags: string[];
-  metadata: Record<string, any>;
-}
 
 interface SpotlightRingProps {
   maxItems?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
-
-// Mock data for development
-const mockSpotlightItems: SpotlightItem[] = [
-  {
-    id: '1',
-    tenantId: 'demo',
-    summary: 'Query optimization available for customer_events table',
-    salienceScore: { score: 0.9, breakdown: { recency: 0.8, novelty: 0.7, impact: 0.9, urgency: 0.6 } },
-    emergency: false,
-    priority: 1,
-    category: 'optimization',
-    spotlightedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    accessCount: 0,
-    tags: ['performance', 'optimization'],
-    metadata: {},
-  },
-  {
-    id: '2',
-    tenantId: 'demo',
-    summary: 'Data freshness alert: orders table hasn\'t updated in 6h',
-    salienceScore: { score: 0.7, breakdown: { recency: 0.9, novelty: 0.5, impact: 0.6, urgency: 0.8 } },
-    emergency: false,
-    priority: 2,
-    category: 'warning',
-    spotlightedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 3600000).toISOString(),
-    accessCount: 0,
-    tags: ['data-quality', 'freshness'],
-    metadata: {},
-  },
-];
-
-const fetchSpotlightItems = async (): Promise<SpotlightItem[]> => {
-  // Mock implementation for development
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockSpotlightItems), 500);
-  });
-};
 
 export function SpotlightRing({
   maxItems = 5,
@@ -92,7 +29,7 @@ export function SpotlightRing({
 }: SpotlightRingProps) {
   const { data: items = [], isLoading, error, refetch } = useQuery({
     queryKey: ['spotlight-items'],
-    queryFn: fetchSpotlightItems,
+    queryFn: () => brainService.getSpotlight(),
     refetchInterval: autoRefresh ? refreshInterval : false,
   });
 
@@ -106,7 +43,7 @@ export function SpotlightRing({
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
+    switch (category.toLowerCase()) {
       case 'anomaly':
       case 'alert':
         return <AlertTriangle className="h-5 w-5" />;
@@ -162,8 +99,8 @@ export function SpotlightRing({
 
       {topItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p className="text-lg">✨ All Clear</p>
-          <p className="text-sm mt-2">No high-salience items detected</p>
+          <p className="text-lg">Spotlight Unavailable</p>
+          <p className="text-sm mt-2">This deployment exposes workspace status but not detailed spotlight items.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -178,12 +115,10 @@ export function SpotlightRing({
                 }
               `}
             >
-              {/* Priority Badge */}
               <div className="absolute -top-2 -left-2 bg-white rounded-full border-2 border-gray-200 w-8 h-8 flex items-center justify-center font-bold text-sm">
                 #{index + 1}
               </div>
 
-              {/* Emergency Indicator */}
               {item.emergency && (
                 <div className="absolute -top-2 -right-2">
                   <span className="relative flex h-6 w-6">
@@ -194,12 +129,10 @@ export function SpotlightRing({
               )}
 
               <div className="flex items-start gap-3">
-                {/* Category Icon */}
                 <div className={`${getSalienceColor(item.salienceScore.score)} mt-1`}>
                   {getCategoryIcon(item.category)}
                 </div>
 
-                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <StatusBadge
@@ -215,7 +148,6 @@ export function SpotlightRing({
                     {item.summary}
                   </p>
 
-                  {/* Salience Score Breakdown */}
                   <div className="flex items-center gap-3 text-xs text-gray-600">
                     <div className="flex items-center gap-1">
                       <span className="font-semibold">Salience:</span>
@@ -232,8 +164,7 @@ export function SpotlightRing({
                     </div>
                   </div>
 
-                  {/* Tags */}
-                  {item.tags && item.tags.length > 0 && (
+                  {item.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {item.tags.slice(0, 3).map((tag: string) => (
                         <span
@@ -252,8 +183,7 @@ export function SpotlightRing({
         </div>
       )}
 
-      {/* Footer Stats */}
-      {items && items.length > 0 && (
+      {items.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between text-sm text-gray-600">
           <span>{items.length} items in spotlight</span>
           <button

@@ -9,6 +9,7 @@ const analyticsMocks = vi.hoisted(() => ({
   useAnalyticsQuery: vi.fn(),
   useCollectionEntityCounts: vi.fn(),
   useAnalyticsAiSuggestions: vi.fn(),
+  useCapabilityRegistry: vi.fn(),
 }));
 
 vi.mock('react-router', async (importOriginal) => {
@@ -42,6 +43,12 @@ vi.mock('../../lib/api/workflows', () => ({
 }));
 
 vi.mock('../../api/analytics.service', () => analyticsMocks);
+
+vi.mock('../../api/capabilities.service', () => ({
+  useCapabilityRegistry: analyticsMocks.useCapabilityRegistry,
+  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
+    capabilities?.find((capability) => aliases.includes(capability.key)),
+}));
 
 vi.mock('../../lib/api/data-cloud-api', () => ({
   dataCloudApi: {
@@ -119,6 +126,31 @@ describe('InsightsPage', () => {
       ],
       isLoading: false,
     });
+    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+      data: {
+        generatedAt: '2026-04-17T12:00:00Z',
+        requestId: 'req-runtime',
+        tenantId: 'tenant-alpha',
+        capabilities: [
+          {
+            key: 'analytics',
+            label: 'Analytics',
+            status: 'active',
+            summary: 'ACTIVE',
+            detail: undefined,
+            rawValue: 'ACTIVE',
+          },
+          {
+            key: 'voice',
+            label: 'Voice',
+            status: 'degraded',
+            summary: 'DEGRADED',
+            detail: 'Voice dependencies are optional in this launcher profile.',
+            rawValue: 'DEGRADED',
+          },
+        ],
+      },
+    });
   });
 
   it('renders live overview metrics from canonical services', async () => {
@@ -145,5 +177,40 @@ describe('InsightsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/query', {
       state: { query: 'query hot path' },
     });
+  });
+
+  it('renders the runtime capability truth panel', async () => {
+    render(<InsightsPage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText('Runtime Capability Truth')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Voice dependencies are optional in this launcher profile.')).toBeInTheDocument();
+  });
+
+  it('shows an honest unavailable state when analytics capability is disabled', async () => {
+    analyticsMocks.useCapabilityRegistry.mockReturnValue({
+      data: {
+        generatedAt: '2026-04-17T12:00:00Z',
+        requestId: 'req-runtime',
+        tenantId: 'tenant-alpha',
+        capabilities: [
+          {
+            key: 'analytics',
+            label: 'Analytics',
+            status: 'unavailable',
+            summary: 'NOT_CONFIGURED',
+            detail: 'Analytics connectors are not configured for this launcher profile.',
+            rawValue: 'NOT_CONFIGURED',
+          },
+        ],
+      },
+    });
+
+    render(<InsightsPage />, { wrapper: TestWrapper });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboards' }));
+
+    expect(await screen.findByText('Analytics unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Analytics connectors are not configured for this launcher profile.')).toBeInTheDocument();
   });
 });

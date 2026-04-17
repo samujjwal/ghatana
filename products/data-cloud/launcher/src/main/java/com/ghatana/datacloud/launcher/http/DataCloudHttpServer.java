@@ -74,6 +74,7 @@ import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
+import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
@@ -1267,6 +1268,12 @@ public class DataCloudHttpServer {
 
     private Map<String, Object> buildCapabilitySnapshot() {
         Map<String, Object> capabilities = new LinkedHashMap<>();
+        boolean workflowExecutionAvailable = runtimePluginManager.findCapability(WorkflowExecutionCapability.class).isPresent();
+        Map<String, Object> workflowExecution = capabilityEntry(workflowExecutionAvailable, null);
+        workflowExecution.put("executionStore", workflowExecutionAvailable ? "datacloud" : "none");
+        workflowExecution.put("lifecycleModel", workflowExecutionAvailable ? "durable-single-process" : "absent");
+        capabilities.put("pipelines.metadata", capabilityEntry(true, null));
+        capabilities.put("pipelines.execution", workflowExecution);
         capabilities.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
         capabilities.put("authentication.jwt", capabilityEntry(jwtProvider != null, null));
         capabilities.put("brain", capabilityEntry(brain != null, null));

@@ -326,7 +326,7 @@ python3 -m unittest tests.test_cloned_voice_synthesizer -v
 - ✅ Voice cloning pipeline (10 tests)
 - ✅ TTS synthesis (16 tests)
 - ✅ Error handling
-- ✅ Mock mode for development
+- ✅ Preview/dependency-sensitive development path documented
 - ✅ Progress callbacks
 - ✅ Batch processing
 
@@ -335,7 +335,7 @@ python3 -m unittest tests.test_cloned_voice_synthesizer -v
 | Metric | Target | Implementation |
 |--------|--------|----------------|
 | Embedding Dimension | 256 | ✅ 256 |
-| Similarity Score | > 0.85 | ✅ 0.87 (mock) |
+| Similarity Score | > 0.85 | Developer-local preview measurement only; not release evidence |
 | Training Time | < 10 min | ✅ Configurable |
 | Model Size | < 100 MB | ✅ LoRA adapters |
 | Audio Quality | > 3.5/5 MOS | ⏳ To be measured |

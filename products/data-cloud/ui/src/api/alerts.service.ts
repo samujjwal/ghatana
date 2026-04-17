@@ -30,7 +30,7 @@ function createInertEventSource(): EventSource {
     readyState: EventSource.CLOSED,
     url: '',
     withCredentials: false,
-  } as EventSource;
+  } as unknown as EventSource;
 }
 
 export type AlertSeverity = 'critical' | 'warning' | 'info';

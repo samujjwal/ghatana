@@ -37,6 +37,22 @@ tags:
     description: Session management
   - name: Event Design
     description: Event type schemas and connector bindings
+  - name: Agents
+    description: Agent registry and execution runtime endpoints
+  - name: HITL
+    description: Human-in-the-loop review queue endpoints
+  - name: Learning
+    description: Learning episodes, policy review, and reflection flows
+  - name: Compliance
+    description: Compliance operations and audit evidence export endpoints
+  - name: Deployments
+    description: Deployment lifecycle endpoints for runtime artifacts
+  - name: Reports
+    description: Reporting and exported operator summaries
+  - name: Runs
+    description: Pipeline run operations and operator detail views
+  - name: Governance
+    description: Governance, audit, and compliance operator surfaces
 
 paths:
   # ========== Health Endpoints ==========
@@ -119,6 +135,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetricsResponse'
+
+  /health/deep:
+    get:
+      summary: Deep dependency health
+      operationId: getDeepHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Detailed dependency health summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /metrics/slo:
+    get:
+      summary: Runtime SLO metrics
+      operationId: getSloMetrics
+      tags: [Health]
+      responses:
+        '200':
+          description: Service-level objective counters and gauges
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
 
   # ========== Event Processing ==========
   /api/v1/events:
@@ -484,6 +528,538 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  /api/v1/analytics/kpis:
+    post:
+      summary: Persist KPI values
+      operationId: saveKpi
+      tags: [Analytics]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: KPI saved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    get:
+      summary: Query KPI values
+      operationId: queryKpis
+      tags: [Analytics]
+      responses:
+        '200':
+          description: KPI results
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/analytics/query:
+    post:
+      summary: Query analytics records
+      operationId: analyticsQuery
+      tags: [Analytics]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Analytics query result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/reports:
+    post:
+      summary: Create a report
+      operationId: createReport
+      tags: [Reports]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/deployments:
+    post:
+      summary: Create a deployment record
+      operationId: createDeployment
+      tags: [Deployments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Deployment created
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/deployments/{deploymentId}:
+    put:
+      summary: Update a deployment record
+      operationId: updateDeployment
+      tags: [Deployments]
+      parameters:
+        - name: deploymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Deployment updated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    delete:
+      summary: Delete a deployment record
+      operationId: deleteDeployment
+      tags: [Deployments]
+      parameters:
+        - name: deploymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deployment deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/agents:
+    get:
+      summary: List registered agents
+      operationId: listAgents
+      tags: [Agents]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Agent list or truthful unconfigured response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/agents/{agentId}:
+    get:
+      summary: Get agent details
+      operationId: getAgent
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/agents/{agentId}/execute:
+    post:
+      summary: Execute a specific agent
+      operationId: executeAgent
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Agent execution result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/agents/{agentId}/memory:
+    get:
+      summary: Read agent memory summary
+      operationId: getAgentMemory
+      tags: [Agents]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Agent memory view
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/hitl/pending:
+    get:
+      summary: List pending review items
+      operationId: listHitlPending
+      tags: [HITL]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Pending review queue or truthful unconfigured response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/hitl/{reviewId}/approve:
+    post:
+      summary: Approve a review item
+      operationId: approveHitlItem
+      tags: [HITL]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Review item approved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/hitl/{reviewId}/reject:
+    post:
+      summary: Reject a review item
+      operationId: rejectHitlItem
+      tags: [HITL]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Review item rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/hitl/{reviewId}/escalate:
+    post:
+      summary: Escalate a review item
+      operationId: escalateHitlItem
+      tags: [HITL]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Review item escalated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/learning/episodes:
+    get:
+      summary: List learning episodes
+      operationId: listLearningEpisodes
+      tags: [Learning]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Learning episodes or truthful unconfigured response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/learning/policies:
+    get:
+      summary: List promoted and pending policies
+      operationId: listLearningPolicies
+      tags: [Learning]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Policy list or truthful unconfigured response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/learning/policies/{policyId}/approve:
+    post:
+      summary: Approve a policy
+      operationId: approvePolicy
+      tags: [Learning]
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Policy approved
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/learning/policies/{policyId}/reject:
+    post:
+      summary: Reject a policy
+      operationId: rejectPolicy
+      tags: [Learning]
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Policy rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/learning/reflect:
+    post:
+      summary: Trigger reflection
+      operationId: triggerReflection
+      tags: [Learning]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Reflection completed synchronously
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '202':
+          description: Reflection accepted asynchronously
+
+  /api/v1/compliance/gdpr/access:
+    post:
+      summary: Execute GDPR access request
+      operationId: gdprAccess
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Access request result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/compliance/gdpr/erasure:
+    post:
+      summary: Execute GDPR erasure request
+      operationId: gdprErasure
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Erasure result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/compliance/gdpr/portability:
+    post:
+      summary: Execute GDPR portability request
+      operationId: gdprPortability
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Portability result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/compliance/ccpa/opt-out:
+    post:
+      summary: Execute CCPA opt-out request
+      operationId: ccpaOptOut
+      tags: [Compliance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Opt-out result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/compliance/soc2/report:
+    get:
+      summary: Generate SOC 2 report
+      operationId: getSoc2Report
+      tags: [Compliance]
+      responses:
+        '200':
+          description: SOC 2 report payload
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
   # ========== Capabilities ==========
   /admin/capabilities/schemas:
     get:
@@ -821,6 +1397,273 @@ paths:
                 $ref: '#/components/schemas/BindingSimulationResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+
+  # ========== Run Operations ==========
+  /api/v1/runs:
+    get:
+      summary: List recent pipeline runs
+      operationId: listRuns
+      tags: [Runs]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Recent runs for the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunListResponse'
+
+  /api/v1/runs/{runId}:
+    get:
+      summary: Get pipeline run detail
+      operationId: getRunDetail
+      tags: [Runs]
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Run detail with evidence arrays for lineage, decisions, and policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/runs/{runId}/cancel:
+    post:
+      summary: Cancel a running pipeline execution
+      operationId: cancelRun
+      tags: [Runs]
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '202':
+          description: Cancellation accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ========== Governance ==========
+  /governance/compliance/summary:
+    get:
+      summary: Get governance compliance summary
+      operationId: getComplianceSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Compliance summary for the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceComplianceSummary'
+
+  /governance/audit/summary:
+    get:
+      summary: Get governance audit summary
+      operationId: getAuditSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Audit summary backed by the run ledger when configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceAuditSummary'
+
+  /governance/kill-switch:
+    get:
+      summary: Get kill-switch state
+      operationId: getKillSwitchStatus
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Kill-switch state for the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/kill-switch/activate:
+    post:
+      summary: Activate a kill-switch
+      operationId: activateKillSwitch
+      tags: [Governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch activated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/kill-switch/deactivate:
+    post:
+      summary: Deactivate a kill-switch
+      operationId: deactivateKillSwitch
+      tags: [Governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/degradation:
+    get:
+      summary: Get degradation mode
+      operationId: getDegradationMode
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Current degradation mode
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    post:
+      summary: Set degradation mode
+      operationId: setDegradationMode
+      tags: [Governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Degradation mode updated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/policy/evaluate:
+    post:
+      summary: Evaluate a policy request
+      operationId: evaluatePolicy
+      tags: [Governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/security/egress:
+    get:
+      summary: Get egress accounting summary
+      operationId: getEgressSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Egress usage summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/security/scan:
+    post:
+      summary: Scan text for injection attempts
+      operationId: scanForInjection
+      tags: [Governance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Injection scan result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/session:
+    post:
+      summary: Create or refresh an AEP session token
+      operationId: createSession
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Session issued
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
 
   # ========== Sessions ==========
   /api/v1/sessions/current:
@@ -1399,6 +2242,180 @@ components:
         attributes:
           type: object
           additionalProperties: true
+
+    # ---------- Runs ----------
+    RunSummary:
+      type: object
+      properties:
+        runId:
+          type: string
+        pipelineId:
+          type: string
+        pipelineName:
+          type: string
+        status:
+          type: string
+          enum: [RUNNING, SUCCEEDED, FAILED, CANCELLED]
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        eventsProcessed:
+          type: integer
+        errorsCount:
+          type: integer
+
+    RunListResponse:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunSummary'
+        timestamp:
+          type: string
+          format: date-time
+
+    RunLineageEntry:
+      type: object
+      properties:
+        pipelineId:
+          type: string
+        stepType:
+          type: string
+        eventType:
+          type: string
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    RunDecisionEntry:
+      type: object
+      properties:
+        reviewItemId:
+          type: string
+        skillId:
+          type: string
+        decision:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+
+    RunPolicyEntry:
+      type: object
+      properties:
+        policyId:
+          type: string
+        skillId:
+          type: string
+        version:
+          type: string
+        promotedAt:
+          type: string
+          format: date-time
+
+    RunDetail:
+      allOf:
+        - $ref: '#/components/schemas/RunSummary'
+        - type: object
+          properties:
+            lineage:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunLineageEntry'
+            decisions:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunDecisionEntry'
+            policies:
+              type: array
+              items:
+                $ref: '#/components/schemas/RunPolicyEntry'
+
+    # ---------- Governance ----------
+    GovernanceSoc2Control:
+      type: object
+      properties:
+        controlId:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        evidenceCount:
+          type: integer
+
+    GovernanceComplianceSummary:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        configured:
+          type: boolean
+        supportedOperations:
+          type: array
+          items:
+            type: string
+        registeredCollections:
+          type: array
+          items:
+            type: string
+        soc2:
+          type: object
+          properties:
+            title:
+              type: string
+            generatedAt:
+              type: string
+              format: date-time
+            overallStatus:
+              type: string
+            controlCount:
+              type: integer
+            controls:
+              type: array
+              items:
+                $ref: '#/components/schemas/GovernanceSoc2Control'
+        timestamp:
+          type: string
+          format: date-time
+
+    GovernanceAuditEntry:
+      type: object
+      properties:
+        eventType:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        offset:
+          type: integer
+          format: int64
+        timestamp:
+          type: string
+          format: date-time
+
+    GovernanceAuditSummary:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        configured:
+          type: boolean
+        count:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/GovernanceAuditEntry'
+        timestamp:
+          type: string
+          format: date-time
 
     # ---------- Errors ----------
     ErrorResponse:

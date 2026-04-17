@@ -27,6 +27,7 @@ dependencies {
     // Data Cloud SPI plus launcher runtime surface for embedded client creation.
     implementation(project(":products:data-cloud:spi"))
     implementation(project(":products:data-cloud:platform-launcher"))
+    implementation(project(":products:data-cloud:agent-registry"))
 
     // AEP product modules — identity and compliance (Phase 8)
     implementation(project(":products:aep:aep-identity"))
@@ -132,14 +133,23 @@ tasks.register<Copy>("syncOpenApiSpec") {
 tasks.register("verifyOpenApiSync") {
     description = "Fails build if the runtime OpenAPI spec diverges from the canonical copy in platform/contracts"
     group = "verification"
+    dependsOn("syncOpenApiSpec")
+    val canonicalSpecFile = canonicalSpec
+    val legacySpecFile = legacySpec
+    val runtimeSpecFile = runtimeSpec
+    inputs.file(canonicalSpecFile)
+    if (legacySpecFile.exists()) {
+        inputs.file(legacySpecFile)
+    }
+    inputs.file(runtimeSpecFile)
     doLast {
-        if (!canonicalSpec.exists()) {
-            throw GradleException("Canonical OpenAPI spec not found: $canonicalSpec")
+        if (!canonicalSpecFile.exists()) {
+            throw GradleException("Canonical OpenAPI spec not found: $canonicalSpecFile")
         }
         // Ensure the legacy product-local copy has not drifted from the platform canonical
-        if (legacySpec.exists()) {
-            val canonical = canonicalSpec.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
-            val legacy = legacySpec.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
+        if (legacySpecFile.exists()) {
+            val canonical = canonicalSpecFile.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
+            val legacy = legacySpecFile.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
             if (canonical != legacy) {
                 throw GradleException(
                     "OpenAPI spec drift: products/aep/contracts/openapi.yaml diverges from platform/contracts/openapi/aep.yaml.\n" +
@@ -147,12 +157,12 @@ tasks.register("verifyOpenApiSync") {
                 )
             }
         }
-        if (!runtimeSpec.exists()) {
-            throw GradleException("Runtime OpenAPI spec not found: $runtimeSpec — run :products:aep:server:syncOpenApiSpec")
+        if (!runtimeSpecFile.exists()) {
+            throw GradleException("Runtime OpenAPI spec not found: $runtimeSpecFile — run :products:aep:server:syncOpenApiSpec")
         }
-        val canonical = canonicalSpec.readText()
+        val canonical = canonicalSpecFile.readText()
         // Strip the NOTE comment lines that only exist in the runtime copy
-        val runtime = runtimeSpec.readLines()
+        val runtime = runtimeSpecFile.readLines()
             .dropWhile { it.startsWith("#") }
             .joinToString("\n")
         val canonicalBody = canonical.lines()

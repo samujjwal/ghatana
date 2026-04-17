@@ -8,12 +8,22 @@
  */
 
 import React, { createContext, useContext, useReducer, useCallback, type ReactNode } from 'react';
-import type { Project, AudioFile, StemSet, Phrase, VoiceModel, PlaybackState, MixerState } from '../types';
+import type {
+  Project,
+  AudioFile,
+  StemSet,
+  Phrase,
+  VoiceModel,
+  PlaybackState,
+  MixerState,
+  RuntimeModeState,
+} from '../types';
 
 interface ProjectState {
   project: Project | null;
   playback: PlaybackState;
   mixer: MixerState;
+  runtimeMode: RuntimeModeState;
   isLoading: boolean;
   error: string | null;
 }
@@ -28,6 +38,7 @@ type ProjectAction =
   | { type: 'SET_VOICE_MODEL'; payload: VoiceModel }
   | { type: 'SET_PLAYBACK'; payload: Partial<PlaybackState> }
   | { type: 'SET_MIXER'; payload: Partial<MixerState> }
+  | { type: 'SET_RUNTIME_MODE'; payload: RuntimeModeState }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'RESET' };
@@ -49,6 +60,11 @@ const initialState: ProjectState = {
   project: null,
   playback: initialPlayback,
   mixer: initialMixer,
+  runtimeMode: {
+    mode: 'degraded',
+    reason: 'Runtime prerequisites have not been verified for this session.',
+    exportAllowed: false,
+  },
   isLoading: false,
   error: null,
 };
@@ -92,6 +108,8 @@ function projectReducer(state: ProjectState, action: ProjectAction): ProjectStat
       return { ...state, playback: { ...state.playback, ...action.payload } };
     case 'SET_MIXER':
       return { ...state, mixer: { ...state.mixer, ...action.payload } };
+    case 'SET_RUNTIME_MODE':
+      return { ...state, runtimeMode: action.payload };
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'SET_ERROR':
@@ -114,6 +132,7 @@ interface ProjectContextValue {
   setVoiceModel: (model: VoiceModel) => void;
   setPlayback: (playback: Partial<PlaybackState>) => void;
   setMixer: (mixer: Partial<MixerState>) => void;
+  setRuntimeMode: (runtimeMode: RuntimeModeState) => void;
   setError: (error: string | null) => void;
   reset: () => void;
 }
@@ -165,6 +184,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_MIXER', payload: mixer });
   }, []);
 
+  const setRuntimeMode = useCallback((runtimeMode: RuntimeModeState) => {
+    dispatch({ type: 'SET_RUNTIME_MODE', payload: runtimeMode });
+  }, []);
+
   const setError = useCallback((error: string | null) => {
     dispatch({ type: 'SET_ERROR', payload: error });
   }, []);
@@ -186,6 +209,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         setVoiceModel,
         setPlayback,
         setMixer,
+        setRuntimeMode,
         setError,
         reset,
       }}

@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -45,6 +46,32 @@ class SharedServicesJwtBoundaryTest {
         assertThat(violations)
                 .as("shared-service source should not reference the concrete JWT provider class directly")
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("non-local deployments should reject missing platform JWT secrets")
+    void nonLocalDeploymentsShouldRejectMissingPlatformJwtSecret() {
+        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret("production", null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("PLATFORM_JWT_SECRET");
+    }
+
+    @Test
+    @DisplayName("non-local deployments should reject the development fallback platform JWT secret")
+    void nonLocalDeploymentsShouldRejectDefaultPlatformJwtSecret() {
+        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret(
+                "staging",
+                "dev-platform-jwt-secret-change-me-in-prod!"
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("minimum 32 characters and not the development fallback");
+    }
+
+    @Test
+    @DisplayName("local development may still use the fallback platform JWT secret")
+    void localDevelopmentMayUseFallbackPlatformJwtSecret() {
+        assertThat(AuthGatewayLauncher.resolvePlatformJwtSecret("development", null))
+                .isEqualTo("dev-platform-jwt-secret-change-me-in-prod!");
     }
 
     private static Path findRepoRoot() {

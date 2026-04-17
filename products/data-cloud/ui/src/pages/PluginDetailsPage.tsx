@@ -27,37 +27,31 @@ import { cn, buttonStyles, textStyles, bgStyles, cardStyles } from '../lib/theme
 import { pluginService } from '../api/plugin.service';
 import { PluginHealthMonitor } from '../components/plugins/PluginHealthMonitor';
 import { PluginVersionCompare } from '../components/plugins/PluginVersionCompare';
-import { PluginDependencyGraph } from '../components/plugins/PluginDependencyGraph';
 import { PluginPerformanceMetrics } from '../components/plugins/PluginPerformanceMetrics';
 import { PluginLogsViewer } from '../components/plugins/PluginLogsViewer';
-import type { PluginNode, PluginDependency } from '../components/plugins/PluginDependencyGraph';
 
-// Mock data for dependency graph
-function getMockGraphNodes(): PluginNode[] {
-  return [
-    { id: 'postgres-connector', name: 'PostgreSQL', version: '2.1.0', status: 'active', category: 'connector' },
-    { id: 'snowflake-connector', name: 'Snowflake', version: '1.8.2', status: 'active', category: 'connector' },
-    { id: 'data-quality-checker', name: 'Data Quality', version: '3.0.1', status: 'active', category: 'quality' },
-    { id: 'pii-detector', name: 'PII Detector', version: '2.5.0', status: 'inactive', category: 'governance' },
-    { id: 'data-transformer', name: 'Transformer', version: '1.2.0', status: 'active', category: 'transformer' },
-  ];
-}
-
-function getMockDependencies(currentPluginId: string): PluginDependency[] {
-  const deps: PluginDependency[] = [
-    { from: 'postgres-connector', to: 'data-quality-checker', type: 'optional', resolved: true },
-    { from: 'snowflake-connector', to: 'data-quality-checker', type: 'requires', resolved: true },
-    { from: 'data-quality-checker', to: 'pii-detector', type: 'requires', resolved: false },
-    { from: 'data-transformer', to: 'data-quality-checker', type: 'optional', resolved: true },
-    { from: 'postgres-connector', to: 'data-transformer', type: 'provides', resolved: true },
-  ];
-
-  // Add a conflict example if viewing the PII detector
-  if (currentPluginId === 'pii-detector') {
-    deps.push({ from: 'pii-detector', to: 'data-transformer', type: 'conflicts', resolved: false });
-  }
-
-  return deps;
+function BoundaryNotice({
+  title,
+  summary,
+  bullets,
+}: {
+  title: string;
+  summary: string;
+  bullets: string[];
+}): React.ReactElement {
+  return (
+    <div className={cardStyles.base}>
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+        <p className="font-medium">{title}</p>
+        <p className="mt-1">{summary}</p>
+      </div>
+      <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
+        {bullets.map((bullet) => (
+          <li key={bullet}>{bullet}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 /**
@@ -192,7 +186,6 @@ export function PluginDetailsPage(): React.ReactElement {
             {/* Version Comparison */}
             <PluginVersionCompare
               currentVersion={plugin.metadata.version}
-              availableVersion="2.0.0"
               changelog={[
                 'Bundled plugin upgrades require deploying a new launcher build.',
                 'Use the server release notes to review included plugin changes.',
@@ -277,15 +270,14 @@ const result = await plugin.execute({
               </div>
             </div>
 
-            {/* Dependency Graph */}
-            <PluginDependencyGraph
-              plugins={getMockGraphNodes()}
-              dependencies={getMockDependencies(plugin.id)}
-              onPluginSelect={(pluginId) => {
-                if (pluginId !== plugin.id) {
-                  navigate(`/plugins/${pluginId}`);
-                }
-              }}
+            <BoundaryNotice
+              title="Dependency graph unavailable"
+              summary="The bundled launcher API exposes plugin runtime facts, but it does not publish a plugin-to-plugin dependency graph."
+              bullets={[
+                'This page no longer renders a fabricated dependency topology.',
+                'Capability and health sections above reflect the live plugin payload returned by the launcher.',
+                'Use release notes or source-level bundle definitions when dependency review is required.',
+              ]}
             />
 
             {/* Performance Metrics */}
@@ -354,27 +346,31 @@ const result = await plugin.execute({
             <div className={cardStyles.base}>
               <h3 className={cn(textStyles.h4, 'mb-4')}>Resources</h3>
               <div className="space-y-2">
-                <a
-                  href="#"
-                  className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Documentation
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Source Code
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Report Issue
-                </a>
+                {plugin.metadata.documentation ? (
+                  <a
+                    href={plugin.metadata.documentation}
+                    className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Documentation
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    No plugin-specific documentation link is published by this runtime.
+                  </p>
+                )}
+                {plugin.metadata.homepage ? (
+                  <a
+                    href={plugin.metadata.homepage}
+                    className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Homepage
+                  </a>
+                ) : null}
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Issue reporting for bundled plugins follows the owning launcher release workflow rather than an in-page action.
+                </p>
               </div>
             </div>
           </div>

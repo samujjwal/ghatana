@@ -4,268 +4,326 @@
  */
 package com.ghatana.datacloud.integration;
 
+import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
+import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import org.junit.jupiter.api.*;
+import io.activej.promise.Promise;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * End-to-end workflow integration tests for Data Cloud.
  *
- * <p>Exercises the full collection → entity → pipeline → event publishing workflow
- * as a single user-observable journey, validating that each step produces the
- * expected side effects in subsequent steps.
+ * <p>Exercises the collection → pipeline → workflow execution → entity persistence →
+ * event publication path using the real workflow runtime plugin instead of an in-test
+ * workflow engine double.
  *
- * @doc.type    class
- * @doc.purpose End-to-end workflow integration: collection → entity → event pipeline
- * @doc.layer   product
+ * @doc.type class
+ * @doc.purpose End-to-end workflow integration through the real Data Cloud runtime plugin path
+ * @doc.layer product
  * @doc.pattern IntegrationTest
  */
 @DisplayName("End-to-End Workflow Integration Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class EndToEndWorkflowTest extends EventloopTestBase {
 
-    // ── Shared state ──────────────────────────────────────────────────────────
-
-    private static WorkflowEngine engine;
     private static final String TENANT_ID = "e2e-tenant";
-    private static String workflowId;
+    private static final String COLLECTION_NAME = "e2e_collection";
+    private static final String PIPELINE_ID = "pipeline-e2e";
+
+    private static InMemoryDataCloudClient client;
+    private static DataCloudRuntimePluginManager runtimePluginManager;
+    private static WorkflowExecutionCapability workflowExecution;
     private static String collectionId;
+    private static String executionId;
     private static List<String> publishedEntityIds;
 
     @BeforeAll
     static void setUpAll() {
-        engine = new WorkflowEngine();
+        client = new InMemoryDataCloudClient();
+        runtimePluginManager = new DataCloudRuntimePluginManager();
+        runtimePluginManager.registerWorkflowPlugin(client);
+        workflowExecution = runtimePluginManager.findCapability(WorkflowExecutionCapability.class)
+            .orElseThrow(() -> new AssertionError("workflow execution capability missing"));
         publishedEntityIds = new ArrayList<>();
     }
 
-    // ── Step 1: Create a collection ───────────────────────────────────────────
-
     @Test
     @Order(1)
-    @DisplayName("1. create collection — persists collection and returns non-null ID")
+    @DisplayName("1. create collection through Data Cloud storage")
     void step1CreateCollection() {
-        collectionId = engine.createCollection(TENANT_ID, "e2e-collection",
-                Map.of("format", "json"));
+        DataCloudClient.Entity collection = runPromise(() -> client.save(TENANT_ID, "dc_collections", Map.of(
+            "id", COLLECTION_NAME,
+            "name", "E2E Collection",
+            "format", "json"
+        )));
 
-        assertThat(collectionId).isNotNull().isNotBlank();
-        assertThat(engine.findCollection(TENANT_ID, collectionId)).isPresent();
+        collectionId = collection.id();
+
+        Optional<DataCloudClient.Entity> persistedCollection = runPromise(() -> client.findById(TENANT_ID, "dc_collections", collectionId));
+        assertThat(collectionId).isEqualTo(COLLECTION_NAME);
+        assertThat(persistedCollection).isPresent();
     }
-
-    // ── Step 2: Register and start a workflow ─────────────────────────────────
 
     @Test
     @Order(2)
-    @DisplayName("2. register workflow — linked to collection, starts in PENDING state")
+    @DisplayName("2. register pipeline definition through Data Cloud storage")
     void step2RegisterWorkflow() {
-        workflowId = engine.registerWorkflow(TENANT_ID, collectionId, "INGEST_PIPELINE");
+        DataCloudClient.Entity pipeline = runPromise(() -> client.save(TENANT_ID, "dc_pipelines", Map.of(
+            "id", PIPELINE_ID,
+            "name", "Entity Ingestion Pipeline",
+            "collectionId", collectionId,
+            "nodes", List.of(
+                Map.of("id", "extract", "type", "EXTRACT", "label", "Extract"),
+                Map.of("id", "validate", "type", "VALIDATE", "label", "Validate"),
+                Map.of("id", "publish", "type", "PUBLISH", "label", "Publish")
+            )
+        )));
 
-        assertThat(workflowId).isNotBlank();
-        assertThat(engine.workflowStatus(TENANT_ID, workflowId)).isEqualTo("PENDING");
+        assertThat(pipeline.id()).isEqualTo(PIPELINE_ID);
+        assertThat(runPromise(() -> client.findById(TENANT_ID, "dc_pipelines", PIPELINE_ID))).isPresent();
     }
 
     @Test
     @Order(3)
-    @DisplayName("3. start workflow — transitions from PENDING to RUNNING")
-    void step3StartWorkflow() {
-        engine.startWorkflow(TENANT_ID, workflowId);
+    @DisplayName("3. execute workflow through the runtime plugin and persist execution state")
+    void step3ExecuteWorkflow() {
+        WorkflowExecutionCapability.ExecutionSnapshot snapshot = runPromise(() -> workflowExecution.execute(
+            TENANT_ID,
+            PIPELINE_ID,
+            Map.of("collectionId", collectionId, "dryRun", false)
+        ));
 
-        assertThat(engine.workflowStatus(TENANT_ID, workflowId)).isEqualTo("RUNNING");
+        executionId = snapshot.id();
+
+        assertThat(snapshot.workflowId()).isEqualTo(PIPELINE_ID);
+        assertThat(snapshot.status()).isEqualTo("COMPLETED");
+        assertThat(snapshot.nodeStatuses()).hasSize(3);
+
+        Optional<WorkflowExecutionCapability.ExecutionSnapshot> persistedExecution = runPromise(() -> workflowExecution.getExecution(TENANT_ID, executionId));
+        List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> workflowExecution.getExecutionLogs(TENANT_ID, executionId));
+
+        assertThat(persistedExecution).isPresent();
+        assertThat(logs).hasSize(5);
+        assertThat(logs.get(0).message()).isEqualTo("Workflow execution started");
     }
-
-    // ── Step 3: Publish entities ──────────────────────────────────────────────
 
     @Test
     @Order(4)
-    @DisplayName("4. publish entities — entities persisted and associated with workflow")
-    void step4PublishEntities() {
-        for (int i = 1; i <= 5; i++) {
-            String entityId = engine.publishEntity(TENANT_ID, collectionId, workflowId,
-                    Map.of("index", i, "value", "entity-" + i));
-            publishedEntityIds.add(entityId);
+    @DisplayName("4. persist workflow output entities and append a completion event")
+    void step4PersistEntitiesAndPublishEvent() {
+        for (int index = 1; index <= 5; index++) {
+            DataCloudClient.Entity entity = runPromise(() -> client.save(TENANT_ID, COLLECTION_NAME, Map.of(
+                "index", index,
+                "value", "entity-" + index,
+                "executionId", executionId
+            )));
+            publishedEntityIds.add(entity.id());
         }
 
+        DataCloudClient.Offset offset = runPromise(() -> client.appendEvent(TENANT_ID, DataCloudClient.Event.of(
+            "workflow.completed",
+            Map.of("pipelineId", PIPELINE_ID, "executionId", executionId, "entityCount", publishedEntityIds.size())
+        )));
+
+        List<DataCloudClient.Entity> entities = runPromise(() -> client.query(TENANT_ID, COLLECTION_NAME, DataCloudClient.Query.all()));
+        List<DataCloudClient.Event> events = runPromise(() -> client.queryEvents(TENANT_ID, DataCloudClient.EventQuery.byType("workflow.completed")));
+
         assertThat(publishedEntityIds).hasSize(5);
-        assertThat(publishedEntityIds).allMatch(id -> id != null && !id.isBlank());
+        assertThat(entities).extracting(DataCloudClient.Entity::id).containsAll(publishedEntityIds);
+        assertThat(offset.value()).isGreaterThan(0);
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).payload()).containsEntry("executionId", executionId);
     }
 
     @Test
     @Order(5)
-    @DisplayName("5. entities are queryable from the collection after publish")
-    void step5EntitiesQueryableFromCollection() {
-        List<String> ids = engine.listEntityIds(TENANT_ID, collectionId);
+    @DisplayName("5. execution detail and logs survive runtime plugin restart")
+    void step5ExecutionSurvivesRestart() {
+        runtimePluginManager.close();
+        runtimePluginManager = new DataCloudRuntimePluginManager();
+        runtimePluginManager.registerWorkflowPlugin(client);
+        workflowExecution = runtimePluginManager.findCapability(WorkflowExecutionCapability.class)
+            .orElseThrow(() -> new AssertionError("workflow execution capability missing after restart"));
 
-        assertThat(ids).containsAll(publishedEntityIds);
+        Optional<WorkflowExecutionCapability.ExecutionSnapshot> reloadedExecution = runPromise(() -> workflowExecution.getExecution(TENANT_ID, executionId));
+        List<WorkflowExecutionCapability.ExecutionSnapshot> executions = runPromise(() -> workflowExecution.listExecutions(TENANT_ID, PIPELINE_ID));
+        List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> workflowExecution.getExecutionLogs(TENANT_ID, executionId));
+
+        assertThat(reloadedExecution).isPresent();
+        assertThat(reloadedExecution.orElseThrow().status()).isEqualTo("COMPLETED");
+        assertThat(executions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id).contains(executionId);
+        assertThat(logs).hasSize(5);
     }
-
-    // ── Step 4: Complete workflow ─────────────────────────────────────────────
 
     @Test
     @Order(6)
-    @DisplayName("6. complete workflow — status transitions from RUNNING to COMPLETED")
-    void step6CompleteWorkflow() {
-        engine.completeWorkflow(TENANT_ID, workflowId, publishedEntityIds.size());
+    @DisplayName("6. delete collection entities without losing workflow execution history")
+    void step6DeleteCollectionData() {
+        for (String entityId : publishedEntityIds) {
+            runPromise(() -> client.delete(TENANT_ID, COLLECTION_NAME, entityId));
+        }
+        runPromise(() -> client.delete(TENANT_ID, "dc_collections", collectionId));
 
-        assertThat(engine.workflowStatus(TENANT_ID, workflowId)).isEqualTo("COMPLETED");
+        List<DataCloudClient.Entity> entities = runPromise(() -> client.query(TENANT_ID, COLLECTION_NAME, DataCloudClient.Query.all()));
+        Optional<DataCloudClient.Entity> collection = runPromise(() -> client.findById(TENANT_ID, "dc_collections", collectionId));
+        Optional<WorkflowExecutionCapability.ExecutionSnapshot> execution = runPromise(() -> workflowExecution.getExecution(TENANT_ID, executionId));
+
+        assertThat(entities).isEmpty();
+        assertThat(collection).isEmpty();
+        assertThat(execution).isPresent();
     }
 
-    @Test
-    @Order(7)
-    @DisplayName("7. completed workflow outcome records entity count")
-    void step7CompletedWorkflowRecordsEntityCount() {
-        WorkflowEngine.WorkflowResult result = engine.getResult(TENANT_ID, workflowId);
+    private static final class InMemoryDataCloudClient implements DataCloudClient {
 
-        assertThat(result.entityCount()).isEqualTo(5);
-        assertThat(result.completedAt()).isNotNull();
-    }
+        private final Map<String, Map<String, Entity>> recordsByCollection = new ConcurrentHashMap<>();
+        private final Map<String, List<Event>> eventsByTenant = new ConcurrentHashMap<>();
+        private final EntityStore entityStore = mock(EntityStore.class);
+        private final EventLogStore eventLogStore = mock(EventLogStore.class);
+        private final AtomicLong nextOffset = new AtomicLong();
 
-    // ── Step 5: Delete collection cascades ────────────────────────────────────
+        @Override
+        public Promise<Entity> save(String tenantId, String collection, Map<String, Object> data) {
+            String recordId = data.get("id") instanceof String id && !id.isBlank()
+                ? id
+                : UUID.randomUUID().toString();
+            String bucketKey = bucketKey(tenantId, collection);
+            Map<String, Entity> bucket = recordsByCollection.computeIfAbsent(bucketKey, ignored -> new ConcurrentHashMap<>());
+            Entity existing = bucket.get(recordId);
+            Map<String, Object> normalized = new LinkedHashMap<>(data);
+            normalized.put("id", recordId);
+            normalized.putIfAbsent("tenantId", tenantId);
+            Instant now = Instant.now();
+            Entity entity = new Entity(
+                recordId,
+                collection,
+                normalized,
+                existing != null ? existing.createdAt() : now,
+                now,
+                existing != null ? existing.version() + 1 : 1
+            );
+            bucket.put(recordId, entity);
+            return Promise.of(entity);
+        }
 
-    @Test
-    @Order(8)
-    @DisplayName("8. delete collection — entities and workflow are also removed")
-    void step8DeleteCollectionCascades() {
-        engine.deleteCollection(TENANT_ID, collectionId);
+        @Override
+        public Promise<Optional<Entity>> findById(String tenantId, String collection, String id) {
+            return Promise.of(Optional.ofNullable(recordsByCollection
+                .getOrDefault(bucketKey(tenantId, collection), Map.of())
+                .get(id)));
+        }
 
-        assertThat(engine.findCollection(TENANT_ID, collectionId)).isEmpty();
-        assertThat(engine.listEntityIds(TENANT_ID, collectionId)).isEmpty();
-    }
+        @Override
+        public Promise<List<Entity>> query(String tenantId, String collection, Query query) {
+            List<Entity> items = new ArrayList<>(recordsByCollection
+                .getOrDefault(bucketKey(tenantId, collection), Map.of())
+                .values());
 
-    // ── Failure path ──────────────────────────────────────────────────────────
+            List<Entity> filtered = items.stream()
+                .filter(entity -> matchesFilters(entity, query.filters()))
+                .sorted(buildComparator(query.sorts()))
+                .toList();
 
-    @Test
-    @Order(9)
-    @DisplayName("9. failing a workflow sets status to FAILED with an error reason")
-    void step9FailWorkflowSetsStatusToFailed() {
-        String colId2 = engine.createCollection(TENANT_ID, "fail-test-col", Map.of());
-        String wfId2 = engine.registerWorkflow(TENANT_ID, colId2, "FAIL_PIPELINE");
-        engine.startWorkflow(TENANT_ID, wfId2);
-        engine.failWorkflow(TENANT_ID, wfId2, "upstream outage");
+            int fromIndex = Math.min(query.offset(), filtered.size());
+            int toIndex = Math.min(fromIndex + query.limit(), filtered.size());
+            return Promise.of(filtered.subList(fromIndex, toIndex));
+        }
 
-        assertThat(engine.workflowStatus(TENANT_ID, wfId2)).isEqualTo("FAILED");
-        assertThat(engine.getResult(TENANT_ID, wfId2).errorReason()).contains("upstream outage");
-    }
+        @Override
+        public Promise<Void> delete(String tenantId, String collection, String id) {
+            Map<String, Entity> bucket = recordsByCollection.get(bucketKey(tenantId, collection));
+            if (bucket != null) {
+                bucket.remove(id);
+            }
+            return Promise.of(null);
+        }
 
-    // ── Concurrent publish ────────────────────────────────────────────────────
+        @Override
+        public Promise<Offset> appendEvent(String tenantId, Event event) {
+            eventsByTenant.computeIfAbsent(tenantId, ignored -> new ArrayList<>()).add(event);
+            return Promise.of(Offset.of(nextOffset.incrementAndGet()));
+        }
 
-    @Test
-    @Order(10)
-    @DisplayName("10. concurrent entity publishes are all persisted without loss")
-    void step10ConcurrentEntityPublishes() throws Exception {
-        String colId3 = engine.createCollection(TENANT_ID, "concurrent-col", Map.of());
-        String wfId3 = engine.registerWorkflow(TENANT_ID, colId3, "CONCURRENT_PIPELINE");
-        engine.startWorkflow(TENANT_ID, wfId3);
+        @Override
+        public Promise<List<Event>> queryEvents(String tenantId, EventQuery query) {
+            List<Event> events = eventsByTenant.getOrDefault(tenantId, List.of()).stream()
+                .filter(event -> query.eventTypes().isEmpty() || query.eventTypes().contains(event.type()))
+                .limit(query.limit())
+                .toList();
+            return Promise.of(events);
+        }
 
-        int threads = 20;
-        CyclicBarrier barrier = new CyclicBarrier(threads);
-        CopyOnWriteArrayList<String> ids = new CopyOnWriteArrayList<>();
+        @Override
+        public Subscription tailEvents(String tenantId, TailRequest request, Consumer<Event> handler) {
+            return new Subscription() {
+                @Override
+                public void cancel() {
+                }
 
-        Thread[] t = new Thread[threads];
-        for (int i = 0; i < threads; i++) {
-            final int idx = i;
-            t[i] = Thread.ofVirtual().start(() -> {
-                try {
-                    barrier.await();
-                    String id = engine.publishEntity(TENANT_ID, colId3, wfId3,
-                            Map.of("idx", idx));
-                    ids.add(id);
-                } catch (Exception ignored) {}
+                @Override
+                public boolean isCancelled() {
+                    return true;
+                }
+            };
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public EntityStore entityStore() {
+            return entityStore;
+        }
+
+        @Override
+        public EventLogStore eventLogStore() {
+            return eventLogStore;
+        }
+
+        private boolean matchesFilters(Entity entity, List<Filter> filters) {
+            return filters.stream().allMatch(filter -> {
+                Object value = "id".equals(filter.field()) ? entity.id() : entity.data().get(filter.field());
+                if (!"eq".equals(filter.operator())) {
+                    return true;
+                }
+                return value != null && value.equals(filter.value());
             });
         }
-        for (Thread thread : t) thread.join();
 
-        assertThat(ids).hasSize(threads);
-        assertThat(engine.listEntityIds(TENANT_ID, colId3)).hasSize(threads);
-    }
-
-    // ── Workflow engine implementation (for tests) ─────────────────────────────
-
-    static class WorkflowEngine {
-        record WorkflowRecord(String workflowId, String tenantId, String collectionId,
-                               String type, String status, String errorReason, Integer entityCount,
-                               Instant completedAt) {}
-        record WorkflowResult(int entityCount, String errorReason, Instant completedAt) {}
-
-        private final ConcurrentHashMap<String, Map<String, Object>> collections = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<String, List<String>> collectionEntities = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<String, WorkflowRecord> workflows = new ConcurrentHashMap<>();
-
-        String createCollection(String tenantId, String name, Map<String, Object> config) {
-            String id = UUID.randomUUID().toString();
-            Map<String, Object> col = new HashMap<>(config);
-            col.put("id", id); col.put("name", name); col.put("tenantId", tenantId);
-            collections.put(tenantId + "|" + id, col);
-            return id;
+        private Comparator<Entity> buildComparator(List<Sort> sorts) {
+            Comparator<Entity> comparator = Comparator.comparing(Entity::id);
+            for (Sort sort : sorts) {
+                Comparator<Entity> nextComparator = Comparator.comparing(entity -> String.valueOf(entity.data().get(sort.field())));
+                comparator = sort.ascending() ? nextComparator.thenComparing(comparator) : nextComparator.reversed().thenComparing(comparator);
+            }
+            return comparator;
         }
 
-        Optional<Map<String, Object>> findCollection(String tenantId, String collectionId) {
-            return Optional.ofNullable(collections.get(tenantId + "|" + collectionId));
-        }
-
-        void deleteCollection(String tenantId, String collectionId) {
-            collections.remove(tenantId + "|" + collectionId);
-            collectionEntities.remove(tenantId + "|" + collectionId);
-        }
-
-        String registerWorkflow(String tenantId, String collectionId, String type) {
-            String id = UUID.randomUUID().toString();
-            workflows.put(tenantId + "|" + id, new WorkflowRecord(
-                    id, tenantId, collectionId, type, "PENDING", null, null, null));
-            return id;
-        }
-
-        void startWorkflow(String tenantId, String workflowId) {
-            updateWorkflow(tenantId, workflowId, "RUNNING", null, null, null);
-        }
-
-        void completeWorkflow(String tenantId, String workflowId, int entityCount) {
-            updateWorkflow(tenantId, workflowId, "COMPLETED", null, entityCount, Instant.now());
-        }
-
-        void failWorkflow(String tenantId, String workflowId, String reason) {
-            updateWorkflow(tenantId, workflowId, "FAILED", reason, null, Instant.now());
-        }
-
-        String workflowStatus(String tenantId, String workflowId) {
-            WorkflowRecord r = workflows.get(tenantId + "|" + workflowId);
-            return r == null ? null : r.status();
-        }
-
-        WorkflowResult getResult(String tenantId, String workflowId) {
-            WorkflowRecord r = workflows.get(tenantId + "|" + workflowId);
-            return r == null ? null : new WorkflowResult(
-                    r.entityCount() == null ? 0 : r.entityCount(),
-                    r.errorReason(), r.completedAt());
-        }
-
-        String publishEntity(String tenantId, String collectionId, String workflowId,
-                             Map<String, Object> data) {
-            String id = UUID.randomUUID().toString();
-            collectionEntities.computeIfAbsent(tenantId + "|" + collectionId,
-                    k -> new CopyOnWriteArrayList<>()).add(id);
-            return id;
-        }
-
-        List<String> listEntityIds(String tenantId, String collectionId) {
-            List<String> ids = collectionEntities.get(tenantId + "|" + collectionId);
-            return ids == null ? List.of() : List.copyOf(ids);
-        }
-
-        private void updateWorkflow(String tenantId, String workflowId, String status,
-                                    String errorReason, Integer entityCount, Instant completedAt) {
-            String k = tenantId + "|" + workflowId;
-            WorkflowRecord old = workflows.get(k);
-            if (old == null) return;
-            workflows.put(k, new WorkflowRecord(old.workflowId(), old.tenantId(),
-                    old.collectionId(), old.type(), status,
-                    errorReason != null ? errorReason : old.errorReason(),
-                    entityCount != null ? entityCount : old.entityCount(),
-                    completedAt != null ? completedAt : old.completedAt()));
+        private String bucketKey(String tenantId, String collection) {
+            return tenantId + "|" + collection;
         }
     }
 }

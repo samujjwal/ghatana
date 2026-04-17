@@ -160,6 +160,11 @@ public class AepCoreModule extends AbstractModule {
     }
 
     @Provides
+    Eventloop eventloop() {
+        return Eventloop.create();
+    }
+
+    @Provides
     JedisPool jedisPool() {
         String redisHost = System.getenv("AEP_REDIS_HOST");
         String redisPort = System.getenv("AEP_REDIS_PORT");

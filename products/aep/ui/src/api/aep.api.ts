@@ -45,6 +45,80 @@ export interface PipelineRun {
   errorsCount: number;
 }
 
+export interface RunLineageEntry {
+  eventType: string;
+  timestamp: string;
+  pipelineId: string;
+  stepType: string;
+  status: string;
+  details: Record<string, unknown>;
+}
+
+export interface RunDecisionEntry {
+  reviewItemId: string;
+  skillId: string;
+  decision: string;
+  decidedAt: string;
+  stepType: string;
+}
+
+export interface RunPolicyEntry {
+  policyId: string;
+  skillId: string;
+  version: string;
+  promotedAt: string;
+  stepType: string;
+}
+
+export interface PipelineRunDetail extends PipelineRun {
+  lineage: RunLineageEntry[];
+  decisions: RunDecisionEntry[];
+  policies: RunPolicyEntry[];
+}
+
+export interface GovernanceComplianceSummary {
+  tenantId: string;
+  configured: boolean;
+  supportedOperations: string[];
+  registeredCollections: string[];
+  soc2: {
+    title: string;
+    generatedAt: string;
+    overallStatus: string;
+    controlCount: number;
+    controls: Array<{
+      controlId: string;
+      description: string;
+      status: string;
+    }>;
+  };
+  timestamp: string;
+}
+
+export interface GovernanceAuditEntry {
+  eventType: string;
+  timestamp: string;
+  runId?: string;
+  pipelineId?: string;
+  status?: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface GovernanceAuditSummary {
+  tenantId: string;
+  configured: boolean;
+  entries: GovernanceAuditEntry[];
+  count: number;
+  timestamp: string;
+}
+
+export interface GovernanceTenancySummary {
+  tenantId: string;
+  active: boolean;
+  globalActive: boolean;
+  mode: string;
+}
+
 export type PipelineRunWire = Partial<PipelineRun> & {
   runId?: string;
   completedAt?: string;
@@ -225,6 +299,19 @@ interface AgentPoliciesResponse {
 
 interface PipelineRunsResponse {
   runs?: PipelineRunWire[];
+}
+
+interface GovernanceKillSwitchResponse {
+  tenantId: string;
+  active: boolean;
+  globalActive: boolean;
+  timestamp: string;
+}
+
+interface GovernanceDegradationResponse {
+  tenantId: string;
+  mode: string;
+  timestamp: string;
 }
 
 interface PipelineMetricsResponse {
@@ -447,11 +534,61 @@ export async function cancelRun(
 export async function getRunDetail(
   runId: string,
   tenantId = "default",
-): Promise<PipelineRun> {
-  const { data } = await client.get<PipelineRunWire>(`/api/v1/runs/${runId}`, {
+): Promise<PipelineRunDetail> {
+  const { data } = await client.get<PipelineRunWire & Partial<PipelineRunDetail>>(`/api/v1/runs/${runId}`, {
     params: { tenantId },
   });
-  return normalizePipelineRun(data);
+  return {
+    ...normalizePipelineRun(data),
+    lineage: data.lineage ?? [],
+    decisions: data.decisions ?? [],
+    policies: data.policies ?? [],
+  };
+}
+
+export async function getGovernanceComplianceSummary(
+  tenantId = "default",
+): Promise<GovernanceComplianceSummary> {
+  const { data } = await client.get<GovernanceComplianceSummary>(
+    "/governance/compliance/summary",
+    {
+      params: { tenantId },
+    },
+  );
+  return data;
+}
+
+export async function getGovernanceAuditSummary(
+  tenantId = "default",
+  limit = 20,
+): Promise<GovernanceAuditSummary> {
+  const { data } = await client.get<GovernanceAuditSummary>(
+    "/governance/audit/summary",
+    {
+      params: { tenantId, limit },
+    },
+  );
+  return data;
+}
+
+export async function getGovernanceTenancySummary(
+  tenantId = "default",
+): Promise<GovernanceTenancySummary> {
+  const [{ data: killSwitch }, { data: degradation }] = await Promise.all([
+    client.get<GovernanceKillSwitchResponse>("/governance/kill-switch", {
+      params: { tenantId },
+    }),
+    client.get<GovernanceDegradationResponse>("/governance/degradation", {
+      params: { tenantId },
+    }),
+  ]);
+
+  return {
+    tenantId,
+    active: killSwitch.active,
+    globalActive: killSwitch.globalActive,
+    mode: degradation.mode,
+  };
 }
 
 export async function listMarketplaceAgents(

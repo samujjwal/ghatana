@@ -152,12 +152,12 @@ test.describe('Visual Regression — Collections', () => {
 
   test('collections empty state', async ({ page }) => {
     // Override the mock to return an empty list
-    await page.route('**/api/v1/collections', async (route) => {
+    await page.route('**/api/v1/entities/dc_collections', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ items: [], total: 0, page: 1, pageSize: 10, hasMore: false }),
+          body: JSON.stringify({ entities: [], count: 0 }),
         });
       } else {
         route.continue();

@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.server.http.controllers;
 
+import com.ghatana.aep.compliance.AepSoc2ControlFramework;
+import com.ghatana.aep.server.compliance.AepComplianceService;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.platform.incident.DegradationMode;
 import com.ghatana.platform.incident.GracefulDegradationManager;
@@ -14,10 +16,12 @@ import com.ghatana.platform.security.analytics.PromptInjectionDetector;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -48,6 +52,9 @@ public final class GovernanceController {
     private final EgressMonitor egressMonitor;
     private final PromptInjectionDetector injectionDetector;
     private final Function<Map<String, Object>, HttpResponse> jsonResponse;
+    @Nullable
+    private final AepComplianceService complianceService;
+    private final AepSoc2ControlFramework soc2Framework;
 
     /**
      * @param killSwitchService    kill-switch service; never {@code null}
@@ -56,6 +63,8 @@ public final class GovernanceController {
      * @param egressMonitor        egress tracking; never {@code null}
      * @param injectionDetector    prompt injection detection; never {@code null}
      * @param jsonResponse         JSON response factory from the enclosing server
+     * @param complianceService    compliance capability service; nullable when Data Cloud is absent
+     * @param soc2Framework        SOC 2 framework summary provider
      */
     public GovernanceController(
             KillSwitchService killSwitchService,
@@ -63,13 +72,17 @@ public final class GovernanceController {
             PolicyAsCodeEngine policyEngine,
             EgressMonitor egressMonitor,
             PromptInjectionDetector injectionDetector,
-            Function<Map<String, Object>, HttpResponse> jsonResponse) {
+            Function<Map<String, Object>, HttpResponse> jsonResponse,
+            @Nullable AepComplianceService complianceService,
+            AepSoc2ControlFramework soc2Framework) {
         this.killSwitchService  = killSwitchService;
         this.degradationManager = degradationManager;
         this.policyEngine       = policyEngine;
         this.egressMonitor      = egressMonitor;
         this.injectionDetector  = injectionDetector;
         this.jsonResponse       = jsonResponse;
+        this.complianceService  = complianceService;
+        this.soc2Framework      = soc2Framework;
     }
 
     // ---- Kill-Switch -------------------------------------------------------
@@ -184,6 +197,42 @@ public final class GovernanceController {
                 return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
             }
         });
+    }
+
+    /** GET /governance/compliance/summary — returns compliance capability summary for the tenant. */
+    public Promise<HttpResponse> handleComplianceSummary(HttpRequest request) {
+        String tenantId = request.getQueryParameter("tenantId");
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400, "tenantId query param required"));
+        }
+
+        AepSoc2ControlFramework.Soc2Report report = soc2Framework.generateReport();
+        return Promise.of(jsonResponse.apply(Map.of(
+            "tenantId", tenantId,
+            "configured", complianceService != null,
+            "supportedOperations", List.of(
+                "GDPR_ACCESS",
+                "GDPR_ERASURE",
+                "GDPR_CORRECTION",
+                "GDPR_PORTABILITY",
+                "CCPA_OPT_OUT"
+            ),
+            "registeredCollections", complianceService != null
+                ? complianceService.registeredCollections()
+                : List.of(),
+            "soc2", Map.of(
+                "title", report.title(),
+                "generatedAt", report.generatedAt(),
+                "overallStatus", report.overallStatus(),
+                "controlCount", report.controls().size(),
+                "controls", report.controls().stream().map(control -> Map.of(
+                    "controlId", control.controlId(),
+                    "description", control.description(),
+                    "status", control.status()
+                )).toList()
+            ),
+            "timestamp", Instant.now().toString()
+        )));
     }
 
     // ---- Policy Evaluation -------------------------------------------------

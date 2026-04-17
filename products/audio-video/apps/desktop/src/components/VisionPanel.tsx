@@ -63,7 +63,7 @@ const VisionPanel: React.FC = () => {
               disabled
               className="w-full"
             >
-              Vision Analysis Coming Soon
+              Vision Analysis Unavailable In This Build
             </Button>
           )}
         </div>

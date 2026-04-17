@@ -18,120 +18,60 @@ import {
   Clock,
   ChevronRight,
   Activity,
-  Info
 } from 'lucide-react';
+import { brainService, type AutonomyAction } from '../../api/brain.service';
 import BaseCard from '../cards/BaseCard';
 import StatusBadge from '../common/StatusBadge';
-
-interface AutonomyLog {
-  timestamp: string;
-  actionType: string;
-  tenantId: string;
-  action: string;
-  decision: string;
-  reason: string;
-  confidence?: number;
-  level?: string;
-  metadata?: Record<string, any>;
-  outcome?: 'SUCCESS' | 'FAILURE' | 'PENDING' | 'BLOCKED';
-}
 
 interface AutonomyTimelineProps {
   maxItems?: number;
   showFilters?: boolean;
 }
 
-// Mock data for development
-const mockAutonomyLogs: AutonomyLog[] = [
-  {
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-    actionType: 'OPTIMIZATION',
-    tenantId: 'demo',
-    action: 'Auto-indexed customer_events.email',
-    decision: 'Create index on email column for query performance',
-    reason: 'Query analysis showed 95% slow queries involve email filtering',
-    confidence: 0.92,
-    level: 'INFO',
-    metadata: { table: 'customer_events', column: 'email', indexType: 'btree' },
-    outcome: 'SUCCESS',
-  },
-  {
-    timestamp: new Date(Date.now() - 600000).toISOString(),
-    actionType: 'QUALITY_CHECK',
-    tenantId: 'demo',
-    action: 'Schema validated for orders table',
-    decision: 'Schema validation passed',
-    reason: 'Scheduled quality check completed',
-    confidence: 0.88,
-    level: 'INFO',
-    metadata: { table: 'orders', validationRules: 12, passed: 12 },
-    outcome: 'SUCCESS',
-  },
-  {
-    timestamp: new Date(Date.now() - 900000).toISOString(),
-    actionType: 'QUALITY_CHECK',
-    tenantId: 'demo',
-    action: 'Quality check on user_profiles',
-    decision: 'Minor data quality issues detected',
-    reason: '5% of records have missing email addresses',
-    confidence: 0.75,
-    level: 'WARNING',
-    metadata: { table: 'user_profiles', issueCount: 3, severity: 'low' },
-    outcome: 'PENDING',
-  },
-];
-
-const fetchAutonomyTimeline = async (): Promise<AutonomyLog[]> => {
-  // Mock implementation for development
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(mockAutonomyLogs), 400);
-  });
-};
-
 export function AutonomyTimeline({
   maxItems = 10,
-  showFilters = true
+  showFilters = true,
 }: AutonomyTimelineProps) {
-  const [selectedLog, setSelectedLog] = useState<AutonomyLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<AutonomyAction | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
   const { data: logs, isLoading, error } = useQuery({
-    queryKey: ['autonomy-timeline'],
-    queryFn: fetchAutonomyTimeline,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    queryKey: ['autonomy-timeline', maxItems],
+    queryFn: () => brainService.getAutonomyTimeline(undefined, maxItems),
+    refetchInterval: 30000,
   });
 
-  const getOutcomeIcon = (decision: string, outcome?: string) => {
-    if (outcome === 'SUCCESS' || decision === 'ALLOWED' || decision === 'PROCEED') {
+  const getOutcomeIcon = (status: AutonomyAction['status']) => {
+    if (status === 'SUCCESS') {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
-    if (outcome === 'FAILURE' || decision === 'BLOCKED') {
+    if (status === 'FAILED') {
       return <XCircle className="h-5 w-5 text-red-500" />;
     }
-    if (outcome === 'PENDING' || decision === 'ADVISORY') {
+    if (status === 'PENDING' || status === 'ADVISORY') {
       return <AlertCircle className="h-5 w-5 text-yellow-500" />;
     }
     return <Clock className="h-5 w-5 text-gray-400" />;
   };
 
-  const getOutcomeColor = (decision: string, outcome?: string) => {
-    if (outcome === 'SUCCESS' || decision === 'ALLOWED' || decision === 'PROCEED') {
+  const getOutcomeColor = (status: AutonomyAction['status']) => {
+    if (status === 'SUCCESS') {
       return 'bg-green-100 border-green-300';
     }
-    if (outcome === 'FAILURE' || decision === 'BLOCKED') {
+    if (status === 'FAILED') {
       return 'bg-red-100 border-red-300';
     }
-    if (outcome === 'PENDING' || decision === 'ADVISORY') {
+    if (status === 'PENDING' || status === 'ADVISORY') {
       return 'bg-yellow-100 border-yellow-300';
     }
     return 'bg-gray-100 border-gray-300';
   };
 
-  const filteredLogs = logs?.filter(log => {
+  const filteredLogs = logs?.filter((log) => {
     if (filter === 'all') return true;
-    if (filter === 'success') return log.outcome === 'SUCCESS' || log.decision === 'ALLOWED';
-    if (filter === 'advisory') return log.decision === 'ADVISORY' || log.outcome === 'PENDING';
-    if (filter === 'blocked') return log.decision === 'BLOCKED' || log.outcome === 'FAILURE';
+    if (filter === 'success') return log.status === 'SUCCESS';
+    if (filter === 'advisory') return log.status === 'ADVISORY' || log.status === 'PENDING';
+    if (filter === 'blocked') return log.status === 'FAILED';
     return true;
   }).slice(0, maxItems) || [];
 
@@ -169,11 +109,7 @@ export function AutonomyTimeline({
             <Activity className="h-6 w-6 text-blue-500" />
             <h2 className="text-xl font-bold text-gray-900">Autonomy Log</h2>
           </div>
-          {logs && (
-            <span className="text-sm text-gray-500">
-              {logs.length} actions
-            </span>
-          )}
+          {logs && <span className="text-sm text-gray-500">{logs.length} actions</span>}
         </div>
 
         {showFilters && (
@@ -223,56 +159,43 @@ export function AutonomyTimeline({
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredLogs.map((log, index) => (
+            {filteredLogs.map((log) => (
               <div
-                key={`${log.timestamp}-${index}`}
+                key={log.id}
                 onClick={() => setSelectedLog(log)}
                 className={`
                   relative p-3 rounded-lg border cursor-pointer
                   transition-all hover:shadow-md
-                  ${getOutcomeColor(log.decision, log.outcome)}
+                  ${getOutcomeColor(log.status)}
                 `}
               >
                 <div className="flex items-start gap-3">
-                  {/* Status Icon */}
                   <div className="mt-0.5">
-                    {getOutcomeIcon(log.decision, log.outcome)}
+                    {getOutcomeIcon(log.status)}
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-900">
                         {log.action}
                       </span>
-                      <StatusBadge status={log.decision} />
-                      {log.level && (
+                      <StatusBadge status={log.status} />
+                      {log.outcome && (
                         <span className="text-xs text-gray-600 px-2 py-0.5 bg-white rounded-full">
-                          {log.level}
+                          {log.outcome}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-700 mb-1">
-                      {log.actionType}
-                    </p>
-
-                    <p className="text-xs text-gray-600">
-                      {log.reason}
-                    </p>
+                    <p className="text-xs text-gray-700 mb-1">{log.domain}</p>
 
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                       <span>{new Date(log.timestamp).toLocaleString()}</span>
-                      {log.confidence !== undefined && (
-                        <>
-                          <div className="h-3 w-px bg-gray-300"></div>
-                          <span>Confidence: {(log.confidence * 100).toFixed(0)}%</span>
-                        </>
-                      )}
+                      <div className="h-3 w-px bg-gray-300"></div>
+                      <span>Confidence: {(log.confidence * 100).toFixed(0)}%</span>
                     </div>
                   </div>
 
-                  {/* Expand Icon */}
                   <ChevronRight className="h-4 w-4 text-gray-400 mt-1" />
                 </div>
               </div>
@@ -281,7 +204,6 @@ export function AutonomyTimeline({
         )}
       </BaseCard>
 
-      {/* Decision Context Modal */}
       {selectedLog && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -293,10 +215,8 @@ export function AutonomyTimeline({
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                {getOutcomeIcon(selectedLog.decision, selectedLog.outcome)}
-                <h3 className="text-lg font-bold text-gray-900">
-                  Decision Context
-                </h3>
+                {getOutcomeIcon(selectedLog.status)}
+                <h3 className="text-lg font-bold text-gray-900">Decision Context</h3>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
@@ -313,43 +233,36 @@ export function AutonomyTimeline({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Action Type</label>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.actionType}</p>
+                <label className="text-sm font-medium text-gray-700">Domain</label>
+                <p className="text-sm text-gray-900 mt-1">{selectedLog.domain}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Decision</label>
+                <label className="text-sm font-medium text-gray-700">Status</label>
                 <div className="flex items-center gap-2 mt-1">
-                  <StatusBadge status={selectedLog.decision} />
-                  {selectedLog.level && (
-                    <span className="text-sm text-gray-600">Level: {selectedLog.level}</span>
+                  <StatusBadge status={selectedLog.status} />
+                  {selectedLog.outcome && (
+                    <span className="text-sm text-gray-600">Outcome: {selectedLog.outcome}</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">Reason</label>
-                <p className="text-sm text-gray-900 mt-1">{selectedLog.reason}</p>
+                <label className="text-sm font-medium text-gray-700">Confidence</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full"
+                      style={{ width: `${selectedLog.confidence * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm text-gray-900">
+                    {(selectedLog.confidence * 100).toFixed(1)}%
+                  </span>
+                </div>
               </div>
 
-              {selectedLog.confidence !== undefined && (
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Confidence</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${selectedLog.confidence * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm text-gray-900">
-                      {(selectedLog.confidence * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
+              {Object.keys(selectedLog.metadata).length > 0 && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Metadata</label>
                   <div className="mt-1 bg-gray-50 rounded p-3 text-xs font-mono">

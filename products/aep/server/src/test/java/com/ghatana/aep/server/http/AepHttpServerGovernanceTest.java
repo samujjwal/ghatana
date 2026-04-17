@@ -306,6 +306,53 @@ class AepHttpServerGovernanceTest {
         }
     }
 
+    @Nested
+    @DisplayName("GET /governance/compliance/summary")
+    class ComplianceSummaryTests {
+
+        @Test
+        @DisplayName("returns 200 with supported operations and SOC2 summary")
+        void returnsComplianceSummary() throws Exception {
+            server = new AepHttpServer(engine, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/governance/compliance/summary?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body).containsKey("supportedOperations");
+            assertThat(body).containsKey("registeredCollections");
+            assertThat(body).containsKey("soc2");
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /governance/audit/summary")
+    class AuditSummaryTests {
+
+        @Test
+        @DisplayName("returns 200 with entries array even when ledger is absent")
+        void returnsAuditSummary() throws Exception {
+            server = new AepHttpServer(engine, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/governance/audit/summary?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body).containsKey("entries");
+            assertThat(body).containsKey("count");
+        }
+    }
+
     // ==================== GET /governance/security/egress ====================
 
     @Nested

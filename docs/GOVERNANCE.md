@@ -12,6 +12,8 @@ The Ghatana monorepo uses a tiered governance model:
 2. **Product Level** — Product-specific architectural and design decisions
 3. **Package Level** — Implementation details within clear boundaries
 
+Product-facing readiness and status language must follow [docs/process/PRODUCT_TRUTHFULNESS_POLICY.md](/Users/samujjwal/Development/ghatana/docs/process/PRODUCT_TRUTHFULNESS_POLICY.md).
+
 ### Decision-Making Authority
 
 | Scope | Decision Maker | Documentation |

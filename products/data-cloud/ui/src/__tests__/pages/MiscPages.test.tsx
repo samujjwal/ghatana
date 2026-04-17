@@ -5,6 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import { PluginDetailsPage } from '../../pages/PluginDetailsPage';
 import { SmartWorkflowBuilder } from '../../pages/SmartWorkflowBuilder';
@@ -33,8 +34,24 @@ describe('SmartWorkflowBuilder', () => {
     expect(screen.getByRole('heading', { name: 'Smart Workflow Builder' })).toBeInTheDocument();
     expect(screen.getAllByText(/Describe your pipeline/i).length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText(/Load data from S3/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Generate Pipeline/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Check AI Builder Availability/i })).toBeDisabled();
     expect(screen.getByText(/Try an example:/i)).toBeInTheDocument();
+  });
+
+  it('surfaces an explicit boundary instead of a fabricated generated workflow', async () => {
+    const user = userEvent.setup();
+
+    render(<SmartWorkflowBuilder />, { wrapper: TestWrapper });
+
+    await user.type(
+      screen.getByPlaceholderText(/Load data from S3/i),
+      'Load data from S3, clean email addresses, save to PostgreSQL',
+    );
+    await user.click(screen.getByRole('button', { name: /Check AI Builder Availability/i }));
+
+    expect(await screen.findByText(/AI pipeline builder unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Natural-language pipeline generation is not exposed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Generated Pipeline/i)).not.toBeInTheDocument();
   });
 });
 

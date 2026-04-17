@@ -1,17 +1,6 @@
 /**
  * RunDetailPage — unified run detail view for AEP operator cockpit.
  *
- * Displays a single pipeline run as a coherent operator story, combining:
- *   - Run header: ID, pipeline, status badge, timing, quick actions
- *   - Overview panel: metadata, events processed, duration
- *   - Event Lineage tab: ordered lineage of events in this run
- *   - Agent Decisions tab: agent invocations and decisions recorded for this run
- *   - Policies tab: policies applied during execution
- *   - Actions panel: contextual actions (cancel, rerun, create review)
- *
- * Accessible from /operate/runs/:runId. Reachable from MonitoringDashboardPage
- * run row clicks and from HITL review items.
- *
  * @doc.type page
  * @doc.purpose Unified run detail — pipeline graph, event lineage, decisions, policies, actions
  * @doc.layer frontend
@@ -21,32 +10,38 @@ import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
-import { getRunDetail, cancelRun, type PipelineRun } from '@/api/aep.api';
+import {
+  cancelRun,
+  getRunDetail,
+  type PipelineRunDetail,
+  type RunDecisionEntry,
+  type RunLineageEntry,
+  type RunPolicyEntry,
+} from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
-import { ComingSoonPanel } from '@/components/core/ComingSoonPanel';
-
-// ─── Types ────────────────────────────────────────────────────────────
 
 type TabId = 'lineage' | 'decisions' | 'policies';
 
-// ─── Status badge ─────────────────────────────────────────────────────
-
-const STATUS_COLORS: Record<PipelineRun['status'], string> = {
-  RUNNING:   'bg-blue-100  text-blue-800  dark:bg-blue-900  dark:text-blue-300',
+const STATUS_COLORS: Record<PipelineRunDetail['status'], string> = {
+  RUNNING: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   SUCCEEDED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  FAILED:    'bg-red-100   text-red-800   dark:bg-red-900   dark:text-red-300',
-  CANCELLED: 'bg-gray-100  text-gray-700  dark:bg-gray-800  dark:text-gray-300',
+  FAILED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  CANCELLED: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 };
 
-function StatusBadge({ status }: { status: PipelineRun['status'] }) {
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'lineage', label: 'Event Lineage' },
+  { id: 'decisions', label: 'Agent Decisions' },
+  { id: 'policies', label: 'Policies' },
+];
+
+function StatusBadge({ status }: { status: PipelineRunDetail['status'] }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[status]}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLORS[status]}`}>
       {status}
     </span>
   );
 }
-
-// ─── Duration helper ──────────────────────────────────────────────────
 
 function formatDuration(startedAt: string, finishedAt?: string): string {
   const start = new Date(startedAt).getTime();
@@ -57,32 +52,65 @@ function formatDuration(startedAt: string, finishedAt?: string): string {
   return `${Math.floor(ms / 60_000)}m ${Math.floor((ms % 60_000) / 1000)}s`;
 }
 
-// ─── Metadata row ─────────────────────────────────────────────────────
-
 function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="w-32 flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</span>
-      <span className="text-sm text-gray-900 dark:text-gray-100 font-mono break-all">{value}</span>
+    <div className="flex items-start gap-2 border-b border-gray-100 py-2 last:border-0 dark:border-gray-800">
+      <span className="w-32 flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="break-all font-mono text-sm text-gray-900 dark:text-gray-100">{value}</span>
     </div>
   );
 }
 
-// ─── Placeholder panel ────────────────────────────────────────────────
+function BoundaryPanel({
+  title,
+  summary,
+  bullets,
+  locked = false,
+}: {
+  title: string;
+  summary: string;
+  bullets: string[];
+  locked?: boolean;
+}) {
+  return (
+    <div className="p-6">
+      <div className="max-w-3xl rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
+        <div className={`rounded-lg border px-4 py-3 text-sm ${locked
+          ? 'border-gray-300 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'
+          : 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'}`}>
+          <p className="font-medium">{title}</p>
+          <p className="mt-1">{summary}</p>
+        </div>
 
-// ─── Tabs ─────────────────────────────────────────────────────────────
+        <div className="mt-5">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Current run facts</h3>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            {bullets.map((bullet) => (
+              <li key={bullet}>{bullet}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'lineage',   label: 'Event Lineage' },
-  { id: 'decisions', label: 'Agent Decisions' },
-  { id: 'policies',  label: 'Policies' },
-];
+function EvidenceList<T>({
+  rows,
+  emptyMessage,
+  renderRow,
+}: {
+  rows: T[];
+  emptyMessage: string;
+  renderRow: (row: T, index: number) => React.ReactNode;
+}) {
+  if (rows.length === 0) {
+    return <p className="py-10 text-center text-sm text-gray-400">{emptyMessage}</p>;
+  }
 
-// ─── Page ─────────────────────────────────────────────────────────────
+  return <div className="space-y-3 p-6">{rows.map(renderRow)}</div>;
+}
 
-/**
- * Unified run detail page — the primary operator view for a single pipeline execution.
- */
 export function RunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
   const tenantId = useAtomValue(tenantIdAtom);
@@ -94,8 +122,7 @@ export function RunDetailPage() {
     queryKey: ['aep', 'run', runId, tenantId],
     queryFn: () => getRunDetail(runId!, tenantId),
     enabled: !!runId,
-    refetchInterval: (query) =>
-      query.state.data?.status === 'RUNNING' ? 3_000 : false,
+    refetchInterval: (query) => query.state.data?.status === 'RUNNING' ? 3_000 : false,
   });
 
   const cancelMut = useMutation({
@@ -103,20 +130,15 @@ export function RunDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['aep', 'run', runId] }),
   });
 
-  // ── Loading/error states
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-gray-400 text-sm">
-        Loading run…
-      </div>
-    );
+    return <div className="flex h-full items-center justify-center text-sm text-gray-400">Loading run…</div>;
   }
 
   if (isError || !run) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-sm text-red-500">Run not found.</p>
-        <Link to="/operate" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+        <Link to="/operate" className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">
           ← Back to Runs &amp; Alerts
         </Link>
       </div>
@@ -126,32 +148,29 @@ export function RunDetailPage() {
   const duration = formatDuration(run.startedAt, run.finishedAt);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ── Header ──────────────────────────────────────────── */}
-      <header className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
-        {/* Breadcrumb */}
-        <nav aria-label="breadcrumb" className="flex items-center gap-1 text-xs text-gray-400 mb-2">
+    <div className="flex h-full flex-col">
+      <header className="flex-shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
+        <nav aria-label="breadcrumb" className="mb-2 flex items-center gap-1 text-xs text-gray-400">
           <Link to="/operate" className="hover:text-indigo-600 dark:hover:text-indigo-400">Operate</Link>
           <span>/</span>
           <span className="text-gray-600 dark:text-gray-300">Run detail</span>
         </nav>
 
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <StatusBadge status={run.status} />
-            <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-md">
+            <h1 className="max-w-md truncate text-base font-semibold text-gray-900 dark:text-white">
               {run.pipelineName || run.pipelineId}
             </h1>
-            <span className="text-xs text-gray-400 font-mono hidden sm:inline">{run.id}</span>
+            <span className="hidden font-mono text-xs text-gray-400 sm:inline">{run.id}</span>
           </div>
 
-          {/* Quick actions */}
           <div className="flex items-center gap-2">
             {run.status === 'RUNNING' && (
               <button
                 onClick={() => cancelMut.mutate()}
                 disabled={cancelMut.isPending}
-                className="px-3 py-1.5 rounded text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900 transition-colors disabled:opacity-50"
+                className="rounded bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
               >
                 {cancelMut.isPending ? 'Cancelling…' : 'Cancel run'}
               </button>
@@ -159,14 +178,14 @@ export function RunDetailPage() {
             {run.status === 'FAILED' && (
               <Link
                 to="/operate/reviews"
-                className="px-3 py-1.5 rounded text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-400 dark:hover:bg-amber-900 transition-colors"
+                className="rounded bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-400 dark:hover:bg-amber-900"
               >
                 Open review queue
               </Link>
             )}
             <button
               onClick={() => navigate('/operate')}
-              className="px-3 py-1.5 rounded text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="rounded px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
             >
               ← All runs
             </button>
@@ -174,43 +193,39 @@ export function RunDetailPage() {
         </div>
       </header>
 
-      {/* ── Body ────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: overview metadata */}
-        <aside className="w-72 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 overflow-y-auto px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-3">Overview</p>
+        <aside className="w-72 flex-shrink-0 overflow-y-auto border-r border-gray-200 bg-white px-4 py-4 dark:border-gray-800 dark:bg-gray-950">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">Overview</p>
 
-          <MetaRow label="Run ID"      value={run.id} />
-          <MetaRow label="Pipeline"    value={run.pipelineId} />
-          <MetaRow label="Status"      value={<StatusBadge status={run.status} />} />
-          <MetaRow label="Started"     value={new Date(run.startedAt).toLocaleString()} />
-          {run.finishedAt && (
-            <MetaRow label="Finished"  value={new Date(run.finishedAt).toLocaleString()} />
-          )}
-          <MetaRow label="Duration"    value={duration} />
-          {run.eventsProcessed !== undefined && (
-            <MetaRow label="Events"    value={String(run.eventsProcessed)} />
-          )}
-          {run.errorsCount !== undefined && run.errorsCount > 0 && (
-            <MetaRow label="Errors"    value={
-              <span className="text-red-600 dark:text-red-400">{String(run.errorsCount)}</span>
-            } />
+          <MetaRow label="Run ID" value={run.id} />
+          <MetaRow label="Pipeline" value={run.pipelineId} />
+          <MetaRow label="Status" value={<StatusBadge status={run.status} />} />
+          <MetaRow label="Started" value={new Date(run.startedAt).toLocaleString()} />
+          {run.finishedAt && <MetaRow label="Finished" value={new Date(run.finishedAt).toLocaleString()} />}
+          <MetaRow label="Duration" value={duration} />
+          <MetaRow label="Events" value={String(run.eventsProcessed)} />
+          <MetaRow label="Lineage rows" value={String(run.lineage.length)} />
+          <MetaRow label="Decisions" value={String(run.decisions.length)} />
+          <MetaRow label="Policies" value={String(run.policies.length)} />
+          {run.errorsCount > 0 && (
+            <MetaRow
+              label="Errors"
+              value={<span className="text-red-600 dark:text-red-400">{String(run.errorsCount)}</span>}
+            />
           )}
         </aside>
 
-        {/* Right: tabbed detail */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex-shrink-0 flex gap-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-shrink-0 gap-0 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={[
-                  'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
+                  'border-b-2 px-4 py-3 text-sm font-medium transition-colors -mb-px',
                   activeTab === tab.id
                     ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
                 ].join(' ')}
               >
                 {tab.label}
@@ -218,51 +233,90 @@ export function RunDetailPage() {
             ))}
           </div>
 
-          {/* Tab content */}
           <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
             {activeTab === 'lineage' && isFeatureEnabled('EVENT_LINEAGE') ? (
-              <div className="p-6">
-                {/* TODO: Implement EventLineagePanel */}
-                <ComingSoonPanel
-                  title="Event lineage"
-                  description="Once Event Cloud integration is wired, this panel will show the ordered chain of events processed in this run, including source event, intermediate transformations, and output events."
-                />
-              </div>
+              <EvidenceList<RunLineageEntry>
+                rows={run.lineage}
+                emptyMessage="No lineage events were recorded for this run."
+                renderRow={(entry, index) => (
+                  <div key={`${entry.eventType}-${entry.timestamp}-${index}`} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.stepType}</p>
+                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{entry.eventType}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Pipeline {entry.pipelineId} · status {entry.status}</p>
+                  </div>
+                )}
+              />
             ) : activeTab === 'lineage' ? (
-              <ComingSoonPanel
-                title="Event lineage"
-                description="Event lineage tracing is an enterprise feature. Contact your administrator to enable."
-                isEnterprise
+              <BoundaryPanel
+                title="Event lineage not enabled"
+                summary="Event-lineage tracing is disabled for this tenant or deployment profile."
+                bullets={[
+                  'The UI does not render mock lineage nodes when the feature is disabled.',
+                  'Enable the backend lineage feed before using this tab as an operator tool.',
+                ]}
+                locked
               />
             ) : null}
+
             {activeTab === 'decisions' && isFeatureEnabled('AGENT_DECISIONS') ? (
-              <div className="p-6">
-                {/* TODO: Implement AgentDecisionsPanel */}
-                <ComingSoonPanel
-                  title="Agent decisions"
-                  description="Agent decision records will appear here once the run ledger is connected. Each decision includes the agent ID, input context, confidence score, policy applied, and outcome."
-                />
-              </div>
+              <EvidenceList<RunDecisionEntry>
+                rows={run.decisions}
+                emptyMessage="No run-linked agent decisions were recorded for this execution."
+                renderRow={(entry, index) => (
+                  <div key={`${entry.reviewItemId}-${entry.decidedAt}-${index}`} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.skillId || 'unknown skill'}</p>
+                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{entry.reviewItemId || 'review item unavailable'}</p>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{entry.decision || 'UNKNOWN'}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{entry.decidedAt ? new Date(entry.decidedAt).toLocaleString() : 'No decision timestamp'}</p>
+                  </div>
+                )}
+              />
             ) : activeTab === 'decisions' ? (
-              <ComingSoonPanel
-                title="Agent decisions"
-                description="Agent decision tracking is an enterprise feature. Contact your administrator to enable."
-                isEnterprise
+              <BoundaryPanel
+                title="Agent decisions not enabled"
+                summary="Agent-decision tracking is disabled for this tenant or deployment profile."
+                bullets={[
+                  'No synthetic agent decisions are shown while this feature is disabled.',
+                  'Enable the decision feed before treating this tab as operational evidence.',
+                ]}
+                locked
               />
             ) : null}
+
             {activeTab === 'policies' && isFeatureEnabled('POLICY_REFERENCES') ? (
-              <div className="p-6">
-                {/* TODO: Implement PolicyReferencesPanel */}
-                <ComingSoonPanel
-                  title="Policy references"
-                  description="When governance rules are applied during this run, they will be listed here with their version, approval status, and effect on agent behavior."
-                />
-              </div>
+              <EvidenceList<RunPolicyEntry>
+                rows={run.policies}
+                emptyMessage="No policy-reference events were recorded for this run."
+                renderRow={(entry, index) => (
+                  <div key={`${entry.policyId}-${entry.promotedAt}-${index}`} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.policyId || 'unknown policy'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Skill {entry.skillId || 'n/a'} · version {entry.version || 'n/a'}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{entry.promotedAt ? new Date(entry.promotedAt).toLocaleString() : 'No promotion time'}</span>
+                    </div>
+                  </div>
+                )}
+              />
             ) : activeTab === 'policies' ? (
-              <ComingSoonPanel
-                title="Policy references"
-                description="Policy reference tracking is an enterprise feature. Contact your administrator to enable."
-                isEnterprise
+              <BoundaryPanel
+                title="Policy references not enabled"
+                summary="Policy-reference tracking is disabled for this tenant or deployment profile."
+                bullets={[
+                  'No mock policy data is rendered while the feature is disabled.',
+                  'Enable policy-reference tracking before relying on this tab for run-level governance evidence.',
+                ]}
+                locked
               />
             ) : null}
           </div>

@@ -4,21 +4,29 @@ Data Cloud is the data foundation product for Ghatana. It owns entity storage, e
 
 ## Current State
 
-| Capability | Status | Notes |
-| --- | --- | --- |
-| Entity CRUD, batch, history, export, validation | Ready | Active in the launcher HTTP surface |
-| Event append/query | Ready | Includes offset lookup and streaming support |
-| Pipelines, checkpoints, and execution state | Ready | CRUD plus plugin-backed execution and execution logs are active |
-| Agent memory persistence | Ready | TTL-aware memory APIs are live |
-| Context layer | Ready | Includes snapshot support and RAG endpoint |
-| Lineage API | Ready | Collection lineage and impact endpoints are live |
-| Data products API | Ready | Publish, discover, and subscribe shipped in the launcher |
-| Semantic similarity and RAG | Ready | Auto-index on entity writes, `/similar`, and `/rag` shipped |
-| SDK generation | Ready | Java, TypeScript, and Python SDKs generated from OpenAPI |
-| Analytics, reports, AI models, feature store | Ready with optional dependencies | Some routes degrade when backing services are absent |
-| AI assist, voice, learning, plugin lifecycle | Beta | Available, with runtime plugin hot-swap and quality dependent on optional services |
-| Sovereign durable profile | Ready | `DATACLOUD_PROFILE=sovereign` runs file-backed H2 entity and event storage with restart persistence |
-| Auto-compaction for embedded durable storage | Ready | Tombstone-based compaction runs on a configurable schedule and can be gated via autonomy |
+| Capability | Implementation state | Evidence level | Notes |
+| --- | --- | --- | --- |
+| Entity CRUD, batch, history, export, validation | Implemented | Deployment-validated | Active in the launcher HTTP surface and covered by launcher tests plus local runbooks |
+| Event append/query | Implemented | Deployment-validated | Includes offset lookup and streaming support in the launcher runtime |
+| Pipeline metadata and checkpoints | Implemented | Verified in integration | CRUD and checkpoint storage are active in the launcher HTTP surface |
+| Workflow execution and logs | Implemented | Verified in integration | Execution snapshots and logs persist through Data Cloud storage, but orchestration remains single-process plugin execution rather than distributed scheduling |
+| Agent memory persistence | Implemented | Verified locally | TTL-aware memory APIs are live |
+| Context layer | Implemented | Verified in integration | Includes snapshot support and RAG endpoint |
+| Lineage API | Implemented | Verified in integration | Collection lineage and impact endpoints are live |
+| Data products API | Implemented | Verified in integration | Publish, discover, and subscribe ship in the launcher |
+| Semantic similarity and RAG | Implemented | Verified in integration | Auto-index on entity writes plus `/similar` and `/rag` routes |
+| SDK generation | Implemented | Verified locally | Java, TypeScript, and Python SDKs generate from OpenAPI during the SDK build |
+| Analytics, reports, AI models, feature store | Implemented | Verified locally | Some routes degrade when backing services are absent; inspect `/api/v1/capabilities` for runtime truth |
+| AI assist, voice, learning, plugin lifecycle | Implemented | Verified locally | Optional-service quality and availability depend on runtime capability registration |
+| Sovereign durable profile | Implemented | Verified in integration | `DATACLOUD_PROFILE=sovereign` runs file-backed H2 entity and event storage with restart persistence |
+| Auto-compaction for embedded durable storage | Implemented | Verified in integration | Tombstone-based compaction runs on a configurable schedule and can be gated via autonomy |
+
+Evidence references:
+
+- Integration-backed workflow durability and runtime execution: `products/data-cloud/integration-tests` and `products/data-cloud/launcher` tests
+- Capability registry truth surface: `GET /api/v1/capabilities` with operator UI reflection in `products/data-cloud/ui`
+- Durable governance, purge, redaction, and audit evidence: `products/data-cloud/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServerGovernanceTest.java`
+- Tenant-isolation provider evidence: `products/data-cloud/IMPLEMENTATION_PLAN_2026-04-13.md` entries for `P2.10.2` and related provider tests
 
 ## Architecture
 
@@ -30,6 +38,14 @@ Clients and products
 ```
 
 Operational guidance for validated deployment paths lives in `RUNBOOK.md`.
+
+## Workflow Capability Tiers
+
+| Tier | Implementation state | Evidence level | What it means today |
+| --- | --- | --- | --- |
+| Pipeline metadata CRUD | Implemented | Verified locally | Pipeline definitions and checkpoints are stored and served over the launcher HTTP API |
+| Runtime execution | Implemented | Verified in integration | `POST /api/v1/pipelines/:id/execute` persists execution snapshots and logs so detail and history survive process restarts when the selected Data Cloud storage is durable |
+| Durable orchestration | Limited | Not deployment-validated | The launcher currently runs a single-process workflow plugin; it is not advertised as a distributed scheduler or multi-worker orchestration plane |
 
 ## Manuals
 
@@ -114,16 +130,17 @@ curl -sS -X POST http://localhost:8082/api/v1/data-products \
 
 ## Deployment Modes
 
-| Mode | Status | Notes |
-| --- | --- | --- |
-| `local` | Ready | In-process development profile, no external services required |
-| Standard standalone | Ready | HTTP server plus optional external services and plugins |
-| Kubernetes and Helm | Available | Deployment assets exist in `k8s/` and `helm/` |
-| `sovereign` | Ready | File-backed single-binary air-gapped profile with embedded H2 entity and event storage |
+| Mode | Implementation state | Evidence level | Notes |
+| --- | --- | --- | --- |
+| `local` | Implemented | Verified locally | In-process development profile, no external services required |
+| Standard standalone | Implemented | Verified locally | HTTP server plus optional external services and plugins |
+| Kubernetes and Helm | Documented | Documentation-backed | Deployment assets exist in `k8s/` and `helm/`; treat them as deployment artifacts until validated in your environment |
+| `sovereign` | Implemented | Verified in integration | File-backed single-binary air-gapped profile with embedded H2 entity and event storage |
 
 Important local-profile caveats:
 
 - Data is not durable across restarts in `local`; use `sovereign` for file-backed embedded durability.
+- Workflow execution history is only restart-safe when the selected Data Cloud storage is itself durable.
 - Federated query and tier migration degrade when external services are absent.
 - Semantic search currently uses the in-process vector plugin initialized by the launcher.
 

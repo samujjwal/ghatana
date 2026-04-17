@@ -214,8 +214,8 @@ invoke('ai_voice_delete_cloned_voice', {
 
 ## 📝 Notes
 
-1. **Mock Mode**: Implementation includes mock mode for development without ML dependencies
-2. **Real Mode Ready**: Code structure supports real ECAPA-TDNN and TTS models
+1. **Dependency-sensitive mode**: ML-backed cloning still depends on optional runtime dependencies and model installation
+2. **Preview architecture**: Code structure supports real ECAPA-TDNN and TTS integration, but this is not release evidence by itself
 3. **Reuse First**: Follows codebase policy by reusing ModelManager, PyO3 bridge, etc.
 4. **Type Safety**: All Python code has type hints, Rust code is fully typed
 5. **Documentation**: Every public class/function has docstrings with @doc tags
@@ -232,7 +232,7 @@ invoke('ai_voice_delete_cloned_voice', {
 - [x] Type safety maintained
 - [x] Error handling implemented
 - [x] Progress tracking included
-- [x] Mock mode for development
+- [x] Explicit preview/dependency constraints documented
 
 ## 🎉 Summary
 
@@ -244,9 +244,9 @@ The implementation provides:
 - TTS synthesis with cloned voices
 - Full Rust/Tauri integration
 - Comprehensive test suite (38 tests)
-- Production-ready architecture
-- Mock mode for development
+- Preview architecture for internal validation; not a production-readiness claim
+- Dependency-sensitive preview mode
 
-Ready for Phase 4b (UI components) and production deployment.
+Ready for further UI integration and internal validation work.
 
 

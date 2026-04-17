@@ -10,7 +10,7 @@ describe('mock service panels', () => {
     render(<AIVoicePanel />);
 
     expect(screen.getByText('Unavailable in this build')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'AI Voice Coming Soon' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'AI Voice Unavailable In This Build' })).toBeDisabled();
     expect(screen.queryByText(/^Enhanced:/)).toBeNull();
   });
 
@@ -18,7 +18,7 @@ describe('mock service panels', () => {
     render(<MultimodalPanel />);
 
     expect(screen.getByText('Unavailable in this build')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Multimodal Processing Coming Soon' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Multimodal Processing Unavailable In This Build' })).toBeDisabled();
     expect(screen.queryByText(/processing completed successfully/i)).toBeNull();
   });
 

@@ -120,12 +120,34 @@ class AepGoldenPathSystemTest {
         // Pass tenantId as query param to match the tenant used in postEvent()
         HttpResponse<String> resp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(resp.statusCode()).isEqualTo(200);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
-        assertThat(body).containsKey("runs");
-        @SuppressWarnings("unchecked")
+        Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+        assertThat(body.containsKey("runs")).isTrue();
         List<?> runs = (List<?>) body.get("runs");
         assertThat(runs).isNotEmpty();
+    }
+
+    @Test
+    @Order(35)
+    @DisplayName("GET /api/v1/runs/:runId returns evidence arrays for a recorded run")
+    void runDetailIncludesEvidenceArrays() throws Exception {
+        postEvent("tenant-acme", "invoice.created", Map.of("invoiceId", "inv-001"));
+
+        HttpResponse<String> listResp = get("/api/v1/runs?tenantId=tenant-acme");
+        assertThat(listResp.statusCode()).isEqualTo(200);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class);
+        List<Map<String, Object>> runs = (List<Map<String, Object>>) listBody.get("runs");
+        assertThat(runs).isNotEmpty();
+
+        String runId = String.valueOf(runs.get(runs.size() - 1).get("runId"));
+        HttpResponse<String> detailResp = get("/api/v1/runs/" + runId + "?tenantId=tenant-acme");
+        assertThat(detailResp.statusCode()).isEqualTo(200);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> detailBody = mapper.readValue(detailResp.body(), Map.class);
+        assertThat(detailBody.get("runId")).isEqualTo(runId);
+        assertThat(detailBody).containsKeys("lineage", "decisions", "policies");
     }
 
     // ── 4. Pattern registration and retrieval ────────────────────────────────
@@ -144,12 +166,10 @@ class AepGoldenPathSystemTest {
 
         HttpResponse<String> createResp = post("/api/v1/patterns", payload);
         assertThat(createResp.statusCode()).isIn(200, 201);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
-        assertThat(created).containsKey("pattern");
+        Map<?, ?> created = mapper.readValue(createResp.body(), Map.class);
+        assertThat(created.containsKey("pattern")).isTrue();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> patternObj = (Map<String, Object>) created.get("pattern");
+        Map<?, ?> patternObj = (Map<?, ?>) created.get("pattern");
         String pId = String.valueOf(patternObj.get("id"));
         HttpResponse<String> getResp = get("/api/v1/patterns/" + pId + "?tenantId=tenant-acme");
         assertThat(getResp.statusCode()).isEqualTo(200);
@@ -183,7 +203,7 @@ class AepGoldenPathSystemTest {
     @Order(60)
     @DisplayName("GET /api/v1/agents returns 200 with agents array")
     void agentListReturns200() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/agents");
+        HttpResponse<String> resp = get("/api/v1/agents?tenantId=tenant-acme");
 
         assertThat(resp.statusCode()).isEqualTo(200);
         @SuppressWarnings("unchecked")
@@ -195,37 +215,34 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(70)
-    @DisplayName("GET /api/v1/hitl/pending endpoint is reachable (200 or 501 when not configured)")
+    @DisplayName("GET /api/v1/hitl/pending returns 200 with a reachable review queue surface")
     void hitlPendingIsReachable() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/hitl/pending");
+        HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-acme");
 
-        // 200 = queue configured and working; 501 = queue not configured in this setup
-        // Both are acceptable — neither is a server crash (500)
-        assertThat(resp.statusCode()).isIn(200, 501, 503);
+        assertThat(resp.statusCode()).isEqualTo(200);
     }
 
     // ── 8. Learning / reflection pipeline is reachable ───────────────────────
 
     @Test
     @Order(80)
-    @DisplayName("POST /api/v1/learning/reflect endpoint is reachable (202 async accepted, 200 sync, or 501/503 when not configured)")
+    @DisplayName("POST /api/v1/learning/reflect returns 200 or 202")
     void reflectionTriggerIsReachable() throws Exception {
         HttpResponse<String> resp = post("/api/v1/learning/reflect",
                 mapper.writeValueAsString(Map.of("tenantId", "tenant-acme")));
 
-        // 202 = accepted (async fire-and-forget); 200 = completed; 501/503 = not configured
-        assertThat(resp.statusCode()).isIn(200, 202, 501, 503);
+        assertThat(resp.statusCode()).isIn(200, 202);
     }
 
     // ── 9. Learning policy list is queryable ──────────────────────────────────
 
     @Test
     @Order(90)
-    @DisplayName("GET /api/v1/learning/policies endpoint is reachable (200 or 501 when not configured)")
+    @DisplayName("GET /api/v1/learning/policies returns 200")
     void learningPoliciesIsReachable() throws Exception {
-        HttpResponse<String> resp = get("/api/v1/learning/policies");
+        HttpResponse<String> resp = get("/api/v1/learning/policies?tenantId=tenant-acme");
 
-        assertThat(resp.statusCode()).isIn(200, 501, 503);
+        assertThat(resp.statusCode()).isEqualTo(200);
     }
 
     // ── 10. Health probe reflects expected fields ─────────────────────────────

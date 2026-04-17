@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -242,11 +243,11 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
     private static final class BuiltInWorkflowExecutionPlugin extends BaseManagedPlugin implements WorkflowExecutionCapability {
 
         private static final String PIPELINES_COLLECTION = "dc_pipelines";
+        private static final String EXECUTIONS_COLLECTION = "dc_workflow_executions";
+        private static final String EXECUTION_LOGS_COLLECTION = "dc_workflow_execution_logs";
 
         private final DataCloudClient client;
         private final PluginMetadata metadata;
-        private final Map<String, ExecutionSnapshot> executions = new ConcurrentHashMap<>();
-        private final Map<String, List<ExecutionLogEntry>> executionLogs = new ConcurrentHashMap<>();
 
         private BuiltInWorkflowExecutionPlugin(DataCloudClient client, Map<String, Object> config) {
             this.client = Objects.requireNonNull(client, "client");
@@ -285,6 +286,7 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
 
                 Map<String, Object> pipelineData = optionalPipeline.get().data();
                 String workflowName = stringValue(pipelineData.get("name"), workflowId);
+                Map<String, Object> executionInput = input == null ? Map.of() : Map.copyOf(input);
                 Instant startedAt = Instant.now();
                 List<NodeSnapshot> nodeStatuses = buildNodeStatuses(pipelineData, startedAt);
                 Instant completedAt = startedAt.plusMillis(Math.max(1, nodeStatuses.size()) * 5L);
@@ -301,75 +303,244 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
                     (int) Duration.between(startedAt, completedAt).toMillis(),
                     nodeStatuses,
                     Map.of(
-                        "input", input != null ? input : Map.of(),
+                        "input", executionInput,
                         "nodeCount", nodeStatuses.size(),
                         "workflowId", workflowId
                     ),
                     null
                 );
 
-                executions.put(snapshot.id(), snapshot);
-                executionLogs.put(snapshot.id(), buildLogs(snapshot, input));
-                return Promise.of(snapshot);
+                List<ExecutionLogEntry> logs = buildLogs(snapshot, executionInput);
+                return persistExecutionSnapshot(snapshot)
+                    .then(() -> persistExecutionLogs(snapshot.id(), tenantId, workflowId, logs))
+                    .map(ignored -> snapshot);
             });
         }
 
         @Override
         public Promise<List<ExecutionSnapshot>> listExecutions(String tenantId, String workflowId) {
-            List<ExecutionSnapshot> items = executions.values().stream()
-                .filter(snapshot -> tenantId.equals(snapshot.tenantId()) && workflowId.equals(snapshot.workflowId()))
+            return client.query(
+                tenantId,
+                EXECUTIONS_COLLECTION,
+                DataCloudClient.Query.builder()
+                    .filters(List.of(DataCloudClient.Filter.eq("workflowId", workflowId)))
+                    .sorts(List.of(DataCloudClient.Sort.desc("startedAt")))
+                    .limit(200)
+                    .build()
+            ).map(entities -> entities.stream()
+                .map(this::toExecutionSnapshot)
+                .filter(snapshot -> workflowId.equals(snapshot.workflowId()))
                 .sorted((left, right) -> right.startedAt().compareTo(left.startedAt()))
-                .toList();
-            return Promise.of(items);
+                .toList());
         }
 
         @Override
         public Promise<Optional<ExecutionSnapshot>> getExecution(String tenantId, String executionId) {
-            ExecutionSnapshot snapshot = executions.get(executionId);
-            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
-                return Promise.of(Optional.empty());
-            }
-            return Promise.of(Optional.of(snapshot));
+            return client.findById(tenantId, EXECUTIONS_COLLECTION, executionId)
+                .map(optionalEntity -> optionalEntity.map(this::toExecutionSnapshot));
         }
 
         @Override
         public Promise<ExecutionSnapshot> cancelExecution(String tenantId, String executionId) {
-            ExecutionSnapshot snapshot = executions.get(executionId);
-            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
-                return Promise.ofException(new IllegalArgumentException("Execution not found: " + executionId));
-            }
-            if (snapshot.isTerminal()) {
-                return Promise.of(snapshot);
-            }
+            return getExecution(tenantId, executionId).then(optionalSnapshot -> {
+                if (optionalSnapshot.isEmpty()) {
+                    return Promise.ofException(new IllegalArgumentException("Execution not found: " + executionId));
+                }
 
-            Instant completedAt = Instant.now();
-            ExecutionSnapshot cancelled = new ExecutionSnapshot(
-                snapshot.id(),
-                snapshot.tenantId(),
-                snapshot.workflowId(),
-                snapshot.workflowName(),
-                "CANCELLED",
-                snapshot.progress(),
-                snapshot.startedAt(),
-                completedAt.toString(),
-                (int) Duration.between(Instant.parse(snapshot.startedAt()), completedAt).toMillis(),
-                snapshot.nodeStatuses(),
-                snapshot.output(),
-                snapshot.error()
-            );
-            executions.put(executionId, cancelled);
-            executionLogs.computeIfAbsent(executionId, ignored -> new ArrayList<>())
-                .add(new ExecutionLogEntry(completedAt.toString(), "warn", "Execution cancelled", null, Map.of()));
-            return Promise.of(cancelled);
+                ExecutionSnapshot snapshot = optionalSnapshot.get();
+                if (snapshot.isTerminal()) {
+                    return Promise.of(snapshot);
+                }
+
+                Instant completedAt = Instant.now();
+                ExecutionSnapshot cancelled = new ExecutionSnapshot(
+                    snapshot.id(),
+                    snapshot.tenantId(),
+                    snapshot.workflowId(),
+                    snapshot.workflowName(),
+                    "CANCELLED",
+                    snapshot.progress(),
+                    snapshot.startedAt(),
+                    completedAt.toString(),
+                    (int) Duration.between(Instant.parse(snapshot.startedAt()), completedAt).toMillis(),
+                    snapshot.nodeStatuses(),
+                    snapshot.output(),
+                    snapshot.error()
+                );
+                ExecutionLogEntry cancelLog = new ExecutionLogEntry(
+                    completedAt.toString(),
+                    "warn",
+                    "Execution cancelled",
+                    null,
+                    Map.of("executionId", executionId)
+                );
+                return getExecutionLogs(tenantId, executionId)
+                    .then(existingLogs -> persistExecutionSnapshot(cancelled)
+                        .then(() -> persistExecutionLogs(
+                            executionId,
+                            tenantId,
+                            snapshot.workflowId(),
+                            appendExecutionLog(existingLogs, cancelLog)
+                        ))
+                        .map(ignored -> cancelled));
+            });
         }
 
         @Override
         public Promise<List<ExecutionLogEntry>> getExecutionLogs(String tenantId, String executionId) {
-            ExecutionSnapshot snapshot = executions.get(executionId);
-            if (snapshot == null || !tenantId.equals(snapshot.tenantId())) {
-                return Promise.of(List.of());
+            return client.findById(tenantId, EXECUTION_LOGS_COLLECTION, executionId)
+                .map(optionalEntity -> optionalEntity
+                    .map(this::toExecutionLogs)
+                    .orElse(List.of()));
+        }
+
+        private Promise<Void> persistExecutionSnapshot(ExecutionSnapshot snapshot) {
+            return client.save(snapshot.tenantId(), EXECUTIONS_COLLECTION, toExecutionRecord(snapshot))
+                .map(ignored -> null);
+        }
+
+        private Promise<Void> persistExecutionLogs(String executionId, String tenantId, String workflowId, List<ExecutionLogEntry> logs) {
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("id", executionId);
+            record.put("tenantId", tenantId);
+            record.put("executionId", executionId);
+            record.put("workflowId", workflowId);
+            record.put("entries", logs.stream().map(this::toExecutionLogRecord).toList());
+            record.put("updatedAt", Instant.now().toString());
+            return client.save(tenantId, EXECUTION_LOGS_COLLECTION, record)
+                .map(ignored -> null);
+        }
+
+        private Map<String, Object> toExecutionRecord(ExecutionSnapshot snapshot) {
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("id", snapshot.id());
+            record.put("tenantId", snapshot.tenantId());
+            record.put("workflowId", snapshot.workflowId());
+            record.put("workflowName", snapshot.workflowName());
+            record.put("status", snapshot.status());
+            record.put("progress", snapshot.progress());
+            record.put("startedAt", snapshot.startedAt());
+            if (snapshot.completedAt() != null) {
+                record.put("completedAt", snapshot.completedAt());
             }
-            return Promise.of(executionLogs.getOrDefault(executionId, List.of()));
+            if (snapshot.duration() != null) {
+                record.put("duration", snapshot.duration());
+            }
+            record.put("nodeStatuses", snapshot.nodeStatuses().stream().map(this::toNodeRecord).toList());
+            if (snapshot.output() != null) {
+                record.put("output", snapshot.output());
+            }
+            if (snapshot.error() != null) {
+                record.put("error", snapshot.error());
+            }
+            return record;
+        }
+
+        private Map<String, Object> toNodeRecord(NodeSnapshot node) {
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("id", node.nodeId());
+            record.put("name", node.nodeName());
+            record.put("state", node.state());
+            record.put("startedAt", node.startedAt());
+            if (node.completedAt() != null) {
+                record.put("completedAt", node.completedAt());
+            }
+            if (node.duration() != null) {
+                record.put("duration", node.duration());
+            }
+            if (node.error() != null) {
+                record.put("error", node.error());
+            }
+            if (node.output() != null) {
+                record.put("output", node.output());
+            }
+            return record;
+        }
+
+        private Map<String, Object> toExecutionLogRecord(ExecutionLogEntry logEntry) {
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("timestamp", logEntry.timestamp());
+            record.put("level", logEntry.level());
+            record.put("message", logEntry.message());
+            if (logEntry.nodeId() != null) {
+                record.put("nodeId", logEntry.nodeId());
+            }
+            if (logEntry.metadata() != null && !logEntry.metadata().isEmpty()) {
+                record.put("metadata", logEntry.metadata());
+            }
+            return record;
+        }
+
+        @SuppressWarnings("unchecked")
+        private ExecutionSnapshot toExecutionSnapshot(DataCloudClient.Entity entity) {
+            Map<String, Object> data = entity.data();
+            Object rawNodeStatuses = data.get("nodeStatuses");
+            List<NodeSnapshot> nodeStatuses = rawNodeStatuses instanceof List<?> entries
+                ? entries.stream()
+                    .filter(Map.class::isInstance)
+                    .map(Map.class::cast)
+                    .map(item -> toNodeSnapshot((Map<String, Object>) item))
+                    .toList()
+                : List.of();
+            return new ExecutionSnapshot(
+                stringValue(data.get("id"), entity.id()),
+                stringValue(data.get("tenantId"), ""),
+                stringValue(data.get("workflowId"), ""),
+                stringValue(data.get("workflowName"), stringValue(data.get("workflowId"), entity.id())),
+                stringValue(data.get("status"), "UNKNOWN"),
+                intValue(data.get("progress"), 0),
+                stringValue(data.get("startedAt"), entity.updatedAt().toString()),
+                nullableString(data.get("completedAt")),
+                nullableInteger(data.get("duration")),
+                nodeStatuses,
+                data.get("output"),
+                nullableString(data.get("error"))
+            );
+        }
+
+        private NodeSnapshot toNodeSnapshot(Map<String, Object> node) {
+            return new NodeSnapshot(
+                stringValue(node.get("id"), "unknown-node"),
+                stringValue(node.get("name"), stringValue(node.get("id"), "Node")),
+                stringValue(node.get("state"), "UNKNOWN"),
+                stringValue(node.get("startedAt"), Instant.now().toString()),
+                nullableString(node.get("completedAt")),
+                nullableInteger(node.get("duration")),
+                nullableString(node.get("error")),
+                node.get("output")
+            );
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<ExecutionLogEntry> toExecutionLogs(DataCloudClient.Entity entity) {
+            Object rawEntries = entity.data().get("entries");
+            if (!(rawEntries instanceof List<?> entries)) {
+                return List.of();
+            }
+            return entries.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(item -> {
+                    Map<String, Object> log = (Map<String, Object>) item;
+                    Map<String, Object> metadata = log.get("metadata") instanceof Map<?, ?> rawMetadata
+                        ? rawMetadata.entrySet().stream().collect(LinkedHashMap::new, (result, entry) -> result.put(String.valueOf(entry.getKey()), entry.getValue()), LinkedHashMap::putAll)
+                        : Map.of();
+                    return new ExecutionLogEntry(
+                        stringValue(log.get("timestamp"), entity.updatedAt().toString()),
+                        stringValue(log.get("level"), "info"),
+                        stringValue(log.get("message"), "Execution log entry"),
+                        nullableString(log.get("nodeId")),
+                        Map.copyOf(metadata)
+                    );
+                })
+                .toList();
+        }
+
+        private List<ExecutionLogEntry> appendExecutionLog(List<ExecutionLogEntry> existingLogs, ExecutionLogEntry logEntry) {
+            List<ExecutionLogEntry> updatedLogs = new ArrayList<>(existingLogs.size() + 1);
+            updatedLogs.addAll(existingLogs);
+            updatedLogs.add(logEntry);
+            return List.copyOf(updatedLogs);
         }
 
         private List<NodeSnapshot> buildNodeStatuses(Map<String, Object> pipelineData, Instant startedAt) {
@@ -438,5 +609,28 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
 
     private static String stringValue(Object value, String defaultValue) {
         return value instanceof String string && !string.isBlank() ? string : defaultValue;
+    }
+
+    private static String nullableString(Object value) {
+        return value instanceof String string && !string.isBlank() ? string : null;
+    }
+
+    private static Integer nullableInteger(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String string && !string.isBlank()) {
+            try {
+                return Integer.parseInt(string);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static int intValue(Object value, int defaultValue) {
+        Integer parsedValue = nullableInteger(value);
+        return parsedValue != null ? parsedValue : defaultValue;
     }
 }

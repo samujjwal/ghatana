@@ -8,12 +8,14 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useProject } from '../../context/ProjectContext';
 import type { ModelDownloadInfo } from '../../types';
 import { createLogger, invokeWithLog } from '../../utils/logger';
 
 const logger = createLogger('SettingsView');
 
 export const SettingsView: React.FC = () => {
+  const { state, setRuntimeMode } = useProject();
   const [models, setModels] = useState<ModelDownloadInfo[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +28,28 @@ export const SettingsView: React.FC = () => {
     try {
       const available = await invokeWithLog<ModelDownloadInfo[]>(logger, 'ai_voice_list_available_models');
       setModels(available);
+      const missingRequiredModels = available.some((model) => !model.isDownloaded && (model.type === 'demucs' || model.type === 'rvc'));
+      if (missingRequiredModels) {
+        setRuntimeMode({
+          mode: 'degraded',
+          reason: 'Required local models are missing. Separation and conversion remain blocked until the missing dependencies are installed.',
+          exportAllowed: false,
+        });
+      } else if (state.runtimeMode.mode !== 'demo') {
+        setRuntimeMode({
+          mode: 'production',
+          reason: 'Required local models are installed for this workstation session.',
+          exportAllowed: true,
+        });
+      }
     } catch (err) {
       logger.error('LoadModels:error', {}, err);
       setError(err instanceof Error ? err.message : 'Failed to load models');
+      setRuntimeMode({
+        mode: 'degraded',
+        reason: 'The desktop app could not inspect local model prerequisites, so export remains blocked.',
+        exportAllowed: false,
+      });
     }
   };
 
@@ -56,6 +77,22 @@ export const SettingsView: React.FC = () => {
             <p className="text-red-400">{error}</p>
           </div>
         )}
+
+        <section className="bg-gray-800 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-medium text-white mb-4">Runtime Mode</h3>
+          <div className="rounded-lg border border-gray-700 bg-gray-900/60 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-gray-400">Current session classification</span>
+              <span className="rounded-full bg-gray-700 px-2 py-1 text-xs font-medium text-white">
+                {state.runtimeMode.mode.toUpperCase()}
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-gray-300">{state.runtimeMode.reason}</p>
+            <p className="mt-3 text-xs text-gray-500">
+              Export is {state.runtimeMode.exportAllowed ? 'enabled' : 'blocked'} for the current mode.
+            </p>
+          </div>
+        </section>
 
         {/* Model Downloads */}
         <section className="bg-gray-800 rounded-lg p-6 mb-6">

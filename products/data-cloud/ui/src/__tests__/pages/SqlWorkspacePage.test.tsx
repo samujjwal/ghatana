@@ -2,13 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TestWrapper } from '../test-utils/wrapper';
 
-const { mockDataCloudApi, mockAnalytics } = vi.hoisted(() => ({
+const { mockDataCloudApi, mockAnalytics, mockCapabilities } = vi.hoisted(() => ({
   mockDataCloudApi: {
     getCollections: vi.fn(),
   },
   mockAnalytics: {
     executeAnalyticsQuery: vi.fn(),
     executeFederatedQuery: vi.fn(),
+  },
+  mockCapabilities: {
+    useCapabilityRegistry: vi.fn(),
   },
 }));
 
@@ -19,6 +22,12 @@ vi.mock('../../lib/api/data-cloud-api', () => ({
 vi.mock('../../api/analytics.service', () => ({
   executeAnalyticsQuery: mockAnalytics.executeAnalyticsQuery,
   executeFederatedQuery: mockAnalytics.executeFederatedQuery,
+}));
+
+vi.mock('../../api/capabilities.service', () => ({
+  useCapabilityRegistry: mockCapabilities.useCapabilityRegistry,
+  getCapabilitySignal: (capabilities: Array<{ key: string }> | undefined, aliases: string[]) =>
+    capabilities?.find((capability) => aliases.includes(capability.key)),
 }));
 
 import { SqlWorkspacePage } from '../../pages/SqlWorkspacePage';
@@ -65,6 +74,39 @@ describe('SqlWorkspacePage', () => {
       optimized: true,
       timestamp: '2026-04-14T12:05:00Z',
     });
+    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+      data: {
+        generatedAt: '2026-04-17T12:00:00Z',
+        requestId: 'req-query',
+        tenantId: 'tenant-alpha',
+        capabilities: [
+          {
+            key: 'analytics',
+            label: 'Analytics',
+            status: 'active',
+            summary: 'ACTIVE',
+            detail: undefined,
+            rawValue: 'ACTIVE',
+          },
+          {
+            key: 'trino',
+            label: 'Trino',
+            status: 'unavailable',
+            summary: 'NOT_CONFIGURED',
+            detail: 'Trino is not configured for this environment.',
+            rawValue: 'NOT_CONFIGURED',
+          },
+          {
+            key: 'ai_assist',
+            label: 'Ai Assist',
+            status: 'degraded',
+            summary: 'DEGRADED',
+            detail: 'AI assist is deployed without a backing LLM service.',
+            rawValue: 'DEGRADED',
+          },
+        ],
+      },
+    });
   });
 
   it('renders the SQL workspace shell with editor and execution controls', async () => {
@@ -73,6 +115,7 @@ describe('SqlWorkspacePage', () => {
     expect(screen.getByRole('heading', { name: /SQL Workspace/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Run Query/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Direct/i })).toBeInTheDocument();
+    expect(screen.getByText('Query Runtime Truth')).toBeInTheDocument();
   });
 
   it('loads canonical collection metadata into the schema sidebar', async () => {
@@ -102,6 +145,32 @@ describe('SqlWorkspacePage', () => {
   });
 
   it('routes query execution through the federated path when the toggle is enabled', async () => {
+    mockCapabilities.useCapabilityRegistry.mockReturnValue({
+      data: {
+        generatedAt: '2026-04-17T12:00:00Z',
+        requestId: 'req-query-fed',
+        tenantId: 'tenant-alpha',
+        capabilities: [
+          {
+            key: 'analytics',
+            label: 'Analytics',
+            status: 'active',
+            summary: 'ACTIVE',
+            detail: undefined,
+            rawValue: 'ACTIVE',
+          },
+          {
+            key: 'trino',
+            label: 'Trino',
+            status: 'active',
+            summary: 'ACTIVE',
+            detail: undefined,
+            rawValue: 'ACTIVE',
+          },
+        ],
+      },
+    });
+
     render(<SqlWorkspacePage />, { wrapper: TestWrapper });
 
     fireEvent.click(screen.getByRole('button', { name: /direct/i }));
@@ -116,5 +185,13 @@ describe('SqlWorkspacePage', () => {
     });
     expect(screen.getByText(/1 rows • 43ms/i)).toBeInTheDocument();
     expect(screen.getByText('global')).toBeInTheDocument();
+  });
+
+  it('disables federated queries when the capability registry marks Trino unavailable', async () => {
+    render(<SqlWorkspacePage />, { wrapper: TestWrapper });
+
+    expect(await screen.findByText('orders')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Direct/i })).toBeDisabled();
+    expect(screen.getByText('Optional Query Dependencies Are Not Fully Available')).toBeInTheDocument();
   });
 });

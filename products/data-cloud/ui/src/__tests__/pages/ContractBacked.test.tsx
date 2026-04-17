@@ -1578,7 +1578,6 @@ describe('Contract-Backed Route Tests', () => {
         '/api/plugins',
         '/api/plugins/installed',
         '/api/plugins/marketplace',
-        '/api/v1/executions/',
         '/api/v1/agents/register',
         '/api/v1/agents/events/stream',
         '/api/brain/agents',

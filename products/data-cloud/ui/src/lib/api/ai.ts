@@ -24,6 +24,11 @@ import {
     type PipelineOptimisationHintsResponse,
 } from '../../contracts/schemas';
 
+export type {
+    PipelineOptimisationHint,
+    PipelineOptimisationHintsResponse,
+} from '../../contracts/schemas';
+
 function withTenantParams(tenantId: string): { params: { tenantId: string } } {
     return { params: { tenantId } };
 }

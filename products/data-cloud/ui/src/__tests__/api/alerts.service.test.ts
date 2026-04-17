@@ -15,8 +15,12 @@ describe('alertsService unsupported boundaries', () => {
     await expect(alertsService.createAlertRule({
       name: 'Critical backlog',
       description: 'Track consumer lag',
-      condition: 'lag > 1000',
       severity: 'critical',
+      conditionType: 'threshold',
+      metric: 'queue_depth',
+      operator: 'gt',
+      threshold: 1000,
+      duration: 5,
       channels: ['email'],
       enabled: true,
     })).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);

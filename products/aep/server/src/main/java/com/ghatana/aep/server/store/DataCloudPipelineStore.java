@@ -10,6 +10,7 @@ import com.ghatana.datacloud.DataCloudClient.Filter;
 import com.ghatana.datacloud.DataCloudClient.Query;
 import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.pipeline.registry.model.PipelineRegistration;
+import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
 import com.ghatana.pipeline.registry.repository.PipelineRepository;
 import com.ghatana.platform.core.common.pagination.Page;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -74,6 +75,9 @@ public final class DataCloudPipelineStore implements PipelineRepository {
 
     /** Data-Cloud collection name for AEP pipeline storage. */
     public static final String COLLECTION = "aep_pipelines";
+
+    /** Data-Cloud collection name for immutable AEP pipeline version snapshots. */
+    public static final String VERSION_COLLECTION = "aep_pipeline_versions";
 
     private final DataCloudClient client;
 
@@ -141,6 +145,50 @@ public final class DataCloudPipelineStore implements PipelineRepository {
                     return Promise.of(0L);
                 });
     }
+
+            @Override
+            public Promise<Void> saveVersionSnapshot(String pipelineId, PipelineRegistration snapshot) {
+            Pipeline pipeline = toPipeline(snapshot);
+            String tenant = tenantStr(pipeline.getTenantId());
+            String snapshotEntityId = versionEntityId(pipelineId, pipeline.getVersion());
+            Map<String, Object> data = toVersionEntityData(pipelineId, pipeline, snapshotEntityId);
+            return client.save(tenant, VERSION_COLLECTION, data)
+                .map(ignored -> (Void) null)
+                .whenException(e ->
+                    log.error("[pipeline-store] saveVersionSnapshot failed pipelineId={} version={} tenant={}: {}",
+                        pipelineId, pipeline.getVersion(), tenant, e.getMessage(), e));
+            }
+
+            @Override
+            public Promise<List<PipelineRegistration>> findVersionHistory(String pipelineId, String tenantId) {
+            Query query = Query.builder()
+                .filter(Filter.eq("pipelineId", pipelineId))
+                .limit(1_000)
+                .build();
+            return client.query(tenantId, VERSION_COLLECTION, query)
+                .map(entities -> entities.stream()
+                    .filter(entity -> tenantId.equals(entity.data().get("tenantId")))
+                    .map(this::fromVersionEntity)
+                    .sorted(java.util.Comparator.comparingInt(PipelineRegistration::getVersion))
+                    .map(pipeline -> (PipelineRegistration) pipeline)
+                    .toList())
+                .whenException(e ->
+                    log.error("[pipeline-store] findVersionHistory failed pipelineId={} tenant={}: {}",
+                        pipelineId, tenantId, e.getMessage(), e));
+            }
+
+            @Override
+            public Promise<Optional<PipelineRegistration>> findVersionSnapshot(String pipelineId, int version, String tenantId) {
+            return client.findById(tenantId, VERSION_COLLECTION, versionEntityId(pipelineId, version))
+                .map(optEntity -> optEntity
+                    .filter(entity -> tenantId.equals(entity.data().get("tenantId")))
+                    .map(this::fromVersionEntity)
+                    .filter(pipeline -> pipelineId.equals(pipeline.getId()))
+                    .map(pipeline -> (PipelineRegistration) pipeline))
+                .whenException(e ->
+                    log.error("[pipeline-store] findVersionSnapshot failed pipelineId={} version={} tenant={}: {}",
+                        pipelineId, version, tenantId, e.getMessage(), e));
+            }
 
     // =========================================================================
     // PipelineRepository — CRUD
@@ -383,6 +431,11 @@ public final class DataCloudPipelineStore implements PipelineRepository {
         data.put("updatedAt",   Instant.now().toString());
         data.put("createdBy",   safeStr(pipeline.getCreatedBy(), "system"));
         data.put("updatedBy",   safeStr(pipeline.getUpdatedBy(), "system"));
+        data.put("versionLabel", safeStr(pipeline.getVersionLabel(), ""));
+        data.put("versionStatus", pipeline.getVersionStatus() != null
+            ? pipeline.getVersionStatus().name()
+            : PipelineVersionStatus.DRAFT.name());
+        data.put("versionControl", pipeline.getVersionControl());
         return data;
     }
 
@@ -401,7 +454,50 @@ public final class DataCloudPipelineStore implements PipelineRepository {
         p.setUpdatedAt(parseInstant(d.get("updatedAt")));
         p.setCreatedBy(safeStr(d.get("createdBy"), "system"));
         p.setUpdatedBy(safeStr(d.get("updatedBy"), "system"));
+        p.setVersionLabel(safeStr(d.get("versionLabel"), ""));
+        p.setVersionStatus(parseVersionStatus(d.get("versionStatus")));
+        p.setVersionControl(parseLong(d.get("versionControl"), 0L));
         return p;
+    }
+
+    private Map<String, Object> toVersionEntityData(String pipelineId, Pipeline pipeline, String snapshotEntityId) {
+        Map<String, Object> data = toEntityData(pipeline);
+        data.put("id", snapshotEntityId);
+        data.put("pipelineId", pipelineId);
+        data.put("snapshotVersion", pipeline.getVersion());
+        return data;
+    }
+
+    private Pipeline fromVersionEntity(Entity entity) {
+        Pipeline pipeline = fromEntity(entity);
+        pipeline.setId(safeStr(entity.data().get("pipelineId"), pipeline.getId()));
+        return pipeline;
+    }
+
+    private static Pipeline toPipeline(PipelineRegistration registration) {
+        if (registration instanceof Pipeline pipeline) {
+            return pipeline;
+        }
+        Pipeline pipeline = new Pipeline();
+        pipeline.setId(registration.getId());
+        pipeline.setTenantId(registration.getTenantId());
+        pipeline.setName(registration.getName());
+        pipeline.setDescription(registration.getDescription());
+        pipeline.setVersion(registration.getVersion());
+        pipeline.setActive(registration.isActive());
+        pipeline.setConfig(registration.getConfig());
+        pipeline.setCreatedAt(registration.getCreatedAt());
+        pipeline.setUpdatedAt(registration.getUpdatedAt());
+        pipeline.setCreatedBy(registration.getCreatedBy());
+        pipeline.setUpdatedBy(registration.getUpdatedBy());
+        pipeline.setVersionLabel(registration.getVersionLabel());
+        pipeline.setVersionStatus(registration.getVersionStatus());
+        pipeline.setVersionControl(registration.getVersionControl());
+        return pipeline;
+    }
+
+    private static String versionEntityId(String pipelineId, int version) {
+        return pipelineId + ":v" + version;
     }
 
     // ── Type-safe field extractors ────────────────────────────────────────────
@@ -420,10 +516,27 @@ public final class DataCloudPipelineStore implements PipelineRepository {
         catch (NumberFormatException e) { return fallback; }
     }
 
+    private static long parseLong(Object value, long fallback) {
+        if (value instanceof Number n) return n.longValue();
+        try { return value != null ? Long.parseLong(value.toString()) : fallback; }
+        catch (NumberFormatException e) { return fallback; }
+    }
+
     private static boolean parseBool(Object value, boolean fallback) {
         if (value instanceof Boolean b) return b;
         if (value instanceof String s) return Boolean.parseBoolean(s);
         return fallback;
+    }
+
+    private static PipelineVersionStatus parseVersionStatus(Object value) {
+        if (value == null) {
+            return PipelineVersionStatus.DRAFT;
+        }
+        try {
+            return PipelineVersionStatus.valueOf(value.toString());
+        } catch (IllegalArgumentException ignored) {
+            return PipelineVersionStatus.DRAFT;
+        }
     }
 
     private static Instant parseInstant(Object value) {
