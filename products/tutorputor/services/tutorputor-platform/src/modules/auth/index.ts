@@ -20,6 +20,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
   const ssoService = createSsoService({
     prisma,
     baseUrl: process.env.API_BASE_URL || "http://localhost:3000",
+    redis: app.redis,
     generateAccessToken: (userId, tenantId) => {
       return jwt.sign({ sub: userId, tenantId }, { expiresIn: "1h" });
     },

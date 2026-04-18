@@ -67,6 +67,12 @@ import { createSsoService } from "../service.js";
 // ---------------------------------------------------------------------------
 describe("createSsoService", () => {
     const tenantId = "tenant-1" as TenantId;
+    let redis: {
+        get: ReturnType<typeof vi.fn>;
+        set: ReturnType<typeof vi.fn>;
+        expire: ReturnType<typeof vi.fn>;
+        del: ReturnType<typeof vi.fn>;
+    };
     let prisma: {
         identityProvider: {
             findFirst: ReturnType<typeof vi.fn>;
@@ -92,6 +98,19 @@ describe("createSsoService", () => {
     let ssoService: ReturnType<typeof createSsoService>;
 
     beforeEach(() => {
+        const redisState = new Map<string, string>();
+        redis = {
+            get: vi.fn((key: string) => Promise.resolve(redisState.get(key) ?? null)),
+            set: vi.fn((key: string, value: string) => {
+                redisState.set(key, value);
+                return Promise.resolve("OK");
+            }),
+            expire: vi.fn(() => Promise.resolve(1)),
+            del: vi.fn((key: string) => {
+                redisState.delete(key);
+                return Promise.resolve(1);
+            }),
+        };
         prisma = {
             identityProvider: {
                 findFirst: vi.fn().mockResolvedValue(null),
@@ -119,6 +138,7 @@ describe("createSsoService", () => {
         ssoService = createSsoService({
             prisma: prisma as unknown as TutorPrismaClient,
             baseUrl: "https://app.example.com",
+            redis,
             generateAccessToken: vi.fn().mockReturnValue("access-token"),
             generateRefreshToken: vi.fn().mockReturnValue("refresh-token"),
             onUserAuthenticated,
@@ -174,6 +194,23 @@ describe("createSsoService", () => {
                 ssoService.initiateLogin({ tenantId, providerId: "missing" })
             ).rejects.toThrow();
         });
+
+        it("persists transient OIDC state in Redis with a TTL", async () => {
+            prisma.identityProvider.findFirst.mockResolvedValue(makeDbProvider());
+
+            const login = await ssoService.initiateLogin({
+                tenantId,
+                providerId: "prov-1",
+                redirectUri: "https://app.example.com/admin",
+            });
+
+            expect(login.state).toBeTruthy();
+            expect(redis.set).toHaveBeenCalledTimes(1);
+            expect(redis.expire).toHaveBeenCalledWith(
+                `sso:oidc:state:${login.state}`,
+                600,
+            );
+        });
     });
 
     describe("handleCallback", () => {
@@ -213,6 +250,7 @@ describe("createSsoService", () => {
                 state: login.state,
             });
 
+            expect(redis.del).toHaveBeenCalledWith(`sso:oidc:state:${login.state}`);
             expect(onUserAuthenticated).toHaveBeenCalledWith({
                 tenantId,
                 userId: "user-new-1",

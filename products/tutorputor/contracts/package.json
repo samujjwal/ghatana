@@ -8,75 +8,93 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./v1": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./v1/types": {
       "types": "./dist/types.d.ts",
-      "import": "./dist/types.js"
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./v1/services": {
       "types": "./dist/services.d.ts",
-      "import": "./dist/services.js"
+      "import": "./dist/services.js",
+      "default": "./dist/services.js"
     },
     "./v1/simulation": {
       "types": "./dist/simulation/index.d.ts",
-      "import": "./dist/simulation/index.js"
+      "import": "./dist/simulation/index.js",
+      "default": "./dist/simulation/index.js"
     },
     "./v1/simulation/types": {
       "types": "./dist/simulation/types.d.ts",
-      "import": "./dist/simulation/types.js"
+      "import": "./dist/simulation/types.js",
+      "default": "./dist/simulation/types.js"
     },
     "./v1/simulation/services": {
       "types": "./dist/simulation/services.d.ts",
-      "import": "./dist/simulation/services.js"
+      "import": "./dist/simulation/services.js",
+      "default": "./dist/simulation/services.js"
     },
     "./v1/social": {
       "types": "./dist/social.d.ts",
-      "import": "./dist/social.js"
+      "import": "./dist/social.js",
+      "default": "./dist/social.js"
     },
     "./v1/curriculum": {
       "types": "./dist/curriculum/index.d.ts",
-      "import": "./dist/curriculum/index.js"
+      "import": "./dist/curriculum/index.js",
+      "default": "./dist/curriculum/index.js"
     },
     "./v1/curriculum/types": {
       "types": "./dist/curriculum/types.d.ts",
-      "import": "./dist/curriculum/types.js"
+      "import": "./dist/curriculum/types.js",
+      "default": "./dist/curriculum/types.js"
     },
     "./v1/assessments": {
       "types": "./dist/assessments/index.d.ts",
-      "import": "./dist/assessments/index.js"
+      "import": "./dist/assessments/index.js",
+      "default": "./dist/assessments/index.js"
     },
     "./v1/assessments/types": {
       "types": "./dist/assessments/types.d.ts",
-      "import": "./dist/assessments/types.js"
+      "import": "./dist/assessments/types.js",
+      "default": "./dist/assessments/types.js"
     },
     "./v1/plugin-interfaces": {
       "types": "./dist/plugin-interfaces.d.ts",
-      "import": "./dist/plugin-interfaces.js"
+      "import": "./dist/plugin-interfaces.js",
+      "default": "./dist/plugin-interfaces.js"
     },
     "./v1/learning-unit": {
       "types": "./dist/learning-unit.d.ts",
-      "import": "./dist/learning-unit.js"
+      "import": "./dist/learning-unit.js",
+      "default": "./dist/learning-unit.js"
     },
     "./v1/telemetry-events": {
       "types": "./dist/telemetry-events.d.ts",
-      "import": "./dist/telemetry-events.js"
+      "import": "./dist/telemetry-events.js",
+      "default": "./dist/telemetry-events.js"
     },
     "./v1/learning-path": {
       "types": "./dist/learning-path.d.ts",
-      "import": "./dist/learning-path.js"
+      "import": "./dist/learning-path.js",
+      "default": "./dist/learning-path.js"
     },
     "./v1/content-studio": {
       "types": "./dist/content-studio.d.ts",
-      "import": "./dist/content-studio.js"
+      "import": "./dist/content-studio.js",
+      "default": "./dist/content-studio.js"
     },
     "./v1/artifact-manifests": {
       "types": "./dist/artifact-manifests.d.ts",
-      "import": "./dist/artifact-manifests.js"
+      "import": "./dist/artifact-manifests.js",
+      "default": "./dist/artifact-manifests.js"
     }
   },
   "files": [

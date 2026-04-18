@@ -4,7 +4,7 @@
 > **Last updated**: 2026-03-24 (WS1–WS8 remediation validated + remaining partial items resolved or reduced: gamification Prisma models added (`Badge`, `BadgeEarned`, `UserPoints`); `DeviceToken` model and first-class device-token lifecycle routes added; Stripe subscription routes (`paymentRoutes`) mounted in `setup.ts` with JWT-based identity; LTI platform admin routes added (`GET/PATCH/DELETE /api/v1/integration/lti/platforms/*`); Stripe webhook handler added to billing routes with signature verification; billing webhook URL exempted from JWT guard; `modules/payments` `routes.ts` rewritten to use `requestContext` helpers; authorization hardening complete for auto-revision and collaboration routes; forum reply/edit/delete/accepted-answer/reaction flows now resolve posts through tenant/topic-bound helpers; study-group join-request, invite, member mutation, and session RSVP flows now resolve through tenant/group-bound helpers; student marketplace page now consumes live marketplace + billing APIs with mock-checkout auto-verification in local/dev; authoring library refresh/delete plus claim/task/settings flows now use real Content Studio endpoints; authoring animation save/load now persists full specs through existing `ClaimAnimation` records via `/api/content-studio/experiences/:id/animations`; authoring simulation save/load/link now uses manifest-backed `/api/sim-author/manifests*` plus claim-linking APIs instead of page-local-only state; public LTI grade passback now delegates through the real AGS flow even without a persisted TutorPutor LTI session by resolving platform context from the line item; compliance export requests now require the target user to resolve inside the caller's tenant before queuing portability work; collaboration answer-marking now verifies that the selected post belongs to the caller's tenant-bound thread before resolving it)
 > **Status keys**: `implemented` | `partial` | `stubbed` | `disabled` | `planned`
 
-This is the **single source of truth** for what TutorPutor does and does not do today. Architecture goals and aspirational features are documented separately in `TARGET_ARCHITECTURE.md`.
+This is the **single source of truth** for what TutorPutor does and does not do today. Pair it with `../PRODUCT_REALITY_AUDIT_2026-04-18.md` for the audited gap list and remediation priorities. Architecture goals and aspirational features are documented separately in `TARGET_ARCHITECTURE.md`.
 
 ---
 
@@ -121,10 +121,32 @@ All API routes are exposed under `/api/v1/`. The legacy mixed `/api/...` and `/a
 
 ### tutorputor-web (Student App)
 
+Canonical learner routes (authoring lives in `tutorputor-admin`):
+
+| Route | Purpose | Status |
+| ----- | ------- | ------ |
+| `/login` | Shared learner/admin sign-in entrypoint | `implemented` |
+| `/dashboard` | Learner home/dashboard | `implemented` |
+| `/pathways` | Learning paths | `implemented` |
+| `/search` | Canonical browse/module discovery surface | `implemented` |
+| `/modules/:slug` | Module detail | `implemented` |
+| `/assessments` | Assessments list | `implemented` |
+| `/assessments/:assessmentId` | Assessment detail | `implemented` |
+| `/simulations` | Simulation catalog | `implemented` |
+| `/simulations/studio/:id?` | Simulation studio | `implemented` |
+| `/teacher` | Teacher classroom dashboard | `implemented` |
+| `/settings` | Learner/teacher settings | `implemented` |
+
+Legacy aliases retained only for compatibility:
+
+- `/` remains the index route for `/dashboard`
+- `/modules` redirects to `/search`
+- `/ai-tutor` redirects to `/dashboard`; AI assistance is delivered through the omnipresent floating tutor instead of a dedicated learner destination
+
 | Page / Feature               | Status        | Notes                                                                                                                                                                                               |
 | ---------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Dashboard                    | `implemented` | Calls `/api/v1/learning/dashboard`                                                                                                                                                                  |
-| Module list                  | `implemented` | Calls `/api/v1/modules`                                                                                                                                                                             |
+| Module list                  | `implemented` | Canonical browse entrypoint is `/search`; `/modules` remains a compatibility redirect                                                                                                               |
 | Module detail                | `implemented` | Calls `/api/v1/modules/:slug`                                                                                                                                                                       |
 | Pathways                     | `implemented` | Calls `/api/v1/pathways`                                                                                                                                                                            |
 | Assessments                  | `implemented` | Calls `/api/v1/assessments`                                                                                                                                                                         |
@@ -132,7 +154,7 @@ All API routes are exposed under `/api/v1/`. The legacy mixed `/api/...` and `/a
 | Marketplace                  | `implemented` | Browse + purchase flow wired to `/api/v1/integration/marketplace/listings` and `/api/v1/integration/billing/*`; owned modules are detected from purchases; mock checkout auto-verifies in local/dev |
 | Collaboration                | `implemented` | Threads and posts                                                                                                                                                                                   |
 | Gamification                 | `implemented` | Progress, leaderboard, achievements                                                                                                                                                                 |
-| AI Tutor                     | `implemented` | Calls `/api/v1/ai/tutor/query`                                                                                                                                                                      |
+| AI Tutor                     | `implemented` | Calls `/api/v1/ai/tutor/query`; primary learner access is now the omnipresent floating tutor, with `/ai-tutor` retained only as a compatibility redirect back into the dashboard flow                                                                 |
 | Content Generation (student) | `implemented` | `useContentGeneration` hook now calls real job API                                                                                                                                                  |
 | Simulation Studio            | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
 | Animation Editor             | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
@@ -140,7 +162,7 @@ All API routes are exposed under `/api/v1/`. The legacy mixed `/api/...` and `/a
 | Assessment Builder           | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
 | Analytics Dashboard          | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
 | Learning Path Designer       | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Settings / Profile           | `implemented` | lazy routes **re-enabled** (were disabled)                                                                                                                                                          |
+| Settings / Profile           | `implemented` | canonical settings route is `/settings`; profile remains a secondary/lazy surface                                                                                                                  |
 
 ### tutorputor-admin (Admin App)
 

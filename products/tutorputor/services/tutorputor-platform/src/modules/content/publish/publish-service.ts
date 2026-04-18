@@ -70,7 +70,7 @@ export class PublishService {
    */
   async publishAsset(
     tenantId: string,
-    _publishedBy: string,
+    publishedBy: string,
     input: PublishAssetInput,
   ): Promise<PublishResult> {
     // Fetch the asset
@@ -87,13 +87,39 @@ export class PublishService {
     }
 
     // Validate that there is a passing evaluation (if not bypassed)
-    if (!input.bypassEvaluationCheck) {
-      const latestEval = await this.prisma.evaluationRecord.findFirst({
-        where: { tenantId, assetId: input.assetId },
-        orderBy: { createdAt: "desc" },
-      });
+    const latestEval = await this.prisma.evaluationRecord.findFirst({
+      where: { tenantId, assetId: input.assetId },
+      orderBy: { createdAt: "desc" },
+    });
 
-      if (!latestEval) {
+    let manifests: Array<{
+      id: string;
+      manifestType?: string | null;
+      version?: string | null;
+      claimRef?: string | null;
+      isValid: boolean;
+      generationId?: string | null;
+      generatedBy?: string | null;
+    }> = [];
+
+    const evaluationForProvenance: {
+      id: string;
+      recommendation: string;
+      overallScore?: number | null;
+      diagnostics?: unknown;
+      generationRequestId?: string | null;
+    } | null = latestEval
+      ? {
+          id: latestEval.id,
+          recommendation: latestEval.recommendation,
+          overallScore: latestEval.overallScore,
+          diagnostics: latestEval.diagnostics,
+          generationRequestId: latestEval.generationRequestId,
+        }
+      : null;
+
+    if (!input.bypassEvaluationCheck) {
+      if (!evaluationForProvenance) {
         return {
           assetId: input.assetId,
           published: false,
@@ -102,7 +128,7 @@ export class PublishService {
         };
       }
 
-      if (latestEval.recommendation === "BLOCK") {
+      if (evaluationForProvenance.recommendation === "BLOCK") {
         return {
           assetId: input.assetId,
           published: false,
@@ -120,7 +146,7 @@ export class PublishService {
       "example_set",
     ];
     if (MANIFEST_TYPES.includes((asset.assetType ?? "").toLowerCase())) {
-      const manifests = await this.prisma.artifactManifest.findMany({
+      manifests = await this.prisma.artifactManifest.findMany({
         where: { assetId: input.assetId },
       });
       if (manifests.length === 0) {
@@ -141,17 +167,87 @@ export class PublishService {
     }
 
     await this.qualityPipeline.applyPrediction(tenantId, input.assetId);
+    const publishedAt = new Date();
 
     // Publish
     await this.prisma.contentAsset.update({
       where: { id: input.assetId },
       data: {
         status: "PUBLISHED",
-        publishedAt: new Date(),
+        publishedAt,
         semanticIndexStatus: "PENDING",
         recommendationStatus: "STALE",
       },
     });
+
+    const revisionSnapshot = {
+      title: asset.title,
+      assetType: asset.assetType,
+      domain: asset.domain,
+      status: "PUBLISHED",
+      targetGrades: asset.targetGrades,
+      difficultyLevel: asset.difficultyLevel ?? null,
+      promptHash: asset.promptHash ?? null,
+      qualityScore: asset.qualityScore ?? null,
+      reviewState: asset.reviewState ?? null,
+      evaluation:
+        evaluationForProvenance == null
+          ? null
+          : {
+              evaluationId: evaluationForProvenance.id,
+              recommendation: evaluationForProvenance.recommendation,
+              overallScore: evaluationForProvenance.overallScore ?? null,
+              generationRequestId:
+                evaluationForProvenance.generationRequestId ?? null,
+              diagnostics: evaluationForProvenance.diagnostics ?? null,
+            },
+      manifests: manifests.map((manifest) => ({
+        id: manifest.id,
+        manifestType: manifest.manifestType ?? null,
+        version: manifest.version ?? null,
+        claimRef: manifest.claimRef ?? null,
+        isValid: manifest.isValid,
+        generationId: manifest.generationId ?? null,
+        generatedBy: manifest.generatedBy ?? null,
+      })),
+      publishedBy,
+      publishedAt: publishedAt.toISOString(),
+    };
+
+    await Promise.all([
+      (this.prisma as PrismaClient & {
+        contentAssetRevision?: { create: (args: unknown) => Promise<unknown> };
+        auditLog?: { create: (args: unknown) => Promise<unknown> };
+      }).contentAssetRevision?.create({
+        data: {
+          assetId: input.assetId,
+          version:
+            typeof asset.currentVersion === "number" && asset.currentVersion > 0
+              ? asset.currentVersion
+              : 1,
+          changeNote: "Published asset provenance snapshot",
+          snapshot: revisionSnapshot,
+          qualityScore:
+            asset.qualityScore ?? evaluationForProvenance?.overallScore ?? null,
+          validationId: evaluationForProvenance?.id ?? null,
+          createdBy: publishedBy,
+        },
+      }),
+      (this.prisma as PrismaClient & {
+        contentAssetRevision?: { create: (args: unknown) => Promise<unknown> };
+        auditLog?: { create: (args: unknown) => Promise<unknown> };
+      }).auditLog?.create({
+        data: {
+          tenantId,
+          actorId: publishedBy,
+          action: "content_asset_published",
+          resourceType: "ContentAsset",
+          resourceId: input.assetId,
+          outcome: "success",
+          metadata: JSON.stringify(revisionSnapshot),
+        },
+      }),
+    ]);
 
     const bootstrap = await this.recommendationService.bootstrapEdges(
       tenantId,

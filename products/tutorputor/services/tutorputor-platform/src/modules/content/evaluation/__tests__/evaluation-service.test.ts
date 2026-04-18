@@ -9,6 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EvaluationService } from "../evaluation-service";
+import { goldenEvaluationDatasets } from "../__fixtures__/golden-datasets";
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -91,6 +92,7 @@ function makePrisma() {
       findFirst: vi.fn().mockResolvedValue(null),
     },
     contentAsset: {
+      findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({ id: "asset-1" }),
     },
   };
@@ -280,6 +282,196 @@ describe("EvaluationService", () => {
         }),
       );
     });
+
+    it("blocks a regenerated artifact that regresses below the approved baseline", async () => {
+      const job = makeJob({
+        id: "job-regression",
+        jobType: "CLAIM",
+        outputAssetId: "asset-1",
+        parameters: {
+          promptHash: "prompt-regenerated-v2",
+        },
+        outputData: {
+          claims: [{ text: "Photosynthesis is important." }],
+          count: 1,
+        },
+      });
+
+      prisma.contentAsset.findFirst.mockResolvedValue({
+        id: "asset-1",
+        currentVersion: 3,
+        promptHash: "prompt-approved-v1",
+        qualityScore: 0.93,
+        reviewState: JSON.stringify({
+          status: "approved",
+          recommendation: "auto_publish",
+        }),
+        searchableText:
+          "Approved baseline artifact with richer explanation and stronger evidence coverage.",
+        revisions: [
+          {
+            version: 3,
+            snapshot: {
+              title: "Photosynthesis",
+              blocks: [
+                {
+                  title: "Explainer",
+                  body:
+                    "Detailed explanation with worked example, evidence references, and task framing.",
+                },
+              ],
+            },
+            qualityScore: 0.93,
+          },
+        ],
+      });
+      prisma.evaluationRecord.findFirst.mockResolvedValueOnce(
+        makeEvalRow({
+          id: "eval-approved",
+          assetId: "asset-1",
+          overallScore: 0.94,
+          recommendation: "AUTO_PUBLISH",
+        }),
+      );
+      prisma.evaluationRecord.create.mockImplementation((args: any) =>
+        Promise.resolve(
+          makeEvalRow({
+            generationJobId: args.data.generationJobId,
+            assetId: args.data.assetId,
+            overallScore: args.data.overallScore,
+            recommendation: args.data.recommendation,
+            status: args.data.status,
+            issues: args.data.issues,
+            diagnostics: args.data.diagnostics,
+          }),
+        ),
+      );
+
+      const result = await service.evaluateJob("tenant-1", job, "req-2");
+
+      expect(result.recommendation).toBe("block");
+      expect(
+        result.issues?.some(
+          (issue) =>
+            issue.message ===
+              "Regenerated artifact quality regressed below the approved baseline" ||
+            issue.message ===
+              "Regenerated artifact is materially thinner than the approved baseline",
+        ),
+      ).toBe(true);
+      expect(prisma.evaluationRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            diagnostics: expect.objectContaining({
+              promptHash: "prompt-regenerated-v2",
+              regressionBaseline: expect.objectContaining({
+                version: 3,
+                promptHash: "prompt-approved-v1",
+                evaluationId: "eval-approved",
+                evaluationScore: 0.94,
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it("emits pedagogy blockers when assessment content lacks scaffolding and validity details", async () => {
+      const job = makeJob({
+        id: "job-assessment-pedagogy",
+        jobType: "ASSESSMENT",
+        parameters: {
+          gradeLevel: "grade_3_5",
+        },
+        outputData: {
+          assessments: [
+            {
+              question: "What is 4 + 5?",
+            },
+          ],
+        },
+      });
+
+      prisma.evaluationRecord.create.mockImplementation((args: any) =>
+        Promise.resolve(
+          makeEvalRow({
+            overallScore: args.data.overallScore,
+            recommendation: args.data.recommendation,
+            status: args.data.status,
+            issues: args.data.issues,
+            diagnostics: args.data.diagnostics,
+          }),
+        ),
+      );
+
+      const result = await service.evaluateJob("tenant-1", job);
+
+      expect(result.recommendation).toBe("block");
+      expect(
+        result.issues?.some(
+          (issue) => issue.message === "Content lacks explicit scaffolding for the learner",
+        ),
+      ).toBe(true);
+      expect(
+        result.issues?.some(
+          (issue) =>
+            issue.message === "Assessment item 1 is missing the expected answer or rubric",
+        ),
+      ).toBe(true);
+      expect(prisma.evaluationRecord.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            diagnostics: expect.objectContaining({
+              pedagogy: expect.objectContaining({
+                gradeLevel: "grade_3_5",
+              }),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it("keeps the golden high-trust domain fixtures publishable", async () => {
+      for (const dataset of goldenEvaluationDatasets) {
+        for (const fixtureCase of dataset.cases) {
+          prisma.evaluationRecord.create.mockImplementation((args: any) =>
+            Promise.resolve(
+              makeEvalRow({
+                generationJobId: args.data.generationJobId,
+                overallScore: args.data.overallScore,
+                recommendation: args.data.recommendation,
+                status: args.data.status,
+                issues: args.data.issues,
+                diagnostics: args.data.diagnostics,
+              }),
+            ),
+          );
+
+          const result = await service.evaluateJob("tenant-1", {
+            ...makeJob({
+              id: `${dataset.domain}-${fixtureCase.name}`,
+              jobType: fixtureCase.jobType,
+              outputData: fixtureCase.outputData,
+              parameters: {
+                domain: dataset.domain,
+                gradeLevel: dataset.gradeLevel,
+              },
+            }),
+          });
+
+          expect(result.overallScore).toBeGreaterThanOrEqual(
+            fixtureCase.minOverallScore,
+          );
+          expect(result.recommendation).not.toBe("block");
+          expect(
+            result.issues?.filter(
+              (issue) =>
+                issue.dimension === "pedagogy" && issue.severity === "error",
+            ) ?? [],
+          ).toHaveLength(0);
+        }
+      }
+    });
   });
 
   // =========================================================================
@@ -374,6 +566,60 @@ describe("EvaluationService", () => {
 
       expect(prisma.evaluationRecord.create).toHaveBeenCalledTimes(2);
       expect(scorecard.overallScore).toBeGreaterThanOrEqual(0);
+    });
+
+    it("flags missing modality and evidence coverage across the request before review", async () => {
+      const jobs = [
+        makeJob({
+          id: "job-claim",
+          jobType: "CLAIM",
+          outputData: {
+            claims: [
+              {
+                text: "Learners compare heat transfer mechanisms.",
+                contentNeeds: {
+                  examples: { required: true },
+                  simulation: { required: true },
+                  animation: { required: true },
+                },
+              },
+            ],
+            count: 1,
+          },
+        }),
+      ];
+
+      prisma.generationRequest.findFirst.mockResolvedValue(makeRequest(jobs));
+      prisma.evaluationRecord.create.mockResolvedValue(
+        makeEvalRow({ generationRequestId: "req-1" }),
+      );
+
+      const scorecard = await service.evaluateGenerationRequest(
+        "tenant-1",
+        "req-1",
+      );
+
+      expect(scorecard.recommendation).toBe("block");
+      expect(scorecard.blockedReasons).toContain(
+        "Claims do not yet have any concrete examples",
+      );
+      expect(scorecard.blockedReasons).toContain(
+        "Generated content has no evidence-producing task or assessment coverage",
+      );
+      expect(
+        scorecard.issues.some(
+          (issue) =>
+            issue.message ===
+            "Claims requiring simulations are missing interactive modality coverage",
+        ),
+      ).toBe(true);
+      expect(
+        scorecard.issues.some(
+          (issue) =>
+            issue.message ===
+            "Claims requiring animations are missing visual modality coverage",
+        ),
+      ).toBe(true);
     });
   });
 

@@ -13,7 +13,10 @@ import type {
   TenantId,
   UserId,
 } from "@tutorputor/contracts/v1/types";
-import { AIContentGenerationService } from "./AIContentGenerationService.js";
+import {
+  AIContentGenerationError,
+  AIContentGenerationService,
+} from "./AIContentGenerationService.js";
 import { getTenantId, requireRole } from "../../core/http/requestContext.js";
 import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
 import { aiQuerySchema } from "../../validation/validator.js";
@@ -318,6 +321,13 @@ export async function registerAIRoutes(
         errorMessage.includes("Forbidden")
       ) {
         return reply.status(403).send({ error: errorMessage });
+      }
+
+      if (error instanceof AIContentGenerationError) {
+        return reply.status(422).send({
+          error: error.message,
+          code: error.code,
+        });
       }
 
       app.log.error(`[AI] Concept generation failed: ${errorMessage}`);

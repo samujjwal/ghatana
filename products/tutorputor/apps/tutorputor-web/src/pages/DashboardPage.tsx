@@ -5,7 +5,6 @@ import { useRecommendations } from "../hooks/useRecommendations";
 import { Box, Card, Button } from "@/components/ui";
 import { cardStyles, textStyles, badgeStyles, cn } from "../theme";
 import { StatCard } from "../components/StatCard";
-import { PageHeader } from "../components/PageHeader";
 import { ChevronDown, ChevronUp, Sparkles, BookOpen, Compass, Brain, Target } from "lucide-react";
 
 // Local type definitions for component props
@@ -121,7 +120,7 @@ export function DashboardPage() {
           <StatCard
             title="Avg. Progress"
             value={`${Math.round(dashboardStats.averageProgress)}%`}
-            color="indigo"
+            color="orange"
           />
         </div>
 
@@ -299,7 +298,7 @@ function ModuleCard({
         <div className="flex items-start justify-between mb-2">
           <h3 className={cn(textStyles.h4, "line-clamp-2 flex-1 mr-2")}>{module.title}</h3>
           {module.isAiRecommended && (
-            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" title="AI Recommended" />
+            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
           )}
         </div>
         

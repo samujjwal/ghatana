@@ -11,6 +11,12 @@
 
 import { z } from 'zod';
 
+const SECURE_DATABASE_MODES = [
+  'sslmode=require',
+  'sslmode=verify-full',
+  'sslmode=verify-ca',
+] as const;
+
 // Configuration schema with validation
 const ConfigSchema = z.object({
   // Server Configuration
@@ -19,20 +25,10 @@ const ConfigSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 
   // Database Configuration
-  DATABASE_URL: z.string()
-    .min(1, 'DATABASE_URL is required')
-    .refine(
-      (url) => url.includes('sslmode=require') || url.includes('sslmode=verify-full') || url.includes('sslmode=verify-ca'),
-      'DATABASE_URL must enforce SSL/TLS (sslmode=require, sslmode=verify-full, or sslmode=verify-ca)'
-    ),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   
   // Redis Configuration
-  REDIS_URL: z.string()
-    .min(1, 'REDIS_URL is required')
-    .refine(
-      (url) => url.startsWith('rediss://') || url.includes('tls='),
-      'REDIS_URL must use secure connection (rediss:// protocol or tls= parameter)'
-    ),
+  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
 
   // JWT Configuration
   JWT_SECRET: z.string()
@@ -87,6 +83,32 @@ const ConfigSchema = z.object({
    * Defaults to 'tutorputor-assessment-v1'.
    */
   ASSESSMENT_MODEL_ID: z.string().min(1).default('tutorputor-assessment-v1'),
+}).superRefine((config, ctx) => {
+  if (config.NODE_ENV === 'development') {
+    return;
+  }
+
+  const hasSecureDatabaseMode = SECURE_DATABASE_MODES.some((mode) =>
+    config.DATABASE_URL.includes(mode),
+  );
+
+  if (!hasSecureDatabaseMode) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['DATABASE_URL'],
+      message:
+        'DATABASE_URL must enforce SSL/TLS (sslmode=require, sslmode=verify-full, or sslmode=verify-ca)',
+    });
+  }
+
+  if (!(config.REDIS_URL.startsWith('rediss://') || config.REDIS_URL.includes('tls='))) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['REDIS_URL'],
+      message:
+        'REDIS_URL must use secure connection (rediss:// protocol or tls= parameter)',
+    });
+  }
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

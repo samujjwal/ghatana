@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import { PrismaClient } from "@tutorputor/core/db";
+import { PrismaClient, createPrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
 import jwt from "@fastify/jwt";
 import helmet from "@fastify/helmet";
@@ -42,6 +42,10 @@ import { featureFlagsModule } from "./modules/feature-flags/index.js";
 import { registerObservabilityRoutes } from "./modules/observability/routes.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const DEFAULT_LOCAL_CORS_ORIGINS = [
+  /^http:\/\/localhost(?::\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(?::\d+)?$/,
+];
 
 let redisClient: Redis | null = null;
 
@@ -84,6 +88,38 @@ function validateStripeKey(key: string): void {
       `[startup] Invalid STRIPE_SECRET_KEY format. Expected sk_test_* or sk_live_* with at least 24 characters.`,
     );
   }
+}
+
+function resolveCorsOrigin(): string | string[] | RegExp[] {
+  const configuredOrigin = process.env.CORS_ORIGIN?.trim();
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (!configuredOrigin) {
+    if (isProduction) {
+      throw new Error(
+        "[startup] CORS_ORIGIN must be explicitly set in production when credentials are enabled.",
+      );
+    }
+
+    return DEFAULT_LOCAL_CORS_ORIGINS;
+  }
+
+  if (configuredOrigin === "*") {
+    if (isProduction) {
+      throw new Error(
+        '[startup] CORS_ORIGIN="*" is not allowed in production when credentials are enabled.',
+      );
+    }
+
+    return DEFAULT_LOCAL_CORS_ORIGINS;
+  }
+
+  const normalizedOrigins = configuredOrigin
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  return normalizedOrigins.length === 1 ? normalizedOrigins[0] : normalizedOrigins;
 }
 
 function isPublicLtiRoute(method: string, url: string): boolean {
@@ -160,7 +196,7 @@ export async function setupPlatform(
   // If gateway registers it first, this might conflict or be skipped
   if (!app.hasPlugin("@fastify/cors")) {
     await app.register(cors as any, {
-      origin: process.env.CORS_ORIGIN || "*",
+      origin: resolveCorsOrigin(),
       credentials: true,
     });
   }
@@ -174,46 +210,12 @@ export async function setupPlatform(
   }
 
   // Database with connection pooling
+  if (process.env.DATABASE_URL) {
+    process.env.TUTORPUTOR_DATABASE_URL = process.env.DATABASE_URL;
+  }
+
   const prisma: PrismaClient =
-    (options.prisma as PrismaClient | undefined) ??
-    new PrismaClient({
-      log:
-        process.env.NODE_ENV === "development"
-          ? ["query", "error", "warn"]
-          : ["error"],
-      // Connection pool configuration
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-      // Connection pool limits based on environment
-      __internal: {
-        engine: {
-          // Connection pool configuration
-          connectionLimit: parseInt(process.env.DATABASE_POOL_SIZE || "10", 10),
-          // Pool timeout in seconds
-          poolTimeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || "10", 10),
-          // Connection timeout in seconds
-          connectTimeout: parseInt(
-            process.env.DATABASE_CONNECT_TIMEOUT || "5",
-            10,
-          ),
-          // How long to wait for a connection from the pool (milliseconds)
-          acquireConnectionTimeout: parseInt(
-            process.env.DATABASE_ACQUIRE_TIMEOUT || "30000",
-            10,
-          ),
-          // How long a connection can be idle before being closed (seconds)
-          idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || "600", 10),
-          // How long a connection can live before being closed (seconds)
-          maxLifetime: parseInt(
-            process.env.DATABASE_MAX_LIFETIME || "1800",
-            10,
-          ),
-        },
-      },
-    } as any);
+    (options.prisma as PrismaClient | undefined) ?? createPrismaClient();
   await prisma.$connect();
   app.decorate("prisma", prisma);
 
@@ -271,6 +273,36 @@ export async function setupPlatform(
     if (url === "/api/v1/integration/billing/webhook") return;
     // Content-studio health is public
     if (url === "/api/content-studio/health") return;
+
+    const authorizationHeader = req.headers.authorization;
+    const trustedTenantId = req.headers["x-tenant-id"];
+    const trustedUserRole = req.headers["x-user-role"];
+    const trustedUserId = req.headers["x-user-id"];
+    const hasTrustedProxyContext =
+      !authorizationHeader &&
+      typeof trustedTenantId === "string" &&
+      trustedTenantId.length > 0 &&
+      typeof trustedUserRole === "string" &&
+      trustedUserRole.length > 0;
+
+    if (hasTrustedProxyContext) {
+      (
+        req as typeof req & {
+          user?: {
+            sub?: string;
+            userId?: string;
+            tenantId?: string;
+            role?: string;
+          };
+        }
+      ).user = {
+        sub: typeof trustedUserId === "string" ? trustedUserId : undefined,
+        userId: typeof trustedUserId === "string" ? trustedUserId : undefined,
+        tenantId: trustedTenantId,
+        role: trustedUserRole,
+      };
+      return;
+    }
 
     try {
       await (

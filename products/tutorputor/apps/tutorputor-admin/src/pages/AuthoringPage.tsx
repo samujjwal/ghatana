@@ -27,16 +27,11 @@ import {
   Link,
 } from "react-router-dom";
 import {
-  BreadcrumbRouter,
   ContextIndicator,
   Button,
-  useAnnouncer,
   ConfirmDialog,
-  useConfirmDialog,
   Tour,
   useTour,
-  SkeletonCard,
-  toast,
   useFormValidation,
   validators,
   FormField,
@@ -53,6 +48,7 @@ import {
   Beaker,
   Play,
   CheckCircle,
+  Lightbulb,
   AlertTriangle,
   FileText,
   Settings,
@@ -71,10 +67,12 @@ import {
 import { AnimationStudio } from "../components/animation/AnimationStudio";
 import { AnalyticsDashboard } from "../components/content-studio/AnalyticsDashboard";
 import { GenerationGovernancePanel } from "../components/content-studio/GenerationGovernancePanel";
+import { PublicationReadinessPanel } from "../components/content-studio/PublicationReadinessPanel";
 import {
   contentStudioApi,
   type AdminContentAsset,
   type AdminContentAssetDetail,
+  type AdminExperience,
 } from "../services/contentStudioApi";
 import { SimulationStudio } from "../../../tutorputor-web/src/components/simulation/SimulationStudio";
 import type { AnimationSpec } from "../../../../services/tutorputor-platform/src/modules/animation-runtime/service";
@@ -178,6 +176,87 @@ interface SimulationRefinementResult {
   suggestions: string[];
 }
 
+type ToastLevel = "success" | "error" | "info";
+
+const toast = {
+  success(message: string) {
+    console.info(`[authoring:${"success" satisfies ToastLevel}] ${message}`);
+  },
+  error(message: string) {
+    console.error(`[authoring:${"error" satisfies ToastLevel}] ${message}`);
+  },
+  info(message: string) {
+    console.info(`[authoring:${"info" satisfies ToastLevel}] ${message}`);
+  },
+};
+
+function useAnnouncer() {
+  return (message: string, delayMs: number = 0) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.setTimeout(() => {
+      const liveRegion = document.getElementById("authoring-live-region");
+      if (liveRegion) {
+        liveRegion.textContent = message;
+      }
+    }, delayMs);
+  };
+}
+
+function SkeletonCard() {
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+      <Skeleton className="h-5 w-1/2" />
+      <Skeleton className="mt-3 h-4 w-full" />
+      <Skeleton className="mt-2 h-4 w-2/3" />
+    </div>
+  );
+}
+
+function BreadcrumbRouter({
+  items,
+  LinkComponent,
+  className,
+}: {
+  items: Array<{ id: string; label: string; href?: string }>;
+  LinkComponent: typeof Link;
+  showHomeIcon?: boolean;
+  className?: string;
+}) {
+  return (
+    <nav aria-label="Breadcrumb" className={className}>
+      <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          return (
+            <li key={item.id} className="flex items-center gap-2">
+              {item.href && !isLast ? (
+                <LinkComponent to={item.href} className="hover:text-primary-600">
+                  {item.label}
+                </LinkComponent>
+              ) : (
+                <span className={isLast ? "font-medium text-gray-900 dark:text-white" : undefined}>
+                  {item.label}
+                </span>
+              )}
+              {!isLast ? <span aria-hidden="true">/</span> : null}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+type ConfirmDialogState = {
+  title: string;
+  message: string;
+  confirmText?: string;
+  confirmVariant?: "primary" | "danger" | "warning" | "destructive";
+};
+
 function getAuthoringApiHeaders(
   includeContentType: boolean = true,
 ): HeadersInit {
@@ -250,6 +329,23 @@ function getExperienceRouteId(
   content: Pick<ContentItem, "id" | "legacyExperienceId">,
 ): string {
   return content.legacyExperienceId ?? content.id;
+}
+
+function mapAdminExperienceToContentItem(
+  experience: AdminExperience,
+): ContentItem {
+  return {
+    id: experience.id,
+    legacyExperienceId: experience.id,
+    title: experience.title,
+    description: experience.description,
+    type: "learning_experience",
+    status: experience.status,
+    domain: experience.subject,
+    gradeRange: experience.gradeLevel,
+    updatedAt: new Date(experience.updatedAt),
+    author: "system",
+  };
 }
 
 function applyCanonicalAssetDetailToContentItem(
@@ -380,9 +476,9 @@ function AuthoringPageContent() {
   // Delete confirmation dialog
   const {
     dialogProps,
-    confirm: confirmDelete,
-    isOpen: _isDeleteDialogOpen,
-  } = useConfirmDialog();
+    confirmDelete,
+    closeDeleteDialog,
+  } = useDeleteDialogController();
   const [contentToDelete, setContentToDelete] = useState<ContentItem | null>(
     null,
   );
@@ -471,8 +567,9 @@ function AuthoringPageContent() {
     } finally {
       setIsDeleting(false);
       setContentToDelete(null);
+      closeDeleteDialog();
     }
-  }, [contentToDelete, selectedContent, announce]);
+  }, [closeDeleteDialog, contentToDelete, selectedContent, announce]);
 
   // Load content from API
   useEffect(() => {
@@ -489,7 +586,29 @@ function AuthoringPageContent() {
     const existing = contentItems.find((item) => item.id === editId);
     if (existing) {
       void openContentItem(existing);
+      return;
     }
+
+    void contentStudioApi
+      .getExperience(editId)
+      .then((experience) => {
+        if (!experience) {
+          return;
+        }
+
+        const mapped = mapAdminExperienceToContentItem(experience);
+        setSelectedContent(mapped);
+        setViewMode("editor");
+        setContentItems((prev) => {
+          if (prev.some((item) => item.id === mapped.id)) {
+            return prev;
+          }
+          return [mapped, ...prev];
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to load experience for authoring route", error);
+      });
   }, [contentItems, editId, openContentItem]);
 
   // Initialize AI suggestions based on context
@@ -619,6 +738,7 @@ function AuthoringPageContent() {
 
   return (
     <>
+      <div id="authoring-live-region" aria-live="polite" className="sr-only" />
       <div className="h-screen flex bg-gray-50 dark:bg-gray-900 overflow-hidden">
         {/* Content Library Sidebar */}
         <aside
@@ -1010,11 +1130,24 @@ function AuthoringPageContent() {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        {...dialogProps}
-        loading={isDeleting}
-        onConfirm={executeDelete}
-      />
+      {dialogProps ? (
+        <ConfirmDialog
+          title={dialogProps.title}
+          message={dialogProps.message}
+          confirmText={dialogProps.confirmText}
+          confirmVariant={
+            dialogProps.confirmVariant === "destructive"
+              ? "danger"
+              : dialogProps.confirmVariant
+          }
+          loading={isDeleting}
+          onConfirm={executeDelete}
+          onCancel={() => {
+            setContentToDelete(null);
+            closeDeleteDialog();
+          }}
+        />
+      ) : null}
 
       {/* Onboarding Tour */}
       <Tour
@@ -1025,6 +1158,24 @@ function AuthoringPageContent() {
       />
     </>
   );
+}
+
+function useDeleteDialogController() {
+  const [dialogProps, setDialogProps] = useState<ConfirmDialogState | null>(null);
+
+  const confirmDelete = useCallback((nextDialog: ConfirmDialogState) => {
+    setDialogProps(nextDialog);
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setDialogProps(null);
+  }, []);
+
+  return {
+    dialogProps,
+    confirmDelete,
+    closeDeleteDialog,
+  };
 }
 
 // Content Editor Component
@@ -1192,6 +1343,21 @@ function ContentEditor({
 
         {content.type === "learning_experience" && (
           <div className="mt-6">
+            <PublicationReadinessPanel
+              experienceId={experienceRouteId}
+              experienceTitle={content.title}
+              onPublished={() => {
+                onContentUpdated({
+                  ...content,
+                  status: "published",
+                });
+              }}
+            />
+          </div>
+        )}
+
+        {content.type === "learning_experience" && (
+          <div className="mt-6">
             <AnalyticsDashboard
               experienceId={experienceRouteId}
               experienceTitle={content.title}
@@ -1244,7 +1410,7 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
   }, [loadClaims]);
 
   // Form validation for new claims
-  const { values, errors, touched, isValid, getFieldProps, reset } =
+  const { values, isValid, getFieldProps, reset } =
     useFormValidation({
       initialValues: {
         newClaim: "",
@@ -1258,6 +1424,8 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
         ],
       },
     });
+
+  const newClaimField = getFieldProps("newClaim");
 
   const addClaim = useCallback(() => {
     if (!isValid || !values.newClaim.trim()) return;
@@ -1351,7 +1519,7 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
       {/* Add new claim with validation */}
       <FormField
         label="New Claim"
-        error={touched.newClaim ? errors.newClaim : undefined}
+        error={newClaimField.touched ? newClaimField.error ?? undefined : undefined}
         helperText={`${values.newClaim.length}/300 characters`}
         validating={false}
       >
@@ -1359,10 +1527,12 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
           <div className="flex-1">
             <input
               type="text"
-              {...getFieldProps("newClaim")}
+              value={newClaimField.value}
+              onChange={(e) => newClaimField.onChange(e.target.value)}
+              onBlur={newClaimField.onBlur}
               placeholder="Add a new learning claim..."
               className={`w-full px-4 py-2 bg-white dark:bg-gray-700 border rounded-lg
-                ${touched.newClaim && errors.newClaim
+                ${newClaimField.touched && newClaimField.error
                   ? "border-red-500 focus:ring-red-500"
                   : "border-gray-200 dark:border-gray-600 focus:ring-primary-500"
                 }`}
@@ -1376,14 +1546,7 @@ function ClaimsEditor({ contentId }: { contentId: string }) {
           </div>
           <select
             value={values.bloomLevel}
-            onChange={(e) => {
-              const event = {
-                target: { name: "bloomLevel", value: e.target.value },
-              };
-              getFieldProps("bloomLevel").onChange(
-                event as React.ChangeEvent<HTMLInputElement>,
-              );
-            }}
+            onChange={(e) => getFieldProps("bloomLevel").onChange(e.target.value)}
             className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
           >
             <option value="Remember">Remember</option>

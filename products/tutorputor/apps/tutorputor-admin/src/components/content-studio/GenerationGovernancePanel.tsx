@@ -29,6 +29,79 @@ interface GenerationGovernancePanelProps {
 
 type ReviewAction = "approved" | "rejected" | "regeneration_requested";
 
+function humanizeLabel(value: string): string {
+    return value.replace(/_/g, " ");
+}
+
+function formatScore(value?: number): number {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+        return 0;
+    }
+
+    return value <= 1 ? Math.round(value * 100) : Math.round(value);
+}
+
+function buildRiskExplanations(input: {
+    request: GenerationRequest;
+    scorecard: EvaluationScorecard | null;
+    matchedCandidates: RegenerationCandidate[];
+}): string[] {
+    const explanations = new Set<string>();
+
+    input.request.riskFactors?.forEach((factor) => explanations.add(humanizeLabel(factor)));
+    input.scorecard?.blockedReasons.forEach((reason) => explanations.add(reason));
+    input.scorecard?.issues
+        .filter((issue) => issue.severity !== "info")
+        .slice(0, 3)
+        .forEach((issue) => explanations.add(`${humanizeLabel(issue.dimension)}: ${issue.message}`));
+    input.matchedCandidates.forEach((candidate) => explanations.add(candidate.reason));
+
+    if (explanations.size === 0) {
+        explanations.add("No elevated risks are currently recorded for this request.");
+    }
+
+    return [...explanations];
+}
+
+function buildTriageSuggestions(input: {
+    request: GenerationRequest;
+    scorecard: EvaluationScorecard | null;
+    matchedCandidates: RegenerationCandidate[];
+    blockedEvaluations: EvaluationRecord[];
+}): string[] {
+    const steps = new Set<string>();
+
+    if (input.scorecard?.blockedReasons.length) {
+        steps.add("Request regeneration for blocked assets before approving publication.");
+    }
+
+    if (input.scorecard?.issues.some((issue) => issue.dimension === "evidence")) {
+        steps.add("Add evidence-producing tasks or assessments so reviewers can verify learner outcomes.");
+    }
+
+    if (
+        input.scorecard?.issues.some(
+            (issue) => issue.message.includes("simulation") || issue.message.includes("animation"),
+        )
+    ) {
+        steps.add("Queue the missing modality work so claims have the interactive or visual support they requested.");
+    }
+
+    if (input.matchedCandidates.length > 0) {
+        steps.add("Queue the highest-priority regeneration candidate onto this request to reuse the governed generation path.");
+    }
+
+    if (input.request.reviewPath !== "auto_publish") {
+        steps.add(`Keep this request in ${humanizeLabel(input.request.reviewPath)} until the blocked reasons are cleared.`);
+    }
+
+    if (input.blockedEvaluations.length === 0 && steps.size === 0) {
+        steps.add("Run evaluation, confirm the scorecard, and record a reviewer decision.");
+    }
+
+    return [...steps];
+}
+
 function statusTone(status: string): string {
     switch (status) {
         case "completed":
@@ -149,6 +222,36 @@ export function GenerationGovernancePanel({
     const blockedEvaluations = useMemo(
         () => evaluations.filter((evaluation) => evaluation.recommendation === "block"),
         [evaluations],
+    );
+    const matchedCandidates = useMemo(
+        () =>
+            candidates.filter((candidate) =>
+                evaluations.some((evaluation) => evaluation.assetId === candidate.assetId),
+            ),
+        [candidates, evaluations],
+    );
+    const riskExplanations = useMemo(
+        () =>
+            selectedRequest
+                ? buildRiskExplanations({
+                    request: selectedRequest,
+                    scorecard,
+                    matchedCandidates,
+                })
+                : [],
+        [matchedCandidates, scorecard, selectedRequest],
+    );
+    const triageSuggestions = useMemo(
+        () =>
+            selectedRequest
+                ? buildTriageSuggestions({
+                    request: selectedRequest,
+                    scorecard,
+                    matchedCandidates,
+                    blockedEvaluations,
+                })
+                : [],
+        [blockedEvaluations, matchedCandidates, scorecard, selectedRequest],
     );
 
     const performAction = useCallback(
@@ -327,7 +430,7 @@ export function GenerationGovernancePanel({
                                         <div className="mt-3 flex items-center justify-between">
                                             <RiskBadge riskLevel={request.riskLevel} size="sm" />
                                             <span className="text-xs text-gray-500">
-                                                {request.reviewPath.replace(/_/g, " ")}
+                                                {humanizeLabel(request.reviewPath)}
                                             </span>
                                         </div>
                                     </button>
@@ -422,11 +525,16 @@ export function GenerationGovernancePanel({
                                                 Domain: {selectedRequest.domain}
                                             </span>
                                             <span className="rounded-full bg-slate-100 px-2 py-1">
-                                                Review path: {selectedRequest.reviewPath.replace(/_/g, " ")}
+                                                Review path: {humanizeLabel(selectedRequest.reviewPath)}
                                             </span>
                                             <span className="rounded-full bg-slate-100 px-2 py-1">
                                                 Jobs: {selectedRequest.completedJobs}/{selectedRequest.totalJobs}
                                             </span>
+                                            {selectedRequest.riskFactors?.map((factor) => (
+                                                <span key={factor} className="rounded-full bg-amber-50 px-2 py-1 text-amber-800">
+                                                    Risk: {humanizeLabel(factor)}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -470,13 +578,43 @@ export function GenerationGovernancePanel({
                                     <div className="rounded-xl bg-slate-50 px-4 py-3">
                                         <div className="text-xs uppercase tracking-wide text-gray-500">Open Candidate Matches</div>
                                         <div className="mt-1 font-medium text-gray-900">
-                                            {candidates.filter((candidate) =>
-                                                evaluations.some((evaluation) => evaluation.assetId === candidate.assetId),
-                                            ).length}
+                                                    {matchedCandidates.length}
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                                    <div className="rounded-xl border border-gray-200 bg-white p-5">
+                                        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-900">Why This Request Is Risky</h4>
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    Review metadata, scorecard blockers, and candidate evidence condensed into reviewer-facing context.
+                                                </p>
+                                                <ul className="mt-4 space-y-2 text-sm text-gray-700">
+                                                    {riskExplanations.map((explanation) => (
+                                                        <li key={explanation} className="rounded-lg bg-slate-50 px-3 py-2">
+                                                            {explanation}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-900">Recommended Next Steps</h4>
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    Suggested reviewer actions based on the current governed generation state.
+                                                </p>
+                                                <ol className="mt-4 space-y-2 text-sm text-gray-700">
+                                                    {triageSuggestions.map((suggestion) => (
+                                                        <li key={suggestion} className="rounded-lg border border-sky-100 bg-sky-50 px-3 py-2">
+                                                            {suggestion}
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
 
                             <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
                                 <div className="space-y-6">
@@ -496,18 +634,18 @@ export function GenerationGovernancePanel({
                                                     <div>
                                                         <div className="text-xs uppercase tracking-wide text-gray-500">Overall Score</div>
                                                         <div className="mt-1 text-3xl font-semibold text-gray-900">
-                                                            {Math.round(scorecard.overallScore)}
+                                                            {formatScore(scorecard.overallScore)}
                                                         </div>
                                                     </div>
                                                     <div className="rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-700">
-                                                        {scorecard.recommendation.replace(/_/g, " ")}
+                                                        {humanizeLabel(scorecard.recommendation)}
                                                     </div>
                                                 </div>
                                                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                                                     {Object.entries(scorecard.dimensions).map(([dimension, value]) => (
                                                         <div key={dimension} className="rounded-lg bg-white px-3 py-2">
                                                             <div className="text-xs uppercase tracking-wide text-gray-500">{dimension}</div>
-                                                            <div className="mt-1 font-medium text-gray-900">{Math.round(value)}</div>
+                                                            <div className="mt-1 font-medium text-gray-900">{formatScore(value)}</div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -537,11 +675,11 @@ export function GenerationGovernancePanel({
                                                                 {evaluation.assetId ?? evaluation.generationJobId ?? evaluation.id}
                                                             </div>
                                                             <div className="mt-1 text-xs text-gray-500">
-                                                                Status: {evaluation.status.replace(/_/g, " ")} • Recommendation: {evaluation.recommendation.replace(/_/g, " ")}
+                                                                Status: {humanizeLabel(evaluation.status)} • Recommendation: {humanizeLabel(evaluation.recommendation)}
                                                             </div>
                                                         </div>
                                                         <span className={clsx("rounded-full px-2 py-1 text-xs font-medium", recommendationTone(evaluation.recommendation))}>
-                                                            {Math.round(evaluation.overallScore ?? 0)}
+                                                            {formatScore(evaluation.overallScore)}
                                                         </span>
                                                     </div>
                                                     {evaluation.issues?.length ? (

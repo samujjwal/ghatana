@@ -1,7 +1,7 @@
 # TutorPutor — AI-Powered Tutoring Platform
 
 **Product Owner:** @ghatana/tutorputor-team  
-**Status:** Active  
+**Status:** Active, under audit-driven remediation  
 **Stack:** TypeScript / React 19 / Java 21 / Fastify
 
 ## Purpose
@@ -23,6 +23,13 @@ ttr doctor
 
 See [bin/README.md](bin/README.md) for full CLI documentation.
 
+High-level product truth lives in exactly two places:
+
+- [docs/architecture/CURRENT_STATE.md](docs/architecture/CURRENT_STATE.md) for what TutorPutor does today
+- [docs/PRODUCT_REALITY_AUDIT_2026-04-18.md](docs/PRODUCT_REALITY_AUDIT_2026-04-18.md) for the audit findings and remediation backlog
+
+Use those documents over older plan, roadmap, or diagram files when they disagree.
+
 ## Architecture
 
 ```
@@ -32,6 +39,13 @@ tutorputor-mobile (RN)     ─┤                            ↓                
                            │                     Content Generation (Java)
                            │                     Simulation Engine
 ```
+
+Supported local validation topology:
+
+- Gateway: `http://127.0.0.1:3200`
+- Learner app: `http://127.0.0.1:3201`
+- Admin app: `http://127.0.0.1:3202`
+- Direct platform service: `http://127.0.0.1:7105`
 
 ### Module Map
 
@@ -50,6 +64,8 @@ tutorputor-mobile (RN)     ─┤                            ↓                
 ## Current Delivery Notes
 
 - Mobile app is in development with offline-first architecture (React Native 0.85, SQLite, MMKV, background sync). Core screens and navigation are implemented, but full production deployment to app stores is pending.
+- Mobile is not a production-ready learner application yet. The repo contains React Native storage, sync, and offline primitives, but no shipped application shell or navigation entrypoint.
+- VR remains a foundation/scaffold area. Runtime routes and schema support exist, but it is not a production-ready learner surface.
 - Web offline support is partially implemented through a service worker, IndexedDB-backed caching, and queued progress mutations in `apps/tutorputor-web`.
 - Real-time collaboration is implemented using WebSockets for cursor tracking and Redis pub/sub for chat messaging (not Redis streams as previously documented).
 
@@ -66,7 +82,7 @@ Use the `ttr` CLI for all operations:
 
 ```bash
 # Environment
-ttr dev                 # Start development
+ttr dev                 # Start gateway + learner + admin + direct platform + infra
 ttr dev --no-seed       # Skip seeding
 ttr dev --with-kafka    # Enable Kafka
 ttr stop                # Stop all services
@@ -80,9 +96,9 @@ ttr test --watch        # Watch mode
 # Maintenance
 ttr doctor              # System health check
 ttr migrate             # Run database migrations
-tr seed                # Seed development data
-tr logs platform       # View platform logs
-tr clean --all         # Deep clean
+ttr seed                # Seed development data
+ttr logs platform       # View platform logs
+ttr clean --all         # Deep clean
 ```
 
 ## Key Documentation

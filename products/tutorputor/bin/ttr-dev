@@ -49,6 +49,7 @@ export QUIET_CONSOLE=true
 export PORT_API_GATEWAY=3200
 export PORT_WEB=3201
 export PORT_ADMIN=3202
+export PORT_PLATFORM=7105
 
 # Database URL (default for Docker setup)
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/tutorputor}"
@@ -56,6 +57,10 @@ export TUTORPUTOR_DATABASE_URL="${TUTORPUTOR_DATABASE_URL:-$DATABASE_URL}"
 
 # Redis URL
 export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
+export JWT_SECRET="${JWT_SECRET:-test-secret-do-not-use-in-prod-1234567890}"
+export STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-test-stripe-secret-key-placeholder}"
+export CONTENT_WORKER_ENABLED="${CONTENT_WORKER_ENABLED:-false}"
+export CONTENT_QUEUE_DISABLED="${CONTENT_QUEUE_DISABLED:-true}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -353,17 +358,27 @@ start_services() {
     
     log_info "Starting backend services..."
     
-    # Start platform service
+    # Start platform service on the canonical direct-validation port.
     cd "${ROOT_DIR}/services/tutorputor-platform"
     if [ "$QUIET_CONSOLE" = "true" ]; then
-        pnpm dev > "${ROOT_DIR}/.logs/platform.log" 2>&1 &
+        PORT=${PORT_PLATFORM} pnpm dev > "${ROOT_DIR}/.logs/platform.log" 2>&1 &
     else
-        pnpm dev &
+        PORT=${PORT_PLATFORM} pnpm dev &
     fi
     echo $! > "${ROOT_DIR}/.logs/platform.pid"
     
-    # Start content generation service (Java)
-    if [ -d "${ROOT_DIR}/services/tutorputor-content-generation" ]; then
+    # Start the API gateway on the browser-facing port. Keep queue workers off
+    # here so the direct platform instance remains the only optional worker host.
+    cd "${ROOT_DIR}/apps/api-gateway"
+    if [ "$QUIET_CONSOLE" = "true" ]; then
+        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm dev > "${ROOT_DIR}/.logs/api-gateway.log" 2>&1 &
+    else
+        PORT=${PORT_API_GATEWAY} CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm dev &
+    fi
+    echo $! > "${ROOT_DIR}/.logs/api-gateway.pid"
+
+    # Start content generation service (Java) only when the queue stack is requested.
+    if [ "$TUTORPUTOR_ENABLE_QUEUE" = "true" ] && [ -d "${ROOT_DIR}/services/tutorputor-content-generation" ]; then
         log_info "Starting content generation service..."
         cd "${ROOT_DIR}/services/tutorputor-content-generation"
         ./gradlew bootRun --quiet > "${ROOT_DIR}/.logs/content-gen.log" 2>&1 &
@@ -372,6 +387,14 @@ start_services() {
     
     # Wait for services
     log_info "Waiting for services..."
+    for i in {1..30}; do
+        if curl -s http://localhost:${PORT_PLATFORM}/health >/dev/null 2>&1; then
+            log_success "Platform service ready"
+            break
+        fi
+        sleep 1
+    done
+
     for i in {1..30}; do
         if curl -s http://localhost:${PORT_API_GATEWAY}/health >/dev/null 2>&1; then
             log_success "API Gateway ready"
@@ -427,6 +450,7 @@ print_status() {
     echo ""
     echo "Services:"
     echo "  API Gateway:  http://localhost:${PORT_API_GATEWAY}"
+    echo "  Platform:     http://localhost:${PORT_PLATFORM}"
     echo "  Web App:      http://localhost:${PORT_WEB}"
     echo "  Admin App:    http://localhost:${PORT_ADMIN}"
     echo ""
@@ -449,6 +473,9 @@ cleanup() {
     # Kill background processes
     if [ -f "${ROOT_DIR}/.logs/platform.pid" ]; then
         kill $(cat "${ROOT_DIR}/.logs/platform.pid") 2>/dev/null || true
+    fi
+    if [ -f "${ROOT_DIR}/.logs/api-gateway.pid" ]; then
+        kill $(cat "${ROOT_DIR}/.logs/api-gateway.pid") 2>/dev/null || true
     fi
     if [ -f "${ROOT_DIR}/.logs/web.pid" ]; then
         kill $(cat "${ROOT_DIR}/.logs/web.pid") 2>/dev/null || true

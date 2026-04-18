@@ -1,5 +1,5 @@
 import fastify, { type FastifyInstance } from "fastify";
-import { setupPlatform } from "@tutorputor/platform";
+import { setupPlatform } from "../../../services/tutorputor-platform/src/index.ts";
 import crypto from "crypto";
 
 export async function createServer(): Promise<FastifyInstance> {

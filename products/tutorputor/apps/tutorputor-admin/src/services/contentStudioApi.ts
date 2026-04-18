@@ -40,12 +40,26 @@ export function setAuthToken(token: string | null): void {
 /** Resolve the API base from env or fall back to same-origin. */
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const CS = `${BASE_URL}/api/content-studio`;
+const DEV_TENANT_ID = import.meta.env.VITE_TUTORPUTOR_TENANT_ID ?? "default";
+const DEV_ADMIN_ID = "user-admin-001";
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (_authToken) headers["Authorization"] = `Bearer ${_authToken}`;
+
+  const isDevBypassToken = _authToken === "dev-token";
+  if (_authToken && !isDevBypassToken) {
+    headers["Authorization"] = `Bearer ${_authToken}`;
+    return headers;
+  }
+
+  if (import.meta.env.DEV || import.meta.env.VITE_DEV_AUTH_BYPASS === "true") {
+    headers["x-tenant-id"] = DEV_TENANT_ID;
+    headers["x-user-id"] = DEV_ADMIN_ID;
+    headers["x-user-role"] = "admin";
+  }
+
   return headers;
 }
 

@@ -1,0 +1,6 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="8.516582999999999">
+<testsuite name="ContentStudio.spec.ts" timestamp="2026-04-18T22:06:23.050Z" hostname="chromium" tests="1" failures="0" skipped="0" time="3.805" errors="0">
+<testcase name="TutorPutor authoring lifecycle › uses the canonical admin route and exercises create, validate, and publish through real APIs" classname="ContentStudio.spec.ts" time="3.805">
+</testcase>
+</testsuite>
+</testsuites>

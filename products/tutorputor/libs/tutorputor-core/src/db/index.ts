@@ -1,4 +1,5 @@
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -97,10 +98,15 @@ export const DEFAULT_TENANT_ID = "tenant-stub";
  */
 export const DEFAULT_USER_ID = "user-stub";
 
+function isPostgresUrl(connectionString: string): boolean {
+  return (
+    connectionString.startsWith("postgres://") ||
+    connectionString.startsWith("postgresql://")
+  );
+}
+
 /**
- * Create a PrismaClient with the libsql driver adapter.
- * This is required for Prisma ORM 7.
- * Uses libsql instead of better-sqlite3 for better Node.js 24 compatibility.
+ * Create a PrismaClient with the adapter matching the configured datasource.
  */
 export function createPrismaClient(): PrismaClient {
   // Use the imported PrismaClient class
@@ -112,11 +118,13 @@ export function createPrismaClient(): PrismaClient {
     ? rootFromDistSrc
     : rootFromSrc;
 
-  const dbPath =
-    process.env.TUTORPUTOR_DATABASE_URL?.replace("file:", "") ??
-    path.resolve(packageRoot, "prisma", "dev.db");
+  const configuredUrl =
+    process.env.TUTORPUTOR_DATABASE_URL ??
+    `file:${path.resolve(packageRoot, "prisma", "dev.db")}`;
 
-  const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
+  const adapter = isPostgresUrl(configuredUrl)
+    ? new PrismaPg({ connectionString: configuredUrl })
+    : new PrismaLibSql({ url: configuredUrl });
   const client = new PrismaClientClass({
     adapter,
     // Enable detailed logging for debugging
@@ -125,7 +133,7 @@ export function createPrismaClient(): PrismaClient {
 
   // Log what we got
   console.log("[TutorPutor DB] PrismaClient created");
-  console.log("[TutorPutor DB] Database path:", dbPath);
+  console.log("[TutorPutor DB] Database url:", configuredUrl);
   console.log(
     "[TutorPutor DB] Has learningExperience model:",
     "learningExperience" in client,

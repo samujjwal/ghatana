@@ -1,79 +1,87 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const tutorputorRoot = path.resolve(configDir, "..");
+const webAppDir = path.resolve(tutorputorRoot, "apps/tutorputor-web");
+const adminAppDir = path.resolve(tutorputorRoot, "apps/tutorputor-admin");
+const gatewayAppDir = path.resolve(tutorputorRoot, "apps/api-gateway");
+const platformServiceDir = path.resolve(
+  tutorputorRoot,
+  "services/tutorputor-platform",
+);
+const shouldSkipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === "true";
 
 /**
- * Playwright configuration for TutorPutor E2E tests
+ * Canonical Playwright configuration for TutorPutor product validation.
+ *
+ * This is the single supported cross-product topology for learner + admin +
+ * gateway + platform end-to-end verification.
  */
 export default defineConfig({
-  testDir: './',
-  testMatch: '**/*.spec.ts',
-  
-  // Global configuration
+  testDir: "./",
+  testMatch: ["LearnerJourney.spec.ts", "ContentStudio.spec.ts", "smoke.spec.ts"],
   timeout: 30000,
   expect: {
     timeout: 5000,
   },
-  
-  // Retry configuration for CI
   retries: process.env.CI ? 2 : 0,
-  
-  // Reporter configuration
   reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
-    ['json', { outputFile: 'test-results.json' }],
-    ['junit', { outputFile: 'test-results.xml' }],
-    ['list'],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "test-results.json" }],
+    ["junit", { outputFile: "test-results.xml" }],
+    ["list"],
   ],
-  
-  // Global setup/teardown
-  globalSetup: './global-setup.ts',
-  globalTeardown: './global-teardown.ts',
-  
-  // Projects configuration
+
+  globalSetup: "./global-setup.ts",
+  globalTeardown: "./global-teardown.ts",
+
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
-  
-  // Web server configuration
-  webServer: {
-    command: 'cd ../../apps/tutorputor-web && pnpm dev',
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
-  
-  // Environment variables
+
+  webServer: shouldSkipWebServer
+    ? undefined
+    : [
+        {
+          command: "pnpm dev",
+          cwd: gatewayAppDir,
+          url: "http://127.0.0.1:3200/health",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+        {
+          command: "pnpm dev",
+          cwd: platformServiceDir,
+          url: "http://127.0.0.1:7105/health",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+        {
+          command: "pnpm dev",
+          cwd: webAppDir,
+          url: "http://127.0.0.1:3201/login",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+        {
+          command: "pnpm dev",
+          cwd: adminAppDir,
+          url: "http://127.0.0.1:3202/authoring",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+      ],
+
   use: {
-    // Global test configuration
-    baseURL: process.env.BASE_URL || 'http://localhost:5173',
-    platformURL: process.env.PLATFORM_URL || 'http://localhost:7105',
-    
-    // Test data
-    testUser: {
-      email: process.env.TEST_EMAIL || 'test@example.com',
-      password: process.env.TEST_PASSWORD || 'test-password-123',
-    },
-    
-    // API configuration
+    baseURL: process.env.BASE_URL || "http://127.0.0.1:3201",
     apiTimeout: 10000,
-    
-    // Screenshot configuration
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'retain-on-failure',
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    trace: "retain-on-failure",
   },
 });

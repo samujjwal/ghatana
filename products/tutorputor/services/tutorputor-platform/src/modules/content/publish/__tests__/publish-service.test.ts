@@ -14,8 +14,15 @@ function makeAsset(overrides: Record<string, unknown> = {}) {
   return {
     id: "asset-1",
     tenantId: "tenant-1",
+    title: "Newton Lab",
     assetType: "SIMULATION",
-    manifestData: { id: "manifest-1", title: "Newton Lab" },
+    domain: "SCIENCE",
+    currentVersion: 3,
+    qualityScore: 0.91,
+    reviewState: JSON.stringify({ status: "approved" }),
+    targetGrades: ["grade_6_8"],
+    difficultyLevel: "intermediate",
+    promptHash: "prompt-v3",
     ...overrides,
   };
 }
@@ -39,11 +46,27 @@ function makePrisma() {
       update: vi.fn().mockResolvedValue({ id: "asset-1" }),
     },
     artifactManifest: {
-      findMany: vi.fn().mockResolvedValue([{ id: "manifest-1", isValid: true }]),
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id: "manifest-1",
+          manifestType: "SIMULATION",
+          version: "1.0.0",
+          claimRef: "claim-1",
+          isValid: true,
+          generationId: "req-1",
+          generatedBy: "ai",
+        },
+      ]),
     },
     evaluationRecord: {
       findFirst: vi.fn().mockResolvedValue(null),
       findMany: vi.fn().mockResolvedValue([]),
+    },
+    contentAssetRevision: {
+      create: vi.fn().mockResolvedValue({ id: "asset-rev-1" }),
+    },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
     },
   };
 }
@@ -190,6 +213,33 @@ describe("PublishService", () => {
         apply: true,
         recomputeRecommendations: false,
       },
+    );
+    expect(prisma.contentAssetRevision.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          assetId: "asset-1",
+          version: 3,
+          validationId: "eval-1",
+          createdBy: "admin-1",
+          snapshot: expect.objectContaining({
+            promptHash: "prompt-v3",
+            evaluation: expect.objectContaining({
+              evaluationId: "eval-1",
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(prisma.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tenantId: "tenant-1",
+          actorId: "admin-1",
+          action: "content_asset_published",
+          resourceType: "ContentAsset",
+          resourceId: "asset-1",
+        }),
+      }),
     );
   });
 

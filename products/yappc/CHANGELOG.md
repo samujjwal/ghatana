@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: yappc 11 [`6fde07a`](https://github.com/samujjwal/ghatana/commit/6fde07ac0cb526a8b41e4f7fb14cf39119302281)
 - **Changed**: yappc refactor 2-17-11 [`433d63e`](https://github.com/samujjwal/ghatana/commit/433d63e0d7439d08a51662e892e49219d82e6522)
 - **Changed**: yappc refactor cc11 [`507b68c`](https://github.com/samujjwal/ghatana/commit/507b68ce997071f4176b415a1a9a2633efe38d7e)
 - **Changed**: repo review 11 [`1baa622`](https://github.com/samujjwal/ghatana/commit/1baa6229dccd6c08b03b69c6b427547a83a5a13c)
