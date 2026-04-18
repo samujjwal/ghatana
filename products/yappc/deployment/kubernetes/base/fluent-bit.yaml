@@ -57,6 +57,22 @@ data:
         Tag kube.yappc.agents.*
         Mem_Buf_Limit 5MB
         Skip_Long_Lines On
+
+    [INPUT]
+      Name tail
+      Path /var/log/containers/yappc-backend-*.log
+      multiline.parser docker, cri
+      Tag kube.yappc.backend.*
+      Mem_Buf_Limit 10MB
+      Skip_Long_Lines On
+
+    [INPUT]
+      Name tail
+      Path /var/log/containers/yappc-frontend-*.log
+      multiline.parser docker, cri
+      Tag kube.yappc.frontend.*
+      Mem_Buf_Limit 5MB
+      Skip_Long_Lines On
     
     [INPUT]
         Name tail
@@ -90,17 +106,15 @@ data:
         Match *
         Format json_lines
     
-    # Uncomment for production (send to Elasticsearch, Loki, etc.)
-    # [OUTPUT]
-    #     Name es
-    #     Match kube.yappc.*
-    #     Host elasticsearch.logging.svc
-    #     Port 9200
-    #     Index yappc-logs
-    #     Type _doc
-    #     Logstash_Format On
-    #     Logstash_Prefix yappc
-    #     Retry_Limit 5
+    [OUTPUT]
+      Name loki
+      Match kube.yappc.*
+      Host loki.monitoring.svc
+      Port 3100
+      Labels product=yappc,service=$kubernetes['container_name'],namespace=$kubernetes['namespace_name']
+      Auto_Kubernetes_Labels On
+      Line_Format json
+      Retry_Limit 5
   
   parsers.conf: |
     [PARSER]

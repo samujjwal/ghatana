@@ -1,0 +1,169 @@
+{
+  "id": null,
+  "uid": "yappc-ai-quality-001",
+  "title": "YAPPC - AI Quality Observability",
+  "description": "Operational quality view for AI completion confidence, fallback pressure, token usage, and estimated cost.",
+  "tags": ["yappc", "ai", "quality", "observability"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "AI Confidence (avg)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(yappc_ai_intent_capture_confidence)",
+          "legendFormat": "intent.capture"
+        },
+        {
+          "refId": "B",
+          "expr": "avg(yappc_ai_shape_derive_confidence)",
+          "legendFormat": "shape.derive"
+        },
+        {
+          "refId": "C",
+          "expr": "avg(yappc_ai_generate_entity_confidence)",
+          "legendFormat": "generate.entity"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "AI Fallback Rate (/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(yappc_ai_fallback_total{job=\"yappc-lifecycle\"}[5m]))",
+          "legendFormat": "fallback"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.2 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Prompt Tokens (/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(yappc_ai_tokens_prompt_total{job=\"yappc-lifecycle\"}[5m]))",
+          "legendFormat": "prompt"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(yappc_ai_tokens_completion_total{job=\"yappc-lifecycle\"}[5m]))",
+          "legendFormat": "completion"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Estimated AI Cost (USD/hour)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(yappc_ai_cost_estimated_usd_total{job=\"yappc-lifecycle\"}[5m])) * 3600",
+          "legendFormat": "estimated_usd_per_hour"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "AI Request Throughput (/s)",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(yappc_ai_request_total{job=\"yappc-lifecycle\"}[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Fallback Ratio (5m)",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(yappc_ai_fallback_total{job=\"yappc-lifecycle\"}[5m])) / clamp_min(sum(rate(yappc_ai_request_total{job=\"yappc-lifecycle\"}[5m])), 1)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Average Confidence (5m)",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg_over_time(yappc_ai_intent_capture_confidence[5m])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    }
+  ]
+}

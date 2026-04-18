@@ -1,0 +1,82 @@
+name: YAPPC DB Migration Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/platform/src/main/resources/db/migration/**'
+      - 'products/yappc/deployment/docker/docker-compose.db.yml'
+      - '.github/workflows/yappc-db-migration-validation.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/platform/src/main/resources/db/migration/**'
+      - 'products/yappc/deployment/docker/docker-compose.db.yml'
+      - '.github/workflows/yappc-db-migration-validation.yml'
+  workflow_dispatch:
+
+jobs:
+  migration-validation:
+    name: Flyway migration validation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ghatana
+          POSTGRES_PASSWORD: ghatana123
+          POSTGRES_DB: yappc_migration_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ghatana -d yappc_migration_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate migration scripts with Flyway
+        run: |
+          docker run --rm --network host \
+            -v "${PWD}/products/yappc/platform/src/main/resources/db/migration:/flyway/sql:ro" \
+            flyway/flyway:10 \
+            -url=jdbc:postgresql://localhost:5432/yappc_migration_ci \
+            -user=ghatana \
+            -password=ghatana123 \
+            -locations=filesystem:/flyway/sql \
+            validate
+
+      - name: Execute migration and verify schema history
+        run: |
+          docker run --rm --network host \
+            -v "${PWD}/products/yappc/platform/src/main/resources/db/migration:/flyway/sql:ro" \
+            flyway/flyway:10 \
+            -url=jdbc:postgresql://localhost:5432/yappc_migration_ci \
+            -user=ghatana \
+            -password=ghatana123 \
+            -locations=filesystem:/flyway/sql \
+            migrate
+
+          docker run --rm --network host \
+            -v "${PWD}/products/yappc/platform/src/main/resources/db/migration:/flyway/sql:ro" \
+            flyway/flyway:10 \
+            -url=jdbc:postgresql://localhost:5432/yappc_migration_ci \
+            -user=ghatana \
+            -password=ghatana123 \
+            -locations=filesystem:/flyway/sql \
+            info \
+            | tee flyway-info.txt
+
+          grep -q 'Success' flyway-info.txt
+
+      - name: Upload migration validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-db-migration-validation
+          path: flyway-info.txt
+          retention-days: 14

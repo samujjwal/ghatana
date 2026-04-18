@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -135,6 +136,13 @@ public class OllamaCompletionService implements CompletionService {
                 payload.put("stop", request.getStopSequences());
             }
 
+            Object tools = request.getMetadata().get("tools");
+            if (tools instanceof List<?> toolList && !toolList.isEmpty()) {
+                payload.put("tools", toolList);
+                Object toolChoice = request.getMetadata().get("tool_choice");
+                payload.put("tool_choice", toolChoice != null ? toolChoice : "auto");
+            }
+
             String jsonPayload = objectMapper.writeValueAsString(payload);
 
             HttpRequest httpRequest = HttpRequest.post(url)
@@ -173,7 +181,7 @@ public class OllamaCompletionService implements CompletionService {
         if (request.getMessages() != null && !request.getMessages().isEmpty()) {
             for (ChatMessage msg : request.getMessages()) {
                 messages.add(Map.of(
-                    "role", msg.getRole(),
+                    "role", msg.getRole().getValue(),
                     "content", msg.getContent()
                 ));
             }
@@ -201,8 +209,11 @@ public class OllamaCompletionService implements CompletionService {
 
             JsonNode firstChoice = choices.get(0);
             JsonNode message = firstChoice.get("message");
-            String content = message != null ? message.get("content").asText() : "";
+                String content = (message != null && message.has("content") && !message.get("content").isNull())
+                    ? message.get("content").asText()
+                    : "";
             String finishReason = firstChoice.has("finish_reason") ? firstChoice.get("finish_reason").asText() : "stop";
+                List<ToolCall> toolCalls = parseToolCalls(message);
 
             // Extract usage stats
             int promptTokens = 0;
@@ -227,6 +238,7 @@ public class OllamaCompletionService implements CompletionService {
                     .completionTokens(completionTokens)
                     .tokensUsed(totalTokens)
                     .latencyMs(latency)
+                    .toolCalls(toolCalls)
                     .build();
 
         } catch (Exception e) {
@@ -254,5 +266,38 @@ public class OllamaCompletionService implements CompletionService {
     private long calculateBackoff(int attempt) {
         // Exponential backoff: 1s, 2s, 4s, 8s, ...
         return Math.min(1000L * (1L << attempt), 10000L);
+    }
+
+    private List<ToolCall> parseToolCalls(JsonNode message) {
+        if (message == null || !message.has("tool_calls") || !message.get("tool_calls").isArray()) {
+            return List.of();
+        }
+
+        List<ToolCall> toolCalls = new ArrayList<>();
+        for (JsonNode toolCallNode : message.get("tool_calls")) {
+            JsonNode function = toolCallNode.path("function");
+            String id = toolCallNode.path("id").asText();
+            String functionName = function.path("name").asText();
+            if (functionName == null || functionName.isBlank()) {
+                continue;
+            }
+
+            Map<String, Object> arguments = Map.of();
+            String argumentsJson = function.path("arguments").asText("{}");
+            if (!argumentsJson.isBlank()) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> parsed = objectMapper.readValue(argumentsJson, Map.class);
+                    arguments = parsed;
+                } catch (Exception parseError) {
+                    logger.warn("Failed to parse tool arguments for function '{}': {}", functionName, parseError.getMessage());
+                }
+            }
+
+            String toolCallId = (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
+            toolCalls.add(ToolCall.of(toolCallId, functionName, arguments));
+        }
+
+        return toolCalls;
     }
 }

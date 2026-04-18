@@ -119,15 +119,15 @@ class IntentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments error counter and propagates on AI failure")
+        @DisplayName("AI failure uses fallback parser and records fallback metric")
         void shouldHandleAIServiceFailureOnCapture() {
             stubAiFailure("AI service unavailable");
 
-            Exception thrown = assertThrows(Exception.class,
-                    () -> runPromise(() -> service.capture(captureInput(null))));
+            IntentSpec result = runPromise(() -> service.capture(captureInput(null)));
 
-            assertTrue(thrown.getMessage().contains("AI service unavailable"));
-            verify(metrics).incrementCounter(eq("yappc.intent.capture.error"), anyMap());
+            assertNotNull(result);
+            assertNotNull(result.productName());
+            verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback"), anyMap());
         }
 
         @Test
@@ -185,15 +185,15 @@ class IntentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments error counter when AI fails during analyze")
+        @DisplayName("AI failure during analyze uses fallback output and records fallback metric")
         void shouldHandleAIServiceFailureOnAnalyze() {
             stubAiFailure("Model timeout");
 
-            Exception thrown = assertThrows(Exception.class,
-                    () -> runPromise(() -> service.analyze(spec("tenant-99"))));
+            IntentAnalysis result = runPromise(() -> service.analyze(spec("tenant-99")));
 
-            assertTrue(thrown.getMessage().contains("Model timeout"));
-            verify(metrics).incrementCounter(eq("yappc.intent.analyze.error"), anyMap());
+            assertNotNull(result);
+            assertEquals("intent-123", result.intentId());
+            verify(metrics).incrementCounter(eq("yappc.ai.intent.analyze.fallback"), anyMap());
         }
     }
 }

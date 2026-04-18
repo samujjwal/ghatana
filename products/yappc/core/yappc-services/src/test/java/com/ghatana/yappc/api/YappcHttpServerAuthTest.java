@@ -45,6 +45,21 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
     @Mock
     private GenerationApiController generationController;
 
+    @Mock
+    private RunApiController runController;
+
+    @Mock
+    private ObserveApiController observeController;
+
+    @Mock
+    private LearnApiController learnController;
+
+    @Mock
+    private EvolveApiController evolveController;
+
+    @Mock
+    private LifecycleApiController lifecycleController;
+
     private AsyncServlet servlet;
 
     @BeforeEach
@@ -57,7 +72,12 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             intentController,
             shapeController,
             validationController,
-            generationController
+            generationController,
+            runController,
+            observeController,
+            learnController,
+            evolveController,
+            lifecycleController
         );
     }
 
@@ -83,6 +103,31 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("full lifecycle endpoint stays protected")
+    void fullLifecycleEndpointRequiresCredentials() {
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute").build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(401);
+        verify(lifecycleController, never()).executeFullLifecycle(any());
+    }
+
+    @Test
+    @DisplayName("protected route rejects unsupported API version")
+    void protectedRouteRejectsUnsupportedApiVersion() {
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/intent/capture")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-key")
+            .withHeader(HttpHeaders.of("X-API-Version"), "v2")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(406);
+        verify(intentController, never()).captureIntent(any());
+    }
+
+    @Test
     @DisplayName("protected routes delegate when credentials are valid")
     void protectedRoutesDelegateWhenCredentialsAreValid() {
         when(intentController.captureIntent(any())).thenReturn(HttpResponse.ok200().toPromise());
@@ -93,6 +138,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(HttpHeaders.of("X-API-Version"))).isEqualTo("v1");
         verify(intentController).captureIntent(any());
     }
 }

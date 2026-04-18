@@ -1,11 +1,19 @@
 import fastify, { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const projectCreateMock = vi.fn();
-const projectFindUniqueMock = vi.fn();
-const projectUpdateMock = vi.fn();
-const workspaceFindUniqueMock = vi.fn();
-const auditLogMock = vi.fn();
+const {
+  projectCreateMock,
+  projectFindUniqueMock,
+  projectUpdateMock,
+  workspaceFindUniqueMock,
+  auditLogMock,
+} = vi.hoisted(() => ({
+  projectCreateMock: vi.fn(),
+  projectFindUniqueMock: vi.fn(),
+  projectUpdateMock: vi.fn(),
+  workspaceFindUniqueMock: vi.fn(),
+  auditLogMock: vi.fn(),
+}));
 
 vi.mock('../../db', () => ({
   default: {

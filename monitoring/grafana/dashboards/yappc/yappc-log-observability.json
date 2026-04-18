@@ -1,0 +1,60 @@
+{
+  "id": null,
+  "uid": "yappc-log-obs-001",
+  "title": "YAPPC - Log Observability",
+  "description": "Loki-driven operational log visibility for YAPPC services.",
+  "tags": ["yappc", "logs", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "YAPPC Service Logs",
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{product=\"yappc\"}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Error Rate by Service",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service) (rate({product=\"yappc\"} |= \"ERROR\" [5m]))",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Auth Failure Logs",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate({product=\"yappc\"} |= \"auth\" |= \"fail\" [5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    }
+  ]
+}

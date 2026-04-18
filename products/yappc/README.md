@@ -1,18 +1,51 @@
-# YAPPC - AI-Native Product Development Platform
+# YAPPC - Product Development Platform (In Active Buildout)
 
 **Status:** Active Development  
-**Last Updated:** 2026-01-27  
+**Last Updated:** 2026-04-17  
 **Version:** 2.0
 
 ---
 
 ## 🎯 What is YAPPC?
 
-YAPPC (Yet Another Platform Product Creator) is an **AI-native platform** that orchestrates the complete software development lifecycle through an **8-phase approach**: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
+YAPPC (Yet Another Platform Product Creator) is a platform for product lifecycle orchestration following an **8-phase target model**: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
 
-The **Run** phase drives an underlying SDLC lifecycle (Discover → Define → Design → Plan → Build → Test → Release → Deploy) managed by the AEP pipeline at `config/pipelines/lifecycle-management-v1.yaml`. Phase transitions, gate agents, and state persistence are defined in `config/agents/phase-transition-events.yaml`.
+Current implementation is partial and under active delivery.
 
-### Key Capabilities
+The **Run** phase target drives an underlying SDLC lifecycle (Discover → Define → Design → Plan → Build → Test → Release → Deploy) managed by the AEP pipeline at `config/pipelines/lifecycle-management-v1.yaml`. Phase transitions, gate agents, and state persistence are defined in `config/agents/phase-transition-events.yaml`.
+
+## Implementation Reality (2026-04-17)
+
+| Dimension | Current Score | Notes |
+|----------|---------------|-------|
+| AI-Native Maturity | 3/10 | Real LLM wiring exists, but pervasive implicit AI is incomplete |
+| Feature Completeness | 4/10 | Several critical workflows are partial or still being integrated |
+| Production Readiness | 2/10 | Security/ops hardening and full end-to-end verification remain in progress |
+
+### Verified Current State
+
+- Phases 0-1 capabilities are largely present.
+- Phase 2 capabilities are partially implemented.
+- Phases 3-7 are in active implementation and hardening.
+- Some AI-assisted experiences are deterministic rule-based assistance and are explicitly labeled as such.
+- Lifecycle route now includes AI-driven workflow planning with one-click transition approval and explicit decision-support defaults.
+- Prompt template registry now supports active-version control, rollback, and score-driven variant weight rebalancing.
+- End-to-end lifecycle API execution now emits DAG execution metadata with phase timing telemetry for monitoring.
+
+### Known Limitations by Lifecycle Phase
+
+| Phase | Current Maturity | Known Limitations |
+|------|------------------|-------------------|
+| Intent | Medium | AI analysis depth is uneven; some flows still depend on manual interpretation |
+| Shape | Medium | Artifact derivation is partially automated; advanced modeling remains manual |
+| Validate | Low-Medium | Policy/config validation exists, but broader quality automation is incomplete |
+| Generate | Medium | Generation pipeline exists, but full end-to-end artifact quality checks are still maturing |
+| Run | Low | Execution orchestration and durable rollout behavior remain in active implementation |
+| Observe | Low-Medium | Observability is present with pipeline phase-duration telemetry, but deeper product-level diagnostics and SLO workflows are incomplete |
+| Learn | Low | Learning loops and adaptive updates are partial and not yet fully automated |
+| Evolve | Low | Evolution workflows are present in parts but not integrated into a complete closed loop |
+
+### Key Capabilities (Implemented + In Progress)
 
 - **AI-Powered Code Generation** - Generate production-ready code from natural language
 - **Intelligent Scaffolding** - Multi-framework project generation (React, Node.js, Java, Python, etc.)

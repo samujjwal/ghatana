@@ -1,7 +1,7 @@
 /**
  * Project API Routes
  *
- * Dead simple REST API for project management with AI enhancements.
+ * Dead simple REST API for project management with rule-based assistance.
  * Projects are owned by exactly one workspace (full CRUD).
  * Projects can be included in other workspaces (read-only).
  *
@@ -12,7 +12,6 @@
  */
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
-import { markDeprecated } from '../middleware/deprecation';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { getAuditService } from '../services/audit/audit.service';
 
@@ -87,11 +86,11 @@ interface ProjectSetupSuggestion {
 }
 
 // ============================================================================
-// AI Helpers
+// Rule-based Assistance Helpers
 // ============================================================================
 
 /**
- * Generate AI next actions based on project state
+ * Generate deterministic next actions based on project state.
  */
 function generateNextActions(project: {
   name: string;
@@ -132,7 +131,7 @@ function generateNextActions(project: {
 }
 
 /**
- * Calculate AI health score based on project metrics
+ * Calculate rule-based health score based on project metrics.
  */
 async function calculateHealthScore(projectId: string): Promise<number> {
   const project = await prisma.project.findUnique({
@@ -168,7 +167,7 @@ async function calculateHealthScore(projectId: string): Promise<number> {
 }
 
 /**
- * Suggest project name based on workspace context
+ * Suggest project name based on deterministic naming rules.
  */
 async function suggestProjectName(
   workspaceId: string,
@@ -412,12 +411,10 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/projects
    * List all projects in a workspace (owned + included)
-   * @deprecated Use Java backend
    */
   fastify.get<{ Querystring: { workspaceId: string } }>(
     '/projects',
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { workspaceId } = request.query;
 
       if (!workspaceId) {
@@ -456,12 +453,10 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/projects/:projectId
    * Get single project with ownership context
-   * @deprecated Use Java backend
    */
   fastify.get<{ Params: ProjectParams; Querystring: { workspaceId?: string } }>(
     '/projects/:projectId',
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { projectId } = request.params;
       const { workspaceId } = request.query;
 
@@ -495,13 +490,11 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/projects
    * Create new project (owned by specified workspace)
-   * @deprecated Use Java backend
    */
   fastify.post<{ Body: CreateProjectBody }>(
     '/projects',
     { preHandler: requirePermission('project', 'create') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       if (!request.user?.userId) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -566,7 +559,6 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * PATCH /api/projects/:projectId
    * Update project (only if owned by current workspace)
-   * @deprecated Use Java backend
    */
   fastify.patch<{
     Params: ProjectParams;
@@ -576,7 +568,6 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     '/projects/:projectId',
     { preHandler: requirePermission('project', 'update') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { projectId } = request.params;
       const { workspaceId } = request.query;
       const { name, description, type, status, lifecyclePhase } = request.body;
@@ -629,7 +620,6 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * DELETE /api/projects/:projectId
    * Delete project (only if owned by current workspace)
-   * @deprecated Use Java backend
    */
   fastify.delete<{
     Params: ProjectParams;
@@ -638,7 +628,6 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     '/projects/:projectId',
     { preHandler: requirePermission('project', 'delete') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { projectId } = request.params;
       const { workspaceId } = request.query;
 
@@ -674,13 +663,11 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/projects/include
    * Include a project in a workspace (read-only)
-   * @deprecated Use Java backend
    */
   fastify.post<{ Body: IncludeProjectBody }>(
     '/projects/include',
     { preHandler: requirePermission('project', 'update') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       if (!request.user?.userId) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -739,13 +726,11 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * DELETE /api/projects/include
    * Remove project inclusion from workspace
-   * @deprecated Use Java backend
    */
   fastify.delete<{ Body: IncludeProjectBody }>(
     '/projects/include',
     { preHandler: requirePermission('project', 'update') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { workspaceId, projectId } = request.body;
 
       await prisma.workspaceProject.delete({
@@ -761,12 +746,10 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/projects/available-for-inclusion
    * List projects available to include in a workspace
-   * @deprecated Use Java backend
    */
   fastify.get<{ Querystring: { workspaceId: string } }>(
     '/projects/available-for-inclusion',
     async (request, reply) => {
-      markDeprecated(request, reply);
       if (!request.user?.userId) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -897,3 +880,4 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     }
   );
 }
+

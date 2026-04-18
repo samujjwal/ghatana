@@ -11,7 +11,18 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { lifecycleAPI, Artifact, Evidence, Task, GateStatus, AIRecommendation, AuditEvent, ReadinessAnomalyAlert } from '@/services/lifecycle/api';
+import {
+    lifecycleAPI,
+    Artifact,
+    Evidence,
+    Task,
+    GateStatus,
+    AIRecommendation,
+    AuditEvent,
+    ReadinessAnomalyAlert,
+    LifecycleAutomationPlan,
+    LifecycleAutomationPlanRequest,
+} from '@/services/lifecycle/api';
 import { FOWStage, ArtifactType } from '@/types/fow-stages';
 import { LifecyclePhase } from '@/types/lifecycle';
 
@@ -34,6 +45,7 @@ export const lifecycleKeys = {
     readinessAnomalies: (projectId: string) => [...lifecycleKeys.all, 'readiness-anomalies', projectId] as const,
     audit: (projectId: string) => [...lifecycleKeys.all, 'audit', projectId] as const,
     derivedPersona: (projectId: string, phase: LifecyclePhase, fowStage: FOWStage) => [...lifecycleKeys.all, 'persona', projectId, phase, fowStage] as const,
+    automationPlan: (projectId: string, phase: LifecyclePhase) => [...lifecycleKeys.all, 'automation-plan', projectId, phase] as const,
 };
 
 // ============================================================================
@@ -426,6 +438,39 @@ export function useDerivedPersona(
         queryKey: lifecycleKeys.derivedPersona(context.projectId, context.phase, context.fowStage),
         queryFn: () => lifecycleAPI.personas.derivePersona(context),
         staleTime: 120000, // 2 minutes
+        ...options,
+    });
+}
+
+// ============================================================================
+// Automation Hooks
+// ============================================================================
+
+export function useLifecycleAutomationPlan(
+    projectId: string,
+    phase: LifecyclePhase,
+    options?: UseQueryOptions<LifecycleAutomationPlan, Error>
+) {
+    return useQuery({
+        queryKey: lifecycleKeys.automationPlan(projectId, phase),
+        queryFn: () => lifecycleAPI.automation.buildPlan(projectId, { phase }),
+        enabled: !!projectId && phase !== undefined,
+        staleTime: 30000,
+        ...options,
+    });
+}
+
+export function useApplyLifecycleAutomationPlan(
+    options?: UseMutationOptions<LifecycleAutomationPlan, Error, { projectId: string; request: LifecycleAutomationPlanRequest }>
+) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ projectId, request }) => lifecycleAPI.automation.buildPlan(projectId, request),
+        onSettled: (_, __, variables) => {
+            queryClient.invalidateQueries({ queryKey: lifecycleKeys.all });
+            queryClient.invalidateQueries({ queryKey: lifecycleKeys.automationPlan(variables.projectId, (variables.request.phase ?? 'INTENT') as LifecyclePhase) });
+        },
         ...options,
     });
 }

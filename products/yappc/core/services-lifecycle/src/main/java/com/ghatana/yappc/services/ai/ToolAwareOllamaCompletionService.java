@@ -9,6 +9,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.OllamaCompletionService;
 import com.ghatana.ai.llm.ToolAwareCompletionService;
+import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.ToolCallResult;
 import com.ghatana.ai.llm.ToolDefinition;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -16,7 +17,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Adapts {@link OllamaCompletionService} to the {@link ToolAwareCompletionService} contract.
@@ -27,8 +31,8 @@ import java.util.List;
  * that Ollama can be registered as an {@link com.ghatana.ai.llm.LLMGateway} provider.
  *
  * <p>Tool-calling methods ({@link #completeWithTools} and {@link #continueWithToolResults})
- * fall back to the standard completion path without tool context. This is safe for
- * development and testing scenarios where tool results are handled by the agent loop.
+ * enrich the request metadata/messages so the underlying Ollama OpenAI-compatible endpoint
+ * receives tool definitions and tool output messages.
  *
  * @doc.type class
  * @doc.purpose Adapter making OllamaCompletionService compatible with ToolAwareCompletionService
@@ -74,27 +78,82 @@ final class ToolAwareOllamaCompletionService implements ToolAwareCompletionServi
 
     // ── ToolAwareCompletionService ────────────────────────────────────────────
 
-    /**
-     * Delegates to the standard {@link #complete} path. Ollama tool-call format
-     * is not yet wired in the platform client; tool definitions are dropped.
-     */
     @Override
     public Promise<CompletionResult> completeWithTools(CompletionRequest request,
                                                        List<ToolDefinition> tools) {
-        log.debug("Ollama provider ignoring {} tool definitions — falling back to standard completion",
-                tools.size());
-        return delegate.complete(request);
+        if (tools == null || tools.isEmpty()) {
+            return delegate.complete(request);
+        }
+
+        List<Map<String, Object>> toolPayload = tools.stream()
+            .map(ToolDefinition::toOpenAIFormat)
+            .toList();
+
+        Map<String, Object> metadata = new HashMap<>(request.getMetadata());
+        metadata.put("tools", toolPayload);
+        metadata.put("tool_choice", "auto");
+
+        CompletionRequest toolAwareRequest = copyRequest(request)
+            .metadata(metadata)
+            .build();
+
+        log.debug("Ollama provider forwarding {} tool definitions", tools.size());
+        return delegate.complete(toolAwareRequest);
     }
 
-    /**
-     * Delegates to the standard {@link #complete} path. Tool results are not
-     * forwarded to Ollama in this adapter; the agent loop should handle them.
-     */
     @Override
     public Promise<CompletionResult> continueWithToolResults(CompletionRequest request,
                                                               List<ToolCallResult> toolResults) {
-        log.debug("Ollama provider ignoring {} tool results — continuing with standard completion",
-                toolResults.size());
-        return delegate.complete(request);
+        if (toolResults == null || toolResults.isEmpty()) {
+            return delegate.complete(request);
+        }
+
+        List<ChatMessage> messages = new ArrayList<>();
+        if (!request.getMessages().isEmpty()) {
+            messages.addAll(request.getMessages());
+        } else if (request.getPrompt() != null && !request.getPrompt().isBlank()) {
+            messages.add(ChatMessage.user(request.getPrompt()));
+        }
+
+        for (ToolCallResult toolResult : toolResults) {
+            messages.add(ChatMessage.of(
+                ChatMessage.Role.TOOL,
+                toolResult.getResult(),
+                toolResult.getToolName()));
+        }
+
+        List<Map<String, Object>> serializedToolResults = toolResults.stream()
+            .map(result -> Map.<String, Object>of(
+                "tool_call_id", result.getToolCallId(),
+                "tool_name", result.getToolName(),
+                "success", result.isSuccess(),
+                "result", result.getResult()))
+            .toList();
+
+        Map<String, Object> metadata = new HashMap<>(request.getMetadata());
+        metadata.put("tool_results", serializedToolResults);
+
+        CompletionRequest continuationRequest = copyRequest(request)
+            .messages(messages)
+            .metadata(metadata)
+            .build();
+
+        log.debug("Ollama provider forwarding {} tool results", toolResults.size());
+        return delegate.complete(continuationRequest);
     }
+
+        private CompletionRequest.Builder copyRequest(CompletionRequest request) {
+        return CompletionRequest.builder()
+            .prompt(request.getPrompt())
+            .messages(request.getMessages())
+            .maxTokens(request.getMaxTokens())
+            .temperature(request.getTemperature())
+            .topP(request.getTopP())
+            .stop(request.getStop())
+            .model(request.getModel())
+            .stopSequences(request.getStopSequences())
+            .responseFormat(request.getResponseFormat())
+            .frequencyPenalty(request.getFrequencyPenalty())
+            .presencePenalty(request.getPresencePenalty());
+        }
 }

@@ -126,6 +126,55 @@ export interface ReadinessAnomalyAlert {
   resolvedAt?: string;
 }
 
+export interface LifecycleDecisionSupportDefaults {
+  approvalMode: 'auto_with_audit' | 'manual_review';
+  riskTolerance: 'low' | 'medium' | 'high';
+  validationDepth: 'standard' | 'deep';
+  targetEnvironment: 'staging' | 'production';
+  ownerRole: string;
+}
+
+export interface LifecycleDecisionSupportSuggestion {
+  id: string;
+  title: string;
+  reasoning: string;
+  impact: 'low' | 'medium' | 'high';
+}
+
+export interface LifecycleAutomationPlan {
+  projectId: string;
+  currentPhase: LifecyclePhase;
+  nextPhase: LifecyclePhase | null;
+  canAutoAdvance: boolean;
+  readiness: number;
+  blockers: string[];
+  estimatedReadyIn: string | null;
+  estimatedReadyInHours: number | null;
+  predictionConfidence: number | null;
+  decisionSupport: {
+    defaults: LifecycleDecisionSupportDefaults;
+    suggestions: LifecycleDecisionSupportSuggestion[];
+    progressiveDisclosure: {
+      primaryActions: string[];
+      secondaryActions: string[];
+    };
+  };
+  execution: {
+    transitioned: boolean;
+    previousPhase: LifecyclePhase;
+    currentPhase: LifecyclePhase;
+    activityLogId?: string;
+  } | null;
+  generatedAt: string;
+}
+
+export interface LifecycleAutomationPlanRequest {
+  phase?: LifecyclePhase;
+  oneClickApprove?: boolean;
+  userId?: string;
+  reason?: string;
+}
+
 // ============================================================================
 // API Configuration
 // ============================================================================
@@ -528,6 +577,28 @@ export const personaAPI = {
 };
 
 // ============================================================================
+// Automation Operations
+// ============================================================================
+
+export const automationAPI = {
+  /**
+   * Build AI-driven lifecycle automation plan and optionally apply one-click approval.
+   */
+  buildPlan: async (
+    projectId: string,
+    request: LifecycleAutomationPlanRequest
+  ): Promise<LifecycleAutomationPlan> => {
+    return fetchAPI<LifecycleAutomationPlan>(
+      `/projects/${projectId}/automation/plan`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
+  },
+};
+
+// ============================================================================
 // Export all APIs
 // ============================================================================
 
@@ -540,4 +611,5 @@ export const lifecycleAPI = {
   devSecOps: devSecOpsAPI,
   audit: auditAPI,
   personas: personaAPI,
+  automation: automationAPI,
 };

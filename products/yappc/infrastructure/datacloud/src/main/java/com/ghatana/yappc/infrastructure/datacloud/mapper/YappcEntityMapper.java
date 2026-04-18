@@ -84,11 +84,7 @@ public class YappcEntityMapper {
     }
 
     private static EncryptionService resolveOptionalEncryptionService() {
-        String encodedKey = System.getenv("YAPPC_ENCRYPTION_KEY");
-        if (encodedKey == null || encodedKey.isBlank()) {
-            return null;
-        }
-        return EncryptionService.fromEnvironment();
+        return EncryptionService.tryFromConfiguredSources().orElse(null);
     }
 
     private Map<String, Object> encryptProjectEnvironmentVariables(@NotNull Map<String, Object> raw) {
@@ -151,7 +147,7 @@ public class YappcEntityMapper {
     private EncryptionService requireEncryptionService() {
         if (encryptionService == null) {
             throw new IllegalStateException(
-                    "YAPPC_ENCRYPTION_KEY must be configured to persist or load ProjectEntity environmentVariables");
+                    "Encryption key must be configured via secret manager to persist or load ProjectEntity environmentVariables");
         }
         return encryptionService;
     }

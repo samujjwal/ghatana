@@ -115,14 +115,13 @@ class EvolutionServiceTest extends EventloopTestBase {
                 .observationRef("obs-123")
                 .build();
 
-        // WHEN/THEN
-        try {
-            runPromise(() -> service.propose(insights));
-            fail("Expected exception");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Proposal failed"));
-        }
+                // WHEN
+                EvolutionPlan result = runPromise(() -> service.propose(insights));
 
-        verify(metrics, times(1)).incrementCounter(eq("yappc.evolve.propose.error"), any(Map.class));
+                // THEN
+                assertNotNull(result);
+                assertEquals("insights-123", result.insightsRef());
+
+                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.evolve.propose.fallback"), any(Map.class));
     }
 }

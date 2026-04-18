@@ -1,9 +1,11 @@
 package com.ghatana.yappc.services.generate;
 
 import com.ghatana.ai.llm.CompletionRequest;
+import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.generate.*;
 import io.activej.promise.Promise;
@@ -127,78 +129,110 @@ public class GenerationServiceImpl implements GenerationService {
 
         String prompt = buildEntityCodePrompt(entity, spec);
 
-        return aiService.complete(CompletionRequest.builder()
-                .prompt(prompt)
-                .temperature(0.1)
-                .maxTokens(2000)
-                .build())
-                .map(result -> Artifact.builder()
+        return completeWithTelemetry(
+            "yappc.ai.generate.entity",
+            prompt,
+            0.1,
+            2000,
+            "public class " + entity.name() + " {}",
+            ServiceObservability.tenantTag(spec.shapeSpec().tenantId()))
+            .map(content -> Artifact.builder()
                         .id(UUID.randomUUID().toString())
                         .name(entity.name() + ".java")
                         .type("code")
                         .language("java")
                         .path("src/main/java/domain/" + entity.name() + ".java")
                         .contentRef("artifact-" + UUID.randomUUID())
-                        .sizeBytes(result.text().length())
+                .sizeBytes(content.length())
                         .build());
     }
 
     private Promise<Artifact> generateConfiguration(ValidatedSpec spec) {
         String prompt = buildConfigurationPrompt(spec);
 
-        return aiService.complete(CompletionRequest.builder()
-                .prompt(prompt)
-                .temperature(0.1)
-                .maxTokens(1000)
-                .build())
-                .map(result -> Artifact.builder()
+        return completeWithTelemetry(
+            "yappc.ai.generate.config",
+            prompt,
+            0.1,
+            1000,
+            "server:\n  port: 8080\n",
+            ServiceObservability.tenantTag(spec.shapeSpec().tenantId()))
+            .map(content -> Artifact.builder()
                         .id(UUID.randomUUID().toString())
                         .name("application.yml")
                         .type("config")
                         .language("yaml")
                         .path("src/main/resources/application.yml")
                         .contentRef("artifact-" + UUID.randomUUID())
-                        .sizeBytes(result.text().length())
+                .sizeBytes(content.length())
                         .build());
     }
 
     private Promise<Artifact> generateDocumentation(ValidatedSpec spec) {
         String prompt = buildDocumentationPrompt(spec);
 
-        return aiService.complete(CompletionRequest.builder()
-                .prompt(prompt)
-                .temperature(0.2)
-                .maxTokens(1500)
-                .build())
-                .map(result -> Artifact.builder()
+        return completeWithTelemetry(
+            "yappc.ai.generate.docs",
+            prompt,
+            0.2,
+            1500,
+            "# README\n\nGenerated documentation placeholder.\n",
+            ServiceObservability.tenantTag(spec.shapeSpec().tenantId()))
+            .map(content -> Artifact.builder()
                         .id(UUID.randomUUID().toString())
                         .name("README.md")
                         .type("documentation")
                         .language("markdown")
                         .path("README.md")
                         .contentRef("artifact-" + UUID.randomUUID())
-                        .sizeBytes(result.text().length())
+                .sizeBytes(content.length())
                         .build());
     }
 
     private Promise<Artifact> generateCIPipeline(ValidatedSpec spec) {
         String prompt = buildCIPipelinePrompt(spec);
 
-        return aiService.complete(CompletionRequest.builder()
-                .prompt(prompt)
-                .temperature(0.1)
-                .maxTokens(1000)
-                .build())
-                .map(result -> Artifact.builder()
+        return completeWithTelemetry(
+            "yappc.ai.generate.pipeline",
+            prompt,
+            0.1,
+            1000,
+            "name: ci\n\non: [push]\n",
+            ServiceObservability.tenantTag(spec.shapeSpec().tenantId()))
+            .map(content -> Artifact.builder()
                         .id(UUID.randomUUID().toString())
                         .name("ci.yml")
                         .type("pipeline")
                         .language("yaml")
                         .path(".github/workflows/ci.yml")
                         .contentRef("artifact-" + UUID.randomUUID())
-                        .sizeBytes(result.text().length())
+                .sizeBytes(content.length())
                         .build());
     }
+
+        private Promise<String> completeWithTelemetry(
+            String metricPrefix,
+            String prompt,
+            double temperature,
+            int maxTokens,
+            String fallbackText,
+            Map<String, String> tags) {
+        return aiService.complete(CompletionRequest.builder()
+            .prompt(prompt)
+            .temperature(temperature)
+            .maxTokens(maxTokens)
+            .build())
+            .then((result, e) -> {
+                if (e != null) {
+                AiQualityTelemetry.recordFallback(metrics, metricPrefix, e, tags);
+                log.warn("AI generation failed for {}, using deterministic fallback", metricPrefix, e);
+                return Promise.of(fallbackText);
+                }
+
+                AiQualityTelemetry.recordCompletion(metrics, metricPrefix, result, tags);
+                return Promise.of(result.text());
+            });
+        }
 
     private String buildEntityCodePrompt(
             com.ghatana.yappc.domain.shape.EntitySpec entity,

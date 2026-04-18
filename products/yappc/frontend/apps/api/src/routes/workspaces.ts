@@ -1,7 +1,7 @@
 /**
  * Workspace API Routes
  *
- * Dead simple REST API for workspace management with AI enhancements.
+ * Dead simple REST API for workspace management with rule-based assistance.
  * Workspaces are containers - project ownership determines permissions.
  *
  * @doc.type router
@@ -11,7 +11,6 @@
  */
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
-import { markDeprecated } from '../middleware/deprecation';
 import { requirePermission } from '../middleware/rbac.middleware';
 
 // ============================================================================
@@ -34,11 +33,11 @@ interface WorkspaceParams {
 }
 
 // ============================================================================
-// AI Helpers
+// Rule-based Assistance Helpers
 // ============================================================================
 
 /**
- * Generate AI summary for workspace based on its projects
+ * Generate a rule-based summary for workspace based on its projects.
  */
 async function generateWorkspaceSummary(workspaceId: string): Promise<string> {
   const projects = await prisma.project.findMany({
@@ -59,7 +58,7 @@ async function generateWorkspaceSummary(workspaceId: string): Promise<string> {
 }
 
 /**
- * Generate AI tags for workspace
+ * Generate rule-based tags for workspace.
  */
 async function generateWorkspaceTags(workspaceId: string): Promise<string[]> {
   const projects = await prisma.project.findMany({
@@ -96,7 +95,7 @@ async function generateWorkspaceTags(workspaceId: string): Promise<string[]> {
 }
 
 /**
- * Suggest workspace name based on user context
+ * Suggest workspace name based on deterministic naming rules.
  */
 function suggestWorkspaceName(existingNames: string[]): string {
   const suggestions = [
@@ -124,13 +123,10 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
    * GET /api/workspaces
    * List all workspaces for current user
    *
-   * @deprecated Use Java backend: GET /api/workspaces
-   * Sunset: 2025-06-06 (90 days from now)
    */
   fastify.get(
     '/workspaces',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      markDeprecated(request, reply);
       try {
         console.log('[WORKSPACE] GET /workspaces - Request received');
 
@@ -198,12 +194,10 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/workspaces/:workspaceId
    * Get single workspace with projects
-   * @deprecated Use Java backend
    */
   fastify.get<{ Params: WorkspaceParams }>(
     '/workspaces/:workspaceId',
     async (request, reply) => {
-      markDeprecated(request, reply);
       try {
         const { workspaceId } = request.params;
 
@@ -269,13 +263,11 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/workspaces
    * Create new workspace with optional default project
-   * @deprecated Use Java backend
    */
   fastify.post<{ Body: CreateWorkspaceBody }>(
     '/workspaces',
     { preHandler: requirePermission('workspace', 'create') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       if (!request.user?.userId) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
@@ -331,13 +323,11 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * PATCH /api/workspaces/:workspaceId
    * Update workspace
-   * @deprecated Use Java backend
    */
   fastify.patch<{ Params: WorkspaceParams; Body: UpdateWorkspaceBody }>(
     '/workspaces/:workspaceId',
     { preHandler: requirePermission('workspace', 'update') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { workspaceId } = request.params;
       const { name, description } = request.body;
 
@@ -356,13 +346,11 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * DELETE /api/workspaces/:workspaceId
    * Delete workspace (cascades to owned projects)
-   * @deprecated Use Java backend
    */
   fastify.delete<{ Params: WorkspaceParams }>(
     '/workspaces/:workspaceId',
     { preHandler: requirePermission('workspace', 'delete') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { workspaceId } = request.params;
 
       // Prevent deleting default workspace
@@ -391,10 +379,8 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/workspaces/suggest-name
    * AI suggests workspace name
-   * @deprecated Use Java backend
    */
   fastify.get('/workspaces/suggest-name', async (request, reply) => {
-    markDeprecated(request, reply);
     if (!request.user?.userId) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
@@ -416,13 +402,11 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/workspaces/:workspaceId/refresh-ai
    * Regenerate AI summary and tags
-   * @deprecated Use Java backend
    */
   fastify.post<{ Params: WorkspaceParams }>(
     '/workspaces/:workspaceId/refresh-ai',
     { preHandler: requirePermission('ai', 'ai_generate') },
     async (request, reply) => {
-      markDeprecated(request, reply);
       const { workspaceId } = request.params;
 
       const [aiSummary, aiTags] = await Promise.all([
@@ -439,3 +423,4 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
     }
   );
 }
+

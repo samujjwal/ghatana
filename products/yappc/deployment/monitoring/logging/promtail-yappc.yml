@@ -1,0 +1,37 @@
+server:
+  http_listen_port: 9081
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions-yappc.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: yappc-backend
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: yappc-backend
+          product: yappc
+          service: yappc-backend
+          __path__: /var/log/yappc/backend/*.log
+
+  - job_name: yappc-api-gateway
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: yappc-api-gateway
+          product: yappc
+          service: yappc-api
+          __path__: /var/log/yappc/api/*.log
+
+  - job_name: yappc-frontend
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: yappc-frontend
+          product: yappc
+          service: yappc-frontend
+          __path__: /var/log/yappc/frontend/*.log

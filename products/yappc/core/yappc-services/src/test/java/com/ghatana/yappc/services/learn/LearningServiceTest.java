@@ -115,14 +115,13 @@ class LearningServiceTest extends EventloopTestBase {
                 .runRef("run-123")
                 .build();
 
-        // WHEN/THEN
-        try {
-            runPromise(() -> service.analyze(observation));
-            fail("Expected exception");
-        } catch (Exception e) {
-            assertTrue(e.getMessage().contains("Analysis failed"));
-        }
+                // WHEN
+                Insights result = runPromise(() -> service.analyze(observation));
 
-        verify(metrics, times(1)).incrementCounter(eq("yappc.learn.analyze.error"), any(Map.class));
+                // THEN
+                assertNotNull(result);
+                assertEquals("obs-123", result.observationRef());
+
+                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback"), any(Map.class));
     }
 }

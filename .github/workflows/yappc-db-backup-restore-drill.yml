@@ -1,0 +1,78 @@
+name: YAPPC DB Backup Restore Drill
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup-restore-drill:
+    name: Weekly backup restore drill
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ghatana
+          POSTGRES_PASSWORD: ghatana123
+          POSTGRES_DB: yappc_drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ghatana -d yappc_drill"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Apply migrations and seed data
+        env:
+          PGPASSWORD: ghatana123
+        run: |
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V1_0_0__YAPPC_INITIAL_SCHEMA.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V2_0_0__YAPPC_APPROVAL_REQUESTS.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V3_0_0__YAPPC_APPROVAL_STATE_EXTENSIONS.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V4_0_0__YAPPC_AI_COST_EVENTS.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V5_0_0__YAPPC_SECRET_ACCESS_AUDIT.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/migration/V6_0_0__YAPPC_KEY_VERSIONS.sql
+          psql -h localhost -U ghatana -d yappc_drill -f products/yappc/platform/src/main/resources/db/seed/V1_0_0__YAPPC_DEV_SEED.sql
+
+      - name: Backup database
+        env:
+          PGPASSWORD: ghatana123
+        run: |
+          pg_dump -h localhost -U ghatana -d yappc_drill -Fc -f yappc-backup.dump
+
+      - name: Drop and recreate drill database
+        env:
+          PGPASSWORD: ghatana123
+        run: |
+          psql -h localhost -U ghatana -d postgres -c "DROP DATABASE IF EXISTS yappc_drill_restore;"
+          psql -h localhost -U ghatana -d postgres -c "CREATE DATABASE yappc_drill_restore;"
+
+      - name: Restore backup and validate
+        env:
+          PGPASSWORD: ghatana123
+        run: |
+          pg_restore -h localhost -U ghatana -d yappc_drill_restore yappc-backup.dump
+          psql -h localhost -U ghatana -d yappc_drill_restore -c "SELECT COUNT(*) FROM tenants;" | tee restore-check.txt
+          grep -Eq '[1-9]' restore-check.txt
+
+      - name: Upload drill artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-backup-restore-drill
+          path: |
+            yappc-backup.dump
+            restore-check.txt
+          retention-days: 14

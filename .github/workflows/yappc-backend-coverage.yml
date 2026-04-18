@@ -1,0 +1,108 @@
+name: YAPPC Backend Coverage Gates
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/**'
+      - 'products/yappc/infrastructure/**'
+      - '.github/workflows/yappc-backend-coverage.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/**'
+      - 'products/yappc/infrastructure/**'
+      - '.github/workflows/yappc-backend-coverage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+  COVERAGE_TARGET_PERCENT: '80'
+
+jobs:
+  backend-coverage:
+    name: Backend Test Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '${{ env.JAVA_VERSION }}'
+          cache: gradle
+
+      - name: Run tests and generate JaCoCo reports
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:test \
+            :products:yappc:core:services-lifecycle:jacocoTestReport \
+            :products:yappc:core:yappc-services:test \
+            :products:yappc:core:yappc-services:jacocoTestReport \
+            :products:yappc:core:yappc-infrastructure:test \
+            :products:yappc:core:yappc-infrastructure:jacocoTestReport \
+            :products:yappc:core:ai:test \
+            :products:yappc:core:ai:jacocoTestReport \
+            :products:yappc:core:agents:test \
+            :products:yappc:core:agents:jacocoTestReport \
+            --no-daemon --stacktrace
+
+      - name: Enforce aggregate coverage threshold
+        run: |
+          mapfile -t csv_files < <(find products/yappc -type f -name 'jacocoTestReport.csv')
+
+          if [ ${#csv_files[@]} -eq 0 ]; then
+            echo 'No JaCoCo CSV files found.'
+            exit 1
+          fi
+
+          total_missed=0
+          total_covered=0
+
+          for file in "${csv_files[@]}"; do
+            missed=$(awk -F, 'NR>1 {sum+=$4} END {print sum+0}' "$file")
+            covered=$(awk -F, 'NR>1 {sum+=$5} END {print sum+0}' "$file")
+            total_missed=$((total_missed + missed))
+            total_covered=$((total_covered + covered))
+          done
+
+          total_instructions=$((total_missed + total_covered))
+          if [ "$total_instructions" -eq 0 ]; then
+            echo 'No JaCoCo instruction data available.'
+            exit 1
+          fi
+
+          coverage=$(awk -v covered="$total_covered" -v total="$total_instructions" 'BEGIN { printf "%.2f", (covered / total) * 100 }')
+
+          echo "Aggregate instruction coverage: ${coverage}%"
+          echo "Target: ${COVERAGE_TARGET_PERCENT}%"
+
+          {
+            echo '## YAPPC Backend Coverage Summary'
+            echo ''
+            echo "- Aggregate instruction coverage: **${coverage}%**"
+            echo "- Target threshold: **${COVERAGE_TARGET_PERCENT}%**"
+            echo "- CSV reports counted: **${#csv_files[@]}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if ! awk -v actual="$coverage" -v target="$COVERAGE_TARGET_PERCENT" 'BEGIN { exit(actual >= target ? 0 : 1) }'; then
+            echo 'Coverage threshold gate failed.'
+            exit 1
+          fi
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-backend-jacoco
+          path: |
+            products/yappc/**/build/reports/jacoco/**
+            products/yappc/**/build/reports/tests/**
+          retention-days: 30

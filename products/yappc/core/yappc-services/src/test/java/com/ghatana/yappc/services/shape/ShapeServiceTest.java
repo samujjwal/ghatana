@@ -123,15 +123,15 @@ class ShapeServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments error counter and propagates on AI failure")
+        @DisplayName("AI failure on derive uses fallback shape and records fallback metric")
         void shouldHandleAIServiceFailureOnDerive() {
             stubAiFailure("AI service unavailable");
 
-            Exception thrown = assertThrows(Exception.class,
-                    () -> runPromise(() -> service.derive(intent("tenant-fail"))));
+            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-fail")));
 
-            assertTrue(thrown.getMessage().contains("AI service unavailable"));
-            verify(metrics).incrementCounter(eq("yappc.shape.derive.error"), anyMap());
+            assertNotNull(result);
+            assertEquals("intent-123", result.intentRef());
+            verify(metrics).incrementCounter(eq("yappc.ai.shape.derive.fallback"), anyMap());
         }
 
         @Test
@@ -189,15 +189,15 @@ class ShapeServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments error counter and propagates on AI failure during generateModel")
+        @DisplayName("AI failure during generateModel uses fallback model and records fallback metric")
         void shouldHandleAIServiceFailureOnGenerateModel() {
             stubAiFailure("LLM timeout");
 
-            Exception thrown = assertThrows(Exception.class,
-                    () -> runPromise(() -> service.generateModel(spec("tenant-err"))));
+            SystemModel result = runPromise(() -> service.generateModel(spec("tenant-err")));
 
-            assertTrue(thrown.getMessage().contains("LLM timeout"));
-            verify(metrics).incrementCounter(eq("yappc.shape.generateModel.error"), anyMap());
+            assertNotNull(result);
+            assertNotNull(result.designRationale());
+            verify(metrics).incrementCounter(eq("yappc.ai.shape.systemModel.fallback"), anyMap());
         }
     }
 }

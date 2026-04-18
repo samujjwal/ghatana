@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -202,6 +203,67 @@ class EncryptionServiceTest {
                         .isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining("YAPPC_ENCRYPTION_KEY");
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("fromConfiguredSources")
+    class FromConfiguredSources {
+
+        @Test
+        @DisplayName("prefers secret provider key over legacy env key")
+        void prefersSecretProviderOverLegacyEnvKey() {
+            String providerKey = EncryptionService.generateKey();
+            String legacyKey = EncryptionService.generateKey();
+
+            EncryptionService.SecretProvider provider = secretName -> Optional.of(providerKey);
+            EncryptionService service = EncryptionService.fromConfiguredSources(
+                    provider,
+                    "yappc/encryption-key",
+                    legacyKey,
+                    true);
+
+            String ciphertext = service.encrypt("provider-first");
+            assertThat(service.decrypt(ciphertext)).isEqualTo("provider-first");
+        }
+
+        @Test
+        @DisplayName("uses legacy env key when enabled and secret provider has no key")
+        void usesLegacyEnvFallbackWhenEnabled() {
+            String legacyKey = EncryptionService.generateKey();
+
+            EncryptionService service = EncryptionService.fromConfiguredSources(
+                    secretName -> Optional.empty(),
+                    "yappc/encryption-key",
+                    legacyKey,
+                    true);
+
+            String ciphertext = service.encrypt("legacy-fallback");
+            assertThat(service.decrypt(ciphertext)).isEqualTo("legacy-fallback");
+        }
+
+        @Test
+        @DisplayName("returns empty when no source is configured")
+        void returnsEmptyWhenNoSourceConfigured() {
+            Optional<EncryptionService> service = EncryptionService.tryFromConfiguredSources(
+                    secretName -> Optional.empty(),
+                    "yappc/encryption-key",
+                    null,
+                    false);
+
+            assertThat(service).isEmpty();
+        }
+
+        @Test
+        @DisplayName("throws when secret value is not valid Base64")
+        void throwsOnInvalidBase64Secret() {
+            assertThatThrownBy(() -> EncryptionService.fromConfiguredSources(
+                    secretName -> Optional.of("not-base64!!"),
+                    "yappc/encryption-key",
+                    null,
+                    false))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Invalid Base64");
         }
     }
 }

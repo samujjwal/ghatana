@@ -13,9 +13,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * AES-256-GCM encryption service for protecting sensitive YAPPC data at rest.
@@ -25,10 +29,9 @@ import java.util.Objects;
  * stored is: {@code IV (12 bytes) || GCM ciphertext+tag}.
  *
  * <p><b>Key Management</b></p>
- * <p>The encryption key is expected as a Base64-encoded 256-bit value supplied
- * via the {@code YAPPC_ENCRYPTION_KEY} environment variable. In development the
- * service can be constructed with a randomly-generated key (use
- * {@link #generateKey()} and store the result securely before first use).
+ * <p>The encryption key should be stored in a secret manager and made available
+ * through mounted secret files. Legacy environment variable loading is still
+ * available as an explicit compatibility mode.
  *
  * <p><b>Usage</b></p>
  * <pre>{@code
@@ -53,6 +56,11 @@ public final class EncryptionService {
     private static final int    KEY_BITS      = 256;
 
     private static final String ENV_KEY = "YAPPC_ENCRYPTION_KEY";
+    private static final String ENV_SECRET_NAME = "YAPPC_ENCRYPTION_KEY_SECRET_NAME";
+    private static final String ENV_SECRETS_DIR = "YAPPC_SECRETS_DIR";
+    private static final String ENV_ALLOW_LEGACY_ENV_KEY = "YAPPC_ALLOW_LEGACY_ENV_KEY";
+    private static final String DEFAULT_SECRET_NAME = "yappc/encryption-key";
+    private static final String DEFAULT_SECRETS_DIR = "/var/run/secrets/ghatana";
 
     private final SecretKey secretKey;
 
@@ -72,6 +80,41 @@ public final class EncryptionService {
     }
 
     // ── Factory methods ──────────────────────────────────────────────────────
+
+    /**
+     * Secret provider abstraction for key retrieval from external secret stores.
+     */
+    @FunctionalInterface
+    public interface SecretProvider {
+        Optional<String> getSecret(String secretName);
+    }
+
+    /**
+     * Reads secrets from mounted files where each secret is stored as
+     * {@code <secretsDir>/<secretName-with-slashes-replaced-by-underscores>}.
+     */
+    public static final class MountedFileSecretProvider implements SecretProvider {
+        private final Path secretsDir;
+
+        public MountedFileSecretProvider(Path secretsDir) {
+            this.secretsDir = Objects.requireNonNull(secretsDir, "secretsDir must not be null");
+        }
+
+        @Override
+        public Optional<String> getSecret(String secretName) {
+            String normalizedName = normalizeSecretFileName(secretName);
+            Path secretFile = secretsDir.resolve(normalizedName);
+            if (!Files.isRegularFile(secretFile)) {
+                return Optional.empty();
+            }
+            try {
+                String raw = Files.readString(secretFile, StandardCharsets.UTF_8).trim();
+                return raw.isBlank() ? Optional.empty() : Optional.of(raw);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to read secret file: " + secretFile, e);
+            }
+        }
+    }
 
     /**
      * Loads the encryption key from the {@code YAPPC_ENCRYPTION_KEY} environment variable.
@@ -96,6 +139,75 @@ public final class EncryptionService {
     }
 
     /**
+     * Loads encryption key from configured secret sources.
+     *
+     * <p>Resolution order:</p>
+     * <ol>
+     *   <li>Mounted secret provider (secret manager integration)</li>
+     *   <li>Legacy environment variable {@code YAPPC_ENCRYPTION_KEY} when
+     *       {@code YAPPC_ALLOW_LEGACY_ENV_KEY=true}</li>
+     * </ol>
+     *
+     * @throws IllegalStateException when no key source is configured or key is invalid
+     */
+    public static EncryptionService fromConfiguredSources() {
+        String secretName = readOrDefault(System.getenv(ENV_SECRET_NAME), DEFAULT_SECRET_NAME);
+        String secretsDir = readOrDefault(System.getenv(ENV_SECRETS_DIR), DEFAULT_SECRETS_DIR);
+        boolean allowLegacyEnv = Boolean.parseBoolean(
+                readOrDefault(System.getenv(ENV_ALLOW_LEGACY_ENV_KEY), "false"));
+
+        SecretProvider provider = new MountedFileSecretProvider(Path.of(secretsDir));
+        return fromConfiguredSources(provider, secretName, System.getenv(ENV_KEY), allowLegacyEnv);
+    }
+
+    /**
+     * Try to build encryption service from configured sources.
+     * Returns empty when no source is configured.
+     */
+    public static Optional<EncryptionService> tryFromConfiguredSources() {
+        String secretName = readOrDefault(System.getenv(ENV_SECRET_NAME), DEFAULT_SECRET_NAME);
+        String secretsDir = readOrDefault(System.getenv(ENV_SECRETS_DIR), DEFAULT_SECRETS_DIR);
+        boolean allowLegacyEnv = Boolean.parseBoolean(
+                readOrDefault(System.getenv(ENV_ALLOW_LEGACY_ENV_KEY), "false"));
+
+        SecretProvider provider = new MountedFileSecretProvider(Path.of(secretsDir));
+        return tryFromConfiguredSources(provider, secretName, System.getenv(ENV_KEY), allowLegacyEnv);
+    }
+
+    static EncryptionService fromConfiguredSources(
+            SecretProvider secretProvider,
+            String secretName,
+            String legacyEncodedKey,
+            boolean allowLegacyEnv) {
+        return tryFromConfiguredSources(secretProvider, secretName, legacyEncodedKey, allowLegacyEnv)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Encryption key not configured via secret manager. "
+                                + "Configure mounted secret '" + secretName + "' (" + ENV_SECRET_NAME + ")"
+                                + " and optional directory via " + ENV_SECRETS_DIR + "."
+                                + (allowLegacyEnv ? "" : " Legacy env fallback is disabled.")));
+    }
+
+    static Optional<EncryptionService> tryFromConfiguredSources(
+            SecretProvider secretProvider,
+            String secretName,
+            String legacyEncodedKey,
+            boolean allowLegacyEnv) {
+        Optional<String> secretValue = secretProvider.getSecret(secretName)
+                .filter(value -> !value.isBlank());
+        if (secretValue.isPresent()) {
+            log.info("Loaded encryption key from secret provider using secret name {}", secretName);
+            return Optional.of(new EncryptionService(decodeKey(secretValue.get(), "secret:" + secretName)));
+        }
+
+        if (allowLegacyEnv && legacyEncodedKey != null && !legacyEncodedKey.isBlank()) {
+            log.warn("Using legacy {} environment variable for encryption key. Migrate to secret manager source.", ENV_KEY);
+            return Optional.of(new EncryptionService(decodeKey(legacyEncodedKey, ENV_KEY)));
+        }
+
+        return Optional.empty();
+    }
+
+    /**
      * Generates a new random 256-bit AES key and returns it as a Base64 string.
      * Store the result in a secret manager (e.g. Vault, AWS Secrets Manager) and
      * set it as {@code YAPPC_ENCRYPTION_KEY} before the service starts.
@@ -110,6 +222,22 @@ public final class EncryptionService {
         } catch (Exception e) {
             throw new EncryptionException("Failed to generate AES-256 key", e);
         }
+    }
+
+    private static byte[] decodeKey(String encoded, String sourceName) {
+        try {
+            return Base64.getDecoder().decode(encoded.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid Base64 value in encryption key source: " + sourceName, e);
+        }
+    }
+
+    private static String normalizeSecretFileName(String secretName) {
+        return secretName.replace('/', '_').replace('\\', '_');
+    }
+
+    private static String readOrDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value.trim();
     }
 
     // ── Core operations ──────────────────────────────────────────────────────

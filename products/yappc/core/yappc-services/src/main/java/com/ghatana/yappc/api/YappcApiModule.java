@@ -92,4 +92,46 @@ public class YappcApiModule extends AbstractModule {
             MetricsCollector metrics) {
         return new EvolutionServiceImpl(aiService, auditLogger, metrics);
     }
+
+    @Provides
+    RunApiController runApiController(RunService runService) {
+        return new RunApiController(runService);
+    }
+
+    @Provides
+    ObserveApiController observeApiController(ObserveService observeService) {
+        return new ObserveApiController(observeService);
+    }
+
+    @Provides
+    LearnApiController learnApiController(LearningService learningService) {
+        return new LearnApiController(learningService);
+    }
+
+    @Provides
+    EvolveApiController evolveApiController(EvolutionService evolutionService) {
+        return new EvolveApiController(evolutionService);
+    }
+
+    @Provides
+    LifecycleApiController lifecycleApiController(
+            IntentService intentService,
+            ShapeService shapeService,
+            ValidationService validationService,
+            GenerationService generationService,
+            RunService runService,
+            ObserveService observeService,
+            LearningService learningService,
+            EvolutionService evolutionService) {
+        return new LifecycleApiController(
+            intentService,
+            shapeService,
+            validationService,
+            generationService,
+            runService,
+            observeService,
+            learningService,
+            evolutionService
+        );
+    }
 }

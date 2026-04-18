@@ -1,0 +1,211 @@
+name: YAPPC Backend Security Gates
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/**'
+      - 'products/yappc/infrastructure/**'
+      - 'products/yappc/platform/**'
+      - '.github/workflows/yappc-backend-security.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/**'
+      - 'products/yappc/infrastructure/**'
+      - 'products/yappc/platform/**'
+      - '.github/workflows/yappc-backend-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  codeql-java:
+    name: SAST (CodeQL Java)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '${{ env.JAVA_VERSION }}'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          queries: security-and-quality
+
+      - name: Build for CodeQL extraction
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:classes \
+            :products:yappc:core:yappc-services:classes \
+            :products:yappc:core:yappc-infrastructure:classes \
+            --no-daemon --stacktrace
+
+      - name: Analyze CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:java'
+
+  dependency-and-image-scan:
+    name: Dependency and Filesystem Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scan (YAPPC backend scope)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: fs
+          scan-ref: products/yappc
+          format: sarif
+          output: trivy-yappc-backend.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-yappc-backend.sarif
+
+  secret-scan:
+    name: Secret Scan (TruffleHog)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for verified secrets
+        uses: trufflesecurity/trufflehog@v3.86.2
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  dast-baseline:
+    name: DAST (OWASP ZAP Baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '${{ env.JAVA_VERSION }}'
+          cache: gradle
+
+      - name: Build lifecycle fat jar
+        run: |
+          ./gradlew :products:yappc:core:services-lifecycle:shadowJar --no-daemon --stacktrace
+
+      - name: Start lifecycle service
+        env:
+          YAPPC_API_KEYS: yappc-security-ci-key
+          YAPPC_AGENT_LLM_MODE: stub
+        run: |
+          java -jar products/yappc/core/services-lifecycle/build/libs/*-all.jar > yappc-security-service.log 2>&1 &
+          echo $! > yappc-security-service.pid
+
+      - name: Wait for readiness
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/health/readiness >/dev/null 2>&1; then
+              echo 'Service is ready'
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'Lifecycle service failed readiness check in time'
+          exit 1
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          docker run --rm \
+            --network host \
+            -v "${PWD}:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://localhost:8080/ \
+            -m 5 \
+            -r zap-report.html \
+            -J zap-report.json \
+            -w zap-warnings.md \
+            -I
+
+      - name: Enforce DAST gate (no FAIL risk accepted)
+        run: |
+          if grep -q 'FAIL-NEW:' zap-warnings.md; then
+            echo 'ZAP baseline reported FAIL findings'
+            cat zap-warnings.md
+            exit 1
+          fi
+
+      - name: Upload DAST artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-dast-baseline
+          path: |
+            zap-report.html
+            zap-report.json
+            zap-warnings.md
+            yappc-security-service.log
+          retention-days: 14
+
+      - name: Stop lifecycle service
+        if: always()
+        run: |
+          if [ -f yappc-security-service.pid ]; then
+            kill "$(cat yappc-security-service.pid)" 2>/dev/null || true
+          fi
+
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: [codeql-java, dependency-and-image-scan, secret-scan, dast-baseline]
+    if: always()
+
+    steps:
+      - name: Validate job outcomes
+        run: |
+          echo "CodeQL: ${{ needs.codeql-java.result }}"
+          echo "Trivy: ${{ needs.dependency-and-image-scan.result }}"
+          echo "Secret Scan: ${{ needs.secret-scan.result }}"
+          echo "DAST: ${{ needs.dast-baseline.result }}"
+
+          if [ "${{ needs.codeql-java.result }}" != 'success' ] || \
+             [ "${{ needs.dependency-and-image-scan.result }}" != 'success' ] || \
+             [ "${{ needs.secret-scan.result }}" != 'success' ] || \
+             [ "${{ needs.dast-baseline.result }}" != 'success' ]; then
+            echo 'Security gate failed'
+            exit 1
+          fi
+
+          echo 'Security gate passed'

@@ -29,7 +29,14 @@ public class YappcHttpServer extends HttpServerLauncher {
             IntentApiController intentController,
             ShapeApiController shapeController,
             ValidationApiController validationController,
-            GenerationApiController generationController) {
+            GenerationApiController generationController,
+            RunApiController runController,
+            ObserveApiController observeController,
+            LearnApiController learnController,
+            EvolveApiController evolveController,
+            LifecycleApiController lifecycleController) {
+
+        ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
 
         return RoutingServlet.builder(eventloop)
                 // Health check
@@ -37,35 +44,63 @@ public class YappcHttpServer extends HttpServerLauncher {
                     Promise.of(HttpResponse.ok200().withPlainText("OK").build()))
 
                 // Intent endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/intent/capture", authFilter.secure(intentController::captureIntent))
-                .with(HttpMethod.POST, "/api/v1/yappc/intent/analyze", authFilter.secure(intentController::analyzeIntent))
-                .with(HttpMethod.GET, "/api/v1/yappc/intent/:id", authFilter.secure(intentController::getIntent))
+                .with(HttpMethod.POST, "/api/v1/yappc/intent/capture", secureVersioned(authFilter, intentController::captureIntent, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/intent/analyze", secureVersioned(authFilter, intentController::analyzeIntent, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/intent/:id", secureVersioned(authFilter, intentController::getIntent, versionPolicy))
 
                 // Shape endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/shape/derive", authFilter.secure(shapeController::deriveShape))
-                .with(HttpMethod.POST, "/api/v1/yappc/shape/model", authFilter.secure(shapeController::generateSystemModel))
-                .with(HttpMethod.GET, "/api/v1/yappc/shape/:id", authFilter.secure(shapeController::getShape))
+                .with(HttpMethod.POST, "/api/v1/yappc/shape/derive", secureVersioned(authFilter, shapeController::deriveShape, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/shape/model", secureVersioned(authFilter, shapeController::generateSystemModel, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/shape/:id", secureVersioned(authFilter, shapeController::getShape, versionPolicy))
 
                 // Validation endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/validate", authFilter.secure(validationController::validate))
-                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-config", authFilter.secure(validationController::validateWithConfig))
-                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-policy", authFilter.secure(validationController::validateWithPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/validate", secureVersioned(authFilter, validationController::validate, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-config", secureVersioned(authFilter, validationController::validateWithConfig, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-policy", secureVersioned(authFilter, validationController::validateWithPolicy, versionPolicy))
 
                 // Generation endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/generate", authFilter.secure(generationController::generateArtifacts))
-                .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", authFilter.secure(generationController::regenerateWithDiff))
-                .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", authFilter.secure(generationController::getArtifacts))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate", secureVersioned(authFilter, generationController::generateArtifacts, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", secureVersioned(authFilter, generationController::regenerateWithDiff, versionPolicy))
+                .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", secureVersioned(authFilter, generationController::getArtifacts, versionPolicy))
+
+                // Run endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/run", secureVersioned(authFilter, runController::executeRun, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/run/with-observation", secureVersioned(authFilter, runController::executeRunWithObservation, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/run/rollback", secureVersioned(authFilter, runController::rollback, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/run/promote", secureVersioned(authFilter, runController::promote, versionPolicy))
+
+                // Observe endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/observe", secureVersioned(authFilter, observeController::collectObservation, versionPolicy))
+
+                // Learn endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/learn", secureVersioned(authFilter, learnController::analyze, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/learn/with-context", secureVersioned(authFilter, learnController::analyzeWithContext, versionPolicy))
+
+                // Evolve endpoints
+                .with(HttpMethod.POST, "/api/v1/yappc/evolve", secureVersioned(authFilter, evolveController::propose, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/evolve/with-constraints", secureVersioned(authFilter, evolveController::proposeWithConstraints, versionPolicy))
+
+                // Full lifecycle orchestration endpoint
+                .with(HttpMethod.POST, "/api/v1/yappc/lifecycle/execute", secureVersioned(authFilter, lifecycleController::executeFullLifecycle, versionPolicy))
 
                 // API info
-                .with(HttpMethod.GET, "/api/v1/yappc/info", request ->
+                .with(HttpMethod.GET, "/api/v1/yappc/info", versionPolicy.apply(request ->
                     Promise.of(HttpResponse.ok200().withJson("""
                         {
                           "name": "YAPPC Lifecycle API",
                           "version": "1.0.0",
+                          "apiVersion": "v1",
                           "phases": ["intent", "shape", "validate", "generate", "run", "observe", "learn", "evolve"]
                         }
-                        """).build()))
+                        """).build())))
                 .build();
+    }
+
+    private AsyncServlet secureVersioned(
+            YappcApiAuthFilter authFilter,
+            AsyncServlet delegate,
+            ApiVersionPolicy versionPolicy) {
+        return versionPolicy.apply(authFilter.secure(delegate));
     }
 
     @Provides

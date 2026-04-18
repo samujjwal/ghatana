@@ -29,12 +29,27 @@ describe('AI routes', () => {
 
     expect(response.statusCode).toBe(200);
     const body = response.json() as {
-      suggestions: Array<{ kind: string; title: string }>;
+      suggestions: Array<{
+        kind: string;
+        title: string;
+        suggestedPayload: {
+          defaultOwnerRole: string;
+          defaultPriority: string;
+          defaultTargetDays: number;
+          defaultReasoning: string;
+        };
+      }>;
       correlationId?: string;
     };
 
     expect(body.suggestions.length).toBeGreaterThan(0);
     expect(body.suggestions.some((suggestion) => suggestion.kind === 'ADR')).toBe(true);
+    const adrSuggestion = body.suggestions.find((suggestion) => suggestion.kind === 'ADR');
+    expect(adrSuggestion).toBeDefined();
+    expect(adrSuggestion?.suggestedPayload.defaultOwnerRole).toBe('Security Team');
+    expect(adrSuggestion?.suggestedPayload.defaultPriority).toBe('high');
+    expect(adrSuggestion?.suggestedPayload.defaultTargetDays).toBeLessThanOrEqual(3);
+    expect(adrSuggestion?.suggestedPayload.defaultReasoning.length).toBeGreaterThan(0);
     expect(typeof body.correlationId).toBe('string');
     expect(response.headers['x-correlation-id']).toBeTruthy();
   });

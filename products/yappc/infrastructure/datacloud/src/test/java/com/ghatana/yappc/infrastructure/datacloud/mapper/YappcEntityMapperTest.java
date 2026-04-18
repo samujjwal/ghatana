@@ -103,7 +103,7 @@ class YappcEntityMapperTest {
 
         assertThatThrownBy(() -> mapper.toEntityData(project))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("YAPPC_ENCRYPTION_KEY");
+            .hasMessageContaining("secret manager");
     }
 
     @Test

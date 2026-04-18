@@ -6,6 +6,7 @@ import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.ai.StructuredOutputParser;
+import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.intent.IntentSpec;
 import com.ghatana.yappc.domain.shape.*;
@@ -90,24 +91,44 @@ public class ShapeServiceImpl implements ShapeService {
 
     private Promise<ShapeSpec> deriveShapeWithAI(IntentSpec intent) {
         String prompt = buildShapeDerivationPrompt(intent);
+        Map<String, String> tags = ServiceObservability.tenantTag(intent.tenantId());
 
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.3)
                 .maxTokens(3000)
                 .build())
-                .map(result -> parseShapeFromAIResponse(result, intent));
+                .then((result, e) -> {
+                    if (e != null) {
+                        AiQualityTelemetry.recordFallback(metrics, "yappc.ai.shape.derive", e, tags);
+                        log.warn("Shape derivation AI failed, using fallback parser", e);
+                        return Promise.of(StructuredOutputParser.parseShapeSpec("", intent.id(), intent.tenantId()));
+                    }
+
+                    AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.shape.derive", result, tags);
+                    return Promise.of(parseShapeFromAIResponse(result, intent));
+                });
     }
 
     private Promise<SystemModel> generateSystemModelWithAI(ShapeSpec spec) {
         String prompt = buildSystemModelPrompt(spec);
+        Map<String, String> tags = ServiceObservability.tenantTag(spec.tenantId());
 
         return aiService.complete(CompletionRequest.builder()
                 .prompt(prompt)
                 .temperature(0.2)
                 .maxTokens(2500)
                 .build())
-                .map(result -> parseSystemModelFromAIResponse(result, spec));
+                .then((result, e) -> {
+                    if (e != null) {
+                        AiQualityTelemetry.recordFallback(metrics, "yappc.ai.shape.systemModel", e, tags);
+                        log.warn("System model AI generation failed, using fallback model", e);
+                        return Promise.of(parseSystemModelFromAIResponse(CompletionResult.of(""), spec));
+                    }
+
+                    AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.shape.systemModel", result, tags);
+                    return Promise.of(parseSystemModelFromAIResponse(result, spec));
+                });
     }
 
     private String buildShapeDerivationPrompt(IntentSpec intent) {

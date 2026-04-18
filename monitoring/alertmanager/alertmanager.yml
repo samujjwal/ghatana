@@ -109,7 +109,42 @@ route:
       continue: false
 
     # ------------------------------------------------------------------
-    # 7. PHR and Finance critical alerts — immediate page (< 1 min)
+    # 7. YAPPC critical alerts — immediate page (< 1 min)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "yappc"
+        - severity = "critical"
+      receiver: yappc-critical
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 8. YAPPC warning alerts — batched Slack notification
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "yappc"
+        - severity = "warning"
+      receiver: yappc-warning
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 9. YAPPC catch-all
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "yappc"
+      receiver: yappc-warning
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 10. PHR and Finance critical alerts — immediate page (< 1 min)
     # ------------------------------------------------------------------
     - matchers:
         - product =~ "phr|finance"
@@ -121,7 +156,7 @@ route:
       continue: false
 
     # ------------------------------------------------------------------
-    # 8. PHR and Finance warning alerts — batched Slack notification
+    # 11. PHR and Finance warning alerts — batched Slack notification
     # ------------------------------------------------------------------
     - matchers:
         - product =~ "phr|finance"
@@ -133,7 +168,7 @@ route:
       continue: false
 
     # ------------------------------------------------------------------
-    # 9. PHR and Finance catch-all
+    # 12. PHR and Finance catch-all
     # ------------------------------------------------------------------
     - matchers:
         - product =~ "phr|finance"
@@ -196,6 +231,14 @@ inhibit_rules:
     target_matchers:
       - severity = "warning"
       - product = "aep"
+    equal: ["alertname", "product"]
+
+  - source_matchers:
+      - severity = "critical"
+      - product = "yappc"
+    target_matchers:
+      - severity = "warning"
+      - product = "yappc"
     equal: ["alertname", "product"]
 
   - source_matchers:
@@ -317,6 +360,52 @@ receivers:
           *Product:* {{ .CommonLabels.product }}
           {{ range .Alerts }}
           *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+
+  # ---- YAPPC: critical (Slack oncall + PagerDuty) ----
+  - name: yappc-critical
+    slack_configs:
+      - channel: "#yappc-oncall"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
+        title: "🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — yappc"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+        actions:
+          - type: button
+            text: "View in Grafana"
+            url: "http://grafana.monitoring.svc.cluster.local:3000/d/yappc-lifecycle-kpi-001"
+    pagerduty_configs:
+      - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
+        description: "{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}"
+        severity: critical
+        details:
+          product: "{{ .CommonLabels.product }}"
+          alert_name: "{{ .CommonLabels.alertname }}"
+          description: "{{ .CommonAnnotations.description }}"
+
+  # ---- YAPPC: warning (Slack alerts channel) ----
+  - name: yappc-warning
+    slack_configs:
+      - channel: "#yappc-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
+        title: "⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — yappc"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
           *Started:* {{ .StartsAt | since }}
           {{ end }}
 

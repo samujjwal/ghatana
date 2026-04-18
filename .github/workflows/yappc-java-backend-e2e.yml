@@ -1,0 +1,65 @@
+name: YAPPC Java Backend E2E
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/yappc-services/**'
+      - 'products/yappc/core/services-lifecycle/**'
+      - '.github/workflows/yappc-java-backend-e2e.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/core/yappc-services/**'
+      - 'products/yappc/core/services-lifecycle/**'
+      - '.github/workflows/yappc-java-backend-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  java-backend-e2e:
+    name: Java Backend E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '${{ env.JAVA_VERSION }}'
+          cache: gradle
+
+      - name: Run YAPPC services e2e integration tests
+        run: |
+          ./gradlew \
+            :products:yappc:core:yappc-services:test \
+            --tests "*LifecycleApiControllerIntegrationTest" \
+            --tests "*YappcHttpServerAuthTest" \
+            --no-daemon --stacktrace
+
+      - name: Run lifecycle pipeline e2e tests
+        run: |
+          ./gradlew \
+            :products:yappc:core:services-lifecycle:test \
+            --tests "*YappcAepPipelineE2eTest" \
+            --tests "*WorkflowIntegrationTest" \
+            --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-java-backend-e2e-reports
+          path: |
+            products/yappc/**/build/reports/tests/**
+            products/yappc/**/build/test-results/**
+          retention-days: 14

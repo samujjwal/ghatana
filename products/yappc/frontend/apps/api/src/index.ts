@@ -41,6 +41,13 @@ import {
 import { authMiddleware } from './middleware/auth.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 import { authRoutes } from './routes/auth';
+import {
+  applyVersionHeaders,
+  buildVersionErrorBody,
+  isSupportedVersion,
+  isVersionedApiPath,
+  resolveRequestedVersion,
+} from './middleware/apiVersioning';
 
 // Import WebSocket Service
 import { RealTimeService } from './services/RealTimeService';
@@ -147,6 +154,24 @@ export async function createApp(
     request.headers['x-correlation-id'] = correlationId;
 
     request.startTime = Date.now();
+  });
+
+  app.addHook('preHandler', async (request, reply) => {
+    if (!isVersionedApiPath(request.url)) {
+      return;
+    }
+
+    const requestedVersion = resolveRequestedVersion(request);
+    if (requestedVersion && !isSupportedVersion(requestedVersion)) {
+      return reply.code(406).send(buildVersionErrorBody(requestedVersion));
+    }
+  });
+
+  app.addHook('onSend', async (request, reply, payload) => {
+    if (isVersionedApiPath(request.url)) {
+      applyVersionHeaders(reply);
+    }
+    return payload;
   });
 
   app.addHook('onResponse', async (request, reply) => {

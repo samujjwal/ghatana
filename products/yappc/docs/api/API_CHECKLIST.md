@@ -172,7 +172,7 @@ Quick reference checklist for YAPPC API integration status.
 
 - [ ] Circuit breakers
 - [ ] Rate limiting (service exists, not deployed)
-- [ ] API versioning strategy
+- [x] API versioning strategy (`docs/api/YAPPC_API_VERSIONING_STRATEGY.md`)
 - [ ] Request/response validation middleware
 
 ---

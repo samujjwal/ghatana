@@ -945,6 +945,91 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── AI Suggestions ───────────────────────────────────────────────────────────
+
+  /api/ai/suggest-artifacts:
+    post:
+      tags: [suggestions]
+      summary: Return rule-based artifact suggestions for the current lifecycle phase
+      operationId: suggestArtifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [context]
+              properties:
+                context:
+                  type: object
+                  required: [projectId, currentPhase, existingArtifacts]
+                  properties:
+                    projectId:
+                      type: string
+                    currentPhase:
+                      type: string
+                      enum: [INTENT, SHAPE, VALIDATE, GENERATE, RUN, OBSERVE, IMPROVE]
+                    existingArtifacts:
+                      type: array
+                      items:
+                        type: object
+                        required: [kind]
+                        properties:
+                          kind:
+                            type: string
+                          payload:
+                            type: object
+                            additionalProperties: true
+                    projectDescription:
+                      type: string
+                targetKinds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Suggested artifacts for missing phase items
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [suggestions, correlationId]
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, kind, title, summary, reasoning, confidence, confidenceType, confidenceReason, suggestedPayload]
+                      properties:
+                        id:
+                          type: string
+                        kind:
+                          type: string
+                        title:
+                          type: string
+                        summary:
+                          type: string
+                        reasoning:
+                          type: string
+                        confidence:
+                          type: number
+                        confidenceType:
+                          type: string
+                          enum: [rule_based_heuristic]
+                        confidenceReason:
+                          type: string
+                        suggestedPayload:
+                          type: object
+                          additionalProperties: true
+                  correlationId:
+                    type: string
+        "400":
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ── Workflows ─────────────────────────────────────────────────────────────────
 
   /api/v1/workflows/templates:

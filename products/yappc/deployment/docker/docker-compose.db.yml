@@ -34,12 +34,28 @@ services:
     container_name: yappc-flyway
     command: -connectRetries=60 -url=jdbc:postgresql://postgres:5432/yappc -user=ghatana -password=ghatana123 -locations=filesystem:/flyway/sql migrate
     volumes:
-      - ../../backend/api/migrations:/flyway/sql
+      - ../../platform/src/main/resources/db/migration:/flyway/sql
     networks:
       - yappc-network
     depends_on:
       postgres:
         condition: service_healthy
+
+  seed:
+    image: postgres:16-alpine
+    container_name: yappc-seed
+    command: >-
+      sh -c "until pg_isready -h postgres -p 5432 -U ghatana -d yappc; do sleep 2; done;
+      psql -h postgres -U ghatana -d yappc -f /seed/V1_0_0__YAPPC_DEV_SEED.sql"
+    environment:
+      PGPASSWORD: ghatana123
+    volumes:
+      - ../../platform/src/main/resources/db/seed:/seed:ro
+    networks:
+      - yappc-network
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

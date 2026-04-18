@@ -27,7 +27,9 @@ import { usePhaseGates } from '../../../services/canvas/lifecycle';
 import {
     useAIInsights,
     useAIRecommendations,
+    useApplyLifecycleAutomationPlan,
     useExecuteTask,
+    useLifecycleAutomationPlan,
     useNextBestTask,
     useReadinessAnomalies,
 } from '../../../hooks/useLifecycleData';
@@ -108,6 +110,7 @@ export default function Component() {
     const { currentPhase } = usePhaseGates(resolvedProjectId);
     const currentStage = getFOWStageForPhase(currentPhase);
     const [automationFeedback, setAutomationFeedback] = React.useState('');
+    const [decisionDetailVisible, setDecisionDetailVisible] = React.useState(false);
 
     const { data: recommendations = [] } = useAIRecommendations(resolvedProjectId, {
         phase: currentPhase,
@@ -118,6 +121,8 @@ export default function Component() {
     const { data: readinessAnomalies = [] } = useReadinessAnomalies(resolvedProjectId);
     const { data: nextTask } = useNextBestTask(resolvedProjectId, currentPhase);
     const executeTask = useExecuteTask();
+    const { data: automationPlan } = useLifecycleAutomationPlan(resolvedProjectId, currentPhase);
+    const applyAutomationPlan = useApplyLifecycleAutomationPlan();
 
     if (!projectId) {
         return createElement(
@@ -176,6 +181,37 @@ export default function Component() {
                     error instanceof Error
                         ? error.message
                         : 'Unable to start workflow automation.'
+                );
+            }
+        })();
+    };
+
+    const handleOneClickApproval = () => {
+        void (async () => {
+            try {
+                const result = await applyAutomationPlan.mutateAsync({
+                    projectId: resolvedProjectId,
+                    request: {
+                        phase: currentPhase,
+                        oneClickApprove: true,
+                        reason: 'Applied from lifecycle route decision support panel',
+                    },
+                });
+
+                if (result.execution?.transitioned) {
+                    setAutomationFeedback(
+                        `AI one-click approval transitioned ${result.execution.previousPhase} to ${result.execution.currentPhase}.`
+                    );
+                } else if (result.canAutoAdvance) {
+                    setAutomationFeedback('Automation plan refreshed. Project is ready for one-click promotion.');
+                } else {
+                    setAutomationFeedback('Automation plan refreshed. Resolve blockers before one-click promotion.');
+                }
+            } catch (error) {
+                setAutomationFeedback(
+                    error instanceof Error
+                        ? error.message
+                        : 'Unable to apply one-click lifecycle approval.'
                 );
             }
         })();
@@ -413,6 +449,100 @@ export default function Component() {
                 'No workflow automation is ready for this lifecycle stage yet.'
             );
 
+    const decisionSupportContent = automationPlan
+        ? createElement(
+                'div',
+                { className: 'space-y-4' },
+                createElement(
+                    'div',
+                    { className: 'rounded-xl border border-divider px-4 py-4' },
+                    createElement(
+                        'div',
+                        { className: 'flex flex-wrap items-center justify-between gap-3' },
+                        createElement(
+                            'p',
+                            { className: 'text-sm font-semibold text-text-primary' },
+                            'AI decision defaults'
+                        ),
+                        createElement(
+                            'button',
+                            {
+                                type: 'button',
+                                className:
+                                    'rounded-lg border border-divider px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-bg-subtle',
+                                onClick: () => setDecisionDetailVisible((currentValue) => !currentValue),
+                                'data-testid': 'decision-support-toggle',
+                            },
+                            decisionDetailVisible ? 'Hide details' : 'Show details'
+                        )
+                    ),
+                    createElement(
+                        'div',
+                        { className: 'mt-3 grid gap-2 text-xs text-text-secondary sm:grid-cols-2' },
+                        createElement('span', null, `Approval: ${automationPlan.decisionSupport.defaults.approvalMode}`),
+                        createElement('span', null, `Risk: ${automationPlan.decisionSupport.defaults.riskTolerance}`),
+                        createElement('span', null, `Validation: ${automationPlan.decisionSupport.defaults.validationDepth}`),
+                        createElement('span', null, `Owner: ${automationPlan.decisionSupport.defaults.ownerRole}`)
+                    ),
+                    decisionDetailVisible
+                        ? createElement(
+                                'div',
+                                { className: 'mt-4 space-y-2' },
+                                ...automationPlan.decisionSupport.suggestions.map((suggestion) =>
+                                    createElement(
+                                        'article',
+                                        {
+                                            key: suggestion.id,
+                                            className: 'rounded-lg border border-divider px-3 py-3',
+                                        },
+                                        createElement(
+                                            'p',
+                                            { className: 'text-sm font-medium text-text-primary' },
+                                            suggestion.title
+                                        ),
+                                        createElement(
+                                            'p',
+                                            { className: 'mt-1 text-xs text-text-secondary' },
+                                            suggestion.reasoning
+                                        )
+                                    )
+                                )
+                            )
+                        : null,
+                    createElement(
+                        'div',
+                        { className: 'mt-4 flex flex-wrap gap-3' },
+                        createElement(
+                            'button',
+                            {
+                                type: 'button',
+                                className:
+                                    'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50',
+                                disabled: applyAutomationPlan.isPending || !automationPlan.canAutoAdvance,
+                                onClick: handleOneClickApproval,
+                                'data-testid': 'ai-one-click-approval-trigger',
+                            },
+                            applyAutomationPlan.isPending
+                                ? 'Applying one-click approval…'
+                                : 'Apply one-click approval'
+                        ),
+                        createElement(
+                            'span',
+                            { className: 'self-center text-xs text-text-secondary' },
+                            `Readiness ${automationPlan.readiness}%`
+                        )
+                    )
+                )
+            )
+        : createElement(
+                'p',
+                {
+                    className:
+                        'rounded-xl border border-dashed border-divider px-4 py-4 text-sm text-text-secondary',
+                },
+                'Decision support will appear after lifecycle signals are available.'
+            );
+
     return createElement(
         'div',
         { className: 'h-full overflow-auto bg-bg-default' },
@@ -570,6 +700,40 @@ export default function Component() {
                             )
                         ),
                         recommendationsContent
+                    ),
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-decision-support-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-cyan-50 text-sm font-semibold text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300',
+                                },
+                                'DS'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Decision support'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'AI-generated defaults and progressive disclosure to reduce manual decision burden.'
+                                )
+                            )
+                        ),
+                        decisionSupportContent
                     )
                 ),
                 createElement(

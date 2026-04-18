@@ -41,6 +41,30 @@ interface TransitionTimingPrediction {
   predictionConfidence: number | null;
 }
 
+type ApprovalMode = 'auto_with_audit' | 'manual_review';
+type RiskTolerance = 'low' | 'medium' | 'high';
+type ValidationDepth = 'standard' | 'deep';
+
+interface DecisionSupportDefaults {
+  approvalMode: ApprovalMode;
+  riskTolerance: RiskTolerance;
+  validationDepth: ValidationDepth;
+  targetEnvironment: 'staging' | 'production';
+  ownerRole: string;
+}
+
+interface DecisionSupportSuggestion {
+  id: string;
+  title: string;
+  reasoning: string;
+  impact: 'low' | 'medium' | 'high';
+}
+
+interface ProgressiveDisclosureModel {
+  primaryActions: string[];
+  secondaryActions: string[];
+}
+
 const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
   {
     id: 'INTENT',
@@ -302,6 +326,93 @@ function buildTransitionTimingPrediction(
   };
 }
 
+function buildDecisionSupportDefaults(
+  phase: LifecyclePhaseId,
+  readiness: number,
+  blockerCount: number
+): DecisionSupportDefaults {
+  const isLateLifecycle = phase === 'RUN' || phase === 'OBSERVE' || phase === 'IMPROVE';
+  const riskTolerance: RiskTolerance = blockerCount > 0
+    ? 'low'
+    : readiness >= 85
+      ? 'high'
+      : 'medium';
+
+  return {
+    approvalMode: blockerCount === 0 ? 'auto_with_audit' : 'manual_review',
+    riskTolerance,
+    validationDepth: readiness < 75 || blockerCount > 0 ? 'deep' : 'standard',
+    targetEnvironment: isLateLifecycle ? 'production' : 'staging',
+    ownerRole: isLateLifecycle ? 'SRE' : 'Tech Lead',
+  };
+}
+
+function buildDecisionSupportSuggestions(
+  phase: LifecyclePhaseId,
+  readiness: number,
+  blockers: string[]
+): DecisionSupportSuggestion[] {
+  const suggestions: DecisionSupportSuggestion[] = [];
+
+  if (blockers.length > 0) {
+    suggestions.push({
+      id: 'resolve-blockers',
+      title: 'Resolve lifecycle blockers before transition',
+      reasoning: blockers[0],
+      impact: 'high',
+    });
+  }
+
+  if (readiness < 80) {
+    suggestions.push({
+      id: 'raise-readiness',
+      title: 'Raise phase readiness to >= 80',
+      reasoning: `Current readiness is ${readiness}. Completing missing artifacts reduces promotion risk.`,
+      impact: 'high',
+    });
+  }
+
+  if (phase === 'VALIDATE') {
+    suggestions.push({
+      id: 'promote-test-evidence',
+      title: 'Attach passing test evidence to approval packet',
+      reasoning: 'Validation outcomes should be traceable for one-click approvals.',
+      impact: 'medium',
+    });
+  }
+
+  if (phase === 'RUN' || phase === 'OBSERVE') {
+    suggestions.push({
+      id: 'confirm-alert-routes',
+      title: 'Confirm on-call alert routing before promotion',
+      reasoning: 'Operational readiness is a precondition for late lifecycle transitions.',
+      impact: 'high',
+    });
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push({
+      id: 'proceed',
+      title: 'Proceed with one-click promotion',
+      reasoning: 'No blocking risks detected in current lifecycle context.',
+      impact: 'medium',
+    });
+  }
+
+  return suggestions;
+}
+
+function buildProgressiveDisclosureModel(
+  suggestions: DecisionSupportSuggestion[]
+): ProgressiveDisclosureModel {
+  const primaryActions = suggestions.slice(0, 2).map((item) => item.id);
+  const secondaryActions = suggestions.slice(2).map((item) => item.id);
+  return {
+    primaryActions,
+    secondaryActions,
+  };
+}
+
 const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
   // ========================================================================
   // Phases (P0 - Critical)
@@ -525,6 +636,140 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         previousPhase: currentPhase,
         currentPhase: targetPhase,
         transitionedAt: new Date(),
+      };
+    }
+  );
+
+  /**
+   * POST /projects/:projectId/automation/plan
+   * Build AI-driven workflow automation plan and optionally apply one-click transition approval.
+   */
+  fastify.post(
+    '/projects/:projectId/automation/plan',
+    { preHandler: requirePermission('workflow', 'update') },
+    async (request, reply) => {
+      const { projectId } = request.params as { projectId: string };
+      const body = (request.body as {
+        phase?: string;
+        oneClickApprove?: boolean;
+        userId?: string;
+        reason?: string;
+      }) || {};
+
+      if (!validateProjectId(projectId)) {
+        return reply.status(400).send({
+          error: 'Invalid projectId. Must be a non-empty string.',
+          received: projectId,
+        });
+      }
+
+      const prisma = getPrismaClient();
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          id: true,
+          lifecyclePhase: true,
+          name: true,
+        },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      const currentPhase = isLifecyclePhaseId(body.phase || '')
+        ? (body.phase as LifecyclePhaseId)
+        : (isLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
+          ? (project.lifecyclePhase as LifecyclePhaseId)
+          : 'INTENT');
+
+      const approvedArtifacts = await prisma.lifecycleArtifact.findMany({
+        where: {
+          projectId,
+          phase: currentPhase,
+          status: 'approved',
+        },
+        select: {
+          type: true,
+        },
+      });
+
+      const completedArtifacts = approvedArtifacts.map((artifact) => artifact.type);
+      const preview = buildNextPhasePreview(currentPhase, completedArtifacts);
+      const timingPrediction = buildTransitionTimingPrediction(
+        currentPhase,
+        preview,
+        completedArtifacts
+      );
+
+      const defaults = buildDecisionSupportDefaults(
+        currentPhase,
+        preview.readiness,
+        preview.blockers.length
+      );
+      const suggestions = buildDecisionSupportSuggestions(
+        currentPhase,
+        preview.readiness,
+        preview.blockers
+      );
+      const progressiveDisclosure = buildProgressiveDisclosureModel(suggestions);
+
+      let execution: {
+        transitioned: boolean;
+        previousPhase: LifecyclePhaseId;
+        currentPhase: LifecyclePhaseId;
+        activityLogId?: string;
+      } | null = null;
+
+      if (body.oneClickApprove && preview.canAdvance && preview.nextPhase) {
+        const updatedProject = await prisma.project.update({
+          where: { id: projectId },
+          data: { lifecyclePhase: preview.nextPhase },
+          select: { lifecyclePhase: true },
+        });
+
+        const activity = await prisma.lifecycleActivityLog.create({
+          data: {
+            projectId,
+            userId: body.userId || 'system',
+            action: 'AI_ONE_CLICK_TRANSITION_APPROVED',
+            description: `AI-approved lifecycle transition from ${currentPhase} to ${preview.nextPhase}`,
+            metadata: {
+              projectName: project.name,
+              fromPhase: currentPhase,
+              toPhase: preview.nextPhase,
+              readiness: preview.readiness,
+              reason: body.reason || 'AI-driven one-click approval',
+            },
+          },
+          select: { id: true },
+        });
+
+        execution = {
+          transitioned: true,
+          previousPhase: currentPhase,
+          currentPhase: updatedProject.lifecyclePhase as LifecyclePhaseId,
+          activityLogId: activity.id,
+        };
+      }
+
+      return {
+        projectId,
+        currentPhase,
+        nextPhase: preview.nextPhase,
+        canAutoAdvance: preview.canAdvance,
+        readiness: preview.readiness,
+        blockers: preview.blockers,
+        estimatedReadyIn: timingPrediction.estimatedReadyIn,
+        estimatedReadyInHours: timingPrediction.estimatedReadyInHours,
+        predictionConfidence: timingPrediction.predictionConfidence,
+        decisionSupport: {
+          defaults,
+          suggestions,
+          progressiveDisclosure,
+        },
+        execution,
+        generatedAt: new Date().toISOString(),
       };
     }
   );

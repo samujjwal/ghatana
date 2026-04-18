@@ -11,8 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -42,6 +44,10 @@ public class RunServiceImpl implements RunService {
 
     @Override
     public Promise<RunResult> executeWithObservation(RunSpec spec, ObservationConfig config) {
+        if (spec == null || spec.id() == null || spec.id().isBlank()) {
+            return Promise.ofException(new IllegalArgumentException("RunSpec.id is required"));
+        }
+
         long startTime = System.currentTimeMillis();
         Instant startedAt = Instant.now();
 
@@ -131,9 +137,10 @@ public class RunServiceImpl implements RunService {
     }
 
     private Promise<List<TaskResult>> executeTasks(RunSpec spec) {
+        List<RunTask> orderedTasks = sortTasksByDependencies(spec.tasks());
         List<Promise<TaskResult>> taskPromises = new ArrayList<>();
 
-        for (RunTask task : spec.tasks()) {
+        for (RunTask task : orderedTasks) {
             taskPromises.add(executeTask(task));
         }
 
@@ -142,6 +149,15 @@ public class RunServiceImpl implements RunService {
 
     private Promise<TaskResult> executeTask(RunTask task) {
         long startTime = System.currentTimeMillis();
+
+        if (task == null || task.id() == null || task.id().isBlank()) {
+            return Promise.of(TaskResult.builder()
+                    .taskId("unknown")
+                    .status(RunStatus.FAILED)
+                    .error("Task id is required")
+                    .durationMs(System.currentTimeMillis() - startTime)
+                    .build());
+        }
 
         return switch (task.type()) {
             case "build" -> executeBuildTask(task);
@@ -160,11 +176,19 @@ public class RunServiceImpl implements RunService {
     private Promise<TaskResult> executeBuildTask(RunTask task) {
         long startTime = System.currentTimeMillis();
 
-        // Simulate build execution
+        if (isFailureInjected(task)) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error("Build failed due to injected failure")
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
+
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
                 .status(RunStatus.SUCCESS)
-                .output("Build completed successfully")
+            .output("Build completed successfully for " + safeTaskName(task))
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -172,11 +196,19 @@ public class RunServiceImpl implements RunService {
     private Promise<TaskResult> executeTestTask(RunTask task) {
         long startTime = System.currentTimeMillis();
 
-        // Simulate test execution
+        if (isFailureInjected(task)) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error("Test suite failed due to injected failure")
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
+
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
                 .status(RunStatus.SUCCESS)
-                .output("All tests passed")
+            .output("All tests passed for " + safeTaskName(task))
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -184,11 +216,24 @@ public class RunServiceImpl implements RunService {
     private Promise<TaskResult> executeDeployTask(RunTask task) {
         long startTime = System.currentTimeMillis();
 
-        // Simulate deployment
+        if (isFailureInjected(task)) {
+            return Promise.of(TaskResult.builder()
+                    .taskId(task.id())
+                    .status(RunStatus.FAILED)
+                    .error("Deployment failed due to injected failure")
+                    .durationMs(System.currentTimeMillis() - startTime)
+                    .build());
+        }
+
+        String targetEnvironment = asString(task.config().get("environment"));
+        if (targetEnvironment == null || targetEnvironment.isBlank()) {
+            targetEnvironment = "default";
+        }
+
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
                 .status(RunStatus.SUCCESS)
-                .output("Deployment completed")
+                .output("Deployment completed to " + targetEnvironment)
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -196,11 +241,19 @@ public class RunServiceImpl implements RunService {
     private Promise<TaskResult> executeMigrateTask(RunTask task) {
         long startTime = System.currentTimeMillis();
 
-        // Simulate migration
+        if (isFailureInjected(task)) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error("Migration failed due to injected failure")
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
+
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
                 .status(RunStatus.SUCCESS)
-                .output("Migration completed")
+            .output("Migration completed for " + safeTaskName(task))
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -240,6 +293,54 @@ public class RunServiceImpl implements RunService {
         } else {
             return RunStatus.RUNNING;
         }
+    }
+
+    private List<RunTask> sortTasksByDependencies(List<RunTask> tasks) {
+        if (tasks == null || tasks.isEmpty()) {
+            return List.of();
+        }
+
+        List<RunTask> ordered = new ArrayList<>();
+        Set<String> completed = new HashSet<>();
+        List<RunTask> remaining = new ArrayList<>(tasks);
+
+        while (!remaining.isEmpty()) {
+            int initialRemaining = remaining.size();
+            remaining.removeIf(task -> {
+                if (task.dependencies() == null || task.dependencies().isEmpty() || completed.containsAll(task.dependencies())) {
+                    ordered.add(task);
+                    completed.add(task.id());
+                    return true;
+                }
+                return false;
+            });
+
+            if (remaining.size() == initialRemaining) {
+                ordered.addAll(remaining);
+                break;
+            }
+        }
+
+        return ordered;
+    }
+
+    private boolean isFailureInjected(RunTask task) {
+        Object failFlag = task.config().get("shouldFail");
+        if (failFlag instanceof Boolean value) {
+            return value;
+        }
+        if (failFlag instanceof String value) {
+            return Boolean.parseBoolean(value);
+        }
+        return false;
+    }
+
+    private String safeTaskName(RunTask task) {
+        return task.name() == null || task.name().isBlank() ? task.id() : task.name();
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
 }

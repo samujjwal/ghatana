@@ -20,10 +20,6 @@ vi.mock('../../db', () => ({
   },
 }));
 
-vi.mock('../../middleware/deprecation', () => ({
-  markDeprecated: () => undefined,
-}));
-
 vi.mock('../../middleware/rbac.middleware', () => ({
   requirePermission: () => async () => undefined,
 }));

@@ -1,7 +1,7 @@
 # YAPPC Architecture
 
 **Status:** Active  
-**Last Updated:** 2026-04-01  
+**Last Updated:** 2026-04-17  
 **Owner:** Architecture Team
 
 > **Changes since 2026-03-24:**
@@ -11,6 +11,8 @@
 > - Data persistence: `AgentStateRepository`, `ConversationRepository`, `JdbcHumanApprovalService` live in `infrastructure/datacloud`
 > - Observability: `AIMetricsCollector`, `BusinessMetrics`, Prometheus alerting rules added
 > - JMH performance benchmarks added to `core/services-lifecycle` and `core/ai`
+> - Lifecycle route decision-support panel added with AI defaults, progressive-disclosure guidance, and one-click automation approval trigger
+> - `LifecycleApiController` now emits DAG execution metadata with per-phase timing telemetry and graceful failure envelopes
 
 ---
 
@@ -22,6 +24,27 @@ YAPPC is an **AI-powered project scaffolding and code-generation platform** buil
 - **Data-Cloud** as canonical persistence layer
 - **Multi-tenancy** with strict tenant isolation at every layer
 - **Event-driven** for cross-module and cross-product communication
+
+### Implementation Reality Snapshot (2026-04-17)
+
+- Architecture direction is stable, but implementation maturity is uneven by phase.
+- AI-Native maturity is currently early-stage: real provider integrations exist, while implicit AI automation remains in progress.
+- Several lifecycle capabilities are implemented with deterministic fallback paths to preserve reliability during rollout.
+- API compatibility is maintained across `/api/*` and `/api/v1/*` prefixes while migration continues.
+- Lifecycle automation planning is now available in API gateway route `POST /projects/:projectId/automation/plan` with explicit decision-support defaults.
+
+### Known Limitations by Phase (2026-04-17)
+
+| Lifecycle Phase | Status | Limitation Focus |
+|----------------|--------|------------------|
+| INTENT | Partial | Intent capture is implemented, while deeper AI-native interpretation remains in progress |
+| SHAPE | Partial | Shape derivation exists, but high-fidelity automated architecture modeling is not complete |
+| VALIDATE | Partial | Validation endpoints exist; broader policy automation and confidence routing remain incomplete |
+| GENERATE | Partial | Generation paths are available, with incomplete quality gates and artifact assurance loops |
+| RUN | Early | Full execution orchestration and production-hardening flows are still being integrated |
+| OBSERVE | Early | Metrics/traces are present, but complete observability-driven automation is not yet in place |
+| LEARN | Early | Learning-service feedback loops are partial and not universally connected across phases |
+| EVOLVE | Early | Evolution workflows are available in parts but not end-to-end across lifecycle state |
 
 ---
 

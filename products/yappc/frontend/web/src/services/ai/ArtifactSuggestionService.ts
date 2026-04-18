@@ -21,7 +21,9 @@ export interface ArtifactSuggestion {
     title: string;
     summary: string;
     reasoning: string;
-    confidence: number; // 0-100
+    confidence: number; // 0-100 heuristic score
+    confidenceType: 'rule_based_heuristic';
+    confidenceReason: string;
     suggestedPayload: Record<string, unknown>;
 }
 
