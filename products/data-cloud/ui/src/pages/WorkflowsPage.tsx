@@ -12,6 +12,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import {
     Play,
     Pause,
@@ -119,15 +120,46 @@ function HintTypeIcon({ type }: { type: PipelineOptimisationHint['type'] }) {
  * DC-E5-S1 — AI Journey #4.
  */
 function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
+    const { data: capabilityRegistry } = useCapabilityRegistry();
+    const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai.assist', 'ai_assist', 'assist']);
     const { data, isLoading, isError } = useQuery({
         queryKey: aiQueryKeys.pipelineHints(pipelineId),
         queryFn: () => getPipelineOptimisationHints(pipelineId),
         staleTime: 5 * 60 * 1_000,
         retry: false,
         refetchOnWindowFocus: false,
+        enabled: aiAssistCapability?.status !== 'unavailable',
     });
 
     const hints = data?.data?.hints ?? [];
+
+    if (aiAssistCapability?.status === 'unavailable') {
+        return (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <div className="flex items-center gap-2 font-medium">
+                    <AlertTriangle className="h-4 w-4" />
+                    AI optimisation hints unavailable
+                </div>
+                <p className="mt-1">
+                    Runtime capability truth reports AI assist as unavailable in this deployment. Workflow monitoring remains available without generated hints.
+                </p>
+            </div>
+        );
+    }
+
+    if (aiAssistCapability?.status === 'degraded') {
+        return (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <div className="flex items-center gap-2 font-medium">
+                    <AlertTriangle className="h-4 w-4" />
+                    AI optimisation hints degraded
+                </div>
+                <p className="mt-1">
+                    {aiAssistCapability.detail ?? 'AI assist is degraded. Any generated hints should be treated as advisory.'}
+                </p>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (

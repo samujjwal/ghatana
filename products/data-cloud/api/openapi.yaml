@@ -1218,6 +1218,236 @@ components:
         requestId:
           type: string
 
+    CollectionContextField:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+      additionalProperties: true
+
+    CollectionContextSchema:
+      type: object
+      required: [fields]
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/CollectionContextField"
+        constraints:
+          $ref: "#/components/schemas/FreeformObject"
+      additionalProperties: true
+
+    CollectionContextLineage:
+      type: object
+      required: [upstream, downstream]
+      properties:
+        upstream:
+          type: array
+          items:
+            type: string
+        downstream:
+          type: array
+          items:
+            type: string
+
+    CollectionContextGovernance:
+      type: object
+      required: [retentionTier, complianceStatus, piiFields]
+      properties:
+        retentionTier:
+          type: string
+        complianceStatus:
+          type: string
+        piiFields:
+          type: array
+          items:
+            type: string
+        policyReason:
+          type: string
+
+    CollectionContextFreshness:
+      type: object
+      required: [sampledAt]
+      properties:
+        sampledAt:
+          type: string
+          format: date-time
+        lastEntityUpdatedAt:
+          type: string
+          format: date-time
+        lastEntityCreatedAt:
+          type: string
+          format: date-time
+
+    CollectionContextTopValue:
+      type: object
+      required: [value, count]
+      properties:
+        value:
+          type: string
+        count:
+          type: integer
+          format: int64
+
+    CollectionContextStatisticalProfile:
+      type: object
+      required: [entityCount, sampleSize, nullRates, topValues]
+      properties:
+        entityCount:
+          type: integer
+          format: int64
+        sampleSize:
+          type: integer
+          format: int32
+        nullRates:
+          type: object
+          additionalProperties:
+            type: number
+        topValues:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/CollectionContextTopValue"
+
+    CollectionContextRelationship:
+      type: object
+      required: [id, source, target, type]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        type:
+          type: string
+        depth:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 3
+        properties:
+          $ref: "#/components/schemas/FreeformObject"
+
+    CollectionContextResponse:
+      type: object
+      required: [collection, tenantId, requestId, generatedAt, generationTimeMs, schema, lineage, governance, freshness, statisticalProfile]
+      properties:
+        collection:
+          type: string
+        tenantId:
+          type: string
+        requestId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        generationTimeMs:
+          type: integer
+          format: int64
+        schema:
+          $ref: "#/components/schemas/CollectionContextSchema"
+        lineage:
+          $ref: "#/components/schemas/CollectionContextLineage"
+        governance:
+          $ref: "#/components/schemas/CollectionContextGovernance"
+        freshness:
+          $ref: "#/components/schemas/CollectionContextFreshness"
+        statisticalProfile:
+          $ref: "#/components/schemas/CollectionContextStatisticalProfile"
+        relationshipDepth:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 3
+        relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/CollectionContextRelationship"
+
+    McpToolDefinition:
+      type: object
+      required: [name, description, inputSchema]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        inputSchema:
+          $ref: "#/components/schemas/FreeformObject"
+
+    McpToolRegistryResponse:
+      type: object
+      required: [tools, requestId, tenantId, generatedAt]
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/McpToolDefinition"
+        requestId:
+          type: string
+        tenantId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    McpToolCallRequest:
+      type: object
+      required: [jsonrpc, id, method, params]
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        id:
+          type: string
+        method:
+          type: string
+          enum: ["tools/call"]
+        params:
+          type: object
+          required: [name, arguments]
+          properties:
+            name:
+              type: string
+            arguments:
+              $ref: "#/components/schemas/FreeformObject"
+
+    McpToolCallResponse:
+      type: object
+      required: [jsonrpc, id]
+      properties:
+        jsonrpc:
+          type: string
+          enum: ["2.0"]
+        id:
+          type: string
+        result:
+          type: object
+          properties:
+            content:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  text:
+                    type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+
     AnomalyQueryItem:
       type: object
       required: [eventId, eventType, timestamp, collection, tenantId, anomalyPayload]
@@ -3423,6 +3653,63 @@ paths:
             application/json:
               schema:
                 type: object
+
+  /api/v1/context/{collection}:
+    get:
+      summary: Get a unified live context document for a collection
+      operationId: apiV1ContextCollectionGet
+      tags: [context]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: depth
+          in: query
+          required: false
+          description: Relationship traversal depth for graph-connected context. Values above 3 are clamped.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 3
+            default: 1
+      responses:
+        "200":
+          description: Unified collection context with schema, lineage, governance, freshness, and statistical profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionContextResponse"
+        "404": { description: Collection not found. }
+
+  /mcp/v1/tools:
+    get:
+      summary: List MCP tools exposed by Data Cloud
+      operationId: mcpV1ToolsGet
+      tags: [mcp]
+      responses:
+        "200":
+          description: MCP tool registry for agent discovery.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpToolRegistryResponse"
+    post:
+      summary: Invoke a Data Cloud MCP tool using JSON-RPC 2.0
+      operationId: mcpV1ToolsPost
+      tags: [mcp]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/McpToolCallRequest"
+      responses:
+        "200":
+          description: JSON-RPC response containing tool execution output.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/McpToolCallResponse"
 
   /api/v1/context/{collection}/rag:
     post:

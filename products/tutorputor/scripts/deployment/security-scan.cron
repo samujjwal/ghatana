@@ -1,0 +1,14 @@
+# TutorPutor Security Scan Schedule
+#
+# Automated security scanning schedule for TutorPutor.
+# Copy this to /etc/cron.d/tutorputor-security and reload cron.
+#
+
+# Weekly security audit (Sundays at 4:00 AM UTC)
+0 4 * * 0 root /Users/samujjwal/Development/ghatana/products/tutorputor/scripts/security-audit.sh >> /var/log/tutorputor/security.log 2>&1
+
+# Daily dependency vulnerability check (6:00 AM UTC)
+0 6 * * * root cd /Users/samujjwal/Development/ghatana/products/tutorputor && pnpm audit --audit-level moderate >> /var/log/tutorputor/dependency-audit.log 2>&1
+
+# Daily secret detection scan (8:00 AM UTC)
+0 8 * * * root /Users/samujjwal/Development/ghatana/products/tutorputor/scripts/scan-secrets.sh >> /var/log/tutorputor/secret-scan.log 2>&1

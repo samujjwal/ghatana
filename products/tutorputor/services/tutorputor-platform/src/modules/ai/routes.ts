@@ -16,6 +16,8 @@ import type {
 import { AIContentGenerationService } from "./AIContentGenerationService.js";
 import { getTenantId, requireRole } from "../../core/http/requestContext.js";
 import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
+import { aiQuerySchema } from "../../validation/validator.js";
+import { validateBody } from "../../validation/middleware/validation.js";
 
 type AiRegistryClient = typeof defaultAiRegistryClient;
 
@@ -120,7 +122,10 @@ export async function registerAIRoutes(
   const aiContentService = new AIContentGenerationService(deps.aiProxyService);
 
   // AI Tutor query endpoint
-  app.post("/tutor/query", async (req, reply) => {
+  app.post(
+    "/tutor/query",
+    { preHandler: validateBody(aiQuerySchema) },
+    async (req, reply) => {
     if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
       return;
     }

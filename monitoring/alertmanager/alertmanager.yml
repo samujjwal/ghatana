@@ -143,6 +143,41 @@ route:
       repeat_interval: 4h
       continue: false
 
+    # ------------------------------------------------------------------
+    # 10. TutorPutor critical alerts — immediate page (< 1 min)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "tutorputor"
+        - severity = "critical"
+      receiver: tutorputor-critical
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 11. TutorPutor warning alerts — batched Slack notification
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "tutorputor"
+        - severity = "warning"
+      receiver: tutorputor-warning
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 12. TutorPutor catch-all
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "tutorputor"
+      receiver: tutorputor-warning
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: false
+
 # ---------------------------------------------------------------------------
 # Inhibition rules — suppress lower-severity alerts when critical fires
 # ---------------------------------------------------------------------------
@@ -169,6 +204,14 @@ inhibit_rules:
     target_matchers:
       - severity = "warning"
       - product =~ "phr|finance"
+    equal: ["alertname", "product"]
+
+  - source_matchers:
+      - severity = "critical"
+      - product = "tutorputor"
+    target_matchers:
+      - severity = "warning"
+      - product = "tutorputor"
     equal: ["alertname", "product"]
 
 # ---------------------------------------------------------------------------
@@ -313,6 +356,55 @@ receivers:
           *Alert:* {{ .CommonLabels.alertname }}
           *Severity:* {{ .CommonLabels.severity }}
           *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+
+  # ---- TutorPutor: critical (Slack oncall + PagerDuty) ----
+  - name: tutorputor-critical
+    slack_configs:
+      - channel: "#tutorputor-oncall"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
+        title: "🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — tutorputor"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          *Layer:* {{ .CommonLabels.layer }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+        actions:
+          - type: button
+            text: "View in Grafana"
+            url: "http://grafana.monitoring.svc.cluster.local:3000/d/tutorputor"
+    pagerduty_configs:
+      - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
+        description: "{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}"
+        severity: critical
+        details:
+          product: "{{ .CommonLabels.product }}"
+          alert_name: "{{ .CommonLabels.alertname }}"
+          layer: "{{ .CommonLabels.layer }}"
+          description: "{{ .CommonAnnotations.description }}"
+
+  # ---- TutorPutor: warning (Slack alerts channel) ----
+  - name: tutorputor-warning
+    slack_configs:
+      - channel: "#tutorputor-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
+        title: "⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — tutorputor"
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          *Layer:* {{ .CommonLabels.layer }}
           {{ range .Alerts }}
           *Description:* {{ .Annotations.description }}
           *Runbook:* {{ .Annotations.runbook_url }}

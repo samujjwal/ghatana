@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tutorputor
+  labels:
+    name: tutorputor
+    environment: production
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tutorputor-quota
+  namespace: tutorputor
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "10"
+    requests.storage: "200Gi"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tutorputor-limits
+  namespace: tutorputor
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      type: Container

@@ -15,10 +15,12 @@
 
 import { apiClient } from './client';
 import {
+    CollectionContextResponseSchema,
     ContextResponseSchema,
     ContextSnapshotSchema,
     UpsertContextRequestSchema,
     UpsertContextResponseSchema,
+    type CollectionContextResponse,
     type ContextResponse,
     type ContextSnapshot,
     type UpsertContextRequest,
@@ -26,6 +28,7 @@ import {
 } from '../../contracts/schemas';
 
 export type {
+    CollectionContextResponse,
     ContextResponse,
     ContextSnapshot,
     UpsertContextResponse,
@@ -39,6 +42,10 @@ export type {
  */
 export type ContextEntries = Record<string, unknown>;
 
+export interface CollectionContextOptions {
+    depth?: number;
+}
+
 // ─── Client functions ─────────────────────────────────────────────────────────
 
 /**
@@ -49,6 +56,22 @@ export type ContextEntries = Record<string, unknown>;
 export async function getContext(): Promise<ContextResponse> {
     const response = await apiClient.get<ContextResponse>('/context');
     return ContextResponseSchema.parse(response);
+}
+
+/**
+ * Fetches the unified collection-scoped context document.
+ *
+ * @param collection - Logical collection name.
+ * @returns Live schema, lineage, governance, freshness, and statistical profile.
+ */
+export async function getCollectionContext(
+    collection: string,
+    options?: CollectionContextOptions,
+): Promise<CollectionContextResponse> {
+    const response = await apiClient.get<CollectionContextResponse>(`/context/${encodeURIComponent(collection)}`, {
+        params: options?.depth ? { depth: options.depth } : undefined,
+    });
+    return CollectionContextResponseSchema.parse(response);
 }
 
 /**

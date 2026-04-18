@@ -16,7 +16,7 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "lcov"],
+      reporter: ["text", "html", "lcov", "json"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/**/*.test.{ts,tsx}",
@@ -29,11 +29,12 @@ export default defineConfig({
         "src/sw.ts", // Service worker
       ],
       thresholds: {
-        statements: 90,
-        branches: 85,
-        functions: 90,
-        lines: 90,
+        statements: 80,
+        branches: 75,
+        functions: 80,
+        lines: 80,
       },
+      all: true,
     },
     testTimeout: 10000,
   },

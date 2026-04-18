@@ -78,6 +78,7 @@ import {
   DetectedAnomalySchema,
   SearchResultSchema,
   SimilarEntitiesResponseSchema,
+  CollectionContextResponseSchema,
   CollectionRagRequestSchema,
   CollectionRagResponseSchema,
   AnomalyQueryResponseSchema,
@@ -1073,6 +1074,53 @@ describe('Contract-Backed Route Tests', () => {
       expect(upsertResponse.version).toBe(9);
       expect(snapshot.count).toBe(3);
     });
+
+    it('collection context payloads pass contract validation', () => {
+      const response = CollectionContextResponseSchema.parse({
+        collection: 'orders',
+        tenantId: 'tenant-alpha',
+        requestId: 'ctx-orders-1',
+        generatedAt: '2026-04-18T14:00:00Z',
+        generationTimeMs: 18,
+        schema: {
+          fields: [
+            { name: 'orderId', type: 'string', required: true },
+            { name: 'email', type: 'string', required: false },
+          ],
+        },
+        lineage: {
+          upstream: ['raw_orders'],
+          downstream: ['invoice_snapshots'],
+        },
+        governance: {
+          retentionTier: 'compliance',
+          complianceStatus: 'active',
+          piiFields: ['email'],
+        },
+        freshness: {
+          sampledAt: '2026-04-18T14:00:00Z',
+          lastEntityUpdatedAt: '2026-04-18T13:59:00Z',
+        },
+        statisticalProfile: {
+          entityCount: 42,
+          sampleSize: 10,
+          nullRates: { email: 0.1, orderId: 0 },
+          topValues: {
+            email: [{ value: 'null', count: 1 }],
+            orderId: [{ value: 'order-1', count: 2 }],
+          },
+        },
+        relationshipDepth: 3,
+        relationships: [
+          { id: 'edge-1', source: 'orders', target: 'customers', type: 'BELONGS_TO', depth: 1 },
+        ],
+      });
+
+      expect(response.collection).toBe('orders');
+      expect(response.schema.fields[0]?.name).toBe('orderId');
+      expect(response.lineage.upstream).toContain('raw_orders');
+      expect(response.relationshipDepth).toBe(3);
+    });
   });
 
   describe('Lineage contracts', () => {
@@ -1529,9 +1577,11 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/brain/salience/{itemId}',
         '/api/v1/memory',
         '/api/v1/context',
+        '/api/v1/context/{collection}',
         '/api/v1/context/{collection}/rag',
         '/api/v1/context/keys/{key}',
         '/api/v1/context/snapshot',
+        '/mcp/v1/tools',
         '/api/v1/learning/trigger',
         '/api/v1/learning/status',
         '/api/v1/governance/privacy/pii-fields',
@@ -1693,11 +1743,21 @@ describe('Contract-Backed Route Tests', () => {
 
     it('keeps the canonical context routes visible to contract coverage', () => {
       expect(canonicalOpenApi).toContain('/api/v1/context:');
+      expect(canonicalOpenApi).toContain('/api/v1/context/{collection}:');
       expect(canonicalOpenApi).toContain('/api/v1/context/{collection}/rag:');
       expect(canonicalOpenApi).toContain('/api/v1/context/keys/{key}:');
       expect(canonicalOpenApi).toContain('/api/v1/context/snapshot:');
+      expect(canonicalOpenApi).toContain('/mcp/v1/tools:');
+      expect(canonicalOpenApi).toContain('CollectionContextResponse:');
+      expect(canonicalOpenApi).toContain('McpToolRegistryResponse:');
+      expect(canonicalOpenApi).toContain('McpToolCallRequest:');
+      expect(canonicalOpenApi).toContain('McpToolCallResponse:');
       expect(canonicalOpenApi).toContain('CollectionRagRequest:');
       expect(canonicalOpenApi).toContain('CollectionRagResponse:');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/CollectionContextResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/McpToolRegistryResponse"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/McpToolCallRequest"');
+      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/McpToolCallResponse"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/CollectionRagRequest"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/CollectionRagResponse"');
     });

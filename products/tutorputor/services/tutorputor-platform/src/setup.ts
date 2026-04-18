@@ -38,8 +38,33 @@ import { vrRoutes } from "./modules/vr/vr-routes.js";
 import { notificationRoutes } from "./modules/notifications/index.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
 import { SubscriptionServiceImpl } from "./modules/payments/service.js";
+import { featureFlagsModule } from "./modules/feature-flags/index.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+
+let redisClient: Redis | null = null;
+
+export function getRedisClient(): Redis {
+  if (!redisClient) {
+    redisClient = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times: number) => {
+        if (times > 3) {
+          return null;
+        }
+        return Math.min(times * 50, 2000);
+      },
+    });
+  }
+  return redisClient;
+}
+
+export function closeRedisClient(): void {
+  if (redisClient) {
+    redisClient.quit();
+    redisClient = null;
+  }
+}
 
 function requireEnv(name: string, fallbackForTest?: string): string {
   const value = process.env[name];
@@ -375,7 +400,7 @@ export async function setupPlatform(
   );
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
-    apiVersion: "2026-02-25.clover",
+    apiVersion: "2026-03-25.dahlia",
   });
   const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);
   await app.register(
@@ -388,6 +413,10 @@ export async function setupPlatform(
     { prefix: "/api/v1" },
   );
   app.log.info("✅ Payment/subscription routes registered");
+
+  // Feature flags: /api/v1/admin/feature-flags
+  await app.register(featureFlagsModule, { prefix: "/api/v1/admin" });
+  app.log.info("✅ Feature flags module registered");
 
   const shouldStartContentWorker =
     options.startContentWorker ??

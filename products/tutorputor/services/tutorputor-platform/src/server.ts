@@ -3,6 +3,8 @@ import pino from "pino";
 import "./types/fastify.js";
 import { setupPlatform } from "./setup.js";
 import { getConfig } from "./config/config.js";
+import { initializeTracing } from "./monitoring/tracing.js";
+import { tracingMiddleware } from "./monitoring/middleware/tracing.js";
 
 const config = getConfig();
 
@@ -10,6 +12,9 @@ const config = getConfig();
 let isShuttingDown = false;
 
 async function bootstrap() {
+  // Initialize distributed tracing
+  await initializeTracing();
+
   const app = Fastify({
     logger: {
       level: config.LOG_LEVEL,
@@ -29,6 +34,9 @@ async function bootstrap() {
         ? true
         : process.env.CONTENT_WORKER_ENABLED === "true",
   });
+
+  // Add tracing middleware for HTTP requests
+  app.addHook('onRequest', tracingMiddleware);
 
   await app.listen({ port: config.PORT, host: "0.0.0.0" });
   app.log.info(

@@ -4,13 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm -C ../../libs/tutorputor-core build && vite",
-    "build": "pnpm -C ../../libs/tutorputor-core build && tsc && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
-    "lint": "../../../../node_modules/.bin/eslint src/ --max-warnings 0",
-    "typecheck": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "lint": "../../../../node_modules/.bin/eslint . --ext ts,tsx --max-warnings 0",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",

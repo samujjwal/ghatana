@@ -3,12 +3,28 @@ import { Queue } from "bullmq";
 export const CONTENT_GENERATION_QUEUE = "content-generation";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
+export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface ContentGenerationJobOptions {
+  priority?: JobPriority;
+  delay?: number;
+  attempts?: number;
+  backoff?: {
+    type: 'exponential' | 'fixed';
+    delay: number;
+  };
+  jobId?: string;
+}
+
 export type ContentGenerationQueueLike = {
   add: (
     name: string,
     data: object,
-    opts?: Record<string, unknown>,
+    opts?: ContentGenerationJobOptions,
   ) => Promise<{ id: string | number | null | undefined }>;
+  addBulk: (
+    jobs: Array<{ name: string; data: object; opts?: ContentGenerationJobOptions }>,
+  ) => Promise<{ id: string | number | null | undefined }[]>;
 };
 
 let queueSingleton: ContentGenerationQueueLike | null = null;
@@ -29,6 +45,58 @@ export function queueConnectionFromUrl(redisUrl: string): {
   };
 }
 
+/**
+ * Convert job priority to BullMQ priority number
+ * Higher number = higher priority (BullMQ uses 1-10)
+ */
+export function priorityToNumber(priority: JobPriority): number {
+  switch (priority) {
+    case 'low':
+      return 1;
+    case 'normal':
+      return 5;
+    case 'high':
+      return 8;
+    case 'urgent':
+      return 10;
+    default:
+      return 5;
+  }
+}
+
+/**
+ * Convert job options to BullMQ options
+ */
+export function toBullMQOptions(opts?: ContentGenerationJobOptions): Record<string, unknown> {
+  if (!opts) {
+    return {};
+  }
+
+  const bullMQOptions: Record<string, unknown> = {};
+
+  if (opts.priority) {
+    bullMQOptions.priority = priorityToNumber(opts.priority);
+  }
+
+  if (opts.delay) {
+    bullMQOptions.delay = opts.delay;
+  }
+
+  if (opts.attempts) {
+    bullMQOptions.attempts = opts.attempts;
+  }
+
+  if (opts.backoff) {
+    bullMQOptions.backoff = opts.backoff;
+  }
+
+  if (opts.jobId) {
+    bullMQOptions.jobId = opts.jobId;
+  }
+
+  return bullMQOptions;
+}
+
 export function getContentGenerationQueue(): ContentGenerationQueueLike {
   if (!queueSingleton) {
     const disableQueue =
@@ -42,11 +110,44 @@ export function getContentGenerationQueue(): ContentGenerationQueueLike {
             typeof opts?.["jobId"] === "string" ? opts["jobId"] : "noop";
           return { id };
         },
+        async addBulk(jobs) {
+          return jobs.map(job => {
+            const id = typeof job.opts?.["jobId"] === "string" ? job.opts["jobId"] : "noop";
+            return { id };
+          });
+        },
       };
     } else {
-      queueSingleton = new Queue<any, any, string>(CONTENT_GENERATION_QUEUE, {
+      const queue = new Queue<any, any, string>(CONTENT_GENERATION_QUEUE, {
         connection: queueConnectionFromUrl(REDIS_URL),
-      }) as unknown as ContentGenerationQueueLike;
+        defaultJobOptions: {
+          removeOnComplete: {
+            count: 1000,
+            age: 3600, // 1 hour
+          },
+          removeOnFail: {
+            count: 5000,
+            age: 86400, // 24 hours
+          },
+        },
+      });
+
+      queueSingleton = {
+        add: async (name, data, opts) => {
+          const bullMQOpts = toBullMQOptions(opts);
+          const job = await queue.add(name, data, bullMQOpts);
+          return { id: job.id };
+        },
+        addBulk: async (jobs) => {
+          const bullMQJobs = jobs.map(job => ({
+            name: job.name,
+            data: job.data,
+            opts: toBullMQOptions(job.opts),
+          }));
+          const addedJobs = await queue.addBulk(bullMQJobs);
+          return addedJobs.map(job => ({ id: job.id }));
+        },
+      } as unknown as ContentGenerationQueueLike;
     }
   }
 

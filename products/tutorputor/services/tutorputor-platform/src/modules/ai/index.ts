@@ -15,6 +15,8 @@
 import type { FastifyPluginAsync } from "fastify";
 import { registerAIRoutes } from "./routes.js";
 import { OllamaAIProxyService } from "./OllamaAIProxyService.js";
+import { AIHealthCheckService } from "./AIHealthCheckService.js";
+import { AICacheService } from "./AICacheService.js";
 import { aiRegistryClient } from "../../clients/ai-registry.client.js";
 
 /**
@@ -33,6 +35,32 @@ export const aiModule: FastifyPluginAsync = async (app) => {
   const aiProxyService = new OllamaAIProxyService(aiProxyBaseUrl);
 
   app.log.info(`AI Proxy configured with base URL: ${aiProxyBaseUrl}`);
+
+  // Create AI Health Check Service
+  const aiHealthCheckService = new AIHealthCheckService();
+  app.decorate('aiHealthCheckService', aiHealthCheckService);
+
+  // Create AI Cache Service
+  const aiCacheService = new AICacheService(
+    parseInt(process.env.AI_CACHE_MAX_ENTRIES || '1000', 10),
+    parseInt(process.env.AI_CACHE_TTL || '3600000', 10)
+  );
+  app.decorate('aiCacheService', aiCacheService);
+
+  // Register health check endpoint
+  app.get('/api/v1/ai/health', async (request, reply) => {
+    const healthStatus = aiHealthCheckService.getHealthStatus();
+    return reply.send({
+      healthy: healthStatus.every(s => s.healthy),
+      services: healthStatus,
+    });
+  });
+
+  // Register cache stats endpoint
+  app.get('/api/v1/ai/cache/stats', async (request, reply) => {
+    const stats = aiCacheService.getStats();
+    return reply.send(stats);
+  });
 
   if (!aiRegistryClient) {
     app.log.warn(

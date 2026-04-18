@@ -201,6 +201,11 @@ model Module {
   @@unique([tenantId, slug])
   @@index([tenantId, domain])
   @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, publishedAt])
+  @@index([tenantId, updatedAt])
+  @@index([tenantId, status, domain])
+  @@index([tenantId, status, difficulty])
 }
 
 model ModuleTag {
@@ -266,6 +271,11 @@ model Enrollment {
 
   @@unique([tenantId, userId, moduleId])
   @@index([tenantId, userId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, startedAt])
+  @@index([tenantId, completedAt])
+  @@index([tenantId, status, moduleId])
 }
 
 model Assessment {
@@ -291,6 +301,9 @@ model Assessment {
 
   @@index([tenantId, moduleId])
   @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, updatedAt])
+  @@index([tenantId, status, type])
 }
 
 model AssessmentObjective {
@@ -358,6 +371,7 @@ model LearningEvent {
 
   @@index([tenantId, eventType])
   @@index([tenantId, userId])
+  @@index([tenantId, timestamp])
 }
 
 model MarketplaceListing {
@@ -376,6 +390,8 @@ model MarketplaceListing {
   @@index([tenantId, status])
   @@index([tenantId, moduleId])
   @@index([tenantId, creatorId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, publishedAt])
 }
 
 // =============================================================================
@@ -564,6 +580,7 @@ model Purchase {
   @@unique([tenantId, userId, moduleId])
   @@index([tenantId, userId])
   @@index([tenantId, moduleId])
+  @@index([tenantId, purchasedAt])
 }
 
 model Payout {

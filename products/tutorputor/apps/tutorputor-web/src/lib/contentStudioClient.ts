@@ -9,7 +9,12 @@ export const CONTENT_STUDIO_BASE = "/api/content-studio";
 
 export function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
+  const tenantId = localStorage.getItem("tenant_id");
+
+  if (!tenantId) {
+    throw new Error("Authentication required: No tenant context found");
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Tenant-ID": tenantId,

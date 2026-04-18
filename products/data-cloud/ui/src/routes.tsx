@@ -76,6 +76,9 @@ const MemoryPlaneViewerPage = React.lazy(() =>
 const EntityBrowserPage = React.lazy(() =>
   import('./pages/EntityBrowserPage').then((m) => ({ default: m.EntityBrowserPage }))
 );
+const ContextExplorerPage = React.lazy(() =>
+  import('./pages/ContextExplorerPage').then((m) => ({ default: m.ContextExplorerPage }))
+);
 const DataFabricPage = React.lazy(() =>
   import('./pages/DataFabricPage').then((m) => ({ default: m.DataFabricPage }))
 );
@@ -280,6 +283,11 @@ export const routes: RouteObject[] = [
       {
         path: 'entities',
         element: withSuspense(EntityBrowserPage),
+      },
+      // Context Explorer — unified schema, lineage, governance, freshness, and relationships
+      {
+        path: 'context',
+        element: withSuspense(ContextExplorerPage),
       },
       // Data Fabric — four-tier topology canvas using @ghatana/canvas/flow
       {

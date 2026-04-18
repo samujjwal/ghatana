@@ -108,8 +108,8 @@ class PrismaUserRepository implements LegacyAuthUserRepository {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      roles: [], // TODO: Load from role relation when schema is updated
-      permissions: [], // TODO: Load from permissions when schema is updated
+      roles: [], // SCHEMA_UPDATE: Load from role relation when User-Role schema is implemented
+      permissions: [], // SCHEMA_UPDATE: Load from permissions when RBAC schema is implemented
       isActive: true,
     };
   }
@@ -134,8 +134,8 @@ class PrismaUserRepository implements LegacyAuthUserRepository {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      roles: [], // TODO: Load from role relation when schema is updated
-      permissions: [], // TODO: Load from permissions when schema is updated
+      roles: [], // SCHEMA_UPDATE: Load from role relation when User-Role schema is implemented
+      permissions: [], // SCHEMA_UPDATE: Load from permissions when RBAC schema is implemented
       isActive: true,
     };
   }

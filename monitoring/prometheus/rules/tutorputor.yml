@@ -1,0 +1,234 @@
+# TutorPutor Monitoring Rules
+#
+# Product-specific alerting rules for the TutorPutor learning platform.
+# Covers platform services, web apps, and critical business metrics.
+
+groups:
+  - name: tutorputor_platform
+    interval: 30s
+    rules:
+      # Platform availability
+      - alert: TutorPutorPlatformDown
+        expr: up{job="tutorputor-app"} == 0
+        for: 1m
+        labels:
+          product: tutorputor
+          severity: critical
+          layer: platform
+        annotations:
+          summary: "TutorPutor platform service is down"
+          description: "The TutorPutor platform service has been down for more than 1 minute."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/platform-down"
+
+      # High error rate
+      - alert: TutorPutorHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="tutorputor-app",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="tutorputor-app"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: platform
+        annotations:
+          summary: "TutorPutor platform high error rate"
+          description: "Error rate is above 5% for the last 5 minutes (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/high-error-rate"
+
+      # High latency
+      - alert: TutorPutorHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="tutorputor-app"}[5m])) by (le)
+          ) > 1
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: platform
+        annotations:
+          summary: "TutorPutor platform high latency"
+          description: "95th percentile latency is above 1s for the last 5 minutes (current: {{ $value }}s)."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/high-latency"
+
+      # Memory usage
+      - alert: TutorPutorHighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="tutorputor-app"}
+            /
+            node_memory_MemTotal_bytes
+          ) > 0.8
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: platform
+        annotations:
+          summary: "TutorPutor platform high memory usage"
+          description: "Memory usage is above 80% (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/high-memory"
+
+      # CPU usage
+      - alert: TutorPutorHighCPUUsage
+        expr: |
+          (
+            rate(process_cpu_seconds_total{job="tutorputor-app"}[5m])
+            *
+            100
+          ) > 80
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: platform
+        annotations:
+          summary: "TutorPutor platform high CPU usage"
+          description: "CPU usage is above 80% for the last 5 minutes (current: {{ $value }}%)."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/high-cpu"
+
+  - name: tutorputor_business
+    interval: 1m
+    rules:
+      # Active learning sessions
+      - alert: TutorPutorLowActiveSessions
+        expr: tutorputor_active_sessions_total < 10
+        for: 10m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: business
+        annotations:
+          summary: "Low number of active learning sessions"
+          description: "Active learning sessions have been below 10 for the last 10 minutes (current: {{ $value }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/low-sessions"
+
+      # Module completion rate
+      - alert: TutorPutorLowCompletionRate
+        expr: |
+          (
+            rate(tutorputor_modules_completed_total[1h])
+            /
+            rate(tutorputor_modules_started_total[1h])
+          ) < 0.3
+        for: 1h
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: business
+        annotations:
+          summary: "Low module completion rate"
+          description: "Module completion rate is below 30% for the last hour (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/low-completion"
+
+      # AI service failures
+      - alert: TutorPutorAIServiceFailure
+        expr: |
+          rate(tutorputor_ai_requests_failed_total[5m])
+          /
+          rate(tutorputor_ai_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          layer: ai
+        annotations:
+          summary: "TutorPutor AI service high failure rate"
+          description: "AI request failure rate is above 10% for the last 5 minutes (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/ai-failures"
+
+  - name: tutorputor_database
+    interval: 30s
+    rules:
+      # Database connection pool exhaustion
+      - alert: TutorPutorDatabasePoolExhaustion
+        expr: |
+          tutorputor_db_pool_active_connections
+          /
+          tutorputor_db_pool_max_connections > 0.9
+        for: 2m
+        labels:
+          product: tutorputor
+          severity: critical
+          layer: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool usage is above 90% (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/db-pool-exhaustion"
+
+      # Slow database queries
+      - alert: TutorPutorSlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(tutorputor_db_query_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query duration is above 2s for the last 5 minutes (current: {{ $value }}s)."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/slow-queries"
+
+  - name: tutorputor_slo
+    interval: 1m
+    rules:
+      # SLO: API availability
+      - alert: TutorPutorSLOAPIAvailability
+        expr: |
+          (
+            sum(rate(http_requests_total{job="tutorputor-app",status!~"5.."}[30d]))
+            /
+            sum(rate(http_requests_total{job="tutorputor-app"}[30d]))
+          ) < 0.99
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          layer: slo
+          slo_type: availability
+        annotations:
+          summary: "SLO breach: API availability below 99%"
+          description: "30-day API availability is below 99% SLO (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/slo-availability"
+
+      # SLO: API latency
+      - alert: TutorPutorSLOAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="tutorputor-app"}[30d])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          layer: slo
+          slo_type: latency
+        annotations:
+          summary: "SLO breach: API latency above 500ms"
+          description: "30-day 95th percentile latency is above 500ms SLO (current: {{ $value }}s)."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/slo-latency"
+
+      # Error budget burn rate
+      - alert: TutorPutorSLOErrorBudgetBurn
+        expr: |
+          (
+            sum(rate(http_requests_total{job="tutorputor-app",status=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{job="tutorputor-app"}[1h]))
+          ) > 0.01
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          layer: slo
+          slo_type: error_budget
+        annotations:
+          summary: "Error budget burning too fast"
+          description: "Error budget burn rate is above 1% per hour (current: {{ $value | humanizePercentage }})."
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/error-budget-burn"

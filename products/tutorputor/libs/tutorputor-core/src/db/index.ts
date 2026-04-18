@@ -83,7 +83,18 @@ export interface SeedOptions {
   seedUserId?: string;
 }
 
+/**
+ * Default tenant ID for testing/development seed data only.
+ * WARNING: This should NEVER be used in production code.
+ * Always provide explicit tenantId in production contexts.
+ */
 export const DEFAULT_TENANT_ID = "tenant-stub";
+
+/**
+ * Default user ID for testing/development seed data only.
+ * WARNING: This should NEVER be used in production code.
+ * Always provide explicit seedUserId in production contexts.
+ */
 export const DEFAULT_USER_ID = "user-stub";
 
 /**
@@ -143,6 +154,12 @@ export async function seedBaseData(
   prisma: PrismaClient,
   options: SeedOptions = {},
 ): Promise<void> {
+  // Require explicit tenantId in production (check via environment)
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction && !options.tenantId) {
+    throw new Error("tenantId is required in production seed operations");
+  }
+  
   const tenantId = options.tenantId ?? DEFAULT_TENANT_ID;
   const seedUserId = options.seedUserId ?? DEFAULT_USER_ID;
 

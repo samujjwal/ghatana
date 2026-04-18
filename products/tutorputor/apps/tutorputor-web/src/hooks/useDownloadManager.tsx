@@ -18,9 +18,26 @@ import {
   StorageQuota,
   DownloadStorage,
 } from '../services/ContentDownloadManager';
+import type { ModuleDetail } from '@tutorputor/contracts/v1/types';
 
-// Type stubs
-type Module = any;
+/**
+ * Module type matching ContentDownloadManager's internal Module type
+ * This aligns with the DownloadStorage interface contract
+ */
+type Module = ModuleDetail & {
+  blocks?: Array<{ id: string; [key: string]: unknown }>;
+  totalSizeBytes?: number;
+  lessons?: Array<{ id: string; [key: string]: unknown }>;
+  quizzes?: Array<{ id: string; questions: unknown[] }>;
+};
+
+/**
+ * Downloaded module type extends Module with download metadata
+ */
+type DownloadedModule = Module & {
+  downloadedAt: string;
+  downloadedSizeBytes?: number;
+};
 
 // ============================================================================
 // IndexedDB Storage Adapter
@@ -61,7 +78,7 @@ function createIndexedDBStorage(): DownloadStorage {
   };
 
   return {
-    async saveModule(module: Module & { downloadedAt: string }): Promise<void> {
+    async saveModule(module: DownloadedModule): Promise<void> {
       const database = await openDatabase();
       return new Promise((resolve, reject) => {
         const tx = database.transaction(STORE_NAME, 'readwrite');
@@ -109,7 +126,9 @@ function createIndexedDBStorage(): DownloadStorage {
       const modules = await this.getAllModules();
       let totalSize = 0;
       for (const module of modules) {
-        totalSize += JSON.stringify(module).length;
+        // Calculate size excluding downloadedAt if present
+        const { downloadedAt, downloadedSizeBytes, ...moduleWithoutDownloadMeta } = module as Module & { downloadedAt?: string; downloadedSizeBytes?: number };
+        totalSize += JSON.stringify(moduleWithoutDownloadMeta).length;
       }
       return totalSize;
     },
@@ -127,7 +146,7 @@ export interface UseDownloadManagerResult {
   // State
   queue: DownloadQueueItem[];
   downloads: Map<string, DownloadProgress>;
-  downloadedModules: Module[];
+  downloadedModules: DownloadedModule[];
   storageQuota: StorageQuota | null;
   isLoading: boolean;
 
@@ -153,7 +172,7 @@ export interface UseDownloadManagerResult {
 export function useDownloadManager(): UseDownloadManagerResult {
   const [queue, setQueue] = useState<DownloadQueueItem[]>([]);
   const [downloads, setDownloads] = useState<Map<string, DownloadProgress>>(new Map());
-  const [downloadedModules, setDownloadedModules] = useState<Module[]>([]);
+  const [downloadedModules, setDownloadedModules] = useState<DownloadedModule[]>([]);
   const [storageQuota, setStorageQuota] = useState<StorageQuota | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -188,7 +207,12 @@ export function useDownloadManager(): UseDownloadManagerResult {
       onDownloadComplete: async (moduleId) => {
         const module = await storage.getModule(moduleId);
         if (module) {
-          setDownloadedModules((prev) => [...prev.filter((m) => m.id !== moduleId), module]);
+          // Type guard: check if module has downloadedAt
+          const downloadedModule: DownloadedModule = {
+            ...module,
+            downloadedAt: new Date().toISOString(),
+          };
+          setDownloadedModules((prev) => [...prev.filter((m) => m.id !== moduleId), downloadedModule]);
           downloadedIdsRef.current.add(moduleId);
         }
         refreshQuota();
@@ -208,8 +232,13 @@ export function useDownloadManager(): UseDownloadManagerResult {
       setIsLoading(true);
       try {
         const modules = await storage.getAllModules();
-        setDownloadedModules(modules);
-        downloadedIdsRef.current = new Set(modules.map((m) => m.id));
+        // Convert to DownloadedModule by adding downloadedAt
+        const downloadedModules: DownloadedModule[] = modules.map((m) => ({
+          ...m,
+          downloadedAt: new Date().toISOString(), // Use current time if not present
+        }));
+        setDownloadedModules(downloadedModules);
+        downloadedIdsRef.current = new Set(downloadedModules.map((m) => m.id));
 
         const quota = await manager.getStorageQuota();
         setStorageQuota(quota);
@@ -234,8 +263,13 @@ export function useDownloadManager(): UseDownloadManagerResult {
     setIsLoading(true);
     try {
       const modules = await managerRef.current.getDownloadedModules();
-      setDownloadedModules(modules);
-      downloadedIdsRef.current = new Set(modules.map((m) => m.id));
+      // Convert to DownloadedModule by adding downloadedAt
+      const downloadedModules: DownloadedModule[] = modules.map((m) => ({
+        ...m,
+        downloadedAt: new Date().toISOString(),
+      }));
+      setDownloadedModules(downloadedModules);
+      downloadedIdsRef.current = new Set(downloadedModules.map((m) => m.id));
       await refreshQuota();
     } finally {
       setIsLoading(false);

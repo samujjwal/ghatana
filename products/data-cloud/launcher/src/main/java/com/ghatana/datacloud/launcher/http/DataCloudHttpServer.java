@@ -51,6 +51,7 @@ import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
 import com.ghatana.datacloud.launcher.http.handlers.PipelineCheckpointHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
+import com.ghatana.datacloud.launcher.http.handlers.McpToolsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.BrainHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LearningHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AnalyticsHandler;
@@ -68,6 +69,7 @@ import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
 import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CapabilityRegistryHandler;
+import com.ghatana.datacloud.launcher.http.handlers.CollectionContextHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
@@ -77,6 +79,7 @@ import com.ghatana.datacloud.launcher.http.plugins.ReportExecutionCapability;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.plugins.iceberg.TierMigrationScheduler;
+import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.s3archive.ArchiveMigrationScheduler;
 import com.ghatana.datacloud.plugins.vector.VectorMemoryPlugin;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
@@ -318,8 +321,11 @@ public class DataCloudHttpServer {
     private DataCloudRuntimePluginManager runtimePluginManager;
     private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
+    private CollectionContextHandler collectionContextHandler; // P3.1: unified collection context API
+    private McpToolsHandler mcpToolsHandler; // P3.1.2: MCP tool registry and invocation
     private DataProductHandler dataProductHandler; // P4.4.1: data products publish/discover/subscribe
     private LineagePlugin lineagePlugin;              // P3.9.1: entity lineage tracking
+    private KnowledgeGraphPlugin knowledgeGraphPlugin; // P3.1: relationship enrichment for context APIs
     private LineageHandler lineageHandler;           // P3.9.1: entity lineage HTTP handler
     private SemanticSearchHandler semanticSearchHandler; // P4.5.1: semantic similarity and RAG
     private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
@@ -473,6 +479,17 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withLineagePlugin(LineagePlugin plugin) {
         this.lineagePlugin = plugin;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link KnowledgeGraphPlugin} to enrich context APIs with relationships.
+     *
+     * @param plugin the knowledge graph plugin; {@code null} disables relationship enrichment
+     * @return this server for chaining
+     */
+    public DataCloudHttpServer withKnowledgeGraphPlugin(KnowledgeGraphPlugin plugin) {
+        this.knowledgeGraphPlugin = plugin;
         return this;
     }
 
@@ -952,7 +969,14 @@ public class DataCloudHttpServer {
             this::buildCapabilitySnapshot);
 
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
-        contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper);
+        contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin);
+        collectionContextHandler = new CollectionContextHandler(
+            client,
+            httpSupport,
+            objectMapper,
+            lineagePlugin,
+            knowledgeGraphPlugin);
+        mcpToolsHandler = new McpToolsHandler(client, httpSupport, objectMapper, collectionContextHandler);
 
         // P3.9.1: Entity lineage tracking and visualization
         lineageHandler = new LineageHandler(httpSupport, objectMapper, lineagePlugin);
@@ -1113,6 +1137,7 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/governance/retention/purge",    dataLifecycleHandler::handlePurge)
             .with(HttpMethod.POST, "/api/v1/governance/privacy/redact",     dataLifecycleHandler::handleRedact)
             .with(HttpMethod.GET,  "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
+            .with(HttpMethod.GET,  "/api/v1/governance/privacy/verify",     dataLifecycleHandler::handleVerifyRedaction)
             .with(HttpMethod.GET,  "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
 
             // Runtime capability registry (P2.7)
@@ -1124,10 +1149,15 @@ public class DataCloudHttpServer {
 
             // Tenant-scoped context layer (P3.1) — lightweight runtime key-value store
             .with(HttpMethod.GET,    "/api/v1/context",                     contextLayerHandler::handleGetContext)
+            .with(HttpMethod.GET,    "/api/v1/context/:collection",         collectionContextHandler::handleGetCollectionContext)
             .with(HttpMethod.PUT,    "/api/v1/context",                     contextLayerHandler::handlePutContext)
             .with(HttpMethod.DELETE, "/api/v1/context/keys/:key",           contextLayerHandler::handleDeleteContextKey)
             .with(HttpMethod.GET,    "/api/v1/context/snapshot",            contextLayerHandler::handleGetSnapshot)
             .with(HttpMethod.POST,   "/api/v1/context/:collection/rag",     semanticSearchHandler::handleCollectionRag)
+
+            // MCP tool discovery and invocation (P3.1.2)
+            .with(HttpMethod.GET,    "/mcp/v1/tools",                       mcpToolsHandler::handleListTools)
+            .with(HttpMethod.POST,   "/mcp/v1/tools",                       mcpToolsHandler::handleToolCall)
 
             // Data product catalog routes (P4.4.1)
             .with(HttpMethod.GET,    "/api/v1/data-products",               dataProductHandler::handleListDataProducts)

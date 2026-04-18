@@ -436,7 +436,7 @@ export class GamificationService {
     return pointsEntries.map((p, index: number) => ({
       rank: offset + index + 1,
       userId: p.userId as UserId,
-      displayName: p.userId, // Todo: fetch names
+      displayName: p.userId, // OPTIMIZATION: Fetch user names from User table for better UX (non-critical)
       points: p.totalPoints,
       badges: badgeMap.get(p.userId) ?? 0,
       streak: 0,

@@ -675,6 +675,69 @@ export const CollectionRagResponseSchema = z.object({
   requestId: z.string(),
 });
 
+export const CollectionContextFieldSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  required: z.boolean().optional(),
+}).catchall(z.unknown());
+
+export const CollectionContextSchemaSchema = z.object({
+  fields: z.array(CollectionContextFieldSchema),
+  constraints: z.unknown().optional(),
+}).catchall(z.unknown());
+
+export const CollectionContextLineageSchema = z.object({
+  upstream: z.array(z.string()),
+  downstream: z.array(z.string()),
+});
+
+export const CollectionContextGovernanceSchema = z.object({
+  retentionTier: z.string(),
+  complianceStatus: z.string(),
+  piiFields: z.array(z.string()),
+  policyReason: z.string().optional(),
+});
+
+export const CollectionContextFreshnessSchema = z.object({
+  sampledAt: z.string(),
+  lastEntityUpdatedAt: z.string().optional(),
+  lastEntityCreatedAt: z.string().optional(),
+});
+
+export const CollectionContextStatisticalProfileSchema = z.object({
+  entityCount: z.number(),
+  sampleSize: z.number(),
+  nullRates: z.record(z.string(), z.number()),
+  topValues: z.record(z.string(), z.array(z.object({
+    value: z.string(),
+    count: z.number(),
+  }))),
+});
+
+export const CollectionContextRelationshipSchema = z.object({
+  id: z.string(),
+  source: z.string(),
+  target: z.string(),
+  type: z.string(),
+  depth: z.number().optional(),
+  properties: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const CollectionContextResponseSchema = z.object({
+  collection: z.string(),
+  tenantId: z.string(),
+  requestId: z.string(),
+  generatedAt: z.string(),
+  generationTimeMs: z.number(),
+  schema: CollectionContextSchemaSchema,
+  lineage: CollectionContextLineageSchema,
+  governance: CollectionContextGovernanceSchema,
+  freshness: CollectionContextFreshnessSchema,
+  statisticalProfile: CollectionContextStatisticalProfileSchema,
+  relationshipDepth: z.number().optional(),
+  relationships: z.array(CollectionContextRelationshipSchema).optional(),
+});
+
 export const AnomalyQueryItemSchema = z.object({
   eventId: z.string(),
   eventType: z.string(),
@@ -1322,6 +1385,7 @@ export type ContextResponse = z.infer<typeof ContextResponseSchema>;
 export type UpsertContextRequest = z.infer<typeof UpsertContextRequestSchema>;
 export type UpsertContextResponse = z.infer<typeof UpsertContextResponseSchema>;
 export type ContextSnapshot = z.infer<typeof ContextSnapshotSchema>;
+export type CollectionContextResponse = z.infer<typeof CollectionContextResponseSchema>;
 export type Event = z.infer<typeof EventSchema>;
 export type AppendEventRequest = z.infer<typeof AppendEventRequestSchema>;
 export type AppendEventResponse = z.infer<typeof AppendEventResponseSchema>;

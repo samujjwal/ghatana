@@ -272,7 +272,11 @@ export class TutorPutorApiClient {
 
   private getHeaders(): HeadersInit {
     const token = localStorage.getItem("auth_token");
-    const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
+    const tenantId = localStorage.getItem("tenant_id");
+
+    if (!tenantId) {
+      throw new Error("Authentication required: No tenant context found");
+    }
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -689,6 +693,48 @@ export class TutorPutorApiClient {
       body: JSON.stringify(input),
     });
   }
+
+  // ========== Analytics ===========
+
+  async getAnalyticsSummary(period: "daily" | "weekly" | "monthly" = "weekly"): Promise<{
+    totalEvents: number;
+    activeLearners: number;
+    eventsByType: Record<string, number>;
+  }> {
+    return await this.request<{
+      totalEvents: number;
+      activeLearners: number;
+      eventsByType: Record<string, number>;
+    }>(`/v1/analytics/summary?period=${period}`);
+  }
+
+  async getUsageTrends(period: "daily" | "weekly" | "monthly" = "weekly"): Promise<{
+    periods: Array<{
+      periodStart: string;
+      eventCount: number;
+    }>;
+  }> {
+    return await this.request<{
+      periods: Array<{
+        periodStart: string;
+        eventCount: number;
+      }>;
+    }>(`/v1/analytics/usage-trends?period=${period}`);
+  }
+
+  async getAtRiskStudents(): Promise<Array<{
+    userId: string;
+    displayName: string;
+    riskLevel: string;
+    riskFactors?: string[];
+  }>> {
+    return await this.request<Array<{
+      userId: string;
+      displayName: string;
+      riskLevel: string;
+      riskFactors?: string[];
+    }>>("/v1/analytics/at-risk");
+  }
 }
 
 export const apiClient = new TutorPutorApiClient();
@@ -699,7 +745,11 @@ export const apiClient = new TutorPutorApiClient();
  */
 function getHeaders(): HeadersInit {
   const token = localStorage.getItem("auth_token");
-  const tenantId = localStorage.getItem("tenant_id") || "tenant-stub";
+  const tenantId = localStorage.getItem("tenant_id");
+
+  if (!tenantId) {
+    throw new Error("Authentication required: No tenant context found");
+  }
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",

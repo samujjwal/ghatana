@@ -13,10 +13,12 @@ vi.mock('../../lib/api/client', () => ({
 }));
 
 import {
+  getCollectionContext,
   getContext,
   putContextEntries,
   deleteContextKey,
   getContextSnapshot,
+  type CollectionContextResponse,
   type ContextResponse,
   type UpsertContextResponse,
   type ContextSnapshot,
@@ -43,6 +45,90 @@ describe('context layer API client (P3.1.2)', () => {
 
     expect(mockApiClient.get).toHaveBeenCalledWith('/context');
     expect(result).toEqual(mockResponse);
+  });
+
+  it('calls GET /context/:collection and returns the unified collection context', async () => {
+    const mockResponse: CollectionContextResponse = {
+      collection: 'orders',
+      tenantId: 'tenant-a',
+      requestId: 'req-ctx-orders',
+      generatedAt: '2026-04-18T09:00:00Z',
+      generationTimeMs: 12,
+      schema: {
+        fields: [
+          { name: 'customerId', type: 'string', required: true },
+          { name: 'email', type: 'string', required: false },
+        ],
+      },
+      lineage: {
+        upstream: ['raw_orders'],
+        downstream: ['invoice_snapshots'],
+      },
+      governance: {
+        retentionTier: 'compliance',
+        complianceStatus: 'active',
+        piiFields: ['email'],
+      },
+      freshness: {
+        sampledAt: '2026-04-18T09:00:00Z',
+        lastEntityUpdatedAt: '2026-04-18T08:58:00Z',
+      },
+      statisticalProfile: {
+        entityCount: 2,
+        sampleSize: 2,
+        nullRates: { customerId: 0, email: 0.5 },
+        topValues: {
+          customerId: [{ value: 'cust-1', count: 2 }],
+          email: [{ value: 'null', count: 1 }],
+        },
+      },
+      relationships: [
+        { id: 'edge-1', source: 'orders', target: 'customers', type: 'BELONGS_TO' },
+      ],
+    };
+    mockApiClient.get.mockResolvedValueOnce(mockResponse);
+
+    const result = await getCollectionContext('orders');
+
+    expect(mockApiClient.get).toHaveBeenCalledWith('/context/orders', {
+      params: undefined,
+    });
+    expect(result.lineage.upstream).toEqual(['raw_orders']);
+    expect(result.governance.piiFields).toEqual(['email']);
+  });
+
+  it('passes the optional relationship depth when fetching collection context', async () => {
+    const mockResponse: CollectionContextResponse = {
+      collection: 'orders',
+      tenantId: 'tenant-a',
+      requestId: 'req-ctx-depth',
+      generatedAt: '2026-04-18T09:00:00Z',
+      generationTimeMs: 8,
+      schema: { fields: [] },
+      lineage: { upstream: [], downstream: [] },
+      governance: {
+        retentionTier: 'standard',
+        complianceStatus: 'default',
+        piiFields: [],
+      },
+      freshness: { sampledAt: '2026-04-18T09:00:00Z' },
+      statisticalProfile: {
+        entityCount: 0,
+        sampleSize: 0,
+        nullRates: {},
+        topValues: {},
+      },
+      relationshipDepth: 3,
+      relationships: [],
+    };
+    mockApiClient.get.mockResolvedValueOnce(mockResponse);
+
+    const result = await getCollectionContext('orders', { depth: 3 });
+
+    expect(mockApiClient.get).toHaveBeenCalledWith('/context/orders', {
+      params: { depth: 3 },
+    });
+    expect(result.relationshipDepth).toBe(3);
   });
 
   // ─── putContextEntries ─────────────────────────────────────────────────────

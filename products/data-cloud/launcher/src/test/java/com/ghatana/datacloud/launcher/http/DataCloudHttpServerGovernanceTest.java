@@ -388,6 +388,11 @@ class DataCloudHttpServerGovernanceTest {
             HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/old_events/old-1");
 
             assertThat(deletedEntityResponse.statusCode()).isEqualTo(404);
+            assertThat(entityState.getOrDefault("_governance_purge_tombstones", Map.of()).values())
+                .anySatisfy(tombstone -> {
+                    assertThat(tombstone.data().get("collection")).isEqualTo("old_events");
+                    assertThat(tombstone.data().get("deletedCount")).isEqualTo(2);
+                });
         }
 
         @Test
@@ -595,6 +600,14 @@ class DataCloudHttpServerGovernanceTest {
         Map<String, Object> purgeData = (Map<String, Object>) purgeBody.get("data");
         assertThat(purgeData.get("status")).isEqualTo("PURGE_COMPLETED");
         assertThat(purgeData.get("deletedRows")).isEqualTo(1);
+
+        HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/user_profiles/expired-1");
+        assertThat(deletedEntityResponse.statusCode()).isEqualTo(404);
+        assertThat(entityState.getOrDefault("_governance_purge_tombstones", Map.of()).values())
+            .anySatisfy(tombstone -> {
+                assertThat(tombstone.data().get("collection")).isEqualTo("user_profiles");
+                assertThat(tombstone.data().get("deletedCount")).isEqualTo(1);
+            });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -625,6 +638,77 @@ class DataCloudHttpServerGovernanceTest {
             List<String> globalFields = (List<String>) data.get("globalFields");
             assertThat(globalFields).contains("email", "phone", "ssn");
             assertThat(((Number) data.get("effectiveCount")).intValue()).isGreaterThanOrEqualTo(9);
+        }
+
+        @Test
+        @DisplayName("collection query reports auto-detected common PII fields")
+        @SuppressWarnings("unchecked")
+        void collectionQuery_reportsAutoDetectedFields() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields?collection=user_profiles");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("collection")).isEqualTo("user_profiles");
+            List<String> autoDetectedFields = (List<String>) data.get("autoDetectedFields");
+            assertThat(autoDetectedFields).contains("email", "phone", "ssn");
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/governance/privacy/verify")
+    class VerifyRedactionTests {
+
+        @Test
+        @DisplayName("returns VERIFIED when requested PII fields are already redacted")
+        @SuppressWarnings("unchecked")
+        void verifyReportsVerified() throws Exception {
+            storeEntity(entity(
+                "ent-verified",
+                "user_profiles",
+                Map.of("email", "[REDACTED]", "phone", "[REDACTED]", "role", "admin")
+            ));
+
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-verified&fields=email,phone");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("status")).isEqualTo("VERIFIED");
+            assertThat((List<String>) data.get("verifiedFields")).containsExactly("email", "phone");
+            assertThat((List<String>) data.get("pendingFields")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("returns NOT_REDACTED when sensitive fields are still present")
+        @SuppressWarnings("unchecked")
+        void verifyReportsPendingFields() throws Exception {
+            storeEntity(entity(
+                "ent-pending",
+                "user_profiles",
+                Map.of("email", "person@example.com", "phone", "[REDACTED]", "role", "admin")
+            ));
+
+            server = new DataCloudHttpServer(mockClient, port);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-pending&fields=email,phone");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("status")).isEqualTo("NOT_REDACTED");
+            assertThat((List<String>) data.get("verifiedFields")).containsExactly("phone");
+            assertThat((List<String>) data.get("pendingFields")).containsExactly("email");
         }
     }
 

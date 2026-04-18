@@ -404,7 +404,7 @@ public class PipelineMigrationUtil {
 - [x] Pipeline definitions survive AEP restart
 - [x] Pipeline version metadata and immutable snapshots persist in Data Cloud mode
 - [x] Integration test: create → restart → list/history → assert present
-- [ ] Migration utility for existing in-memory pipelines
+- [x] Migration utility for existing in-memory pipelines
 - [ ] Performance: save < 50ms, list < 100ms for 100 pipelines
 
 ---
@@ -707,8 +707,8 @@ public class RetentionPolicyEnforcementJob {
 - [x] Purge audit event emitted with deleted count
 - [x] Confirmation token hash stored in audit (not raw token)
 - [ ] Batch delete handles 1000+ entities efficiently
-- [ ] Tombstone records retained for compliance
-- [ ] Integration test: create → classify short retention → age data → purge → verify gone
+- [x] Tombstone records retained for compliance
+- [x] Integration test: create → classify short retention → age data → purge → verify gone
 
 ---
 
@@ -946,8 +946,8 @@ public class RedactionVerificationService {
 - [x] Redaction actually replaces field values with [REDACTED]
 - [x] Redacted values cannot be retrieved via API
 - [x] Audit event contains hashed previous values (not plaintext)
-- [ ] PII auto-detection identifies common PII fields
-- [ ] Verification endpoint confirms redaction applied
+- [x] PII auto-detection identifies common PII fields
+- [x] Verification endpoint confirms redaction applied
 - [x] Integration test: create entity with PII → redact → verify fields redacted → verify audit event
 
 ---
@@ -1850,7 +1850,7 @@ public class StartupHealthCheck {
 - [x] /ready returns 200 only when all required dependencies up
 - [x] /health/deep shows UNKNOWN for unconfigured optional services
 - [x] Response includes response time for each dependency
-- [ ] Startup fails fast if required dependencies unavailable
+- [x] Startup fails fast if required dependencies unavailable
 - [x] Kubernetes liveness probe uses /health (tolerant)
 - [x] Kubernetes readiness probe uses /ready (strict)
 
@@ -2154,7 +2154,7 @@ export function PluginsPage() {
 ```
 
 #### Acceptance Criteria
-- [ ] All optional features guarded by capability check
+- [x] All optional features guarded by capability check
 - [x] Features show "unavailable" state when backend not wired
 - [x] Degraded features show warning but remain usable
 - [x] Capability registry polled on app start and periodically
@@ -2293,7 +2293,7 @@ jobs:
 **Priority:** P3 - Strategic  
 **Owner:** Data Cloud Platform Team  
 **Effort:** 10-12 days
-**Implementation Status (2026-04-17):** Code complete in current repo shape. `ContextLayerHandler` exposes the tenant-scoped context API and snapshot endpoint, the HTTP server wires the routes, and the typed frontend client plus integration tests are already in place.
+**Implementation Status (2026-04-17):** Code complete in current repo shape. `ContextLayerHandler` exposes the tenant-scoped context API and snapshot endpoint, the HTTP server wires the routes, the unified collection context endpoint now supports depth-aware relationship traversal with live recomputation on entity changes, and the UI includes a dedicated `ContextExplorerPage` on top of the typed frontend client.
 
 #### Vision
 Expose unified context surface for AI agents: entity schema + lineage + governance + freshness in single query.
@@ -2440,12 +2440,12 @@ public class ContextMcpServer implements McpServer {
 ```
 
 #### Acceptance Criteria
-- [ ] Single API returns unified context (schema+lineage+governance+relationships)
-- [ ] MCP server exposes context tools to AI agents
-- [ ] < 100ms response for standard context query
-- [ ] Relationship traversal up to 3 levels
-- [ ] Context automatically updated on entity changes
-- [ ] Documentation: "Context-Native Data Fabric" positioning
+- [x] Single API returns unified context (schema+lineage+governance+relationships)
+- [x] MCP server exposes context tools to AI agents
+- [x] < 100ms response for standard context query
+- [x] Relationship traversal up to 3 levels
+- [x] Context automatically updated on entity changes
+- [x] Documentation: "Context-Native Data Fabric" positioning
 
 ---
 

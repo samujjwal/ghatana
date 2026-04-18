@@ -63,8 +63,9 @@ export function App(): JSX.Element {
         await syncService.init({
           apiBaseUrl,
           getAuthToken: async () => {
-            // TODO: Get from secure storage
-            return null;
+            // MOBILE_PLATFORM: Implement secure storage (e.g., Keychain on iOS, Keystore on Android)
+            // For web/desktop PWA, use localStorage/sessionStorage
+            return localStorage.getItem('auth_token') ?? null;
           },
           maxConcurrent: 3,
           retryBaseDelayMs: 1000,

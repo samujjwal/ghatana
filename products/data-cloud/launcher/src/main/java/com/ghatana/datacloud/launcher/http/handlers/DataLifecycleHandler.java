@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
  *   POST /api/v1/governance/retention/purge       — trigger deletion workflow (CRITICAL)
  *   POST /api/v1/governance/privacy/redact        — redact PII fields from an entity
  *   GET  /api/v1/governance/privacy/pii-fields    — list registered PII-tagged fields
+ *   GET  /api/v1/governance/privacy/verify        — verify redaction status for an entity
  *   GET  /api/v1/governance/compliance/summary    — tenant compliance dashboard
  * </pre>
  *
@@ -99,6 +100,7 @@ public class DataLifecycleHandler {
     /** HMAC-SHA256 algorithm identifier. */
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final String GOVERNANCE_POLICY_COLLECTION = "_governance_retention_policies";
+    private static final String GOVERNANCE_PURGE_TOMBSTONE_COLLECTION = "_governance_purge_tombstones";
     private static final String POLICY_STATUS_CLASSIFIED = "CLASSIFIED";
     private static final String POLICY_STATUS_DEFAULT = "DEFAULT";
     private static final String MISSING_TENANT_ERROR = "MISSING_TENANT";
@@ -411,7 +413,7 @@ public class DataLifecycleHandler {
                         }
 
                         return entityStore.deleteBatch(tenantContext, entityIds)
-                            .map(batchResult -> {
+                            .then(batchResult -> {
                                 log.info("[DC-E5] purge COMPLETED collection={} tenant={} deleted={}",
                                     collection, tenantId, batchResult.successCount());
                                 emitAudit(tenantId, requestId, "RETENTION_PURGE",
@@ -429,6 +431,18 @@ public class DataLifecycleHandler {
                                         "deletedCount", batchResult.successCount(),
                                         "requestedCount", entityIds.size(),
                                         "failedCount", batchResult.failureCount()));
+
+                                return savePurgeTombstone(
+                                    tenantContext,
+                                    collection,
+                                    candidates.stream().map(entity -> entity.id().value()).toList(),
+                                    batchResult.successCount(),
+                                    entityIds.size(),
+                                    sha256Hex(confirmationToken),
+                                    requestId
+                                ).map(ignored -> batchResult);
+                            })
+                            .map(batchResult -> {
 
                                 Map<String, Object> result = new LinkedHashMap<>();
                                 result.put("collection", collection);
@@ -599,6 +613,7 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(missingTenantResponse(requestId));
         }
+        String collection = sanitise(request.getQueryParameter("collection"));
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
@@ -617,14 +632,90 @@ public class DataLifecycleHandler {
                 Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
                 effectiveFields.addAll(tenantFields);
 
-                Map<String, Object> data = Map.of(
-                    "globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList(),
-                    "tenantFields", List.copyOf(tenantFields),
-                    "effectiveCount", effectiveFields.size()
-                );
+                List<String> autoDetectedFields = collection == null || collection.isBlank()
+                    ? List.of()
+                    : derivePiiFields(collection);
+                effectiveFields.addAll(autoDetectedFields);
+
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList());
+                data.put("tenantFields", List.copyOf(tenantFields));
+                data.put("autoDetectedFields", autoDetectedFields);
+                if (collection != null && !collection.isBlank()) {
+                    data.put("collection", collection);
+                }
+                data.put("effectiveCount", effectiveFields.size());
                 return http.envelopeResponse(
                     ApiResponse.success(data, tenantId, requestId), objectMapper);
             })
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    /**
+     * {@code GET /api/v1/governance/privacy/verify?collection=X&entityId=Y}
+     *
+     * <p>Verifies whether the expected PII fields on an entity have already been redacted.
+     */
+    public Promise<HttpResponse> handleVerifyRedaction(HttpRequest request) {
+        String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
+
+        String collection = sanitise(request.getQueryParameter("collection"));
+        String entityId = sanitise(request.getQueryParameter("entityId"));
+        String fieldsParam = sanitise(request.getQueryParameter("fields"));
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+            request,
+            tenantId,
+            "datacloud.http.governance.privacy.verify",
+            traceSupport.requestSpanId(request),
+            Map.of("request.id", requestId));
+
+        if (collection.isBlank() || entityId.isBlank()) {
+            return Promise.of(http.envelopeResponse(
+                ApiResponse.error("MISSING_REQUIRED", "collection and entityId are required", tenantId, requestId),
+                objectMapper)).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+        }
+
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        return loadRetentionPolicy(tenantContext, collection)
+            .then(policy -> requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(entityId))
+                .map(entityOpt -> {
+                    if (entityOpt.isEmpty()) {
+                        return http.envelopeResponse(
+                            ApiResponse.error("ENTITY_NOT_FOUND", "No entity found for entityId=" + entityId, tenantId, requestId),
+                            objectMapper);
+                    }
+
+                    EntityStore.Entity entity = entityOpt.get();
+                    List<String> fieldsToVerify = resolveVerificationFields(fieldsParam, collection, policy.orElse(null));
+                    List<String> verifiedFields = fieldsToVerify.stream()
+                        .filter(field -> REDACTED_VALUE.equals(entity.data().get(field)))
+                        .sorted()
+                        .toList();
+                    List<String> pendingFields = fieldsToVerify.stream()
+                        .filter(field -> entity.data().containsKey(field) && !REDACTED_VALUE.equals(entity.data().get(field)))
+                        .sorted()
+                        .toList();
+                    List<String> absentFields = fieldsToVerify.stream()
+                        .filter(field -> !entity.data().containsKey(field))
+                        .sorted()
+                        .toList();
+
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("collection", collection);
+                    data.put("entityId", entityId);
+                    data.put("status", pendingFields.isEmpty() ? "VERIFIED" : "NOT_REDACTED");
+                    data.put("verifiedFields", verifiedFields);
+                    data.put("pendingFields", pendingFields);
+                    data.put("absentFields", absentFields);
+                    data.put("requestedFields", fieldsToVerify);
+                    data.put("verifiedAt", Instant.now().toString());
+                    return http.envelopeResponse(
+                        ApiResponse.success(data, tenantId, requestId), objectMapper);
+                }))
             .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
@@ -788,6 +879,30 @@ public class DataLifecycleHandler {
             .map(saved -> new LinkedHashMap<>(saved.data()));
     }
 
+    private Promise<Void> savePurgeTombstone(TenantContext tenantContext,
+                                             String collection,
+                                             List<String> entityIds,
+                                             int deletedCount,
+                                             int requestedCount,
+                                             String confirmationTokenHash,
+                                             String requestId) {
+        Map<String, Object> tombstone = new LinkedHashMap<>();
+        tombstone.put("collection", collection);
+        tombstone.put("entityIds", entityIds);
+        tombstone.put("deletedCount", deletedCount);
+        tombstone.put("requestedCount", requestedCount);
+        tombstone.put("confirmationTokenHash", confirmationTokenHash);
+        tombstone.put("requestId", requestId);
+        tombstone.put("purgedAt", Instant.now().toString());
+        tombstone.put("status", "PURGED");
+
+        EntityStore.Entity entity = EntityStore.Entity.builder()
+            .collection(GOVERNANCE_PURGE_TOMBSTONE_COLLECTION)
+            .data(tombstone)
+            .build();
+        return requireEntityStore().save(tenantContext, entity).map(ignored -> null);
+    }
+
     private Promise<Optional<Map<String, Object>>> loadRetentionPolicy(TenantContext tenantContext,
                                                                        String collection) {
         return requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(policyId(collection)))
@@ -857,6 +972,26 @@ public class DataLifecycleHandler {
             .distinct()
             .sorted()
             .toList();
+    }
+
+    private List<String> resolveVerificationFields(String fieldsParam,
+                                                   String collection,
+                                                   Map<String, Object> policy) {
+        if (fieldsParam != null && !fieldsParam.isBlank()) {
+            return List.of(fieldsParam.split(",")).stream()
+                .map(DataLifecycleHandler::sanitise)
+                .filter(field -> !field.isBlank())
+                .distinct()
+                .sorted()
+                .toList();
+        }
+
+        java.util.TreeSet<String> fields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
+        fields.addAll(derivePiiFields(collection));
+        if (policy != null) {
+            fields.addAll(readPolicyPiiFields(policy));
+        }
+        return List.copyOf(fields);
     }
 
     private Instant resolvePolicyCutoff(Map<String, Object> policy, Instant now) {

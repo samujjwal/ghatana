@@ -18,6 +18,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import {
   Sparkles,
   Play,
@@ -406,6 +407,8 @@ function StepCard({
  */
 export function SmartWorkflowBuilder() {
   const navigate = useNavigate();
+  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai.assist', 'ai_assist', 'assist']);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationBoundaryMessage, setGenerationBoundaryMessage] = useState<string | null>(null);
@@ -620,6 +623,24 @@ export function SmartWorkflowBuilder() {
                     Dismiss
                   </button>
                 </div>
+              </div>
+            )}
+
+            {aiAssistCapability?.status === 'unavailable' && (
+              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <p className="font-medium">AI assist unavailable</p>
+                <p className="mt-1">
+                  {aiAssistCapability.detail ?? 'Runtime capability truth reports AI assist as unavailable. You can still capture intent here and continue in the manual pipeline editor.'}
+                </p>
+              </div>
+            )}
+
+            {aiAssistCapability?.status === 'degraded' && (
+              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <p className="font-medium">AI assist degraded</p>
+                <p className="mt-1">
+                  {aiAssistCapability.detail ?? 'Runtime capability truth reports AI assist as degraded. Suggestions should be treated as advisory only.'}
+                </p>
               </div>
             )}
 

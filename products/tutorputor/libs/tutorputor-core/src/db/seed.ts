@@ -78,6 +78,13 @@ async function main(options: SeedOptions = {}) {
   }
 
   const prisma = createPrismaClient();
+  
+  // Require explicit tenantId in production
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction && !options.tenantId && !process.env.TUTORPUTOR_DEFAULT_TENANT_ID) {
+    throw new Error("tenantId is required in production seed operations");
+  }
+  
   const tenantId = options.tenantId ?? process.env.TUTORPUTOR_DEFAULT_TENANT_ID ?? DEFAULT_TENANT_ID;
   const userId = options.userId ?? DEFAULT_USER_ID;
 

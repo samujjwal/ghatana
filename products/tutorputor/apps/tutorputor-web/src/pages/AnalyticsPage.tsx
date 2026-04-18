@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Box, Card, Text, Button, Spinner } from "@/components/ui";
 import { PageHeader } from "../components/PageHeader";
+import { apiClient } from "../api/tutorputorClient";
 
 interface AnalyticsSummary {
     totalEvents: number;
@@ -36,28 +37,19 @@ interface AtRiskStudent {
 export function AnalyticsPage() {
     const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("weekly");
 
-    const { data: summary, isLoading: summaryLoading } = useQuery<AnalyticsSummary>({
+    const { data: summary, isLoading: summaryLoading } = useQuery({
         queryKey: ["analytics", "summary"],
-        queryFn: async (): Promise<AnalyticsSummary> => {
-            // Placeholder - getAnalyticsSummary to be implemented on apiClient
-            return { totalEvents: 0, activeLearners: 0, eventsByType: {} };
-        }
+        queryFn: async () => apiClient.getAnalyticsSummary(),
     });
 
-    const { data: usageTrends, isLoading: trendsLoading } = useQuery<UsageTrends>({
+    const { data: usageTrends, isLoading: trendsLoading } = useQuery({
         queryKey: ["analytics", "usage-trends", period],
-        queryFn: async (): Promise<UsageTrends> => {
-            // Placeholder - getUsageTrends to be implemented on apiClient
-            return { periods: [] };
-        }
+        queryFn: async () => apiClient.getUsageTrends(period),
     });
 
-    const { data: atRisk, isLoading: atRiskLoading } = useQuery<AtRiskStudent[]>({
+    const { data: atRisk, isLoading: atRiskLoading } = useQuery({
         queryKey: ["analytics", "at-risk"],
-        queryFn: async (): Promise<AtRiskStudent[]> => {
-            // Placeholder - getAtRiskStudents to be implemented on apiClient
-            return [];
-        }
+        queryFn: async () => apiClient.getAtRiskStudents(),
     });
 
     const isLoading = summaryLoading || trendsLoading || atRiskLoading;
@@ -128,12 +120,12 @@ export function AnalyticsPage() {
                     </Box>
                     {usageTrends?.periods && usageTrends.periods.length > 0 ? (
                         <Box className="h-[300px] flex items-end gap-1 p-4">
-                            {usageTrends.periods.map((p: TrendPeriod, i: number) => (
+                            {usageTrends?.periods.map((p: TrendPeriod, i: number) => (
                                 <Box
                                     key={i}
                                     className="bg-blue-500 rounded-t flex-1 min-w-[20px]"
                                     style={{
-                                        height: `${Math.min(100, (p.eventCount / Math.max(...usageTrends.periods.map(x => x.eventCount)) * 100))}%`
+                                        height: `${Math.min(100, (p.eventCount / Math.max(...usageTrends.periods.map((x: TrendPeriod) => x.eventCount)) * 100))}%`
                                     }}
                                     title={`${p.periodStart}: ${p.eventCount} events`}
                                 />
