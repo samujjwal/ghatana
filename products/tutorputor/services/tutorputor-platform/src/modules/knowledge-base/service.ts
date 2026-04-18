@@ -8,6 +8,22 @@
 import type { PrismaClient } from "@tutorputor/core/db";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
 
+const DEFAULT_GOVERNED_EVIDENCE_DOMAINS = [
+  "medical",
+  "health",
+  "safety",
+  "legal",
+];
+
+const GOVERNED_SOURCE_TYPES = new Set([
+  "PEER_REVIEWED_JOURNAL",
+  "TEXTBOOK",
+  "CURRICULUM_STANDARD",
+  "DOMAIN_EXPERT",
+  "CALCULATION",
+  "SIMULATION_RESULT",
+]);
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -142,15 +158,23 @@ export class KnowledgeBaseServiceImpl {
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
 
   constructor(
-    _prisma: PrismaClient,
+    private readonly prisma: PrismaClient,
     private readonly config: {
       wikipediaApiUrl?: string;
       openStaxApiUrl?: string;
       khanAcademyApiUrl?: string;
       enableCaching?: boolean;
+      governedEvidenceDomains?: string[];
     } = {},
-  ) {
-    void _prisma;
+  ) {}
+
+  private isGovernedEvidenceDomain(domain: string): boolean {
+    const governedDomains =
+      this.config.governedEvidenceDomains ?? DEFAULT_GOVERNED_EVIDENCE_DOMAINS;
+    const normalizedDomain = domain.trim().toLowerCase();
+    return governedDomains.some((candidate) =>
+      normalizedDomain.includes(candidate.toLowerCase()),
+    );
   }
 
   private getCached<T>(key: string): T | undefined {
@@ -188,6 +212,43 @@ export class KnowledgeBaseServiceImpl {
 
     // Extract factual assertions from the claim
     const assertions = await this.extractAssertions(request.claim);
+
+    if (this.isGovernedEvidenceDomain(request.domain)) {
+      const governedSources = await this.queryGovernedEvidenceSources(
+        assertions,
+        request.domain,
+      );
+
+      const result: FactCheckResult =
+        governedSources.length > 0
+          ? {
+              ...this.analyzeFactCheckResults(
+                assertions,
+                governedSources,
+                request,
+              ),
+              processingTimeMs: Date.now() - startTime,
+            }
+          : {
+              verified: false,
+              confidence: 0,
+              sources: [],
+              contradictions: [],
+              supportingEvidence: [],
+              recommendations: [
+                "No governed evidence bundle is available for this high-risk domain.",
+                "Escalate this content to human review before trusting or publishing it.",
+              ],
+              riskLevel: "high",
+              processingTimeMs: Date.now() - startTime,
+            };
+
+      if (this.config.enableCaching !== false) {
+        this.setCached(cacheKey, result);
+      }
+
+      return result;
+    }
 
     // Query multiple knowledge bases
     const sourceQueries = [
@@ -247,7 +308,7 @@ export class KnowledgeBaseServiceImpl {
     results.push(...localResults);
 
     // Search external sources if needed
-    if (results.length < 5) {
+    if (results.length < 5 && !this.isGovernedEvidenceDomain(domain)) {
       const externalResults = await this.searchExternalSources(query, domain);
       results.push(...externalResults);
     }
@@ -278,7 +339,7 @@ export class KnowledgeBaseServiceImpl {
     }
 
     // If no examples found, generate them
-    if (examples.length === 0) {
+    if (examples.length === 0 && !this.isGovernedEvidenceDomain(domain)) {
       const generatedExamples = await this.generateExamples(
         concept,
         domain,
@@ -669,8 +730,77 @@ export class KnowledgeBaseServiceImpl {
     query: string,
     domain: string,
   ): Promise<KnowledgeBaseEntry[]> {
-    // In production, this would query a local knowledge base database
-    // For now, return mock data
+    const learningEvidenceModel = (
+      this.prisma as PrismaClient & {
+        learningEvidence?: {
+          findMany?: (args: unknown) => Promise<Array<Record<string, unknown>>>;
+        };
+      }
+    ).learningEvidence;
+
+    if (learningEvidenceModel?.findMany) {
+      const evidenceRows =
+        (await learningEvidenceModel.findMany({
+        where: {
+          experience: {
+            domain: domain.toUpperCase(),
+          },
+          OR: [
+            {
+              sourceTitle: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              excerpt: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+        take: 10,
+      } as never)) ?? [];
+
+      if (evidenceRows.length > 0) {
+        return evidenceRows.map((row, index) => ({
+          id: String(row.id ?? `kb-${index + 1}`),
+          concept: query,
+          definition:
+            typeof row.excerpt === "string" && row.excerpt.length > 0
+              ? row.excerpt
+              : `Governed evidence for ${query}`,
+          domain,
+          gradeRange: "professional",
+          examples:
+            typeof row.excerpt === "string" && row.excerpt.length > 0
+              ? [row.excerpt]
+              : [],
+          relatedConcepts: [],
+          sources: [
+            {
+              name: String(row.sourcePublisher ?? row.sourceType ?? "Governed Source"),
+              url: typeof row.sourceUrl === "string" ? row.sourceUrl : "",
+              title: String(row.sourceTitle ?? query),
+              relevanceScore: Number(row.credibilityScore ?? 0.9),
+              excerpt: typeof row.excerpt === "string" ? row.excerpt : "",
+              credibility: Number(row.credibilityScore ?? 0.9),
+              lastUpdated:
+                row.updatedAt instanceof Date ? row.updatedAt : new Date(),
+            },
+          ],
+          confidence: Number(row.credibilityScore ?? 0.9),
+          lastVerified:
+            row.updatedAt instanceof Date ? row.updatedAt : new Date(),
+        }));
+      }
+    }
+
+    if (this.isGovernedEvidenceDomain(domain)) {
+      return [];
+    }
+
     return [
       {
         id: "kb-1",
@@ -777,6 +907,65 @@ export class KnowledgeBaseServiceImpl {
       suggestions: factCheck.recommendations,
       evidence: factCheck.sources,
     };
+  }
+
+  private async queryGovernedEvidenceSources(
+    assertions: string[],
+    domain: string,
+  ): Promise<FactSource[]> {
+    const learningEvidenceModel = (
+      this.prisma as PrismaClient & {
+        learningEvidence?: {
+          findMany?: (args: unknown) => Promise<Array<Record<string, unknown>>>;
+        };
+      }
+    ).learningEvidence;
+
+    if (!learningEvidenceModel?.findMany) {
+      return [];
+    }
+
+    const rows = await learningEvidenceModel.findMany({
+      where: {
+        experience: {
+          domain: domain.toUpperCase(),
+        },
+        verificationState: {
+          in: ["VERIFIED", "UNVERIFIED"],
+        },
+        OR: assertions.flatMap((assertion) => [
+          {
+            sourceTitle: {
+              contains: assertion,
+              mode: "insensitive",
+            },
+          },
+          {
+            excerpt: {
+              contains: assertion,
+              mode: "insensitive",
+            },
+          },
+        ]),
+      },
+      orderBy: {
+        credibilityScore: "desc",
+      },
+      take: 12,
+    } as never);
+
+    return rows
+      .filter((row) => GOVERNED_SOURCE_TYPES.has(String(row.sourceType ?? "")))
+      .map((row) => ({
+        name: String(row.sourcePublisher ?? row.sourceType ?? "Governed Source"),
+        url: typeof row.sourceUrl === "string" ? row.sourceUrl : "",
+        title: String(row.sourceTitle ?? "Governed evidence"),
+        relevanceScore: Number(row.credibilityScore ?? 0.9),
+        excerpt: typeof row.excerpt === "string" ? row.excerpt : "",
+        credibility: Number(row.credibilityScore ?? 0.9),
+        lastUpdated:
+          row.updatedAt instanceof Date ? row.updatedAt : new Date(),
+      }));
   }
 
   private async checkCompleteness(

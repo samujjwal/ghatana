@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ModulePage } from "../pages/ModulePage";
 import { PathwaysPage } from "../pages/PathwaysPage";
@@ -6,24 +6,27 @@ import { SearchResultsPage } from "../pages/SearchResultsPage";
 import { AssessmentsPage } from "../pages/AssessmentsPage";
 import { AssessmentDetailPage } from "../pages/AssessmentDetailPage";
 import { AnalyticsPage } from "../pages/AnalyticsPage";
-import { AITutorPage } from "../pages/AITutorPage";
 import { MarketplacePage } from "../pages/MarketplacePage";
 import { CollaborationPage } from "../pages/CollaborationPage";
+import { TeacherPage } from "../pages/TeacherPage";
+import SettingsPage from "../pages/Settings";
+import SimulationListPage from "../pages/SimulationList";
 import { AppLayout } from "../components/AppLayout";
+import { LoginRoutePage } from "../pages/LoginRoutePage";
+import { canonicalLearnerRoutes } from "./canonicalRouteMap";
 
 /**
- * Student App Routes
- * 
- * Simplified navigation structure based on UI/UX audit:
- * - Learn: Dashboard, Modules, Pathways
- * - Practice: Assessments
- * - Explore: Search, Marketplace
- * - Connect: Collaboration
- * - Profile: Analytics
- * 
- * Legacy routes removed: CMS, Templates, Content Generation demos
+ * Canonical learner route map.
+ *
+ * The web app owns learner consumption and teacher-side classroom surfaces.
+ * Admin authoring remains canonical in the separate tutorputor-admin app.
+ * Legacy aliases stay only where they preserve existing deep links.
  */
 export const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginRoutePage />,
+  },
   {
     path: "/",
     element: <AppLayout />,
@@ -36,6 +39,10 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "modules",
+        element: <Navigate to="/search" replace />,
       },
       {
         path: "modules/:slug",
@@ -77,17 +84,32 @@ export const router = createBrowserRouter([
         path: "analytics",
         element: <AnalyticsPage />,
       },
-
-      // === AI TUTOR (Omnipresent) ===
       {
-        path: "ai-tutor",
-        element: <AITutorPage />,
+        path: "teacher",
+        element: <TeacherPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
       },
 
-      // === SIMULATION AUTHORING ===
+      // === AI TUTOR COMPATIBILITY ALIAS ===
+      {
+        path: "ai-tutor",
+        element: <Navigate to="/dashboard" replace />,
+      },
+
+      // === SIMULATIONS ===
+      {
+        path: "simulations",
+        element: <SimulationListPage />,
+      },
       {
         path: "simulations/studio/:id?",
-        lazy: () => import("../pages/SimulationStudio"),
+        lazy: async () => {
+          const module = await import("../pages/SimulationStudio");
+          return { Component: module.default };
+        },
       },
     ],
   },

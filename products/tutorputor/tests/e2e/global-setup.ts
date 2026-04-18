@@ -1,68 +1,43 @@
-/**
- * Global setup for Playwright tests
- * 
- * Prepares test environment, starts services, and validates dependencies
- */
+import { chromium, type FullConfig } from "@playwright/test";
 
-import { chromium, FullConfig } from '@playwright/test';
+const learnerUrl = process.env.BASE_URL ?? "http://127.0.0.1:3201";
+const adminUrl = process.env.ADMIN_URL ?? "http://127.0.0.1:3202";
+const gatewayUrl = process.env.GATEWAY_URL ?? "http://127.0.0.1:3200";
+const platformUrl = process.env.PLATFORM_URL ?? "http://127.0.0.1:7105";
 
-async function globalSetup(config: FullConfig) {
-  console.log('🚀 Starting E2E test setup...');
-  
+async function globalSetup(_config: FullConfig): Promise<void> {
+  console.log("Starting Tutorputor canonical E2E topology checks...");
+
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
-  
+
   try {
-    // Wait for web application to be ready
-    const baseURL = config.webServer?.url || 'http://localhost:5173';
-    console.log(`📱 Checking web app at ${baseURL}`);
-    
-    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
-    
-    // Check if page loaded successfully
-    const title = await page.title();
-    console.log(`✅ Web app loaded: ${title}`);
-    
-    // Check platform service health
-    const platformURL = process.env.PLATFORM_URL || 'http://localhost:7105';
-    console.log(`🔍 Checking platform service at ${platformURL}`);
-    
-    try {
-      const response = await page.request.get(`${platformURL}/health`);
-      if (response.status() === 200) {
-        console.log('✅ Platform service is healthy');
-      } else {
-        console.log(`⚠️ Platform service returned status: ${response.status()}`);
-      }
-    } catch (error) {
-      console.log('⚠️ Platform service not available, continuing...');
+    const appChecks = [
+      { label: "learner app", url: `${learnerUrl}/login` },
+      { label: "admin app", url: `${adminUrl}/authoring` },
+    ] as const;
+
+    for (const appCheck of appChecks) {
+      await page.goto(appCheck.url, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle");
+      console.log(`Verified ${appCheck.label}: ${appCheck.url}`);
     }
-    
-    // Validate critical APIs are accessible
-    const criticalEndpoints = [
-      '/api/health',
-      '/api/status',
-      '/health',
-    ];
-    
-    for (const endpoint of criticalEndpoints) {
-      try {
-        const response = await page.request.get(`${baseURL}${endpoint}`);
-        if (response.status() < 500) {
-          console.log(`✅ Endpoint ${endpoint} is accessible`);
-        }
-      } catch (error) {
-        console.log(`⚠️ Endpoint ${endpoint} not accessible`);
+
+    const serviceChecks = [
+      { label: "gateway", url: `${gatewayUrl}/health` },
+      { label: "platform", url: `${platformUrl}/health` },
+    ] as const;
+
+    for (const serviceCheck of serviceChecks) {
+      const response = await page.request.get(serviceCheck.url);
+      if (!response.ok()) {
+        throw new Error(
+          `${serviceCheck.label} health check failed with status ${response.status()}`,
+        );
       }
+      console.log(`Verified ${serviceCheck.label}: ${serviceCheck.url}`);
     }
-    
-    console.log('✅ E2E test setup completed successfully');
-    
-  } catch (error) {
-    console.error('❌ E2E test setup failed:', error);
-    throw error;
   } finally {
     await context.close();
     await browser.close();

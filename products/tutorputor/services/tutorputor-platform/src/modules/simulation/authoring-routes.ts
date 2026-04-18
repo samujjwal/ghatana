@@ -120,10 +120,23 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     app.log.warn(
       "No AI providers configured (OPENAI_API_KEY / ANTHROPIC_API_KEY) — simulation authoring routes will not be registered.",
     );
-    return;
   }
 
-  const service = await createAuthorService(app, config);
+  const service =
+    config.providers.length > 0 ? await createAuthorService(app, config) : null;
+
+  const getAuthorService = (reply: Parameters<FastifyInstance["get"]>[1] extends never ? never : any) => {
+    if (service) {
+      return service;
+    }
+
+    reply.code(503).send({
+      error: "Simulation authoring unavailable",
+      message:
+        "Simulation AI endpoints require OPENAI_API_KEY or ANTHROPIC_API_KEY, but manifest CRUD remains available.",
+    });
+    return null;
+  };
 
   app.get<{
     Querystring: {
@@ -1158,8 +1171,13 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   // Generate Manifest
   app.post<{ Body: Omit<GenerateManifestRequest, "tenantId" | "userId"> }>(
     "/api/sim-author/generate",
-    async (request) => {
-      return service.generateManifest({
+    async (request, reply) => {
+      const authorService = getAuthorService(reply);
+      if (!authorService) {
+        return;
+      }
+
+      return authorService.generateManifest({
         ...request.body,
         tenantId: getTenantId(request) as TenantId,
         userId: getUserId(request) as UserId,
@@ -1179,7 +1197,12 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       };
     };
   }>("/api/sim-author/generate/template", async (request, reply) => {
-    const result = await service.generateManifest({
+    const authorService = getAuthorService(reply);
+    if (!authorService) {
+      return;
+    }
+
+    const result = await authorService.generateManifest({
       ...request.body,
       tenantId: getTenantId(request) as TenantId,
       userId: getUserId(request) as UserId,
@@ -1200,8 +1223,13 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   // Refine Manifest
   app.post<{ Body: Omit<RefineManifestRequest, "tenantId" | "userId"> }>(
     "/api/sim-author/refine",
-    async (request) => {
-      return service.refineManifest({
+    async (request, reply) => {
+      const authorService = getAuthorService(reply);
+      if (!authorService) {
+        return;
+      }
+
+      return authorService.refineManifest({
         ...request.body,
         tenantId: getTenantId(request) as TenantId,
         userId: getUserId(request) as UserId,
@@ -1219,6 +1247,11 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       changeNote?: string;
     };
   }>("/api/sim-author/templates/:id/refine", async (request, reply) => {
+    const authorService = getAuthorService(reply);
+    if (!authorService) {
+      return;
+    }
+
     const existingTemplate = await templateLibrary.getTemplateById(
       getTenantId(request),
       request.params.id,
@@ -1228,7 +1261,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "Template manifest not found" });
     }
 
-    const refined = await service.refineManifest({
+    const refined = await authorService.refineManifest({
       tenantId: getTenantId(request) as TenantId,
       userId: getUserId(request) as UserId,
       manifest: manifestPayload as unknown as SimulationManifest,
@@ -1263,8 +1296,13 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   // Suggest Parameters
   app.post<{ Body: Omit<SuggestParametersRequest, "tenantId"> }>(
     "/api/sim-author/suggest",
-    async (request) => {
-      return service.suggestParameters({
+    async (request, reply) => {
+      const authorService = getAuthorService(reply);
+      if (!authorService) {
+        return;
+      }
+
+      return authorService.suggestParameters({
         ...request.body,
         tenantId: getTenantId(request) as TenantId,
       });

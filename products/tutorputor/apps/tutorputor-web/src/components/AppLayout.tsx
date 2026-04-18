@@ -2,11 +2,11 @@
  * Student App Layout
  *
  * Consolidated navigation from 3 sections to focused student experience:
- * - Learn (Primary): Dashboard, Pathways, Browse, AI Tutor
+ * - Learn (Primary): Dashboard, Pathways, Browse
  * - Create (Secondary): Content Studio (for teachers)
  *
  * Design Principles:
- * - AI Tutor is always accessible via floating button
+ * - AI Tutor is always accessible via floating assistant button instead of a dedicated destination
  * - Mobile-first responsive design
  * - Dark mode support
  *
@@ -65,22 +65,6 @@ const SearchIcon = () => (
       strokeLinejoin="round"
       strokeWidth={2}
       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-    />
-  </svg>
-);
-
-const AITutorIcon = () => (
-  <svg
-    className="w-5 h-5"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
     />
   </svg>
 );
@@ -211,7 +195,6 @@ export function AppLayout() {
     { path: "/", label: "Dashboard", icon: HomeIcon },
     { path: "/pathways", label: "Learning Paths", icon: PathwaysIcon },
     { path: "/search", label: "Browse Content", icon: SearchIcon },
-    { path: "/ai-tutor", label: "AI Tutor", icon: AITutorIcon, badge: "AI" },
   ];
 
   const teachNav: NavItem[] = [

@@ -106,6 +106,24 @@ function makePrisma() {
       create: vi.fn().mockResolvedValue({ id: "evt-1" }),
       findMany: vi.fn().mockResolvedValue([]),
     },
+    experienceRevision: {
+      create: vi.fn().mockResolvedValue({ id: "rev-1" }),
+    },
+    auditLog: {
+      create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+    },
+    evidenceBundleMetadata: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    aiGenerationLog: {
+      findFirst: vi.fn().mockResolvedValue({
+        promptHash: "prompt-hash-1",
+        model: "gpt-4.1",
+        modelVersion: "2026-04",
+        guardrailsVersion: "guardrails-v2",
+        createdAt: new Date("2024-01-01T00:00:00.000Z"),
+      }),
+    },
     experienceAnalytics: {
       findUnique: vi.fn().mockResolvedValue(null),
     },
@@ -340,6 +358,38 @@ describe("ContentStudioService", () => {
       expect(
         result.checks.find((c: any) => c.checkId === "claim-artifacts")?.passed,
       ).toBe(false);
+      expect(
+        result.checks.find((c: any) => c.checkId === "claim-artifacts")?.severity,
+      ).toBe("error");
+      expect(
+        result.checks.find((c: any) => c.checkId === "claim-tasks")?.severity,
+      ).toBe("error");
+    });
+
+    it("fails when tasks reference a claim that no longer exists", async () => {
+      const claim = {
+        id: "c1",
+        claimRef: "claim-1",
+        bloomLevel: "APPLY",
+        examples: [{ id: "ex-1" }],
+        simulations: [],
+        animations: [],
+      };
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        ...baseExp,
+        claims: [claim],
+        experienceTasks: [{ id: "task-1", claimRef: "claim-orphan" }],
+      });
+
+      const result = await service.validateExperience("exp-1");
+
+      expect(result.canPublish).toBe(false);
+      expect(
+        result.checks.find((c: any) => c.checkId === "task-claim-links")?.passed,
+      ).toBe(false);
+      expect(
+        result.checks.find((c: any) => c.checkId === "task-claim-links")?.severity,
+      ).toBe("error");
     });
 
     it("passes with canPublish=true when all claims have tasks and artifacts", async () => {
@@ -457,6 +507,31 @@ describe("ContentStudioService", () => {
       expect(prisma.learningExperience.update).not.toHaveBeenCalled();
     });
 
+    it("includes blocking artifact-graph reasons in publish errors", async () => {
+      prisma.learningExperience.findUnique.mockResolvedValue({
+        id: "exp-1",
+        tenantId: "tenant-1",
+        status: "DRAFT",
+        gradeAdaptations: [],
+        claims: [
+          {
+            id: "c1",
+            claimRef: "claim-1",
+            bloomLevel: "UNDERSTAND",
+            examples: [],
+            simulations: [],
+            animations: [],
+          },
+        ],
+        evidences: [],
+        experienceTasks: [],
+      });
+
+      await expect(
+        service.publishExperience("exp-1", "user-1"),
+      ).rejects.toThrow(/missing tasks.*examples, simulations, or animations/i);
+    });
+
     it("updates status to PUBLISHED when validation passes", async () => {
       const claim = {
         id: "c1",
@@ -498,6 +573,32 @@ describe("ContentStudioService", () => {
             experienceId: "exp-1",
             eventType: "PUBLISHED",
             actorId: "user-1",
+          }),
+        }),
+      );
+      expect(prisma.experienceRevision.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            experienceId: "exp-1",
+            version: 1,
+            authorId: "user-1",
+            promptHash: "prompt-hash-1",
+            diff: expect.objectContaining({
+              validation: expect.objectContaining({
+                source: "content_studio.validateExperience",
+              }),
+            }),
+          }),
+        }),
+      );
+      expect(prisma.auditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: "tenant-1",
+            actorId: "user-1",
+            action: "experience_published",
+            resourceType: "LearningExperience",
+            resourceId: "exp-1",
           }),
         }),
       );

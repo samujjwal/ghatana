@@ -25,6 +25,13 @@ export const knowledgeBaseModule: FastifyPluginAsync = async (fastify) => {
       process.env.KNOWLEDGE_BASE_KHAN_ACADEMY_API_URL ||
       "https://www.khanacademy.org/api",
     enableCaching: process.env.KNOWLEDGE_BASE_CACHE_ENABLED !== "false",
+    governedEvidenceDomains: (
+      process.env.KNOWLEDGE_BASE_GOVERNED_DOMAINS ||
+      "medical,health,safety,legal"
+    )
+      .split(",")
+      .map((domain) => domain.trim())
+      .filter(Boolean),
   });
 
   // Get configuration from environment or use defaults

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeProvider as GhatanaThemeProvider } from '@ghatana/theme';
 
 export interface MinimalThemeProviderProps {
     children: React.ReactNode;
@@ -9,5 +10,5 @@ export interface MinimalThemeProviderProps {
  * Provides basic theming context for the application
  */
 export const MinimalThemeProvider: React.FC<MinimalThemeProviderProps> = ({ children }) => {
-    return <>{children}</>;
+    return <GhatanaThemeProvider>{children}</GhatanaThemeProvider>;
 };

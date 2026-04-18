@@ -410,12 +410,14 @@ export function LoginPage({
   logo,
   title = "Welcome back",
   subtitle = "Sign in to continue to your account",
+  redirectPath = "/dashboard",
 }: {
   tenantSlug: string;
   onEmailLogin?: () => void;
   logo?: React.ReactNode;
   title?: string;
   subtitle?: string;
+  redirectPath?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [errorDescription, setErrorDescription] = useState<string | null>(null);
@@ -439,12 +441,17 @@ export function LoginPage({
   }, []);
 
   const handleProviderSelect = useCallback((providerId: string) => {
+    const safeRedirectPath =
+      redirectPath.startsWith("/") && !redirectPath.startsWith("//")
+        ? redirectPath
+        : "/dashboard";
+
     // Redirect to SSO login endpoint
     const redirectUri = encodeURIComponent(
-      `${window.location.origin}/dashboard`
+      new URL(safeRedirectPath, window.location.origin).toString()
     );
     window.location.href = `/auth/login/${providerId}?redirect_uri=${redirectUri}`;
-  }, []);
+  }, [redirectPath]);
 
   const handleRetry = useCallback(() => {
     setError(null);

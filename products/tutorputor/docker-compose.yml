@@ -29,6 +29,120 @@ services:
       timeout: 3s
       retries: 5
 
+  platform:
+    profiles: ["app-stack"]
+    image: node:22-bookworm-slim
+    container_name: tutorputor-platform-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - >-
+        corepack enable &&
+        pnpm install --frozen-lockfile &&
+        PORT=7105
+        DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tutorputor
+        TUTORPUTOR_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tutorputor
+        REDIS_URL=redis://redis:6379
+        JWT_SECRET=test-secret-do-not-use-in-prod-1234567890
+        STRIPE_SECRET_KEY=test-stripe-secret-key-placeholder
+        CONTENT_WORKER_ENABLED=false
+        CONTENT_QUEUE_DISABLED=true
+        pnpm --dir products/tutorputor/services/tutorputor-platform dev
+    ports:
+      - "7105:7105"
+    volumes:
+      - ../..:/workspace
+      - tutorputor_node_modules:/workspace/node_modules
+      - tutorputor_pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api-gateway:
+    profiles: ["app-stack"]
+    image: node:22-bookworm-slim
+    container_name: tutorputor-api-gateway-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - >-
+        corepack enable &&
+        pnpm install --frozen-lockfile &&
+        PORT=3200
+        DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tutorputor
+        TUTORPUTOR_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tutorputor
+        REDIS_URL=redis://redis:6379
+        JWT_SECRET=test-secret-do-not-use-in-prod-1234567890
+        STRIPE_SECRET_KEY=test-stripe-secret-key-placeholder
+        CONTENT_WORKER_ENABLED=false
+        CONTENT_QUEUE_DISABLED=true
+        pnpm --dir products/tutorputor/apps/api-gateway dev
+    ports:
+      - "3200:3200"
+    volumes:
+      - ../..:/workspace
+      - tutorputor_node_modules:/workspace/node_modules
+      - tutorputor_pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    profiles: ["app-stack"]
+    image: node:22-bookworm-slim
+    container_name: tutorputor-web-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - >-
+        corepack enable &&
+        pnpm install --frozen-lockfile &&
+        VITE_API_BASE_URL=http://127.0.0.1:3200/api
+        pnpm --dir products/tutorputor/apps/tutorputor-web dev --host 0.0.0.0 --port 3201
+    ports:
+      - "3201:3201"
+    volumes:
+      - ../..:/workspace
+      - tutorputor_node_modules:/workspace/node_modules
+      - tutorputor_pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+  admin:
+    profiles: ["app-stack"]
+    image: node:22-bookworm-slim
+    container_name: tutorputor-admin-dev
+    working_dir: /workspace
+    command:
+      - sh
+      - -lc
+      - >-
+        corepack enable &&
+        pnpm install --frozen-lockfile &&
+        VITE_API_BASE_URL=http://127.0.0.1:3200
+        VITE_DEV_AUTH_BYPASS=true
+        VITE_TUTORPUTOR_TENANT_ID=default
+        pnpm --dir products/tutorputor/apps/tutorputor-admin dev --host 0.0.0.0 --port 3202
+    ports:
+      - "3202:3202"
+    volumes:
+      - ../..:/workspace
+      - tutorputor_node_modules:/workspace/node_modules
+      - tutorputor_pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      api-gateway:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:
+  tutorputor_node_modules:
+  tutorputor_pnpm_store:

@@ -202,10 +202,12 @@ describe("DashboardPage", () => {
 
       expect(screen.getByText("Learning Pathways")).toBeInTheDocument();
       expect(screen.getByText("Browse Modules")).toBeInTheDocument();
-      expect(screen.getByText("AI Tutor")).toBeInTheDocument();
       expect(screen.getByText("Assessments")).toBeInTheDocument();
       expect(screen.getByText("Analytics")).toBeInTheDocument();
       expect(screen.getByText("Marketplace")).toBeInTheDocument();
+      expect(
+        screen.getByText(/floating AI tutor button for in-context guidance/i),
+      ).toBeInTheDocument();
     });
 
     it("displays recommended modules", () => {
@@ -254,13 +256,6 @@ describe("DashboardPage", () => {
 
       const searchLink = screen.getByRole("link", { name: /browse modules/i });
       expect(searchLink).toHaveAttribute("href", "/search");
-    });
-
-    it("has link to AI Tutor", () => {
-      renderWithProviders(<DashboardPage />);
-
-      const aiTutorLink = screen.getByRole("link", { name: /ai tutor/i });
-      expect(aiTutorLink).toHaveAttribute("href", "/ai-tutor");
     });
 
     it("has link to Assessments", () => {

@@ -82,6 +82,13 @@ type ValidateExperienceInput = {
   userId?: string;
 };
 
+type ClaimCoverageCheck = {
+  claimRef: string;
+  hasTasks: boolean;
+  hasArtifacts: boolean;
+  hasBloom: boolean;
+};
+
 type AddClaimInput = {
   claimRef?: string;
   text?: string;
@@ -337,6 +344,153 @@ async function recordExperienceEvent(
       metadata: metadata ?? undefined,
     } as any,
   });
+}
+
+async function recordExperiencePublishProvenance(
+  prisma: PrismaClient,
+  experience: LearningExperience,
+  actorId: string,
+  validationScore: number,
+): Promise<void> {
+  const claimRefs = experience.claims.map((claim) => claim.claimRef ?? claim.id);
+  const prismaWithExtras = prisma as PrismaClient & {
+    experienceRevision?: {
+      create: (args: unknown) => Promise<unknown>;
+    };
+    auditLog?: {
+      create: (args: unknown) => Promise<unknown>;
+    };
+    evidenceBundleMetadata?: {
+      findMany: (args: unknown) => Promise<
+        Array<{
+          claimRef: string;
+          bundleConfidence: number;
+          coverageScore: number;
+          contradictionDetected: boolean;
+          freshnessOverall: string;
+          evidenceCount: number;
+          generatedAt: Date;
+          regeneratedAt: Date | null;
+          generationJobId: string | null;
+        }>
+      >;
+    };
+    aiGenerationLog?: {
+      findFirst: (args: unknown) => Promise<
+        | {
+            promptHash: string | null;
+            model: string;
+            modelVersion: string | null;
+            guardrailsVersion: string | null;
+            createdAt: Date;
+          }
+        | null
+      >;
+    };
+  };
+
+  const [bundleMetadata, latestGenerationLog] = await Promise.all([
+    claimRefs.length > 0
+      ? prismaWithExtras.evidenceBundleMetadata?.findMany({
+          where: {
+            experienceId: experience.id,
+            claimRef: { in: claimRefs },
+          },
+          orderBy: { claimRef: "asc" },
+        })
+      : Promise.resolve([]),
+    prismaWithExtras.aiGenerationLog?.findFirst({
+      where: { experienceId: experience.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        promptHash: true,
+        model: true,
+        modelVersion: true,
+        guardrailsVersion: true,
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  const provenanceSnapshot = {
+    status: experience.status,
+    title: experience.title,
+    description: experience.description,
+    version: experience.version,
+    gradeAdaptation: experience.gradeAdaptation,
+    claimCount: experience.claims.length,
+    taskCount: experience.claims.reduce(
+      (count, claim) => count + (claim.tasks?.length ?? 0),
+      0,
+    ),
+    evidenceCount: experience.claims.reduce(
+      (count, claim) => count + (claim.evidenceRequirements?.length ?? 0),
+      0,
+    ),
+    claims: experience.claims.map((claim) => ({
+      id: claim.id,
+      claimRef: claim.claimRef ?? claim.id,
+      text: claim.text,
+      bloomLevel: claim.bloomLevel ?? claim.bloom,
+      taskRefs: (claim.tasks ?? []).map((task) => task.id),
+      evidenceRefs: (claim.evidenceRequirements ?? []).map(
+        (evidence) => evidence.id,
+      ),
+      contentNeeds: claim.contentNeeds ?? null,
+    })),
+    evidenceBundles: (bundleMetadata ?? []).map((bundle) => ({
+      claimRef: bundle.claimRef,
+      bundleConfidence: bundle.bundleConfidence,
+      coverageScore: bundle.coverageScore,
+      contradictionDetected: bundle.contradictionDetected,
+      freshnessOverall: bundle.freshnessOverall,
+      evidenceCount: bundle.evidenceCount,
+      generatedAt: bundle.generatedAt.toISOString(),
+      regeneratedAt: bundle.regeneratedAt?.toISOString() ?? null,
+      generationJobId: bundle.generationJobId,
+    })),
+    latestGeneration:
+      latestGenerationLog == null
+        ? null
+        : {
+            promptHash: latestGenerationLog.promptHash,
+            model: latestGenerationLog.model,
+            modelVersion: latestGenerationLog.modelVersion,
+            guardrailsVersion: latestGenerationLog.guardrailsVersion,
+            createdAt: latestGenerationLog.createdAt.toISOString(),
+          },
+    validation: {
+      source: "content_studio.validateExperience",
+      version: "heuristic-v2",
+      score: validationScore,
+    },
+    publishedBy: actorId,
+    publishedAt: new Date().toISOString(),
+  };
+
+  await Promise.all([
+    prismaWithExtras.experienceRevision?.create({
+      data: {
+        experienceId: experience.id,
+        version: experience.version,
+        diff: provenanceSnapshot,
+        authorType: "HUMAN",
+        authorId: actorId,
+        promptHash: latestGenerationLog?.promptHash ?? null,
+      },
+    }),
+    prismaWithExtras.auditLog?.create({
+      data: {
+        tenantId: experience.tenantId,
+        actorId,
+        action: "experience_published",
+        resourceType: "LearningExperience",
+        resourceId: experience.id,
+        outcome: "success",
+        metadata: JSON.stringify(provenanceSnapshot),
+      },
+    }),
+  ]);
 }
 
 function defaultGradeAdaptation(gradeRange: GradeRange): GradeAdaptation {
@@ -950,12 +1104,7 @@ export function createContentStudioService(
     let claimsWithArtifacts = 0;
     let claimsWithBloom = 0;
 
-    const claimChecks: Array<{
-      claimRef: string;
-      hasTasks: boolean;
-      hasArtifacts: boolean;
-      hasBloom: boolean;
-    }> = [];
+    const claimChecks: ClaimCoverageCheck[] = [];
 
     const tasksByClaimRef = new Map<string, number>();
     for (const task of experience.experienceTasks) {
@@ -963,11 +1112,14 @@ export function createContentStudioService(
       tasksByClaimRef.set(ref, (tasksByClaimRef.get(ref) ?? 0) + 1);
     }
 
+    const claimRefs = new Set<string>();
+
     for (const claim of claims) {
       const claimRef =
         (claim as { claimRef?: string; id?: string }).claimRef ??
         (claim as { claimRef?: string; id?: string }).id ??
         "";
+      claimRefs.add(claimRef);
       const taskCount = tasksByClaimRef.get(claimRef) ?? 0;
       const exampleCount = Array.isArray(claim.examples) ? claim.examples.length : 0;
       const simCount = Array.isArray(claim.simulations) ? claim.simulations.length : 0;
@@ -982,6 +1134,10 @@ export function createContentStudioService(
 
       claimChecks.push({ claimRef, hasTasks, hasArtifacts, hasBloom });
     }
+
+    const orphanTaskRefs = [...tasksByClaimRef.entries()]
+      .filter(([claimRef, count]) => count > 0 && !claimRefs.has(claimRef))
+      .map(([claimRef]) => claimRef || "unlinked-task");
 
     // --------------------------------------------------------------------------
     // Pillar scoring (0–100 per pillar)
@@ -1032,10 +1188,13 @@ export function createContentStudioService(
     //   - Overall score >= 60
     // --------------------------------------------------------------------------
     const allClaimsMeetBaseline = claimChecks.every(
-      (c) => c.hasTasks || c.hasArtifacts,
+      (c) => c.hasTasks && c.hasArtifacts,
     );
     const canPublish =
-      claimCount > 0 && allClaimsMeetBaseline && overallScore >= 60;
+      claimCount > 0 &&
+      allClaimsMeetBaseline &&
+      orphanTaskRefs.length === 0 &&
+      overallScore >= 60;
     const overallStatus = canPublish
       ? "PASS"
       : overallScore >= 45
@@ -1081,7 +1240,7 @@ export function createContentStudioService(
         pillar: "educational",
         name: "Claim Tasks Coverage",
         passed: missingTasks === 0,
-        severity: missingTasks === 0 ? "info" : "warning",
+        severity: missingTasks === 0 ? "info" : "error",
         message:
           missingTasks === 0
             ? "All claims have associated practice tasks."
@@ -1097,7 +1256,7 @@ export function createContentStudioService(
         pillar: "experiential",
         name: "Concrete Learning Artifacts",
         passed: missingArtifacts === 0,
-        severity: missingArtifacts === 0 ? "info" : "warning",
+        severity: missingArtifacts === 0 ? "info" : "error",
         message:
           missingArtifacts === 0
             ? "All claims have at least one concrete learning artifact."
@@ -1108,6 +1267,41 @@ export function createContentStudioService(
           "Run the content generation pipeline to create examples and simulations.";
       }
       checks.push(artifactCheck);
+
+      const missingBloom = claimChecks.filter((c) => !c.hasBloom).length;
+      const bloomCheck: ValidationCheck = {
+        checkId: "claim-bloom",
+        pillar: "educational",
+        name: "Bloom Coverage",
+        passed: missingBloom === 0,
+        severity: missingBloom === 0 ? "info" : "warning",
+        message:
+          missingBloom === 0
+            ? "All claims include a Bloom level."
+            : `${missingBloom} claim${missingBloom > 1 ? "s are" : " is"} missing Bloom classification.`,
+      };
+      if (missingBloom > 0) {
+        bloomCheck.suggestion =
+          "Assign Bloom levels so validation and review can assess instructional coverage.";
+      }
+      checks.push(bloomCheck);
+
+      const orphanTaskCheck: ValidationCheck = {
+        checkId: "task-claim-links",
+        pillar: "technical",
+        name: "Task Claim Links",
+        passed: orphanTaskRefs.length === 0,
+        severity: orphanTaskRefs.length === 0 ? "info" : "error",
+        message:
+          orphanTaskRefs.length === 0
+            ? "All practice tasks are linked to an existing claim."
+            : `${orphanTaskRefs.length} task link${orphanTaskRefs.length > 1 ? "s reference" : " references"} missing claims: ${orphanTaskRefs.join(", ")}.`,
+      };
+      if (orphanTaskRefs.length > 0) {
+        orphanTaskCheck.suggestion =
+          "Relink or remove tasks whose claimRef no longer exists before publishing.";
+      }
+      checks.push(orphanTaskCheck);
     }
 
     const gradeCheck: ValidationCheck = {
@@ -1187,15 +1381,15 @@ export function createContentStudioService(
     id: string,
     userId: string,
   ): Promise<LearningExperience | null> {
-    // Validate before publishing — gate on canPublish from evidence-based check
+    // Validate before publishing and surface the exact blocking artifact-graph defects.
     const validation = await validateExperience(id);
     if (!validation.canPublish) {
+      const blockingIssues = validation.checks
+        .filter((c) => !c.passed && c.severity !== "info")
+        .map((c) => c.message);
       throw new Error(
         `Cannot publish: validation failed (score ${validation.score}/100). ` +
-          `Fix the following issues: ${validation.checks
-            .filter((c) => !c.passed && c.severity === "error")
-            .map((c) => c.message)
-            .join("; ")}`,
+          `Fix the following issues: ${blockingIssues.join("; ")}`,
       );
     }
 
@@ -1208,6 +1402,17 @@ export function createContentStudioService(
       },
     });
 
+    const publishedExperience = await mapExperience(prisma, id);
+
+    if (publishedExperience) {
+      await recordExperiencePublishProvenance(
+        prisma,
+        publishedExperience,
+        userId || "publisher",
+        validation.score,
+      );
+    }
+
     await recordExperienceEvent(
       prisma,
       id,
@@ -1219,7 +1424,7 @@ export function createContentStudioService(
       },
     );
 
-    return mapExperience(prisma, id);
+    return publishedExperience;
   }
 
   async function unpublishExperience(

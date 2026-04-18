@@ -72,10 +72,19 @@ function createTestJWT(
  * Mock Redis client
  */
 function createMockRedis() {
+  const storage = new Map<string, string>();
+
   return {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue("OK"),
-    del: vi.fn().mockResolvedValue(1),
+    get: vi.fn((key: string) => Promise.resolve(storage.get(key) ?? null)),
+    set: vi.fn((key: string, value: string) => {
+      storage.set(key, value);
+      return Promise.resolve("OK");
+    }),
+    expire: vi.fn(() => Promise.resolve(1)),
+    del: vi.fn((key: string) => {
+      storage.delete(key);
+      return Promise.resolve(1);
+    }),
     ping: vi.fn().mockResolvedValue("PONG"),
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn().mockResolvedValue(undefined),
@@ -560,10 +569,31 @@ describe("Tutorputor Platform Startup & Auth (Integration)", () => {
       const response = await fixture.app.inject({
         method: "GET",
         url: "/health",
-        headers: { origin: "https://tutorputor.local" },
+        headers: { origin: "http://localhost:5173" },
       });
 
       expect(response.headers["access-control-allow-origin"]).toBeTruthy();
+    });
+
+    it("fails startup on wildcard credentialed CORS in production", async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalCorsOrigin = process.env.CORS_ORIGIN;
+
+      process.env.NODE_ENV = "production";
+      process.env.CORS_ORIGIN = "*";
+
+      await expect(
+        createServer({
+          prisma: createMockPrisma(),
+          redis: createMockRedis() as any,
+          jwtSecret: JWT_SECRET,
+        }),
+      ).rejects.toThrow(
+        '[startup] CORS_ORIGIN="*" is not allowed in production when credentials are enabled.',
+      );
+
+      process.env.NODE_ENV = originalNodeEnv;
+      process.env.CORS_ORIGIN = originalCorsOrigin;
     });
   });
 });

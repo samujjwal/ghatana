@@ -31,6 +31,12 @@ import { randomUUID } from "crypto";
 interface SsoServiceDeps {
   prisma: TutorPrismaClient;
   baseUrl: string; // e.g., https://api.tutorputor.com
+  redis: {
+    get: (key: string) => Promise<string | null>;
+    set: (key: string, value: string) => Promise<unknown>;
+    expire: (key: string, seconds: number) => Promise<number>;
+    del: (key: string) => Promise<number>;
+  };
   generateAccessToken: (userId: string, tenantId: string) => string;
   generateRefreshToken: (userId: string, tenantId: string) => string;
   onUserAuthenticated?: (args: {
@@ -47,22 +53,26 @@ interface ProviderRuntimeConfig {
   roleMapping: Record<string, string>;
 }
 
+interface SsoStateRecord {
+  providerId: string;
+  tenantId: TenantId;
+  codeVerifier: string;
+  nonce: string;
+  redirectUri?: string;
+  expiresAt: number;
+}
+
 // =============================================================================
-// Cache & State (Replacements for Redis in MVP/Migration)
+// Cache & State
 // =============================================================================
 
 const oidcClientCache = new Map<string, OidcClient>();
-const stateCache = new Map<
-  string,
-  {
-    providerId: string;
-    tenantId: TenantId;
-    codeVerifier: string;
-    nonce: string;
-    redirectUri?: string;
-    expiresAt: number;
-  }
->();
+const STATE_TTL_SECONDS = 10 * 60;
+const STATE_CACHE_KEY_PREFIX = "sso:oidc:state:";
+
+function getStateCacheKey(state: string): string {
+  return `${STATE_CACHE_KEY_PREFIX}${state}`;
+}
 
 // =============================================================================
 // Implementation
@@ -72,10 +82,38 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
   const {
     prisma,
     baseUrl,
+    redis,
     generateAccessToken,
     generateRefreshToken,
     onUserAuthenticated,
   } = deps;
+
+  async function storeStateRecord(
+    state: string,
+    stateRecord: SsoStateRecord,
+  ): Promise<void> {
+    const cacheKey = getStateCacheKey(state);
+    await redis.set(cacheKey, JSON.stringify(stateRecord));
+    await redis.expire(cacheKey, STATE_TTL_SECONDS);
+  }
+
+  async function consumeStateRecord(
+    state: string,
+  ): Promise<SsoStateRecord | null> {
+    const cacheKey = getStateCacheKey(state);
+    const serializedRecord = await redis.get(cacheKey);
+    if (!serializedRecord) {
+      return null;
+    }
+
+    await redis.del(cacheKey);
+
+    try {
+      return JSON.parse(serializedRecord) as SsoStateRecord;
+    } catch {
+      return null;
+    }
+  }
 
   function getProviderRuntimeConfig(
     provider: Record<string, unknown>,
@@ -356,7 +394,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         if (redirectUri) {
           stateEntry.redirectUri = redirectUri;
         }
-        stateCache.set(state, stateEntry);
+        await storeStateRecord(state, stateEntry);
 
         return { redirectUrl: url, state };
       }
@@ -368,9 +406,8 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       const { providerId, code, state } = args;
 
       // 1. Validate State
-      const storedState = stateCache.get(state);
+      const storedState = await consumeStateRecord(state);
       if (!storedState) throw new Error("Invalid or expired state");
-      stateCache.delete(state);
 
       if (storedState.providerId !== providerId)
         throw new Error("Provider mismatch");

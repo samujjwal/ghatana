@@ -103,6 +103,7 @@ check_services() {
     # Check if services are running
     local services=(
         "3200:API Gateway"
+        "7105:Platform Service"
         "3201:Web App"
         "3202:Admin App"
     )
@@ -190,7 +191,7 @@ check_common_issues() {
     
     # Check for hanging processes
     local hanging_ports=()
-    for port in 3200 3201 3202; do
+    for port in 3200 3201 3202 7105; do
         if lsof -ti :$port >/dev/null 2>&1; then
             hanging_ports+=("$port")
         fi

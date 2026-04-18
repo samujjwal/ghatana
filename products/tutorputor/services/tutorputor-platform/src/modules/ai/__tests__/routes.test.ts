@@ -428,6 +428,33 @@ describe("AI Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.error).toContain("domain");
     });
+
+    it("returns 422 when concept generation fails closed", async () => {
+      mockAIProxyService.handleTutorQuery.mockResolvedValue({
+        answer: "",
+        safety: { blocked: false },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/generate-concept",
+        headers: {
+          "x-tenant-id": "test",
+          "x-user-role": "admin",
+        },
+        payload: {
+          conceptName: "Photosynthesis",
+          domain: "BIOLOGY",
+        },
+      });
+
+      expect(response.statusCode).toBe(422);
+      const body = JSON.parse(response.body);
+      expect(body.code).toBe("AI_GENERATION_FAILED");
+      expect(body.error).toContain(
+        "AI concept generation failed after 3 attempts",
+      );
+    });
   });
 
   describe("POST /generate-simulation", () => {

@@ -140,7 +140,7 @@ print_services() {
     log_section "Backend Services"
     
     format_status "API Gateway" "$(get_service_status "api-gateway" "port" "3200")" "http://localhost:3200"
-    format_status "Platform Service" "$(get_service_status "platform" "pid" "${ROOT_DIR}/.logs/platform.pid")"
+    format_status "Platform Service" "$(get_service_status "platform" "port" "7105")" "http://localhost:7105"
     
     if [ -f "${ROOT_DIR}/.logs/content-gen.pid" ]; then
         format_status "Content Generation" "$(get_service_status "content-gen" "pid" "${ROOT_DIR}/.logs/content-gen.pid")"
@@ -167,7 +167,7 @@ print_quick_stats() {
     local running=0
     local total=0
     
-    for port in 3200 3201 3202; do
+    for port in 3200 3201 3202 7105; do
         ((total++))
         if [ "$(check_port $port)" = "up" ]; then
             ((running++))

@@ -183,6 +183,7 @@ Options:
 |----------|-------------|---------|
 | `TUTORPUTOR_ENV` | Environment mode | `development` |
 | `PORT_API_GATEWAY` | API Gateway port | `3200` |
+| `PORT_PLATFORM` | Direct platform port | `7105` |
 | `PORT_WEB` | Web app port | `3201` |
 | `PORT_ADMIN` | Admin app port | `3202` |
 | `QUIET_CONSOLE` | Suppress output | `true` |
@@ -233,4 +234,5 @@ ttr dev
 lsof -ti :3200 | xargs kill
 lsof -ti :3201 | xargs kill
 lsof -ti :3202 | xargs kill
+lsof -ti :7105 | xargs kill
 ```

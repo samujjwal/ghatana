@@ -18,6 +18,11 @@
       "types": "./dist/renderer/index.d.ts",
       "import": "./dist/renderer/index.js"
     },
+    "./renderer/easing": {
+      "types": "./src/renderer/easing.d.ts",
+      "import": "./src/renderer/easing.js",
+      "default": "./src/renderer/easing.js"
+    },
     "./physics": {
       "types": "./dist/physics/index.d.ts",
       "import": "./dist/physics/index.js"

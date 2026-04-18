@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - **Node.js** 18+ (with Corepack enabled)
+- **Node.js** 22+ (matches the platform and gateway package requirements)
 - **pnpm** (install with `npm install -g pnpm`)
 - **Docker Desktop**
 - **Java** 21+ (for content generation service)
@@ -44,9 +45,17 @@ ttr dev
 The dev environment starts:
 - PostgreSQL (Docker)
 - Redis (Docker)
-- Platform Service (port 3200)
+- API Gateway (port 3200)
 - Web App (port 3201)
 - Admin App (port 3202)
+- Direct Platform Service (port 7105)
+
+Canonical local validation topology:
+
+- Gateway: `http://127.0.0.1:3200`
+- Learner app: `http://127.0.0.1:3201`
+- Admin app: `http://127.0.0.1:3202`
+- Direct platform service: `http://127.0.0.1:7105`
 
 ## Using `ttr` Commands
 
@@ -56,7 +65,7 @@ The `ttr` command provides unified access to all operations:
 ttr dev                    # Start development
 ttr dev --no-seed          # Skip database seeding
 ttr dev --with-kafka       # Enable Kafka
-tr dev --monitoring       # Enable Prometheus/Grafana
+ttr dev --monitoring       # Enable Prometheus/Grafana
 
 ttr test                   # Run all tests
 ttr test --unit            # Unit tests only
@@ -67,9 +76,9 @@ ttr doctor                 # System health check
 ttr logs platform          # View platform logs
 ttr logs platform -f       # Follow logs
 ttr migrate                # Run migrations
-tr seed                   # Seed database
-tr stop                   # Stop all services
-tr clean --logs           # Clean log files
+ttr seed                   # Seed database
+ttr stop                   # Stop all services
+ttr clean --logs           # Clean log files
 ```
 
 ## Manual Setup (Alternative)
@@ -80,6 +89,9 @@ If you prefer not to use `ttr`:
 
 ```bash
 docker compose up -d postgres redis
+
+# Or boot the full supported local stack inside containers
+docker compose --profile app-stack up -d
 ```
 
 ### Run Migrations
@@ -102,15 +114,19 @@ npx prisma db seed
 ```bash
 # Terminal 1: Platform service
 cd services/tutorputor-platform
-pnpm dev
+PORT=7105 pnpm dev
 
-# Terminal 2: Web app
+# Terminal 2: API gateway
+cd apps/api-gateway
+PORT=3200 CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm dev
+
+# Terminal 3: Web app
 cd apps/tutorputor-web
-pnpm dev --port 3201
+VITE_API_BASE_URL=http://127.0.0.1:3200/api pnpm dev --host 0.0.0.0 --port 3201
 
-# Terminal 3: Admin app
+# Terminal 4: Admin app
 cd apps/tutorputor-admin
-pnpm dev --port 3202
+VITE_API_BASE_URL=http://127.0.0.1:3200 VITE_DEV_AUTH_BYPASS=true VITE_TUTORPUTOR_TENANT_ID=default pnpm dev --host 0.0.0.0 --port 3202
 ```
 
 ## Development Workflow
@@ -162,6 +178,7 @@ ttr test --unit -f "example"
 lsof -ti :3200 | xargs kill
 lsof -ti :3201 | xargs kill
 lsof -ti :3202 | xargs kill
+lsof -ti :7105 | xargs kill
 
 # Or use ttr stop
 ttr stop
@@ -223,6 +240,9 @@ REDIS_URL="redis://localhost:6379"
 
 # JWT
 JWT_SECRET="your-secret-key"
+
+# Payments
+STRIPE_SECRET_KEY="sk_test_..."
 
 # AI (optional)
 OLLAMA_HOST="http://localhost:11434"

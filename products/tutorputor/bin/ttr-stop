@@ -70,6 +70,7 @@ stop_services() {
     # Stop Node.js services
     local pids=(
         "${ROOT_DIR}/.logs/platform.pid"
+        "${ROOT_DIR}/.logs/api-gateway.pid"
         "${ROOT_DIR}/.logs/content-gen.pid"
     )
     
@@ -85,7 +86,7 @@ stop_services() {
     done
     
     # Kill any remaining node processes on our ports
-    local ports=("3200" "3201" "3202")
+    local ports=("3200" "3201" "3202" "7105")
     for port in "${ports[@]}"; do
         local pid=$(lsof -ti :$port 2>/dev/null || true)
         if [ -n "$pid" ]; then

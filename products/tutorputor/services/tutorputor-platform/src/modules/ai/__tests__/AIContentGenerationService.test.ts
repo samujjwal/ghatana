@@ -69,7 +69,7 @@ describe("AIContentGenerationService", () => {
       expect(result.prerequisites).toContain("Basic chemistry");
     });
 
-    it("handles plain text AI response", async () => {
+    it("fails closed on plain text AI responses that cannot be parsed", async () => {
       const mockResponse: TutorResponsePayload = {
         answer: `
           Description: Gravity is a force that attracts objects toward each other.
@@ -83,16 +83,13 @@ describe("AIContentGenerationService", () => {
         safety: { blocked: false },
       };
 
-      (mockAIProxy.handleTutorQuery as any).mockResolvedValueOnce(mockResponse);
+      (mockAIProxy.handleTutorQuery as any).mockResolvedValue(mockResponse);
 
-      const result = await service.generateConceptFromName(
-        "Gravity",
-        "PHYSICS",
-        "tenant-1",
+      await expect(
+        service.generateConceptFromName("Gravity", "PHYSICS", "tenant-1"),
+      ).rejects.toThrow(
+        "AI concept generation failed after 3 attempts: Failed to parse AI concept response: No JSON found in AI response",
       );
-
-      expect(result.name).toBe("Gravity");
-      expect(result.description).toBeDefined();
     });
 
     it("retries on empty response", async () => {
@@ -127,7 +124,7 @@ describe("AIContentGenerationService", () => {
       expect(result.description).toBe("A valid description");
     });
 
-    it("returns fallback after max retries with empty responses", async () => {
+    it("fails closed after max retries with empty responses", async () => {
       const emptyResponse: TutorResponsePayload = {
         answer: "",
         safety: { blocked: false },
@@ -135,10 +132,9 @@ describe("AIContentGenerationService", () => {
 
       (mockAIProxy.handleTutorQuery as any).mockResolvedValue(emptyResponse);
 
-      const result = await service.generateConceptFromName("Test", "TEST", "tenant-1");
-
-      expect(result.name).toBe("Test");
-      expect(result.description).toContain("AI concept generation incomplete");
+      await expect(
+        service.generateConceptFromName("Test", "TEST", "tenant-1"),
+      ).rejects.toThrow("AI concept generation failed after 3 attempts");
       expect(mockAIProxy.handleTutorQuery).toHaveBeenCalledTimes(3);
     });
 
@@ -176,15 +172,16 @@ describe("AIContentGenerationService", () => {
       expect(call.question).toContain("MATHEMATICS");
     });
 
-    it("handles API errors gracefully", async () => {
+    it("fails closed when the AI service errors repeatedly", async () => {
       (mockAIProxy.handleTutorQuery as any).mockRejectedValue(
         new Error("AI service unavailable"),
       );
 
-      const result = await service.generateConceptFromName("Test", "TEST", "tenant-1");
-
-      expect(result.name).toBe("Test");
-      expect(result.description).toContain("AI concept generation incomplete");
+      await expect(
+        service.generateConceptFromName("Test", "TEST", "tenant-1"),
+      ).rejects.toThrow(
+        "AI concept generation failed after 3 attempts: AI service unavailable",
+      );
     });
   });
 
@@ -367,13 +364,14 @@ describe("AIContentGenerationService", () => {
         new Error("Request timeout"),
       );
 
-      const result = await service.generateConceptFromName("Test", "TEST", "t1");
-
-      expect(result.name).toBe("Test");
-      expect(result.description).toContain("AI concept generation incomplete");
+      await expect(
+        service.generateConceptFromName("Test", "TEST", "t1"),
+      ).rejects.toThrow(
+        "AI concept generation failed after 3 attempts: Request timeout",
+      );
     });
 
-    it("handles safety blocked response", async () => {
+    it("fails closed with an explicit safety policy error", async () => {
       const blockedResponse: TutorResponsePayload = {
         answer: "",
         safety: { blocked: true, reason: "Content policy violation" },
@@ -381,10 +379,11 @@ describe("AIContentGenerationService", () => {
 
       (mockAIProxy.handleTutorQuery as any).mockResolvedValue(blockedResponse);
 
-      const result = await service.generateConceptFromName("Test", "TEST", "t1");
-
-      expect(result.name).toBe("Test");
-      expect(result.description).toContain("AI concept generation incomplete");
+      await expect(
+        service.generateConceptFromName("Test", "TEST", "t1"),
+      ).rejects.toThrow(
+        "AI concept generation failed after 3 attempts: AI response blocked by safety policy: Content policy violation",
+      );
     });
   });
 

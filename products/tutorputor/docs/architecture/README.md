@@ -1,5 +1,12 @@
 # TutorPutor Architecture
 
+This page is an orientation guide, not the final product-truth document.
+
+Use these as the authoritative high-level sources:
+
+- [CURRENT_STATE.md](CURRENT_STATE.md) for what is implemented today
+- [../PRODUCT_REALITY_AUDIT_2026-04-18.md](../PRODUCT_REALITY_AUDIT_2026-04-18.md) for the audit findings, gaps, and remediation priorities
+
 ## Overview
 
 TutorPutor is an AI-powered adaptive learning platform built as a monorepo with:
@@ -9,6 +16,12 @@ TutorPutor is an AI-powered adaptive learning platform built as a monorepo with:
 - **Admin**: React admin dashboard for content authoring
 - **Core**: Shared Prisma schema and generated client
 - **Simulation**: Simulation engine library
+
+Current delivery posture:
+
+- The learner and admin web apps are the supported product surfaces.
+- The mobile workspace is a foundation area for offline and sync capabilities, not a production-ready learner app.
+- VR APIs and schema support exist, but VR is still a scaffold/foundation area rather than a production-ready learner surface.
 
 ## System Architecture
 
@@ -103,7 +116,12 @@ flowchart TB
 
 ## API Routes
 
-All routes under `/api/v1/`:
+Tutorputor exposes root observability routes plus product APIs. Root routes are registered directly on the platform service:
+
+- `/health` for deep health checks
+- `/metrics` for Prometheus metrics
+
+Product APIs are mounted under the following namespaces:
 
 | Namespace | Module |
 |-----------|--------|
@@ -112,8 +130,11 @@ All routes under `/api/v1/`:
 | `/api/v1/assessments` | Learning |
 | `/api/v1/auth` | User |
 | `/api/v1/ai` | AI |
+| `/api/v1/integration` | Integration |
 | `/api/sim-author` | Simulation |
 | `/api/content-studio` | Content |
+
+Module-scoped health routes live under their mounted prefixes, while the canonical product-wide probes stay at the root service level. The Prometheus metric definitions and registration live in `services/tutorputor-platform/src/core/observability/metrics.ts`.
 
 ## Development
 
@@ -129,9 +150,19 @@ ttr logs        # View logs
 
 See [bin/README.md](../../bin/README.md) for full command reference.
 
+Supported local validation topology:
+
+- Gateway: `http://127.0.0.1:3200`
+- Learner app: `http://127.0.0.1:3201`
+- Admin app: `http://127.0.0.1:3202`
+- Direct platform service: `http://127.0.0.1:7105`
+
+The learner and admin apps talk to the gateway on `3200`. The direct platform process on `7105` remains part of the supported local stack for backend validation, health checks, and focused service debugging.
+
 ## Documentation
 
-- [CURRENT_STATE.md](CURRENT_STATE.md) - Current implementation status
+- [CURRENT_STATE.md](CURRENT_STATE.md) - Current implementation status and the primary product-state source
+- [../PRODUCT_REALITY_AUDIT_2026-04-18.md](../PRODUCT_REALITY_AUDIT_2026-04-18.md) - Audit source and remediation backlog
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) - Autonomous content roadmap
 - [TUTORPUTOR_FLOW_MAP.md](TUTORPUTOR_FLOW_MAP.md) - Detailed flow diagrams
 - [TUTORPUTOR_MODULE_INVENTORY.md](TUTORPUTOR_MODULE_INVENTORY.md) - Module catalog

@@ -61,8 +61,27 @@ interface GeneratedSimulationManifest {
   purpose: string;
 }
 
+export class AIContentGenerationError extends Error {
+  readonly code = "AI_GENERATION_FAILED" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "AIContentGenerationError";
+  }
+}
+
 export class AIContentGenerationService {
   constructor(private readonly aiProxyService: AIProxyService) {}
+
+  private ensureResponseIsAllowed(response: TutorResponsePayload): void {
+    if (response.safety.blocked) {
+      throw new AIContentGenerationError(
+        response.safety.reason
+          ? `AI response blocked by safety policy: ${response.safety.reason}`
+          : "AI response blocked by safety policy",
+      );
+    }
+  }
 
   /**
    * Generate concept metadata from a concept name using AI.
@@ -85,6 +104,8 @@ export class AIContentGenerationService {
           question: prompt,
           locale: "en",
         });
+
+        this.ensureResponseIsAllowed(response);
 
         const responseText = this.extractResponseText(response);
         const generated = this.parseConceptResponse(responseText);
@@ -115,18 +136,11 @@ export class AIContentGenerationService {
       await new Promise((res) => setTimeout(res, delay));
     }
 
-    // Return fallback after retries
     const message =
       lastError instanceof Error ? lastError.message : "Unknown error";
-    return {
-      name: conceptName,
-      description: `AI concept generation incomplete: ${message}`,
-      learningObjectives: [],
-      prerequisites: [],
-      competencies: [],
-      keywords: [],
-      level: "INTERMEDIATE",
-    };
+    throw new AIContentGenerationError(
+      `AI concept generation failed after ${maxAttempts} attempts: ${message}`,
+    );
   }
 
   /**
@@ -150,6 +164,8 @@ export class AIContentGenerationService {
         question: prompt,
         locale: "en",
       });
+
+      this.ensureResponseIsAllowed(response);
 
       const responseText = this.extractResponseText(response);
       return this.parseSimulationResponse(responseText);

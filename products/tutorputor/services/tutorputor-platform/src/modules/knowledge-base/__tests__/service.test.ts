@@ -26,6 +26,9 @@ const mockPrisma = {
   curriculumStandard: {
     findMany: vi.fn(),
   },
+  learningEvidence: {
+    findMany: vi.fn(),
+  },
 } as unknown as PrismaClient;
 
 describe("KnowledgeBaseService", () => {
@@ -44,6 +47,47 @@ describe("KnowledgeBaseService", () => {
   });
 
   describe("verifyFact", () => {
+    it("fails closed for governed domains without authoritative evidence bundles", async () => {
+      (mockPrisma.learningEvidence.findMany as unknown as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([]);
+
+      const result = await service.verifyFact({
+        claim: "Aspirin is safe for every patient and every dose.",
+        domain: "medical",
+      });
+
+      expect(result.verified).toBe(false);
+      expect(result.riskLevel).toBe("high");
+      expect(result.sources).toHaveLength(0);
+      expect(result.recommendations.join(" ")).toContain("human review");
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("uses governed stored evidence for high-risk domains without public fallback", async () => {
+      (mockPrisma.learningEvidence.findMany as unknown as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([
+          {
+            id: "evidence-1",
+            sourceType: "TEXTBOOK",
+            sourceTitle: "Clinical Pharmacology Handbook",
+            sourcePublisher: "Trusted Medical Press",
+            sourceUrl: "https://example.com/clinical-pharmacology",
+            excerpt: "Aspirin dosing depends on age, condition, and contraindications.",
+            credibilityScore: 0.97,
+            updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+          },
+        ]);
+
+      const result = await service.verifyFact({
+        claim: "Aspirin dosing depends on the patient and the condition treated.",
+        domain: "medical",
+      });
+
+      expect(result.sources).toHaveLength(1);
+      expect(result.sources[0]?.name).toContain("Trusted Medical Press");
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     it("returns verified result for valid scientific claim", async () => {
       // Mock Wikipedia response
       mockFetch.mockResolvedValueOnce({
@@ -768,6 +812,8 @@ describe("KnowledgeBaseService - Edge Cases", () => {
   beforeEach(() => {
     mockFetch.mockClear();
     service = new KnowledgeBaseService(mockPrisma, { enableCaching: false });
+    (mockPrisma.learningEvidence.findMany as unknown as ReturnType<typeof vi.fn>)
+      .mockReset();
   });
 
   it("handles empty claim gracefully", async () => {

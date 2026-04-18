@@ -4,7 +4,6 @@ import { Box, Card } from "@/components/ui";
 import { cardStyles, textStyles, badgeStyles, cn } from "../theme";
 import { StatCard } from "../components/StatCard";
 import { PageHeader } from "../components/PageHeader";
-import { ContentGenerationNav } from "../components/content-generation/ContentGenerationNav";
 
 // Local type definitions for component props
 type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
@@ -97,12 +96,6 @@ export function DashboardPage() {
       href: "/search",
     },
     {
-      icon: "🤖",
-      title: "AI Tutor",
-      description: "Get on-demand explanations and guidance.",
-      href: "/ai-tutor",
-    },
-    {
       icon: "📝",
       title: "Assessments",
       description: "Check your understanding with quizzes and exams.",
@@ -147,9 +140,6 @@ export function DashboardPage() {
             color="orange"
           />
         </div>
-
-        <ContentGenerationNav />
-
         <section className="mb-12">
           <h2 className={cn(textStyles.h2, "mb-2")}>
             Design your learning journey
@@ -157,6 +147,10 @@ export function DashboardPage() {
           <p className={cn(textStyles.muted, "mb-4")}>
             Jump into the core areas of TutorPutor just like the Design section
             in AEP.
+          </p>
+          <p className={cn(textStyles.muted, "mb-4")}>
+            Need help while you work? Use the floating AI tutor button for
+            in-context guidance instead of leaving your current learning flow.
           </p>
           <div className="grid grid-cols-1 gap-4">
             {featureTiles.map((tile) => (

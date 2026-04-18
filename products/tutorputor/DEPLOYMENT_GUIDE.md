@@ -1,14 +1,14 @@
 # Tutorputor Deployment Guide
-**Version:** 1.0  
-**Date:** March 28, 2026  
-**Audit Remediation:** Phase 1 Complete
+**Version:** 1.1  
+**Date:** April 18, 2026  
+**Audit Remediation:** Phase 1 route and observability alignment
 
 ---
 
 ## Prerequisites
 
 ### Required Software
-- Node.js 18+ and pnpm 8+
+- Node.js 22+ and pnpm 9+
 - PostgreSQL 14+
 - Redis 6+
 - Stripe account (test and production keys)
@@ -46,7 +46,7 @@ JWT_SECRET="your-very-long-secret-key-at-least-32-characters-long"
 
 # Application
 NODE_ENV="development" # or "production"
-PORT="3000"
+PORT="7105" # tutorputor-platform default
 HOST="0.0.0.0"
 ```
 
@@ -59,7 +59,7 @@ FEATURE_STORE_URL="http://localhost:8080"
 AI_REGISTRY_URL="http://localhost:8081"
 
 # CORS
-CORS_ORIGIN="*" # or specific domain for production
+CORS_ORIGIN="http://127.0.0.1:3200,http://127.0.0.1:3201,http://127.0.0.1:3202"
 
 # gRPC
 GRPC_SERVER_ADDRESS="localhost:50051"
@@ -154,8 +154,8 @@ brew install stripe/stripe-cli/stripe
 # Login
 stripe login
 
-# Forward webhooks to local server
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+# Forward webhooks to the canonical Tutorputor billing webhook
+stripe listen --forward-to localhost:7105/api/v1/integration/billing/webhook
 ```
 
 ### 3. Webhook Events to Subscribe
@@ -171,14 +171,50 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 ## Build and Start
 
+## Supported Local Topology
+
+Canonical local validation topology:
+
+- Gateway: `http://127.0.0.1:3200`
+- Learner app: `http://127.0.0.1:3201`
+- Admin app: `http://127.0.0.1:3202`
+- Platform service: `http://127.0.0.1:7105`
+
+The platform service exposes the canonical Tutorputor API and health surfaces directly. The gateway proxies browser traffic for the learner and admin apps in the supported end-to-end topology.
+
+For local development, the gateway and direct platform both run against the same PostgreSQL and Redis services. The gateway is the browser-facing entrypoint; the direct platform process remains available on `7105` for focused service validation and health checks.
+
+### Docker-Compose Local Stack
+
+`docker-compose.yml` now supports two modes:
+
+- `docker compose up -d postgres redis` for infrastructure-only local development
+- `docker compose --profile app-stack up -d` for the supported source-backed local stack: gateway, learner app, admin app, direct platform, PostgreSQL, and Redis
+
+The `app-stack` profile intentionally disables content workers by default so the local stack can boot without optional AI/gRPC dependencies. Add those services separately when validating asynchronous content-generation flows.
+
 ### Development
 
 ```bash
-# Start in development mode
-pnpm dev
+# Start learner + admin apps from the product root
+docker compose --profile app-stack up -d
 
-# Or with specific port
-PORT=3000 pnpm dev
+# Or run the processes directly if you prefer local shells over containers.
+
+# Terminal 1: direct platform service
+PORT=7105 pnpm --dir services/tutorputor-platform dev
+
+# Terminal 2: API gateway
+PORT=3200 CONTENT_WORKER_ENABLED=false CONTENT_QUEUE_DISABLED=true pnpm --dir apps/api-gateway dev
+
+# Terminal 3: learner app
+VITE_API_BASE_URL=http://127.0.0.1:3200/api pnpm --dir apps/tutorputor-web dev --host 0.0.0.0 --port 3201
+
+# Terminal 4: admin app
+VITE_API_BASE_URL=http://127.0.0.1:3200 VITE_DEV_AUTH_BYPASS=true VITE_TUTORPUTOR_TENANT_ID=default pnpm --dir apps/tutorputor-admin dev --host 0.0.0.0 --port 3202
+
+# Infrastructure only (for manual process startup)
+docker compose up -d postgres redis
 ```
 
 ### Production
@@ -211,7 +247,8 @@ pm2 start ecosystem.config.js
 ### Post-Deployment
 
 - [ ] Application starts without errors
-- [ ] Health check endpoint responds
+- [ ] Root health endpoint responds at `/health`
+- [ ] Root metrics endpoint responds at `/metrics`
 - [ ] Database queries working
 - [ ] Redis caching working
 - [ ] Stripe webhooks receiving events
@@ -225,7 +262,13 @@ pm2 start ecosystem.config.js
 ### Application Health
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:7105/health
+```
+
+### Metrics
+
+```bash
+curl http://localhost:7105/metrics
 ```
 
 Expected response:
@@ -236,10 +279,20 @@ Expected response:
   "checks": {
     "database": "ok",
     "redis": "ok",
-    "stripe": "ok"
+    "learnerProfileGrpc": "ok"
   }
 }
 ```
+
+### Billing Webhook
+
+Tutorputor billing webhooks are mounted at:
+
+```text
+/api/v1/integration/billing/webhook
+```
+
+If the platform service runs behind the gateway or ingress, forward Stripe to that same path on the externally exposed host rather than the legacy `/api/webhooks/stripe` path.
 
 ### Database Health
 
