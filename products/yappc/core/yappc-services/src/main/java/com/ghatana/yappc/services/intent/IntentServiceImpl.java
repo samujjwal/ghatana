@@ -141,8 +141,9 @@ public class IntentServiceImpl implements IntentService {
     }
 
     private String buildIntentCapturePrompt(IntentInput input) {
+        String tenantId = input.tenantId() != null ? input.tenantId() : "default";
         PromptTemplateVersion selected = promptRegistry
-            .selectForExperiment("intent.capture", "v1", input.tenantId(), "intent.capture.default")
+            .selectForExperiment("intent.capture", "v1", tenantId, "intent.capture.default")
             .orElseGet(() -> promptRegistry.latest("intent.capture").orElse(null));
 
         String fallbackTemplate = """
@@ -168,8 +169,9 @@ public class IntentServiceImpl implements IntentService {
     }
 
     private String buildIntentAnalysisPrompt(IntentSpec spec) {
+        String tenantId = spec.tenantId() != null ? spec.tenantId() : "default";
         PromptTemplateVersion selected = promptRegistry
-                .selectForExperiment("intent.analyze", "v1", spec.tenantId(), "intent.analyze.default")
+                .selectForExperiment("intent.analyze", "v1", tenantId, "intent.analyze.default")
                 .orElseGet(() -> promptRegistry.latest("intent.analyze").orElse(null));
 
         String fallbackTemplate = """

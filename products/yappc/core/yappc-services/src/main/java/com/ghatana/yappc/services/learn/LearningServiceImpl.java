@@ -139,7 +139,8 @@ public class LearningServiceImpl implements LearningService {
         List<Pattern> patterns = new ArrayList<>();
         for (String line : splitLines(text)) {
             String normalized = line.trim();
-            if (normalized.toLowerCase().startsWith("pattern") || normalized.toLowerCase().startsWith("p:")) {
+            String lower = normalized.toLowerCase();
+            if (lower.startsWith("pattern") || lower.startsWith("p:") || lower.contains("pattern:")) {
                 patterns.add(Pattern.builder()
                     .id(UUID.randomUUID().toString())
                     .type(inferType(normalized, "pattern"))

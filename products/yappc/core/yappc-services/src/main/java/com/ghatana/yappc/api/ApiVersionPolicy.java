@@ -1,10 +1,13 @@
 package com.ghatana.yappc.api;
 
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeader;
+import io.activej.http.HttpHeaderValue;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -47,10 +50,29 @@ public final class ApiVersionPolicy {
     }
 
     private HttpResponse applyHeaders(HttpResponse response) {
-        return response
-                .withHeader(X_API_VERSION, CURRENT_VERSION)
-                .withHeader(X_API_COMPATIBILITY, CURRENT_VERSION)
-                .withHeader(DEPRECATION, "false");
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode());
+
+        // Copy existing headers
+        for (Map.Entry<HttpHeader, HttpHeaderValue> entry : response.getHeaders()) {
+            builder.withHeader(entry.getKey(), entry.getValue());
+        }
+
+        // Inject version headers
+        builder.withHeader(X_API_VERSION, CURRENT_VERSION);
+        builder.withHeader(X_API_COMPATIBILITY, CURRENT_VERSION);
+        builder.withHeader(DEPRECATION, "false");
+
+        // Copy body if present
+        try {
+            io.activej.bytebuf.ByteBuf body = response.getBody();
+            if (body != null) {
+                builder.withBody(body);
+            }
+        } catch (IllegalStateException ignored) {
+            // No body set — skip
+        }
+
+        return builder.build();
     }
 
     private String normalize(String version) {

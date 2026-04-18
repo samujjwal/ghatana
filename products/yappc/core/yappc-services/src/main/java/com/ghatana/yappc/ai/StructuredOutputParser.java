@@ -39,7 +39,7 @@ public class StructuredOutputParser {
             return IntentSpec.builder()
                     .id(UUID.randomUUID().toString())
                     .productName(extractString(root, "productName", "Unnamed Product"))
-                    .description(extractString(root, "description", ""))
+                    .description(extractString(root, "description", "Product intent parsed from AI response"))
                     .goals(extractGoals(root.path("goals")))
                     .personas(extractPersonas(root.path("personas")))
                     .constraints(extractConstraints(root.path("constraints")))
@@ -188,9 +188,31 @@ public class StructuredOutputParser {
     }
 
     private static DomainModel extractDomainModel(JsonNode node) {
-        // Simplified extraction - can be enhanced
+        List<EntitySpec> entities = new ArrayList<>();
+        JsonNode entitiesNode = node.path("entities");
+        if (entitiesNode.isArray()) {
+            entitiesNode.forEach(entityNode -> {
+                List<FieldSpec> fields = new ArrayList<>();
+                JsonNode fieldsNode = entityNode.path("fields");
+                if (fieldsNode.isArray()) {
+                    fieldsNode.forEach(fieldNode -> fields.add(FieldSpec.builder()
+                            .name(extractString(fieldNode, "name", ""))
+                            .type(extractString(fieldNode, "type", "String"))
+                            .required(extractBoolean(fieldNode, "required", false))
+                            .description(extractString(fieldNode, "description", ""))
+                            .validation(new HashMap<>())
+                            .build()));
+                }
+                entities.add(EntitySpec.builder()
+                        .name(extractString(entityNode, "name", ""))
+                        .description(extractString(entityNode, "description", ""))
+                        .fields(fields)
+                        .behaviors(extractStringList(entityNode.path("behaviors")))
+                        .build());
+            });
+        }
         return DomainModel.builder()
-                .entities(List.of())
+                .entities(entities)
                 .relationships(List.of())
                 .boundedContexts(List.of())
                 .build();
@@ -216,10 +238,11 @@ public class StructuredOutputParser {
     // Fallback methods
 
     private static IntentSpec parseFallback(String text, IntentInput input) {
+        String description = (text == null || text.isBlank()) ? "Product intent captured via fallback parser" : text;
         return IntentSpec.builder()
                 .id(UUID.randomUUID().toString())
-                .productName("Product from: " + text.substring(0, Math.min(50, text.length())))
-                .description(text)
+                .productName("Product from: " + description.substring(0, Math.min(50, description.length())))
+                .description(description)
                 .goals(List.of(createDefaultGoal()))
                 .personas(List.of(createDefaultPersona()))
                 .constraints(List.of())

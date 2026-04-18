@@ -95,7 +95,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(200);
 
         String body = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(body).contains("\"status\":\"SUCCESS\"");
+        assertThat(body).contains("\"status\" : \"SUCCESS\"");
         assertThat(body).contains("\"intent\"");
         assertThat(body).contains("\"shape\"");
         assertThat(body).contains("\"validation\"");

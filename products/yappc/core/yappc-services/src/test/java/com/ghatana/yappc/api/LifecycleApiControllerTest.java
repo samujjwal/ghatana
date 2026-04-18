@@ -168,8 +168,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         String responseJson = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(responseJson).contains("\"pipelineMode\":\"DAG\"");
-        assertThat(responseJson).contains("\"status\":\"SUCCESS\"");
+        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\"");
+        assertThat(responseJson).contains("\"status\" : \"SUCCESS\"");
         verify(evolutionService).propose(any());
     }
 
@@ -210,8 +210,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
         String responseJson = response.getBody().asString(StandardCharsets.UTF_8);
-        assertThat(responseJson).contains("\"status\":\"VALIDATION_FAILED\"");
-        assertThat(responseJson).contains("\"pipelineMode\":\"DAG\"");
+        assertThat(responseJson).contains("\"status\" : \"VALIDATION_FAILED\"");
+        assertThat(responseJson).contains("\"pipelineMode\" : \"DAG\"");
         verify(generationService, never()).generate(any());
         verify(runService, never()).execute(any());
         verify(observeService, never()).collect(any());

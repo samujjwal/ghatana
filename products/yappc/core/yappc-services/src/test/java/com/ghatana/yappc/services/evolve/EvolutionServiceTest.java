@@ -109,6 +109,9 @@ class EvolutionServiceTest extends EventloopTestBase {
         when(aiService.complete(any(CompletionRequest.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("Proposal failed")));
 
+        when(auditLogger.log(any(Map.class)))
+                .thenReturn(Promise.complete());
+
         EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics);
         Insights insights = Insights.builder()
                 .id("insights-123")

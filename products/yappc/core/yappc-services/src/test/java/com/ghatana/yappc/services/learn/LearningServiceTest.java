@@ -109,6 +109,9 @@ class LearningServiceTest extends EventloopTestBase {
         when(aiService.complete(any(CompletionRequest.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("Analysis failed")));
 
+        when(auditLogger.log(any(Map.class)))
+                .thenReturn(Promise.complete());
+
         LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics);
         Observation observation = Observation.builder()
                 .id("obs-123")
